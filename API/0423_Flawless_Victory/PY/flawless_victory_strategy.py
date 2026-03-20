@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 class flawless_victory_strategy(Strategy):
@@ -82,7 +82,7 @@ class flawless_victory_strategy(Strategy):
         upper = float(upper)
         lower = float(lower)
         middle = float(middle)
-        rsi = float(rsi_value.ToDecimal())
+        rsi = float(IndicatorHelper.ToDecimal(rsi_value))
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1

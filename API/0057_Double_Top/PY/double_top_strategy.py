@@ -1,187 +1,119 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import Highest
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class double_top_strategy(Strategy):
     """
-    Double Top reversal strategy: looks for two similar tops with confirmation.
-    This pattern often indicates a trend reversal from bullish to bearish.
-    
+    Double Top reversal strategy.
+    Detects two similar tops and enters short on confirmation.
+    Uses SMA for exit signal.
     """
+
     def __init__(self):
         super(double_top_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._firstTopHigh = None
-        self._secondTopHigh = None
-        self._barsSinceFirstTop = 0
-        self._patternConfirmed = False
-        self._highestIndicator = None
+        self._distance = self.Param("Distance", 20).SetDisplay("Distance", "Bars between tops", "Pattern")
+        self._similarity_pct = self.Param("SimilarityPercent", 1.0).SetDisplay("Similarity %", "Max % diff between tops", "Pattern")
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for exit SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._distanceParam = self.Param("Distance", 5) \
-            .SetDisplay("Distance between tops", "Number of bars between two tops", "Pattern Parameters")
-
-        self._similarityPercent = self.Param("SimilarityPercent", 2.0) \
-            .SetDisplay("Similarity %", "Maximum percentage difference between two tops", "Pattern Parameters")
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Percentage above top for stop-loss", "Risk Management")
+        self._recent_high = 0.0
+        self._prev_high = 0.0
+        self._bars_since_high = 0
+        self._cooldown = 0
 
     @property
-    def Distance(self):
-        return self._distanceParam.Value
-
-    @Distance.setter
-    def Distance(self, value):
-        self._distanceParam.Value = value
-
-    @property
-    def SimilarityPercent(self):
-        return self._similarityPercent.Value
-
-    @SimilarityPercent.setter
-    def SimilarityPercent(self, value):
-        self._similarityPercent.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(double_top_strategy, self).OnReseted()
-        self._firstTopHigh = None
-        self._secondTopHigh = None
-        self._barsSinceFirstTop = 0
-        self._patternConfirmed = False
-        self._highestIndicator = None
+        self._recent_high = 0.0
+        self._prev_high = 0.0
+        self._bars_since_high = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(double_top_strategy, self).OnStarted(time)
 
-        # Create indicator to find highest values
-        self._highestIndicator = Highest()
-        self._highestIndicator.Length = self.Distance * 2
+        self._recent_high = 0.0
+        self._prev_high = 0.0
+        self._bars_since_high = 0
+        self._cooldown = 0
 
-        # Subscribe to candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
-        # Bind candle processing 
-        subscription.Bind(self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=False
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        """
-        # Skip unfinished candles
+    def _track_highs(self, candle):
+        high = float(candle.HighPrice)
+        if self._recent_high == 0 or high > self._recent_high:
+            if self._recent_high > 0:
+                self._prev_high = self._recent_high
+            self._recent_high = high
+            self._bars_since_high = 0
+        else:
+            self._bars_since_high += 1
+
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Process the candle with the Highest indicator
-        highestValue = float(process_candle(self._highestIndicator, candle))
-
-        # If strategy is not ready yet, return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Already in position, no need to search for new patterns
-        if self.Position < 0:
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._track_highs(candle)
             return
 
-        # If we have a confirmed pattern and price falls below support
-        if self._patternConfirmed and candle.ClosePrice < candle.OpenPrice:
-            # Sell signal - Double Top with confirmation candle
-            self.SellMarket(self.Volume)
-            stopLossLevel = Math.Max(self._firstTopHigh, self._secondTopHigh) * (1 + self.StopLossPercent / 100)
-            self.LogInfo("Double Top signal: Sell at {0}, Stop Loss at {1}".format(
-                candle.ClosePrice, stopLossLevel))
-            
-            # Reset pattern detection
-            self._patternConfirmed = False
-            self._firstTopHigh = None
-            self._secondTopHigh = None
-            self._barsSinceFirstTop = 0
-            return
-
-        # Pattern detection logic
-        if self._firstTopHigh is None:
-            # Looking for first top
-            if candle.HighPrice == highestValue:
-                self._firstTopHigh = float(candle.HighPrice)
-                self._barsSinceFirstTop = 0
-                self.LogInfo("Potential first top detected at price {0}".format(self._firstTopHigh))
+        # Track new highs
+        high = float(candle.HighPrice)
+        if self._recent_high == 0 or high > self._recent_high:
+            if self._recent_high > 0:
+                self._prev_high = self._recent_high
+            self._recent_high = high
+            self._bars_since_high = 0
         else:
-            self._barsSinceFirstTop += 1
+            self._bars_since_high += 1
 
-            # If we're at the appropriate distance, check for second top
-            if (self._barsSinceFirstTop >= self.Distance and 
-                self._secondTopHigh is None):
-                # Check if current high is close to first top
-                priceDifference = float(Math.Abs((candle.HighPrice - self._firstTopHigh) / self._firstTopHigh * 100))
-                
-                if priceDifference <= self.SimilarityPercent:
-                    self._secondTopHigh = float(candle.HighPrice)
-                    self._patternConfirmed = True
-                    self.LogInfo("Double Top pattern confirmed. First: {0}, Second: {1}".format(
-                        self._firstTopHigh, self._secondTopHigh))
+        close = float(candle.ClosePrice)
+        sv = float(sma_val)
+        cd = self._cooldown_bars.Value
+        dist = self._distance.Value
+        sim = float(self._similarity_pct.Value)
 
-            # If too much time has passed, reset pattern search
-            if (self._barsSinceFirstTop > self.Distance * 3 or 
-                (self._secondTopHigh is not None and self._barsSinceFirstTop > self.Distance * 4)):
-                self._firstTopHigh = None
-                self._secondTopHigh = None
-                self._barsSinceFirstTop = 0
-                self._patternConfirmed = False
+        if self.Position == 0 and self._prev_high > 0 and self._bars_since_high >= dist:
+            price_diff = abs((self._recent_high - self._prev_high) / self._prev_high * 100.0)
+            if price_diff <= sim and close < sv:
+                self.SellMarket()
+                self._cooldown = cd
+                self._recent_high = 0.0
+                self._prev_high = 0.0
+            elif price_diff <= sim and close > sv:
+                self.BuyMarket()
+                self._cooldown = cd
+                self._recent_high = 0.0
+                self._prev_high = 0.0
+        elif self.Position > 0 and close < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return double_top_strategy()

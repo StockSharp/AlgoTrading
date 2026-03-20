@@ -3,12 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest, SimpleMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class the_price_radio_strategy(Strategy):
     """Ehlers Price Radio: derivative-based amplitude/frequency with hold bars and cooldown."""
@@ -18,7 +16,7 @@ class the_price_radio_strategy(Strategy):
         self._max_entries = self.Param("MaxEntries", 45).SetGreaterThanZero().SetDisplay("Max Entries", "Maximum entries per run", "Risk")
         self._hold_bars = self.Param("HoldBars", 180).SetGreaterThanZero().SetDisplay("Hold Bars", "Bars to hold position", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 240).SetGreaterThanZero().SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -73,26 +71,13 @@ class the_price_radio_strategy(Strategy):
         t = candle.OpenTime
 
         abs_deriv = abs(deriv)
-        env_inp = DecimalIndicatorValue(self._envelope, abs_deriv)
-        env_inp.IsFinal = True
-        envelope = float(self._envelope.Process(env_inp).ToDecimal())
-
-        am_inp = DecimalIndicatorValue(self._am_sma, envelope)
-        am_inp.IsFinal = True
-        am = float(self._am_sma.Process(am_inp).ToDecimal())
-
-        dh_inp = DecimalIndicatorValue(self._deriv_high, deriv)
-        dh_inp.IsFinal = True
-        high = float(self._deriv_high.Process(dh_inp).ToDecimal())
-
-        dl_inp = DecimalIndicatorValue(self._deriv_low, deriv)
-        dl_inp.IsFinal = True
-        low = float(self._deriv_low.Process(dl_inp).ToDecimal())
+        envelope = float(IndicatorHelper.ToDecimal(IndicatorHelper.Process(self._envelope, Decimal(abs_deriv), t, True)))
+        am = float(IndicatorHelper.ToDecimal(IndicatorHelper.Process(self._am_sma, Decimal(envelope), t, True)))
+        high = float(IndicatorHelper.ToDecimal(IndicatorHelper.Process(self._deriv_high, Decimal(deriv), t, True)))
+        low = float(IndicatorHelper.ToDecimal(IndicatorHelper.Process(self._deriv_low, Decimal(deriv), t, True)))
 
         clamped = min(max(10 * deriv, low), high)
-        fm_inp = DecimalIndicatorValue(self._fm_sma, clamped)
-        fm_inp.IsFinal = True
-        fm = float(self._fm_sma.Process(fm_inp).ToDecimal())
+        fm = float(IndicatorHelper.ToDecimal(IndicatorHelper.Process(self._fm_sma, Decimal(clamped), t, True)))
 
         if self.Position != 0:
             self._bars_in_pos += 1

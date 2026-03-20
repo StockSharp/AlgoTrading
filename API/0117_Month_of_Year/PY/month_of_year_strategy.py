@@ -3,118 +3,110 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class month_of_year_strategy(Strategy):
     """
-    Implementation of Month of Year seasonal trading strategy.
-    The strategy enters long position in November and short position in February.
+    Month of Year seasonal trading strategy.
+    Uses first/second half of month with MA trend filter and cooldown.
     """
 
     def __init__(self):
         super(month_of_year_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "SMA period", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetNotNegative() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
-
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-
-        self._candle_type = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def ma_period(self):
-        """Moving average period."""
-        return self._ma_period.Value
-
-    @ma_period.setter
-    def ma_period(self, value):
-        self._ma_period.Value = value
+        self._prev_ma = 0.0
+        self._prev_close = 0.0
+        self._last_trade_month = 0
+        self._last_trade_half = 0
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def OnReseted(self):
+        super(month_of_year_strategy, self).OnReseted()
+        self._prev_ma = 0.0
+        self._prev_close = 0.0
+        self._last_trade_month = 0
+        self._last_trade_half = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(month_of_year_strategy, self).OnStarted(time)
 
-        # Create a simple moving average indicator
+        self._prev_ma = 0.0
+        self._prev_close = 0.0
+        self._last_trade_month = 0
+        self._last_trade_half = 0
+        self._cooldown = 0
+
         sma = SimpleMovingAverage()
-        sma.Length = self.ma_period
+        sma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self.ProcessCandle).Start()
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, ma_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        current_month = candle.OpenTime.Month
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
+        month = candle.OpenTime.Month
+        half = 1 if candle.OpenTime.Day <= 15 else 2
+        cd = self._cooldown_bars.Value
 
-        # November - BUY signal (Month = 11)
-        if current_month == 11 and self.Position <= 0 and candle.ClosePrice > ma_value:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_ma = ma
+            self._prev_close = close
+            return
 
-            self.LogInfo("Buy signal in November: Price={0}, MA={1}, Volume={2}".format(
-                candle.ClosePrice, ma_value, volume))
-        # February - SELL signal (Month = 2)
-        elif current_month == 2 and self.Position >= 0 and candle.ClosePrice < ma_value:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
+        # Exit logic: MA cross
+        if self.Position > 0 and close < ma and self._prev_ma > 0 and self._prev_close >= self._prev_ma:
+            self.SellMarket()
+            self._cooldown = cd
+            self._last_trade_month = month
+            self._last_trade_half = half
+        elif self.Position < 0 and close > ma and self._prev_ma > 0 and self._prev_close <= self._prev_ma:
+            self.BuyMarket()
+            self._cooldown = cd
+            self._last_trade_month = month
+            self._last_trade_half = half
 
-            self.LogInfo("Sell signal in February: Price={0}, MA={1}, Volume={2}".format(
-                candle.ClosePrice, ma_value, volume))
-        # Closing conditions
-        elif (current_month == 12 and self.Position > 0) or \
-             (current_month == 3 and self.Position < 0):
-            # Close long position in December
-            # Close short position in March
-            self.ClosePosition()
-            self.LogInfo("Closing position in month {0}: Position={1}".format(current_month, self.Position))
+        # Entry logic: seasonal month-half based
+        if self.Position == 0 and (month != self._last_trade_month or half != self._last_trade_half):
+            # First half of month: buy if above MA
+            if half == 1 and close > ma:
+                self.BuyMarket()
+                self._cooldown = cd
+                self._last_trade_month = month
+                self._last_trade_half = half
+            # Second half of month: sell if below MA
+            elif half == 2 and close < ma:
+                self.SellMarket()
+                self._cooldown = cd
+                self._last_trade_month = month
+                self._last_trade_half = half
+
+        self._prev_ma = ma
+        self._prev_close = close
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return month_of_year_strategy()

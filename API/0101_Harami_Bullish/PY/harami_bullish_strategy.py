@@ -3,134 +3,104 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class harami_bullish_strategy(Strategy):
     """
-    Harami Bullish pattern strategy.
-    Strategy enters long position when a bullish harami pattern is detected.
-
+    Harami Bullish strategy.
+    Enters long on bullish harami (bearish candle followed by smaller bullish candle inside it).
+    Enters short on bearish harami (bullish candle followed by smaller bearish candle inside it).
+    Uses SMA for exit confirmation.
     """
 
     def __init__(self):
         super(harami_bullish_strategy, self).__init__()
+        self._ma_length = self.Param("MaLength", 20).SetDisplay("MA Length", "Period of SMA for exit", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Stop-loss percentage below pattern's low", "Protection") \
-            .SetRange(0.1, 5.0)
-
-        # Internal state
-        self._previousCandle = None
-        self._patternDetected = False
+        self._prev_candle = None
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        """Candle type and timeframe for the strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss as percentage below the pattern's low."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(harami_bullish_strategy, self).OnReseted()
-        self._previousCandle = None
-        self._patternDetected = False
+        self._prev_candle = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up subscriptions, protections, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(harami_bullish_strategy, self).OnStarted(time)
-        # Create and setup subscription for candles
-        subscription = self.SubscribeCandles(self.CandleType)
 
-        # Bind the candle processor
-        subscription.Bind(self.ProcessCandle).Start()
+        self._prev_candle = None
+        self._cooldown = 0
 
-        # Enable stop-loss protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart if available
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Skip first candle as we need at least one previous candle to detect the pattern
-        if self._previousCandle is None:
-            self._previousCandle = candle
+        if self._prev_candle is None:
+            self._prev_candle = candle
             return
 
-        # Check for Harami Bullish pattern:
-        # 1. Previous candle is bearish (close < open)
-        # 2. Current candle is bullish (close > open)
-        # 3. Current candle is completely inside the previous candle (high < prev high and low > prev low)
-        isPreviousBearish = self._previousCandle.OpenPrice > self._previousCandle.ClosePrice
-        isCurrentBullish = candle.OpenPrice < candle.ClosePrice
-        isInsidePrevious = candle.HighPrice < self._previousCandle.HighPrice and \
-            candle.LowPrice > self._previousCandle.LowPrice
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_candle = candle
+            return
 
-        # Detect Harami Bullish pattern
-        if isPreviousBearish and isCurrentBullish and isInsidePrevious and not self._patternDetected:
-            self._patternDetected = True
+        cd = self._cooldown_bars.Value
+        sv = float(sma_val)
 
-            # Calculate position size (if we already have a position, this will close it and open a new one)
-            volume = self.Volume + Math.Abs(self.Position)
+        # Bullish Harami: prev bearish, current bullish, current inside prev
+        bullish_harami = (
+            self._prev_candle.ClosePrice < self._prev_candle.OpenPrice and
+            candle.ClosePrice > candle.OpenPrice and
+            candle.HighPrice < self._prev_candle.HighPrice and
+            candle.LowPrice > self._prev_candle.LowPrice
+        )
 
-            # Enter long position at market price
-            self.BuyMarket(volume)
+        # Bearish Harami: prev bullish, current bearish, current inside prev
+        bearish_harami = (
+            self._prev_candle.ClosePrice > self._prev_candle.OpenPrice and
+            candle.ClosePrice < candle.OpenPrice and
+            candle.HighPrice < self._prev_candle.HighPrice and
+            candle.LowPrice > self._prev_candle.LowPrice
+        )
 
-            # Set stop-loss level
-            stopLossLevel = float(candle.LowPrice * (1 - self.StopLossPercent / 100))
+        if self.Position == 0 and bullish_harami:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and bearish_harami:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and float(candle.ClosePrice) < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and float(candle.ClosePrice) > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
-            self.LogInfo("Harami Bullish detected. Buying at {0}. Stop-loss set at {1}".format(
-                candle.ClosePrice, stopLossLevel))
-        elif self._patternDetected:
-            # Check for exit condition: price breaks above the previous candle's high
-            if candle.HighPrice > self._previousCandle.HighPrice:
-                # If we have a long position and price breaks above previous high, close the position
-                if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self._patternDetected = False
-
-                    self.LogInfo("Exit signal: Price broke above previous high ({0}). Closing position at {1}".format(
-                        self._previousCandle.HighPrice, candle.ClosePrice))
-
-        # Store current candle as previous for the next iteration
-        self._previousCandle = candle
+        self._prev_candle = candle
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return harami_bullish_strategy()

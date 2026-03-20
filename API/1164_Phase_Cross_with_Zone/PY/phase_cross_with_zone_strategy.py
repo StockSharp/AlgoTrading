@@ -7,15 +7,13 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class phase_cross_with_zone_strategy(Strategy):
     def __init__(self):
         super(phase_cross_with_zone_strategy, self).__init__()
         self._length = self.Param("Length", 20).SetGreaterThanZero().SetDisplay("Length", "Smoothing length", "General")
         self._offset = self.Param("Offset", 0.5).SetDisplay("Offset", "Phase offset", "General")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

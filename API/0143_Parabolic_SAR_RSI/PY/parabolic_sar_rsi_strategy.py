@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -12,68 +12,42 @@ from datatype_extensions import *
 
 class parabolic_sar_rsi_strategy(Strategy):
     """
-    Strategy that combines Parabolic SAR for trend direction
-    and RSI for entry confirmation with oversold/overbought conditions.
+    Strategy combining Parabolic SAR for trend direction
+    and RSI for entry confirmation.
     """
 
     def __init__(self):
         super(parabolic_sar_rsi_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._sar_af = self.Param("SarAf", 0.02) \
-            .SetRange(0.01, 0.1) \
-            .SetDisplay("SAR Acceleration Factor", "Initial acceleration factor for Parabolic SAR", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.01, 0.05, 0.01)
-
-        self._sar_max_af = self.Param("SarMaxAf", 0.2) \
-            .SetRange(0.1, 0.5) \
-            .SetDisplay("SAR Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.1, 0.3, 0.1)
-
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
-
-        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
-            .SetNotNegative() \
-            .SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20.0, 40.0, 5.0)
-
-        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
-            .SetNotNegative() \
-            .SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(60.0, 80.0, 5.0)
-
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._rsi_period = self.Param("RsiPeriod", 14) \
+            .SetRange(7, 21) \
+            .SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
+
+        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
+            .SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
+
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
+            .SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
+
+        self._cooldown_bars = self.Param("CooldownBars", 130) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
+            .SetRange(5, 500)
+
+        self._cooldown = 0
+
     @property
-    def sar_af(self):
-        """Parabolic SAR acceleration factor."""
-        return self._sar_af.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @sar_af.setter
-    def sar_af(self, value):
-        self._sar_af.Value = value
-
-    @property
-    def sar_max_af(self):
-        """Parabolic SAR maximum acceleration factor."""
-        return self._sar_max_af.Value
-
-    @sar_max_af.setter
-    def sar_max_af(self, value):
-        self._sar_max_af.Value = value
+    @candle_type.setter
+    def candle_type(self, value):
+        self._candle_type.Value = value
 
     @property
     def rsi_period(self):
-        """RSI period."""
         return self._rsi_period.Value
 
     @rsi_period.setter
@@ -82,7 +56,6 @@ class parabolic_sar_rsi_strategy(Strategy):
 
     @property
     def rsi_oversold(self):
-        """RSI oversold level."""
         return self._rsi_oversold.Value
 
     @rsi_oversold.setter
@@ -91,7 +64,6 @@ class parabolic_sar_rsi_strategy(Strategy):
 
     @property
     def rsi_overbought(self):
-        """RSI overbought level."""
         return self._rsi_overbought.Value
 
     @rsi_overbought.setter
@@ -99,71 +71,73 @@ class parabolic_sar_rsi_strategy(Strategy):
         self._rsi_overbought.Value = value
 
     @property
-    def candle_type(self):
-        """Candle type for strategy calculation."""
-        return self._candle_type.Value
+    def cooldown_bars(self):
+        return self._cooldown_bars.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    @cooldown_bars.setter
+    def cooldown_bars(self, value):
+        self._cooldown_bars.Value = value
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(parabolic_sar_rsi_strategy, self).OnStarted(time)
 
-        # Create indicators
-        parabolic_sar = ParabolicSar()
-        parabolic_sar.Acceleration = self.sar_af
-        parabolic_sar.AccelerationMax = self.sar_max_af
-        parabolic_sar.AccelerationStep = self.sar_af  # Using initial AF as the step
+        self._cooldown = 0
 
+        parabolic_sar = ParabolicSar()
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period
 
-        # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(parabolic_sar, rsi, self.ProcessCandles).Start()
+        subscription.Bind(parabolic_sar, rsi, self.ProcessCandle).Start()
 
-        # Enable dynamic stop-loss using Parabolic SAR
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(0, UnitTypes.Absolute)
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, parabolic_sar)
-            self.DrawIndicator(area, rsi)
             self.DrawOwnTrades(area)
 
-    def ProcessCandles(self, candle, sar_value, rsi_value):
-        """Process candles and indicator values."""
-        # Skip unfinished candles
+            rsi_area = self.CreateChartArea()
+            if rsi_area is not None:
+                self.DrawIndicator(rsi_area, rsi)
+
+    def ProcessCandle(self, candle, sar_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Long entry: price above SAR and RSI oversold
-        if candle.ClosePrice > sar_value and rsi_value < self.rsi_oversold and self.Position <= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        # Short entry: price below SAR and RSI overbought
-        elif candle.ClosePrice < sar_value and rsi_value > self.rsi_overbought and self.Position >= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        # Long exit: price falls below SAR (trend change)
-        elif self.Position > 0 and candle.ClosePrice < sar_value:
-            self.SellMarket(Math.Abs(self.Position))
-        # Short exit: price rises above SAR (trend change)
-        elif self.Position < 0 and candle.ClosePrice > sar_value:
-            self.BuyMarket(Math.Abs(self.Position))
+        close = float(candle.ClosePrice)
+        sv = float(sar_value)
+
+        if sv == 0:
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        # Long: price above SAR + RSI not overbought
+        if close > sv and rsi_value < self.rsi_overbought and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
+        # Short: price below SAR + RSI not oversold
+        elif close < sv and rsi_value > self.rsi_oversold and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+
+        # Exit long: SAR flips above price
+        if self.Position > 0 and close < sv:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+        # Exit short: SAR flips below price
+        elif self.Position < 0 and close > sv:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
+
+    def OnReseted(self):
+        super(parabolic_sar_rsi_strategy, self).OnReseted()
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return parabolic_sar_rsi_strategy()

@@ -3,251 +3,130 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Ichimoku, RelativeStrengthIndex
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class ichimoku_rsi_strategy(Strategy):
     """
-    Strategy that combines Ichimoku Cloud and RSI indicators to identify
-    potential trading opportunities in trending markets with RSI confirmation.
+    Ichimoku RSI strategy.
+    Combines manual Tenkan/Kijun calculation with RSI confirmation.
+    Enters on Tenkan/Kijun crossover with RSI filter.
     """
+
+    TENKAN_PERIOD = 9
+    KIJUN_PERIOD = 26
 
     def __init__(self):
         super(ichimoku_rsi_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
+        self._rsi_oversold = self.Param("RsiOversold", 30.0).SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings")
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0).SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings")
+        self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Data type for candles.
-        self._candle_type = self.Param("CandleType", tf(30)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Tenkan-sen (Conversion Line) period.
-        self._tenkan_period = self.Param("TenkanPeriod", 9) \
-            .SetRange(5, 30) \
-            .SetDisplay("Tenkan Period", "Tenkan-sen (Conversion Line) period", "Ichimoku Settings") \
-            .SetCanOptimize(True)
-
-        # Kijun-sen (Base Line) period.
-        self._kijun_period = self.Param("KijunPeriod", 26) \
-            .SetRange(10, 50) \
-            .SetDisplay("Kijun Period", "Kijun-sen (Base Line) period", "Ichimoku Settings") \
-            .SetCanOptimize(True)
-
-        # Senkou Span B (2nd Leading Span) period.
-        self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 52) \
-            .SetRange(30, 100) \
-            .SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings") \
-            .SetCanOptimize(True)
-
-        # Period for RSI calculation.
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetRange(5, 30) \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings") \
-            .SetCanOptimize(True)
-
-        # RSI oversold level.
-        self._rsi_oversold = self.Param("RsiOversold", 30) \
-            .SetRange(10, 40) \
-            .SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings") \
-            .SetCanOptimize(True)
-
-        # RSI overbought level.
-        self._rsi_overbought = self.Param("RsiOverbought", 70) \
-            .SetRange(60, 90) \
-            .SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings") \
-            .SetCanOptimize(True)
-
-        # Stop loss percentage from entry price.
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetRange(0.5, 5.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+        self._rsi_value = 50.0
+        self._cooldown = 0
+        self._highs = []
+        self._lows = []
 
     @property
-    def CandleType(self):
-        """Data type for candles."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def TenkanPeriod(self):
-        """Tenkan-sen (Conversion Line) period."""
-        return self._tenkan_period.Value
-
-    @TenkanPeriod.setter
-    def TenkanPeriod(self, value):
-        self._tenkan_period.Value = value
-
-    @property
-    def KijunPeriod(self):
-        """Kijun-sen (Base Line) period."""
-        return self._kijun_period.Value
-
-    @KijunPeriod.setter
-    def KijunPeriod(self, value):
-        self._kijun_period.Value = value
-
-    @property
-    def SenkouSpanBPeriod(self):
-        """Senkou Span B (2nd Leading Span) period."""
-        return self._senkou_span_b_period.Value
-
-    @SenkouSpanBPeriod.setter
-    def SenkouSpanBPeriod(self, value):
-        self._senkou_span_b_period.Value = value
-
-    @property
-    def RsiPeriod(self):
-        """Period for RSI calculation."""
-        return self._rsi_period.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def RsiOversold(self):
-        """RSI oversold level."""
-        return self._rsi_oversold.Value
-
-    @RsiOversold.setter
-    def RsiOversold(self, value):
-        self._rsi_oversold.Value = value
-
-    @property
-    def RsiOverbought(self):
-        """RSI overbought level."""
-        return self._rsi_overbought.Value
-
-    @RsiOverbought.setter
-    def RsiOverbought(self, value):
-        self._rsi_overbought.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+    def OnReseted(self):
+        super(ichimoku_rsi_strategy, self).OnReseted()
+        self._rsi_value = 50.0
+        self._cooldown = 0
+        self._highs = []
+        self._lows = []
 
     def OnStarted(self, time):
         super(ichimoku_rsi_strategy, self).OnStarted(time)
 
-        # Set up stop loss protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Create indicators
-        ichimoku = Ichimoku()
-        ichimoku.Tenkan.Length = self.TenkanPeriod
-        ichimoku.Kijun.Length = self.KijunPeriod
-        ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
+        self._rsi_value = 50.0
+        self._cooldown = 0
+        self._highs = []
+        self._lows = []
 
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
+        rsi.Length = self._rsi_period.Value
 
-        # Create candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(rsi, self._process_candle).Start()
 
-        # Bind the indicators and candle processor
-        subscription.BindEx(ichimoku, rsi, self.ProcessCandle).Start()
-
-        # Set up chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ichimoku)
-
-            # Draw RSI in a separate area
-            rsi_area = self.CreateChartArea()
-            self.DrawIndicator(rsi_area, rsi)
-
             self.DrawOwnTrades(area)
+            rsi_area = self.CreateChartArea()
+            if rsi_area is not None:
+                self.DrawIndicator(rsi_area, rsi)
 
-    def ProcessCandle(self, candle, ichimoku_value, rsi_value):
-        """
-        Process incoming candle with indicator values.
+    @staticmethod
+    def _get_highest(values, period):
+        start = max(0, len(values) - period)
+        return max(values[start:])
 
-        :param candle: Candle to process.
-        :param ichimoku_value: Ichimoku value.
-        :param rsi_value: RSI value.
-        """
+    @staticmethod
+    def _get_lowest(values, period):
+        start = max(0, len(values) - period)
+        return min(values[start:])
+
+    def _process_candle(self, candle, rsi_val):
+        self._rsi_value = float(rsi_val)
+
         if candle.State != CandleStates.Finished:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Extract values from Ichimoku indicator
-        if ichimoku_value.Tenkan is None:
+        # Track highs and lows
+        self._highs.append(float(candle.HighPrice))
+        self._lows.append(float(candle.LowPrice))
+
+        # Keep buffer manageable
+        max_len = self.KIJUN_PERIOD * 2
+        if len(self._highs) > max_len:
+            self._highs = self._highs[-max_len:]
+            self._lows = self._lows[-max_len:]
+
+        # Need at least KijunPeriod bars
+        if len(self._highs) < self.KIJUN_PERIOD:
             return
-        tenkan = float(ichimoku_value.Tenkan)
 
-        if ichimoku_value.Kijun is None:
+        # Tenkan-sen = (highest high over 9 + lowest low over 9) / 2
+        tenkan = (self._get_highest(self._highs, self.TENKAN_PERIOD) + self._get_lowest(self._lows, self.TENKAN_PERIOD)) / 2.0
+        # Kijun-sen = (highest high over 26 + lowest low over 26) / 2
+        kijun = (self._get_highest(self._highs, self.KIJUN_PERIOD) + self._get_lowest(self._lows, self.KIJUN_PERIOD)) / 2.0
+
+        cd = self._cooldown_bars.Value
+        overbought = float(self._rsi_overbought.Value)
+        oversold = float(self._rsi_oversold.Value)
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
             return
-        kijun = float(ichimoku_value.Kijun)
 
-        if ichimoku_value.SenkouA is None:
-            return
-        senkou_span_a = float(ichimoku_value.SenkouA)
+        # Buy: tenkan > kijun (bullish) + RSI not overbought
+        if tenkan > kijun and self._rsi_value < overbought and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Sell: tenkan < kijun (bearish) + RSI not oversold
+        elif tenkan < kijun and self._rsi_value > oversold and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cd
 
-        if ichimoku_value.SenkouB is None:
-            return
-        senkou_span_b = float(ichimoku_value.SenkouB)
-
-        # Extract RSI value
-        rsi_indicator_value = float(rsi_value)
-
-        # Check cloud status (Kumo)
-        price_above_cloud = candle.ClosePrice > Math.Max(senkou_span_a, senkou_span_b)
-        price_below_cloud = candle.ClosePrice < Math.Min(senkou_span_a, senkou_span_b)
-        bullish_cloud = senkou_span_a > senkou_span_b
-
-        # Trading logic for long positions
-        if price_above_cloud and tenkan > kijun and bullish_cloud and rsi_indicator_value < self.RsiOverbought:
-            # Price above cloud with bullish TK cross and bullish cloud, and RSI not overbought - Long signal
-            if self.Position <= 0:
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo("Buy signal: Price above cloud, Tenkan > Kijun ({0:F4} > {1:F4}), Bullish cloud, RSI = {2:F2}".format(
-                    tenkan, kijun, rsi_indicator_value))
-        # Trading logic for short positions
-        elif price_below_cloud and tenkan < kijun and not bullish_cloud and rsi_indicator_value > self.RsiOversold:
-            # Price below cloud with bearish TK cross and bearish cloud, and RSI not oversold - Short signal
-            if self.Position >= 0:
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo("Sell signal: Price below cloud, Tenkan < Kijun ({0:F4} < {1:F4}), Bearish cloud, RSI = {2:F2}".format(
-                    tenkan, kijun, rsi_indicator_value))
-
-        # Exit conditions
-        if self.Position > 0:
-            # Exit long if price crosses below Kijun-sen (Base Line)
-            if candle.ClosePrice < kijun:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit long: Price ({0}) crossed below Kijun-sen ({1:F4})".format(candle.ClosePrice, kijun))
-            # Also exit if RSI becomes overbought
-            elif rsi_indicator_value > self.RsiOverbought:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit long: RSI overbought ({0:F2})".format(rsi_indicator_value))
-        elif self.Position < 0:
-            # Exit short if price crosses above Kijun-sen (Base Line)
-            if candle.ClosePrice > kijun:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit short: Price ({0}) crossed above Kijun-sen ({1:F4})".format(candle.ClosePrice, kijun))
-            # Also exit if RSI becomes oversold
-            elif rsi_indicator_value < self.RsiOversold:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit short: RSI oversold ({0:F2})".format(rsi_indicator_value))
+        # Exit long if tenkan crosses below kijun
+        if self.Position > 0 and tenkan < kijun:
+            self.SellMarket()
+            self._cooldown = cd
+        # Exit short if tenkan crosses above kijun
+        elif self.Position < 0 and tenkan > kijun:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return ichimoku_rsi_strategy()

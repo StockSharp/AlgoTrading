@@ -7,15 +7,13 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class tuga_supertrend_strategy(Strategy):
     """RSI momentum with EMA trend filter: buy on RSI cross above 50 in uptrend."""
     def __init__(self):
         super(tuga_supertrend_strategy, self).__init__()
         self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Length", "RSI period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

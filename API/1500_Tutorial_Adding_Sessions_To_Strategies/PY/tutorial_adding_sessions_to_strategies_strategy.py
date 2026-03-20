@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class tutorial_adding_sessions_to_strategies_strategy(Strategy):
     """RSI momentum with EMA trend filter: buy on RSI cross above 50 in uptrend."""
@@ -17,7 +15,7 @@ class tutorial_adding_sessions_to_strategies_strategy(Strategy):
         self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "RSI length", "RSI")
         self._upper = self.Param("Upper", 70.0).SetDisplay("Upper Level", "Overbought", "RSI")
         self._lower = self.Param("Lower", 30.0).SetDisplay("Lower Level", "Oversold", "RSI")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

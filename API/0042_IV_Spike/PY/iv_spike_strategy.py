@@ -1,171 +1,98 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class iv_spike_strategy(Strategy):
     """
-    IV Spike strategy based on implied volatility spikes
-    This strategy enters long when IV increases by 50% and price is below MA,
-    or short when IV increases by 50% and price is above MA
-    
+    IV Spike strategy based on implied volatility spikes.
+    Enters long when IV increases above threshold and price is below MA,
+    or short when IV increases and price is above MA.
     """
+
     def __init__(self):
         super(iv_spike_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._previousIV = 0
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
+        self._iv_period = self.Param("IVPeriod", 20).SetDisplay("IV Period", "Period for volatility calculation", "Indicators")
+        self._iv_spike_threshold = self.Param("IVSpikeThreshold", 1.5).SetDisplay("IV Spike Threshold", "Minimum IV increase multiplier", "Entry")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._maPeriod = self.Param("MAPeriod", 20) \
-            .SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-
-        self._ivPeriod = self.Param("IVPeriod", 20) \
-            .SetDisplay("IV Period", "Period for Implied Volatility calculation", "Strategy Parameters")
-
-        self._ivSpikeThreshold = self.Param("IVSpikeThreshold", 1.5) \
-            .SetDisplay("IV Spike Threshold", "Minimum IV increase multiplier (e.g., 1.5 = 50% increase)", "Strategy Parameters")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
+        self._previous_iv = 0.0
+        self._cooldown = 0
 
     @property
-    def MAPeriod(self):
-        return self._maPeriod.Value
-
-    @MAPeriod.setter
-    def MAPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def IVPeriod(self):
-        return self._ivPeriod.Value
-
-    @IVPeriod.setter
-    def IVPeriod(self, value):
-        self._ivPeriod.Value = value
-
-    @property
-    def IVSpikeThreshold(self):
-        return self._ivSpikeThreshold.Value
-
-    @IVSpikeThreshold.setter
-    def IVSpikeThreshold(self, value):
-        self._ivSpikeThreshold.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(iv_spike_strategy, self).OnReseted()
-        self._previousIV = 0
+        self._previous_iv = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(iv_spike_strategy, self).OnStarted(time)
 
-        # Create indicators
+        self._previous_iv = 0.0
+        self._cooldown = 0
+
         ma = SimpleMovingAverage()
-        ma.Length = self.MAPeriod
-        
-        hv = StandardDeviation()  # Using standard deviation as proxy for IV
-        hv.Length = self.IVPeriod
+        ma.Length = self._ma_period.Value
+        hv = StandardDeviation()
+        hv.Length = self._iv_period.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ma, hv, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ma, hv, self._process_candle).Start()
 
-        # Configure protection
-        self.StartProtection(
-            takeProfit=Unit(3, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
-            self.DrawIndicator(area, hv)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, maValue, ivValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param maValue: The Moving Average value.
-        :param ivValue: The IV (standard deviation) value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val, iv_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Initialize previous IV on first candle
-        if self._previousIV == 0 and ivValue > 0:
-            self._previousIV = float(ivValue)
+        iv = float(iv_val)
+
+        if self._previous_iv == 0 and iv > 0:
+            self._previous_iv = iv
             return
 
-        # Calculate IV change
-        ivChange = float(ivValue) / self._previousIV if self._previousIV != 0 else 1
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._previous_iv = iv
+            return
 
-        # Log current values
-        self.LogInfo("Candle Close: {0}, MA: {1}, IV: {2}, IV Change: {3:.2%}".format(
-            candle.ClosePrice, maValue, ivValue, ivChange - 1))
+        iv_change = iv / self._previous_iv if self._previous_iv > 0 else 0.0
+        close = float(candle.ClosePrice)
+        mv = float(ma_val)
+        threshold = float(self._iv_spike_threshold.Value)
+        cd = self._cooldown_bars.Value
 
-        # Trading logic:
-        # Check for IV spike
-        if ivChange >= self.IVSpikeThreshold:
-            self.LogInfo("IV Spike detected: {0:.2%}".format(ivChange - 1))
+        if self.Position == 0 and iv_change >= threshold:
+            if close < mv:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif close > mv:
+                self.SellMarket()
+                self._cooldown = cd
+        elif self.Position > 0 and iv < self._previous_iv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and iv < self._previous_iv:
+            self.BuyMarket()
+            self._cooldown = cd
 
-            # Long: IV spike and price below MA
-            if candle.ClosePrice < maValue and self.Position <= 0:
-                self.LogInfo("Buy Signal: IV Spike ({0:.2%}) and Price ({1}) < MA ({2})".format(
-                    ivChange - 1, candle.ClosePrice, maValue))
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            # Short: IV spike and price above MA
-            elif candle.ClosePrice > maValue and self.Position >= 0:
-                self.LogInfo("Sell Signal: IV Spike ({0:.2%}) and Price ({1}) > MA ({2})".format(
-                    ivChange - 1, candle.ClosePrice, maValue))
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-
-        # Exit logic: IV declining (IV now < previous IV)
-        if ivValue < self._previousIV:
-            if self.Position > 0:
-                self.LogInfo("Exit Long: IV declining ({0} < {1})".format(ivValue, self._previousIV))
-                self.SellMarket(Math.Abs(self.Position))
-            elif self.Position < 0:
-                self.LogInfo("Exit Short: IV declining ({0} < {1})".format(ivValue, self._previousIV))
-                self.BuyMarket(Math.Abs(self.Position))
-
-        # Store current IV for next comparison
-        self._previousIV = ivValue
+        self._previous_iv = iv
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return iv_spike_strategy()

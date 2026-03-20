@@ -4,164 +4,116 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, AverageTrueRange
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class adx_di_strategy(Strategy):
-    """
-    Strategy based on ADX and Directional Movement indicators.
-    It enters long when ADX is strong and +DI > -DI,
-    and short when ADX is strong and -DI > +DI.
-    
-    """
-    
+
     def __init__(self):
         super(adx_di_strategy, self).__init__()
-        
-        # Initialize strategy parameters
+
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-        
-        self._adx_threshold = self.Param("AdxThreshold", 25.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 15.0) \
             .SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
-        
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
-        
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._prev_plus_di_above = False
+        self._has_prev_values = False
+        self._cooldown = 0
+
     @property
-    def adx_period(self):
-        """ADX period."""
+    def AdxPeriod(self):
         return self._adx_period.Value
 
-    @adx_period.setter
-    def adx_period(self, value):
+    @AdxPeriod.setter
+    def AdxPeriod(self, value):
         self._adx_period.Value = value
 
     @property
-    def adx_threshold(self):
-        """ADX threshold for trend confirmation."""
+    def AdxThreshold(self):
         return self._adx_threshold.Value
 
-    @adx_threshold.setter
-    def adx_threshold(self, value):
+    @AdxThreshold.setter
+    def AdxThreshold(self, value):
         self._adx_threshold.Value = value
 
     @property
-    def atr_multiplier(self):
-        """ATR multiplier for stop-loss."""
-        return self._atr_multiplier.Value
-
-    @atr_multiplier.setter
-    def atr_multiplier(self, value):
-        self._atr_multiplier.Value = value
-
-    @property
-    def candle_type(self):
-        """Candle type."""
+    def CandleType(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
+    @CandleType.setter
+    def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
-        super(adx_di_strategy, self).OnReseted()
-
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(adx_di_strategy, self).OnStarted(time)
 
-        # Create ADX Indicator
+        self._prev_plus_di_above = False
+        self._has_prev_values = False
+        self._cooldown = 0
+
         adx = AverageDirectionalIndex()
-        adx.Length = self.adx_period
-        
-        atr = AverageTrueRange()
-        atr.Length = 14
+        adx.Length = self.AdxPeriod
 
-        # Subscribe to candles
-        subscription = self.SubscribeCandles(self.candle_type)
-        
-        # Bind indicators and process candles
-        subscription.BindEx(adx, atr, self.ProcessCandle).Start()
+        self.SubscribeCandles(self.CandleType) \
+            .BindEx(adx, self.ProcessCandle) \
+            .Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
-        )
-        # Setup chart visualization
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adx)
-            self.DrawIndicator(area, atr)
-            self.DrawOwnTrades(area)
-
-    def ProcessCandle(self, candle, adx_value, atr_value):
-        """
-        Processes each finished candle and executes ADX/DI logic.
-        
-        :param candle: The processed candle message.
-        :param adx_value: The current value of the ADX indicator.
-        :param atr_value: The current value of the ATR indicator.
-        """
-        # Skip unfinished candles
+    def ProcessCandle(self, candle, adx_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Get ADX and +DI/-DI values
-        if adx_value.MovingAverage is None:
+        if adx_value.IsEmpty:
             return
-        if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
+
+        adx_main = adx_value.MovingAverage
+        plus_di = adx_value.Dx.Plus
+        minus_di = adx_value.Dx.Minus
+
+        if adx_main is None or plus_di is None or minus_di is None:
             return
-        adx_main = float(adx_value.MovingAverage)
-        plus_di = float(adx_value.Dx.Plus)
-        minus_di = float(adx_value.Dx.Minus)
 
-        # Trading logic
-        if adx_main >= self.adx_threshold:
-            # Strong trend detected
-            
-            # Long signal: +DI > -DI
-            if plus_di > minus_di and self.Position <= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
-                self.LogInfo("Buy signal: ADX = {0:F2}, +DI = {1:F2}, -DI = {2:F2}".format(
-                    adx_main, plus_di, minus_di))
-            # Short signal: -DI > +DI
-            elif minus_di > plus_di and self.Position >= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.SellMarket(volume)
-                self.LogInfo("Sell signal: ADX = {0:F2}, +DI = {1:F2}, -DI = {2:F2}".format(
-                    adx_main, plus_di, minus_di))
+        adx_main_f = float(adx_main)
+        plus_di_f = float(plus_di)
+        minus_di_f = float(minus_di)
 
-        # Exit logic when trend weakens
-        if adx_main < 20:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exiting long position: ADX weakened to {0:F2}".format(adx_main))
-            elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exiting short position: ADX weakened to {0:F2}".format(adx_main))
+        plus_di_above = plus_di_f > minus_di_f
+
+        if not self._has_prev_values:
+            self._has_prev_values = True
+            self._prev_plus_di_above = plus_di_above
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_plus_di_above = plus_di_above
+            return
+
+        threshold = float(self.AdxThreshold)
+
+        if plus_di_above and not self._prev_plus_di_above and adx_main_f >= threshold and self.Position <= 0:
+            volume = self.Volume + Math.Abs(self.Position)
+            self.BuyMarket(volume)
+            self._cooldown = 5
+        elif not plus_di_above and self._prev_plus_di_above and adx_main_f >= threshold and self.Position >= 0:
+            volume = self.Volume + Math.Abs(self.Position)
+            self.SellMarket(volume)
+            self._cooldown = 5
+
+        self._prev_plus_di_above = plus_di_above
+
+    def OnReseted(self):
+        super(adx_di_strategy, self).OnReseted()
+        self._prev_plus_di_above = False
+        self._has_prev_values = False
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return adx_di_strategy()

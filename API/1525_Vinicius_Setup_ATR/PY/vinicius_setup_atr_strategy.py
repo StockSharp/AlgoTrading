@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class vinicius_setup_atr_strategy(Strategy):
     """EMA trend direction with RSI momentum crossing 50: buy in uptrend, sell in downtrend."""
@@ -16,7 +14,7 @@ class vinicius_setup_atr_strategy(Strategy):
         super(vinicius_setup_atr_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 50).SetGreaterThanZero().SetDisplay("EMA Length", "EMA trend filter length", "General")
         self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "RSI length", "General")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

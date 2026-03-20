@@ -2,123 +2,111 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Array, Math
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math, DayOfWeek
+from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
+from StockSharp.BusinessEntities import Order
 from datatype_extensions import *
+
 
 class bitcoin_intraday_seasonality_strategy(Strategy):
     """
     Strategy that goes long on Bitcoin during predefined strong intraday hours.
-    Maintains a long position during specified UTC hours and exits otherwise.
-    Skips trades smaller than the minimum USD value.
+    Only trades on the first Monday of the month during specified UTC hours.
     """
 
     def __init__(self):
         super(bitcoin_intraday_seasonality_strategy, self).__init__()
 
-        # Hours to stay long (UTC)
         self._hours_long = self.Param("HoursLong", [0, 1, 2, 3]) \
             .SetDisplay("Long Hours", "UTC hours when the strategy stays long", "General")
 
-        # Minimum trade size in USD
         self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum order value in USD", "Trading")
 
-        # Candle type used for processing
-        self._candle_type = self.Param("CandleType", tf(60)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._latest_prices = {}
+        self._latest_price = 0.0
 
     @property
-    def hours_long(self):
-        """UTC hours when the strategy holds a long position."""
+    def HoursLong(self):
         return self._hours_long.Value
 
-    @hours_long.setter
-    def hours_long(self, value):
+    @HoursLong.setter
+    def HoursLong(self, value):
         self._hours_long.Value = value
 
     @property
-    def min_trade_usd(self):
-        """Minimum trade size in USD."""
+    def MinTradeUsd(self):
         return self._min_trade_usd.Value
 
-    @min_trade_usd.setter
-    def min_trade_usd(self, value):
+    @MinTradeUsd.setter
+    def MinTradeUsd(self, value):
         self._min_trade_usd.Value = value
 
     @property
-    def candle_type(self):
-        """The type of candles to use for strategy calculation."""
+    def CandleType(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
+    @CandleType.setter
+    def CandleType(self, value):
         self._candle_type.Value = value
 
     def GetWorkingSecurities(self):
-        if self.Security is None:
-            raise Exception("BTC security not set.")
-        return [(self.Security, self.candle_type)]
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(bitcoin_intraday_seasonality_strategy, self).OnReseted()
-        self._latest_prices.clear()
+        self._latest_price = 0.0
 
     def OnStarted(self, time):
-        if self.hours_long is None or len(self.hours_long) == 0:
-            raise Exception("HoursLong cannot be empty.")
-        if self.Security is None:
-            raise Exception("BTC security not set.")
-
         super(bitcoin_intraday_seasonality_strategy, self).OnStarted(time)
 
-        self.SubscribeCandles(self.candle_type, True, self.Security) \
-            .Bind(lambda candle: self.ProcessCandle(candle, self.Security)) \
-            .Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self.ProcessCandle).Start()
 
-    def ProcessCandle(self, candle, security):
-        # Skip unfinished candles
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
+
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Store the latest closing price for this security
-        self._latest_prices[security] = candle.ClosePrice
+        self._latest_price = float(candle.ClosePrice)
 
-        self._on_hour_close(candle, security)
-
-    def _on_hour_close(self, candle, security):
-        hour = candle.OpenTime.UtcDateTime.Hour
-        in_season = hour in self.hours_long
-
-        portfolio_value = self.Portfolio.CurrentValue or 0.0
-        price = self._latest_prices.get(security, 0.0)
-
-        tgt = portfolio_value / price if in_season and price > 0 else 0.0
-        diff = tgt - self._position_by(security)
-
-        if price <= 0 or Math.Abs(diff) * price < self.min_trade_usd:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        order = Order()
-        order.Security = security
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = Math.Abs(diff)
-        order.Type = OrderTypes.Market
-        order.Comment = "BTCSeason"
-        self.RegisterOrder(order)
+        hour = candle.OpenTime.Hour
+        is_first_monday = candle.OpenTime.DayOfWeek == DayOfWeek.Monday and candle.OpenTime.Day <= 7
+        in_season = is_first_monday and hour in self.HoursLong
 
-    def _position_by(self, security):
-        val = self.GetPositionValue(security, self.Portfolio)
-        return val if val is not None else 0
+        price = self._latest_price
+        if price <= 0:
+            return
+
+        portfolio_value = 0.0
+        if self.Portfolio is not None and self.Portfolio.CurrentValue is not None:
+            portfolio_value = float(self.Portfolio.CurrentValue)
+
+        if portfolio_value <= 0:
+            portfolio_value = 100000.0
+
+        tgt = portfolio_value / price if in_season else 0.0
+        diff = tgt - float(self.Position)
+
+        if abs(diff) * price < self.MinTradeUsd:
+            return
+
+        if diff > 0:
+            self.BuyMarket(abs(diff))
+        elif diff < 0:
+            self.SellMarket(abs(diff))
 
     def CreateClone(self):
-        """Creates a new instance of the strategy."""
         return bitcoin_intraday_seasonality_strategy()

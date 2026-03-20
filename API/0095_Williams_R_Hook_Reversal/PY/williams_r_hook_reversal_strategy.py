@@ -3,185 +3,100 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class williams_r_hook_reversal_strategy(Strategy):
     """
-    Williams %R Hook Reversal Strategy.
-    Enters long when Williams %R forms an upward hook from oversold conditions.
-    Enters short when Williams %R forms a downward hook from overbought conditions.
+    Williams %R Hook Reversal strategy.
+    Enters long when Williams %R hooks up from oversold zone.
+    Enters short when Williams %R hooks down from overbought zone.
+    Exits when Williams %R reaches neutral zone.
     """
 
     def __init__(self):
         super(williams_r_hook_reversal_strategy, self).__init__()
+        self._wr_period = self.Param("WillRPeriod", 14).SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R")
+        self._oversold_level = self.Param("OversoldLevel", -80.0).SetDisplay("Oversold", "Oversold level", "Williams %R")
+        self._overbought_level = self.Param("OverboughtLevel", -20.0).SetDisplay("Overbought", "Overbought level", "Williams %R")
+        self._exit_level = self.Param("ExitLevel", -50.0).SetDisplay("Exit Level", "Neutral exit zone", "Williams %R")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._willRPeriod = self.Param("WillRPeriod", 14) \
-            .SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Williams %R Settings") \
-            .SetRange(7, 21) \
-            .SetCanOptimize(True)
-
-        self._oversoldLevel = self.Param("OversoldLevel", -80.0) \
-            .SetDisplay("Oversold Level", "Oversold level for Williams %R (typically -80)", "Williams %R Settings") \
-            .SetRange(-90.0, -70.0) \
-            .SetCanOptimize(True)
-
-        self._overboughtLevel = self.Param("OverboughtLevel", -20.0) \
-            .SetDisplay("Overbought Level", "Overbought level for Williams %R (typically -20)", "Williams %R Settings") \
-            .SetRange(-30.0, -10.0) \
-            .SetCanOptimize(True)
-
-        self._exitLevel = self.Param("ExitLevel", -50.0) \
-            .SetDisplay("Exit Level", "Exit level for Williams %R (neutral zone)", "Williams %R Settings") \
-            .SetRange(-60.0, -40.0) \
-            .SetCanOptimize(True)
-
-        self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management") \
-            .SetRange(1.0, 3.0) \
-            .SetCanOptimize(True)
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Internal state
-        self._prevWillR = 0.0
+        self._prev_wr = None
+        self._cooldown = 0
 
     @property
-    def WillRPeriod(self):
-        """Period for Williams %R calculation."""
-        return self._willRPeriod.Value
-
-    @WillRPeriod.setter
-    def WillRPeriod(self, value):
-        self._willRPeriod.Value = value
-
-    @property
-    def OversoldLevel(self):
-        """Oversold level for Williams %R (typically -80)."""
-        return self._oversoldLevel.Value
-
-    @OversoldLevel.setter
-    def OversoldLevel(self, value):
-        self._oversoldLevel.Value = value
-
-    @property
-    def OverboughtLevel(self):
-        """Overbought level for Williams %R (typically -20)."""
-        return self._overboughtLevel.Value
-
-    @OverboughtLevel.setter
-    def OverboughtLevel(self, value):
-        self._overboughtLevel.Value = value
-
-    @property
-    def ExitLevel(self):
-        """Exit level for Williams %R (neutral zone)."""
-        return self._exitLevel.Value
-
-    @ExitLevel.setter
-    def ExitLevel(self, value):
-        self._exitLevel.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage from entry price."""
-        return self._stopLoss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stopLoss.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED !! Returns securities for strategy."""
-        return [(self.Security, self.CandleType)]
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(williams_r_hook_reversal_strategy, self).OnReseted()
-        self._prevWillR = 0.0
+        self._prev_wr = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(williams_r_hook_reversal_strategy, self).OnStarted(time)
 
-        # Enable position protection using stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss,
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
+        self._prev_wr = None
+        self._cooldown = 0
 
-        # Create Williams %R indicator
-        williams_r = WilliamsR()
-        williams_r.Length = self.WillRPeriod
+        wr = WilliamsR()
+        wr.Length = self._wr_period.Value
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(wr, self._process_candle).Start()
 
-        # Bind indicator and process candles
-        subscription.Bind(williams_r, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, williams_r)
+            self.DrawIndicator(area, wr)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, will_r_value):
-        """Process candle with Williams %R value."""
-        # Skip unfinished candles
+    def _process_candle(self, candle, wr_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # If this is the first calculation, just store the value
-        if self._prevWillR == 0:
-            self._prevWillR = will_r_value
+        wv = float(wr_val)
+
+        if self._prev_wr is None:
+            self._prev_wr = wv
             return
 
-        # Check for Williams %R hooks
-        oversold_hook_up = self._prevWillR < self.OversoldLevel and will_r_value > self._prevWillR
-        overbought_hook_down = self._prevWillR > self.OverboughtLevel and will_r_value < self._prevWillR
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_wr = wv
+            return
 
-        # Long entry: Williams %R forms an upward hook from oversold
-        if oversold_hook_up and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Long entry: Williams %R upward hook from oversold ({0} -> {1})".format(self._prevWillR, will_r_value))
-        # Short entry: Williams %R forms a downward hook from overbought
-        elif overbought_hook_down and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Short entry: Williams %R downward hook from overbought ({0} -> {1})".format(self._prevWillR, will_r_value))
+        cd = self._cooldown_bars.Value
+        oversold = self._oversold_level.Value
+        overbought = self._overbought_level.Value
+        exit_lvl = self._exit_level.Value
 
-        # Exit conditions based on Williams %R reaching neutral zone
-        if will_r_value > self.ExitLevel and self.Position < 0:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: Williams %R reached neutral zone ({0} > {1})".format(will_r_value, self.ExitLevel))
-        elif will_r_value < self.ExitLevel and self.Position > 0:
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit long: Williams %R reached neutral zone ({0} < {1})".format(will_r_value, self.ExitLevel))
+        # Hook up from oversold
+        oversold_hook_up = self._prev_wr < oversold and wv > self._prev_wr
+        # Hook down from overbought
+        overbought_hook_down = self._prev_wr > overbought and wv < self._prev_wr
 
-        # Update previous Williams %R value
-        self._prevWillR = will_r_value
+        if self.Position == 0 and oversold_hook_up:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and overbought_hook_down:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and wv < exit_lvl:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and wv > exit_lvl:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_wr = wv
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return williams_r_hook_reversal_strategy()

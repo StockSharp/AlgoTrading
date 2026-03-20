@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class vortex_cross_ma_confirmation_strategy(Strategy):
     """Manual Vortex indicator crossover with SMA trend confirmation."""
@@ -16,7 +14,7 @@ class vortex_cross_ma_confirmation_strategy(Strategy):
         super(vortex_cross_ma_confirmation_strategy, self).__init__()
         self._vortex_len = self.Param("VortexLength", 14).SetGreaterThanZero().SetDisplay("Vortex Length", "Vortex period", "General")
         self._sma_len = self.Param("SmaLength", 9).SetGreaterThanZero().SetDisplay("SMA Length", "MA confirmation period", "General")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

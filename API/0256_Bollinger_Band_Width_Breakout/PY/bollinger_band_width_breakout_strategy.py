@@ -4,12 +4,12 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, AverageTrueRange
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, AverageTrueRange, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-from orderbook_extensions import *
+
 
 class bollinger_band_width_breakout_strategy(Strategy):
     """
@@ -21,36 +21,42 @@ class bollinger_band_width_breakout_strategy(Strategy):
     def __init__(self):
         super(bollinger_band_width_breakout_strategy, self).__init__()
 
-        # Bollinger Bands period.
         self._bollinger_length = self.Param("BollingerLength", 20) \
-            .SetDisplay("Bollinger Length", "Period of the Bollinger Bands indicator", "Indicators")
+            .SetGreaterThanZero() \
+            .SetDisplay("Bollinger Length", "Period of the Bollinger Bands indicator", "Indicators") \
+            .SetCanOptimize(True) \
+            .SetOptimize(10, 50, 5)
 
-        # Bollinger Bands standard deviation multiplier.
         self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
-            .SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
+            .SetGreaterThanZero() \
+            .SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators") \
+            .SetCanOptimize(True) \
+            .SetOptimize(1.0, 3.0, 0.5)
 
-        # Period for width average calculation.
         self._avg_period = self.Param("AvgPeriod", 20) \
-            .SetDisplay("Average Period", "Period for Bollinger width average calculation", "Indicators")
+            .SetGreaterThanZero() \
+            .SetDisplay("Average Period", "Period for Bollinger width average calculation", "Indicators") \
+            .SetCanOptimize(True) \
+            .SetOptimize(10, 50, 5)
 
-        # Standard deviation multiplier for breakout detection.
-        self._multiplier = self.Param("Multiplier", 2.0) \
-            .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
+        self._multiplier = self.Param("Multiplier", 1.5) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators") \
+            .SetCanOptimize(True) \
+            .SetOptimize(1.0, 3.0, 0.5)
 
-        # Candle type for strategy.
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Stop-loss ATR multiplier.
         self._stop_multiplier = self.Param("StopMultiplier", 2) \
-            .SetDisplay("Stop Multiplier", "ATR multiplier for stop-loss", "Risk Management")
+            .SetGreaterThanZero() \
+            .SetDisplay("Stop Multiplier", "ATR multiplier for stop-loss", "Risk Management") \
+            .SetCanOptimize(True) \
+            .SetOptimize(1, 5, 1)
 
-        # Internal state
         self._bollinger = None
         self._width_average = None
         self._atr = None
-        self._best_bid_price = 0.0
-        self._best_ask_price = 0.0
 
     @property
     def BollingerLength(self):
@@ -100,26 +106,14 @@ class bollinger_band_width_breakout_strategy(Strategy):
     def StopMultiplier(self, value):
         self._stop_multiplier.Value = value
 
-    def _update_best_prices(self, depth):
-        best_bid = get_best_bid(depth)
-        if best_bid is not None:
-            self._best_bid_price = best_bid.Price
-        best_ask = get_best_ask(depth)
-        if best_ask is not None:
-            self._best_ask_price = best_ask.Price
-
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(bollinger_band_width_breakout_strategy, self).OnReseted()
-        self._best_bid_price = 0.0
-        self._best_ask_price = 0.0
 
     def OnStarted(self, time):
         super(bollinger_band_width_breakout_strategy, self).OnStarted(time)
-
 
         # Create indicators
         self._bollinger = BollingerBands()
@@ -133,10 +127,13 @@ class bollinger_band_width_breakout_strategy(Strategy):
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
 
-        # Bind Bollinger Bands
+        # Bind Bollinger Bands and ATR
         subscription.BindEx(self._bollinger, self._atr, self.ProcessBollinger).Start()
 
-        self.SubscribeOrderBook().Bind(self._update_best_prices).Start()
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
 
         # Create chart area for visualization
         area = self.CreateChartArea()
@@ -149,28 +146,23 @@ class bollinger_band_width_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        # Process candle through ATR
-        current_atr = float(atr_value)
+        if not bollinger_value.IsFinal or not atr_value.IsFinal or bollinger_value.IsEmpty or atr_value.IsEmpty:
+            return
 
         # Calculate Bollinger Band width
-        if bollinger_value.UpBand is None:
+        if bollinger_value.UpBand is None or bollinger_value.LowBand is None:
             return
-        if bollinger_value.LowBand is None:
-            return
+
         upper_band = float(bollinger_value.UpBand)
         lower_band = float(bollinger_value.LowBand)
-
         last_width = upper_band - lower_band
 
         # Process width through average
-        width_avg_value = process_float(self._width_average, last_width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = float(width_avg_value)
-
-        # Calculate width standard deviation (simplified approach)
-        std_dev = Math.Abs(last_width - avg_width) * 1.5
+        avg_result = process_float(self._width_average, last_width, candle.ServerTime, True)
+        avg_width = float(avg_result)
 
         # Skip if indicators are not formed yet
-        if not self._bollinger.IsFormed or not self._width_average.IsFormed or not self._atr.IsFormed:
+        if not self._width_average.IsFormed:
             return
 
         # Check if trading is allowed
@@ -178,35 +170,16 @@ class bollinger_band_width_breakout_strategy(Strategy):
             return
 
         # Bollinger width breakout detection
-        if last_width > avg_width + self.Multiplier * std_dev:
+        if last_width > avg_width * (1.0 + self.Multiplier / 10.0):
             # Determine direction based on price and bands
-            price_direction = False
+            upper_distance = abs(float(candle.ClosePrice) - upper_band)
+            lower_distance = abs(float(candle.ClosePrice) - lower_band)
+            price_direction = upper_distance < lower_distance
 
-            # If price is closer to upper band, go long. If closer to lower band, go short.
-            upper_distance = float(Math.Abs(candle.ClosePrice - upper_band))
-            lower_distance = float(Math.Abs(candle.ClosePrice - lower_band))
-
-            if upper_distance < lower_distance:
-                # Price is closer to upper band, likely bullish
-                price_direction = True
-
-            # Cancel active orders before placing new ones
-            self.CancelActiveOrders()
-
-            # Calculate stop-loss based on current ATR
-            stop_offset = self.StopMultiplier * current_atr
-
-            # Trade in the determined direction
-            if price_direction and self.Position <= 0:
-                # Bullish direction - Buy
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            elif not price_direction and self.Position >= 0:
-                # Bearish direction - Sell
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        elif (self.Position > 0 or self.Position < 0) and last_width < avg_width:
-            # Exit position
-            self.ClosePosition()
+            if price_direction and self.Position == 0:
+                self.BuyMarket()
+            elif not price_direction and self.Position == 0:
+                self.SellMarket()
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_band_width_breakout_strategy()

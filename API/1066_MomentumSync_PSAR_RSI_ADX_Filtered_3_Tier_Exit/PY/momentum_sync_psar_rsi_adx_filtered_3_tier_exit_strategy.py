@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex, AverageDirectionalIndex
+from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex, AverageDirectionalIndex, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
@@ -56,8 +56,8 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
             return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        psar = float(psar_value.ToDecimal())
-        rsi = float(rsi_value.ToDecimal())
+        psar = float(IndicatorHelper.ToDecimal(psar_value))
+        rsi = float(IndicatorHelper.ToDecimal(rsi_value))
         adx_typed = adx_value
         ma_val = adx_typed.MovingAverage
         if ma_val is None:

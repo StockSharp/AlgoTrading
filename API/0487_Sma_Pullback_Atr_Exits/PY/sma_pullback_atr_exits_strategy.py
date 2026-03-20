@@ -7,8 +7,6 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class sma_pullback_atr_exits_strategy(Strategy):
     def __init__(self):
@@ -19,7 +17,7 @@ class sma_pullback_atr_exits_strategy(Strategy):
         self._atr_sl = self.Param("AtrMultiplierSl", 1.2).SetDisplay("ATR SL Mult", "ATR multiplier for SL", "Risk")
         self._atr_tp = self.Param("AtrMultiplierTp", 2.0).SetDisplay("ATR TP Mult", "ATR multiplier for TP", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 10).SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -1,152 +1,94 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AccumulationDistributionLine
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class ad_strategy(Strategy):
     """
-    Accumulation/Distribution (A/D) Strategy
-    Long entry: A/D rising and price above MA
-    Short entry: A/D falling and price below MA
-    Exit: A/D changes direction
-    
+    Accumulation/Distribution (A/D) Strategy.
+    Long entry: A/D rising and price above MA.
+    Short entry: A/D falling and price below MA.
     """
+
     def __init__(self):
         super(ad_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._previousADValue = 0
-        self._isFirstCandle = True
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for Moving Average", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._maPeriod = self.Param("MAPeriod", 20) \
-            .SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
+        self._previous_ad = 0.0
+        self._cooldown = 0
 
     @property
-    def MAPeriod(self):
-        return self._maPeriod.Value
-
-    @MAPeriod.setter
-    def MAPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(ad_strategy, self).OnReseted()
-        self._previousADValue = 0
-        self._isFirstCandle = True
+        self._previous_ad = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(ad_strategy, self).OnStarted(time)
 
-        # Create indicators
+        self._previous_ad = 0.0
+        self._cooldown = 0
+
         ma = SimpleMovingAverage()
-        ma.Length = self.MAPeriod
-        
+        ma.Length = self._ma_period.Value
         ad = AccumulationDistributionLine()
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        
-        # We need to bind both indicators but handle with one callback
-        subscription.Bind(ma, ad, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ma, ad, self._process_candle).Start()
 
-        # Configure protection
-        self.StartProtection(
-            takeProfit=Unit(3, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
-            self.DrawIndicator(area, ad)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, maValue, adValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param maValue: The Moving Average value.
-        :param adValue: The A/D Line value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val, ad_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        
-        # Skip the first candle, just initialize values
-        if self._isFirstCandle:
-            self._previousADValue = adValue
-            self._isFirstCandle = False
+
+        av = float(ad_val)
+
+        if self._previous_ad == 0:
+            self._previous_ad = av
             return
-        
-        # Check for A/D direction
-        adRising = adValue > self._previousADValue
-        adFalling = adValue < self._previousADValue
-        
-        # Log current values
-        self.LogInfo("Candle Close: {0}, MA: {1}, A/D: {2}".format(
-            candle.ClosePrice, maValue, adValue))
-        self.LogInfo("Previous A/D: {0}, A/D Rising: {1}, A/D Falling: {2}".format(
-            self._previousADValue, adRising, adFalling))
 
-        # Trading logic:
-        # Long: A/D rising and price above MA
-        if adRising and candle.ClosePrice > maValue and self.Position <= 0:
-            self.LogInfo("Buy Signal: A/D rising and Price ({0}) > MA ({1})".format(
-                candle.ClosePrice, maValue))
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        # Short: A/D falling and price below MA
-        elif adFalling and candle.ClosePrice < maValue and self.Position >= 0:
-            self.LogInfo("Sell Signal: A/D falling and Price ({0}) < MA ({1})".format(
-                candle.ClosePrice, maValue))
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-        
-        # Exit logic: A/D changes direction
-        if self.Position > 0 and adFalling:
-            self.LogInfo("Exit Long: A/D changing direction (falling)")
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and adRising:
-            self.LogInfo("Exit Short: A/D changing direction (rising)")
-            self.BuyMarket(Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._previous_ad = av
+            return
 
-        # Store current A/D value for next comparison
-        self._previousADValue = adValue
+        ad_rising = av > self._previous_ad
+        close = float(candle.ClosePrice)
+        mv = float(ma_val)
+        cd = self._cooldown_bars.Value
+
+        if self.Position == 0:
+            if ad_rising and close > mv:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif not ad_rising and close < mv:
+                self.SellMarket()
+                self._cooldown = cd
+        elif self.Position > 0 and not ad_rising:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and ad_rising:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._previous_ad = av
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return ad_strategy()

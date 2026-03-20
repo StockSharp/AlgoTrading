@@ -56,7 +56,7 @@ class keltner_stochastic_strategy(Strategy):
 
     def _on_atr(self, candle, atr_val):
         if atr_val.IsFinal:
-            self._atr_value = float(atr_val.ToDecimal())
+            self._atr_value = float(atr_val.Value)
 
     def _process_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:

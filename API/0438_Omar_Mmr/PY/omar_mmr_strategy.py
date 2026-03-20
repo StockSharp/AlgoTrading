@@ -3,132 +3,134 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Array, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import (
-    RelativeStrengthIndex,
-    ExponentialMovingAverage,
-    MovingAverageConvergenceDivergenceSignal,
-)
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class omar_mmr_strategy(Strategy):
-    """Omar MMR strategy combining RSI, three EMAs and MACD crossover.
-
-    Enters long when price is above the slow EMA, the fast EMA is above the
-    medium EMA, MACD crosses above its signal line and RSI is between 29
-    and 70. Uses fixed take-profit and stop-loss percentages.
+    """Omar MMR Strategy.
+    Uses RSI, triple EMA alignment, and EMA A/B crossover for entries.
+    Buys when price > EMA C, EMA A > EMA B, EMA A crosses above EMA B, RSI in range.
+    Sells when EMA alignment reverses or EMA A crosses below EMA B.
     """
 
     def __init__(self):
         super(omar_mmr_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)).SetDisplay(
-            "Candle type", "Candle type for strategy calculation.", "General"
-        )
-        self._rsi_length = self.Param("RsiLength", 14).SetDisplay(
-            "RSI Length", "RSI period", "RSI"
-        )
-        self._ema_a_length = self.Param("EmaALength", 20).SetDisplay(
-            "EMA A Length", "First EMA period", "Moving Averages"
-        )
-        self._ema_b_length = self.Param("EmaBLength", 50).SetDisplay(
-            "EMA B Length", "Second EMA period", "Moving Averages"
-        )
-        self._ema_c_length = self.Param("EmaCLength", 200).SetDisplay(
-            "EMA C Length", "Third EMA period", "Moving Averages"
-        )
-        self._macd_fast = self.Param("MacdFastLength", 12).SetDisplay(
-            "MACD Fast Length", "Fast MA period", "MACD"
-        )
-        self._macd_slow = self.Param("MacdSlowLength", 26).SetDisplay(
-            "MACD Slow Length", "Slow MA period", "MACD"
-        )
-        self._macd_signal = self.Param("MacdSignalLength", 9).SetDisplay(
-            "MACD Signal Length", "Signal period", "MACD"
-        )
-        self._tp_percent = self.Param("TakeProfitPercent", 1.5).SetDisplay(
-            "Take Profit %", "Take profit percentage", "Strategy"
-        )
-        self._sl_percent = self.Param("StopLossPercent", 2.0).SetDisplay(
-            "Stop Loss %", "Stop loss percentage", "Strategy"
-        )
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
+        self._rsi_length = self.Param("RsiLength", 14) \
+            .SetDisplay("RSI Length", "RSI period", "RSI")
+        self._ema_a_length = self.Param("EmaALength", 20) \
+            .SetDisplay("EMA A Length", "Fast EMA period", "Moving Averages")
+        self._ema_b_length = self.Param("EmaBLength", 50) \
+            .SetDisplay("EMA B Length", "Medium EMA period", "Moving Averages")
+        self._ema_c_length = self.Param("EmaCLength", 200) \
+            .SetDisplay("EMA C Length", "Slow EMA period", "Moving Averages")
+        self._cooldown_bars = self.Param("CooldownBars", 15) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
-        self._rsi = None
-        self._ema_a = None
-        self._ema_b = None
-        self._ema_c = None
-        self._macd = None
+        self._prev_ema_a = 0.0
+        self._prev_ema_b = 0.0
+        self._cooldown_remaining = 0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def OnReseted(self):
+        super(omar_mmr_strategy, self).OnReseted()
+        self._prev_ema_a = 0.0
+        self._prev_ema_b = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(omar_mmr_strategy, self).OnStarted(time)
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self._rsi_length.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
 
-        self._ema_a = ExponentialMovingAverage()
-        self._ema_a.Length = self._ema_a_length.Value
-        self._ema_b = ExponentialMovingAverage()
-        self._ema_b.Length = self._ema_b_length.Value
-        self._ema_c = ExponentialMovingAverage()
-        self._ema_c.Length = self._ema_c_length.Value
+        ema_a = ExponentialMovingAverage()
+        ema_a.Length = self._ema_a_length.Value
+        ema_b = ExponentialMovingAverage()
+        ema_b.Length = self._ema_b_length.Value
+        ema_c = ExponentialMovingAverage()
+        ema_c.Length = self._ema_c_length.Value
 
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self._macd_fast.Value
-        self._macd.Macd.LongMa.Length = self._macd_slow.Value
-        self._macd.SignalMa.Length = self._macd_signal.Value
-
-        sub = self.SubscribeCandles(self.candle_type)
-        sub.BindEx(self._rsi, self._macd, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(rsi, ema_a, ema_b, ema_c, self.OnProcess).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, sub)
-            self.DrawIndicator(area, self._ema_a)
-            self.DrawIndicator(area, self._ema_b)
-            self.DrawIndicator(area, self._ema_c)
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, ema_a)
+            self.DrawIndicator(area, ema_b)
+            self.DrawIndicator(area, ema_c)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            Unit(self._tp_percent.Value, UnitTypes.Percent),
-            Unit(self._sl_percent.Value, UnitTypes.Percent),
-        )
-
-    def OnProcess(self, candle, rsi_val, macd_val):
+    def OnProcess(self, candle, rsi_val, ema_a_val, ema_b_val, ema_c_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self._rsi.IsFormed or not self._ema_a.IsFormed or not self._ema_b.IsFormed or not self._ema_c.IsFormed or not self._macd.IsFormed:
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_ema_a = float(ema_a_val)
+            self._prev_ema_b = float(ema_b_val)
             return
 
-        ema_a = float(self._ema_a.Process(candle))
-        ema_b = float(self._ema_b.Process(candle))
-        ema_c = float(self._ema_c.Process(candle))
-
-        macd_line = macd_val.Macd
-        signal_line = macd_val.Signal
-        prev = self._macd.GetValue(1)
-        prev_macd = prev.Macd
-        prev_signal = prev.Signal
-        macd_cross = macd_line > signal_line and prev_macd <= prev_signal
-
+        ema_a = float(ema_a_val)
+        ema_b = float(ema_b_val)
+        ema_c = float(ema_c_val)
         rsi = float(rsi_val)
 
-        long_entry = (
-            candle.ClosePrice > ema_c
-            and ema_a > ema_b
-            and macd_cross
-            and rsi > 29
-            and rsi < 70
-        )
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self._prev_ema_a = ema_a
+            self._prev_ema_b = ema_b
+            return
 
-        if long_entry and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+        if self._prev_ema_a == 0.0 or self._prev_ema_b == 0.0:
+            self._prev_ema_a = ema_a
+            self._prev_ema_b = ema_b
+            return
+
+        close = float(candle.ClosePrice)
+
+        # EMA alignment
+        bullish_alignment = ema_a > ema_b and close > ema_c
+        bearish_alignment = ema_a < ema_b and close < ema_c
+
+        # EMA A/B crossover
+        ema_cross_up = ema_a > ema_b and self._prev_ema_a <= self._prev_ema_b
+        ema_cross_down = ema_a < ema_b and self._prev_ema_a >= self._prev_ema_b
+
+        # RSI filter
+        rsi_in_range = rsi > 30 and rsi < 70
+
+        # Buy: bullish EMA alignment + EMA cross up + RSI in range
+        if bullish_alignment and ema_cross_up and rsi_in_range and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+        # Sell: bearish EMA alignment + EMA cross down + RSI in range
+        elif bearish_alignment and ema_cross_down and rsi_in_range and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+        # Exit long: EMA A crosses below EMA B
+        elif self.Position > 0 and ema_cross_down:
+            self.SellMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+        # Exit short: EMA A crosses above EMA B
+        elif self.Position < 0 and ema_cross_up:
+            self.BuyMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+
+        self._prev_ema_a = ema_a
+        self._prev_ema_b = ema_b
 
     def CreateClone(self):
         return omar_mmr_strategy()

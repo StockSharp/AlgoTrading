@@ -4,10 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import CandleStates
+from StockSharp.Messages import CandleStates, DataType
 from StockSharp.Algo.Indicators import AwesomeOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class artificial_intelligence_strategy(Strategy):
     """
@@ -32,7 +31,7 @@ class artificial_intelligence_strategy(Strategy):
         self._stop_loss = self.Param("StopLoss", 85.0) \
             .SetDisplay("Stop Loss", "Stop loss distance in points", "Risk") \
             .SetOptimize(10.0, 200.0, 5.0)
-        self._candle_type = self.Param("CandleType", tf(240)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(240))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._ao_buffer = [0.0] * 22

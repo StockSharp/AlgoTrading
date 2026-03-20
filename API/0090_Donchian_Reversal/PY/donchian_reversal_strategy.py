@@ -3,144 +3,106 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class donchian_reversal_strategy(Strategy):
     """
-    Donchian Reversal Strategy.
+    Donchian Reversal strategy.
     Enters long when price bounces from the lower Donchian Channel band.
     Enters short when price bounces from the upper Donchian Channel band.
-
+    Exits at middle band.
+    Uses cooldown to control trade frequency.
     """
 
     def __init__(self):
         super(donchian_reversal_strategy, self).__init__()
+        self._period = self.Param("Period", 20).SetDisplay("Period", "Period for Donchian Channel", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._period = self.Param("Period", 20) \
-            .SetDisplay("Period", "Period for Donchian Channel calculation", "Indicator Settings") \
-            .SetOptimize(10, 40, 5) \
-            .SetCanOptimize(True)
-
-        self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management") \
-            .SetOptimize(1.0, 3.0, 0.5) \
-            .SetCanOptimize(True)
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._is_first_candle = True
-
-        # Internal state
+        self._prev_close = 0.0
+        self._cooldown = 0
 
     @property
-    def Period(self):
-        """Period for Donchian Channel calculation."""
-        return self._period.Value
-
-    @Period.setter
-    def Period(self, value):
-        self._period.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(donchian_reversal_strategy, self).OnReseted()
-        self._is_first_candle = True
+        self._prev_close = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        """
         super(donchian_reversal_strategy, self).OnStarted(time)
 
-        # Enable position protection using stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss,
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
-        # Initialize state
+        self._prev_close = 0.0
+        self._cooldown = 0
 
-        # Create Donchian Channel indicator
         donchian = DonchianChannels()
-        donchian.Length = self.Period
+        donchian.Length = self._period.Value
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(donchian, self._process_candle).Start()
 
-        # Bind indicator and process candles
-        subscription.BindEx(donchian, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, donchian)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, donchian_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, donchian_iv):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not donchian_iv.IsFormed:
             return
 
-        # If this is the first candle, just store the close price
-        if self._is_first_candle:
-            self._previous_close = float(candle.ClosePrice)
-            self._is_first_candle = False
+        upper_val = donchian_iv.UpperBand
+        lower_val = donchian_iv.LowerBand
+        middle_val = donchian_iv.Middle
+
+        if upper_val is None or lower_val is None or middle_val is None:
             return
 
-        if donchian_value.LowerBand is None or donchian_value.UpperBand is None:
+        upper = float(upper_val)
+        lower = float(lower_val)
+        middle = float(middle_val)
+
+        close = float(candle.ClosePrice)
+
+        if self._prev_close == 0:
+            self._prev_close = close
             return
 
-        lower_band = float(donchian_value.LowerBand)
-        upper_band = float(donchian_value.UpperBand)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_close = close
+            return
 
-        # Check for price bounce from Donchian bands
-        bounced_from_lower = self._previous_close < lower_band and candle.ClosePrice > lower_band
-        bounced_from_upper = self._previous_close > upper_band and candle.ClosePrice < upper_band
+        cd = self._cooldown_bars.Value
 
-        # Long entry: Price bounced from lower band
-        if bounced_from_lower and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo(f"Long entry: Price bounced from lower Donchian band ({lower_band})")
-        # Short entry: Price bounced from upper band
-        elif bounced_from_upper and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo(f"Short entry: Price bounced from upper Donchian band ({upper_band})")
+        # Bounce from lower band = bullish
+        bounced_from_lower = self._prev_close <= lower and close > lower
+        # Bounce from upper band = bearish
+        bounced_from_upper = self._prev_close >= upper and close < upper
 
-        # Store current close price for next candle comparison
-        self._previous_close = float(candle.ClosePrice)
+        if self.Position == 0 and bounced_from_lower:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and bounced_from_upper:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and close >= middle and bounced_from_upper:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close <= middle and bounced_from_lower:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_close = close
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_reversal_strategy()

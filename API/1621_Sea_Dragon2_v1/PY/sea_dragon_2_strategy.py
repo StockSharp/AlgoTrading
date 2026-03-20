@@ -7,15 +7,13 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class sea_dragon_2_strategy(Strategy):
     def __init__(self):
         super(sea_dragon_2_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 20).SetGreaterThanZero().SetDisplay("EMA Length", "EMA period for trend", "General")
         self._grid_percent = self.Param("GridPercent", 0.5).SetDisplay("Grid %", "Grid spacing as price percent", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle Type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

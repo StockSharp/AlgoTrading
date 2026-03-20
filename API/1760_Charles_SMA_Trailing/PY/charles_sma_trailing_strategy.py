@@ -1,0 +1,80 @@
+import clr
+
+clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.Algo")
+
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Strategies import Strategy
+
+
+class charles_sma_trailing_strategy(Strategy):
+    def __init__(self):
+        super(charles_sma_trailing_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Working candle timeframe", "General")
+        self._fast_period = self.Param("FastPeriod", 18) \
+            .SetDisplay("Fast Period", "Length of fast EMA", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 60) \
+            .SetDisplay("Slow Period", "Length of slow EMA", "Indicators")
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._is_initialized = False
+
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
+
+    @property
+    def fast_period(self):
+        return self._fast_period.Value
+
+    @property
+    def slow_period(self):
+        return self._slow_period.Value
+
+    def OnReseted(self):
+        super(charles_sma_trailing_strategy, self).OnReseted()
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._is_initialized = False
+
+    def OnStarted(self, time):
+        super(charles_sma_trailing_strategy, self).OnStarted(time)
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self.fast_period
+        slow_ema = ExponentialMovingAverage()
+        slow_ema.Length = self.slow_period
+        self.SubscribeCandles(self.candle_type).Bind(fast_ema, slow_ema, self.process_candle).Start()
+
+    def process_candle(self, candle, fast, slow):
+        if candle.State != CandleStates.Finished:
+            return
+
+        fv = float(fast)
+        sv = float(slow)
+
+        if not self._is_initialized:
+            self._prev_fast = fv
+            self._prev_slow = sv
+            self._is_initialized = True
+            return
+
+        cross_up = self._prev_fast <= self._prev_slow and fv > sv
+        cross_down = self._prev_fast >= self._prev_slow and fv < sv
+
+        self._prev_fast = fv
+        self._prev_slow = sv
+
+        if cross_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif cross_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+
+    def CreateClone(self):
+        return charles_sma_trailing_strategy()

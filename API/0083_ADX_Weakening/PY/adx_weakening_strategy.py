@@ -1,170 +1,107 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class adx_weakening_strategy(Strategy):
     """
-    ADX Weakening Strategy.
-    Enters long when ADX weakens and price is above MA.
-    Enters short when ADX weakens and price is below MA.
-
+    ADX Weakening strategy.
+    Enters when ADX is decreasing (trend weakening) using price vs SMA for direction.
+    ADX weakening + price above SMA = buy.
+    ADX weakening + price below SMA = sell.
+    Exits on SMA cross.
     """
+
     def __init__(self):
-        """Initializes a new instance of the ``adx_weakening_strategy``."""
         super(adx_weakening_strategy, self).__init__()
+        self._adx_period = self.Param("AdxPeriod", 14).SetDisplay("ADX Period", "Period for ADX", "Indicators")
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._adxPeriod = self.Param("AdxPeriod", 14) \
-            .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators") \
-            .SetRange(7, 28) \
-            .SetCanOptimize(True)
-
-        self._maPeriod = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Period for moving average", "Indicators") \
-            .SetRange(10, 50) \
-            .SetCanOptimize(True)
-
-        self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management") \
-            .SetRange(1.0, 3.0) \
-            .SetCanOptimize(True)
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Internal state
-        self._prevAdxValue = 0.0
+        self._prev_adx = 0.0
+        self._cooldown = 0
 
     @property
-    def AdxPeriod(self):
-        """Period for ADX calculation."""
-        return self._adxPeriod.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adxPeriod.Value = value
-
-    @property
-    def MaPeriod(self):
-        """Period for moving average."""
-        return self._maPeriod.Value
-
-    @MaPeriod.setter
-    def MaPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage from entry price."""
-        return self._stopLoss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stopLoss.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(adx_weakening_strategy, self).OnReseted()
-        self._prevAdxValue = 0.0
+        self._prev_adx = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(adx_weakening_strategy, self).OnStarted(time)
 
-        # Enable position protection using stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss,
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
-        # Create indicators
-        ma = SimpleMovingAverage()
-        ma.Length = self.MaPeriod
+        self._prev_adx = 0.0
+        self._cooldown = 0
+
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
         adx = AverageDirectionalIndex()
-        adx.Length = self.AdxPeriod
+        adx.Length = self._adx_period.Value
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(sma, adx, self._process_candle).Start()
 
-        # Bind indicators and process candles
-        subscription.BindEx(ma, adx, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
+            self.DrawIndicator(area, sma)
             self.DrawIndicator(area, adx)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, maValue, adxValue):
-        """
-        Process candle with indicator values.
-
-        :param candle: Candle.
-        :param maValue: Moving average value.
-        :param adxValue: ADX value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_iv, adx_iv):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not adx_iv.IsFormed or not sma_iv.IsFormed:
+            return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ma = float(maValue)
+        sma_value = float(sma_iv.Value)
 
-        if adxValue.MovingAverage is None:
+        adx_ma = adx_iv.MovingAverage
+        if adx_ma is None:
             return
-        adx_val = float(adxValue.MovingAverage)
+        adx_value = float(adx_ma)
 
-        dx = adxValue.Dx
-        if dx.Plus is None or dx.Minus is None:
-            return
-
-        # If this is the first calculation, just store the ADX value
-        if self._prevAdxValue == 0.0:
-            self._prevAdxValue = adx_val
+        if self._prev_adx == 0:
+            self._prev_adx = adx_value
             return
 
-        # Check if ADX is weakening (decreasing)
-        isAdxWeakening = adx_val < self._prevAdxValue
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_adx = adx_value
+            return
 
-        # Long entry: ADX weakening and price above MA
-        if isAdxWeakening and candle.ClosePrice > ma and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo(
-                "Long entry: ADX weakening ({0} < {1}) and price above MA".format(adx_val, self._prevAdxValue))
-        # Short entry: ADX weakening and price below MA
-        elif isAdxWeakening and candle.ClosePrice < ma and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo(
-                "Short entry: ADX weakening ({0} < {1}) and price below MA".format(adx_val, self._prevAdxValue))
+        is_weakening = adx_value < self._prev_adx
+        close = float(candle.ClosePrice)
+        cd = self._cooldown_bars.Value
 
-        # Update previous ADX value
-        self._prevAdxValue = adx_val
+        if self.Position == 0 and is_weakening and close > sma_value:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and is_weakening and close < sma_value:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and close < sma_value:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > sma_value:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_adx = adx_value
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adx_weakening_strategy()

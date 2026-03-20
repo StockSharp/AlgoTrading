@@ -3,158 +3,99 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math, DayOfWeek, DateTimeOffset
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class quarterly_expiry_strategy(Strategy):
     """
-    Implementation of Quarterly Expiry trading strategy.
-    The strategy trades on quarterly expiration days based on price relative to MA.
-
+    Quarterly Expiry trading strategy.
+    Trades around monthly expiry dates (3rd Friday area of each month).
+    Buys if above MA in expiry week, sells if below. Exits next week.
     """
 
     def __init__(self):
         super(quarterly_expiry_strategy, self).__init__()
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
-
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-
-        self._candle_type = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def ma_period(self):
-        """Moving average period."""
-        return self._ma_period.Value
-
-    @ma_period.setter
-    def ma_period(self, value):
-        self._ma_period.Value = value
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def OnReseted(self):
+        super(quarterly_expiry_strategy, self).OnReseted()
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(quarterly_expiry_strategy, self).OnStarted(time)
 
-        # Create a simple moving average indicator
+        self._cooldown = 0
+        self._prev_day_of_month = 0
+
         sma = SimpleMovingAverage()
-        sma.Length = self.ma_period
+        sma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self.ProcessCandle).Start()
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, ma_value):
-        """
-        Processes each finished candle and executes trading logic for quarterly expiry days.
-
-        :param candle: The processed candle message.
-        :param ma_value: The current value of the moving average.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        date = candle.OpenTime
-        day_of_week = date.DayOfWeek
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
+        day_of_month = candle.OpenTime.Day
+        cd = self._cooldown_bars.Value
+        is_new_day = day_of_month != self._prev_day_of_month
 
-        # Check if this is a quarterly expiry day
-        # Typically the third Friday of March, June, September, and December
-        if self._is_quarterly_expiry_day(date):
-            # BUY signal - price above MA
-            if candle.ClosePrice > ma_value and self.Position <= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
-                self.LogInfo("Buy signal on quarterly expiry day: Date={0:yyyy-MM-dd}, Price={1}, MA={2}, Volume={3}".format(
-                    date, candle.ClosePrice, ma_value, volume))
-            # SELL signal - price below MA
-            elif candle.ClosePrice < ma_value and self.Position >= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.SellMarket(volume)
-                self.LogInfo("Sell signal on quarterly expiry day: Date={0:yyyy-MM-dd}, Price={1}, MA={2}, Volume={3}".format(
-                    date, candle.ClosePrice, ma_value, volume))
-        # Exit position on Friday (if we're not already on a Friday)
-        elif day_of_week == DayOfWeek.Friday and self.Position != 0:
-            self.ClosePosition()
-            self.LogInfo("Closing position on Friday: Date={0:yyyy-MM-dd}, Position={1}".format(
-                date, self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_day_of_month = day_of_month
+            return
 
-    def _is_quarterly_expiry_day(self, date):
-        """
-        Check if the given date is the quarterly expiry day.
-        """
-        # Check if it's a Friday
-        if date.DayOfWeek != DayOfWeek.Friday:
-            return False
+        # Expiry week zone: day 15-19 (around 3rd Friday of each month)
+        is_expiry_week = day_of_month >= 15 and day_of_month <= 19
+        # Post-expiry exit zone: day 22-25
+        is_post_expiry = day_of_month >= 22 and day_of_month <= 25
+        # Start of month entry zone: day 1-5
+        is_start_of_month = day_of_month >= 1 and day_of_month <= 5
+        # Pre-expiry exit: day 12-14
+        is_pre_expiry = day_of_month >= 12 and day_of_month <= 14
 
-        # Check if it's March, June, September, or December
-        month = date.Month
-        if month != 3 and month != 6 and month != 9 and month != 12:
-            return False
+        # Entry in expiry week: buy if above MA
+        if is_expiry_week and is_new_day and self.Position == 0 and close > ma:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Exit after expiry week
+        elif is_post_expiry and is_new_day and self.Position > 0:
+            self.SellMarket()
+            self._cooldown = cd
+        # Short entry at start of month if below MA
+        elif is_start_of_month and is_new_day and self.Position == 0 and close < ma:
+            self.SellMarket()
+            self._cooldown = cd
+        # Cover short before expiry
+        elif is_pre_expiry and is_new_day and self.Position < 0:
+            self.BuyMarket()
+            self._cooldown = cd
 
-        # Check if it's the third Friday of the month
-        # Find the first day of the month
-        first_day = DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, date.Offset)
-
-        # Find the first Friday
-        # Convert DayOfWeek to int for calculation
-        friday_int = int(DayOfWeek.Friday)
-        first_day_int = int(first_day.DayOfWeek)
-        days_until_first_friday = ((friday_int - first_day_int + 7) % 7)
-        first_friday = first_day.AddDays(days_until_first_friday)
-
-        # Calculate the third Friday
-        third_friday = first_friday.AddDays(14)
-
-        # Check if the date is the third Friday
-        return date.Day == third_friday.Day
+        self._prev_day_of_month = day_of_month
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return quarterly_expiry_strategy()

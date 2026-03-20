@@ -10,204 +10,107 @@ from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
 
+
 class donchian_width_breakout_strategy(Strategy):
     """
     Strategy that trades on Donchian Channel width breakouts.
     When Donchian Channel width increases significantly above its average,
     it enters position in the direction determined by price movement.
-
     """
 
     def __init__(self):
-        """Initialize donchian_width_breakout_strategy."""
         super(donchian_width_breakout_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._donchian_period = self.Param("DonchianPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Donchian Period", "Period for the Donchian Channel", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+        self._donchianPeriod = self.Param("DonchianPeriod", 20) \
+            .SetDisplay("Donchian Period", "Period for the Donchian Channel", "Indicators")
 
-        self._avg_period = self.Param("AvgPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Average Period", "Period for width average calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+        self._widthThreshold = self.Param("WidthThreshold", 1.2) \
+            .SetDisplay("Width Threshold", "Threshold multiplier for width breakout", "Trading")
 
-        self._multiplier = self.Param("Multiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._stop_loss = self.Param("StopLoss", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
-
-        # Create indicator placeholders
-        self._highest = None
-        self._lowest = None
-        self._width_average = None
-
-        # Track channel width values
-        self._last_width = 0.0
-        self._last_avg_width = 0.0
+        self._widthAverage = None
 
     @property
     def DonchianPeriod(self):
-        """Donchian Channel period."""
-        return self._donchian_period.Value
+        return self._donchianPeriod.Value
 
     @DonchianPeriod.setter
     def DonchianPeriod(self, value):
-        self._donchian_period.Value = value
+        self._donchianPeriod.Value = value
 
     @property
-    def AvgPeriod(self):
-        """Period for width average calculation."""
-        return self._avg_period.Value
+    def WidthThreshold(self):
+        return self._widthThreshold.Value
 
-    @AvgPeriod.setter
-    def AvgPeriod(self, value):
-        self._avg_period.Value = value
-
-    @property
-    def Multiplier(self):
-        """Standard deviation multiplier for breakout detection."""
-        return self._multiplier.Value
-
-    @Multiplier.setter
-    def Multiplier(self, value):
-        self._multiplier.Value = value
+    @WidthThreshold.setter
+    def WidthThreshold(self, value):
+        self._widthThreshold.Value = value
 
     @property
     def CandleType(self):
-        """Candle type for strategy."""
-        return self._candle_type.Value
+        return self._candleType.Value
 
     @CandleType.setter
     def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop-loss percentage."""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    def GetWorkingSecurities(self):
-        """Return securities used by the strategy."""
-        return [(self.Security, self.CandleType)]
-
+        self._candleType.Value = value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(donchian_width_breakout_strategy, self).OnReseted()
-        self._last_width = 0
-        self._last_avg_width = 0
 
     def OnStarted(self, time):
         super(donchian_width_breakout_strategy, self).OnStarted(time)
 
+        highest = Highest()
+        highest.Length = self.DonchianPeriod
+        lowest = Lowest()
+        lowest.Length = self.DonchianPeriod
+        donchian_period = self.DonchianPeriod
+        self._widthAverage = SimpleMovingAverage()
+        self._widthAverage.Length = max(5, donchian_period // 2)
 
-        # Create indicators for Donchian Channel components
-        self._highest = Highest()
-        self._highest.Length = self.DonchianPeriod
-        self._lowest = Lowest()
-        self._lowest.Length = self.DonchianPeriod
-        self._width_average = SimpleMovingAverage()
-        self._width_average.Length = self.AvgPeriod
-
-        # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(highest, lowest, self.ProcessCandle).Start()
 
-        # Bind to candle processing
-        subscription.Bind(self.ProcessCandle).Start()
-
-        # Enable stop loss protection
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-        # Create chart area for visualization
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
+    def ProcessCandle(self, candle, highest_value, lowest_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Process candle through Highest and Lowest indicators
-        highest_value = float(process_candle(self._highest, candle))
-        lowest_value = float(process_candle(self._lowest, candle))
-
-        # Calculate Donchian Channel width
-        width = highest_value - lowest_value
-
-        # Process width through average
-        width_avg_value = process_float(self._width_average, width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = float(width_avg_value)
-
-        # For first values, just save and skip
-        if self._last_width == 0:
-            self._last_width = width
-            self._last_avg_width = avg_width
+        width = float(highest_value) - float(lowest_value)
+        if width <= 0:
             return
 
-        # Calculate width standard deviation (simplified approach)
-        std_dev = Math.Abs(width - avg_width) * 1.5  # Simplified approximation
+        avg_result = process_float(self._widthAverage, width, candle.ServerTime, True)
 
-        # Skip if indicators are not formed yet
-        if not self._highest.IsFormed or not self._lowest.IsFormed or not self._width_average.IsFormed:
-            self._last_width = width
-            self._last_avg_width = avg_width
+        if not self._widthAverage.IsFormed:
             return
 
-        # Check if trading is allowed
+        avg_width = float(avg_result)
+        if avg_width <= 0:
+            return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._last_width = width
-            self._last_avg_width = avg_width
             return
 
-        # Donchian Channel width breakout detection
-        if width > avg_width + self.Multiplier * std_dev:
-            # Determine direction based on price and channel
-            middle_channel = (highest_value + lowest_value) / 2
-            bullish = candle.ClosePrice > middle_channel
+        middle_channel = (float(highest_value) + float(lowest_value)) / 2.0
 
-            # Cancel active orders before placing new ones
-            self.CancelActiveOrders()
-
-            # Trade in the direction determined by price position in the channel
-            if bullish and self.Position <= 0:
-                # Bullish breakout - Buy
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            elif not bullish and self.Position >= 0:
-                # Bearish breakout - Sell
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        # Check for exit condition - width returns to average
-        elif (self.Position > 0 or self.Position < 0) and width < avg_width:
-            # Exit position when channel width returns to normal
-            self.ClosePosition()
-
-        # Update last values
-        self._last_width = width
-        self._last_avg_width = avg_width
+        # Width breakout detection
+        if width > avg_width * self.WidthThreshold and self.Position == 0:
+            if float(candle.ClosePrice) > middle_channel:
+                self.BuyMarket()
+            elif float(candle.ClosePrice) < middle_channel:
+                self.SellMarket()
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_width_breakout_strategy()
-

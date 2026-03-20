@@ -3,119 +3,95 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class first_day_of_month_strategy(Strategy):
     """
-    Implementation of First Day of Month trading strategy.
-    The strategy enters long position on the 1st day of the month and exits on the 5th day.
-
+    First Day of Month trading strategy.
+    Enters long on the first few days of month, exits around the 5th-10th day.
+    Enters short in mid-month if price below MA.
     """
 
     def __init__(self):
         super(first_day_of_month_strategy, self).__init__()
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._stop_loss_percent = self.Param("StopLossPercent", 2) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
-
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-
-        self._candle_type = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-
-        self._sma = None
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def ma_period(self):
-        """Moving average period."""
-        return self._ma_period.Value
-
-    @ma_period.setter
-    def ma_period(self, value):
-        self._ma_period.Value = value
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(first_day_of_month_strategy, self).OnReseted()
-        self._sma = None
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(first_day_of_month_strategy, self).OnStarted(time)
 
-        # Create a simple moving average indicator
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self.ma_period
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
-        # Create subscription and bind indicator
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._sma, self.ProcessCandle).Start()
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._sma)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, ma_value):
-        """Process candle and execute trading logic."""
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
         day_of_month = candle.OpenTime.Day
+        cd = self._cooldown_bars.Value
+        is_new_day = day_of_month != self._prev_day_of_month
 
-        # Enter position on the 1st day of the month if price is above MA
-        if day_of_month == 1 and candle.ClosePrice > ma_value and self.Position <= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo(
-                "Buy signal on first day of month: Price={0}, MA={1}, Volume={2}".format(
-                    candle.ClosePrice, ma_value, volume
-                )
-            )
-        # Exit position on the 5th day of the month
-        elif day_of_month == 5 and self.Position > 0:
-            self.ClosePosition()
-            self.LogInfo(
-                "Closing position on day 5 of month: Position={0}".format(self.Position)
-            )
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_day_of_month = day_of_month
+            return
+
+        is_first_days = day_of_month >= 1 and day_of_month <= 3
+        is_exit_zone = day_of_month >= 8 and day_of_month <= 12
+        is_mid_month = day_of_month >= 15 and day_of_month <= 20
+        is_end_of_month = day_of_month >= 25
+
+        # Entry: buy on first days of month
+        if is_first_days and is_new_day and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Exit long around mid-first-week
+        elif is_exit_zone and is_new_day and self.Position > 0:
+            self.SellMarket()
+            self._cooldown = cd
+        # Short entry mid-month if below MA
+        elif is_mid_month and is_new_day and self.Position == 0 and close < ma:
+            self.SellMarket()
+            self._cooldown = cd
+        # Cover short at end of month
+        elif is_end_of_month and is_new_day and self.Position < 0:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_day_of_month = day_of_month
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return first_day_of_month_strategy()

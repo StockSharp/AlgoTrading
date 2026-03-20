@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class triple_ma_htf_dynamic_smoothing_strategy(Strategy):
     """EMA crossover with RSI confirmation and re-entry on RSI crossing 50."""
@@ -17,7 +15,7 @@ class triple_ma_htf_dynamic_smoothing_strategy(Strategy):
         self._len1 = self.Param("Length1", 10).SetDisplay("MA1 Length", "Fast EMA", "Trend")
         self._len2 = self.Param("Length2", 30).SetDisplay("MA2 Length", "Slow EMA", "Trend")
         self._len3 = self.Param("Length3", 14).SetDisplay("RSI Length", "RSI period", "Trend")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

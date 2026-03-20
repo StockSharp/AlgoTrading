@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, MovingAverageConvergenceDivergenceSignal
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, MovingAverageConvergenceDivergenceSignal, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 class imacd_sniper_strategy(Strategy):
@@ -77,7 +77,7 @@ class imacd_sniper_strategy(Strategy):
 
         macd = float(macd_val)
         signal = float(signal_val)
-        ema = float(ema_value.ToDecimal())
+        ema = float(IndicatorHelper.ToDecimal(ema_value))
         close = float(candle.ClosePrice)
 
         if not self.IsFormedAndOnlineAndAllowTrading():

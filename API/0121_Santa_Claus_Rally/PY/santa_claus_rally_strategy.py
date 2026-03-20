@@ -3,123 +3,94 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates, ICandleMessage
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class santa_claus_rally_strategy(Strategy):
     """
-    Implementation of Santa Claus Rally trading strategy.
-    The strategy enters long position between December 20 and December 31,
-    and exits on January 5 of the following year.
-
+    Santa Claus Rally trading strategy.
+    Buys at end of each month and exits early next month.
+    Short mid-month if below MA.
     """
 
     def __init__(self):
         super(santa_claus_rally_strategy, self).__init__()
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
-
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-
-        self._candle_type = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
     @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def MaPeriod(self):
-        return self._ma_period.Value
-
-    @MaPeriod.setter
-    def MaPeriod(self, value):
-        self._ma_period.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(santa_claus_rally_strategy, self).OnReseted()
+        self._cooldown = 0
+        self._prev_day_of_month = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(santa_claus_rally_strategy, self).OnStarted(time)
 
-        # Create a simple moving average indicator
+        self._cooldown = 0
+        self._prev_day_of_month = 0
+
         sma = SimpleMovingAverage()
-        sma.Length = self.MaPeriod
+        sma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(sma, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, ma_value):
-        """
-        Process candle and execute trading logic
-
-        :param candle: The candle message.
-        :param ma_value: The moving average value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        date = candle.OpenTime
-        month = date.Month
-        day = date.Day
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
+        day_of_month = candle.OpenTime.Day
+        cd = self._cooldown_bars.Value
+        is_new_day = day_of_month != self._prev_day_of_month
 
-        # Santa Claus Rally period - Dec 20 to Dec 31
-        if month == 12 and day >= 20 and day <= 31 and self.Position <= 0 and candle.ClosePrice > ma_value:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo("Buy signal for Santa Claus Rally: Date={0:yyyy-MM-dd}, Price={1}, MA={2}, Volume={3}".format(
-                date, candle.ClosePrice, ma_value, volume))
-        # Exit position on January 5
-        elif month == 1 and day == 5 and self.Position > 0:
-            self.ClosePosition()
-            self.LogInfo("Closing position on January 5: Position={0}".format(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_day_of_month = day_of_month
+            return
+
+        is_rally_zone = day_of_month >= 25
+        is_exit_zone = day_of_month >= 3 and day_of_month <= 7
+        is_short_zone = day_of_month >= 12 and day_of_month <= 18
+
+        # Buy at end of month for rally
+        if is_rally_zone and is_new_day and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Exit long in early next month
+        elif is_exit_zone and is_new_day and self.Position > 0:
+            self.SellMarket()
+            self._cooldown = cd
+        # Short mid-month if below MA
+        elif is_short_zone and is_new_day and self.Position == 0 and close < ma:
+            self.SellMarket()
+            self._cooldown = cd
+        # Cover short before rally zone
+        elif is_rally_zone and is_new_day and self.Position < 0:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_day_of_month = day_of_month
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return santa_claus_rally_strategy()

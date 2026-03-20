@@ -1,0 +1,84 @@
+import clr
+
+clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.Algo")
+
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
+from StockSharp.Algo.Strategies import Strategy
+
+
+class bar_range_strategy(Strategy):
+    def __init__(self):
+        super(bar_range_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._ema_length = self.Param("EmaLength", 50) \
+            .SetGreaterThanZero() \
+            .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
+        self._rsi_length = self.Param("RsiLength", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("RSI Length", "RSI period", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 350) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
+        self._prev_rsi = 0.0
+        self._bar_index = 0
+        self._last_trade_bar = 0
+
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
+
+    @candle_type.setter
+    def candle_type(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def cooldown_bars(self):
+        return self._cooldown_bars.Value
+
+    @cooldown_bars.setter
+    def cooldown_bars(self, value):
+        self._cooldown_bars.Value = value
+
+    def OnReseted(self):
+        super(bar_range_strategy, self).OnReseted()
+        self._prev_rsi = 0.0
+        self._bar_index = 0
+        self._last_trade_bar = 0
+
+    def OnStarted(self, time):
+        super(bar_range_strategy, self).OnStarted(time)
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ema, rsi, self.OnProcess).Start()
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, ema)
+            self.DrawOwnTrades(area)
+
+    def OnProcess(self, candle, ema_val, rsi_val):
+        if candle.State != CandleStates.Finished:
+            return
+        self._bar_index += 1
+        ema_v = float(ema_val)
+        rsi_v = float(rsi_val)
+        close = float(candle.ClosePrice)
+        cooldown_ok = self._bar_index - self._last_trade_bar > self.cooldown_bars
+        long_signal = self._prev_rsi > 0 and self._prev_rsi < 45.0 and rsi_v >= 45.0 and close > ema_v
+        short_signal = self._prev_rsi > 0 and self._prev_rsi > 55.0 and rsi_v <= 55.0 and close < ema_v
+        if long_signal and self.Position <= 0 and cooldown_ok:
+            self.BuyMarket()
+            self._last_trade_bar = self._bar_index
+        elif short_signal and self.Position >= 0 and cooldown_ok:
+            self.SellMarket()
+            self._last_trade_bar = self._bar_index
+        self._prev_rsi = rsi_v
+
+    def CreateClone(self):
+        return bar_range_strategy()

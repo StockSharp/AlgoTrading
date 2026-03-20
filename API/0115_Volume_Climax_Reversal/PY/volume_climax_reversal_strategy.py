@@ -3,169 +3,118 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class volume_climax_reversal_strategy(Strategy):
     """
     Volume Climax Reversal strategy.
-
+    Enters counter-trend when volume spikes above average with MA confirmation.
+    Uses cooldown and MA cross for exits.
     """
 
     def __init__(self):
         super(volume_climax_reversal_strategy, self).__init__()
-        # Initializes a new instance of the <see cref="VolumeClimaxReversalStrategy"/>.
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "SMA period", "Indicators")
+        self._volume_multiplier = self.Param("VolumeMultiplier", 2.0).SetDisplay("Volume Multiplier", "Volume spike threshold", "Volume")
+        self._cooldown_bars = self.Param("CooldownBars", 400).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "Candles")
-
-        self._volumePeriod = self.Param("VolumePeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("Volume Period", "Period for volume average calculation", "Volume") \
-            .SetCanOptimize(True)
-
-        self._volumeMultiplier = self.Param("VolumeMultiplier", 3.0) \
-            .SetRange(1.5, 5.0) \
-            .SetDisplay("Volume Multiplier", "Volume threshold as multiplier of average volume", "Volume") \
-            .SetCanOptimize(True)
-
-        self._maPeriod = self.Param("MAPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("MA Period", "Period for moving average calculation", "Moving Average") \
-            .SetCanOptimize(True)
-
-        self._atrMultiplier = self.Param("ATRMultiplier", 2.0) \
-            .SetRange(1.0, 5.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR to calculate stop loss", "Risk") \
-            .SetCanOptimize(True)
-
-        self._ma = None
-        self._volumeAverage = None
-        self._atr = None
+        self._prev_ma = 0.0
+        self._prev_close = 0.0
+        self._volumes = []
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        """Candle type and timeframe."""
-        return self._candleType.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def VolumePeriod(self):
-        """Period for volume average calculation."""
-        return self._volumePeriod.Value
-
-    @VolumePeriod.setter
-    def VolumePeriod(self, value):
-        self._volumePeriod.Value = value
-
-    @property
-    def VolumeMultiplier(self):
-        """Volume multiplier for signal detection."""
-        return self._volumeMultiplier.Value
-
-    @VolumeMultiplier.setter
-    def VolumeMultiplier(self, value):
-        self._volumeMultiplier.Value = value
-
-    @property
-    def MAPeriod(self):
-        """Moving average period for trend determination."""
-        return self._maPeriod.Value
-
-    @MAPeriod.setter
-    def MAPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def ATRMultiplier(self):
-        """ATR multiplier for stop loss."""
-        return self._atrMultiplier.Value
-
-    @ATRMultiplier.setter
-    def ATRMultiplier(self, value):
-        self._atrMultiplier.Value = value
+    def OnReseted(self):
+        super(volume_climax_reversal_strategy, self).OnReseted()
+        self._prev_ma = 0.0
+        self._prev_close = 0.0
+        self._volumes = []
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
         super(volume_climax_reversal_strategy, self).OnStarted(time)
 
-        # Initialize indicators
-        self._ma = SimpleMovingAverage()
-        self._ma.Length = self.MAPeriod
-        self._volumeAverage = SimpleMovingAverage()
-        self._volumeAverage.Length = self.VolumePeriod
-        self._atr = AverageTrueRange()
-        self._atr.Length = self.VolumePeriod
+        self._prev_ma = 0.0
+        self._prev_close = 0.0
+        self._volumes = []
+        self._cooldown = 0
 
-        # Create and subscribe to candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
-        # Use BindEx to process both price and volume
-        subscription.Bind(self._ma, self._atr, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Set up chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ma)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, maValue, atrValue):
-        """
-        Process candle logic.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Process indicators
-        volumeAverageValue = float(process_float(self._volumeAverage, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Get current candle information
-        currentVolume = float(candle.TotalVolume)
-        isBullishCandle = candle.ClosePrice > candle.OpenPrice
-        isBearishCandle = candle.ClosePrice < candle.OpenPrice
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
+        volume = float(candle.TotalVolume)
+        ma_period = self._ma_period.Value
+        cd = self._cooldown_bars.Value
 
-        # Check for volume climax (volume spike)
-        isVolumeClimaxDetected = currentVolume > volumeAverageValue * self.VolumeMultiplier
+        # Track volumes for average calculation
+        self._volumes.append(volume)
+        if len(self._volumes) > ma_period:
+            self._volumes.pop(0)
 
-        if isVolumeClimaxDetected:
-            self.LogInfo("Volume climax detected: {0} > {1} * {2}".format(currentVolume, volumeAverageValue, self.VolumeMultiplier))
+        if len(self._volumes) < ma_period or self._prev_ma == 0:
+            self._prev_ma = ma
+            self._prev_close = close
+            return
 
-            # Bullish reversal: High volume + bearish candle + price below MA
-            if isBearishCandle and candle.ClosePrice < maValue and self.Position <= 0:
-                self.LogInfo("Bullish reversal signal detected")
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            # Bearish reversal: High volume + bullish candle + price above MA
-            elif isBullishCandle and candle.ClosePrice > maValue and self.Position >= 0:
-                self.LogInfo("Bearish reversal signal detected")
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
+        # Calculate average volume
+        avg_volume = sum(self._volumes) / len(self._volumes)
 
-        # Exit logic - Price crosses MA
-        if self.Position > 0 and candle.ClosePrice < maValue:
-            self.LogInfo("Exit long: Price moved below MA")
-            self.ClosePosition()
-        elif self.Position < 0 and candle.ClosePrice > maValue:
-            self.LogInfo("Exit short: Price moved above MA")
-            self.ClosePosition()
+        is_volume_climax = avg_volume > 0 and volume > avg_volume * self._volume_multiplier.Value
+        is_bullish = candle.ClosePrice > candle.OpenPrice
+        is_bearish = candle.ClosePrice < candle.OpenPrice
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_ma = ma
+            self._prev_close = close
+            return
+
+        # Exit logic: MA cross
+        if self.Position > 0 and close < ma and self._prev_close >= self._prev_ma:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > ma and self._prev_close <= self._prev_ma:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        # Entry logic: volume climax reversal
+        if self.Position == 0 and is_volume_climax:
+            # Bullish reversal: high volume bearish candle below MA (selling climax)
+            if is_bearish and close < ma:
+                self.BuyMarket()
+                self._cooldown = cd
+            # Bearish reversal: high volume bullish candle above MA (buying climax)
+            elif is_bullish and close > ma:
+                self.SellMarket()
+                self._cooldown = cd
+
+        self._prev_ma = ma
+        self._prev_close = close
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return volume_climax_reversal_strategy()

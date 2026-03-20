@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, VolumeWeightedAveragePrice
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, VolumeWeightedAveragePrice, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 class intraday_momentum_strategy(Strategy):
@@ -82,10 +82,10 @@ class intraday_momentum_strategy(Strategy):
         if ema_fast_val.IsEmpty or ema_slow_val.IsEmpty or rsi_val.IsEmpty or vwap_val.IsEmpty:
             return
 
-        ema_fast = float(ema_fast_val.ToDecimal())
-        ema_slow = float(ema_slow_val.ToDecimal())
-        rsi = float(rsi_val.ToDecimal())
-        vwap = float(vwap_val.ToDecimal())
+        ema_fast = float(IndicatorHelper.ToDecimal(ema_fast_val))
+        ema_slow = float(IndicatorHelper.ToDecimal(ema_slow_val))
+        rsi = float(IndicatorHelper.ToDecimal(rsi_val))
+        vwap = float(IndicatorHelper.ToDecimal(vwap_val))
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

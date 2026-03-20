@@ -4,15 +4,13 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import CandleStates
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class arpit_bollinger_band_strategy(Strategy):
-    """
-    Bollinger Band reversal strategy.
+    """Bollinger Band reversal strategy.
     Buys when price crosses below lower band then returns above.
     Sells when price crosses above upper band then returns below.
     """
@@ -20,13 +18,11 @@ class arpit_bollinger_band_strategy(Strategy):
     def __init__(self):
         super(arpit_bollinger_band_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._bollinger_length = self.Param("BollingerLength", 20) \
-            .SetGreaterThanZero() \
             .SetDisplay("Length", "Bollinger Bands length", "Bollinger")
         self._bollinger_multiplier = self.Param("BollingerMultiplier", 2.0) \
-            .SetGreaterThanZero() \
             .SetDisplay("Multiplier", "StdDev multiplier", "Bollinger")
         self._cooldown_bars = self.Param("CooldownBars", 350) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
@@ -38,21 +34,8 @@ class arpit_bollinger_band_strategy(Strategy):
         self._last_trade_bar = 0
 
     @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, v): self._candle_type.Value = v
-    @property
-    def BollingerLength(self): return self._bollinger_length.Value
-    @BollingerLength.setter
-    def BollingerLength(self, v): self._bollinger_length.Value = v
-    @property
-    def BollingerMultiplier(self): return self._bollinger_multiplier.Value
-    @BollingerMultiplier.setter
-    def BollingerMultiplier(self, v): self._bollinger_multiplier.Value = v
-    @property
-    def CooldownBars(self): return self._cooldown_bars.Value
-    @CooldownBars.setter
-    def CooldownBars(self, v): self._cooldown_bars.Value = v
+    def CandleType(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(arpit_bollinger_band_strategy, self).OnReseted()
@@ -66,8 +49,8 @@ class arpit_bollinger_band_strategy(Strategy):
         super(arpit_bollinger_band_strategy, self).OnStarted(time)
 
         bollinger = BollingerBands()
-        bollinger.Length = self.BollingerLength
-        bollinger.Width = self.BollingerMultiplier
+        bollinger.Length = self._bollinger_length.Value
+        bollinger.Width = self._bollinger_multiplier.Value
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(bollinger, self.ProcessCandle).Start()
@@ -87,14 +70,20 @@ class arpit_bollinger_band_strategy(Strategy):
         if bb_value.IsEmpty:
             return
 
-        upper = get_bb_upper(bb_value)
-        lower = get_bb_lower(bb_value)
+        upper = bb_value.UpBand
+        lower = bb_value.LowBand
+
+        if upper is None or lower is None:
+            return
+
+        upper = float(upper)
+        lower = float(lower)
 
         if upper == 0 or lower == 0:
             return
 
         close = float(candle.ClosePrice)
-        cooldown_ok = self._bar_index - self._last_trade_bar > self.CooldownBars
+        cooldown_ok = self._bar_index - self._last_trade_bar > self._cooldown_bars.Value
 
         cross_up_from_below = self._prev_close <= self._prev_lower and self._prev_lower > 0 and close > lower
         cross_down_from_above = self._prev_close >= self._prev_upper and self._prev_upper > 0 and close < upper
@@ -111,5 +100,4 @@ class arpit_bollinger_band_strategy(Strategy):
         self._prev_lower = lower
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return arpit_bollinger_band_strategy()

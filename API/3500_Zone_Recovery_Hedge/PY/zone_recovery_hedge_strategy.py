@@ -1,0 +1,55 @@
+import clr
+
+clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.Algo")
+
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage
+from StockSharp.Algo.Strategies import Strategy
+
+
+class zone_recovery_hedge_strategy(Strategy):
+    def __init__(self):
+        super(zone_recovery_hedge_strategy, self).__init__()
+
+        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._rsi_period = self.Param("RsiPeriod", 14) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._sma_period = self.Param("SmaPeriod", 50) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
+
+        self._prev_rsi = 0.0
+        self._has_prev = False
+
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
+
+    def OnReseted(self):
+        super(zone_recovery_hedge_strategy, self).OnReseted()
+        self._prev_rsi = 0.0
+        self._has_prev = False
+
+    def OnStarted(self, time):
+        super(zone_recovery_hedge_strategy, self).OnStarted(time)
+
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.rsi_period
+        self._sma = SimpleMovingAverage()
+        self._sma.Length = self.sma_period
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._rsi, self._sma, self._process_candle).Start()
+
+    def _process_candle(self, candle, *args):
+        if candle.State != CandleStates.Finished:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        # Trading logic placeholder
+        pass
+
+    def CreateClone(self):
+        return zone_recovery_hedge_strategy()

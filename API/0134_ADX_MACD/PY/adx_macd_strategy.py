@@ -1,237 +1,109 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, MovingAverageConvergenceDivergenceSignal, AverageTrueRange
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class adx_macd_strategy(Strategy):
     """
-    Strategy that combines ADX and MACD indicators to identify strong trends
-    and potential entry points.
-
+    ADX + MACD strategy.
+    Enters on MACD crossover when ADX indicates strong trend.
     """
 
     def __init__(self):
         super(adx_macd_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._adx_period = self.Param("AdxPeriod", 14).SetDisplay("ADX Period", "Period for ADX calculation", "ADX Settings")
+        self._adx_threshold = self.Param("AdxThreshold", 25.0).SetDisplay("ADX Threshold", "ADX threshold for trend strength", "ADX Settings")
+        self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._adxPeriod = self.Param("AdxPeriod", 14) \
-            .SetRange(5, 30) \
-            .SetDisplay("ADX Period", "Period for ADX calculation", "ADX Settings") \
-            .SetCanOptimize(True)
-
-        self._adxThreshold = self.Param("AdxThreshold", 25) \
-            .SetRange(15, 40) \
-            .SetDisplay("ADX Threshold", "ADX threshold for trend strength", "ADX Settings") \
-            .SetCanOptimize(True)
-
-        self._macdFast = self.Param("MacdFast", 12) \
-            .SetRange(5, 30) \
-            .SetDisplay("MACD Fast", "Fast period for MACD calculation", "MACD Settings") \
-            .SetCanOptimize(True)
-
-        self._macdSlow = self.Param("MacdSlow", 26) \
-            .SetRange(10, 50) \
-            .SetDisplay("MACD Slow", "Slow period for MACD calculation", "MACD Settings") \
-            .SetCanOptimize(True)
-
-        self._macdSignal = self.Param("MacdSignal", 9) \
-            .SetRange(3, 20) \
-            .SetDisplay("MACD Signal", "Signal period for MACD calculation", "MACD Settings") \
-            .SetCanOptimize(True)
-
-        self._atrMultiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetRange(1.0, 5.0) \
-            .SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-
-        self._adx = None
-        self._macd = None
-        self._atr = None
+        self._adx_value = 0.0
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        return self._candleType.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def AdxPeriod(self):
-        return self._adxPeriod.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adxPeriod.Value = value
-
-    @property
-    def AdxThreshold(self):
-        return self._adxThreshold.Value
-
-    @AdxThreshold.setter
-    def AdxThreshold(self, value):
-        self._adxThreshold.Value = value
-
-    @property
-    def MacdFast(self):
-        return self._macdFast.Value
-
-    @MacdFast.setter
-    def MacdFast(self, value):
-        self._macdFast.Value = value
-
-    @property
-    def MacdSlow(self):
-        return self._macdSlow.Value
-
-    @MacdSlow.setter
-    def MacdSlow(self, value):
-        self._macdSlow.Value = value
-
-    @property
-    def MacdSignal(self):
-        return self._macdSignal.Value
-
-    @MacdSignal.setter
-    def MacdSignal(self, value):
-        self._macdSignal.Value = value
-
-    @property
-    def AtrMultiplier(self):
-        return self._atrMultiplier.Value
-
-    @AtrMultiplier.setter
-    def AtrMultiplier(self, value):
-        self._atrMultiplier.Value = value
+    def OnReseted(self):
+        super(adx_macd_strategy, self).OnReseted()
+        self._adx_value = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(adx_macd_strategy, self).OnStarted(time)
 
-        # Initialize indicators
-        self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.AdxPeriod
+        self._adx_value = 0.0
+        self._cooldown = 0
 
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self.MacdFast
-        self._macd.Macd.LongMa.Length = self.MacdSlow
-        self._macd.SignalMa.Length = self.MacdSignal
+        adx = AverageDirectionalIndex()
+        adx.Length = self._adx_period.Value
 
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
+        macd = MovingAverageConvergenceDivergenceSignal()
 
-        # Create candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
 
-        # Bind the indicators and candle processor
-        subscription.BindEx(self._adx, self._macd, self._atr, self.ProcessCandle).Start()
+        # Bind ADX with BindEx (composite indicator)
+        subscription.BindEx(adx, self._on_adx)
 
-        # Set up chart if available
+        # Bind MACD for main logic
+        subscription.BindEx(macd, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-
-            # Draw ADX in a separate area
-            adxArea = self.CreateChartArea()
-            self.DrawIndicator(adxArea, self._adx)
-
-            # Draw MACD in a separate area
-            macdArea = self.CreateChartArea()
-            self.DrawIndicator(macdArea, self._macd)
-
             self.DrawOwnTrades(area)
+            adx_area = self.CreateChartArea()
+            if adx_area is not None:
+                self.DrawIndicator(adx_area, adx)
+            macd_area = self.CreateChartArea()
+            if macd_area is not None:
+                self.DrawIndicator(macd_area, macd)
 
-    def ProcessCandle(self, candle, adxValue, macdValue, atrValue):
-        """
-        Process incoming candle with indicator values.
+    def _on_adx(self, candle, adx_iv):
+        if adx_iv.MovingAverage is not None:
+            self._adx_value = float(adx_iv.MovingAverage)
 
-        :param candle: Candle to process.
-        :param adxValue: ADX value.
-        :param macdValue: MACD value.
-        :param atrValue: ATR value.
-        """
+    def _process_candle(self, candle, macd_iv):
         if candle.State != CandleStates.Finished:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        typedAdx = adxValue
-        if typedAdx.MovingAverage is None:
+        if macd_iv.Macd is None or macd_iv.Signal is None:
             return
-        adxIndicatorValue = typedAdx.MovingAverage
 
-        macdLine = macdValue.Macd
-        signalLine = macdValue.Signal
+        macd_line = float(macd_iv.Macd)
+        signal_line = float(macd_iv.Signal)
+        cd = self._cooldown_bars.Value
+        threshold = float(self._adx_threshold.Value)
 
-        atrIndicatorValue = float(atrValue)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        # ADX trend strength check
-        strongTrend = adxIndicatorValue > self.AdxThreshold
+        strong_trend = self._adx_value > threshold
 
-        # Calculate stop loss distance based on ATR
-        stopLossDistance = atrIndicatorValue * self.AtrMultiplier
+        # Entry: strong trend + MACD bullish = buy
+        if strong_trend and macd_line > signal_line and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Entry: strong trend + MACD bearish = sell
+        elif strong_trend and macd_line < signal_line and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cd
 
-        # Trading logic
-        if strongTrend:
-            if macdLine > signalLine:  # Bullish signal
-                # Strong uptrend with bullish MACD - Long signal
-                if self.Position <= 0:
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo("Buy signal: Strong trend (ADX={0:F2}) with bullish MACD ({1:F4} > {2:F4})".format(
-                        adxIndicatorValue, macdLine, signalLine))
-
-                    # Set stop loss
-                    stopPrice = float(candle.ClosePrice - stopLossDistance)
-                    self.RegisterOrder(self.CreateOrder(Sides.Sell, stopPrice, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
-            elif macdLine < signalLine:  # Bearish signal
-                # Strong downtrend with bearish MACD - Short signal
-                if self.Position >= 0:
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo("Sell signal: Strong trend (ADX={0:F2}) with bearish MACD ({1:F4} < {2:F4})".format(
-                        adxIndicatorValue, macdLine, signalLine))
-
-                    # Set stop loss
-                    stopPrice = float(candle.ClosePrice + stopLossDistance)
-                    self.RegisterOrder(self.CreateOrder(Sides.Buy, stopPrice, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
-
-        # Exit conditions
-        if adxIndicatorValue < self.AdxThreshold * 0.8:
-            if self.Position != 0:
-                if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self.LogInfo("Exit long: Trend weakening (ADX={0:F2})".format(adxIndicatorValue))
-                elif self.Position < 0:
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("Exit short: Trend weakening (ADX={0:F2})".format(adxIndicatorValue))
-
-                # Cancel any pending stop orders
-                self.CancelActiveOrders()
-        # Additional exit logic for MACD crossover against the position
-        elif (self.Position > 0 and macdLine < signalLine) or (self.Position < 0 and macdLine > signalLine):
-            if self.Position != 0:
-                if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self.LogInfo("Exit long: MACD crossed below signal ({0:F4} < {1:F4})".format(macdLine, signalLine))
-                elif self.Position < 0:
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("Exit short: MACD crossed above signal ({0:F4} > {1:F4})".format(macdLine, signalLine))
-
-                # Cancel any pending stop orders
-                self.CancelActiveOrders()
+        # Exit on MACD crossover against position
+        if self.Position > 0 and macd_line < signal_line:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and macd_line > signal_line:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return adx_macd_strategy()

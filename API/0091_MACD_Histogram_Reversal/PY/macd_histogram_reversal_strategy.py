@@ -3,166 +3,102 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceHistogram
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class macd_histogram_reversal_strategy(Strategy):
     """
-    MACD Histogram Reversal Strategy.
-    Enters long when MACD histogram crosses above zero.
+    MACD Histogram Reversal strategy.
+    Enters long when MACD histogram (MACD - Signal) crosses above zero.
     Enters short when MACD histogram crosses below zero.
-
+    Uses cooldown to control trade frequency.
     """
 
     def __init__(self):
         super(macd_histogram_reversal_strategy, self).__init__()
+        self._fast_period = self.Param("FastPeriod", 12).SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD")
+        self._slow_period = self.Param("SlowPeriod", 26).SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD")
+        self._signal_period = self.Param("SignalPeriod", 9).SetDisplay("Signal Period", "Signal line period", "MACD")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._fastPeriod = self.Param("FastPeriod", 12) \
-            .SetDisplay("Fast Period", "Fast period for MACD calculation", "MACD Settings") \
-            .SetRange(8, 16) \
-            .SetCanOptimize(True)
-
-        self._slowPeriod = self.Param("SlowPeriod", 26) \
-            .SetDisplay("Slow Period", "Slow period for MACD calculation", "MACD Settings") \
-            .SetRange(20, 30) \
-            .SetCanOptimize(True)
-
-        self._signalPeriod = self.Param("SignalPeriod", 9) \
-            .SetDisplay("Signal Period", "Signal period for MACD calculation", "MACD Settings") \
-            .SetRange(7, 13) \
-            .SetCanOptimize(True)
-
-        self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management") \
-            .SetRange(1.0, 3.0) \
-            .SetCanOptimize(True)
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Previous MACD histogram value
-        self._prevHistogram = None
+        self._prev_histogram = None
+        self._cooldown = 0
 
     @property
-    def FastPeriod(self):
-        """Fast period for MACD calculation."""
-        return self._fastPeriod.Value
-
-    @FastPeriod.setter
-    def FastPeriod(self, value):
-        self._fastPeriod.Value = value
-
-    @property
-    def SlowPeriod(self):
-        """Slow period for MACD calculation."""
-        return self._slowPeriod.Value
-
-    @SlowPeriod.setter
-    def SlowPeriod(self, value):
-        self._slowPeriod.Value = value
-
-    @property
-    def SignalPeriod(self):
-        """Signal period for MACD calculation."""
-        return self._signalPeriod.Value
-
-    @SignalPeriod.setter
-    def SignalPeriod(self, value):
-        self._signalPeriod.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage from entry price."""
-        return self._stopLoss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stopLoss.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(macd_histogram_reversal_strategy, self).OnReseted()
-        self._prevHistogram = None
+        self._prev_histogram = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(macd_histogram_reversal_strategy, self).OnStarted(time)
 
-        # Enable position protection using stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss
-        )
-        # Create MACD histogram indicator
-        macdHistogram = MovingAverageConvergenceDivergenceHistogram()
-        macdHistogram.Macd.ShortMa.Length = self.FastPeriod
-        macdHistogram.Macd.LongMa.Length = self.SlowPeriod
-        macdHistogram.SignalMa.Length = self.SignalPeriod
+        self._prev_histogram = None
+        self._cooldown = 0
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        macd_hist = MovingAverageConvergenceDivergenceHistogram()
+        macd_hist.Macd.ShortMa.Length = self._fast_period.Value
+        macd_hist.Macd.LongMa.Length = self._slow_period.Value
+        macd_hist.SignalMa.Length = self._signal_period.Value
 
-        # Bind indicator and process candles
-        subscription.BindEx(macdHistogram, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(macd_hist, self._process_candle).Start()
 
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, macdHistogram)
+            self.DrawIndicator(area, macd_hist)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, macdValue):
-        """Process candle with MACD histogram value."""
-        # Skip unfinished candles
+    def _process_candle(self, candle, macd_iv):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not macd_iv.IsFormed:
             return
 
-        macd = macdValue.Macd
-        signal = macdValue.Signal
+        macd_val = macd_iv.Macd
+        signal_val = macd_iv.Signal
 
-        # If this is the first calculation, just store the value
-        if self._prevHistogram is None:
-            self._prevHistogram = macd
+        if macd_val is None or signal_val is None:
             return
 
-        # Check for zero-line crossovers
-        crossedAboveZero = self._prevHistogram < 0 and macd > 0
-        crossedBelowZero = self._prevHistogram > 0 and macd < 0
+        histogram = float(macd_val) - float(signal_val)
 
-        # Long entry: MACD histogram crossed above zero
-        if crossedAboveZero and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Long entry: MACD histogram crossed above zero ({0} -> {1})".format(
-                self._prevHistogram, macd))
-        # Short entry: MACD histogram crossed below zero
-        elif crossedBelowZero and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Short entry: MACD histogram crossed below zero ({0} -> {1})".format(
-                self._prevHistogram, macd))
+        if self._prev_histogram is None:
+            self._prev_histogram = histogram
+            return
 
-        # Update previous value
-        self._prevHistogram = macd
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_histogram = histogram
+            return
+
+        cd = self._cooldown_bars.Value
+
+        crossed_above_zero = self._prev_histogram < 0 and histogram >= 0
+        crossed_below_zero = self._prev_histogram > 0 and histogram <= 0
+
+        if self.Position == 0 and crossed_above_zero:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and crossed_below_zero:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and crossed_below_zero:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and crossed_above_zero:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_histogram = histogram
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return macd_histogram_reversal_strategy()

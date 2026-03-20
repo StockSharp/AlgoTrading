@@ -3,214 +3,168 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, ATR, RSI
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class keltner_rsi_strategy(Strategy):
-    """
-    Strategy combining Keltner Channels and RSI indicators.
-    Looks for mean reversion opportunities when price touches channel boundaries
-    and RSI confirms oversold/overbought conditions.
-
-    """
 
     def __init__(self):
         super(keltner_rsi_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._emaPeriod = self.Param("EmaPeriod", 20) \
+        self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "Period for EMA in Keltner Channels", "Indicators")
-
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "Period for ATR in Keltner Channels", "Indicators")
-
-        self._atrMultiplier = self.Param("AtrMultiplier", 2.0) \
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR to set channel width", "Indicators")
-
-        self._rsiPeriod = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-
-        self._rsiOverboughtLevel = self.Param("RsiOverboughtLevel", 70) \
+        self._rsi_overbought_level = self.Param("RsiOverboughtLevel", 60.0) \
             .SetDisplay("RSI Overbought", "RSI level considered overbought", "Trading Levels")
-
-        self._rsiOversoldLevel = self.Param("RsiOversoldLevel", 30) \
+        self._rsi_oversold_level = self.Param("RsiOversoldLevel", 40.0) \
             .SetDisplay("RSI Oversold", "RSI level considered oversold", "Trading Levels")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
+        self._cooldown_bars = self.Param("CooldownBars", 120) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Fields for indicators
         self._ema = None
         self._atr = None
         self._rsi = None
+        self._cooldown = 0
 
     @property
     def EmaPeriod(self):
-        """EMA period for Keltner Channels."""
-        return self._emaPeriod.Value
+        return self._ema_period.Value
 
     @EmaPeriod.setter
     def EmaPeriod(self, value):
-        self._emaPeriod.Value = value
+        self._ema_period.Value = value
 
     @property
     def AtrPeriod(self):
-        """ATR period for Keltner Channels."""
-        return self._atrPeriod.Value
+        return self._atr_period.Value
 
     @AtrPeriod.setter
     def AtrPeriod(self, value):
-        self._atrPeriod.Value = value
+        self._atr_period.Value = value
 
     @property
     def AtrMultiplier(self):
-        """ATR multiplier for Keltner Channels width."""
-        return self._atrMultiplier.Value
+        return self._atr_multiplier.Value
 
     @AtrMultiplier.setter
     def AtrMultiplier(self, value):
-        self._atrMultiplier.Value = value
+        self._atr_multiplier.Value = value
 
     @property
     def RsiPeriod(self):
-        """Period for RSI calculation."""
-        return self._rsiPeriod.Value
+        return self._rsi_period.Value
 
     @RsiPeriod.setter
     def RsiPeriod(self, value):
-        self._rsiPeriod.Value = value
+        self._rsi_period.Value = value
 
     @property
     def RsiOverboughtLevel(self):
-        """RSI overbought level."""
-        return self._rsiOverboughtLevel.Value
+        return self._rsi_overbought_level.Value
 
     @RsiOverboughtLevel.setter
     def RsiOverboughtLevel(self, value):
-        self._rsiOverboughtLevel.Value = value
+        self._rsi_overbought_level.Value = value
 
     @property
     def RsiOversoldLevel(self):
-        """RSI oversold level."""
-        return self._rsiOversoldLevel.Value
+        return self._rsi_oversold_level.Value
 
     @RsiOversoldLevel.setter
     def RsiOversoldLevel(self, value):
-        self._rsiOversoldLevel.Value = value
+        self._rsi_oversold_level.Value = value
+
+    @property
+    def CooldownBars(self):
+        return self._cooldown_bars.Value
+
+    @CooldownBars.setter
+    def CooldownBars(self, value):
+        self._cooldown_bars.Value = value
 
     @property
     def StopLossPercent(self):
-        """Stop loss percentage."""
-        return self._stopLossPercent.Value
+        return self._stop_loss_percent.Value
 
     @StopLossPercent.setter
     def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+        self._stop_loss_percent.Value = value
 
     @property
     def CandleType(self):
-        """Candle type for strategy calculation."""
-        return self._candleType.Value
+        return self._candle_type.Value
 
     @CandleType.setter
     def CandleType(self, value):
-        self._candleType.Value = value
+        self._candle_type.Value = value
+
+    def OnStarted(self, time):
+        super(keltner_rsi_strategy, self).OnStarted(time)
+
+        self._cooldown = 0
+
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self.EmaPeriod
+        self._atr = AverageTrueRange()
+        self._atr.Length = self.AtrPeriod
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.RsiPeriod
+
+        self.SubscribeCandles(self.CandleType) \
+            .Bind(self._ema, self._atr, self._rsi, self.ProcessCandle) \
+            .Start()
+
+    def ProcessCandle(self, candle, ema_value, atr_value, rsi_value):
+        if candle.State != CandleStates.Finished:
+            return
+
+        if not self._ema.IsFormed or not self._atr.IsFormed or not self._rsi.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        ema_f = float(ema_value)
+        atr_f = float(atr_value)
+        rsi_f = float(rsi_value)
+        close = float(candle.ClosePrice)
+        cooldown_bars = int(self.CooldownBars)
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        if close < ema_f and rsi_f < 45.0 and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cooldown_bars
+        elif close > ema_f and rsi_f > 55.0 and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cooldown_bars
+        elif self.Position > 0 and close >= ema_f and rsi_f > 50:
+            self.SellMarket()
+            self._cooldown = cooldown_bars
+        elif self.Position < 0 and close <= ema_f and rsi_f < 50:
+            self.BuyMarket()
+            self._cooldown = cooldown_bars
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(keltner_rsi_strategy, self).OnReseted()
         self._ema = None
         self._atr = None
         self._rsi = None
-
-    def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
-        super(keltner_rsi_strategy, self).OnStarted(time)
-
-        # Create indicators
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.EmaPeriod
-        self._atr = ATR()
-        self._atr.Length = self.AtrPeriod
-        self._rsi = RSI()
-        self._rsi.Length = self.RsiPeriod
-
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-
-        # Use WhenCandlesFinished to process candles manually
-        subscription.Bind(self._ema, self._atr, self._rsi, self.ProcessCandle).Start()
-
-        # Enable stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
-        # Setup chart if available
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-
-            # Add indicators to chart
-            self.DrawIndicator(area, self._ema)
-
-            # Create second area for RSI
-            rsiArea = self.CreateChartArea()
-            self.DrawIndicator(rsiArea, self._rsi)
-
-            self.DrawOwnTrades(area)
-
-    def ProcessCandle(self, candle, emaValue, atrValue, rsiValue):
-        """
-        Process candle and execute trading logic
-
-        :param candle: The candle message.
-        :param emaValue: EMA indicator value.
-        :param atrValue: ATR indicator value.
-        :param rsiValue: RSI indicator value.
-        """
-        # Skip if indicators are not formed yet
-        if not self._ema.IsFormed or not self._atr.IsFormed or not self._rsi.IsFormed:
-            return
-
-        # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
-        # Calculate Keltner Channels
-        upperBand = emaValue + (atrValue * self.AtrMultiplier)
-        lowerBand = emaValue - (atrValue * self.AtrMultiplier)
-
-        # Trading logic
-        if candle.ClosePrice < lowerBand and rsiValue < self.RsiOversoldLevel and self.Position <= 0:
-            # Price below lower Keltner band and RSI oversold - Buy
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        elif candle.ClosePrice > upperBand and rsiValue > self.RsiOverboughtLevel and self.Position >= 0:
-            # Price above upper Keltner band and RSI overbought - Sell
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        elif self.Position > 0 and candle.ClosePrice > emaValue:
-            # Exit long position when price crosses above EMA (middle band)
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and candle.ClosePrice < emaValue:
-            # Exit short position when price crosses below EMA (middle band)
-            self.BuyMarket(Math.Abs(self.Position))
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return keltner_rsi_strategy()

@@ -3,211 +3,91 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class stochastic_rsi_cross_strategy(Strategy):
     """
-    Strategy based on Stochastic RSI crossover.
-    It trades the crossover of %K and %D lines in overbought/oversold zones.
-    Note: This uses regular Stochastic as StockSharp doesn't have built-in Stochastic RSI.
-    
+    Stochastic K/D crossover strategy.
+    Buys when %K crosses above %D in oversold zone.
+    Sells when %K crosses below %D in overbought zone.
     """
-    
+
     def __init__(self):
         super(stochastic_rsi_cross_strategy, self).__init__()
-        
-        # Initialize strategy parameters
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-        
-        self._stoch_period = self.Param("StochPeriod", 14) \
-            .SetDisplay("Stochastic Period", "Period for Stochastic", "Indicators")
-        
-        self._k_period = self.Param("KPeriod", 3) \
-            .SetDisplay("K Period", "Period for %K line", "Indicators")
-        
-        self._d_period = self.Param("DPeriod", 3) \
-            .SetDisplay("D Period", "Period for %D line", "Indicators")
-        
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-        
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        
-        # Cache for K and D values
+        self._k_period = self.Param("KPeriod", 14).SetDisplay("K Period", "Period for %K line", "Indicators")
+        self._d_period = self.Param("DPeriod", 3).SetDisplay("D Period", "Period for %D line", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+
         self._prev_k = 0.0
         self._prev_d = 0.0
-        self._is_first_candle = True
-
-    @property
-    def rsi_period(self):
-        """RSI period."""
-        return self._rsi_period.Value
-
-    @rsi_period.setter
-    def rsi_period(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def stoch_period(self):
-        """Stochastic period."""
-        return self._stoch_period.Value
-
-    @stoch_period.setter
-    def stoch_period(self, value):
-        self._stoch_period.Value = value
-
-    @property
-    def k_period(self):
-        """K period (fast)."""
-        return self._k_period.Value
-
-    @k_period.setter
-    def k_period(self, value):
-        self._k_period.Value = value
-
-    @property
-    def d_period(self):
-        """D period (slow)."""
-        return self._d_period.Value
-
-    @d_period.setter
-    def d_period(self, value):
-        self._d_period.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._has_prev = False
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(stochastic_rsi_cross_strategy, self).OnReseted()
         self._prev_k = 0.0
         self._prev_d = 0.0
-        self._is_first_candle = True
+        self._has_prev = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(stochastic_rsi_cross_strategy, self).OnStarted(time)
 
-        # Create a StochRsi indicator (simulated using regular Stochastic)
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.rsi_period
-        
         stoch = StochasticOscillator()
-        stoch.K.Length = self.k_period
-        stoch.D.Length = self.d_period
+        stoch.K.Length = self._k_period.Value
+        stoch.D.Length = self._d_period.Value
 
-        # Subscribe to candles
         subscription = self.SubscribeCandles(self.candle_type)
-        
-        # Create a custom binding to simulate Stochastic RSI since it's not built-in
-        subscription.BindEx(stoch, rsi, self.ProcessCandle).Start()
+        subscription.BindEx(stoch, self._process_candle).Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, rsi)
             self.DrawIndicator(area, stoch)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, stoch_value, rsi_value):
-        """
-        Processes each finished candle and executes Stochastic RSI crossover logic.
-        
-        :param candle: The processed candle message.
-        :param stoch_value: The current value of the Stochastic indicator.
-        :param rsi_value: The current value of the RSI indicator.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, stoch_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Extract Stochastic values
-        if stoch_value.K is None:
-            return
-        k_value = float(stoch_value.K)
-
-        if stoch_value.D is None:
-            return
-        d_value = float(stoch_value.D)
-
-        # For the first candle, just store values and return
-        if self._is_first_candle:
-            self._prev_k = k_value
-            self._prev_d = d_value
-            self._is_first_candle = False
+        if stoch_val.K is None or stoch_val.D is None:
             return
 
-        # Check for crossovers
-        k_crossed_above_d = self._prev_k <= self._prev_d and k_value > d_value
-        k_crossed_below_d = self._prev_k >= self._prev_d and k_value < d_value
+        k = float(stoch_val.K)
+        d = float(stoch_val.D)
 
-        # Entry logic
-        if k_crossed_above_d and k_value < 20 and self.Position <= 0:
-            # Buy when %K crosses above %D in oversold territory (below 20)
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo("Buy signal: Stochastic RSI %K ({0:F2}) crossed above %D ({1:F2}) in oversold zone".format(
-                k_value, d_value))
-        elif k_crossed_below_d and k_value > 80 and self.Position >= 0:
-            # Sell when %K crosses below %D in overbought territory (above 80)
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-            self.LogInfo("Sell signal: Stochastic RSI %K ({0:F2}) crossed below %D ({1:F2}) in overbought zone".format(
-                k_value, d_value))
+        if not self._has_prev:
+            self._has_prev = True
+            self._prev_k = k
+            self._prev_d = d
+            return
 
-        # Exit logic
-        if self.Position > 0 and k_value > 50:
-            # Exit long when %K rises above 50 (middle zone)
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exiting long position: Stochastic RSI %K reached {0:F2}".format(k_value))
-        elif self.Position < 0 and k_value < 50:
-            # Exit short when %K falls below 50 (middle zone)
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exiting short position: Stochastic RSI %K reached {0:F2}".format(k_value))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_k = k
+            self._prev_d = d
+            return
 
-        # Update previous values for next comparison
-        self._prev_k = k_value
-        self._prev_d = d_value
+        # %K crosses above %D in oversold zone (< 20)
+        if self._prev_k <= self._prev_d and k > d and k < 20 and self.Position <= 0:
+            self.BuyMarket()
+            self._cooldown = 5
+        # %K crosses below %D in overbought zone (> 80)
+        elif self._prev_k >= self._prev_d and k < d and k > 80 and self.Position >= 0:
+            self.SellMarket()
+            self._cooldown = 5
+
+        self._prev_k = k
+        self._prev_d = d
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return stochastic_rsi_cross_strategy()

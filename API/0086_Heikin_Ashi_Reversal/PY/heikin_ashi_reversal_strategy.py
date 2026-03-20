@@ -1,138 +1,117 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class heikin_ashi_reversal_strategy(Strategy):
     """
-    Heikin Ashi Reversal Strategy.
-    Enters long when Heikin-Ashi candles change from bearish to bullish.
-    Enters short when Heikin-Ashi candles change from bullish to bearish.
-
+    Heikin Ashi Reversal strategy.
+    Computes Heikin-Ashi candles from regular candles.
+    Enters long when HA switches from bearish to bullish.
+    Enters short when HA switches from bullish to bearish.
+    Uses SMA for exit confirmation.
     """
+
     def __init__(self):
-        """Initializes a new instance of the HeikinAshiReversalStrategy."""
         super(heikin_ashi_reversal_strategy, self).__init__()
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management") \
-            .SetRange(1.0, 3.0) \
-            .SetCanOptimize(True)
-
-        # Internal state
-        self._prevIsBullish = None
+        self._ha_open = 0.0
+        self._ha_close = 0.0
+        self._prev_bullish = None
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        """Type of candles to use."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage from entry price."""
-        return self._stopLoss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stopLoss.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(heikin_ashi_reversal_strategy, self).OnReseted()
-        self._prevIsBullish = None
+        self._ha_open = 0.0
+        self._ha_close = 0.0
+        self._prev_bullish = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(heikin_ashi_reversal_strategy, self).OnStarted(time)
 
-        # Enable position protection using stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss,
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
-        # Create subscription to candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        self._ha_open = 0.0
+        self._ha_close = 0.0
+        self._prev_bullish = None
+        self._cooldown = 0
 
-        # Bind candle handler
-        subscription.Bind(self.ProcessCandle).Start()
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
-        # Setup chart if available
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        """
-        Process new candle.
-
-        :param candle: New candle.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        # Compute Heikin-Ashi values
+        new_ha_close = (float(candle.OpenPrice) + float(candle.HighPrice) + float(candle.LowPrice) + float(candle.ClosePrice)) / 4.0
+
+        if self._ha_open == 0:
+            # First candle
+            new_ha_open = (float(candle.OpenPrice) + float(candle.ClosePrice)) / 2.0
+        else:
+            new_ha_open = (self._ha_open + self._ha_close) / 2.0
+
+        self._ha_open = new_ha_open
+        self._ha_close = new_ha_close
+
+        is_bullish = new_ha_close > new_ha_open
+
         if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_bullish = is_bullish
             return
 
-        # Calculate Heikin-Ashi candle values
-        if self._prevIsBullish is None:
-            # First candle - initialize HA values
-            ha_open = float((candle.OpenPrice + candle.ClosePrice) / 2)
-            ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
-            ha_high = Math.Max(float(candle.HighPrice), Math.Max(ha_open, ha_close))
-            ha_low = Math.Min(float(candle.LowPrice), Math.Min(ha_open, ha_close))
-
-            # Store the initial bullish/bearish state
-            self._prevIsBullish = ha_close > ha_open
+        if self._prev_bullish is None:
+            self._prev_bullish = is_bullish
             return
 
-        # Calculate previous HA open/close based on previous state
-        prev_ha_open = float(self._prevIsBullish and min(candle.OpenPrice, candle.ClosePrice) or max(candle.OpenPrice, candle.ClosePrice))
-        prev_ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_bullish = is_bullish
+            return
 
-        # Calculate current HA values
-        ha_open = (prev_ha_open + prev_ha_close) / 2
-        ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
-        ha_high = Math.Max(float(candle.HighPrice), Math.Max(ha_open, ha_close))
-        ha_low = Math.Min(float(candle.LowPrice), Math.Min(ha_open, ha_close))
+        # Reversal detection
+        bullish_reversal = self._prev_bullish == False and is_bullish
+        bearish_reversal = self._prev_bullish == True and not is_bullish
 
-        # Determine if current HA candle is bullish or bearish
-        is_bullish = ha_close > ha_open
+        sv = float(sma_val)
+        close = float(candle.ClosePrice)
+        cd = self._cooldown_bars.Value
 
-        # Check for trend reversal
-        bullish_reversal = (not self._prevIsBullish) and is_bullish
-        bearish_reversal = self._prevIsBullish and not is_bullish
+        if self.Position == 0 and bullish_reversal:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and bearish_reversal:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and close < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
-        # Long entry: Bullish reversal
-        if bullish_reversal and self.Position <= 0:
-            self.BuyMarket(self.Volume + abs(self.Position))
-            self.LogInfo("Long entry: Heikin-Ashi reversal from bearish to bullish")
-        # Short entry: Bearish reversal
-        elif bearish_reversal and self.Position >= 0:
-            self.SellMarket(self.Volume + abs(self.Position))
-            self.LogInfo("Short entry: Heikin-Ashi reversal from bullish to bearish")
-
-        # Update previous state
-        self._prevIsBullish = is_bullish
+        self._prev_bullish = is_bullish
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return heikin_ashi_reversal_strategy()

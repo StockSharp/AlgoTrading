@@ -1,276 +1,122 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class fibonacci_retracement_reversal_strategy(Strategy):
     """
     Fibonacci Retracement Reversal strategy.
-    The strategy identifies significant swings in price and looks for reversals at key Fibonacci retracement levels.
-    
+    Identifies swing high/low over a lookback window and enters at key Fibonacci retracement levels.
+    Bullish reversal at 61.8% retracement from swing low.
+    Bearish reversal at 61.8% retracement from swing high.
+    Uses SMA for exit signals.
     """
+
     def __init__(self):
         super(fibonacci_retracement_reversal_strategy, self).__init__()
-        
-        # Fibonacci retracement levels
-        self._fibLevels = [0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
-        
-        # Initialize strategy parameters
-        self._swingLookbackPeriodParam = self.Param("SwingLookbackPeriod", 20) \
-            .SetDisplay("Swing Lookback Period", "Number of candles to look back for swing detection", "Indicators")
-        
-        self._fibLevelBufferParam = self.Param("FibLevelBuffer", 0.5) \
-            .SetDisplay("Fib Level Buffer %", "Buffer percentage around Fibonacci levels", "Indicators")
-        
-        self._candleTypeParam = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        
-        self._stopLossPercentParam = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-        
-        # Variables to store swing high and low
-        self._swingHigh = None
-        self._swingLow = None
-        self._trendIsUp = False
-        
-        # Store recent candles for swing detection
-        self._recentCandles = []
+        self._swing_lookback = self.Param("SwingLookback", 20).SetDisplay("Swing Lookback", "Lookback for swing high/low", "Indicators")
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+
+        self._highs = []
+        self._lows = []
+        self._cooldown = 0
 
     @property
-    def SwingLookbackPeriod(self):
-        return self._swingLookbackPeriodParam.Value
-
-    @SwingLookbackPeriod.setter
-    def SwingLookbackPeriod(self, value):
-        self._swingLookbackPeriodParam.Value = value
-
-    @property
-    def FibLevelBuffer(self):
-        return self._fibLevelBufferParam.Value
-
-    @FibLevelBuffer.setter
-    def FibLevelBuffer(self, value):
-        self._fibLevelBufferParam.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleTypeParam.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleTypeParam.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercentParam.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercentParam.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """Resets internal state when the strategy is reset."""
         super(fibonacci_retracement_reversal_strategy, self).OnReseted()
-        self._swingHigh = None
-        self._swingLow = None
-        self._trendIsUp = False
-        self._recentCandles = []
+        self._highs = []
+        self._lows = []
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
         super(fibonacci_retracement_reversal_strategy, self).OnStarted(time)
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessCandle).Start()
+        self._highs = []
+        self._lows = []
+        self._cooldown = 0
 
-        # Setup chart visualization if available
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle):
-        """
-        Process each finished candle and execute trading logic.
-        """
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
+
+        # Track highs and lows
+        self._highs.append(float(candle.HighPrice))
+        self._lows.append(float(candle.LowPrice))
+
+        lb = self._swing_lookback.Value
+
+        if len(self._highs) > lb:
+            self._highs.pop(0)
+            self._lows.pop(0)
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Add current candle to the list and maintain list size
-        self._recentCandles.append(candle)
-        while len(self._recentCandles) > self.SwingLookbackPeriod:
-            self._recentCandles.pop(0)
-
-        # We need a sufficient number of candles to identify swings
-        if len(self._recentCandles) < 3:
+        if len(self._highs) < lb:
             return
 
-        # Update swing points if necessary
-        self.UpdateSwingPoints()
-
-        # Check for potential entry signals
-        self.CheckForEntrySignals(candle)
-
-    def UpdateSwingPoints(self):
-        """
-        Update swing high and low points based on recent candles.
-        """
-        # Get high and low from recent candles
-        if len(self._recentCandles) < 3:
+        if self._cooldown > 0:
+            self._cooldown -= 1
             return
 
-        candles = self._recentCandles
-        middleIndex = len(candles) // 2
+        # Find swing high and swing low from lookback
+        swing_high = max(self._highs)
+        swing_low = min(self._lows)
 
-        # Check if we have a new swing high or low
-        swingHighFound = False
-        swingLowFound = False
-
-        # Check for swing high - middle candle has the highest high
-        if len(candles) >= 3:
-            middleHigh = 0.0
-            middleLow = float('inf')
-
-            # Find the highest high and lowest low in the middle third of candles
-            start_idx = max(0, middleIndex - 1)
-            end_idx = min(len(candles) - 1, middleIndex + 1)
-            
-            for i in range(start_idx, end_idx + 1):
-                if candles[i].HighPrice > middleHigh:
-                    middleHigh = candles[i].HighPrice
-                
-                if candles[i].LowPrice < middleLow:
-                    middleLow = candles[i].LowPrice
-
-            # Check if this middle section forms a swing high/low
-            isHigher = True
-            isLower = True
-
-            # Check candles before middle
-            for i in range(0, max(0, middleIndex - 1)):
-                if candles[i].HighPrice >= middleHigh:
-                    isHigher = False
-                
-                if candles[i].LowPrice <= middleLow:
-                    isLower = False
-
-            # Check candles after middle
-            for i in range(min(len(candles) - 1, middleIndex + 2), len(candles)):
-                if candles[i].HighPrice >= middleHigh:
-                    isHigher = False
-                
-                if candles[i].LowPrice <= middleLow:
-                    isLower = False
-
-            # If we found a swing high or low
-            if isHigher and (self._swingHigh is None or middleHigh > self._swingHigh):
-                self._swingHigh = middleHigh
-                swingHighFound = True
-                self._trendIsUp = False  # After a swing high, the trend is down
-                self.LogInfo("New swing high found: {0}", self._swingHigh)
-
-            if isLower and (self._swingLow is None or middleLow < self._swingLow):
-                self._swingLow = middleLow
-                swingLowFound = True
-                self._trendIsUp = True  # After a swing low, the trend is up
-                self.LogInfo("New swing low found: {0}", self._swingLow)
-
-        # If we found both a new swing high and low, use the most recent one
-        if swingHighFound and swingLowFound and self._swingHigh is not None and self._swingLow is not None:
-            lastCandle = candles[-1]
-            self._trendIsUp = lastCandle.ClosePrice > ((self._swingHigh + self._swingLow) / 2)
-
-    def CheckForEntrySignals(self, candle):
-        """
-        Check for entry signals based on Fibonacci retracement levels.
-        """
-        # Need valid swing points to calculate Fibonacci levels
-        if (self._swingHigh is None or self._swingLow is None or 
-            self._swingHigh <= self._swingLow):
+        rng = swing_high - swing_low
+        if rng <= 0:
             return
 
-        swingHigh = self._swingHigh
-        swingLow = self._swingLow
-        currentPrice = float(candle.ClosePrice)
-        isBullish = candle.ClosePrice > candle.OpenPrice
-        isBearish = candle.ClosePrice < candle.OpenPrice
+        # Fibonacci 61.8% retracement levels
+        fib618_from_high = swing_high - rng * 0.618
+        fib618_from_low = swing_low + rng * 0.618
+        buffer = rng * 0.02  # 2% buffer
 
-        # Calculate Fibonacci retracement levels
-        range_val = swingHigh - swingLow
-        
-        # Check if price is near a Fibonacci retracement level
-        for fibLevel in self._fibLevels:
-            # Calculate price at this Fibonacci level
-            if self._trendIsUp:
-                # For uptrend, calculate retracement levels from swing low
-                levelPrice = swingLow + (range_val * fibLevel)
-            else:
-                # For downtrend, calculate retracement levels from swing high
-                levelPrice = swingHigh - (range_val * fibLevel)
+        close = float(candle.ClosePrice)
+        sv = float(sma_val)
+        cd = self._cooldown_bars.Value
 
-            # Calculate buffer around Fibonacci level
-            buffer = range_val * (self.FibLevelBuffer / 100)
-            
-            # Check if price is within buffer of the Fibonacci level
-            if abs(currentPrice - levelPrice) <= buffer:
-                # We're at a Fibonacci level - check if we should enter a position
-                self.LogInfo("Price {0} is near Fibonacci {1}% level {2} (buffer: {3})", 
-                           currentPrice, fibLevel*100, levelPrice, buffer)
+        is_bullish = candle.ClosePrice > candle.OpenPrice
+        is_bearish = candle.ClosePrice < candle.OpenPrice
 
-                # Look for long signal at 61.8% or 78.6% retracement in uptrend with bullish candle
-                if (self._trendIsUp and (abs(fibLevel - 0.618) < 0.001 or abs(fibLevel - 0.786) < 0.001) and 
-                    isBullish and self.Position <= 0):
-                    # Enter long position
-                    self.CancelActiveOrders()
-                    self.BuyMarket(self.Volume + abs(self.Position))
-                    self.LogInfo("Long entry at {0} near {1}% retracement level", 
-                               currentPrice, fibLevel*100)
-                    break
-
-                # Look for short signal at 61.8% or 78.6% retracement in downtrend with bearish candle
-                elif (not self._trendIsUp and (abs(fibLevel - 0.618) < 0.001 or abs(fibLevel - 0.786) < 0.001) and 
-                      isBearish and self.Position >= 0):
-                    # Enter short position
-                    self.CancelActiveOrders()
-                    self.SellMarket(self.Volume + abs(self.Position))
-                    self.LogInfo("Short entry at {0} near {1}% retracement level", 
-                               currentPrice, fibLevel*100)
-                    break
-
-        # Exit logic - exit when price reaches the central Fibonacci level (50%)
-        if self._trendIsUp:
-            centralLevel = swingLow + (range_val * 0.5)
-        else:
-            centralLevel = swingHigh - (range_val * 0.5)
-        
-        if self.Position > 0 and currentPrice >= centralLevel:
-            self.SellMarket(abs(self.Position))
-            self.LogInfo("Long exit at {0}, reached 50% level {1}", currentPrice, centralLevel)
-
-        elif self.Position < 0 and currentPrice <= centralLevel:
-            self.BuyMarket(abs(self.Position))
-            self.LogInfo("Short exit at {0}, reached 50% level {1}", currentPrice, centralLevel)
+        # Buy at 61.8% retracement from high (near swing low area) with bullish candle
+        if self.Position == 0 and abs(close - fib618_from_high) < buffer and is_bullish:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Sell at 61.8% retracement from low (near swing high area) with bearish candle
+        elif self.Position == 0 and abs(close - fib618_from_low) < buffer and is_bearish:
+            self.SellMarket()
+            self._cooldown = cd
+        # Exit long below SMA
+        elif self.Position > 0 and close < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        # Exit short above SMA
+        elif self.Position < 0 and close > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return fibonacci_retracement_reversal_strategy()

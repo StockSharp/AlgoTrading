@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import WilliamsR, SimpleMovingAverage
+from StockSharp.Algo.Indicators import WilliamsR, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
@@ -19,7 +19,6 @@ class williams_r_breakout_strategy(Strategy):
     """
 
     def __init__(self):
-        """Initialize williams_r_breakout_strategy."""
         super(williams_r_breakout_strategy, self).__init__()
 
         self._williamsRPeriod = self.Param("WilliamsRPeriod", 14) \
@@ -56,7 +55,6 @@ class williams_r_breakout_strategy(Strategy):
 
     @property
     def WilliamsRPeriod(self):
-        """Williams %R period."""
         return self._williamsRPeriod.Value
 
     @WilliamsRPeriod.setter
@@ -65,7 +63,6 @@ class williams_r_breakout_strategy(Strategy):
 
     @property
     def AvgPeriod(self):
-        """Period for Williams %R average calculation."""
         return self._avgPeriod.Value
 
     @AvgPeriod.setter
@@ -74,7 +71,6 @@ class williams_r_breakout_strategy(Strategy):
 
     @property
     def Multiplier(self):
-        """Standard deviation multiplier for breakout detection."""
         return self._multiplier.Value
 
     @Multiplier.setter
@@ -83,7 +79,6 @@ class williams_r_breakout_strategy(Strategy):
 
     @property
     def CandleType(self):
-        """Candle type for strategy."""
         return self._candleType.Value
 
     @CandleType.setter
@@ -92,7 +87,6 @@ class williams_r_breakout_strategy(Strategy):
 
     @property
     def StopLoss(self):
-        """Stop-loss percentage."""
         return self._stopLoss.Value
 
     @StopLoss.setter
@@ -127,6 +121,7 @@ class williams_r_breakout_strategy(Strategy):
             takeProfit=Unit(0, UnitTypes.Absolute),
             stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
+
         # Create chart area for visualization
         area = self.CreateChartArea()
         if area is not None:
@@ -145,8 +140,10 @@ class williams_r_breakout_strategy(Strategy):
         currentWilliamsR = float(williamsRValue)
 
         # Process Williams %R through average indicator
-        williamsRAvgValue = process_float(self._williamsRAverage, currentWilliamsR, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentWilliamsRAvg = float(williamsRAvgValue)
+        avgInput = DecimalIndicatorValue(self._williamsRAverage, currentWilliamsR, candle.ServerTime)
+        avgInput.IsFinal = True
+        avgResult = self._williamsRAverage.Process(avgInput)
+        currentWilliamsRAvg = float(avgResult)
 
         # For first values, just save and skip
         if self._prevWilliamsRValue == 0:
@@ -155,7 +152,7 @@ class williams_r_breakout_strategy(Strategy):
             return
 
         # Calculate standard deviation of Williams %R (simplified approach)
-        stdDev = Math.Abs(currentWilliamsR - currentWilliamsRAvg) * 1.5  # Simplified approximation
+        stdDev = abs(currentWilliamsR - currentWilliamsRAvg) * 1.5
 
         # Skip if indicators are not formed yet
         if not self._williamsRAverage.IsFormed:
@@ -171,23 +168,20 @@ class williams_r_breakout_strategy(Strategy):
 
         # Williams %R breakout detection
         if currentWilliamsR > currentWilliamsRAvg + self.Multiplier * stdDev and self.Position <= 0:
-            # Williams %R breaking out upward (but remember Williams %R is negative, less negative = bullish)
-            self.CancelActiveOrders()
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif currentWilliamsR < currentWilliamsRAvg - self.Multiplier * stdDev and self.Position >= 0:
-            # Williams %R breaking out downward (more negative = bearish)
-            self.CancelActiveOrders()
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
+            self.SellMarket(self.Volume + abs(self.Position))
         # Check for exit condition - Williams %R returns to average
         elif (self.Position > 0 and currentWilliamsR < currentWilliamsRAvg) or \
              (self.Position < 0 and currentWilliamsR > currentWilliamsRAvg):
-            # Exit position
-            self.ClosePosition()
+            if self.Position > 0:
+                self.SellMarket(abs(self.Position))
+            elif self.Position < 0:
+                self.BuyMarket(abs(self.Position))
 
         # Update previous values
         self._prevWilliamsRValue = currentWilliamsR
         self._prevWilliamsRAvgValue = currentWilliamsRAvg
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return williams_r_breakout_strategy()

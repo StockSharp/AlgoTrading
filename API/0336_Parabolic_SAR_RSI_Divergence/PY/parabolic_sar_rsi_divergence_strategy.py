@@ -2,43 +2,48 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 
 
 class parabolic_sar_rsi_divergence_strategy(Strategy):
-    """Strategy that trades based on Parabolic SAR signals when RSI shows divergence from price."""
+    """
+    Strategy that trades Parabolic SAR trend direction with RSI divergence-style reversals.
+    """
 
     def __init__(self):
         super(parabolic_sar_rsi_divergence_strategy, self).__init__()
 
-        # Strategy parameter: Parabolic SAR acceleration factor.
         self._sar_acceleration_factor = self.Param("SarAccelerationFactor", 0.02) \
-            .SetRange(0.01, 0.25) \
             .SetDisplay("SAR Acceleration Factor", "Initial acceleration factor for Parabolic SAR", "Indicator Settings")
 
-        # Strategy parameter: Parabolic SAR maximum acceleration factor.
         self._sar_max_acceleration_factor = self.Param("SarMaxAccelerationFactor", 0.2) \
-            .SetRange(0.1, 0.5) \
             .SetDisplay("SAR Max Acceleration Factor", "Maximum acceleration factor for Parabolic SAR", "Indicator Settings")
 
-        # Strategy parameter: RSI period.
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings")
 
-        # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
+            .SetDisplay("RSI Oversold", "RSI oversold level for bullish reversal detection", "Indicator Settings")
+
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
+            .SetDisplay("RSI Overbought", "RSI overbought level for bearish reversal detection", "Indicator Settings")
+
+        self._cooldown_bars = self.Param("CooldownBars", 24) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Trading")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_rsi = 0
-        self._prev_price = 0
-        self._divergence_detected = False
+        self._prev_rsi = 0.0
+        self._prev_price = 0.0
+        self._has_prev_values = False
+        self._cooldown_remaining = 0
 
     @property
     def SarAccelerationFactor(self):
@@ -65,6 +70,30 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
         self._rsi_period.Value = value
 
     @property
+    def RsiOversold(self):
+        return self._rsi_oversold.Value
+
+    @RsiOversold.setter
+    def RsiOversold(self, value):
+        self._rsi_oversold.Value = value
+
+    @property
+    def RsiOverbought(self):
+        return self._rsi_overbought.Value
+
+    @RsiOverbought.setter
+    def RsiOverbought(self, value):
+        self._rsi_overbought.Value = value
+
+    @property
+    def CooldownBars(self):
+        return self._cooldown_bars.Value
+
+    @CooldownBars.setter
+    def CooldownBars(self, value):
+        self._cooldown_bars.Value = value
+
+    @property
     def CandleType(self):
         return self._candle_type.Value
 
@@ -73,92 +102,77 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
         self._candle_type.Value = value
 
     def GetWorkingSecurities(self):
-        """!! REQUIRED!!"""
         return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(parabolic_sar_rsi_divergence_strategy, self).OnReseted()
-        self._prev_rsi = 0
-        self._prev_price = 0
-        self._divergence_detected = False
+        self._prev_rsi = 0.0
+        self._prev_price = 0.0
+        self._has_prev_values = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(parabolic_sar_rsi_divergence_strategy, self).OnStarted(time)
 
-        # Create Parabolic SAR indicator
-        parabolic_sar = ParabolicSar()
-        parabolic_sar.Acceleration = self.SarAccelerationFactor
-        parabolic_sar.AccelerationMax = self.SarMaxAccelerationFactor
-
-        # Create RSI indicator
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod
 
-        # Create subscription for candles
         subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(rsi, self.ProcessCandle).Start()
 
-        # Bind indicators to subscription and start
-        subscription.Bind(parabolic_sar, rsi, self.ProcessSignals).Start()
-
-        # Add chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, parabolic_sar)
-            self.DrawIndicator(area, rsi)
             self.DrawOwnTrades(area)
+            rsi_area = self.CreateChartArea()
+            if rsi_area is not None:
+                self.DrawIndicator(rsi_area, rsi)
 
-    def ProcessSignals(self, candle, sar_value, rsi_value):
-        # Skip unfinished candles
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
+
+    def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Check for RSI divergence
-        self.CheckRsiDivergence(candle.ClosePrice, rsi_value)
+        rsi_val = float(rsi_value)
+        close_price = float(candle.ClosePrice)
 
-        # Trading logic based on Parabolic SAR and RSI divergence
-        if self._divergence_detected:
-            is_below_sar = candle.ClosePrice < sar_value
+        if not self._has_prev_values:
+            self._prev_price = close_price
+            self._prev_rsi = rsi_val
+            self._has_prev_values = True
+            return
 
-            # Bullish divergence (price falling but RSI rising) and price above SAR
-            if not is_below_sar and self._prev_price > candle.ClosePrice and self._prev_rsi < rsi_value and self.Position <= 0:
-                self.LogInfo("Buy signal: Bullish divergence with price ({0}) above SAR ({1})".format(candle.ClosePrice, sar_value))
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                self._divergence_detected = False
-            # Bearish divergence (price rising but RSI falling) and price below SAR
-            elif is_below_sar and self._prev_price < candle.ClosePrice and self._prev_rsi > rsi_value and self.Position >= 0:
-                self.LogInfo("Sell signal: Bearish divergence with price ({0}) below SAR ({1})".format(candle.ClosePrice, sar_value))
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self._divergence_detected = False
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Exit logic based on SAR flips
-        if (self.Position > 0 and candle.ClosePrice < sar_value) or (self.Position < 0 and candle.ClosePrice > sar_value):
-            self.LogInfo("Exit signal: Price crossed SAR in opposite direction. Price: {0}, SAR: {1}".format(candle.ClosePrice, sar_value))
-            self.ClosePosition()
+        bullish_divergence = close_price < self._prev_price and rsi_val > self._prev_rsi
+        bearish_divergence = close_price > self._prev_price and rsi_val < self._prev_rsi
+        bullish_reversal = self._prev_rsi < self.RsiOversold and rsi_val >= self.RsiOversold
+        bearish_reversal = self._prev_rsi > self.RsiOverbought and rsi_val <= self.RsiOverbought
+        can_trade = self._cooldown_remaining == 0
 
-        # Store previous values for next comparison
-        self._prev_rsi = rsi_value
-        self._prev_price = float(candle.ClosePrice)
+        if can_trade and (bullish_divergence or bullish_reversal) and self.Position <= 0:
+            vol = self.Volume
+            if self.Position < 0:
+                vol = self.Volume + abs(self.Position)
+            self.BuyMarket(vol)
+            self._cooldown_remaining = self.CooldownBars
+        elif can_trade and (bearish_divergence or bearish_reversal) and self.Position >= 0:
+            vol = self.Volume
+            if self.Position > 0:
+                vol = self.Volume + abs(self.Position)
+            self.SellMarket(vol)
+            self._cooldown_remaining = self.CooldownBars
 
-    def CheckRsiDivergence(self, current_price, current_rsi):
-        # If we have previous values to compare
-        if self._prev_price != 0 and self._prev_rsi != 0:
-            # Bullish divergence: price making lower lows but RSI making higher lows
-            bullish_divergence = current_price < self._prev_price and current_rsi > self._prev_rsi
-
-            # Bearish divergence: price making higher highs but RSI making lower highs
-            bearish_divergence = current_price > self._prev_price and current_rsi < self._prev_rsi
-
-            if bullish_divergence or bearish_divergence:
-                self._divergence_detected = True
-                self.LogInfo("Divergence detected: {0}. Price: {1}->{2}, RSI: {3}->{4}".format(
-                    "Bullish" if bullish_divergence else "Bearish",
-                    self._prev_price, current_price, self._prev_rsi, current_rsi))
+        self._prev_price = close_price
+        self._prev_rsi = rsi_val
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return parabolic_sar_rsi_divergence_strategy()

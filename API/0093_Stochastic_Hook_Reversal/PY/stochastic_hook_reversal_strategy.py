@@ -3,210 +3,106 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import StochasticOscillator, StochasticOscillatorValue
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class stochastic_hook_reversal_strategy(Strategy):
     """
-    Stochastic Hook Reversal Strategy.
-    Enters long when %K forms an upward hook from oversold conditions.
-    Enters short when %K forms a downward hook from overbought conditions.
-
+    Stochastic Hook Reversal strategy.
+    Enters long when %K hooks up from oversold zone.
+    Enters short when %K hooks down from overbought zone.
+    Exits when %K reaches neutral zone.
     """
 
     def __init__(self):
         super(stochastic_hook_reversal_strategy, self).__init__()
+        self._k_period = self.Param("KPeriod", 14).SetDisplay("K Period", "%K period", "Stochastic")
+        self._d_period = self.Param("DPeriod", 3).SetDisplay("D Period", "%D period", "Stochastic")
+        self._oversold_level = self.Param("OversoldLevel", 20).SetDisplay("Oversold", "Oversold level", "Stochastic")
+        self._overbought_level = self.Param("OverboughtLevel", 80).SetDisplay("Overbought", "Overbought level", "Stochastic")
+        self._exit_level = self.Param("ExitLevel", 50).SetDisplay("Exit Level", "Neutral exit zone", "Stochastic")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._stoch_period = self.Param("StochPeriod", 14) \
-            .SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Stochastic Settings")
-
-        self._k_period = self.Param("KPeriod", 3) \
-            .SetDisplay("K Period", "%K Period for Stochastic calculation", "Stochastic Settings")
-
-        self._d_period = self.Param("DPeriod", 3) \
-            .SetDisplay("D Period", "%D Period for Stochastic calculation", "Stochastic Settings")
-
-        self._oversold_level = self.Param("OversoldLevel", 20) \
-            .SetDisplay("Oversold Level", "Oversold level for Stochastic", "Stochastic Settings")
-
-        self._overbought_level = self.Param("OverboughtLevel", 80) \
-            .SetDisplay("Overbought Level", "Overbought level for Stochastic", "Stochastic Settings")
-
-        self._exit_level = self.Param("ExitLevel", 50) \
-            .SetDisplay("Exit Level", "Exit level for Stochastic (neutral zone)", "Stochastic Settings")
-
-        self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Previous %K value
-        self._prev_k = 0.0
+        self._prev_k = None
+        self._cooldown = 0
 
     @property
-    def StochPeriod(self):
-        """Period for Stochastic calculation."""
-        return self._stoch_period.Value
-
-    @StochPeriod.setter
-    def StochPeriod(self, value):
-        self._stoch_period.Value = value
-
-    @property
-    def KPeriod(self):
-        """%K Period for Stochastic calculation."""
-        return self._k_period.Value
-
-    @KPeriod.setter
-    def KPeriod(self, value):
-        self._k_period.Value = value
-
-    @property
-    def DPeriod(self):
-        """%D Period for Stochastic calculation."""
-        return self._d_period.Value
-
-    @DPeriod.setter
-    def DPeriod(self, value):
-        self._d_period.Value = value
-
-    @property
-    def OversoldLevel(self):
-        """Oversold level for Stochastic."""
-        return self._oversold_level.Value
-
-    @OversoldLevel.setter
-    def OversoldLevel(self, value):
-        self._oversold_level.Value = value
-
-    @property
-    def OverboughtLevel(self):
-        """Overbought level for Stochastic."""
-        return self._overbought_level.Value
-
-    @OverboughtLevel.setter
-    def OverboughtLevel(self, value):
-        self._overbought_level.Value = value
-
-    @property
-    def ExitLevel(self):
-        """Exit level for Stochastic (neutral zone)."""
-        return self._exit_level.Value
-
-    @ExitLevel.setter
-    def ExitLevel(self, value):
-        self._exit_level.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(stochastic_hook_reversal_strategy, self).OnReseted()
-        self._prev_k = 0.0
+        self._prev_k = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
         super(stochastic_hook_reversal_strategy, self).OnStarted(time)
 
-        # Enable position protection using stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss
-        )
+        self._prev_k = None
+        self._cooldown = 0
 
-        # Create Stochastic oscillator
-        stoch = StochasticOscillator()
-        stoch.K.Length = self.KPeriod
-        stoch.D.Length = self.DPeriod
+        stochastic = StochasticOscillator()
+        stochastic.K.Length = self._k_period.Value
+        stochastic.D.Length = self._d_period.Value
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(stochastic, self._process_candle).Start()
 
-        # Bind indicator and process candles
-        subscription.BindEx(stoch, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, stoch)
+            self.DrawIndicator(area, stochastic)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, stoch_value):
-        """
-        Process candle with Stochastic values.
-
-        :param candle: Candle.
-        :param stoch_value: Stochastic %K value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, stoch_iv):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not stoch_iv.IsFormed:
             return
 
-        # Extract %K value
-        if stoch_value.K is None:
-            return
-        stoch_k = float(stoch_value.K)
-
-        # If this is the first calculation, just store the value
-        if self._prev_k == 0:
-            self._prev_k = stoch_k
+        k_val = stoch_iv.K
+        if k_val is None:
             return
 
-        # Check for Stochastic hooks
-        oversold_hook_up = self._prev_k < self.OversoldLevel and stoch_k > self._prev_k
-        overbought_hook_down = self._prev_k > self.OverboughtLevel and stoch_k < self._prev_k
+        kv = float(k_val)
 
-        # Long entry: %K forms an upward hook from oversold
-        if oversold_hook_up and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Long entry: Stochastic %K upward hook from oversold ({0} -> {1})", self._prev_k, stoch_k)
-        # Short entry: %K forms a downward hook from overbought
-        elif overbought_hook_down and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Short entry: Stochastic %K downward hook from overbought ({0} -> {1})", self._prev_k, stoch_k)
+        if self._prev_k is None:
+            self._prev_k = kv
+            return
 
-        # Exit conditions based on Stochastic reaching neutral zone
-        if stoch_k > self.ExitLevel and self.Position < 0:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: Stochastic %K reached neutral zone ({0} > {1})", stoch_k, self.ExitLevel)
-        elif stoch_k < self.ExitLevel and self.Position > 0:
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit long: Stochastic %K reached neutral zone ({0} < {1})", stoch_k, self.ExitLevel)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_k = kv
+            return
 
-        # Update previous K value
-        self._prev_k = stoch_k
+        cd = self._cooldown_bars.Value
+        oversold = self._oversold_level.Value
+        overbought = self._overbought_level.Value
+        exit_lvl = self._exit_level.Value
+
+        # Hook up from oversold
+        oversold_hook_up = self._prev_k < oversold and kv > self._prev_k
+        # Hook down from overbought
+        overbought_hook_down = self._prev_k > overbought and kv < self._prev_k
+
+        if self.Position == 0 and oversold_hook_up:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and overbought_hook_down:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and kv < exit_lvl:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and kv > exit_lvl:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_k = kv
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return stochastic_hook_reversal_strategy()

@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class thirty_minute_candle_strategy(Strategy):
     """Close vs previous close with EMA trend filter and cooldown."""
@@ -16,7 +14,7 @@ class thirty_minute_candle_strategy(Strategy):
         super(thirty_minute_candle_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 20).SetGreaterThanZero().SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 15).SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

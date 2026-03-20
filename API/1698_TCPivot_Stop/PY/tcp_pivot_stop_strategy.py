@@ -6,14 +6,12 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class tcp_pivot_stop_strategy(Strategy):
     """Pivot-based breakout with support/resistance exits."""
     def __init__(self):
         super(tcp_pivot_stop_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Time frame", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Time frame", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

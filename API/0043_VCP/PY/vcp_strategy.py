@@ -1,164 +1,111 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest, Lowest
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class vcp_strategy(Strategy):
     """
     Volume Contraction Pattern (VCP) strategy.
-    The strategy looks for narrowing price ranges and breakouts after contraction.
-    Long entry: Range contraction followed by a break above previous high
-    Short entry: Range contraction followed by a break below previous low
-    
+    Looks for narrowing volatility (ATR declining) and breakouts above/below MA bands.
     """
+
     def __init__(self):
         super(vcp_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._prevCandleRange = 0
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
+        self._atr_period = self.Param("AtrPeriod", 14).SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetDisplay("ATR Multiplier", "ATR multiplier for breakout band", "Entry")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._maPeriod = self.Param("MAPeriod", 20) \
-            .SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-
-        self._lookbackPeriod = self.Param("LookbackPeriod", 20) \
-            .SetDisplay("Lookback Period", "Period for calculating breakout levels", "Strategy Parameters")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
+        self._prev_atr = 0.0
+        self._contraction_count = 0
+        self._cooldown = 0
 
     @property
-    def MAPeriod(self):
-        return self._maPeriod.Value
-
-    @MAPeriod.setter
-    def MAPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        return self._lookbackPeriod.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookbackPeriod.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(vcp_strategy, self).OnReseted()
-        self._prevCandleRange = 0
+        self._prev_atr = 0.0
+        self._contraction_count = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(vcp_strategy, self).OnStarted(time)
 
-        # Create indicators
+        self._prev_atr = 0.0
+        self._contraction_count = 0
+        self._cooldown = 0
+
         ma = SimpleMovingAverage()
-        ma.Length = self.MAPeriod
-        
-        highest = Highest()
-        highest.Length = self.LookbackPeriod
-        
-        lowest = Lowest()
-        lowest.Length = self.LookbackPeriod
+        ma.Length = self._ma_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(highest, lowest, ma, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ma, atr, self._process_candle).Start()
 
-        # Configure protection
-        self.StartProtection(
-            takeProfit=Unit(3, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, highestValue, lowestValue, maValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param highestValue: The highest price value.
-        :param lowestValue: The lowest price value.
-        :param maValue: The Moving Average value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Calculate current candle range
-        currentCandleRange = float(candle.HighPrice - candle.LowPrice)
-        
-        # If first candle, just store the range and return
-        if self._prevCandleRange == 0:
-            self._prevCandleRange = currentCandleRange
+        av = float(atr_val)
+
+        if self._prev_atr == 0:
+            self._prev_atr = av
             return
 
-        # Check for range contraction (current range smaller than previous range)
-        isContraction = currentCandleRange < self._prevCandleRange
-        
-        # Log current values
-        self.LogInfo("Candle Range: {0}, Previous Range: {1}, Contraction: {2}".format(
-            currentCandleRange, self._prevCandleRange, isContraction))
-        self.LogInfo("Highest: {0}, Lowest: {1}, MA: {2}".format(highestValue, lowestValue, maValue))
+        # Track contraction
+        if av < self._prev_atr:
+            self._contraction_count += 1
+        else:
+            self._contraction_count = 0
 
-        # Trading logic:
-        if isContraction:
-            # Long: Contraction and breakout above highest high
-            if candle.ClosePrice > highestValue and self.Position <= 0:
-                self.LogInfo("Buy Signal: Contraction and Price ({0}) > Highest ({1})".format(
-                    candle.ClosePrice, highestValue))
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            # Short: Contraction and breakout below lowest low
-            elif candle.ClosePrice < lowestValue and self.Position >= 0:
-                self.LogInfo("Sell Signal: Contraction and Price ({0}) < Lowest ({1})".format(
-                    candle.ClosePrice, lowestValue))
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        
-        # Exit logic: Price crosses MA
-        if self.Position > 0 and candle.ClosePrice < maValue:
-            self.LogInfo("Exit Long: Price ({0}) < MA ({1})".format(candle.ClosePrice, maValue))
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and candle.ClosePrice > maValue:
-            self.LogInfo("Exit Short: Price ({0}) > MA ({1})".format(candle.ClosePrice, maValue))
-            self.BuyMarket(Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_atr = av
+            return
 
-        # Store current range for next comparison
-        self._prevCandleRange = currentCandleRange
+        mv = float(ma_val)
+        mult = float(self._atr_multiplier.Value)
+        close = float(candle.ClosePrice)
+        cd = self._cooldown_bars.Value
+
+        is_contracted = self._contraction_count >= 3
+        upper_band = mv + av * mult
+        lower_band = mv - av * mult
+
+        if self.Position == 0 and is_contracted:
+            if close > upper_band:
+                self.BuyMarket()
+                self._cooldown = cd
+                self._contraction_count = 0
+            elif close < lower_band:
+                self.SellMarket()
+                self._cooldown = cd
+                self._contraction_count = 0
+        elif self.Position > 0 and close < mv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > mv:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_atr = av
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return vcp_strategy()

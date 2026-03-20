@@ -1,148 +1,117 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, ICandleMessage
-from StockSharp.Algo.Indicators import SimpleMovingAverage, Lowest
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class spring_reversal_strategy(Strategy):
     """
-    Strategy based on Spring Reversal pattern, which occurs when price makes a new low below support
-    but immediately reverses and closes above the support level, indicating a bullish reversal.
+    Spring Reversal strategy (Wyckoff).
+    Enters long when price dips below recent support then closes back above it.
+    Enters short when price spikes above recent resistance then closes back below it.
+    Uses SMA for exit confirmation.
     """
 
     def __init__(self):
         super(spring_reversal_strategy, self).__init__()
+        self._lookback_period = self.Param("LookbackPeriod", 20).SetDisplay("Lookback", "Period for support/resistance", "Range")
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Period for SMA exit", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Strategy parameters
-        self._candle_type_param = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
-        self._lookback_period_param = self.Param("LookbackPeriod", 20) \
-            .SetDisplay("Lookback Period", "Period for support level detection", "Range") \
-            .SetRange(5, 50)
-        self._ma_period_param = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Period for moving average calculation", "Trend") \
-            .SetRange(5, 50)
-        self._stop_loss_percent_param = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection") \
-            .SetRange(0.5, 3.0)
-
-        # Indicators
-        self._ma = None
-        self._lowest = None
-        self._last_lowest_value = 0
+        self._lows = []
+        self._highs = []
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        """Candle type and timeframe for the strategy."""
-        return self._candle_type_param.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type_param.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        """Period for low range detection."""
-        return self._lookback_period_param.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookback_period_param.Value = value
-
-    @property
-    def MaPeriod(self):
-        """Period for moving average calculation."""
-        return self._ma_period_param.Value
-
-    @MaPeriod.setter
-    def MaPeriod(self, value):
-        self._ma_period_param.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percentage from entry price."""
-        return self._stop_loss_percent_param.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent_param.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(spring_reversal_strategy, self).OnReseted()
-        self._last_lowest_value = 0
+        self._lows = []
+        self._highs = []
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
         super(spring_reversal_strategy, self).OnStarted(time)
-        # Initialize indicators
-        self._ma = SimpleMovingAverage()
-        self._ma.Length = self.MaPeriod
-        self._lowest = Lowest()
-        self._lowest.Length = self.LookbackPeriod
 
-        # Create and setup subscription for candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        self._lows = []
+        self._highs = []
+        self._cooldown = 0
 
-        # Bind indicators and processor
-        subscription.Bind(self._ma, self._lowest, self.ProcessCandle).Start()
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
-        # Enable stop-loss protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart if available
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ma)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, ma_value, lowest_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Store the last lowest value
-        self._last_lowest_value = lowest_value
+        lookback = self._lookback_period.Value
 
-        # Determine candle characteristics
-        is_bullish = candle.ClosePrice > candle.OpenPrice
-        pierces_below_support = candle.LowPrice < self._last_lowest_value
-        close_above_support = candle.ClosePrice > self._last_lowest_value
+        # Maintain rolling window of lows and highs
+        self._lows.append(float(candle.LowPrice))
+        self._highs.append(float(candle.HighPrice))
+        if len(self._lows) > lookback + 1:
+            self._lows.pop(0)
+            self._highs.pop(0)
 
-        # Spring pattern:
-        # 1. Price dips below recent low (support level)
-        # 2. But closes above the support level (bullish rejection)
-        if pierces_below_support and close_above_support and is_bullish:
-            # Enter long position only if we're not already long
-            if self.Position <= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
+        if len(self._lows) < lookback + 1:
+            return
 
-                self.LogInfo("Spring Reversal detected. Support level: {0}, Low: {1}. Long entry at {2}".format(
-                    self._last_lowest_value, candle.LowPrice, candle.ClosePrice))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        # Exit conditions
-        if self.Position > 0:
-            # Exit when price rises above the moving average (take profit)
-            if candle.ClosePrice > ma_value:
-                self.SellMarket(Math.Abs(self.Position))
+        cd = self._cooldown_bars.Value
+        sv = float(sma_val)
 
-                self.LogInfo("Exit signal: Price above MA. Closed long position at {0}".format(candle.ClosePrice))
+        # Find support (lowest low) and resistance (highest high) of previous N bars
+        support = min(self._lows[:-1])
+        resistance = max(self._highs[:-1])
+
+        # Spring: price dips below support but closes above it (bullish)
+        is_spring = (
+            float(candle.LowPrice) < support and
+            float(candle.ClosePrice) > support and
+            candle.ClosePrice > candle.OpenPrice
+        )
+
+        # Upthrust: price spikes above resistance but closes below it (bearish)
+        is_upthrust = (
+            float(candle.HighPrice) > resistance and
+            float(candle.ClosePrice) < resistance and
+            candle.ClosePrice < candle.OpenPrice
+        )
+
+        if self.Position == 0 and is_spring:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and is_upthrust:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and float(candle.ClosePrice) < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and float(candle.ClosePrice) > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return spring_reversal_strategy()

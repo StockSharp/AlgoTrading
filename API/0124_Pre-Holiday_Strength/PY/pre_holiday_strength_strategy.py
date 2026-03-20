@@ -3,152 +3,100 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, ICandleMessage, CandleStates
+from System import TimeSpan, DayOfWeek
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class pre_holiday_strength_strategy(Strategy):
     """
-    Implementation of Pre-Holiday Strength trading strategy.
-    The strategy enters long position before a holiday and exits after the holiday.
-
+    Pre-Holiday Strength trading strategy.
+    Buys on Thursday (pre-weekend strength effect) if above MA, exits Monday.
+    Shorts on Tuesday if below MA, covers Wednesday.
     """
 
     def __init__(self):
         super(pre_holiday_strength_strategy, self).__init__()
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown_bars = self.Param("CooldownBars", 30).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Dictionary of common holidays (month, day)
-        self._holidays = {
-            # US Holidays (approximate dates, some holidays like Easter vary)
-            (1, 1): "New Year's Day",
-            (7, 4): "Independence Day",
-            (12, 25): "Christmas",
-            (11, 25): "Thanksgiving",  # Approximate (4th Thursday in November)
-            (5, 31): "Memorial Day",  # Approximate (last Monday in May)
-            (9, 4): "Labor Day",      # Approximate (first Monday in September)
-            # Add more holidays as needed
-        }
-
-        self._inPreHolidayPosition = False
-
-        # Initialize strategy parameters
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
-            .SetNotNegative() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
-
-        self._maPeriod = self.Param("MaPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-
-        self._candleType = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown = 0
+        self._prev_day_of_week = DayOfWeek.Sunday
+        self._entered_this_day = False
 
     @property
-    def StopLossPercent(self):
-        """Stop loss percentage from entry price."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def MaPeriod(self):
-        """Moving average period."""
-        return self._maPeriod.Value
-
-    @MaPeriod.setter
-    def MaPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(pre_holiday_strength_strategy, self).OnReseted()
-        self._inPreHolidayPosition = False
+        self._cooldown = 0
+        self._prev_day_of_week = DayOfWeek.Sunday
+        self._entered_this_day = False
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(pre_holiday_strength_strategy, self).OnStarted(time)
 
-        # Create a simple moving average indicator
+        self._cooldown = 0
+        self._prev_day_of_week = DayOfWeek.Sunday
+        self._entered_this_day = False
+
         sma = SimpleMovingAverage()
-        sma.Length = self.MaPeriod
+        sma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(sma, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, ma_value):
-        """Process candle and execute trading logic"""
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        date = candle.OpenTime
-        tomorrow = date.AddDays(1)
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
+        day_of_week = candle.OpenTime.DayOfWeek
+        cd = self._cooldown_bars.Value
 
-        isTomorrowHoliday = self.IsHoliday(tomorrow)
-        isToday = self.IsHoliday(date)
+        # Reset entry flag on new day
+        if day_of_week != self._prev_day_of_week:
+            self._entered_this_day = False
 
-        # Enter position one day before holiday
-        if (isTomorrowHoliday and not self._inPreHolidayPosition and
-                candle.ClosePrice > ma_value and self.Position <= 0):
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_day_of_week = day_of_week
+            return
 
-            self._inPreHolidayPosition = True
+        # Pre-weekend buy: Thursday if above MA
+        if day_of_week == DayOfWeek.Thursday and not self._entered_this_day and self.Position == 0 and close > ma:
+            self.BuyMarket()
+            self._cooldown = cd
+            self._entered_this_day = True
+        # Exit on Monday
+        elif day_of_week == DayOfWeek.Monday and self.Position > 0 and not self._entered_this_day:
+            self.SellMarket()
+            self._cooldown = cd
+            self._entered_this_day = True
+        # Short on Tuesday if below MA
+        elif day_of_week == DayOfWeek.Tuesday and not self._entered_this_day and self.Position == 0 and close < ma:
+            self.SellMarket()
+            self._cooldown = cd
+            self._entered_this_day = True
+        # Cover short on Wednesday
+        elif day_of_week == DayOfWeek.Wednesday and self.Position < 0 and not self._entered_this_day:
+            self.BuyMarket()
+            self._cooldown = cd
+            self._entered_this_day = True
 
-            holidayName = self.GetHolidayName(tomorrow)
-            self.LogInfo(
-                "Buy signal before holiday {0}: Date={1:yyyy-MM-dd}, Price={2}, MA={3}, Volume={4}".format(
-                    holidayName, date, candle.ClosePrice, ma_value, volume))
-
-        # Exit position after holiday
-        elif self._inPreHolidayPosition and isToday and self.Position > 0:
-            self.ClosePosition()
-
-            self._inPreHolidayPosition = False
-
-            holidayName = self.GetHolidayName(date)
-            self.LogInfo(
-                "Closing position after holiday {0}: Date={1:yyyy-MM-dd}, Position={2}".format(
-                    holidayName, date, self.Position))
-
-    def IsHoliday(self, date):
-        return (date.Month, date.Day) in self._holidays
-
-    def GetHolidayName(self, date):
-        if (date.Month, date.Day) in self._holidays:
-            return self._holidays[(date.Month, date.Day)]
-        return "Unknown Holiday"
+        self._prev_day_of_week = day_of_week
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return pre_holiday_strength_strategy()

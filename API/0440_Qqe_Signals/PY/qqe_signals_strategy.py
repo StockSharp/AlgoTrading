@@ -3,163 +3,107 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Array, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class qqe_signals_strategy(Strategy):
-    """QQE Signals strategy based on smoothed RSI bands.
-
-    Implements the Quantitative Qualitative Estimation technique to build
-    dynamic bands around RSI. Trades when RSI crosses the bands, signalling
-    potential trend shifts.
+    """QQE Signals Strategy.
+    Uses RSI with threshold crossover for trade signals.
+    Buys when RSI crosses above upper threshold.
+    Sells when RSI crosses below lower threshold.
+    Exits at the 50 midline crossover.
     """
 
     def __init__(self):
         super(qqe_signals_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)).SetDisplay(
-            "Candle type", "Candle type for strategy calculation.", "General"
-        )
-        self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay(
-            "RSI Length", "RSI period", "QQE"
-        )
-        self._rsi_smoothing = self.Param("RsiSmoothing", 5).SetDisplay(
-            "RSI Smoothing", "RSI smoothing period", "QQE"
-        )
-        self._qqe_factor = self.Param("QqeFactor", 4.238).SetDisplay(
-            "Fast QQE Factor", "QQE factor", "QQE"
-        )
-        self._threshold = self.Param("Threshold", 10.0).SetDisplay(
-            "Threshold", "Threshold value", "QQE"
-        )
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
+        self._rsi_period = self.Param("RsiPeriod", 14) \
+            .SetDisplay("RSI Length", "RSI period", "QQE")
+        self._upper_threshold = self.Param("UpperThreshold", 60.0) \
+            .SetDisplay("Upper Threshold", "Bullish threshold", "QQE")
+        self._lower_threshold = self.Param("LowerThreshold", 40.0) \
+            .SetDisplay("Lower Threshold", "Bearish threshold", "QQE")
+        self._cooldown_bars = self.Param("CooldownBars", 10) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
-        self._rsi = None
-        self._rsi_ma = None
-        self._atr_rsi = None
-        self._ma_atr_rsi = None
-        self._dar = None
-
-        # Store previous values instead of using GetValue()
-        self._prev_rsi_ma = 0.0
-        self._prev_rs_index = 0.0
-        self._longband = 0.0
-        self._shortband = 0.0
-        self._prev_longband = 0.0
-        self._prev_shortband = 0.0
-        self._trend = 0
-        self._qqe_xlong = 0
-        self._qqe_xshort = 0
+        self._prev_rsi = 0.0
+        self._cooldown_remaining = 0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(qqe_signals_strategy, self).OnReseted()
-        self._prev_rsi_ma = 0.0
-        self._prev_rs_index = 0.0
-        self._longband = 0.0
-        self._shortband = 0.0
-        self._prev_longband = 0.0
-        self._prev_shortband = 0.0
-        self._trend = 0
-        self._qqe_xlong = 0
-        self._qqe_xshort = 0
+        self._prev_rsi = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(qqe_signals_strategy, self).OnStarted(time)
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self._rsi_period.Value
-        self._rsi_ma = ExponentialMovingAverage()
-        self._rsi_ma.Length = self._rsi_smoothing.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_period.Value
 
-        wilders = self._rsi_period.Value * 2 - 1
-        self._atr_rsi = ExponentialMovingAverage()
-        self._atr_rsi.Length = 1
-        self._ma_atr_rsi = ExponentialMovingAverage()
-        self._ma_atr_rsi.Length = wilders
-        self._dar = ExponentialMovingAverage()
-        self._dar.Length = wilders
-
-        sub = self.SubscribeCandles(self.candle_type)
-        sub.Bind(self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(rsi, self.OnProcess).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, sub)
+            self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
+    def OnProcess(self, candle, rsi_val):
+        if candle.State != CandleStates.Finished:
+            return
+
+        rsi = float(rsi_val)
+
         if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_rsi = rsi
             return
 
-        rsi_val = process_candle(self._rsi, candle)
-        if not self._rsi.IsFormed:
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self._prev_rsi = rsi
             return
-        rsi_ma_val = process_float(self._rsi_ma, rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
-        if not self._rsi_ma.IsFormed:
+
+        if self._prev_rsi == 0.0:
+            self._prev_rsi = rsi
             return
-        rs_index = float(rsi_ma_val)
 
-        # Use stored previous value instead of GetValue()
-        atr_rsi_val = abs(self._prev_rsi_ma - rs_index)
-        ma_atr_rsi_val = process_float(self._ma_atr_rsi, atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
-        if not self._ma_atr_rsi.IsFormed:
-            # Store current values for next iteration
-            self._prev_rsi_ma = rs_index
-            return
-        dar_val = process_float(self._dar, ma_atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
-        if not self._dar.IsFormed:
-            # Store current values for next iteration
-            self._prev_rsi_ma = rs_index
-            return
-        delta_fast = float(dar_val) * self._qqe_factor.Value
+        upper = self._upper_threshold.Value
+        lower = self._lower_threshold.Value
 
-        new_shortband = rs_index + delta_fast
-        new_longband = rs_index - delta_fast
+        # RSI crosses above upper threshold (bullish signal)
+        cross_up = rsi > upper and self._prev_rsi <= upper
+        # RSI crosses below lower threshold (bearish signal)
+        cross_down = rsi < lower and self._prev_rsi >= lower
 
-        # Use stored previous values
-        if self._prev_rs_index > self._prev_longband and rs_index > self._prev_longband:
-            self._longband = max(self._prev_longband, new_longband)
-        else:
-            self._longband = new_longband
-        if self._prev_rs_index < self._prev_shortband and rs_index < self._prev_shortband:
-            self._shortband = min(self._prev_shortband, new_shortband)
-        else:
-            self._shortband = new_shortband
+        if cross_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+        elif cross_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+        # Exit long: RSI drops below 50
+        elif self.Position > 0 and rsi < 50 and self._prev_rsi >= 50:
+            self.SellMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
+        # Exit short: RSI rises above 50
+        elif self.Position < 0 and rsi > 50 and self._prev_rsi <= 50:
+            self.BuyMarket()
+            self._cooldown_remaining = self._cooldown_bars.Value
 
-        if rs_index > self._shortband and self._prev_rs_index <= self._prev_shortband:
-            self._trend = 1
-        elif rs_index < self._longband and self._prev_rs_index >= self._prev_longband:
-            self._trend = -1
-
-        fast_atr_rsi_tl = self._longband if self._trend == 1 else self._shortband
-
-        if fast_atr_rsi_tl < rs_index:
-            self._qqe_xlong += 1
-            self._qqe_xshort = 0
-        else:
-            self._qqe_xshort += 1
-            self._qqe_xlong = 0
-
-        qqe_long = self._qqe_xlong == 1
-        qqe_short = self._qqe_xshort == 1
-
-        if qqe_long and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif qqe_short and self.Position > 0:
-            self.ClosePosition()
-
-        # Store current values for next iteration
-        self._prev_rsi_ma = rs_index
-        self._prev_rs_index = rs_index
-        self._prev_longband = self._longband
-        self._prev_shortband = self._shortband
+        self._prev_rsi = rsi
 
     def CreateClone(self):
         return qqe_signals_strategy()

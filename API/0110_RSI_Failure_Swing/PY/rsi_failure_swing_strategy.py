@@ -3,208 +3,120 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates, Sides
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class rsi_failure_swing_strategy(Strategy):
     """
     Strategy that trades based on RSI Failure Swing pattern.
     A failure swing occurs when RSI reverses direction without crossing through centerline.
-
+    Uses cooldown to control trade frequency.
     """
+
     def __init__(self):
         super(rsi_failure_swing_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "Period for RSI", "RSI Settings")
+        self._oversold_level = self.Param("OversoldLevel", 40.0).SetDisplay("Oversold Level", "RSI oversold threshold", "RSI Settings")
+        self._overbought_level = self.Param("OverboughtLevel", 60.0).SetDisplay("Overbought Level", "RSI overbought threshold", "RSI Settings")
+        self._cooldown_bars = self.Param("CooldownBars", 400).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
-
-        self._rsiPeriod = self.Param("RsiPeriod", 14) \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-
-        self._oversoldLevel = self.Param("OversoldLevel", 30.0) \
-            .SetDisplay("Oversold Level", "RSI level considered oversold", "RSI Settings")
-
-        self._overboughtLevel = self.Param("OverboughtLevel", 70.0) \
-            .SetDisplay("Overbought Level", "RSI level considered overbought", "RSI Settings")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection")
-
-        # Internal state
-        self._rsi = None
-        self._prevRsiValue = 0.0
-        self._prevPrevRsiValue = 0.0
-        self._inPosition = False
-        self._positionSide = None
+        self._prev_rsi = 0.0
+        self._prev_prev_rsi = 0.0
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        """Candle type and timeframe for the strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def RsiPeriod(self):
-        """Period for RSI calculation."""
-        return self._rsiPeriod.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsiPeriod.Value = value
-
-    @property
-    def OversoldLevel(self):
-        """Oversold level for RSI."""
-        return self._oversoldLevel.Value
-
-    @OversoldLevel.setter
-    def OversoldLevel(self, value):
-        self._oversoldLevel.Value = value
-
-    @property
-    def OverboughtLevel(self):
-        """Overbought level for RSI."""
-        return self._overboughtLevel.Value
-
-    @OverboughtLevel.setter
-    def OverboughtLevel(self, value):
-        self._overboughtLevel.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percentage from entry price."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(rsi_failure_swing_strategy, self).OnReseted()
-        self._rsi = None
-        self._prevRsiValue = 0.0
-        self._prevPrevRsiValue = 0.0
-        self._inPosition = False
-        self._positionSide = None
+        self._prev_rsi = 0.0
+        self._prev_prev_rsi = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(rsi_failure_swing_strategy, self).OnStarted(time)
 
-        # Initialize indicators
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.RsiPeriod
+        self._prev_rsi = 0.0
+        self._prev_prev_rsi = 0.0
+        self._cooldown = 0
 
-        # Create and setup subscription for candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_period.Value
 
-        # Bind indicator and processor
-        subscription.Bind(self._rsi, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(rsi, self._process_candle).Start()
 
-        # Enable stop-loss protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._rsi)
+            self.DrawIndicator(area, rsi)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, rsi_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Need at least 3 RSI values to detect failure swing
-        if self._prevRsiValue == 0 or self._prevPrevRsiValue == 0:
-            self._prevPrevRsiValue = self._prevRsiValue
-            self._prevRsiValue = rsi_value
+        rv = float(rsi_val)
+
+        # Need at least 2 previous RSI values
+        if self._prev_rsi == 0 or self._prev_prev_rsi == 0:
+            self._prev_prev_rsi = self._prev_rsi
+            self._prev_rsi = rv
             return
 
-        # Detect Bullish Failure Swing:
-        # 1. RSI falls below oversold level
-        # 2. RSI rises without crossing centerline
-        # 3. RSI pulls back but stays above previous low
-        # 4. RSI breaks above the high point of first rise
-        isBullishFailureSwing = (self._prevPrevRsiValue < self.OversoldLevel and
-                                 self._prevRsiValue > self._prevPrevRsiValue and
-                                 rsi_value < self._prevRsiValue and
-                                 rsi_value > self._prevPrevRsiValue)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_prev_rsi = self._prev_rsi
+            self._prev_rsi = rv
+            return
 
-        # Detect Bearish Failure Swing:
-        # 1. RSI rises above overbought level
-        # 2. RSI falls without crossing centerline
-        # 3. RSI bounces up but stays below previous high
-        # 4. RSI breaks below the low point of first decline
-        isBearishFailureSwing = (self._prevPrevRsiValue > self.OverboughtLevel and
-                                 self._prevRsiValue < self._prevPrevRsiValue and
-                                 rsi_value > self._prevRsiValue and
-                                 rsi_value < self._prevPrevRsiValue)
+        cd = self._cooldown_bars.Value
+        oversold = self._oversold_level.Value
+        overbought = self._overbought_level.Value
 
-        # Trading logic
-        if isBullishFailureSwing and not self._inPosition:
-            # Enter long position
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
+        # Bullish Failure Swing: RSI was oversold, rose, pulled back but stayed above prior low
+        is_bullish = (
+            self._prev_prev_rsi < oversold and
+            self._prev_rsi > self._prev_prev_rsi and
+            rv < self._prev_rsi and
+            rv > self._prev_prev_rsi
+        )
 
-            self._inPosition = True
-            self._positionSide = Sides.Buy
+        # Bearish Failure Swing: RSI was overbought, fell, bounced but stayed below prior high
+        is_bearish = (
+            self._prev_prev_rsi > overbought and
+            self._prev_rsi < self._prev_prev_rsi and
+            rv > self._prev_rsi and
+            rv < self._prev_prev_rsi
+        )
 
-            self.LogInfo(
-                "Bullish RSI Failure Swing detected. RSI values: {0:F2} -> {1:F2} -> {2:F2}. Long entry at {3}".format(
-                    self._prevPrevRsiValue, self._prevRsiValue, rsi_value, candle.ClosePrice))
-        elif isBearishFailureSwing and not self._inPosition:
-            # Enter short position
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
+        if self.Position == 0:
+            if is_bullish:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif is_bearish:
+                self.SellMarket()
+                self._cooldown = cd
+        elif self.Position > 0:
+            # Exit long when RSI crosses above overbought or reverses from peak
+            if rv > overbought or (rv < 45 and self._prev_rsi > 45):
+                self.SellMarket()
+                self._cooldown = cd
+        elif self.Position < 0:
+            # Exit short when RSI crosses below oversold or reverses from trough
+            if rv < oversold or (rv > 55 and self._prev_rsi < 55):
+                self.BuyMarket()
+                self._cooldown = cd
 
-            self._inPosition = True
-            self._positionSide = Sides.Sell
-
-            self.LogInfo(
-                "Bearish RSI Failure Swing detected. RSI values: {0:F2} -> {1:F2} -> {2:F2}. Short entry at {3}".format(
-                    self._prevPrevRsiValue, self._prevRsiValue, rsi_value, candle.ClosePrice))
-
-        # Exit conditions
-        if self._inPosition:
-            # For long positions: exit when RSI crosses above 50
-            if self._positionSide == Sides.Buy and rsi_value > 50:
-                self.SellMarket(Math.Abs(self.Position))
-                self._inPosition = False
-                self._positionSide = None
-
-                self.LogInfo(
-                    "Exit signal for long position: RSI ({0:F2}) crossed above 50. Closing at {1}".format(
-                        rsi_value, candle.ClosePrice))
-            # For short positions: exit when RSI crosses below 50
-            elif self._positionSide == Sides.Sell and rsi_value < 50:
-                self.BuyMarket(Math.Abs(self.Position))
-                self._inPosition = False
-                self._positionSide = None
-
-                self.LogInfo(
-                    "Exit signal for short position: RSI ({0:F2}) crossed below 50. Closing at {1}".format(
-                        rsi_value, candle.ClosePrice))
-
-        # Update RSI values for next iteration
-        self._prevPrevRsiValue = self._prevRsiValue
-        self._prevRsiValue = rsi_value
+        self._prev_prev_rsi = self._prev_rsi
+        self._prev_rsi = rv
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return rsi_failure_swing_strategy()

@@ -3,173 +3,114 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Sides, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class rejection_candle_strategy(Strategy):
     """
-    Strategy based on rejection candles that indicate potential reversals.
-
+    Rejection Candle (Pin Bar) strategy.
+    Enters long on bullish rejection (lower low + bullish close + long lower wick).
+    Enters short on bearish rejection (higher high + bearish close + long upper wick).
+    Uses SMA for exit confirmation.
     """
 
     def __init__(self):
         super(rejection_candle_strategy, self).__init__()
+        self._ma_length = self.Param("MaLength", 20).SetDisplay("MA Length", "Period of SMA for exit", "Indicators")
+        self._wick_ratio = self.Param("WickRatio", 1.5).SetDisplay("Wick Ratio", "Min wick to body ratio for rejection", "Pattern")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection") \
-            .SetRange(0.1, 5.0)
-
-        # Internal state
-        self._previous_candle = None
-        self._in_position = False
-        self._current_position_side = None
+        self._prev_candle = None
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type and timeframe for the strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop-loss percentage from entry price."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(rejection_candle_strategy, self).OnReseted()
-        self._previous_candle = None
-        self._in_position = False
-        self._current_position_side = None
+        self._prev_candle = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up subscriptions and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(rejection_candle_strategy, self).OnStarted(time)
-        # Create and setup subscription for candles
+
+        self._prev_candle = None
+        self._cooldown = 0
+
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_length.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Bind the candle processor
-        subscription.Bind(self.ProcessCandle).Start()
-
-        # Enable stop-loss protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        """
-        Processes finished candles and executes trading logic.
-
-        :param candle: The candle message.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Skip first candle as we need at least one previous candle
-        if self._previous_candle is None:
-            self._previous_candle = candle
+        if self._prev_candle is None:
+            self._prev_candle = candle
             return
 
-        # Determine candle characteristics
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_candle = candle
+            return
+
+        cd = self._cooldown_bars.Value
+        sv = float(sma_val)
+        wr = self._wick_ratio.Value
+
+        body_size = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
+        if body_size == 0:
+            body_size = 0.01
+
+        upper_wick = float(candle.HighPrice) - max(float(candle.OpenPrice), float(candle.ClosePrice))
+        lower_wick = min(float(candle.OpenPrice), float(candle.ClosePrice)) - float(candle.LowPrice)
+
         is_bullish = candle.ClosePrice > candle.OpenPrice
         is_bearish = candle.ClosePrice < candle.OpenPrice
-        has_upper_wick = candle.HighPrice > max(candle.OpenPrice, candle.ClosePrice)
-        has_lower_wick = candle.LowPrice < min(candle.OpenPrice, candle.ClosePrice)
-        made_lower_low = candle.LowPrice < self._previous_candle.LowPrice
-        made_higher_high = candle.HighPrice > self._previous_candle.HighPrice
 
-        # 1. Bearish Rejection (Pin Bar): Made a higher high but closed lower with a long upper wick
-        if made_higher_high and is_bearish and has_upper_wick:
-            # Calculate upper wick size as a percentage of candle body
-            body_size = float(Math.Abs(candle.ClosePrice - candle.OpenPrice))
-            upper_wick_size = float(candle.HighPrice - max(candle.OpenPrice, candle.ClosePrice))
+        # Bullish rejection: made lower low, bullish close, long lower wick
+        bullish_rejection = (
+            candle.LowPrice < self._prev_candle.LowPrice and
+            is_bullish and
+            lower_wick > body_size * wr
+        )
 
-            # Upper wick should be significant compared to body
-            if upper_wick_size > body_size * 1.5:
-                # If we already have a long position, close it
-                if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self._in_position = False
-                    self._current_position_side = None
-                    self.LogInfo("Closed long position at {0} on bearish rejection".format(candle.ClosePrice))
-                # Enter short if we're not already short
-                elif self.Position <= 0:
-                    volume = self.Volume + Math.Abs(self.Position)
-                    self.SellMarket(volume)
-                    self._in_position = True
-                    self._current_position_side = Sides.Sell
-                    self.LogInfo("Bearish rejection detected. Short entry at {0}".format(candle.ClosePrice))
+        # Bearish rejection: made higher high, bearish close, long upper wick
+        bearish_rejection = (
+            candle.HighPrice > self._prev_candle.HighPrice and
+            is_bearish and
+            upper_wick > body_size * wr
+        )
 
-        # 2. Bullish Rejection (Pin Bar): Made a lower low but closed higher with a long lower wick
-        elif made_lower_low and is_bullish and has_lower_wick:
-            # Calculate lower wick size as a percentage of candle body
-            body_size = float(Math.Abs(candle.ClosePrice - candle.OpenPrice))
-            lower_wick_size = float(min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice)
+        if self.Position == 0 and bullish_rejection:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and bearish_rejection:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and float(candle.ClosePrice) < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and float(candle.ClosePrice) > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
-            # Lower wick should be significant compared to body
-            if lower_wick_size > body_size * 1.5:
-                # If we already have a short position, close it
-                if self.Position < 0:
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self._in_position = False
-                    self._current_position_side = None
-                    self.LogInfo("Closed short position at {0} on bullish rejection".format(candle.ClosePrice))
-                # Enter long if we're not already long
-                elif self.Position >= 0:
-                    volume = self.Volume + Math.Abs(self.Position)
-                    self.BuyMarket(volume)
-                    self._in_position = True
-                    self._current_position_side = Sides.Buy
-                    self.LogInfo("Bullish rejection detected. Long entry at {0}".format(candle.ClosePrice))
-
-        # Check for exit conditions if in position
-        if self._in_position:
-            if self._current_position_side == Sides.Buy and candle.HighPrice > self._previous_candle.HighPrice:
-                # For long positions: exit when price breaks above the high of previous candle
-                self.SellMarket(Math.Abs(self.Position))
-                self._in_position = False
-                self._current_position_side = None
-                self.LogInfo("Exit signal: Price broke above previous high ({0}). Closed long at {1}".format(
-                    self._previous_candle.HighPrice, candle.ClosePrice))
-            elif self._current_position_side == Sides.Sell and candle.LowPrice < self._previous_candle.LowPrice:
-                # For short positions: exit when price breaks below the low of previous candle
-                self.BuyMarket(Math.Abs(self.Position))
-                self._in_position = False
-                self._current_position_side = None
-                self.LogInfo("Exit signal: Price broke below previous low ({0}). Closed short at {1}".format(
-                    self._previous_candle.LowPrice, candle.ClosePrice))
-
-        # Store current candle as previous for the next iteration
-        self._previous_candle = candle
+        self._prev_candle = candle
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return rejection_candle_strategy()

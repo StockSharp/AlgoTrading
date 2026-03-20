@@ -1,187 +1,119 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import Lowest
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class double_bottom_strategy(Strategy):
     """
-    Double Bottom reversal strategy: looks for two similar bottoms with confirmation.
-    This pattern often indicates a trend reversal from bearish to bullish.
-    
+    Double Bottom reversal strategy.
+    Detects two similar bottoms and enters long on confirmation.
+    Uses SMA for exit signal.
     """
+
     def __init__(self):
         super(double_bottom_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._firstBottomLow = None
-        self._secondBottomLow = None
-        self._barsSinceFirstBottom = 0
-        self._patternConfirmed = False
-        self._lowestIndicator = None
+        self._distance = self.Param("Distance", 20).SetDisplay("Distance", "Bars between bottoms", "Pattern")
+        self._similarity_pct = self.Param("SimilarityPercent", 1.0).SetDisplay("Similarity %", "Max % diff between bottoms", "Pattern")
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for exit SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._distanceParam = self.Param("Distance", 5) \
-            .SetDisplay("Distance between bottoms", "Number of bars between two bottoms", "Pattern Parameters")
-
-        self._similarityPercent = self.Param("SimilarityPercent", 2.0) \
-            .SetDisplay("Similarity %", "Maximum percentage difference between two bottoms", "Pattern Parameters")
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Percentage below bottom for stop-loss", "Risk Management")
+        self._recent_low = 0.0
+        self._prev_low = 0.0
+        self._bars_since_low = 0
+        self._cooldown = 0
 
     @property
-    def Distance(self):
-        return self._distanceParam.Value
-
-    @Distance.setter
-    def Distance(self, value):
-        self._distanceParam.Value = value
-
-    @property
-    def SimilarityPercent(self):
-        return self._similarityPercent.Value
-
-    @SimilarityPercent.setter
-    def SimilarityPercent(self, value):
-        self._similarityPercent.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(double_bottom_strategy, self).OnReseted()
-        self._firstBottomLow = None
-        self._secondBottomLow = None
-        self._barsSinceFirstBottom = 0
-        self._patternConfirmed = False
-        self._lowestIndicator = None
+        self._recent_low = 0.0
+        self._prev_low = 0.0
+        self._bars_since_low = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(double_bottom_strategy, self).OnStarted(time)
 
-        # Create indicator to find lowest values
-        self._lowestIndicator = Lowest()
-        self._lowestIndicator.Length = self.Distance * 2
+        self._recent_low = 0.0
+        self._prev_low = 0.0
+        self._bars_since_low = 0
+        self._cooldown = 0
 
-        # Subscribe to candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
-        # Bind candle processing 
-        subscription.Bind(self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=False
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        """
-        # Skip unfinished candles
+    def _track_lows(self, candle):
+        low = float(candle.LowPrice)
+        if self._recent_low == 0 or low < self._recent_low:
+            if self._recent_low > 0:
+                self._prev_low = self._recent_low
+            self._recent_low = low
+            self._bars_since_low = 0
+        else:
+            self._bars_since_low += 1
+
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Process the candle with the Lowest indicator
-        lowestValue = float(process_candle(self._lowestIndicator, candle))
-
-        # If strategy is not ready yet, return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Already in position, no need to search for new patterns
-        if self.Position > 0:
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._track_lows(candle)
             return
 
-        # If we have a confirmed pattern and price rises above resistance
-        if self._patternConfirmed and candle.ClosePrice > candle.OpenPrice:
-            # Buy signal - Double Bottom with confirmation candle
-            self.BuyMarket(self.Volume)
-            stopLossLevel = Math.Min(self._firstBottomLow, self._secondBottomLow) * (1 - self.StopLossPercent / 100)
-            self.LogInfo("Double Bottom signal: Buy at {0}, Stop Loss at {1}".format(
-                candle.ClosePrice, stopLossLevel))
-            
-            # Reset pattern detection
-            self._patternConfirmed = False
-            self._firstBottomLow = None
-            self._secondBottomLow = None
-            self._barsSinceFirstBottom = 0
-            return
-
-        # Pattern detection logic
-        if self._firstBottomLow is None:
-            # Looking for first bottom
-            if candle.LowPrice == lowestValue:
-                self._firstBottomLow = float(candle.LowPrice)
-                self._barsSinceFirstBottom = 0
-                self.LogInfo("Potential first bottom detected at price {0}".format(self._firstBottomLow))
+        # Track new lows
+        low = float(candle.LowPrice)
+        if self._recent_low == 0 or low < self._recent_low:
+            if self._recent_low > 0:
+                self._prev_low = self._recent_low
+            self._recent_low = low
+            self._bars_since_low = 0
         else:
-            self._barsSinceFirstBottom += 1
+            self._bars_since_low += 1
 
-            # If we're at the appropriate distance, check for second bottom
-            if (self._barsSinceFirstBottom >= self.Distance and 
-                self._secondBottomLow is None):
-                # Check if current low is close to first bottom
-                priceDifference = float(Math.Abs((candle.LowPrice - self._firstBottomLow) / self._firstBottomLow * 100))
-                
-                if priceDifference <= self.SimilarityPercent:
-                    self._secondBottomLow = float(candle.LowPrice)
-                    self._patternConfirmed = True
-                    self.LogInfo("Double Bottom pattern confirmed. First: {0}, Second: {1}".format(
-                        self._firstBottomLow, self._secondBottomLow))
+        close = float(candle.ClosePrice)
+        sv = float(sma_val)
+        cd = self._cooldown_bars.Value
+        dist = self._distance.Value
+        sim = float(self._similarity_pct.Value)
 
-            # If too much time has passed, reset pattern search
-            if (self._barsSinceFirstBottom > self.Distance * 3 or 
-                (self._secondBottomLow is not None and self._barsSinceFirstBottom > self.Distance * 4)):
-                self._firstBottomLow = None
-                self._secondBottomLow = None
-                self._barsSinceFirstBottom = 0
-                self._patternConfirmed = False
+        if self.Position == 0 and self._prev_low > 0 and self._bars_since_low >= dist:
+            price_diff = abs((self._recent_low - self._prev_low) / self._prev_low * 100.0)
+            if price_diff <= sim and close > sv:
+                self.BuyMarket()
+                self._cooldown = cd
+                self._recent_low = 0.0
+                self._prev_low = 0.0
+            elif price_diff <= sim and close < sv:
+                self.SellMarket()
+                self._cooldown = cd
+                self._recent_low = 0.0
+                self._prev_low = 0.0
+        elif self.Position > 0 and close < sv:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > sv:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return double_bottom_strategy()

@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class state_aware_ma_cross_strategy(Strategy):
     def __init__(self):
@@ -16,7 +14,7 @@ class state_aware_ma_cross_strategy(Strategy):
         self._fast_length = self.Param("FastLength", 15).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_length = self.Param("SlowLength", 45).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 350).SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

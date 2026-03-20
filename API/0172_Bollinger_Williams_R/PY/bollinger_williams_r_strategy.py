@@ -7,11 +7,19 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, WilliamsR, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class bollinger_williams_r_strategy(Strategy):
+    """
+    Bollinger Bands + Williams %R strategy.
+    Enters long when price is at lower band and Williams %R is oversold.
+    Enters short when price is at upper band and Williams %R is overbought.
+    """
+
     def __init__(self):
         super(bollinger_williams_r_strategy, self).__init__()
+
         self._bollinger_period = self.Param("BollingerPeriod", 20) \
             .SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
         self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
@@ -22,70 +30,59 @@ class bollinger_williams_r_strategy(Strategy):
             .SetDisplay("ATR Period", "Period for ATR indicator for stop-loss", "Risk Management")
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
+
         self._cooldown = 0
         self._was_below_lower = False
         self._was_above_upper = False
 
-    @property
-    def bollinger_period(self):
-        return self._bollinger_period.Value
-    @property
-    def bollinger_deviation(self):
-        return self._bollinger_deviation.Value
-    @property
-    def williams_r_period(self):
-        return self._williams_r_period.Value
-    @property
-    def atr_period(self):
-        return self._atr_period.Value
-    @property
-    def atr_multiplier(self):
-        return self._atr_multiplier.Value
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(bollinger_williams_r_strategy, self).OnReseted()
+    def OnStarted(self, time):
+        super(bollinger_williams_r_strategy, self).OnStarted(time)
         self._cooldown = 0
         self._was_below_lower = False
         self._was_above_upper = False
 
-    def OnStarted(self, time):
-        super(bollinger_williams_r_strategy, self).OnStarted(time)
         bollinger = BollingerBands()
-        bollinger.Length = self.bollinger_period
-        bollinger.Width = self.bollinger_deviation
+        bollinger.Length = self._bollinger_period.Value
+        bollinger.Width = self._bollinger_deviation.Value
+
         williams_r = WilliamsR()
-        williams_r.Length = self.williams_r_period
+        williams_r.Length = self._williams_r_period.Value
+
         atr = AverageTrueRange()
-        atr.Length = self.atr_period
+        atr.Length = self._atr_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bollinger, williams_r, atr, self.OnProcess).Start()
+        subscription.BindEx(bollinger, williams_r, atr, self.ProcessCandle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
-            williams_area = self.CreateChartArea()
-            if williams_area is not None:
-                self.DrawIndicator(williams_area, williams_r)
+            wr_area = self.CreateChartArea()
+            if wr_area is not None:
+                self.DrawIndicator(wr_area, williams_r)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, bollinger_value, williams_r_value, atr_value):
+    def ProcessCandle(self, candle, bb_value, wr_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        bb = bollinger_value
-        if bb.UpBand is None or bb.LowBand is None or bb.MovingAverage is None:
+
+        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
-        upper_band = float(bb.UpBand)
-        lower_band = float(bb.LowBand)
-        middle_band = float(bb.MovingAverage)
+
+        upper_band = float(bb_value.UpBand)
+        lower_band = float(bb_value.LowBand)
+        middle_band = float(bb_value.MovingAverage)
         price = float(candle.ClosePrice)
-        williams_val = float(williams_r_value)
+        wr_dec = float(wr_value)
 
         is_below_lower = price <= lower_band * 1.001
         is_above_upper = price >= upper_band * 0.999
@@ -96,10 +93,10 @@ class bollinger_williams_r_strategy(Strategy):
             self._was_above_upper = is_above_upper
             return
 
-        if not self._was_below_lower and is_below_lower and williams_val < -45 and self.Position <= 0:
+        if not self._was_below_lower and is_below_lower and wr_dec < -45 and self.Position <= 0:
             self.BuyMarket()
             self._cooldown = 6
-        elif not self._was_above_upper and is_above_upper and williams_val > -55 and self.Position >= 0:
+        elif not self._was_above_upper and is_above_upper and wr_dec > -55 and self.Position >= 0:
             self.SellMarket()
             self._cooldown = 6
         elif price >= middle_band and self.Position < 0:
@@ -109,6 +106,12 @@ class bollinger_williams_r_strategy(Strategy):
 
         self._was_below_lower = is_below_lower
         self._was_above_upper = is_above_upper
+
+    def OnReseted(self):
+        super(bollinger_williams_r_strategy, self).OnReseted()
+        self._cooldown = 0
+        self._was_below_lower = False
+        self._was_above_upper = False
 
     def CreateClone(self):
         return bollinger_williams_r_strategy()

@@ -3,210 +3,127 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import DonchianChannels, RSI
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-from indicator_extensions import *
 
 
 class donchian_rsi_strategy(Strategy):
     """
-    Strategy combining Donchian Channels and RSI indicators.
-    Buys on Donchian breakouts when RSI confirms trend is not overextended.
+    Strategy combining manual Donchian Channels with RSI.
     """
 
     def __init__(self):
         super(donchian_rsi_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._donchian_period = self.Param("DonchianPeriod", 20) \
-            .SetDisplay("Donchian Period", "Period for Donchian Channels calculation", "Indicators")
-
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-
-        self._rsi_overbought_level = self.Param("RsiOverboughtLevel", 70.0) \
-            .SetDisplay("RSI Overbought", "RSI level considered overbought", "Trading Levels")
-
-        self._rsi_oversold_level = self.Param("RsiOversoldLevel", 30.0) \
-            .SetDisplay("RSI Oversold", "RSI level considered oversold", "Trading Levels")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._donchian_period = self.Param("DonchianPeriod", 20) \
+            .SetRange(10, 50) \
+            .SetDisplay("Donchian Period", "Period for Donchian Channels", "Indicators")
+        self._rsi_period = self.Param("RsiPeriod", 14) \
+            .SetRange(7, 21) \
+            .SetDisplay("RSI Period", "Period for RSI", "Indicators")
+        self._rsi_overbought_level = self.Param("RsiOverboughtLevel", 70.0) \
+            .SetDisplay("RSI Overbought", "RSI overbought level", "Trading Levels")
+        self._rsi_oversold_level = self.Param("RsiOversoldLevel", 30.0) \
+            .SetDisplay("RSI Oversold", "RSI oversold level", "Trading Levels")
+        self._cooldown_bars = self.Param("CooldownBars", 100) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
+            .SetRange(5, 500)
 
-        # Variables to store previous high and low values for breakout detection
-        self._prev_upper_band = 0.0
-        self._prev_lower_band = 0.0
-        self._is_first_calculation = True
-
-    @property
-    def donchian_period(self):
-        """Period for Donchian Channels calculation."""
-        return self._donchian_period.Value
-
-    @donchian_period.setter
-    def donchian_period(self, value):
-        self._donchian_period.Value = value
-
-    @property
-    def rsi_period(self):
-        """Period for RSI calculation."""
-        return self._rsi_period.Value
-
-    @rsi_period.setter
-    def rsi_period(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def rsi_overbought_level(self):
-        """RSI overbought level."""
-        return self._rsi_overbought_level.Value
-
-    @rsi_overbought_level.setter
-    def rsi_overbought_level(self, value):
-        self._rsi_overbought_level.Value = value
-
-    @property
-    def rsi_oversold_level(self):
-        """RSI oversold level."""
-        return self._rsi_oversold_level.Value
-
-    @rsi_oversold_level.setter
-    def rsi_oversold_level(self, value):
-        self._rsi_oversold_level.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._highs = []
+        self._lows = []
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy calculation."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
-        super(donchian_rsi_strategy, self).OnReseted()
-        self._prev_upper_band = 0.0
-        self._prev_lower_band = 0.0
-        self._is_first_calculation = True
-
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(donchian_rsi_strategy, self).OnStarted(time)
+        self._highs = []
+        self._lows = []
+        self._cooldown = 0
 
-        # Create indicators
-        donchian = DonchianChannels()
-        donchian.Length = self.donchian_period
-        rsi = RSI()
-        rsi.Length = self.rsi_period
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_period.Value
 
-        # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(rsi, self.ProcessCandle).Start()
 
-        # Bind indicators to candles
-        subscription.BindEx(donchian, rsi, self.ProcessCandle).Start()
-
-        # Enable stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, donchian)
-
-            # Create second area for RSI
-            rsi_area = self.CreateChartArea()
-            self.DrawIndicator(rsi_area, rsi)
-
             self.DrawOwnTrades(area)
+            rsi_area = self.CreateChartArea()
+            if rsi_area is not None:
+                self.DrawIndicator(rsi_area, rsi)
 
-    def ProcessCandle(self, candle, donchian_value, rsi_value):
-        """
-        Processes each finished candle and executes trading logic.
-        """
-        # Skip unfinished candles
+    def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-
-        if (
-            donchian_value.UpperBand is None
-            or donchian_value.LowerBand is None
-            or donchian_value.Middle is None
-        ):
-            return
-        upper_band = float(donchian_value.UpperBand)
-        lower_band = float(donchian_value.LowerBand)
-        middle_band = float(donchian_value.Middle)
-
-        # Store current bands before comparison
-        current_upper = upper_band
-        current_lower = lower_band
-
-        # Skip first calculation to avoid false breakouts
-        if self._is_first_calculation:
-            self._is_first_calculation = False
-            self._prev_upper_band = current_upper
-            self._prev_lower_band = current_lower
-            return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rsi_dec = float(rsi_value)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        close = float(candle.ClosePrice)
+        rv = float(rsi_value)
 
-        # Detect breakouts by comparing current price to previous Donchian bands
-        upper_breakout = candle.ClosePrice > self._prev_upper_band
-        lower_breakout = candle.ClosePrice < self._prev_lower_band
+        self._highs.append(high)
+        self._lows.append(low)
 
-        # Trading logic
-        if upper_breakout and rsi_dec < self.rsi_overbought_level and self.Position <= 0:
-            # Upward breakout with RSI not overbought - Buy
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        elif lower_breakout and rsi_dec > self.rsi_oversold_level and self.Position >= 0:
-            # Downward breakout with RSI not oversold - Sell
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        elif self.Position > 0 and candle.ClosePrice < middle_band:
-            # Exit long position when price falls below middle band
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and candle.ClosePrice > middle_band:
-            # Exit short position when price rises above middle band
-            self.BuyMarket(Math.Abs(self.Position))
+        period = self._donchian_period.Value
 
-        # Update previous bands for next comparison
-        self._prev_upper_band = current_upper
-        self._prev_lower_band = current_lower
+        if len(self._highs) < period + 1:
+            if self._cooldown > 0:
+                self._cooldown -= 1
+            return
+
+        # Previous Donchian channel (excluding current bar)
+        count = len(self._highs)
+        prev_upper = max(self._highs[count - period - 1:count - 1])
+        prev_lower = min(self._lows[count - period - 1:count - 1])
+        middle_band = (prev_upper + prev_lower) / 2.0
+
+        # Trim lists
+        if len(self._highs) > period * 3:
+            trim = len(self._highs) - period * 2
+            self._highs = self._highs[trim:]
+            self._lows = self._lows[trim:]
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        cd = self._cooldown_bars.Value
+        ob = self._rsi_overbought_level.Value
+        os_level = self._rsi_oversold_level.Value
+
+        # Buy: upper breakout + RSI not overbought
+        if close > prev_upper and rv < ob and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif close < prev_lower and rv > os_level and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cd
+
+        # Exit long: price below middle
+        if self.Position > 0 and close < middle_band:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > middle_band:
+            self.BuyMarket()
+            self._cooldown = cd
+
+    def OnReseted(self):
+        super(donchian_rsi_strategy, self).OnReseted()
+        self._highs = []
+        self._lows = []
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return donchian_rsi_strategy()

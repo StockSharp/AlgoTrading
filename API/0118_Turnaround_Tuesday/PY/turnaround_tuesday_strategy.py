@@ -3,125 +3,131 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math, DayOfWeek
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class turnaround_tuesday_strategy(Strategy):
     """
-    Implementation of Turnaround Tuesday trading strategy.
-    The strategy enters long position on Tuesday after a price decline on Monday.
-
+    Turnaround Tuesday trading strategy.
+    Buys if previous session declined and price above MA.
+    Sells if previous session rallied and price below MA.
+    Uses session detection via day-of-year transitions.
     """
 
     def __init__(self):
         super(turnaround_tuesday_strategy, self).__init__()
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
+        self._cooldown_bars = self.Param("CooldownBars", 30).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
-
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-
-        self._candle_type = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-
-        # Internal state
-        self._prev_close_price = 0.0
-        self._is_price_lower_on_monday = False
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage from entry price."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def ma_period(self):
-        """Moving average period."""
-        return self._ma_period.Value
-
-    @ma_period.setter
-    def ma_period(self, value):
-        self._ma_period.Value = value
+        self._prev_ma = 0.0
+        self._session_open = 0.0
+        self._session_close = 0.0
+        self._prev_session_day = -1
+        self._prev_session_decline = False
+        self._prev_session_rally = False
+        self._current_session_day = -1
+        self._entered_this_session = False
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy."""
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
 
     def OnReseted(self):
         super(turnaround_tuesday_strategy, self).OnReseted()
-        self._prev_close_price = 0.0
-        self._is_price_lower_on_monday = False
+        self._prev_ma = 0.0
+        self._session_open = 0.0
+        self._session_close = 0.0
+        self._prev_session_day = -1
+        self._prev_session_decline = False
+        self._prev_session_rally = False
+        self._current_session_day = -1
+        self._entered_this_session = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(turnaround_tuesday_strategy, self).OnStarted(time)
-        # Create a simple moving average indicator
+
+        self._prev_ma = 0.0
+        self._session_open = 0.0
+        self._session_close = 0.0
+        self._prev_session_day = -1
+        self._prev_session_decline = False
+        self._prev_session_rally = False
+        self._current_session_day = -1
+        self._entered_this_session = False
+        self._cooldown = 0
+
         sma = SimpleMovingAverage()
-        sma.Length = self.ma_period
+        sma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self.ProcessCandle).Start()
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, ma_value):
-        """Process each finished candle."""
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        current_day = candle.OpenTime.DayOfWeek
+        close = float(candle.ClosePrice)
+        ma = float(ma_val)
+        day_of_year = candle.OpenTime.DayOfYear
+        cd = self._cooldown_bars.Value
 
-        # Record Monday's price action
-        if current_day == DayOfWeek.Monday:
-            # Check if Monday's close is lower than the previous candle's close
-            self._is_price_lower_on_monday = candle.ClosePrice < self._prev_close_price
-            self.LogInfo("Monday candle: Close={0}, Prev Close={1}, Lower={2}".format(
-                candle.ClosePrice, self._prev_close_price, self._is_price_lower_on_monday))
-        # Tuesday - BUY signal if Monday's close was lower
-        elif (current_day == DayOfWeek.Tuesday and self._is_price_lower_on_monday and
-              candle.ClosePrice > ma_value and self.Position <= 0):
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
+        # Detect new session (new calendar day)
+        if day_of_year != self._current_session_day:
+            # Save previous session result
+            if self._current_session_day >= 0 and self._session_open > 0:
+                self._prev_session_decline = self._session_close < self._session_open
+                self._prev_session_rally = self._session_close > self._session_open
+                self._prev_session_day = self._current_session_day
 
-            self.LogInfo("Buy signal on Tuesday after Monday decline: Price={0}, MA={1}, Volume={2}".format(
-                candle.ClosePrice, ma_value, volume))
-        # Closing conditions - close long position on Friday
-        elif current_day == DayOfWeek.Friday and self.Position > 0:
-            self.ClosePosition()
-            self.LogInfo("Closing position on Friday: Position={0}".format(self.Position))
+            self._current_session_day = day_of_year
+            self._session_open = float(candle.OpenPrice)
+            self._entered_this_session = False
 
-        # Store current close price for next candle
-        self._prev_close_price = float(candle.ClosePrice)
+        self._session_close = close
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_ma = ma
+            return
+
+        # Entry: buy if previous session declined and no position
+        if self.Position == 0 and not self._entered_this_session and self._prev_session_decline and close > ma:
+            self.BuyMarket()
+            self._cooldown = cd
+            self._entered_this_session = True
+            self._prev_session_decline = False
+        # Entry: sell if previous session rallied and no position
+        elif self.Position == 0 and not self._entered_this_session and self._prev_session_rally and close < ma:
+            self.SellMarket()
+            self._cooldown = cd
+            self._entered_this_session = True
+            self._prev_session_rally = False
+
+        # Exit long if price crosses below MA
+        if self.Position > 0 and self._prev_ma > 0 and close < ma:
+            self.SellMarket()
+            self._cooldown = cd
+
+        # Exit short if price crosses above MA
+        if self.Position < 0 and self._prev_ma > 0 and close > ma:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_ma = ma
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return turnaround_tuesday_strategy()

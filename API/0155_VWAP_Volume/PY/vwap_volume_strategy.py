@@ -3,175 +3,120 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, SimpleMovingAverage
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-from indicator_extensions import *
+
 
 class vwap_volume_strategy(Strategy):
     """
-    Strategy combining VWAP and Volume indicators.
-    Buys/sells on VWAP breakouts confirmed by above-average volume.
-
+    Strategy combining VWAP with volume confirmation.
     """
 
     def __init__(self):
         super(vwap_volume_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._volume_period = self.Param("VolumePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10)
-
-        self._volume_threshold = self.Param("VolumeThreshold", 1.5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Volume Threshold", "Multiplier for average volume to confirm signal", "Trading Levels") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.2, 2.0, 0.2)
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._volume_period = self.Param("VolumePeriod", 20) \
+            .SetRange(10, 50) \
+            .SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators")
+        self._volume_threshold = self.Param("VolumeThreshold", 1.5) \
+            .SetDisplay("Volume Threshold", "Multiplier for average volume", "Trading Levels")
+        self._cooldown_bars = self.Param("CooldownBars", 100) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
+            .SetRange(5, 500)
 
-        # Indicator for volume
-        self._volumeMA = SimpleMovingAverage()
-        self._volumeMA.Length = self.volume_period
-
-    @property
-    def volume_period(self):
-        """Period for volume moving average."""
-        return self._volume_period.Value
-
-    @volume_period.setter
-    def volume_period(self, value):
-        self._volume_period.Value = value
-
-    @property
-    def volume_threshold(self):
-        """Volume threshold as percentage of average volume."""
-        return self._volume_threshold.Value
-
-    @volume_threshold.setter
-    def volume_threshold(self, value):
-        self._volume_threshold.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._volumes = []
+        self._cum_vol = 0.0
+        self._cum_tpv = 0.0
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy calculation."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def OnReseted(self):
-        """Resets internal state when strategy is reset."""
-        super(vwap_volume_strategy, self).OnReseted()
-        self._volumeMA = SimpleMovingAverage()
-        self._volumeMA.Length = self.volume_period
-
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(vwap_volume_strategy, self).OnStarted(time)
+        self._volumes = []
+        self._cum_vol = 0.0
+        self._cum_tpv = 0.0
+        self._cooldown = 0
 
-        # Create indicators
-        vwap = VolumeWeightedMovingAverage()
+        ema = ExponentialMovingAverage()
+        ema.Length = self._volume_period.Value
 
-        # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ema, self.ProcessCandle).Start()
 
-        # Create custom bind for processing VWAP and volume data
-        subscription.Bind(self.ProcessCandle).Start()
-
-        # Enable stop-loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
-            isStopTrailing=False,
-            useMarketOrders=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, vwap)
-
-            # Create second area for volume
-            volume_area = self.CreateChartArea()
-            self.DrawIndicator(volume_area, self._volumeMA)
-
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        # Process volume with indicator
-        volume_ma = float(
-            process_float(
-                self._volumeMA,
-                candle.TotalVolume,
-                candle.ServerTime,
-                candle.State == CandleStates.Finished,
-            )
-        )
-
-        # Calculate VWAP manually for the current candle
-        vwap = 0
-        typical_price = float((candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3)
-
-        if candle.TotalVolume > 0:
-            # Simple VWAP calculation for a single candle
-            vwap = typical_price
-
-        # Skip if volume MA is not formed yet
-        if not self._volumeMA.IsFormed:
+    def ProcessCandle(self, candle, ema_value):
+        if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Check if volume is above threshold
-        is_high_volume = candle.TotalVolume > volume_ma * self.volume_threshold
+        close = float(candle.ClosePrice)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        vol = float(candle.TotalVolume)
+        typical_price = (high + low + close) / 3.0
 
-        # Trading logic
-        if candle.ClosePrice > vwap and is_high_volume and self.Position <= 0:
-            # Price breaks above VWAP with high volume - Buy
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        elif candle.ClosePrice < vwap and is_high_volume and self.Position >= 0:
-            # Price breaks below VWAP with high volume - Sell
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        elif self.Position > 0 and candle.ClosePrice < vwap:
-            # Exit long position when price crosses below VWAP
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and candle.ClosePrice > vwap:
-            # Exit short position when price crosses above VWAP
-            self.BuyMarket(Math.Abs(self.Position))
+        self._volumes.append(vol)
+        self._cum_vol += vol
+        self._cum_tpv += typical_price * vol
+
+        vol_prd = self._volume_period.Value
+
+        if len(self._volumes) < vol_prd:
+            if self._cooldown > 0:
+                self._cooldown -= 1
+            return
+
+        # Manual VWAP (cumulative)
+        vwap_value = self._cum_tpv / self._cum_vol if self._cum_vol > 0 else close
+
+        # Manual volume average
+        count = len(self._volumes)
+        sum_vol = sum(self._volumes[count - vol_prd:count])
+        avg_vol = sum_vol / vol_prd
+
+        high_volume = vol > avg_vol * self._volume_threshold.Value
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        cd = self._cooldown_bars.Value
+
+        # Buy: price above VWAP + high volume
+        if close > vwap_value and high_volume and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif close < vwap_value and high_volume and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cd
+
+        # Exit long: price below VWAP
+        if self.Position > 0 and close < vwap_value:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > vwap_value:
+            self.BuyMarket()
+            self._cooldown = cd
+
+    def OnReseted(self):
+        super(vwap_volume_strategy, self).OnReseted()
+        self._volumes = []
+        self._cum_vol = 0.0
+        self._cum_tpv = 0.0
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return vwap_volume_strategy()

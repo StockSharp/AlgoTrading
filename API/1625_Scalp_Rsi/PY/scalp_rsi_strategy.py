@@ -7,8 +7,6 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class scalp_rsi_strategy(Strategy):
     def __init__(self):
@@ -27,7 +25,7 @@ class scalp_rsi_strategy(Strategy):
         self._sell_tp = self.Param("SellTakeProfit", 3).SetDisplay("Sell Take Profit", "Ticks for take profit", "Sell")
         self._buy_ma_length = self.Param("BuyMaLength", 14).SetDisplay("Buy RSI Length", "RSI period for buy", "Buy")
         self._sell_ma_length = self.Param("SellMaLength", 14).SetDisplay("Sell RSI Length", "RSI period for sell", "Sell")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

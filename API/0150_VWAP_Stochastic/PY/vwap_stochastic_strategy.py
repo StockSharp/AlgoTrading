@@ -1,198 +1,164 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, StochasticOscillator
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-from indicator_extensions import *
+
 
 class vwap_stochastic_strategy(Strategy):
     """
-    Strategy combining VWAP and Stochastic indicators.
+    Strategy combining VWAP and manual Stochastic %K.
     Buys when price is below VWAP and Stochastic is oversold.
     Sells when price is above VWAP and Stochastic is overbought.
-
     """
 
     def __init__(self):
         super(vwap_stochastic_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._stochPeriod = self.Param("StochPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stoch Period", "Period for Stochastic calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
-
-        self._stochKPeriod = self.Param("StochKPeriod", 3) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stoch %K", "Smoothing period for %K line", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1, 5, 1)
-
-        self._stochDPeriod = self.Param("StochDPeriod", 3) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stoch %D", "Smoothing period for %D line", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1, 5, 1)
-
-        self._overboughtLevel = self.Param("OverboughtLevel", 80.0) \
-            .SetRange(50, 95) \
-            .SetDisplay("Overbought Level", "Level considered overbought", "Trading Levels") \
-            .SetCanOptimize(True) \
-            .SetOptimize(70, 90, 5)
-
-        self._oversoldLevel = self.Param("OversoldLevel", 20.0) \
-            .SetRange(5, 50) \
-            .SetDisplay("Oversold Level", "Level considered oversold", "Trading Levels") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
-
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def StochPeriod(self):
-        return self._stochPeriod.Value
+        self._stoch_period = self.Param("StochPeriod", 14) \
+            .SetRange(5, 30) \
+            .SetDisplay("Stoch Period", "Lookback period for Stochastic %K", "Indicators")
 
-    @StochPeriod.setter
-    def StochPeriod(self, value):
-        self._stochPeriod.Value = value
+        self._overbought_level = self.Param("OverboughtLevel", 80.0) \
+            .SetDisplay("Overbought Level", "Level considered overbought", "Trading Levels")
 
-    @property
-    def StochKPeriod(self):
-        return self._stochKPeriod.Value
+        self._oversold_level = self.Param("OversoldLevel", 20.0) \
+            .SetDisplay("Oversold Level", "Level considered oversold", "Trading Levels")
 
-    @StochKPeriod.setter
-    def StochKPeriod(self, value):
-        self._stochKPeriod.Value = value
+        self._cooldown_bars = self.Param("CooldownBars", 100) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
+            .SetRange(5, 500)
 
-    @property
-    def StochDPeriod(self):
-        return self._stochDPeriod.Value
-
-    @StochDPeriod.setter
-    def StochDPeriod(self, value):
-        self._stochDPeriod.Value = value
+        self._highs = []
+        self._lows = []
+        self._closes = []
+        self._volumes = []
+        self._typical_price_vol = []
+        self._cooldown = 0
 
     @property
-    def OverboughtLevel(self):
-        return self._overboughtLevel.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @OverboughtLevel.setter
-    def OverboughtLevel(self, value):
-        self._overboughtLevel.Value = value
-
-    @property
-    def OversoldLevel(self):
-        return self._oversoldLevel.Value
-
-    @OversoldLevel.setter
-    def OversoldLevel(self, value):
-        self._oversoldLevel.Value = value
+    @candle_type.setter
+    def candle_type(self, value):
+        self._candle_type.Value = value
 
     @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def stoch_period(self):
+        return self._stoch_period.Value
 
     @property
-    def CandleType(self):
-        return self._candleType.Value
+    def overbought_level(self):
+        return self._overbought_level.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    @property
+    def oversold_level(self):
+        return self._oversold_level.Value
+
+    @property
+    def cooldown_bars(self):
+        return self._cooldown_bars.Value
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(vwap_stochastic_strategy, self).OnStarted(time)
 
-        # Create indicators
-        vwap = VolumeWeightedMovingAverage()
-        stochastic = StochasticOscillator()
-        stochastic.K.Length = self.StochKPeriod
-        stochastic.D.Length = self.StochDPeriod
+        self._highs = []
+        self._lows = []
+        self._closes = []
+        self._volumes = []
+        self._typical_price_vol = []
+        self._cooldown = 0
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        ema = ExponentialMovingAverage()
+        ema.Length = 20
 
-        # Bind indicators to candles
-        subscription.BindEx(vwap, stochastic, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ema, self.ProcessCandle).Start()
 
-        # Enable stop-loss and take-profit protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, vwap)
-
-            # Create second area for stochastic
-            stochArea = self.CreateChartArea()
-            self.DrawIndicator(stochArea, stochastic)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, vwapValue, stochValue):
-        """
-        Skip unfinished candles and apply trading logic using VWAP and Stochastic.
-
-        :param candle: The candle message.
-        :param vwapValue: The VWAP indicator value.
-        :param stochValue: The Stochastic indicator value.
-        """
-        # Skip unfinished candles
+    def ProcessCandle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        kValue = stochValue.K
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        close = float(candle.ClosePrice)
+        volume = float(candle.TotalVolume)
+        typical_price = (high + low + close) / 3.0
 
-        vwapDec = float(vwapValue)
+        self._highs.append(high)
+        self._lows.append(low)
+        self._closes.append(close)
+        self._volumes.append(volume)
+        self._typical_price_vol.append(typical_price * volume)
 
-        # Trading logic
-        if candle.ClosePrice < vwapDec and kValue < self.OversoldLevel and self.Position <= 0:
-            # Price below VWAP and stochastic shows oversold - Buy
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        elif candle.ClosePrice > vwapDec and kValue > self.OverboughtLevel and self.Position >= 0:
-            # Price above VWAP and stochastic shows overbought - Sell
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        elif self.Position > 0 and candle.ClosePrice > vwapDec:
-            # Exit long position when price crosses above VWAP
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and candle.ClosePrice < vwapDec:
-            # Exit short position when price crosses below VWAP
-            self.BuyMarket(Math.Abs(self.Position))
+        period = self.stoch_period
+
+        if len(self._closes) < period:
+            if self._cooldown > 0:
+                self._cooldown -= 1
+            return
+
+        # Manual VWAP (cumulative)
+        sum_tpv = sum(self._typical_price_vol)
+        sum_vol = sum(self._volumes)
+        vwap_value = sum_tpv / sum_vol if sum_vol > 0 else close
+
+        # Manual Stochastic %K
+        count = len(self._highs)
+        start = count - period
+        highest_high = max(self._highs[start:count])
+        lowest_low = min(self._lows[start:count])
+
+        rng = highest_high - lowest_low
+        stoch_k = 100.0 * (close - lowest_low) / rng if rng > 0 else 50.0
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        # Buy: price below VWAP + Stochastic oversold
+        if close < vwap_value and stoch_k < self.oversold_level and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
+        # Sell: price above VWAP + Stochastic overbought
+        elif close > vwap_value and stoch_k > self.overbought_level and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+
+        # Exit long: price above VWAP or stoch overbought
+        if self.Position > 0 and (close > vwap_value or stoch_k > self.overbought_level):
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+        # Exit short: price below VWAP or stoch oversold
+        elif self.Position < 0 and (close < vwap_value or stoch_k < self.oversold_level):
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
+
+    def OnReseted(self):
+        super(vwap_stochastic_strategy, self).OnReseted()
+        self._highs = []
+        self._lows = []
+        self._closes = []
+        self._volumes = []
+        self._typical_price_vol = []
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return vwap_stochastic_strategy()

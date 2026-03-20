@@ -3,79 +3,55 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import Math, DayOfWeek, DateTime
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, DayOfWeek, DateTime
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class option_expiration_week_strategy(Strategy):
     """Goes long the specified ETF only during option-expiration week."""
 
     def __init__(self):
-        super().__init__()
-        self._min_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetDisplay("Min USD", "Minimum trade value", "Risk")
-        self._tf = self.Param("CandleType", tf(1 * 1440)) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._latest = {}
+        super(option_expiration_week_strategy, self).__init__()
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+
+        self._entered_month_key = 0
+        self._exited_month_key = 0
 
     @property
-    def min_trade_usd(self):
-        return self._min_usd.Value
-
-    @min_trade_usd.setter
-    def min_trade_usd(self, value):
-        self._min_usd.Value = value
-
-    @property
-    def candle_type(self):
-        return self._tf.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._tf.Value = value
-
-    def GetWorkingSecurities(self):
-        if self.Security is None:
-            raise Exception("ETF not set")
-        return [(self.Security, self.candle_type)]
+    def CandleType(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        super().OnReseted()
-        self._latest.clear()
+        super(option_expiration_week_strategy, self).OnReseted()
+        self._entered_month_key = 0
+        self._exited_month_key = 0
 
     def OnStarted(self, time):
-        super().OnStarted(time)
-        if self.Security is None:
-            raise Exception("ETF cannot be null")
-        self.SubscribeCandles(self.candle_type, True, self.Security) \
-            .Bind(lambda c, s=self.Security: self._process(c, s)) \
+        super(option_expiration_week_strategy, self).OnStarted(time)
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription \
+            .Bind(self.ProcessCandle) \
             .Start()
 
-    def _process(self, candle, sec):
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        self._latest[sec] = candle.ClosePrice
-        self._on_daily(candle.OpenTime.Date)
 
-    def _on_daily(self, d):
+        d = candle.OpenTime.Date
+        month_key = d.Year * 100 + d.Month
         in_exp = self._is_exp_week(d)
-        port = self.Portfolio.CurrentValue or 0.0
-        price = self._latest.get(self.Security, 0)
-        tgt = port / price if in_exp and price > 0 else 0
-        diff = tgt - self._pos()
-        if price <= 0 or abs(diff) * price < self.min_trade_usd:
-            return
-        side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order, Security
-        self.RegisterOrder(Order(Security=self.Security, Portfolio=self.Portfolio,
-                                 Side=side, Volume=abs(diff), Type=OrderTypes.Market,
-                                 Comment="OpExp"))
 
-    def _pos(self):
-        val = self.GetPositionValue(self.Security, self.Portfolio)
-        return val or 0.0
+        if in_exp and self.Position == 0 and self._entered_month_key != month_key:
+            self.BuyMarket()
+            self._entered_month_key = month_key
+            self._exited_month_key = 0
+        elif not in_exp and self.Position > 0 and self._entered_month_key == month_key and self._exited_month_key != month_key:
+            self.SellMarket()
+            self._exited_month_key = month_key
 
     def _is_exp_week(self, d):
         third = DateTime(d.Year, d.Month, 1)

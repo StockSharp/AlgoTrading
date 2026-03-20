@@ -1,168 +1,106 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class morning_star_strategy(Strategy):
     """
     Morning Star candle pattern strategy.
-    The strategy looks for a Morning Star pattern - first bearish candle, second small candle (doji), third bullish candle that closes above the midpoint of the first.
-    
+    Morning Star: 1st bearish, 2nd small body (doji), 3rd bullish closing above midpoint of 1st.
+    Evening Star (reverse): 1st bullish, 2nd small body, 3rd bearish closing below midpoint of 1st.
+    Uses SMA for exit signals.
     """
+
     def __init__(self):
         super(morning_star_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._firstCandle = None
-        self._secondCandle = None
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage below the second candle's low", "Risk Management")
+        self._bar1 = None
+        self._bar2 = None
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(morning_star_strategy, self).OnReseted()
-        self._firstCandle = None
-        self._secondCandle = None
+        self._bar1 = None
+        self._bar2 = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(morning_star_strategy, self).OnStarted(time)
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessCandle).Start()
+        self._bar1 = None
+        self._bar2 = None
+        self._cooldown = 0
 
-        # Setup chart visualization if available
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Setup trailing stop
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=True
-        )
-    def ProcessCandle(self, candle):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        """
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # The strategy only takes long positions
-        if self.Position > 0:
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._bar1 = self._bar2
+            self._bar2 = candle
             return
 
-        # If we have no previous candle stored, store the current one and return
-        if self._firstCandle is None:
-            self._firstCandle = candle
-            return
+        if self._bar1 is not None and self._bar2 is not None:
+            # Morning Star (bullish reversal)
+            first_bearish = self._bar1.ClosePrice < self._bar1.OpenPrice
+            first_body = abs(float(self._bar1.OpenPrice) - float(self._bar1.ClosePrice))
+            second_body = abs(float(self._bar2.OpenPrice) - float(self._bar2.ClosePrice))
+            second_small = first_body > 0 and second_body < first_body * 0.5
+            third_bullish = candle.ClosePrice > candle.OpenPrice
+            first_mid = (float(self._bar1.HighPrice) + float(self._bar1.LowPrice)) / 2.0
+            morning_star = first_bearish and second_small and third_bullish and float(candle.ClosePrice) > first_mid
 
-        # If we have one previous candle stored, store the current one as the second and return
-        if self._secondCandle is None:
-            self._secondCandle = candle
-            return
+            # Evening Star (bearish reversal)
+            first_bullish = self._bar1.ClosePrice > self._bar1.OpenPrice
+            third_bearish = candle.ClosePrice < candle.OpenPrice
+            evening_star = first_bullish and second_small and third_bearish and float(candle.ClosePrice) < first_mid
 
-        # We now have three candles to analyze (the first two stored and the current one)
-        isMorningStar = self.CheckMorningStar(self._firstCandle, self._secondCandle, candle)
+            sv = float(sma_val)
+            close = float(candle.ClosePrice)
+            cd = self._cooldown_bars.Value
 
-        if isMorningStar:
-            # Morning Star pattern detected - enter long position
-            self.BuyMarket(self.Volume)
-            
-            self.LogInfo("Morning Star pattern detected. Entering long position at {0}".format(candle.ClosePrice))
-            
-            # Set stop-loss
-            stopPrice = self._secondCandle.LowPrice * (1 - self.StopLossPercent / 100)
-            self.LogInfo("Setting stop-loss at {0}".format(stopPrice))
+            if self.Position == 0 and morning_star:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif self.Position == 0 and evening_star:
+                self.SellMarket()
+                self._cooldown = cd
+            elif self.Position > 0 and close < sv:
+                self.SellMarket()
+                self._cooldown = cd
+            elif self.Position < 0 and close > sv:
+                self.BuyMarket()
+                self._cooldown = cd
 
-        # Shift candles (drop first, move second to first, current to second)
-        self._firstCandle = self._secondCandle
-        self._secondCandle = candle
-
-        # Exit logic for existing positions
-        if self.Position > 0 and candle.HighPrice > self._secondCandle.HighPrice:
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit signal: Price above previous high. Closing position at {0}".format(candle.ClosePrice))
-
-    def CheckMorningStar(self, first, second, third):
-        """
-        Check if three candles form a Morning Star pattern
-        
-        :param first: First candle
-        :param second: Second candle
-        :param third: Third candle
-        :return: True if Morning Star pattern is detected
-        """
-        # Check the first candle is bearish (close lower than open)
-        firstIsBearish = first.ClosePrice < first.OpenPrice
-        
-        # Check the third candle is bullish (close higher than open)
-        thirdIsBullish = third.ClosePrice > third.OpenPrice
-        
-        # Calculate the body size (absolute difference between open and close)
-        firstBodySize = Math.Abs(first.OpenPrice - first.ClosePrice)
-        secondBodySize = Math.Abs(second.OpenPrice - second.ClosePrice)
-        
-        # Second candle should have a small body (doji or near-doji) - typically less than 30% of the first
-        secondIsSmall = secondBodySize < (firstBodySize * 0.3)
-        
-        # Calculate midpoint of first candle
-        firstMidpoint = (first.HighPrice + first.LowPrice) / 2
-        
-        # Third candle close should be above the midpoint of the first candle
-        thirdClosesHighEnough = third.ClosePrice > firstMidpoint
-        
-        # Log pattern analysis
-        self.LogInfo("Pattern analysis: First bearish={0}, Second small={1}, Third bullish={2}, Third above midpoint={3}".format(
-            firstIsBearish, secondIsSmall, thirdIsBullish, thirdClosesHighEnough))
-        
-        # Return true if all conditions are met
-        return firstIsBearish and secondIsSmall and thirdIsBullish and thirdClosesHighEnough
+        self._bar1 = self._bar2
+        self._bar2 = candle
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return morning_star_strategy()

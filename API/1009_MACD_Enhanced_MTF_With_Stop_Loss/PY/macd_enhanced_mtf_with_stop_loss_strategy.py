@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
@@ -60,9 +60,9 @@ class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
             return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        fast = float(fast_val.ToDecimal())
-        slow = float(slow_val.ToDecimal())
-        atr = float(atr_val.ToDecimal())
+        fast = float(IndicatorHelper.ToDecimal(fast_val))
+        slow = float(IndicatorHelper.ToDecimal(slow_val))
+        atr = float(IndicatorHelper.ToDecimal(atr_val))
         if fast == 0 or slow == 0:
             return
         is_fast_above = fast > slow

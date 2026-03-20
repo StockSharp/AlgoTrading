@@ -3,82 +3,34 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import KeltnerChannels
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class keltner_channel_breakout_strategy(Strategy):
     """
     Strategy based on Keltner Channel breakout.
-    It enters long position when price breaks through the upper band 
-    and short position when price breaks through the lower band.
-    
+    Enters long when price breaks above upper band, short when price breaks below lower band.
     """
-    
+
     def __init__(self):
         super(keltner_channel_breakout_strategy, self).__init__()
-        
-        # Initialize strategy parameters
-        self._ema_period = self.Param("EmaPeriod", 20) \
-            .SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")
-        
-        self._atr_period = self.Param("AtrPeriod", 14) \
-            .SetDisplay("ATR Period", "Period for Average True Range", "Indicators")
-        
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR to determine channel width", "Indicators")
-        
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        
-        # Current state
+        self._ema_period = self.Param("EmaPeriod", 500).SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")
+        self._atr_period = self.Param("AtrPeriod", 14).SetDisplay("ATR Period", "Period for Average True Range", "Indicators")
+        self._atr_multiplier = self.Param("AtrMultiplier", 10.0).SetDisplay("ATR Multiplier", "Multiplier for ATR to determine channel width", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+
         self._prev_close_price = 0.0
         self._prev_upper_band = 0.0
         self._prev_lower_band = 0.0
         self._prev_ema = 0.0
 
     @property
-    def ema_period(self):
-        """Period for EMA calculation."""
-        return self._ema_period.Value
-
-    @ema_period.setter
-    def ema_period(self, value):
-        self._ema_period.Value = value
-
-    @property
-    def atr_period(self):
-        """Period for ATR calculation."""
-        return self._atr_period.Value
-
-    @atr_period.setter
-    def atr_period(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def atr_multiplier(self):
-        """Multiplier for ATR to determine channel width."""
-        return self._atr_multiplier.Value
-
-    @atr_multiplier.setter
-    def atr_multiplier(self, value):
-        self._atr_multiplier.Value = value
-
-    @property
     def candle_type(self):
-        """Candle type."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(keltner_channel_breakout_strategy, self).OnReseted()
         self._prev_close_price = 0.0
         self._prev_upper_band = 0.0
@@ -86,104 +38,54 @@ class keltner_channel_breakout_strategy(Strategy):
         self._prev_ema = 0.0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(keltner_channel_breakout_strategy, self).OnStarted(time)
 
-        # Create indicators
-        keltner_channel = KeltnerChannels()
-        keltner_channel.Length = self.ema_period
-        keltner_channel.Multiplier = self.atr_multiplier
+        keltner = KeltnerChannels()
+        keltner.Length = self._ema_period.Value
+        keltner.Multiplier = self._atr_multiplier.Value
 
-        # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(keltner_channel, self.ProcessCandle).Start()
+        subscription.BindEx(keltner, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, keltner_channel)
+            self.DrawIndicator(area, keltner)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, keltner_value):
-        """
-        Processes each finished candle and executes Keltner Channel breakout logic.
-        
-        :param candle: The processed candle message.
-        :param keltner_value: The current value of the Keltner Channel indicator.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, keltner_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Extract values from Keltner Channel indicator
-        if keltner_value.Upper is None:
+        if keltner_val.Upper is None or keltner_val.Lower is None or keltner_val.Middle is None:
             return
-        upper_value = float(keltner_value.Upper)
 
-        if keltner_value.Lower is None:
-            return
-        lower_value = float(keltner_value.Lower)
+        upper = float(keltner_val.Upper)
+        lower = float(keltner_val.Lower)
+        middle = float(keltner_val.Middle)
 
-        if keltner_value.Middle is None:
-            return
-        middle_value = float(keltner_value.Middle)
-
-        # Skip the first received value for proper comparison
         if self._prev_upper_band == 0:
             self._prev_close_price = float(candle.ClosePrice)
-            self._prev_upper_band = upper_value
-            self._prev_lower_band = lower_value
-            self._prev_ema = middle_value
+            self._prev_upper_band = upper
+            self._prev_lower_band = lower
+            self._prev_ema = middle
             return
 
-        # Check for breakouts
-        is_upper_breakout = (candle.ClosePrice > self._prev_upper_band and 
-                           self._prev_close_price <= self._prev_upper_band)
-        is_lower_breakout = (candle.ClosePrice < self._prev_lower_band and 
-                           self._prev_close_price >= self._prev_lower_band)
+        close = float(candle.ClosePrice)
+        is_upper_breakout = close > self._prev_upper_band and self._prev_close_price <= self._prev_upper_band
+        is_lower_breakout = close < self._prev_lower_band and self._prev_close_price >= self._prev_lower_band
 
-        # Check for exit conditions
-        should_exit_long = candle.ClosePrice < self._prev_ema and self.Position > 0
-        should_exit_short = candle.ClosePrice > self._prev_ema and self.Position < 0
-
-        # Entry logic
         if is_upper_breakout and self.Position <= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo("Buy signal: Price {0} broke above upper band {1}".format(
-                candle.ClosePrice, self._prev_upper_band))
+            self.BuyMarket()
         elif is_lower_breakout and self.Position >= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-            self.LogInfo("Sell signal: Price {0} broke below lower band {1}".format(
-                candle.ClosePrice, self._prev_lower_band))
-        # Exit logic
-        elif should_exit_long:
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit long: Price {0} dropped below EMA {1}".format(
-                candle.ClosePrice, self._prev_ema))
-        elif should_exit_short:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: Price {0} rose above EMA {1}".format(
-                candle.ClosePrice, self._prev_ema))
+            self.SellMarket()
 
-        # Update previous values
-        self._prev_close_price = float(candle.ClosePrice)
-        self._prev_upper_band = upper_value
-        self._prev_lower_band = lower_value
-        self._prev_ema = middle_value
+        self._prev_close_price = close
+        self._prev_upper_band = upper
+        self._prev_lower_band = lower
+        self._prev_ema = middle
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return keltner_channel_breakout_strategy()

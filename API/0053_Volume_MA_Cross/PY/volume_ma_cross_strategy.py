@@ -1,176 +1,117 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class volume_ma_cross_strategy(Strategy):
     """
-    Volume MA Cross strategy
-    Long entry: Fast volume MA crosses above slow volume MA
-    Short entry: Fast volume MA crosses below slow volume MA
-    Exit: Reverse crossover
-    
+    Volume MA Cross strategy.
+    Uses fast/slow volume MA crossover with price MA for direction.
+    Long: Price crosses above SMA.
+    Short: Price crosses below SMA.
     """
+
     def __init__(self):
         super(volume_ma_cross_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._previousFastVolumeMA = 0
-        self._previousSlowVolumeMA = 0
-        self._isFirstValue = True
-        self._fastVolumeMA = None
-        self._slowVolumeMA = None
+        self._price_ma_period = self.Param("PriceMaPeriod", 20).SetDisplay("Price MA Period", "Period for price SMA", "Indicators")
+        self._fast_vol_period = self.Param("FastVolPeriod", 10).SetDisplay("Fast Vol Period", "Period for fast volume MA", "Indicators")
+        self._slow_vol_period = self.Param("SlowVolPeriod", 30).SetDisplay("Slow Vol Period", "Period for slow volume MA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._fastVolumeMALength = self.Param("FastVolumeMALength", 10) \
-            .SetDisplay("Fast Volume MA Length", "Period for Fast Volume Moving Average", "Strategy Parameters")
-
-        self._slowVolumeMALength = self.Param("SlowVolumeMALength", 50) \
-            .SetDisplay("Slow Volume MA Length", "Period for Slow Volume Moving Average", "Strategy Parameters")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
+        self._fast_vol_ma = None
+        self._slow_vol_ma = None
+        self._prev_close = 0.0
+        self._prev_ma = 0.0
+        self._cooldown = 0
 
     @property
-    def FastVolumeMALength(self):
-        return self._fastVolumeMALength.Value
-
-    @FastVolumeMALength.setter
-    def FastVolumeMALength(self, value):
-        self._fastVolumeMALength.Value = value
-
-    @property
-    def SlowVolumeMALength(self):
-        return self._slowVolumeMALength.Value
-
-    @SlowVolumeMALength.setter
-    def SlowVolumeMALength(self, value):
-        self._slowVolumeMALength.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(volume_ma_cross_strategy, self).OnReseted()
-        self._previousFastVolumeMA = 0
-        self._previousSlowVolumeMA = 0
-        self._isFirstValue = True
-        self._fastVolumeMA = None
-        self._slowVolumeMA = None
+        self._fast_vol_ma = None
+        self._slow_vol_ma = None
+        self._prev_close = 0.0
+        self._prev_ma = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(volume_ma_cross_strategy, self).OnStarted(time)
 
-        # Create indicators
-        self._fastVolumeMA = SimpleMovingAverage()
-        self._fastVolumeMA.Length = self.FastVolumeMALength
-        
-        self._slowVolumeMA = SimpleMovingAverage()
-        self._slowVolumeMA.Length = self.SlowVolumeMALength
-        
-        priceMA = SimpleMovingAverage()  # Use same period as fast Volume MA
-        priceMA.Length = self.FastVolumeMALength
+        self._prev_close = 0.0
+        self._prev_ma = 0.0
+        self._cooldown = 0
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-        
-        # Regular price MA binding for chart visualization
-        subscription.Bind(priceMA, self.ProcessCandle).Start()
+        self._fast_vol_ma = SimpleMovingAverage()
+        self._fast_vol_ma.Length = self._fast_vol_period.Value
+        self._slow_vol_ma = SimpleMovingAverage()
+        self._slow_vol_ma.Length = self._slow_vol_period.Value
 
-        # Configure protection
-        self.StartProtection(
-            takeProfit=Unit(3, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-        # Setup chart visualization
+        sma = SimpleMovingAverage()
+        sma.Length = self._price_ma_period.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, priceMA)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, priceMAValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param priceMAValue: The price Moving Average value.
-        """
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Process volume through MAs
-        fastMAValue = float(process_float(self._fastVolumeMA, candle.TotalVolume, candle.ServerTime, True))
-        slowMAValue = float(process_float(self._slowVolumeMA, candle.TotalVolume, candle.ServerTime, True))
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        
-        # Skip the first values to initialize previous values
-        if self._isFirstValue:
-            self._previousFastVolumeMA = fastMAValue
-            self._previousSlowVolumeMA = slowMAValue
-            self._isFirstValue = False
+
+        # Process volume through manual MAs
+        fast_result = self._fast_vol_ma.Process(DecimalIndicatorValue(self._fast_vol_ma, candle.TotalVolume, candle.ServerTime))
+        slow_result = self._slow_vol_ma.Process(DecimalIndicatorValue(self._slow_vol_ma, candle.TotalVolume, candle.ServerTime))
+        fast_vol = float(fast_result)
+        slow_vol = float(slow_result)
+
+        close = float(candle.ClosePrice)
+        sv = float(sma_val)
+
+        if self._prev_close == 0:
+            self._prev_close = close
+            self._prev_ma = sv
             return
-        
-        # Check for crossovers
-        crossAbove = (self._previousFastVolumeMA <= self._previousSlowVolumeMA and 
-                     fastMAValue > slowMAValue)
-        crossBelow = (self._previousFastVolumeMA >= self._previousSlowVolumeMA and 
-                     fastMAValue < slowMAValue)
-        
-        # Log current values
-        self.LogInfo("Candle Close: {0}, Price MA: {1}".format(candle.ClosePrice, priceMAValue))
-        self.LogInfo("Fast Volume MA: {0}, Slow Volume MA: {1}".format(fastMAValue, slowMAValue))
-        self.LogInfo("Cross Above: {0}, Cross Below: {1}".format(crossAbove, crossBelow))
 
-        # Trading logic:
-        # Long: Fast volume MA crosses above slow volume MA
-        if crossAbove and self.Position <= 0:
-            self.LogInfo("Buy Signal: Fast Volume MA crossing above Slow Volume MA")
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        # Short: Fast volume MA crosses below slow volume MA
-        elif crossBelow and self.Position >= 0:
-            self.LogInfo("Sell Signal: Fast Volume MA crossing below Slow Volume MA")
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-        
-        # Exit logic: Reverse crossover
-        if self.Position > 0 and crossBelow:
-            self.LogInfo("Exit Long: Fast Volume MA crossing below Slow Volume MA")
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and crossAbove:
-            self.LogInfo("Exit Short: Fast Volume MA crossing above Slow Volume MA")
-            self.BuyMarket(Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_close = close
+            self._prev_ma = sv
+            return
 
-        # Store current values for next comparison
-        self._previousFastVolumeMA = fastMAValue
-        self._previousSlowVolumeMA = slowMAValue
+        cd = self._cooldown_bars.Value
+        cross_up = self._prev_close <= self._prev_ma and close > sv
+        cross_down = self._prev_close >= self._prev_ma and close < sv
+        volume_expanding = self._slow_vol_ma.IsFormed and fast_vol > slow_vol
+
+        if self.Position == 0 and cross_up:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and cross_down:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and (cross_down or (volume_expanding and close < sv)):
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and (cross_up or (volume_expanding and close > sv)):
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_close = close
+        self._prev_ma = sv
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return volume_ma_cross_strategy()

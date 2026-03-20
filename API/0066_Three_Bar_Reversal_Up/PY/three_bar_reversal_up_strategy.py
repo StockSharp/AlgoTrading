@@ -1,208 +1,109 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("System.Collections")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from System.Collections.Generic import Queue
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import Lowest
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class three_bar_reversal_up_strategy(Strategy):
     """
-    Strategy based on the Three-Bar Reversal Up pattern.
-    This pattern consists of three consecutive bars where:
-    1. First bar is bearish (close < open)
-    2. Second bar is bearish with a lower low than the first
-    3. Third bar is bullish and closes above the high of the second bar
-    
+    Three-Bar Reversal Up strategy.
+    Pattern: 1st bar bearish, 2nd bar bearish with lower low, 3rd bar bullish closing above 2nd high.
+    Uses SMA for exit.
     """
+
     def __init__(self):
         super(three_bar_reversal_up_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._lastThreeCandles = Queue[object](3)
-        self._lowestIndicator = None
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Percentage below pattern's low for stop-loss", "Risk Management")
-
-        self._requireDowntrend = self.Param("RequireDowntrend", True) \
-            .SetDisplay("Require Downtrend", "Whether to require a prior downtrend", "Pattern Parameters")
-
-        self._downtrendLength = self.Param("DowntrendLength", 5) \
-            .SetDisplay("Downtrend Length", "Number of bars to check for downtrend", "Pattern Parameters")
+        self._bar1 = None
+        self._bar2 = None
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def RequireDowntrend(self):
-        return self._requireDowntrend.Value
-
-    @RequireDowntrend.setter
-    def RequireDowntrend(self, value):
-        self._requireDowntrend.Value = value
-
-    @property
-    def DowntrendLength(self):
-        return self._downtrendLength.Value
-
-    @DowntrendLength.setter
-    def DowntrendLength(self, value):
-        self._downtrendLength.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(three_bar_reversal_up_strategy, self).OnReseted()
-        self._lastThreeCandles.Clear()
-        self._lowestIndicator = None
+        self._bar1 = None
+        self._bar2 = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(three_bar_reversal_up_strategy, self).OnStarted(time)
 
-        # Create lowest indicator for downtrend identification
-        self._lowestIndicator = Lowest()
-        self._lowestIndicator.Length = self.DowntrendLength
+        self._bar1 = None
+        self._bar2 = None
+        self._cooldown = 0
 
-        # Subscribe to candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
 
-        # Bind candle processing with the lowest indicator
-        subscription.Bind(self._lowestIndicator, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=False
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, lowestValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param lowestValue: The lowest value from indicator.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Already in position, no need to search for new patterns
-        if self.Position > 0:
-            self.UpdateCandleQueue(candle)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._bar1 = self._bar2
+            self._bar2 = candle
             return
 
-        # Add current candle to the queue and maintain its size
-        self.UpdateCandleQueue(candle)
+        if self._bar1 is not None and self._bar2 is not None:
+            # Three-bar reversal up: bar1 bearish, bar2 bearish with lower low, bar3 bullish closing above bar2 high
+            bar1_bearish = self._bar1.ClosePrice < self._bar1.OpenPrice
+            bar2_bearish = self._bar2.ClosePrice < self._bar2.OpenPrice
+            bar2_lower_low = self._bar2.LowPrice < self._bar1.LowPrice
+            bar3_bullish = candle.ClosePrice > candle.OpenPrice
+            bar3_above_bar2_high = candle.ClosePrice > self._bar2.HighPrice
 
-        # Check if we have enough candles for pattern detection
-        if self._lastThreeCandles.Count < 3:
-            return
+            three_bar_up = bar1_bearish and bar2_bearish and bar2_lower_low and bar3_bullish and bar3_above_bar2_high
 
-        # Get the three candles for pattern analysis
-        candles = list(self._lastThreeCandles)
-        firstCandle = candles[0]
-        secondCandle = candles[1]
-        thirdCandle = candles[2]  # Current candle
+            # Three-bar reversal down: bar1 bullish, bar2 bullish with higher high, bar3 bearish closing below bar2 low
+            bar1_bullish = self._bar1.ClosePrice > self._bar1.OpenPrice
+            bar2_bullish = self._bar2.ClosePrice > self._bar2.OpenPrice
+            bar2_higher_high = self._bar2.HighPrice > self._bar1.HighPrice
+            bar3_bearish = candle.ClosePrice < candle.OpenPrice
+            bar3_below_bar2_low = candle.ClosePrice < self._bar2.LowPrice
 
-        # Check for Three-Bar Reversal Up pattern:
-        # 1. First candle is bearish
-        isFirstBearish = firstCandle.ClosePrice < firstCandle.OpenPrice
+            three_bar_down = bar1_bullish and bar2_bullish and bar2_higher_high and bar3_bearish and bar3_below_bar2_low
 
-        # 2. Second candle is bearish with a lower low
-        isSecondBearish = secondCandle.ClosePrice < secondCandle.OpenPrice
-        hasSecondLowerLow = secondCandle.LowPrice < firstCandle.LowPrice
+            sv = float(sma_val)
+            close = float(candle.ClosePrice)
+            cd = self._cooldown_bars.Value
 
-        # 3. Third candle is bullish and closes above second candle's high
-        isThirdBullish = thirdCandle.ClosePrice > thirdCandle.OpenPrice
-        doesThirdCloseAboveSecondHigh = thirdCandle.ClosePrice > secondCandle.HighPrice
+            if self.Position == 0 and three_bar_up:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif self.Position == 0 and three_bar_down:
+                self.SellMarket()
+                self._cooldown = cd
+            elif self.Position > 0 and close < sv:
+                self.SellMarket()
+                self._cooldown = cd
+            elif self.Position < 0 and close > sv:
+                self.BuyMarket()
+                self._cooldown = cd
 
-        # 4. Check if we're in a downtrend (if required)
-        isInDowntrend = not self.RequireDowntrend or self.IsInDowntrend(lowestValue)
-
-        # Check if the pattern is complete
-        if (isFirstBearish and isSecondBearish and hasSecondLowerLow and 
-            isThirdBullish and doesThirdCloseAboveSecondHigh and isInDowntrend):
-            # Pattern found - take long position
-            patternLow = Math.Min(secondCandle.LowPrice, thirdCandle.LowPrice)
-            stopLoss = patternLow * (1 - self.StopLossPercent / 100)
-
-            self.BuyMarket(self.Volume)
-            self.LogInfo("Three-Bar Reversal Up pattern detected at {0}".format(thirdCandle.OpenTime))
-            self.LogInfo("First bar: O={0}, C={1}, L={2}".format(
-                firstCandle.OpenPrice, firstCandle.ClosePrice, firstCandle.LowPrice))
-            self.LogInfo("Second bar: O={0}, C={1}, L={2}".format(
-                secondCandle.OpenPrice, secondCandle.ClosePrice, secondCandle.LowPrice))
-            self.LogInfo("Third bar: O={0}, C={1}".format(
-                thirdCandle.OpenPrice, thirdCandle.ClosePrice))
-            self.LogInfo("Stop Loss set at {0}".format(stopLoss))
-
-    def UpdateCandleQueue(self, candle):
-        """
-        Update the candle queue with the latest candle
-        
-        :param candle: The candle to add.
-        """
-        self._lastThreeCandles.Enqueue(candle)
-        while self._lastThreeCandles.Count > 3:
-            self._lastThreeCandles.Dequeue()
-
-    def IsInDowntrend(self, lowestValue):
-        """
-        Check if we're in a downtrend
-        
-        :param lowestValue: The lowest value from indicator.
-        :return: True if in downtrend.
-        """
-        # If we have the lowest indicator value, check if current price is near it
-        if self._lastThreeCandles.Count > 0:
-            candlesList = list(self._lastThreeCandles)
-            lastCandle = candlesList[-1]  # Get the last candle
-            return Math.Abs(lastCandle.LowPrice - lowestValue) / lowestValue < 0.03
-        
-        return False
+        self._bar1 = self._bar2
+        self._bar2 = candle
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return three_bar_reversal_up_strategy()

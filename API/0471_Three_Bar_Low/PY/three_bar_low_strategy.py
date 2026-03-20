@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class three_bar_low_strategy(Strategy):
     """Mean reversion: buy below N-bar low, sell above N-bar high, with EMA filter."""
@@ -18,7 +16,7 @@ class three_bar_low_strategy(Strategy):
         self._lookback_low = self.Param("LookbackLow", 3).SetGreaterThanZero().SetDisplay("Lookback Low", "Bars for lowest low", "Parameters")
         self._lookback_high = self.Param("LookbackHigh", 7).SetGreaterThanZero().SetDisplay("Lookback High", "Bars for highest high", "Parameters")
         self._cooldown_bars = self.Param("CooldownBars", 10).SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

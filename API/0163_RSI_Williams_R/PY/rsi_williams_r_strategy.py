@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -12,200 +12,119 @@ from datatype_extensions import *
 
 class rsi_williams_r_strategy(Strategy):
     """
-    Implementation of strategy - RSI + Williams %R.
-    Buy when RSI is below 30 and Williams %R is below -80 (double oversold condition).
-    Sell when RSI is above 70 and Williams %R is above -20 (double overbought condition).
-
+    RSI + Williams %R strategy.
+    Buy when both RSI and Williams %R cross into oversold.
+    Sell when both cross into overbought.
     """
 
     def __init__(self):
         super(rsi_williams_r_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("RSI Period", "Period for Relative Strength Index", "RSI Parameters")
-
+            .SetDisplay("RSI Period", "Period for RSI", "RSI Parameters")
         self._rsi_oversold = self.Param("RsiOversold", 30.0) \
             .SetRange(1, 100) \
-            .SetDisplay("RSI Oversold", "RSI level to consider market oversold", "RSI Parameters")
-
+            .SetDisplay("RSI Oversold", "RSI oversold level", "RSI Parameters")
         self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
             .SetRange(1, 100) \
-            .SetDisplay("RSI Overbought", "RSI level to consider market overbought", "RSI Parameters")
-
+            .SetDisplay("RSI Overbought", "RSI overbought level", "RSI Parameters")
         self._williams_r_period = self.Param("WilliamsRPeriod", 14) \
-            .SetGreaterThanZero() \
             .SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R Parameters")
-
         self._williams_r_oversold = self.Param("WilliamsROversold", -80.0) \
             .SetRange(-100, 0) \
-            .SetDisplay("Williams %R Oversold", "Williams %R level to consider market oversold", "Williams %R Parameters")
-
+            .SetDisplay("Williams %R Oversold", "Williams %R oversold level", "Williams %R Parameters")
         self._williams_r_overbought = self.Param("WilliamsROverbought", -20.0) \
             .SetRange(-100, 0) \
-            .SetDisplay("Williams %R Overbought", "Williams %R level to consider market overbought", "Williams %R Parameters")
-
-        self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
-
+            .SetDisplay("Williams %R Overbought", "Williams %R overbought level", "Williams %R Parameters")
+        self._cooldown_bars = self.Param("CooldownBars", 180) \
+            .SetRange(5, 500) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
-    @property
-    def rsi_period(self):
-        """RSI period."""
-        return self._rsi_period.Value
-
-    @rsi_period.setter
-    def rsi_period(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def rsi_oversold(self):
-        """RSI oversold level."""
-        return self._rsi_oversold.Value
-
-    @rsi_oversold.setter
-    def rsi_oversold(self, value):
-        self._rsi_oversold.Value = value
-
-    @property
-    def rsi_overbought(self):
-        """RSI overbought level."""
-        return self._rsi_overbought.Value
-
-    @rsi_overbought.setter
-    def rsi_overbought(self, value):
-        self._rsi_overbought.Value = value
-
-    @property
-    def williams_r_period(self):
-        """Williams %R period."""
-        return self._williams_r_period.Value
-
-    @williams_r_period.setter
-    def williams_r_period(self, value):
-        self._williams_r_period.Value = value
-
-    @property
-    def williams_r_oversold(self):
-        """Williams %R oversold level (usually below -80)."""
-        return self._williams_r_oversold.Value
-
-    @williams_r_oversold.setter
-    def williams_r_oversold(self, value):
-        self._williams_r_oversold.Value = value
-
-    @property
-    def williams_r_overbought(self):
-        """Williams %R overbought level (usually above -20)."""
-        return self._williams_r_overbought.Value
-
-    @williams_r_overbought.setter
-    def williams_r_overbought(self, value):
-        self._williams_r_overbought.Value = value
-
-    @property
-    def stop_loss(self):
-        """Stop-loss value."""
-        return self._stop_loss.Value
-
-    @stop_loss.setter
-    def stop_loss(self, value):
-        self._stop_loss.Value = value
+        self._cooldown = 0
+        self._prev_rsi = 0.0
+        self._prev_williams = 0.0
 
     @property
     def candle_type(self):
-        """Candle type used for strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def OnReseted(self):
-        """Resets internal state when strategy is reset."""
-        super(rsi_williams_r_strategy, self).OnReseted()
-        self.Indicators.Clear()
-
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Creates indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(rsi_williams_r_strategy, self).OnStarted(time)
+        self._cooldown = 0
+        self._prev_rsi = 0.0
+        self._prev_williams = 0.0
 
-        # Create indicators
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.rsi_period
+        rsi.Length = self._rsi_period.Value
         williams_r = WilliamsR()
-        williams_r.Length = self.williams_r_period
+        williams_r.Length = self._williams_r_period.Value
 
-        # Setup candle subscription
         subscription = self.SubscribeCandles(self.candle_type)
-
-        # Bind indicators to candles
         subscription.Bind(rsi, williams_r, self.ProcessCandle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-
-            # Create separate area for oscillators
-            oscillator_area = self.CreateChartArea()
-            if oscillator_area is not None:
-                self.DrawIndicator(oscillator_area, rsi)
-                self.DrawIndicator(oscillator_area, williams_r)
-
+            osc_area = self.CreateChartArea()
+            if osc_area is not None:
+                self.DrawIndicator(osc_area, rsi)
+                self.DrawIndicator(osc_area, williams_r)
             self.DrawOwnTrades(area)
 
-        # Start protective orders
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=self.stop_loss
-        )
     def ProcessCandle(self, candle, rsi_value, williams_r_value):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        self.LogInfo("Candle: {0}, Close: {1}, RSI: {2} , Williams %R: {3}".format(
-            candle.OpenTime, candle.ClosePrice, rsi_value, williams_r_value))
+        rv = float(rsi_value)
+        wv = float(williams_r_value)
 
-        # Trading rules
-        if rsi_value < self.rsi_oversold and williams_r_value < self.williams_r_oversold and self.Position <= 0:
-            # Buy signal - double oversold condition
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
+        if self._prev_rsi == 0 and self._prev_williams == 0:
+            self._prev_rsi = rv
+            self._prev_williams = wv
+            return
 
-            self.LogInfo("Buy signal: Double oversold condition - RSI: {0} < {1} and Williams %R: {2} < {3}. Volume: {4}".format(
-                rsi_value, self.rsi_oversold, williams_r_value, self.williams_r_oversold, volume))
-        elif rsi_value > self.rsi_overbought and williams_r_value > self.williams_r_overbought and self.Position >= 0:
-            # Sell signal - double overbought condition
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_rsi = rv
+            self._prev_williams = wv
+            return
 
-            self.LogInfo("Sell signal: Double overbought condition - RSI: {0} > {1} and Williams %R: {2} > {3}. Volume: {4}".format(
-                rsi_value, self.rsi_overbought, williams_r_value, self.williams_r_overbought, volume))
-        # Exit conditions
-        elif rsi_value > 50 and self.Position > 0:
-            # Exit long position when RSI returns to neutral zone
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit long: RSI returned to neutral zone ({0} > 50). Position: {1}".format(
-                rsi_value, self.Position))
-        elif rsi_value < 50 and self.Position < 0:
-            # Exit short position when RSI returns to neutral zone
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: RSI returned to neutral zone ({0} < 50). Position: {1}".format(
-                rsi_value, self.Position))
+        cd = self._cooldown_bars.Value
+        rsi_os = self._rsi_oversold.Value
+        rsi_ob = self._rsi_overbought.Value
+        wr_os = self._williams_r_oversold.Value
+        wr_ob = self._williams_r_overbought.Value
+
+        oversold_cross = (self._prev_rsi >= rsi_os and rv < rsi_os
+                          and self._prev_williams >= wr_os and wv < wr_os)
+        overbought_cross = (self._prev_rsi <= rsi_ob and rv > rsi_ob
+                            and self._prev_williams <= wr_ob and wv > wr_ob)
+
+        if oversold_cross and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif overbought_cross and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cd
+        elif rv > 50 and self.Position > 0:
+            self.SellMarket()
+            self._cooldown = cd
+        elif rv < 50 and self.Position < 0:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_rsi = rv
+        self._prev_williams = wv
+
+    def OnReseted(self):
+        super(rsi_williams_r_strategy, self).OnReseted()
+        self._cooldown = 0
+        self._prev_rsi = 0.0
+        self._prev_williams = 0.0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return rsi_williams_r_strategy()

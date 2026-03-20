@@ -4,145 +4,106 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class tweezer_top_strategy(Strategy):
     """
-    Strategy based on "Tweezer Top" candlestick pattern.
-    This pattern forms when two candlesticks have nearly identical highs, with the first
-    being bullish and the second being bearish, indicating a potential reversal.
-
+    Tweezer Top strategy.
+    Enters short on Tweezer Top (bullish then bearish with matching highs).
+    Enters long on Tweezer Bottom (bearish then bullish with matching lows).
+    Uses SMA for exit confirmation.
     """
 
     def __init__(self):
         super(tweezer_top_strategy, self).__init__()
+        self._tolerance_percent = self.Param("TolerancePercent", 0.1).SetDisplay("Tolerance %", "Max diff between highs/lows", "Pattern")
+        self._ma_length = self.Param("MaLength", 20).SetDisplay("MA Length", "Period of SMA for exit", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetRange(0.1, 5.0) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage above high", "Risk Management")
-
-        self._highTolerancePercent = self.Param("HighTolerancePercent", 0.1) \
-            .SetRange(0.05, 1.0) \
-            .SetDisplay("High Tolerance %", "Maximum percentage difference between highs", "Pattern Parameters")
-
-        # Internal state
-        self._previousCandle = None
-        self._currentCandle = None
-        self._entryPrice = 0.0
+        self._prev_candle = None
+        self._cooldown = 0
 
     @property
-    def CandleType(self):
-        """Candle type and timeframe for strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percent from entry price."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def HighTolerancePercent(self):
-        """Tolerance percentage for comparing high prices."""
-        return self._highTolerancePercent.Value
-
-    @HighTolerancePercent.setter
-    def HighTolerancePercent(self, value):
-        self._highTolerancePercent.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Returns securities this strategy works with."""
-        return [(self.Security, self.CandleType)]
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(tweezer_top_strategy, self).OnReseted()
-        self._previousCandle = None
-        self._currentCandle = None
-        self._entryPrice = 0.0
+        self._prev_candle = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
         super(tweezer_top_strategy, self).OnStarted(time)
 
-        # Create subscription and bind to process candles
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessCandle).Start()
+        self._prev_candle = None
+        self._cooldown = 0
 
-        # Setup protection with stop loss
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=False
-        )
-        # Setup chart visualization if available
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Shift candles
-        self._previousCandle = self._currentCandle
-        self._currentCandle = candle
-
-        if self._previousCandle is None:
+        if self._prev_candle is None:
+            self._prev_candle = candle
             return
 
-        # Check for Tweezer Top pattern
-        isTweezerTop = self.IsTweezerTop(self._previousCandle, self._currentCandle)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_candle = candle
+            return
 
-        # Check for entry condition
-        if isTweezerTop and self.Position == 0:
-            self.LogInfo("Tweezer Top pattern detected. Going short.")
-            self.SellMarket(self.Volume)
-            self._entryPrice = float(candle.ClosePrice)
-        # Check for exit condition
-        elif self.Position < 0 and candle.LowPrice < self._entryPrice:
-            self.LogInfo("Price below entry low. Taking profit.")
-            self.BuyMarket(abs(self.Position))
+        tol = self._tolerance_percent.Value
+        high_tolerance = float(self._prev_candle.HighPrice) * (tol / 100.0)
+        low_tolerance = float(self._prev_candle.LowPrice) * (tol / 100.0)
 
-    def IsTweezerTop(self, candle1, candle2):
-        # First candle must be bullish (close > open)
-        if candle1.ClosePrice <= candle1.OpenPrice:
-            return False
+        cd = self._cooldown_bars.Value
+        sv = float(sma_val)
 
-        # Second candle must be bearish (close < open)
-        if candle2.ClosePrice >= candle2.OpenPrice:
-            return False
+        # Tweezer Top: prev bullish, current bearish, matching highs
+        is_tweezer_top = (
+            self._prev_candle.ClosePrice > self._prev_candle.OpenPrice and
+            candle.ClosePrice < candle.OpenPrice and
+            abs(float(self._prev_candle.HighPrice) - float(candle.HighPrice)) <= high_tolerance
+        )
 
-        # Calculate the tolerance range for high comparisons
-        highTolerance = candle1.HighPrice * (self.HighTolerancePercent / 100.0)
+        # Tweezer Bottom: prev bearish, current bullish, matching lows
+        is_tweezer_bottom = (
+            self._prev_candle.ClosePrice < self._prev_candle.OpenPrice and
+            candle.ClosePrice > candle.OpenPrice and
+            abs(float(self._prev_candle.LowPrice) - float(candle.LowPrice)) <= low_tolerance
+        )
 
-        # High prices must be approximately equal
-        highsAreEqual = Math.Abs(candle1.HighPrice - candle2.HighPrice) <= highTolerance
-        if not highsAreEqual:
-            return False
+        if self.Position == 0 and is_tweezer_top:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and is_tweezer_bottom:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and float(candle.ClosePrice) > sv:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and float(candle.ClosePrice) < sv:
+            self.SellMarket()
+            self._cooldown = cd
 
-        return True
+        self._prev_candle = candle
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return tweezer_top_strategy()

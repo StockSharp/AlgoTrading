@@ -3,162 +3,81 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class rsi_divergence_strategy(Strategy):
     """
-    Strategy based on RSI divergence.
-    It detects bullish divergence (price makes lower low, RSI makes higher low) 
-    and bearish divergence (price makes higher high, RSI makes lower high).
-    
+    Strategy based on RSI divergence detection.
+    Uses RSI overbought/oversold level crossings to generate reversal signals.
     """
-    
+
     def __init__(self):
         super(rsi_divergence_strategy, self).__init__()
-        
-        # Initialize strategy parameters
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-        
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-        
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        
-        # State tracking
-        self._prev_price = 0.0
+        self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+
         self._prev_rsi = 0.0
-        self._is_first_candle = True
-
-    @property
-    def rsi_period(self):
-        """RSI period."""
-        return self._rsi_period.Value
-
-    @rsi_period.setter
-    def rsi_period(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._has_prev_values = False
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(rsi_divergence_strategy, self).OnReseted()
-        self._prev_price = 0.0
         self._prev_rsi = 0.0
-        self._is_first_candle = True
+        self._has_prev_values = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(rsi_divergence_strategy, self).OnStarted(time)
 
-        # Create RSI indicator
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.rsi_period
+        rsi.Length = self._rsi_period.Value
 
-        # Subscribe to candles and bind the indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(rsi, self.ProcessCandle).Start()
+        subscription.Bind(rsi, self._process_candle).Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, rsi)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, rsi_value):
-        """
-        Processes each finished candle and executes RSI divergence logic.
-        
-        :param candle: The processed candle message.
-        :param rsi_value: The current value of the RSI indicator.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        current_price = float(candle.ClosePrice)
-        current_rsi = float(rsi_value)
-
-        # For the first candle, just store values and return
-        if self._is_first_candle:
-            self._prev_price = current_price
-            self._prev_rsi = current_rsi
-            self._is_first_candle = False
+        rv = float(rsi_val)
+        if rv == 0:
             return
 
-        # Detect bullish divergence: Price makes lower low but RSI makes higher low
-        if (current_price < self._prev_price and 
-            current_rsi > self._prev_rsi and self.Position <= 0):
-            # Buy signal
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo("Bullish divergence detected: Price {0} -> {1}, RSI {2} -> {3}".format(
-                self._prev_price, current_price, self._prev_rsi, current_rsi))
+        if not self._has_prev_values:
+            self._has_prev_values = True
+            self._prev_rsi = rv
+            return
 
-        # Detect bearish divergence: Price makes higher high but RSI makes lower high
-        elif (current_price > self._prev_price and 
-              current_rsi < self._prev_rsi and self.Position >= 0):
-            # Sell signal
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-            self.LogInfo("Bearish divergence detected: Price {0} -> {1}, RSI {2} -> {3}".format(
-                self._prev_price, current_price, self._prev_rsi, current_rsi))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_rsi = rv
+            return
 
-        # Exit logic for long positions: RSI crosses above 70 (overbought)
-        if self.Position > 0 and current_rsi > 70:
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exiting long position: RSI overbought at {0}".format(current_rsi))
+        # RSI crosses from oversold into neutral zone - buy
+        if self._prev_rsi < 30 and rv >= 30 and self.Position <= 0:
+            self.BuyMarket()
+            self._cooldown = 15
+        # RSI crosses from overbought into neutral zone - sell
+        elif self._prev_rsi > 70 and rv <= 70 and self.Position >= 0:
+            self.SellMarket()
+            self._cooldown = 15
 
-        # Exit logic for short positions: RSI crosses below 30 (oversold)
-        elif self.Position < 0 and current_rsi < 30:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exiting short position: RSI oversold at {0}".format(current_rsi))
-
-        # Update previous values for next comparison
-        self._prev_price = current_price
-        self._prev_rsi = current_rsi
+        self._prev_rsi = rv
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return rsi_divergence_strategy()

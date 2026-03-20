@@ -1,263 +1,108 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class macd_divergence_strategy(Strategy):
     """
-    MACD Divergence strategy that looks for divergences between price and MACD
-    as potential reversal signals.
-    
+    MACD Divergence strategy.
+    Detects divergences between price and MACD for reversal signals.
+    Bullish: price falling but MACD rising.
+    Bearish: price rising but MACD falling.
     """
+
     def __init__(self):
         super(macd_divergence_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._previousPrice = None
-        self._previousMacd = None
-        self._currentPrice = None
-        self._currentMacd = None
-        self._barsSinceDivergence = 0
-        self._bullishDivergence = False
-        self._bearishDivergence = False
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._fastMacdPeriod = self.Param("FastMacdPeriod", 12) \
-            .SetDisplay("Fast MACD Period", "Fast EMA period for MACD", "Indicator Parameters")
-
-        self._slowMacdPeriod = self.Param("SlowMacdPeriod", 26) \
-            .SetDisplay("Slow MACD Period", "Slow EMA period for MACD", "Indicator Parameters")
-
-        self._signalPeriod = self.Param("SignalPeriod", 9) \
-            .SetDisplay("Signal Period", "Signal line period for MACD", "Indicator Parameters")
-
-        self._divergencePeriod = self.Param("DivergencePeriod", 5) \
-            .SetDisplay("Divergence Period", "Number of bars to look back for divergence", "Signal Parameters")
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
+        self._prev_price = 0.0
+        self._prev_macd = 0.0
+        self._cooldown = 0
 
     @property
-    def FastMacdPeriod(self):
-        return self._fastMacdPeriod.Value
-
-    @FastMacdPeriod.setter
-    def FastMacdPeriod(self, value):
-        self._fastMacdPeriod.Value = value
-
-    @property
-    def SlowMacdPeriod(self):
-        return self._slowMacdPeriod.Value
-
-    @SlowMacdPeriod.setter
-    def SlowMacdPeriod(self, value):
-        self._slowMacdPeriod.Value = value
-
-    @property
-    def SignalPeriod(self):
-        return self._signalPeriod.Value
-
-    @SignalPeriod.setter
-    def SignalPeriod(self, value):
-        self._signalPeriod.Value = value
-
-    @property
-    def DivergencePeriod(self):
-        return self._divergencePeriod.Value
-
-    @DivergencePeriod.setter
-    def DivergencePeriod(self, value):
-        self._divergencePeriod.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(macd_divergence_strategy, self).OnReseted()
-        self._previousPrice = None
-        self._previousMacd = None
-        self._currentPrice = None
-        self._currentMacd = None
-        self._barsSinceDivergence = 0
-        self._bullishDivergence = False
-        self._bearishDivergence = False
+        self._prev_price = 0.0
+        self._prev_macd = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(macd_divergence_strategy, self).OnStarted(time)
 
-        # Create MACD indicator
+        self._prev_price = 0.0
+        self._prev_macd = 0.0
+        self._cooldown = 0
+
         macd = MovingAverageConvergenceDivergenceSignal()
-        macd.Macd.ShortMa.Length = self.FastMacdPeriod
-        macd.Macd.LongMa.Length = self.SlowMacdPeriod
-        macd.SignalMa.Length = self.SignalPeriod
 
-        # Create candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(macd, self._process_candle).Start()
 
-        # Bind MACD to candles
-        subscription.BindEx(macd, self.ProcessCandle).Start()
-
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            isStopTrailing=False
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, macd)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, macdValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param macdValue: The MACD indicator value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not macd_value.IsFormed:
             return
 
-        # Extract MACD values - be careful with the order of indexes
-        
-        if macdValue.Macd is None or macdValue.Signal is None:
+        macd_line = macd_value.Macd
+        signal = macd_value.Signal
+
+        if macd_line is None or signal is None:
             return
-        
-        macd = macdValue.Macd
-        signal = macdValue.Signal
 
-        # Store previous values before updating
-        if self._currentPrice is not None and self._currentMacd is not None:
-            self._previousPrice = self._currentPrice
-            self._previousMacd = self._currentMacd
+        macd_f = float(macd_line)
+        signal_f = float(signal)
+        close = float(candle.ClosePrice)
 
-        # Update current values
-        self._currentPrice = float(candle.ClosePrice)
-        self._currentMacd = macd
+        if self._prev_price == 0:
+            self._prev_price = close
+            self._prev_macd = macd_f
+            return
 
-        self.LogInfo("Candle: {0}, Close: {1}, MACD: {2:F4}, Signal: {3:F4}".format(
-            candle.OpenTime, candle.ClosePrice, macd, signal))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_price = close
+            self._prev_macd = macd_f
+            return
 
-        # Look for divergences once we have enough data
-        if (self._previousPrice is not None and self._previousMacd is not None and 
-            self._currentPrice is not None and self._currentMacd is not None):
-            self.CheckForDivergences()
+        cd = self._cooldown_bars.Value
 
-        # Process signals based on detected divergences
-        self.ProcessDivergenceSignals(candle, macd, signal)
+        # Bullish divergence: price down but MACD up
+        bullish_div = close < self._prev_price and macd_f > self._prev_macd
+        # Bearish divergence: price up but MACD down
+        bearish_div = close > self._prev_price and macd_f < self._prev_macd
 
-    def CheckForDivergences(self):
-        """
-        Check for bullish and bearish divergences
-        """
-        # Check for bullish divergence (lower price lows but higher MACD lows)
-        if self._currentPrice < self._previousPrice and self._currentMacd > self._previousMacd:
-            self._bullishDivergence = True
-            self._bearishDivergence = False
-            self._barsSinceDivergence = 0
-            self.LogInfo("Bullish Divergence Detected: Price {0}->{1}, MACD {2}->{3}".format(
-                self._previousPrice, self._currentPrice, self._previousMacd, self._currentMacd))
-        # Check for bearish divergence (higher price highs but lower MACD highs)
-        elif self._currentPrice > self._previousPrice and self._currentMacd < self._previousMacd:
-            self._bearishDivergence = True
-            self._bullishDivergence = False
-            self._barsSinceDivergence = 0
-            self.LogInfo("Bearish Divergence Detected: Price {0}->{1}, MACD {2}->{3}".format(
-                self._previousPrice, self._currentPrice, self._previousMacd, self._currentMacd))
-        else:
-            self._barsSinceDivergence += 1
-            
-            # Reset divergence signals after a certain number of bars
-            if self._barsSinceDivergence > self.DivergencePeriod:
-                self._bullishDivergence = False
-                self._bearishDivergence = False
+        if self.Position == 0 and bullish_div and macd_f > signal_f:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and bearish_div and macd_f < signal_f:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and macd_f < signal_f:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and macd_f > signal_f:
+            self.BuyMarket()
+            self._cooldown = cd
 
-    def ProcessDivergenceSignals(self, candle, macdLine, signalLine):
-        """
-        Process trading signals based on divergences
-        
-        :param candle: The candle message.
-        :param macdLine: The MACD line value.
-        :param signalLine: The signal line value.
-        """
-        # Entry signals based on detected divergences
-        if self._bullishDivergence and self.Position <= 0 and macdLine > signalLine:
-            # Bullish divergence with MACD crossing above signal - Buy signal
-            if self.Position < 0:
-                # Close any existing short position
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Closed short position on bullish divergence")
-
-            # Open new long position
-            self.BuyMarket(self.Volume)
-            self.LogInfo("Buy signal: Bullish MACD divergence with signal line cross")
-            
-            # Reset divergence detection
-            self._bullishDivergence = False
-        elif self._bearishDivergence and self.Position >= 0 and macdLine < signalLine:
-            # Bearish divergence with MACD crossing below signal - Sell signal
-            if self.Position > 0:
-                # Close any existing long position
-                self.SellMarket(self.Position)
-                self.LogInfo("Closed long position on bearish divergence")
-
-            # Open new short position
-            self.SellMarket(self.Volume)
-            self.LogInfo("Sell signal: Bearish MACD divergence with signal line cross")
-            
-            # Reset divergence detection
-            self._bearishDivergence = False
-        
-        # Exit signals based on MACD crossing the signal line
-        elif self.Position > 0 and macdLine < signalLine:
-            # Exit long position when MACD crosses below signal
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit long: MACD crossed below signal line")
-        elif self.Position < 0 and macdLine > signalLine:
-            # Exit short position when MACD crosses above signal
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: MACD crossed above signal line")
+        self._prev_price = close
+        self._prev_macd = macd_f
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return macd_divergence_strategy()

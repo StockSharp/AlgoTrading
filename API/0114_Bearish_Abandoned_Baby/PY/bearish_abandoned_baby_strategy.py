@@ -4,123 +4,153 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class bearish_abandoned_baby_strategy(Strategy):
-    """Strategy based on Bearish Abandoned Baby candlestick pattern."""
+    """
+    Strategy based on Bearish Abandoned Baby candlestick pattern.
+    Detects a bullish candle followed by a small-body candle near highs,
+    then a bearish confirmation candle. Uses SMA for trend filter.
+    Also detects the bullish mirror pattern for long entries.
+    """
 
     def __init__(self):
         super(bearish_abandoned_baby_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "SMA period for exit", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 400).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use for analysis", "Candles")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
-            .SetRange(0.1, 5.0) \
-            .SetDisplay("Stop Loss %", "Stop Loss percentage above the high of the doji candle", "Risk") \
-            .SetCanOptimize(True)
-
-        # Internal state
-        self._prev_candle1 = None
-        self._prev_candle2 = None
+        self._prev2_open = 0.0
+        self._prev2_close = 0.0
+        self._prev2_high = 0.0
+        self._prev2_low = 0.0
+        self._prev1_open = 0.0
+        self._prev1_close = 0.0
+        self._prev1_high = 0.0
+        self._prev1_low = 0.0
+        self._prev_ma = 0.0
+        self._candle_count = 0
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type and timeframe."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop-loss percent from entry price."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(bearish_abandoned_baby_strategy, self).OnReseted()
-        self._prev_candle1 = None
-        self._prev_candle2 = None
+        self._prev2_open = 0.0
+        self._prev2_close = 0.0
+        self._prev2_high = 0.0
+        self._prev2_low = 0.0
+        self._prev1_open = 0.0
+        self._prev1_close = 0.0
+        self._prev1_high = 0.0
+        self._prev1_low = 0.0
+        self._prev_ma = 0.0
+        self._candle_count = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up subscriptions and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(bearish_abandoned_baby_strategy, self).OnStarted(time)
 
-        # Reset pattern candles
-        self._prev_candle1 = None
-        self._prev_candle2 = None
+        self._prev2_open = 0.0
+        self._prev2_close = 0.0
+        self._prev2_high = 0.0
+        self._prev2_low = 0.0
+        self._prev1_open = 0.0
+        self._prev1_close = 0.0
+        self._prev1_high = 0.0
+        self._prev1_low = 0.0
+        self._prev_ma = 0.0
+        self._candle_count = 0
+        self._cooldown = 0
 
-        # Create and subscribe to candles
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sma, self._process_candle).Start()
 
-        subscription.Bind(self.ProcessCandle).Start()
-
-        # Configure protection for open positions
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
-            isStopTrailing=False
-        )
-        # Set up chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Add log entry for the candle
-        self.LogInfo("Candle: Open={0}, High={1}, Low={2}, Close={3}".format(
-            candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice))
+        self._candle_count += 1
 
-        # If we have enough candles, check for the Bearish Abandoned Baby pattern
-        if self._prev_candle2 is not None and self._prev_candle1 is not None:
-            # Check for bearish abandoned baby pattern:
-            # 1. First candle is bullish (close > open)
-            # 2. Middle candle is a doji and gaps up (low > high of first candle)
-            # 3. Current candle is bearish (close < open) and gaps down (high < low of middle candle)
-            first_candle_bullish = self._prev_candle2.ClosePrice > self._prev_candle2.OpenPrice
-            middle_candle_gaps_up = self._prev_candle1.LowPrice > self._prev_candle2.HighPrice
-            current_candle_bearish = candle.ClosePrice < candle.OpenPrice
-            current_candle_gaps_down = candle.HighPrice < self._prev_candle1.LowPrice
+        close = float(candle.ClosePrice)
+        opn = float(candle.OpenPrice)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        ma = float(ma_val)
+        cd = self._cooldown_bars.Value
 
-            if first_candle_bullish and middle_candle_gaps_up and current_candle_bearish and current_candle_gaps_down:
-                self.LogInfo("Bearish Abandoned Baby pattern detected!")
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev2_open = self._prev1_open
+            self._prev2_close = self._prev1_close
+            self._prev2_high = self._prev1_high
+            self._prev2_low = self._prev1_low
+            self._prev1_open = opn
+            self._prev1_close = close
+            self._prev1_high = high
+            self._prev1_low = low
+            self._prev_ma = ma
+            return
 
-                # Enter short position if we don't have one already
-                if self.Position >= 0:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo("Short position opened: {0} at market".format(self.Volume))
+        # Exit logic: MA cross
+        if self.Position > 0 and close < ma and self._prev_ma > 0 and self._prev1_close >= self._prev_ma:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close > ma and self._prev_ma > 0 and self._prev1_close <= self._prev_ma:
+            self.BuyMarket()
+            self._cooldown = cd
 
-        # Store current candle for next pattern check
-        self._prev_candle2 = self._prev_candle1
-        self._prev_candle1 = candle
+        # Entry logic
+        if self.Position == 0 and self._candle_count >= 3 and self._prev2_close != 0:
+            prev2_body = abs(self._prev2_close - self._prev2_open)
+            prev2_range = self._prev2_high - self._prev2_low
 
-        # Exit logic - if we're in a short position and price breaks below low of the current candle
-        if self.Position < 0 and self._prev_candle2 is not None and candle.LowPrice < self._prev_candle2.LowPrice:
-            self.LogInfo("Exit signal: Price broke below previous candle low")
-            self.ClosePosition()
+            # Small body (doji-like) for middle candle
+            is_small_body = abs(self._prev1_close - self._prev1_open) < prev2_body * 0.4 and prev2_range > 0
+
+            # Bearish abandoned baby (relaxed)
+            first_bullish = self._prev2_close > self._prev2_open
+            middle_near_high = self._prev1_close >= self._prev2_high - prev2_range * 0.3
+            current_bearish = close < opn
+
+            # Bullish abandoned baby (relaxed, mirror)
+            first_bearish = self._prev2_close < self._prev2_open
+            middle_near_low = self._prev1_close <= self._prev2_low + prev2_range * 0.3
+            current_bullish = close > opn
+
+            if is_small_body and first_bullish and middle_near_high and current_bearish and close < ma:
+                self.SellMarket()
+                self._cooldown = cd
+            elif is_small_body and first_bearish and middle_near_low and current_bullish and close > ma:
+                self.BuyMarket()
+                self._cooldown = cd
+
+        # Shift candle history
+        self._prev2_open = self._prev1_open
+        self._prev2_close = self._prev1_close
+        self._prev2_high = self._prev1_high
+        self._prev2_low = self._prev1_low
+        self._prev1_open = opn
+        self._prev1_close = close
+        self._prev1_high = high
+        self._prev1_low = low
+        self._prev_ma = ma
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return bearish_abandoned_baby_strategy()

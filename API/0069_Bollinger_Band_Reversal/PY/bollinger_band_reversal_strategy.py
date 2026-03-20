@@ -1,170 +1,98 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class bollinger_band_reversal_strategy(Strategy):
     """
     Bollinger Band Reversal strategy.
-    The strategy enters long position when price is below the lower Bollinger Band and the candle is bullish,
-    enters short position when price is above the upper Bollinger Band and the candle is bearish.
-    
+    Enters long when price is below the lower Bollinger Band and candle is bullish.
+    Enters short when price is above the upper Bollinger Band and candle is bearish.
+    Exits at middle band.
     """
+
     def __init__(self):
         super(bollinger_band_reversal_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._bollingerBands = None
-        self._atr = None
+        self._bollinger_period = self.Param("BollingerPeriod", 20).SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
+        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0).SetDisplay("Bollinger Deviation", "Standard deviations for Bollinger Bands", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._bollingerPeriod = self.Param("BollingerPeriod", 20) \
-            .SetDisplay("Bollinger Period", "Number of periods for Bollinger Bands", "Indicators")
-
-        self._bollingerDeviation = self.Param("BollingerDeviation", 2.0) \
-            .SetDisplay("Bollinger Deviation", "Number of standard deviations for Bollinger Bands", "Indicators")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._atrMultiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR to set stop-loss", "Risk Management")
+        self._cooldown = 0
 
     @property
-    def BollingerPeriod(self):
-        return self._bollingerPeriod.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @BollingerPeriod.setter
-    def BollingerPeriod(self, value):
-        self._bollingerPeriod.Value = value
-
-    @property
-    def BollingerDeviation(self):
-        return self._bollingerDeviation.Value
-
-    @BollingerDeviation.setter
-    def BollingerDeviation(self, value):
-        self._bollingerDeviation.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def AtrMultiplier(self):
-        return self._atrMultiplier.Value
-
-    @AtrMultiplier.setter
-    def AtrMultiplier(self, value):
-        self._atrMultiplier.Value = value
+    def OnReseted(self):
+        super(bollinger_band_reversal_strategy, self).OnReseted()
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(bollinger_band_reversal_strategy, self).OnStarted(time)
 
-        # Create indicators
-        self._bollingerBands = BollingerBands()
-        self._bollingerBands.Length = self.BollingerPeriod
-        self._bollingerBands.Width = self.BollingerDeviation
+        self._cooldown = 0
 
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
+        bb = BollingerBands()
+        bb.Length = self._bollinger_period.Value
+        bb.Width = self._bollinger_deviation.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._bollingerBands, self._atr, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(bb, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._bollingerBands)
+            self.DrawIndicator(area, bb)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(10, UnitTypes.Percent),
-            stopLoss=Unit(self.AtrMultiplier, UnitTypes.Absolute)
-        )
-    def ProcessCandle(self, candle, bollingerValue, atrValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param bollingerValue: The Bollinger Bands value.
-        :param atrValue: The ATR value.
-        """
+    def _process_candle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not bb_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Get current Bollinger Bands values
-
-        if bollingerValue.UpBand is None:
+        if self._cooldown > 0:
+            self._cooldown -= 1
             return
-        upperBand = float(bollingerValue.UpBand)
 
-        if bollingerValue.LowBand is None:
+        upper_band = bb_value.UpBand
+        lower_band = bb_value.LowBand
+        middle_band = bb_value.MovingAverage
+
+        if upper_band is None or lower_band is None or middle_band is None:
             return
-        lowerBand = float(bollingerValue.LowBand)
 
-        if bollingerValue.MovingAverage is None:
-            return
-        middleBand = float(bollingerValue.MovingAverage)
+        close = float(candle.ClosePrice)
+        ub = float(upper_band)
+        lb = float(lower_band)
+        mb = float(middle_band)
+        cd = self._cooldown_bars.Value
 
-        # Determine if the candle is bullish or bearish
-        isBullish = candle.ClosePrice > candle.OpenPrice
-        isBearish = candle.ClosePrice < candle.OpenPrice
+        is_bullish = candle.ClosePrice > candle.OpenPrice
+        is_bearish = candle.ClosePrice < candle.OpenPrice
 
-        # Long entry: Price below lower band and bullish candle
-        if candle.ClosePrice < lowerBand and isBullish and self.Position <= 0:
-            # Cancel active orders first
-            self.CancelActiveOrders()
-            
-            # Enter long position
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            
-            self.LogInfo("Long entry: Price {0} below lower band {1} with bullish candle".format(
-                candle.ClosePrice, lowerBand))
-        # Short entry: Price above upper band and bearish candle
-        elif candle.ClosePrice > upperBand and isBearish and self.Position >= 0:
-            # Cancel active orders first
-            self.CancelActiveOrders()
-            
-            # Enter short position
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            
-            self.LogInfo("Short entry: Price {0} above upper band {1} with bearish candle".format(
-                candle.ClosePrice, upperBand))
-        # Long exit: Price above middle band
-        elif candle.ClosePrice > middleBand and self.Position > 0:
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Long exit: Price {0} above middle band {1}".format(candle.ClosePrice, middleBand))
-        # Short exit: Price below middle band
-        elif candle.ClosePrice < middleBand and self.Position < 0:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Short exit: Price {0} below middle band {1}".format(candle.ClosePrice, middleBand))
+        if self.Position == 0 and close < lb and is_bullish:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and close > ub and is_bearish:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and close > mb:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and close < mb:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return bollinger_band_reversal_strategy()

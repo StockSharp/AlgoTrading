@@ -1,244 +1,180 @@
 import clr
-import random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import DonchianChannels
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 
+
 class donchian_with_sentiment_spike_strategy(Strategy):
-    """Donchian with Sentiment Spike strategy.
-    Entry condition:
-    Long: Price > Max(High, N) && Sentiment_Score > Avg(Sentiment, M) + k*StdDev(Sentiment, M)
-    Short: Price < Min(Low, N) && Sentiment_Score < Avg(Sentiment, M) - k*StdDev(Sentiment, M)
-    Exit condition:
-    Long: Price < (Max(High, N) + Min(Low, N))/2
-    Short: Price > (Max(High, N) + Min(Low, N))/2
+    """
+    Donchian with Sentiment Spike strategy.
     """
 
     def __init__(self):
         super(donchian_with_sentiment_spike_strategy, self).__init__()
 
-        # Donchian channel period.
-        self._donchian_period = self.Param("DonchianPeriod", 20) \
+        self._donchian_period = self.Param("DonchianPeriod", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Donchian Period", "Donchian channel period", "Donchian Settings") \
             .SetCanOptimize(True) \
             .SetOptimize(10, 30, 5)
 
-        # Sentiment averaging period.
-        self._sentiment_period = self.Param("SentimentPeriod", 20) \
+        self._sentiment_period = self.Param("SentimentPeriod", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Sentiment Period", "Sentiment averaging period", "Sentiment Settings") \
             .SetCanOptimize(True) \
             .SetOptimize(10, 30, 5)
 
-        # Sentiment standard deviation multiplier.
-        self._sentiment_multiplier = self.Param("SentimentMultiplier", 2.0) \
+        self._sentiment_multiplier = self.Param("SentimentMultiplier", 0.5) \
             .SetGreaterThanZero() \
             .SetDisplay("Sentiment StdDev Multiplier", "Multiplier for sentiment standard deviation", "Sentiment Settings") \
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        # Stop-loss percentage.
         self._stop_loss = self.Param("StopLoss", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management") \
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        # Type of candles to use.
-        self._candle_type = self.Param("CandleType", tf(15)) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state
         self._sentiment_history = []
         self._sentiment_average = 0.0
         self._sentiment_std_dev = 0.0
         self._current_sentiment = 0.0
-        self._mid_channel = 0.0
-        self._is_long = False
-        self._is_short = False
 
     @property
-    def donchian_period(self):
+    def DonchianPeriod(self):
         return self._donchian_period.Value
 
-    @donchian_period.setter
-    def donchian_period(self, value):
+    @DonchianPeriod.setter
+    def DonchianPeriod(self, value):
         self._donchian_period.Value = value
 
     @property
-    def sentiment_period(self):
+    def SentimentPeriod(self):
         return self._sentiment_period.Value
 
-    @sentiment_period.setter
-    def sentiment_period(self, value):
+    @SentimentPeriod.setter
+    def SentimentPeriod(self, value):
         self._sentiment_period.Value = value
 
     @property
-    def sentiment_multiplier(self):
+    def SentimentMultiplier(self):
         return self._sentiment_multiplier.Value
 
-    @sentiment_multiplier.setter
-    def sentiment_multiplier(self, value):
+    @SentimentMultiplier.setter
+    def SentimentMultiplier(self, value):
         self._sentiment_multiplier.Value = value
 
     @property
-    def stop_loss(self):
+    def StopLoss(self):
         return self._stop_loss.Value
 
-    @stop_loss.setter
-    def stop_loss(self, value):
+    @StopLoss.setter
+    def StopLoss(self, value):
         self._stop_loss.Value = value
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
+    @CandleType.setter
+    def CandleType(self, value):
         self._candle_type.Value = value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(donchian_with_sentiment_spike_strategy, self).OnReseted()
-        self._is_long = self._is_short = False
-        self._mid_channel = self._sentiment_average = self._sentiment_std_dev = self._current_sentiment = 0.0
-        self._sentiment_history.clear()
+        self._sentiment_history = []
+        self._sentiment_average = 0.0
+        self._sentiment_std_dev = 0.0
+        self._current_sentiment = 0.0
 
     def OnStarted(self, time):
         super(donchian_with_sentiment_spike_strategy, self).OnStarted(time)
 
-        # Create Donchian Channel indicator
-        donchian = DonchianChannels()
-        donchian.Length = self.donchian_period
+        highest = Highest()
+        highest.Length = self.DonchianPeriod
+        lowest = Lowest()
+        lowest.Length = self.DonchianPeriod
 
-        # Subscribe to candles and bind indicator
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(donchian, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(highest, lowest, self.ProcessCandle).Start()
 
-        # Create chart visualization if available
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, donchian)
             self.DrawOwnTrades(area)
 
-        # Enable position protection with stop-loss
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, donchian_value):
-        """Process each candle and Donchian Channel values."""
-        # Skip unfinished candles
+    def ProcessCandle(self, candle, upper, lower):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        self.UpdateSentiment(candle)
+
+        price = float(candle.ClosePrice)
+        upper_val = float(upper)
+        lower_val = float(lower)
+
+        if self.Position != 0:
+            return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Update sentiment data (in a real system, this would come from external source)
-        self.UpdateSentiment(candle)
-
-        # Extract Donchian Channel values
-        if (
-            donchian_value.UpperBand is None
-            or donchian_value.LowerBand is None
-            or donchian_value.Middle is None
-        ):
-            return
-        upper_band = float(donchian_value.UpperBand)
-        lower_band = float(donchian_value.LowerBand)
-        middle_band = float(donchian_value.Middle)
-
-        # Store middle band for exit conditions
-        self._mid_channel = middle_band
-
-        # Calculate sentiment thresholds
-        bullish_threshold = self._sentiment_average + self.sentiment_multiplier * self._sentiment_std_dev
-        bearish_threshold = self._sentiment_average - self.sentiment_multiplier * self._sentiment_std_dev
-
-        price = float(candle.ClosePrice)
-
-        # Trading logic
-        # Entry conditions
-        # Long entry: Price breaks above upper band with positive sentiment spike
-        if price > upper_band and self._current_sentiment > bullish_threshold and not self._is_long and self.Position <= 0:
-            self.LogInfo(f"Long signal: Price {price} > Upper Band {upper_band}, Sentiment {self._current_sentiment} > Threshold {bullish_threshold}")
-            self.BuyMarket(self.Volume)
-            self._is_long = True
-            self._is_short = False
-        # Short entry: Price breaks below lower band with negative sentiment spike
-        elif price < lower_band and self._current_sentiment < bearish_threshold and not self._is_short and self.Position >= 0:
-            self.LogInfo(f"Short signal: Price {price} < Lower Band {lower_band}, Sentiment {self._current_sentiment} < Threshold {bearish_threshold}")
-            self.SellMarket(self.Volume)
-            self._is_short = True
-            self._is_long = False
-
-        # Exit conditions
-        # Exit long: Price falls below middle band
-        if self._is_long and price < self._mid_channel and self.Position > 0:
-            self.LogInfo(f"Exit long: Price {price} < Middle Band {self._mid_channel}")
-            self.SellMarket(Math.Abs(self.Position))
-            self._is_long = False
-        # Exit short: Price rises above middle band
-        elif self._is_short and price > self._mid_channel and self.Position < 0:
-            self.LogInfo(f"Exit short: Price {price} > Middle Band {self._mid_channel}")
-            self.BuyMarket(Math.Abs(self.Position))
-            self._is_short = False
+        if price >= upper_val and self._current_sentiment > 0:
+            self.BuyMarket()
+        elif price <= lower_val and self._current_sentiment < 0:
+            self.SellMarket()
 
     def UpdateSentiment(self, candle):
-        """Update sentiment score based on candle data (simulation).
-        In a real implementation, this would fetch data from an external source."""
-        # Simple sentiment simulation based on price action
-        # In reality, this would come from social media or news sentiment API
-
-        body_size = float(abs(candle.ClosePrice - candle.OpenPrice))
-        total_size = float(candle.HighPrice - candle.LowPrice)
+        body_size = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
+        total_size = float(candle.HighPrice) - float(candle.LowPrice)
 
         if total_size == 0:
-            sentiment = 0
+            sentiment = 0.0
         else:
             body_ratio = body_size / total_size
-
-            # Bullish candle with strong body
-            if candle.ClosePrice > candle.OpenPrice:
-                sentiment = body_ratio * 2  # 0 to 2 scale
-            # Bearish candle with strong body
+            if float(candle.ClosePrice) > float(candle.OpenPrice):
+                sentiment = body_ratio * 2.0
             else:
-                sentiment = -body_ratio * 2  # -2 to 0 scale
+                sentiment = -body_ratio * 2.0
 
-            # Add some randomness
-            sentiment += (random.random() - 0.5) * 0.5
-
-        # Ensure sentiment is within -2 to 2 range
-        sentiment = max(min(sentiment, 2), -2)
-
+        sentiment = max(min(sentiment, 2.0), -2.0)
         self._current_sentiment = sentiment
 
-        # Add to history
         self._sentiment_history.append(self._current_sentiment)
-        if len(self._sentiment_history) > self.sentiment_period:
+        if len(self._sentiment_history) > self.SentimentPeriod:
             self._sentiment_history.pop(0)
 
-        # Calculate average
-        self._sentiment_average = sum(self._sentiment_history) / len(self._sentiment_history) if self._sentiment_history else 0
-
-        # Calculate standard deviation
-        if len(self._sentiment_history) > 1:
-            sum_squared = sum((value - self._sentiment_average) ** 2 for value in self._sentiment_history)
-            self._sentiment_std_dev = Math.Sqrt(sum_squared / (len(self._sentiment_history) - 1))
+        if len(self._sentiment_history) > 0:
+            self._sentiment_average = sum(self._sentiment_history) / len(self._sentiment_history)
         else:
-            self._sentiment_std_dev = 0.5  # Default value until we have enough data
+            self._sentiment_average = 0.0
 
-        self.LogInfo(f"Sentiment: {self._current_sentiment}, Avg: {self._sentiment_average}, StdDev: {self._sentiment_std_dev}")
+        if len(self._sentiment_history) > 1:
+            sum_sq = 0.0
+            for v in self._sentiment_history:
+                diff = v - self._sentiment_average
+                sum_sq += diff * diff
+            self._sentiment_std_dev = Math.Sqrt(sum_sq / (len(self._sentiment_history) - 1))
+        else:
+            self._sentiment_std_dev = 0.5
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_with_sentiment_spike_strategy()

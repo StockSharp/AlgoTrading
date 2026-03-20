@@ -1,184 +1,140 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ChoppinessIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class choppiness_index_breakout_strategy(Strategy):
-    """
-    Choppiness Index Breakout strategy
-    Enters trades when market transitions from choppy to trending state
-    Long entry: Choppiness Index falls below 38.2 and price is above MA
-    Short entry: Choppiness Index falls below 38.2 and price is below MA
-    
-    """
+
     def __init__(self):
         super(choppiness_index_breakout_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._prevChoppiness = 100  # Initialize to high value
 
-        # Initialize strategy parameters
-        self._maPeriod = self.Param("MAPeriod", 20) \
-            .SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
+        self._ma_period = self.Param("MAPeriod", 20) \
+            .SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
+        self._choppiness_period = self.Param("ChoppinessPeriod", 14) \
+            .SetDisplay("Choppiness Period", "Period for Choppiness Index calculation", "Indicators")
+        self._choppiness_threshold = self.Param("ChoppinessThreshold", 99.0) \
+            .SetDisplay("Choppiness Threshold", "Threshold below which market is trending", "Entry")
+        self._high_choppiness_threshold = self.Param("HighChoppinessThreshold", 99.5) \
+            .SetDisplay("High Choppiness", "Threshold above which to exit positions", "Exit")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        self._choppinessPeriod = self.Param("ChoppinessPeriod", 14) \
-            .SetDisplay("Choppiness Period", "Period for Choppiness Index calculation", "Strategy Parameters")
-
-        self._choppinessThreshold = self.Param("ChoppinessThreshold", 38.2) \
-            .SetDisplay("Choppiness Threshold", "Threshold below which market is considered trending", "Strategy Parameters")
-
-        self._highChoppinessThreshold = self.Param("HighChoppinessThreshold", 61.8) \
-            .SetDisplay("High Choppiness Threshold", "Threshold above which to exit positions", "Strategy Parameters")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
+        self._prev_choppiness = 100.0
+        self._cooldown = 0
 
     @property
     def MAPeriod(self):
-        return self._maPeriod.Value
+        return self._ma_period.Value
 
     @MAPeriod.setter
     def MAPeriod(self, value):
-        self._maPeriod.Value = value
+        self._ma_period.Value = value
 
     @property
     def ChoppinessPeriod(self):
-        return self._choppinessPeriod.Value
+        return self._choppiness_period.Value
 
     @ChoppinessPeriod.setter
     def ChoppinessPeriod(self, value):
-        self._choppinessPeriod.Value = value
+        self._choppiness_period.Value = value
 
     @property
     def ChoppinessThreshold(self):
-        return self._choppinessThreshold.Value
+        return self._choppiness_threshold.Value
 
     @ChoppinessThreshold.setter
     def ChoppinessThreshold(self, value):
-        self._choppinessThreshold.Value = value
+        self._choppiness_threshold.Value = value
 
     @property
     def HighChoppinessThreshold(self):
-        return self._highChoppinessThreshold.Value
+        return self._high_choppiness_threshold.Value
 
     @HighChoppinessThreshold.setter
     def HighChoppinessThreshold(self, value):
-        self._highChoppinessThreshold.Value = value
+        self._high_choppiness_threshold.Value = value
 
     @property
     def CandleType(self):
-        return self._candleType.Value
+        return self._candle_type.Value
 
     @CandleType.setter
     def CandleType(self, value):
-        self._candleType.Value = value
+        self._candle_type.Value = value
 
-    def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
-        super(choppiness_index_breakout_strategy, self).OnReseted()
-        self._prevChoppiness = 100
+    @property
+    def CooldownBars(self):
+        return self._cooldown_bars.Value
+
+    @CooldownBars.setter
+    def CooldownBars(self, value):
+        self._cooldown_bars.Value = value
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(choppiness_index_breakout_strategy, self).OnStarted(time)
 
-        # Create indicators
+        self._prev_choppiness = 100.0
+        self._cooldown = 0
+
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod
-        
-        choppinessIndex = ChoppinessIndex()
-        choppinessIndex.Length = self.ChoppinessPeriod
+        choppiness_index = ChoppinessIndex()
+        choppiness_index.Length = self.ChoppinessPeriod
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ma, choppinessIndex, self.ProcessCandle).Start()
+        self.SubscribeCandles(self.CandleType) \
+            .Bind(ma, choppiness_index, self.ProcessCandle) \
+            .Start()
 
-        # Configure protection
-        self.StartProtection(
-            takeProfit=Unit(3, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-        # Setup chart visualization
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
-            self.DrawIndicator(area, choppinessIndex)
-            self.DrawOwnTrades(area)
-
-    def ProcessCandle(self, candle, maValue, choppinessValue):
-        """
-        Process candle and execute trading logic
-        
-        :param candle: The candle message.
-        :param maValue: The Moving Average value.
-        :param choppinessValue: The Choppiness Index value.
-        """
-        # Skip unfinished candles
+    def ProcessCandle(self, candle, ma_value, choppiness_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        
-        # Log current values
-        self.LogInfo("Candle Close: {0}, MA: {1}, Choppiness: {2}".format(
-            candle.ClosePrice, maValue, choppinessValue))
-        self.LogInfo("Previous Choppiness: {0}, Threshold: {1}".format(
-            self._prevChoppiness, self.ChoppinessThreshold))
 
-        # Check for transition from choppy to trending (falling below threshold)
-        transitionToTrending = (self._prevChoppiness >= self.ChoppinessThreshold and 
-                               choppinessValue < self.ChoppinessThreshold)
-        
-        # Trading logic:
-        if transitionToTrending:
-            self.LogInfo("Market transitioning to trending state: {0} < {1}".format(
-                choppinessValue, self.ChoppinessThreshold))
-            
-            # Long: Low choppiness and price above MA
-            if candle.ClosePrice > maValue and self.Position <= 0:
-                self.LogInfo("Buy Signal: Low choppiness ({0}) and Price ({1}) > MA ({2})".format(
-                    choppinessValue, candle.ClosePrice, maValue))
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            # Short: Low choppiness and price below MA
-            elif candle.ClosePrice < maValue and self.Position >= 0:
-                self.LogInfo("Sell Signal: Low choppiness ({0}) and Price ({1}) < MA ({2})".format(
-                    choppinessValue, candle.ClosePrice, maValue))
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        
-        # Exit logic: Choppiness rises above high threshold (market becoming choppy again)
-        if choppinessValue > self.HighChoppinessThreshold:
-            self.LogInfo("Market becoming choppy: {0} > {1}".format(
-                choppinessValue, self.HighChoppinessThreshold))
-            
-            if self.Position > 0:
-                self.LogInfo("Exit Long: High choppiness ({0})".format(choppinessValue))
-                self.SellMarket(Math.Abs(self.Position))
-            elif self.Position < 0:
-                self.LogInfo("Exit Short: High choppiness ({0})".format(choppinessValue))
-                self.BuyMarket(Math.Abs(self.Position))
+        ma_f = float(ma_value)
+        chop_f = float(choppiness_value)
+        chop_threshold = float(self.ChoppinessThreshold)
+        high_chop_threshold = float(self.HighChoppinessThreshold)
+        cooldown_bars = int(self.CooldownBars)
 
-        # Store current choppiness for next comparison
-        self._prevChoppiness = choppinessValue
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_choppiness = chop_f
+            return
+
+        is_trending = chop_f < chop_threshold
+        is_choppy = chop_f > high_chop_threshold
+        close = float(candle.ClosePrice)
+
+        if self.Position == 0 and is_trending:
+            if close > ma_f:
+                self.BuyMarket()
+                self._cooldown = cooldown_bars
+            elif close < ma_f:
+                self.SellMarket()
+                self._cooldown = cooldown_bars
+        elif self.Position > 0 and is_choppy:
+            self.SellMarket()
+            self._cooldown = cooldown_bars
+        elif self.Position < 0 and is_choppy:
+            self.BuyMarket()
+            self._cooldown = cooldown_bars
+
+        self._prev_choppiness = chop_f
+
+    def OnReseted(self):
+        super(choppiness_index_breakout_strategy, self).OnReseted()
+        self._prev_choppiness = 100.0
+        self._cooldown = 0
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return choppiness_index_breakout_strategy()

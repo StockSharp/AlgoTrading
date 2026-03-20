@@ -3,177 +3,109 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, SimpleMovingAverage, DonchianChannels
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class donchian_volume_strategy(Strategy):
     """
-    Strategy that uses Donchian Channels to identify breakouts
-    and volume confirmation to filter signals.
-    Enters positions when price breaks above/below Donchian Channel with increased volume.
-
+    Donchian Volume strategy.
+    Uses manual Donchian Channels for breakout detection.
+    Enters when price breaks above/below the channel.
     """
 
     def __init__(self):
         super(donchian_volume_strategy, self).__init__()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._donchian_period = self.Param("DonchianPeriod", 20).SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
-        # Strategy constructor.
-        self._donchian_period = self.Param("DonchianPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10)
-
-        self._volume_period = self.Param("VolumePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Volume Period", "Period for volume averaging", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._volume_multiplier = self.Param("VolumeMultiplier", 1.5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm breakout", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 2.0, 0.5)
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._average_volume = 0.0
-
-    @property
-    def donchian_period(self):
-        """Donchian Channels period."""
-        return self._donchian_period.Value
-
-    @donchian_period.setter
-    def donchian_period(self, value):
-        self._donchian_period.Value = value
-
-    @property
-    def volume_period(self):
-        """Volume averaging period."""
-        return self._volume_period.Value
-
-    @volume_period.setter
-    def volume_period(self, value):
-        self._volume_period.Value = value
-
-    @property
-    def volume_multiplier(self):
-        """Volume multiplier for breakout confirmation."""
-        return self._volume_multiplier.Value
-
-    @volume_multiplier.setter
-    def volume_multiplier(self, value):
-        self._volume_multiplier.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._cooldown = 0
+        self._highs = []
+        self._lows = []
 
     @property
     def candle_type(self):
-        """Candle type for strategy calculation."""
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(donchian_volume_strategy, self).OnReseted()
-        self._average_volume = 0.0
+        self._cooldown = 0
+        self._highs = []
+        self._lows = []
 
     def OnStarted(self, time):
         super(donchian_volume_strategy, self).OnStarted(time)
-        # Create indicators
-        donchian_high = Highest()
-        donchian_high.Length = self.donchian_period
 
-        donchian_low = Lowest()
-        donchian_low.Length = self.donchian_period
+        self._cooldown = 0
+        self._highs = []
+        self._lows = []
 
-        volume_average = SimpleMovingAverage()
-        volume_average.Length = self.volume_period
+        sma = SimpleMovingAverage()
+        sma.Length = self._donchian_period.Value
 
-        # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(volume_average, donchian_high, donchian_low, self.ProcessDonchian).Start()
+        subscription.Bind(sma, self._process_candle).Start()
 
-        # Setup position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-
-            # Create a composite indicator for visualization purposes
-            donchian = DonchianChannels()
-            donchian.Length = self.donchian_period
-
-            self.DrawIndicator(area, donchian)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessDonchian(self, candle, volume_avg_value, highest_value, lowest_value):
-        """Process Donchian Channel values."""
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        if volume_avg_value.IsFinal:
-            self._average_volume = float(volume_avg_value)
-
-        # Check if strategy is ready to trade
-        if (not self.IsFormedAndOnlineAndAllowTrading()) or self._average_volume <= 0:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        highest_dec = float(highest_value)
-        lowest_dec = float(lowest_value)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        close = float(candle.ClosePrice)
+        cd = self._cooldown_bars.Value
+        period = self._donchian_period.Value
 
-        # Calculate middle line of Donchian Channel
-        middle_line = (highest_dec + lowest_dec) / 2
+        self._highs.append(high)
+        self._lows.append(low)
 
-        # Check if volume condition is met
-        is_volume_high_enough = candle.TotalVolume > self._average_volume * self.volume_multiplier
+        max_buf = period * 2
+        if len(self._highs) > max_buf:
+            self._highs = self._highs[-max_buf:]
+            self._lows = self._lows[-max_buf:]
 
-        if is_volume_high_enough:
-            # Long entry: price breaks above highest high with increased volume
-            if candle.ClosePrice > highest_dec and self.Position <= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
-            # Short entry: price breaks below lowest low with increased volume
-            elif candle.ClosePrice < lowest_dec and self.Position >= 0:
-                volume = self.Volume + Math.Abs(self.Position)
-                self.SellMarket(volume)
+        if len(self._highs) < period:
+            return
 
-        # Exit conditions based on middle line
-        if self.Position > 0 and candle.ClosePrice < middle_line:
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and candle.ClosePrice > middle_line:
-            self.BuyMarket(Math.Abs(self.Position))
+        # Calculate Donchian Channel
+        recent_h = self._highs[-period:]
+        recent_l = self._lows[-period:]
+        highest_high = max(recent_h)
+        lowest_low = min(recent_l)
+        middle_line = (highest_high + lowest_low) / 2.0
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        # Long entry: price breaks above channel
+        if close >= highest_high and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = cd
+        # Short entry: price breaks below channel
+        elif close <= lowest_low and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = cd
+
+        # Exit long: price crosses below middle line
+        if self.Position > 0 and close < middle_line:
+            self.SellMarket()
+            self._cooldown = cd
+        # Exit short: price crosses above middle line
+        elif self.Position < 0 and close > middle_line:
+            self.BuyMarket()
+            self._cooldown = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_volume_strategy()

@@ -3,12 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class three_red_green_volatility_strategy(Strategy):
     """Buy after 3 red candles + ATR > average, sell after 3 green + ATR > average, max hold."""
@@ -17,7 +15,7 @@ class three_red_green_volatility_strategy(Strategy):
         self._max_hold = self.Param("MaxTradeDuration", 20).SetGreaterThanZero().SetDisplay("Max Hold Bars", "Maximum bars in position", "Trading")
         self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "ATR period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 12).SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -60,10 +58,8 @@ class three_red_green_volatility_strategy(Strategy):
             return
 
         # Update ATR average manually
-        inp = DecimalIndicatorValue(self._atr_avg, atr_val)
-        inp.IsFinal = True
-        avg_result = self._atr_avg.Process(inp)
-        atr_avg_val = float(avg_result.ToDecimal()) if self._atr_avg.IsFormed else atr_val
+        avg_result = IndicatorHelper.Process(self._atr_avg, Decimal(atr_val), candle.ServerTime, True)
+        atr_avg_val = float(IndicatorHelper.ToDecimal(avg_result)) if self._atr_avg.IsFormed else atr_val
 
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)

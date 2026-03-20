@@ -3,129 +3,98 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class parabolic_sar_reversal_strategy(Strategy):
-    """Parabolic SAR Reversal Strategy.
-
+    """
+    Parabolic SAR Reversal strategy.
     Enters long when SAR switches from above to below price.
     Enters short when SAR switches from below to above price.
+    Uses cooldown to control trade frequency.
     """
 
     def __init__(self):
-        """Initializes a new instance of the strategy."""
         super(parabolic_sar_reversal_strategy, self).__init__()
+        self._acceleration = self.Param("Acceleration", 0.02).SetDisplay("Acceleration", "Initial acceleration factor", "SAR")
+        self._acceleration_max = self.Param("AccelerationMax", 0.2).SetDisplay("Max Acceleration", "Maximum acceleration factor", "SAR")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        self._initial_acceleration = self.Param("InitialAcceleration", 0.02) \
-            .SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings") \
-            .SetRange(0.01, 0.05) \
-            .SetCanOptimize(True)
+        self._prev_sar_above = None
+        self._cooldown = 0
 
-        self._max_acceleration = self.Param("MaxAcceleration", 0.2) \
-            .SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings") \
-            .SetRange(0.1, 0.3) \
-            .SetCanOptimize(True)
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._prev_is_sar_above_price = None
-
-    # Initial acceleration factor for Parabolic SAR.
     @property
-    def InitialAcceleration(self):
-        return self._initial_acceleration.Value
-
-    @InitialAcceleration.setter
-    def InitialAcceleration(self, value):
-        self._initial_acceleration.Value = value
-
-    # Maximum acceleration factor for Parabolic SAR.
-    @property
-    def MaxAcceleration(self):
-        return self._max_acceleration.Value
-
-    @MaxAcceleration.setter
-    def MaxAcceleration(self, value):
-        self._max_acceleration.Value = value
-
-    # Type of candles to use.
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(parabolic_sar_reversal_strategy, self).OnReseted()
-        self._prev_is_sar_above_price = None
+        self._prev_sar_above = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(parabolic_sar_reversal_strategy, self).OnStarted(time)
 
-        # Create Parabolic SAR indicator
-        parabolic_sar = ParabolicSar()
-        parabolic_sar.Acceleration = self.InitialAcceleration
-        parabolic_sar.AccelerationMax = self.MaxAcceleration
+        self._prev_sar_above = None
+        self._cooldown = 0
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        sar = ParabolicSar()
+        sar.Acceleration = self._acceleration.Value
+        sar.AccelerationMax = self._acceleration_max.Value
 
-        # Bind indicator and process candles
-        subscription.Bind(parabolic_sar, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(sar, self._process_candle).Start()
 
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, parabolic_sar)
+            self.DrawIndicator(area, sar)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, sar_value):
-        """Process candle with Parabolic SAR value."""
-        # Skip unfinished candles
+    def _process_candle(self, candle, sar_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Determine if SAR is above or below price
-        is_sar_above_price = sar_value > candle.ClosePrice
+        sv = float(sar_val)
+        close = float(candle.ClosePrice)
+        is_sar_above = sv > close
 
-        # If this is the first calculation, just store the state
-        if self._prev_is_sar_above_price is None:
-            self._prev_is_sar_above_price = is_sar_above_price
+        if self._prev_sar_above is None:
+            self._prev_sar_above = is_sar_above
             return
 
-        # Check for SAR reversal
-        sar_switched_below = self._prev_is_sar_above_price and not is_sar_above_price
-        sar_switched_above = not self._prev_is_sar_above_price and is_sar_above_price
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_sar_above = is_sar_above
+            return
 
-        # Long entry: SAR switched from above to below price
-        if sar_switched_below and self.Position <= 0:
-            self.BuyMarket(self.Volume + abs(self.Position))
-            self.LogInfo(f"Long entry: SAR ({sar_value}) switched below price ({candle.ClosePrice})")
-        # Short entry: SAR switched from below to above price
-        elif sar_switched_above and self.Position >= 0:
-            self.SellMarket(self.Volume + abs(self.Position))
-            self.LogInfo(f"Short entry: SAR ({sar_value}) switched above price ({candle.ClosePrice})")
+        cd = self._cooldown_bars.Value
 
-        # Update the previous state
-        self._prev_is_sar_above_price = is_sar_above_price
+        # SAR switched from above to below = bullish signal
+        sar_switched_below = self._prev_sar_above == True and not is_sar_above
+        # SAR switched from below to above = bearish signal
+        sar_switched_above = self._prev_sar_above == False and is_sar_above
+
+        if self.Position == 0 and sar_switched_below:
+            self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and sar_switched_above:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position > 0 and sar_switched_above:
+            self.SellMarket()
+            self._cooldown = cd
+        elif self.Position < 0 and sar_switched_below:
+            self.BuyMarket()
+            self._cooldown = cd
+
+        self._prev_sar_above = is_sar_above
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return parabolic_sar_reversal_strategy()

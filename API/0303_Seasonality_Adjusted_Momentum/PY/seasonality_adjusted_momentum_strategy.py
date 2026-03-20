@@ -8,45 +8,37 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
+
 
 class seasonality_adjusted_momentum_strategy(Strategy):
     """
-    Strategy based on momentum indicator adjusted with seasonality strength.
+    Momentum strategy that allows longs or shorts only when the current month historically supports that seasonal bias.
     """
 
     def __init__(self):
-        # Initialize a new instance of SeasonalityAdjustedMomentumStrategy.
         super(seasonality_adjusted_momentum_strategy, self).__init__()
 
-        # Period for Momentum indicator.
         self._momentum_period = self.Param("MomentumPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Momentum Period", "Period for momentum indicator", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
+            .SetDisplay("Momentum Period", "Period for the momentum indicator", "Indicators")
 
-        # Threshold for seasonality strength.
-        self._seasonality_threshold = self.Param("SeasonalityThreshold", 0.5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Seasonality Threshold", "Threshold value for seasonality strength", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.3, 0.7, 0.1)
+        self._seasonality_threshold = self.Param("SeasonalityThreshold", 0.2) \
+            .SetDisplay("Seasonality Threshold", "Minimum absolute seasonality strength required for entries", "Signals")
 
-        # Stop loss percentage.
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-        # Candle type parameter.
-        self._candle_type = self.Param("CandleType", tf(1*1440)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 120) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
 
-        # Dictionary to store seasonality strength values for each month
+        self._candle_type = self.Param("CandleType", tf(5)) \
+            .SetDisplay("Candle Type", "Type of candles for the strategy", "General")
+
         self._seasonal_strength_by_month = {}
+        self._momentum = None
+        self._momentum_average = None
+        self._cooldown = 0
 
-        # Initialize seasonality strength for each month (example data)
         self.InitializeSeasonalityData()
 
     @property
@@ -74,6 +66,14 @@ class seasonality_adjusted_momentum_strategy(Strategy):
         self._stop_loss_percent.Value = value
 
     @property
+    def CooldownBars(self):
+        return self._cooldown_bars.Value
+
+    @CooldownBars.setter
+    def CooldownBars(self, value):
+        self._cooldown_bars.Value = value
+
+    @property
     def CandleType(self):
         return self._candle_type.Value
 
@@ -82,114 +82,97 @@ class seasonality_adjusted_momentum_strategy(Strategy):
         self._candle_type.Value = value
 
     def InitializeSeasonalityData(self):
-        # This is sample data - in a real strategy, this would be calculated from historical data
-        # Positive values indicate historically strong months, negative values indicate weak months
-        self._seasonal_strength_by_month[1] = 0.8  # January
-        self._seasonal_strength_by_month[2] = 0.2  # February
-        self._seasonal_strength_by_month[3] = 0.5  # March
-        self._seasonal_strength_by_month[4] = 0.7  # April
-        self._seasonal_strength_by_month[5] = 0.3  # May
-        self._seasonal_strength_by_month[6] = -0.2  # June
-        self._seasonal_strength_by_month[7] = -0.3  # July
-        self._seasonal_strength_by_month[8] = -0.4  # August
-        self._seasonal_strength_by_month[9] = -0.7  # September
-        self._seasonal_strength_by_month[10] = 0.4  # October
-        self._seasonal_strength_by_month[11] = 0.6  # November
-        self._seasonal_strength_by_month[12] = 0.9  # December
+        self._seasonal_strength_by_month[1] = 0.8
+        self._seasonal_strength_by_month[2] = 0.2
+        self._seasonal_strength_by_month[3] = 0.5
+        self._seasonal_strength_by_month[4] = 0.7
+        self._seasonal_strength_by_month[5] = 0.3
+        self._seasonal_strength_by_month[6] = -0.2
+        self._seasonal_strength_by_month[7] = -0.3
+        self._seasonal_strength_by_month[8] = -0.4
+        self._seasonal_strength_by_month[9] = -0.7
+        self._seasonal_strength_by_month[10] = 0.4
+        self._seasonal_strength_by_month[11] = 0.6
+        self._seasonal_strength_by_month[12] = 0.9
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(seasonality_adjusted_momentum_strategy, self).OnReseted()
+        self._momentum = None
+        self._momentum_average = None
+        self._cooldown = 0
         self._seasonal_strength_by_month.clear()
         self.InitializeSeasonalityData()
 
     def OnStarted(self, time):
         super(seasonality_adjusted_momentum_strategy, self).OnStarted(time)
 
-        # Create indicators
-        momentum = Momentum()
-        momentum.Length = self.MomentumPeriod
-        momentumAvg = SimpleMovingAverage()
-        momentumAvg.Length = self.MomentumPeriod
+        self._momentum = Momentum()
+        self._momentum.Length = self.MomentumPeriod
+        self._momentum_average = SimpleMovingAverage()
+        self._momentum_average.Length = self.MomentumPeriod
+        self._cooldown = 0
 
-        # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self._momentum, self.ProcessCandle).Start()
 
-        # Bind indicators to subscription
-        subscription.Bind(momentum, momentumAvg, self.ProcessCandle).Start()
-
-        # Enable position protection with percentage stop-loss
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            useMarketOrders=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, momentum)
-            self.DrawIndicator(area, momentumAvg)
+            self.DrawIndicator(area, self._momentum)
+            self.DrawIndicator(area, self._momentum_average)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, momentum_value, momentum_avg_value):
-        # Skip unfinished candles
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
+
+    def ProcessCandle(self, candle, momentum_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        momentum_val = float(momentum_value)
+
+        momentum_avg_result = process_float(self._momentum_average, momentum_val, candle.OpenTime, True)
+        momentum_avg_val = float(momentum_avg_result)
+
+        if not self._momentum.IsFormed or not self._momentum_average.IsFormed:
+            return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Get current month
-        current_month = candle.OpenTime.Month
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        # Get seasonality strength for current month
-        seasonal_strength = 0
-        if current_month in self._seasonal_strength_by_month:
-            seasonal_strength = self._seasonal_strength_by_month[current_month]
+        seasonal_strength = self._seasonal_strength_by_month.get(candle.OpenTime.Month, 0.0)
+        allow_long = seasonal_strength >= self.SeasonalityThreshold
+        allow_short = seasonal_strength <= -self.SeasonalityThreshold
+        bullish_momentum = momentum_val > momentum_avg_val
+        bearish_momentum = momentum_val < momentum_avg_val
 
-        # Log seasonality data
-        self.LogInfo("Month: {0}, Seasonality Strength: {1}, Momentum: {2}, Avg Momentum: {3}".format(current_month, seasonal_strength, momentum_value, momentum_avg_value))
+        if self.Position > 0:
+            if not allow_long or bearish_momentum:
+                self.SellMarket(abs(self.Position))
+                self._cooldown = self.CooldownBars
+            return
 
-        # Define entry conditions with seasonality adjustment
-        longEntryCondition = momentum_value > momentum_avg_value and \
-                             seasonal_strength > self.SeasonalityThreshold and \
-                             self.Position <= 0
+        if self.Position < 0:
+            if not allow_short or bullish_momentum:
+                self.BuyMarket(abs(self.Position))
+                self._cooldown = self.CooldownBars
+            return
 
-        shortEntryCondition = momentum_value < momentum_avg_value and \
-                              seasonal_strength < -self.SeasonalityThreshold and \
-                              self.Position >= 0
-
-        # Define exit conditions
-        longExitCondition = momentum_value < momentum_avg_value and self.Position > 0
-        shortExitCondition = momentum_value > momentum_avg_value and self.Position < 0
-
-        # Execute trading logic
-        if longEntryCondition:
-            # Calculate position size
-            positionSize = self.Volume + Math.Abs(self.Position)
-
-            # Enter long position
-            self.BuyMarket(positionSize)
-
-            self.LogInfo("Long entry: Price={0}, Momentum={1}, Avg={2}, Seasonality={3}".format(candle.ClosePrice, momentum_value, momentum_avg_value, seasonal_strength))
-        elif shortEntryCondition:
-            # Calculate position size
-            positionSize = self.Volume + Math.Abs(self.Position)
-
-            # Enter short position
-            self.SellMarket(positionSize)
-
-            self.LogInfo("Short entry: Price={0}, Momentum={1}, Avg={2}, Seasonality={3}".format(candle.ClosePrice, momentum_value, momentum_avg_value, seasonal_strength))
-        elif longExitCondition:
-            # Exit long position
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Long exit: Price={0}, Momentum={1}, Avg={2}".format(candle.ClosePrice, momentum_value, momentum_avg_value))
-        elif shortExitCondition:
-            # Exit short position
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Short exit: Price={0}, Momentum={1}, Avg={2}".format(candle.ClosePrice, momentum_value, momentum_avg_value))
+        if allow_long and bullish_momentum:
+            self.BuyMarket()
+            self._cooldown = self.CooldownBars
+        elif allow_short and bearish_momentum:
+            self.SellMarket()
+            self._cooldown = self.CooldownBars
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return seasonality_adjusted_momentum_strategy()

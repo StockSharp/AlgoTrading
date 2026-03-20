@@ -1,180 +1,104 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class atr_trailing_strategy(Strategy):
     """
-    Strategy that uses ATR (Average True Range) for trailing stop management.
-    It enters positions using a simple moving average and manages exits with a dynamic
+    Strategy that uses ATR for trailing stop management.
+    Enters positions using a simple moving average and manages exits with a dynamic
     trailing stop calculated as a multiple of ATR.
-    
     """
+
     def __init__(self):
         super(atr_trailing_strategy, self).__init__()
-        
-        # Initialize internal state
-        self._entryPrice = 0
-        self._trailingStopLevel = 0
+        self._atr_period = self.Param("AtrPeriod", 14).SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
+        self._atr_multiplier = self.Param("AtrMultiplier", 3.0).SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
+        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
 
-        # Initialize strategy parameters
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
-            .SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
-
-        self._atrMultiplier = self.Param("AtrMultiplier", 3.0) \
-            .SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop calculation", "Risk Management")
-
-        self._maPeriod = self.Param("MAPeriod", 20) \
-            .SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Entry Parameters")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "Data")
+        self._entry_price = 0.0
+        self._trailing_stop_level = 0.0
+        self._cooldown = 0
 
     @property
-    def AtrPeriod(self):
-        return self._atrPeriod.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atrPeriod.Value = value
-
-    @property
-    def AtrMultiplier(self):
-        return self._atrMultiplier.Value
-
-    @AtrMultiplier.setter
-    def AtrMultiplier(self, value):
-        self._atrMultiplier.Value = value
-
-    @property
-    def MAPeriod(self):
-        return self._maPeriod.Value
-
-    @MAPeriod.setter
-    def MAPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(atr_trailing_strategy, self).OnReseted()
-        self._entryPrice = 0
-        self._trailingStopLevel = 0
+        self._entry_price = 0.0
+        self._trailing_stop_level = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(atr_trailing_strategy, self).OnStarted(time)
 
-        # Create indicators
+        self._entry_price = 0.0
+        self._trailing_stop_level = 0.0
+        self._cooldown = 0
+
         atr = AverageTrueRange()
-        atr.Length = self.AtrPeriod
-        
+        atr.Length = self._atr_period.Value
         sma = SimpleMovingAverage()
-        sma.Length = self.MAPeriod
+        sma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(atr, sma, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(atr, sma, self._process_candle).Start()
 
-        # Configure chart if GUI is available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
-            self.DrawIndicator(area, atr)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, atrValue, smaValue):
-        """
-        Process candle and manage positions with ATR-based trailing stops
-        
-        :param candle: The candle message.
-        :param atrValue: The ATR value.
-        :param smaValue: The SMA value.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, atr_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Calculate trailing stop distance based on ATR
-        trailingStopDistance = atrValue * self.AtrMultiplier
+        av = float(atr_val)
+        sv = float(sma_val)
+        close = float(candle.ClosePrice)
+        trailing_dist = av * float(self._atr_multiplier.Value)
+        cd = self._cooldown_bars.Value
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
         if self.Position == 0:
-            # No position - check for entry signals
-            if candle.ClosePrice > smaValue:
-                # Price above MA - buy (long)
-                self.BuyMarket(self.Volume)
-                
-                # Record entry price
-                self._entryPrice = float(candle.ClosePrice)
-                
-                # Set initial trailing stop
-                self._trailingStopLevel = self._entryPrice - trailingStopDistance
-            elif candle.ClosePrice < smaValue:
-                # Price below MA - sell (short)
-                self.SellMarket(self.Volume)
-                
-                # Record entry price
-                self._entryPrice = float(candle.ClosePrice)
-                
-                # Set initial trailing stop
-                self._trailingStopLevel = self._entryPrice + trailingStopDistance
+            if close > sv:
+                self.BuyMarket()
+                self._entry_price = close
+                self._trailing_stop_level = self._entry_price - trailing_dist
+                self._cooldown = cd
+            elif close < sv:
+                self.SellMarket()
+                self._entry_price = close
+                self._trailing_stop_level = self._entry_price + trailing_dist
+                self._cooldown = cd
         elif self.Position > 0:
-            # Long position - update and check trailing stop
-            
-            # Calculate potential new trailing stop level
-            newTrailingStopLevel = float(candle.ClosePrice - trailingStopDistance)
-            
-            # Only move the trailing stop up, never down (for long positions)
-            if newTrailingStopLevel > self._trailingStopLevel:
-                self._trailingStopLevel = newTrailingStopLevel
-            
-            # Check if price hit the trailing stop
-            if candle.LowPrice <= self._trailingStopLevel:
-                # Trailing stop hit - exit long
-                self.SellMarket(self.Position)
+            new_level = close - trailing_dist
+            if new_level > self._trailing_stop_level:
+                self._trailing_stop_level = new_level
+            if float(candle.LowPrice) <= self._trailing_stop_level:
+                self.SellMarket()
+                self._cooldown = cd
         elif self.Position < 0:
-            # Short position - update and check trailing stop
-            
-            # Calculate potential new trailing stop level
-            newTrailingStopLevel = float(candle.ClosePrice + trailingStopDistance)
-            
-            # Only move the trailing stop down, never up (for short positions)
-            if newTrailingStopLevel < self._trailingStopLevel or self._trailingStopLevel == 0:
-                self._trailingStopLevel = newTrailingStopLevel
-            
-            # Check if price hit the trailing stop
-            if candle.HighPrice >= self._trailingStopLevel:
-                # Trailing stop hit - exit short
-                self.BuyMarket(Math.Abs(self.Position))
+            new_level = close + trailing_dist
+            if new_level < self._trailing_stop_level or self._trailing_stop_level == 0:
+                self._trailing_stop_level = new_level
+            if float(candle.HighPrice) >= self._trailing_stop_level:
+                self.BuyMarket()
+                self._cooldown = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return atr_trailing_strategy()
