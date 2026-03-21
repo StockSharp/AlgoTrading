@@ -70,8 +70,6 @@ class macd_candle_strategy(Strategy):
         close_input.IsFinal = True
         open_value = self._macd_open.Process(open_input)
         close_value = self._macd_close.Process(close_input)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         open_macd = open_value.Macd
         close_macd = close_value.Macd
         if open_macd is None or close_macd is None:

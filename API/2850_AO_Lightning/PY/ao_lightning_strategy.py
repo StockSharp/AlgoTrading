@@ -64,8 +64,6 @@ class ao_lightning_strategy(Strategy):
     def _on_process(self, candle, ao_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         av = float(ao_value)
 

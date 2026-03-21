@@ -71,9 +71,6 @@ class macd_zero_filtered_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         macd_line = macd_value.Macd
         signal_line = macd_value.Signal
 

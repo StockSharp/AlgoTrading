@@ -60,9 +60,6 @@ class cci_failure_swing_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         cv = float(cci_val)
 
         # Need at least 2 previous CCI values

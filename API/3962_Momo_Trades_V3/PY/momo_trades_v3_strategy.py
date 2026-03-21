@@ -70,8 +70,6 @@ class momo_trades_v3_strategy(Strategy):
             self._ema_history = self._ema_history[:64]
         if len(self._close_history) > 64:
             self._close_history = self._close_history[:64]
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         self._bars_from_signal += 1
         if self.Position != 0:
             return

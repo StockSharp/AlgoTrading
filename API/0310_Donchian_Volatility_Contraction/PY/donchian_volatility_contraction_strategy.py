@@ -174,9 +174,6 @@ class donchian_volatility_contraction_strategy(Strategy):
             self._width_std_dev_value = float(process_float(self._width_std_dev, self._previous_width, candle.OpenTime, True))
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             self.UpdateChannelStatistics(candle, dh, dl)

@@ -127,11 +127,6 @@ class glfx_strategy(Strategy):
             self._buy_count = 0
             self._sell_count = 0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_rsi = rv
-            self._prev_ma = mv
-            return
-
         # Entry after required confirmations
         if self.Position == 0:
             if self._buy_count >= signals_needed:

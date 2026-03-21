@@ -97,8 +97,6 @@ class color_metro_wpr_strategy(Strategy):
     def process_candle(self, candle, wpr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         wpr = float(wpr_value) + 100.0
         fs = float(self.fast_step)

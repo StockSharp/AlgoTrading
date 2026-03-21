@@ -116,15 +116,12 @@ class le_man_trend_strategy(Strategy):
         bears_val = float(self._bears_ema.Process(DecimalIndicatorValue(self._bears_ema, ll, t)))
         if not self._bulls_ema.IsFormed or not self._bears_ema.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._prev_bulls <= self._prev_bears and bulls_val > bears_val and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
             self.BuyMarket()
+
         elif self._prev_bulls >= self._prev_bears and bulls_val < bears_val and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
             self.SellMarket()
         self._prev_bulls = bulls_val
         self._prev_bears = bears_val

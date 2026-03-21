@@ -75,10 +75,6 @@ class spectral_rvi_crossover_strategy(Strategy):
             return
         sm_rvi = float(sm_rvi_result.ToDecimal())
         sm_sig = float(sm_sig_result.ToDecimal())
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_sm_rvi = sm_rvi
-            self._prev_sm_sig = sm_sig
-            return
         if self._prev_sm_rvi is not None and self._prev_sm_sig is not None:
             if self._prev_sm_rvi <= self._prev_sm_sig and sm_rvi > sm_sig and self.Position <= 0:
                 self.BuyMarket()

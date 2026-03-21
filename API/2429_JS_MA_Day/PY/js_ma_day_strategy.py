@@ -61,9 +61,6 @@ class js_ma_day_strategy(Strategy):
         if len(self._prices) < period:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma = sum(self._prices) / len(self._prices)
 
         if self._prev_ma is not None and self._prev_open is not None:

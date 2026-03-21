@@ -51,8 +51,6 @@ class donchian_channel_strategy(Strategy):
     def _process_candle(self, candle, donchian_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if donchian_val.UpperBand is None or donchian_val.LowerBand is None or donchian_val.Middle is None:
             return
@@ -71,9 +69,9 @@ class donchian_channel_strategy(Strategy):
         is_lower_breakout = close < self._prev_lower_band and self._prev_close_price >= self._prev_lower_band
 
         if is_upper_breakout and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif is_lower_breakout and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
 
         self._prev_close_price = close
         self._prev_upper_band = upper

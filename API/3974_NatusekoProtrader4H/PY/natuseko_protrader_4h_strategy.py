@@ -96,8 +96,6 @@ class natuseko_protrader_4h_strategy(Strategy):
     def OnProcess(self, candle, fast_val, slow_val, trend_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = candle.ClosePrice
         price_step = 1.0

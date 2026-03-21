@@ -70,9 +70,6 @@ class vwap_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._vwap_value == 0:
             return
 

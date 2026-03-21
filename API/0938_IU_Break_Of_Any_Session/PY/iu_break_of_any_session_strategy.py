@@ -79,9 +79,6 @@ class iu_break_of_any_session_strategy(Strategy):
                 self._session_low = min(self._session_low, low)
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position > 0:
             if low <= self._stop_price or high >= self._target_price:
                 self.SellMarket()

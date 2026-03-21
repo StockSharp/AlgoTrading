@@ -58,9 +58,6 @@ class end_of_month_strength_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         ma = float(ma_val)
         day_of_month = candle.OpenTime.Day

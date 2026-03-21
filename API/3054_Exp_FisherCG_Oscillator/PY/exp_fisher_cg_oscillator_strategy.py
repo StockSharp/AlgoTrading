@@ -136,9 +136,6 @@ class exp_fisher_cg_oscillator_strategy(Strategy):
 
         self._handle_risk_management(float(candle.ClosePrice))
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         current = self._oscillator_history[-1]
         previous = self._oscillator_history[-2]
 

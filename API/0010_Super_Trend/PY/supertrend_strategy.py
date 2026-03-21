@@ -49,8 +49,6 @@ class supertrend_strategy(Strategy):
     def _process_candle(self, candle, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         atr_v = float(atr_val)
         mult = float(self._multiplier.Value)
@@ -80,9 +78,9 @@ class supertrend_strategy(Strategy):
         crossed_below = not is_above and self._prev_is_price_above
 
         if crossed_above and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif crossed_below and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
 
         self._prev_supertrend = st
         self._prev_is_price_above = is_above

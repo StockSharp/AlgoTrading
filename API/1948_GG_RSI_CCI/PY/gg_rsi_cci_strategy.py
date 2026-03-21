@@ -144,9 +144,6 @@ class gg_rsi_cci_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rsi_val = float(rsi_value)
         cci_val = float(cci_value)
 

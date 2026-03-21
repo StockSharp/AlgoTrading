@@ -45,8 +45,6 @@ class maybeawo222_strategy(Strategy):
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         ma = float(ma_val)
         if self._prev_close is None or self._prev_ma is None:

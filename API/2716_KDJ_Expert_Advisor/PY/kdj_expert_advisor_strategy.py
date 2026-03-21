@@ -89,11 +89,6 @@ class kdj_expert_advisor_strategy(Strategy):
         d = float(d)
         kdc = k - d
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_k = k
-            self._prev_kdc = kdc
-            return
-
         buy_signal = False
         sell_signal = False
 

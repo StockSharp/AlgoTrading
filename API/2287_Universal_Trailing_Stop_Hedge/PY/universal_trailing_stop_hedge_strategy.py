@@ -55,8 +55,6 @@ class universal_trailing_stop_hedge_strategy(Strategy):
     def process_candle(self, candle, atr):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         atr = float(atr)
         distance = atr * float(self.atr_multiplier)
         close_price = float(candle.ClosePrice)

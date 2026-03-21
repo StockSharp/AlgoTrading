@@ -77,9 +77,6 @@ class bollinger_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
 

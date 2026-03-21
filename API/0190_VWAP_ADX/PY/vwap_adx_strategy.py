@@ -114,8 +114,6 @@ class vwap_adx_strategy(Strategy):
         current_adx_value = typed_adx.MovingAverage
 
         # Skip if not formed or online
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Trading logic
         if current_adx_value > 25:

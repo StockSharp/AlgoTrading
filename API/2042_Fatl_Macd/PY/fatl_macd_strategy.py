@@ -64,9 +64,6 @@ class fatl_macd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         val = float(macd_value)
 
         if not self._is_initialized:

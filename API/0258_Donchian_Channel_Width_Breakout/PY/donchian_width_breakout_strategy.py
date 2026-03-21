@@ -100,9 +100,6 @@ class donchian_width_breakout_strategy(Strategy):
         if avg_width <= 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         middle_channel = (float(highest_value) + float(lowest_value)) / 2.0
 
         # Width breakout detection

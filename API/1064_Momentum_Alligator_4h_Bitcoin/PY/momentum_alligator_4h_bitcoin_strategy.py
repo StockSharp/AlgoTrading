@@ -56,8 +56,6 @@ class momentum_alligator_4h_bitcoin_strategy(Strategy):
     def _process_candle(self, candle, ao_val, jaw_val, teeth_val, lips_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         ao = float(ao_val)
         jaw = float(jaw_val)

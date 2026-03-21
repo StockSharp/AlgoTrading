@@ -64,10 +64,6 @@ class exp_x_period_candle_x2_strategy(Strategy):
             self._prev_open = open_p
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_open = open_p
-            return
         ev = float(ema_value)
         if (self._prev_close > self._prev_open and close > open_p
                 and close > ev and self.Position <= 0):

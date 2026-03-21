@@ -48,8 +48,6 @@ class midday_reversal_strategy(Strategy):
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         hour = candle.OpenTime.Hour
         if self._prev_close == 0:

@@ -49,8 +49,6 @@ class volume_weighted_ma_candle_strategy(Strategy):
     def process_candle(self, candle, vwma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         vwma_value = float(vwma_value)
         close_price = float(candle.ClosePrice)
         price_above = close_price > vwma_value

@@ -139,16 +139,12 @@ class macd_pattern_trader_double_top_strategy(Strategy):
             self._reset_buy_pattern()
 
     def _enter_short(self):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         volume = self.Volume + max(0.0, float(self.Position))
         if volume <= 0:
             return
         self.SellMarket(volume)
 
     def _enter_long(self):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         volume = self.Volume + max(0.0, -float(self.Position))
         if volume <= 0:
             return

@@ -45,8 +45,6 @@ class hurst_exponent_trend_strategy(Strategy):
     def _process_candle(self, candle, hurst_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         hurst = float(hurst_val)
         sma = float(sma_val)
         close = float(candle.ClosePrice)

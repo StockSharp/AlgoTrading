@@ -149,8 +149,6 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get the Parabolic SAR value
         self._sar_value = float(value)

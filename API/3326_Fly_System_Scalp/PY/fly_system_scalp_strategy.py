@@ -57,9 +57,6 @@ class fly_system_scalp_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         ema = float(ema_val)
         rsi = float(rsi_val)

@@ -73,9 +73,6 @@ class inverse_reaction_strategy(Strategy):
         if len(self._abs_changes) < period:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         avg = sum(self._abs_changes) / len(self._abs_changes)
         threshold = avg * self._coefficient.Value
 

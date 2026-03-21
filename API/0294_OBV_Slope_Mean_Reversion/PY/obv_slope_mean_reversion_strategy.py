@@ -159,8 +159,6 @@ class obv_slope_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Process the candle with OBV indicator
         obv_value = float(process_candle(self._obv, candle))

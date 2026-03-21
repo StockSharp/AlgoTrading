@@ -59,8 +59,6 @@ class macd_pattern_trader_v01_strategy(Strategy):
     def _process_candle(self, candle, macd_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         macd_line = float(macd_val)
         self._macd_prev3 = self._macd_prev2
         self._macd_prev2 = self._macd_prev1

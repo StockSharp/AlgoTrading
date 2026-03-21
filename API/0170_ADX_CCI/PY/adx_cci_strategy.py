@@ -115,8 +115,6 @@ class adx_cci_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # For the first value, just store and skip trading
         if self._is_first_value:

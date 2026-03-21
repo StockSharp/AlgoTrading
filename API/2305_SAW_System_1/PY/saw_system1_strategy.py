@@ -61,8 +61,6 @@ class saw_system1_strategy(Strategy):
     def process_candle(self, candle, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         atr_value = float(atr_value)
         date = candle.OpenTime.Date
         if self._current_date is None or date != self._current_date:

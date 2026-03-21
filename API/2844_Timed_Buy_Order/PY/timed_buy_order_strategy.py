@@ -48,8 +48,6 @@ class timed_buy_order_strategy(Strategy):
     def _on_process(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._orders_placed >= self.OrdersToPlace:
             return
 

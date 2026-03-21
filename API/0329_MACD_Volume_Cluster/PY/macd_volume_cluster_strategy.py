@@ -190,8 +190,6 @@ class macd_volume_cluster_strategy(Strategy):
             self._volume_std_dev = alpha * volume_dev + (1 - alpha) * self._volume_std_dev
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         macd_line = macd_value.Macd
         signal_line = macd_value.Signal

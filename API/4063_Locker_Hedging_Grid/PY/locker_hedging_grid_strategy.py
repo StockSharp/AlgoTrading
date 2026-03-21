@@ -68,9 +68,6 @@ class locker_hedging_grid_strategy(Strategy):
             self._initialized = True
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             if close >= self._grid_level + grid_step:
                 self._entry_price = close

@@ -89,8 +89,6 @@ class ema_sma_rsi_strategy(Strategy):
     def _on_process(self, candle, emaA, emaB, emaC, rsi):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not (self._emaA.IsFormed and self._emaB.IsFormed and self._emaC.IsFormed and self._rsi.IsFormed):
             return
 

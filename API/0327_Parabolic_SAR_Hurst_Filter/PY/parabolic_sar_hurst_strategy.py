@@ -126,8 +126,6 @@ class parabolic_sar_hurst_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get SAR and Hurst values
         sar_price = float(sar_value)

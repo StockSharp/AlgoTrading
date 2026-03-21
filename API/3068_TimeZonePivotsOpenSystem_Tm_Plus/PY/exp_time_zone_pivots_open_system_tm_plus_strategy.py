@@ -186,9 +186,6 @@ class exp_time_zone_pivots_open_system_tm_plus_strategy(Strategy):
         if self._session_trade_taken:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position != 0:
             return
 

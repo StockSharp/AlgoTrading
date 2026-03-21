@@ -96,8 +96,6 @@ class kloss_simple_strategy(Strategy):
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)

@@ -73,8 +73,6 @@ class corrected_average_breakout_strategy(Strategy):
     def on_process(self, candle, ma_val, std_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         ma_val = float(ma_val)
         std_val = float(std_val)

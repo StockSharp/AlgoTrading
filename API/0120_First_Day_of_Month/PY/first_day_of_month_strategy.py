@@ -55,9 +55,6 @@ class first_day_of_month_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         ma = float(ma_val)
         day_of_month = candle.OpenTime.Day

@@ -61,8 +61,6 @@ class cai_standard_deviation_strategy(Strategy):
     def process_candle(self, candle, sma_value, std_dev_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         sma_value = float(sma_value)
         std_dev_value = float(std_dev_value)
         open_mult = float(self.open_multiplier)

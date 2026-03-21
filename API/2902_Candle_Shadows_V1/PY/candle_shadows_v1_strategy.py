@@ -50,8 +50,6 @@ class candle_shadows_v1_strategy(Strategy):
     def _on_process(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)
         high = float(candle.HighPrice)

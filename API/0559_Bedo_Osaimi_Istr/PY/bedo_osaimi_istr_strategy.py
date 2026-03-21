@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
+from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -17,10 +17,8 @@ class bedo_osaimi_istr_strategy(Strategy):
         self._ma_length = self.Param("MaLength", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("MA Length", "Moving average length", "Parameters")
-        self._prev_close_ma = None
-        self._prev_open_ma = None
-        self._open_sum = 0.0
-        self._open_values = []
+        self._prev_close = None
+        self._prev_open = None
 
     @property
     def candle_type(self):
@@ -32,50 +30,63 @@ class bedo_osaimi_istr_strategy(Strategy):
 
     def OnReseted(self):
         super(bedo_osaimi_istr_strategy, self).OnReseted()
-        self._prev_close_ma = None
-        self._prev_open_ma = None
-        self._open_sum = 0.0
-        self._open_values = []
+        self._prev_close = None
+        self._prev_open = None
 
     def OnStarted(self, time):
         super(bedo_osaimi_istr_strategy, self).OnStarted(time)
-        close_ma = SimpleMovingAverage()
-        close_ma.Length = self._ma_length.Value
+        self._close_ma = SimpleMovingAverage()
+        self._close_ma.Length = self._ma_length.Value
+        self._open_ma = SimpleMovingAverage()
+        self._open_ma.Length = self._ma_length.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(close_ma, self.OnProcess).Start()
+        subscription.Bind(self._close_ma, self._process_candle).Start()
+
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, close_ma)
+            self.DrawIndicator(area, self._close_ma)
+            self.DrawIndicator(area, self._open_ma)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, close_ma_val):
+    def _process_candle(self, candle, close_ma_value):
         if candle.State != CandleStates.Finished:
             return
-        close_ma_v = float(close_ma_val)
-        open_p = float(candle.OpenPrice)
-        length = self._ma_length.Value
-        self._open_values.append(open_p)
-        self._open_sum += open_p
-        if len(self._open_values) > length:
-            self._open_sum -= self._open_values[0]
-            self._open_values = self._open_values[1:]
-        if len(self._open_values) < length:
-            self._prev_close_ma = close_ma_v
+
+        iv = DecimalIndicatorValue(self._open_ma, float(candle.OpenPrice), candle.ServerTime)
+        iv.IsFinal = True
+        open_ma_result = self._open_ma.Process(iv)
+        if not open_ma_result.IsFormed:
+            self._prev_close = float(close_ma_value)
+            self._prev_open = None
             return
-        open_ma_v = self._open_sum / length
-        if self._prev_close_ma is None or self._prev_open_ma is None:
-            self._prev_close_ma = close_ma_v
-            self._prev_open_ma = open_ma_v
+
+        open_ma_value = float(open_ma_result)
+        close_ma_v = float(close_ma_value)
+
+        if self._prev_close is None or self._prev_open is None:
+            self._prev_close = close_ma_v
+            self._prev_open = open_ma_value
             if self.Position == 0:
                 self.BuyMarket()
             return
-        if close_ma_v > open_ma_v and self._prev_close_ma <= self._prev_open_ma and self.Position == 0:
+
+        prev_close = self._prev_close
+        prev_open = self._prev_open
+
+        if close_ma_v > open_ma_value and prev_close <= prev_open and self.Position == 0:
             self.BuyMarket()
-        elif close_ma_v < open_ma_v and self._prev_close_ma >= self._prev_open_ma and self.Position == 0:
+        elif close_ma_v < open_ma_value and prev_close >= prev_open and self.Position == 0:
             self.SellMarket()
-        self._prev_close_ma = close_ma_v
-        self._prev_open_ma = open_ma_v
+
+        self._prev_close = close_ma_v
+        self._prev_open = open_ma_value
 
     def CreateClone(self):
         return bedo_osaimi_istr_strategy()

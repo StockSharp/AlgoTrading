@@ -60,9 +60,6 @@ class false_breakout_trap_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         lookback = self._lookback_period.Value
 
         # Maintain rolling high/low window

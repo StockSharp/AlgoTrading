@@ -58,8 +58,6 @@ class z_score_strategy(Strategy):
     def _process_candle(self, candle, ma_val, std_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         sv = float(std_val)
         if sv == 0:

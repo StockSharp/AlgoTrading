@@ -71,8 +71,6 @@ class color_bears_strategy(Strategy):
         ma2_result = self._ma2.Process(ma2_input)
         if not self._ma2.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         current = float(ma2_result)
         color = 1
         if self._prev_value is not None:

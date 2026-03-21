@@ -30,6 +30,11 @@ class ema_rsi_trend_reversal_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
+
+    def OnReseted(self):
+        super(ema_rsi_trend_reversal_strategy, self).OnReseted()
+        self._prev_fast_ema = 0.0
+        self._prev_slow_ema = 0.0
     def OnStarted(self, time):
         super(ema_rsi_trend_reversal_strategy, self).OnStarted(time)
 
@@ -51,31 +56,22 @@ class ema_rsi_trend_reversal_strategy(Strategy):
     def on_process(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
-        fast_val = float(fast_val)
-        slow_val = float(slow_val)
+        fast_v = float(fast_val)
+        slow_v = float(slow_val)
 
         if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_val
-            self._prev_slow_ema = slow_val
+            self._prev_fast_ema = fast_v
+            self._prev_slow_ema = slow_v
             return
 
-        buy_signal = self._prev_fast_ema <= self._prev_slow_ema and fast_val > slow_val
-        sell_signal = self._prev_fast_ema >= self._prev_slow_ema and fast_val < slow_val
-
-        if buy_signal and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+        if self._prev_fast_ema <= self._prev_slow_ema and fast_v > slow_v and self.Position <= 0:
             self.BuyMarket()
-        elif sell_signal and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+        elif self._prev_fast_ema >= self._prev_slow_ema and fast_v < slow_v and self.Position >= 0:
             self.SellMarket()
 
-        self._prev_fast_ema = fast_val
-        self._prev_slow_ema = slow_val
+        self._prev_fast_ema = fast_v
+        self._prev_slow_ema = slow_v
 
     def CreateClone(self):
         return ema_rsi_trend_reversal_strategy()

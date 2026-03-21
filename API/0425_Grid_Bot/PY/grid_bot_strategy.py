@@ -46,8 +46,6 @@ class grid_bot_strategy(Strategy):
     def _on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         price = candle.ClosePrice
         level = self._nearest_level(price)
         mid = (self._upper.Value + self._lower.Value) / 2

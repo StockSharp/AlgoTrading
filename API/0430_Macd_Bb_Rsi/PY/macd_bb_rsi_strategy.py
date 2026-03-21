@@ -56,8 +56,6 @@ class macd_bb_rsi_strategy(Strategy):
     def _on_process(self, candle, macd_val, boll_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Access MACD signal value correctly
         macd_value = float(macd_val.Signal) if macd_val.Signal is not None else 0.0

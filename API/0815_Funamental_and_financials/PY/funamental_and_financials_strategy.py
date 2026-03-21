@@ -54,21 +54,18 @@ class funamental_and_financials_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_val = float(fast_val)
-        slow_val = float(slow_val)
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
-            return
+        fast_v = float(fast_val)
+        slow_v = float(slow_val)
 
         if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_fast = fast_val

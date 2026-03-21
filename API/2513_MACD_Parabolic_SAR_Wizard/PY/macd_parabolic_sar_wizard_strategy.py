@@ -65,8 +65,6 @@ class macd_parabolic_sar_wizard_strategy(Strategy):
     def _process_candle(self, candle, macd_value, sar_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         typed_val = macd_value
         macd_line = typed_val.Macd
         signal_line = typed_val.Signal

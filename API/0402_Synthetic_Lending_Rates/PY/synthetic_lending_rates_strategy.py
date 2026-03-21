@@ -74,11 +74,6 @@ class synthetic_lending_rates_strategy(Strategy):
         sv = float(short_val)
         lv = float(long_val)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_short = sv
-            self._prev_long = lv
-            return
-
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_short = sv

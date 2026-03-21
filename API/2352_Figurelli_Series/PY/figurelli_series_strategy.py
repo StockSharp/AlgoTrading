@@ -85,9 +85,6 @@ class figurelli_series_strategy(Strategy):
         if not all_formed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         value = bids - asks
         sign = 1 if value > 0 else (-1 if value < 0 else 0)
 

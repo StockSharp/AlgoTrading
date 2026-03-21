@@ -140,8 +140,6 @@ class williams_r_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract Williams %R value
         current_williams_r = float(williams_r_value)

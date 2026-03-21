@@ -86,9 +86,6 @@ class color_zerolag_hlr_strategy(Strategy):
             not l2.IsFormed or not h3.IsFormed or not l3.IsFormed):
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         high1 = float(h1)
         low1 = float(l1)
         high2 = float(h2)

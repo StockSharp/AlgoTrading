@@ -175,9 +175,6 @@ class asimmetric_stoch_nr_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         k_raw = stoch_value.K
         d_raw = stoch_value.D
         if k_raw is None or d_raw is None:

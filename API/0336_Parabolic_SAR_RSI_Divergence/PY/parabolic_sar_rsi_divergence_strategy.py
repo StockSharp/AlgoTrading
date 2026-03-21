@@ -137,9 +137,6 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rsi_val = float(rsi_value)
         close_price = float(candle.ClosePrice)
 

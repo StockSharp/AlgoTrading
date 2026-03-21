@@ -70,11 +70,6 @@ class labouchere_ea_strategy(Strategy):
         k = float(k)
         d = float(d)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_k = k
-            self._prev_d = d
-            return
-
         signal = 0
 
         if self._prev_k is not None and self._prev_d is not None:

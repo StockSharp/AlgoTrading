@@ -107,9 +107,6 @@ class rsi_stochastic_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._ema_value == 0:
             return
 

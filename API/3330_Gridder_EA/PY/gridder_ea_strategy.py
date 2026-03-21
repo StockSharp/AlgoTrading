@@ -44,9 +44,6 @@ class gridder_ea_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         upper = bb_val.UpBand
         lower = bb_val.LowBand
         if upper is None or lower is None:

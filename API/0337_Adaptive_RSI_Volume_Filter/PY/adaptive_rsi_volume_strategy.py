@@ -176,8 +176,6 @@ class adaptive_rsi_volume_strategy(Strategy):
                 self.LogInfo("Adjusted RSI period to {0} based on ATR ({1})".format(self._currentRsiPeriod, atr))
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Store RSI value
         if rsi_value.IsFinal:

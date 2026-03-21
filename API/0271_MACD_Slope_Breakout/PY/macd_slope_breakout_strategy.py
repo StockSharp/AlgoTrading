@@ -172,8 +172,6 @@ class macd_slope_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if macd_value.Macd is None or macd_value.Signal is None:
             return

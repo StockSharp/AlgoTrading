@@ -119,9 +119,6 @@ class puria_strategy(Strategy):
         if not macd_result.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma75_f = float(ma75_val)
         ma85_f = float(ma85_val)
         ma5_f = float(ma5_val)

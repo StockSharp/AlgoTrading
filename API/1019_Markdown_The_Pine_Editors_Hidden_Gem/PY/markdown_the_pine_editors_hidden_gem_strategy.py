@@ -42,8 +42,6 @@ class markdown_the_pine_editors_hidden_gem_strategy(Strategy):
     def _process_candle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         upper = bb_value.UpBand
         lower = bb_value.LowBand
         if upper is None or lower is None:

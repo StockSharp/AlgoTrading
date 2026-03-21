@@ -61,8 +61,6 @@ class brain_trend2_v2_duplex_strategy(Strategy):
     def _on_process(self, candle, atr_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         av = float(atr_value)
         ev = float(ema_value)

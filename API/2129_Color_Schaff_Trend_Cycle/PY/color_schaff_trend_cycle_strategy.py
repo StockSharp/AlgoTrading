@@ -86,8 +86,6 @@ class color_schaff_trend_cycle_strategy(Strategy):
         slow_result = self._slow_ema.Process(slow_input)
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         macd = float(fast_result) - float(slow_result)
         stc = rsi_value
         high = float(self.high_level)

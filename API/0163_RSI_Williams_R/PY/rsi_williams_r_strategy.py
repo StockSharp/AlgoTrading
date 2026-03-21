@@ -76,8 +76,6 @@ class rsi_williams_r_strategy(Strategy):
     def ProcessCandle(self, candle, rsi_value, williams_r_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rv = float(rsi_value)
         wv = float(williams_r_value)

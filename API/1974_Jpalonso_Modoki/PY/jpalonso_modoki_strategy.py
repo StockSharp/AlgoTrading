@@ -48,9 +48,6 @@ class jpalonso_modoki_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma = float(ma_val)
         dev = self._deviation.Value
         upper = ma * (1.0 + dev / 100.0)

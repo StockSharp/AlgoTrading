@@ -58,8 +58,6 @@ class donchian_channels_system_strategy(Strategy):
     def process_candle(self, candle, donchian_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         upper = donchian_value.UpperBand
         lower = donchian_value.LowerBand
         if upper is None or lower is None:

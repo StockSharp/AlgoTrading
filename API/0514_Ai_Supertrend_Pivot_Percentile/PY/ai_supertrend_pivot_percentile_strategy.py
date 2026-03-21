@@ -84,8 +84,6 @@ class ai_supertrend_pivot_percentile_strategy(Strategy):
     def OnProcess(self, candle, st1_value, st2_value, adx_value, wpr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         adx_typed = adx_value
         adx_ma = adx_typed.MovingAverage
         if adx_ma is None:

@@ -132,8 +132,6 @@ class hull_ma_cci_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Store previous Hull value for slope detection
         previous_hull_value = self._previous_hull_value

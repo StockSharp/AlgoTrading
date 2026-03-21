@@ -52,8 +52,6 @@ class trend_continuation_strategy(Strategy):
     def process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast)
         slow = float(slow)
         if self._prev_fast is not None and self._prev_slow is not None:

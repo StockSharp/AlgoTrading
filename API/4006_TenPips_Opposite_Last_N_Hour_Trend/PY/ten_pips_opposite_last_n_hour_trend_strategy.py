@@ -130,9 +130,6 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         self._update_close_history(float(candle.ClosePrice))
 
         if self.Position != 0 and self._update_protective_logic(candle):

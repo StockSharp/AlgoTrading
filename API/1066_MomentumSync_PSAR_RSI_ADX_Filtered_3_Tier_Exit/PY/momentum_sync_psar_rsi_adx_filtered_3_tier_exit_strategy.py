@@ -54,8 +54,6 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
     def _process_candle(self, candle, psar_value, rsi_value, adx_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         psar = float(IndicatorHelper.ToDecimal(psar_value))
         rsi = float(IndicatorHelper.ToDecimal(rsi_value))
         adx_typed = adx_value

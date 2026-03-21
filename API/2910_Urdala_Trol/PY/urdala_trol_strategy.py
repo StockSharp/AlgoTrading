@@ -79,10 +79,6 @@ class urdala_trol_strategy(Strategy):
             self._prev_ema = ev
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_ema = ev
-            return
 
         if self.Position > 0:
             if high > self._high_since_entry:

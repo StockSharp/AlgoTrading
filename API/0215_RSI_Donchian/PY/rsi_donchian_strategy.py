@@ -161,8 +161,6 @@ class rsi_donchian_strategy(Strategy):
 
     def ProcessTradingLogic(self, candle):
         # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Skip if not all indicators are initialized
         if self._donchian_high == 0 or self._donchian_low == 0 or self._current_rsi == 0:

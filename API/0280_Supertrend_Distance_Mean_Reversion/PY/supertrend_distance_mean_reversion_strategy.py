@@ -160,8 +160,6 @@ class supertrend_distance_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get the Supertrend value
         self._supertrend_value = float(supertrend_value)

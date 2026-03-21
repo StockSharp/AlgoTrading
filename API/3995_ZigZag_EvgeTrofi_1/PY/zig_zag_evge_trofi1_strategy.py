@@ -110,9 +110,6 @@ class zig_zag_evge_trofi1_strategy(Strategy):
         if self._signal_handled:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         volume = float(self.VolumePerTrade)
         if volume <= 0:
             self._signal_handled = True

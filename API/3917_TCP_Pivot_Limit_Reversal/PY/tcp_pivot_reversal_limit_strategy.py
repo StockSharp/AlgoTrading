@@ -41,8 +41,6 @@ class tcp_pivot_reversal_limit_strategy(Strategy):
     def process_candle(self, candle, rsi):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         rsi_val = float(rsi)
         if not self._has_prev:
             self._prev_rsi = rsi_val

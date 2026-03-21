@@ -81,9 +81,6 @@ class color_xdin_ma_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         main_val = float(main)
         plus_val = float(plus)
         xdin = main_val * 2.0 - plus_val

@@ -73,9 +73,6 @@ class n7_s_ao772012_strategy(Strategy):
             if current > 0 or (self._entry_price > 0 and close > self._entry_price * 1.02):
                 self.BuyMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry
         if self.Position == 0:
             if rising:

@@ -69,8 +69,6 @@ class volume_ma_cross_strategy(Strategy):
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Process volume through manual MAs
         fast_result = self._fast_vol_ma.Process(DecimalIndicatorValue(self._fast_vol_ma, candle.TotalVolume, candle.ServerTime))

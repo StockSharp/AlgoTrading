@@ -133,9 +133,6 @@ class keltner_rsi_strategy(Strategy):
         if not self._ema.IsFormed or not self._atr.IsFormed or not self._rsi.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ema_f = float(ema_value)
         atr_f = float(atr_value)
         rsi_f = float(rsi_value)

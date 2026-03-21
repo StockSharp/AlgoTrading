@@ -90,9 +90,6 @@ class gandalf_pro_projection_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry
         if self.Position == 0:
             if target > close + buffer_dist:

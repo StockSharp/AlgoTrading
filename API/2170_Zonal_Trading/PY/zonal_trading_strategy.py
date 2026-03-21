@@ -77,9 +77,6 @@ class zonal_trading_strategy(Strategy):
             self._history_count += 1
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         buy_signal = (ao_val > self._ao_prev1 and ac_value > self._ac_prev1 and
                       (self._ac_prev1 < self._ac_prev2 or self._ao_prev1 < self._ao_prev2) and
                       ao_val > 0 and ac_value > 0)

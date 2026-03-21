@@ -57,9 +57,6 @@ class tweezer_bottom_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._prev_candle is None:
             self._prev_candle = candle
             return

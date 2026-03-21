@@ -77,8 +77,6 @@ class ha_universal_strategy(Strategy):
     def _on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         
         # Calculate Heikin-Ashi values
         if self._prev_ha_open == 0:

@@ -64,8 +64,6 @@ class expotest_strategy(Strategy):
     def _on_process(self, candle, sar_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         sv = float(sar_value)
         sar_below = sv < float(candle.ClosePrice)

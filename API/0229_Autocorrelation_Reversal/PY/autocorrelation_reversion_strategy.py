@@ -136,8 +136,6 @@ class autocorrelation_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate autocorrelation
         self._latest_autocorrelation = self.CalculateAutocorrelation()

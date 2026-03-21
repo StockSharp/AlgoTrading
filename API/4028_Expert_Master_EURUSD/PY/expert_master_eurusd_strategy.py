@@ -131,9 +131,6 @@ class expert_master_eurusd_strategy(Strategy):
         self._signal1 = self._signal0
         self._signal0 = macd_signal
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._manage_trailing(candle):
             return
 

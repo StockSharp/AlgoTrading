@@ -58,8 +58,6 @@ class evening_star_strategy(Strategy):
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown > 0:
             self._cooldown -= 1

@@ -55,9 +55,6 @@ class simple_macd_strategy(Strategy):
         if not self._macd.IsFormed or not macd_val.IsFinal:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         macd_line = macd_val.ToDecimal()
 
         if self._prev_macd is None:

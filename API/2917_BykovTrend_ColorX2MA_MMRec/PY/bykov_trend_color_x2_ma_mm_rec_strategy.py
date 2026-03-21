@@ -73,10 +73,6 @@ class bykov_trend_color_x2_ma_mm_rec_strategy(Strategy):
             self._prev_slow = sv
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)
         bullish_cross = self._prev_fast <= self._prev_slow and fv > sv

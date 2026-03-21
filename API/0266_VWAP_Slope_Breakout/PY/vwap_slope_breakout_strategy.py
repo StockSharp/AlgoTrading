@@ -143,8 +143,6 @@ class vwap_slope_breakout_strategy(Strategy):
         self._current_index = (self._current_index + 1) % self.lookback_period
 
         # Calculate statistics once we have enough data
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self.CalculateStatistics()
 

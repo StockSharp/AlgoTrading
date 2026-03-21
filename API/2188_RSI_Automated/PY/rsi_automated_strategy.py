@@ -93,8 +93,6 @@ class rsi_automated_strategy(Strategy):
     def process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rsi_val = float(rsi_value)
         close = float(candle.ClosePrice)

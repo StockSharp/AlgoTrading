@@ -112,9 +112,6 @@ class exp_xma_range_bands_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         upper_raw = keltner_value.Upper
         lower_raw = keltner_value.Lower
         if upper_raw is None or lower_raw is None:

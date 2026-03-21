@@ -102,8 +102,6 @@ class vwap_adx_trend_strength_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
 
         # Extract values from ADX composite indicator

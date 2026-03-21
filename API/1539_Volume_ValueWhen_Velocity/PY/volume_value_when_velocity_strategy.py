@@ -90,8 +90,6 @@ class volume_value_when_velocity_strategy(Strategy):
         volume_condition = candle.TotalVolume > self._prev_volume1 and self._prev_volume1 > self._prev_volume2
         self._prev_volume2 = self._prev_volume1
         self._prev_volume1 = candle.TotalVolume
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if volume_condition and atr_condition and was_oversold and prev_close_change > self.distance and self._bars_since_cross < 5 and self.Position <= 0:
             self.BuyMarket()
 

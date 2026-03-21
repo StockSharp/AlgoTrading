@@ -120,9 +120,6 @@ class trend_catcher_strategy(Strategy):
             self._is_initialized = True
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         buy_signal = is_price_above_sar and not self._is_price_above_sar_prev and fast_val > slow_val
         sell_signal = not is_price_above_sar and self._is_price_above_sar_prev and fast_val < slow_val
 

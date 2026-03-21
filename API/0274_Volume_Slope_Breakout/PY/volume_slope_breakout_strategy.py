@@ -137,8 +137,6 @@ class volume_slope_breakout_strategy(Strategy):
         )
     def ProcessCandle(self, candle, volumeValue):
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Process volume SMA
         volumeSma = float(process_float(self._volumeSma, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))

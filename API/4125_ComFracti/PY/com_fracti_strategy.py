@@ -107,9 +107,6 @@ class com_fracti_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             if fractal_down and rv < 55:
                 self._entry_price = close

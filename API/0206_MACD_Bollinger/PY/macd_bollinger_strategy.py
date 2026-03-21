@@ -56,8 +56,6 @@ class macd_bollinger_strategy(Strategy):
     def _process_candle(self, candle, bollinger_value, macd_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if bollinger_value.MovingAverage is None:
             return
         middle_band = float(bollinger_value.MovingAverage)

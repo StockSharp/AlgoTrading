@@ -69,8 +69,6 @@ class exp_kwan_nrp_strategy(Strategy):
     def _on_process(self, candle, rsi_value, mom_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rv = float(rsi_value)
         mv = float(mom_value)

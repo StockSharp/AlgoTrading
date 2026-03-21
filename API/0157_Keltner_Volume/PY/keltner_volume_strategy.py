@@ -66,8 +66,6 @@ class keltner_volume_strategy(Strategy):
     def ProcessCandle(self, candle, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         volume = float(candle.TotalVolume)

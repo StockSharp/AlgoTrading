@@ -56,8 +56,6 @@ class cai_channel_system_digit_strategy(Strategy):
     def process_candle(self, candle, bb_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         up = bb_val.UpBand
         down = bb_val.LowBand
         if up is None or down is None:

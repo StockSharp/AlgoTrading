@@ -72,8 +72,6 @@ class cci_mean_reversion_strategy(Strategy):
     def on_process(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         current_cci = float(cci_value)
         self._update_cci_statistics(current_cci)

@@ -137,9 +137,6 @@ class ma_slope_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma_float = float(ma_value)
         if self._previous_ma_value != 0:
             # Calculate current slope

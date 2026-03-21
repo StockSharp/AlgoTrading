@@ -60,8 +60,6 @@ class normalized_oscillators_spider_chart_strategy(Strategy):
     def OnProcess(self, candle, f, s, r):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not self._init:
             self._prev_f = f
             self._prev_s = s

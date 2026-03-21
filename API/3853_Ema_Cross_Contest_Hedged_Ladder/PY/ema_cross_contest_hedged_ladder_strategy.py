@@ -46,12 +46,11 @@ class ema_cross_contest_hedged_ladder_strategy(Strategy):
             self._has_prev = True
             return
         if self._prev_short <= self._prev_long and short_val > long_val and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
             self.BuyMarket()
+
         elif self._prev_short >= self._prev_long and short_val < long_val and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
             self.SellMarket()
         self._prev_short = short_val
         self._prev_long = long_val

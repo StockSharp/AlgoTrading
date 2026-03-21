@@ -161,8 +161,6 @@ class adx_with_volume_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check for strong trend
         is_strong_trend = adx > self.AdxThreshold

@@ -87,9 +87,6 @@ class color_bulls_gap_strategy(Strategy):
         xbulls_c = float(self._sma_bulls_c.Process(bulls_c, t, True).GetValue[float]())
         xbulls_o = float(self._sma_bulls_o.Process(bulls_o, t, True).GetValue[float]())
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._is_first:
             self._prev_xbulls_c = xbulls_c
             self._is_first = False

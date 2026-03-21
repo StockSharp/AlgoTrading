@@ -49,8 +49,6 @@ class adx_dmi_strategy(Strategy):
     def process_candle(self, candle, dmi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         current_plus = dmi_value.Plus
         current_minus = dmi_value.Minus
         if current_plus is None or current_minus is None:

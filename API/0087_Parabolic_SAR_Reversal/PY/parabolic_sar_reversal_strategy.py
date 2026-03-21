@@ -58,9 +58,6 @@ class parabolic_sar_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         sv = float(sar_val)
         close = float(candle.ClosePrice)
         is_sar_above = sv > close

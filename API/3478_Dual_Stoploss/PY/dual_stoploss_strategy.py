@@ -65,8 +65,6 @@ class dual_stoploss_strategy(Strategy):
     def _process_candle(self, candle, fast_val, mid_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         fast_val = float(fast_val)
         mid_val = float(mid_val)

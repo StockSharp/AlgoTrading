@@ -58,8 +58,6 @@ class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(IndicatorHelper.ToDecimal(fast_val))
         slow = float(IndicatorHelper.ToDecimal(slow_val))
         atr = float(IndicatorHelper.ToDecimal(atr_val))

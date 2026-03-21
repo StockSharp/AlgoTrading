@@ -90,9 +90,6 @@ class afl_winner_sign_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         k_result = self._fast.Process(
             DecimalIndicatorValue(self._fast, float(momentum), candle.OpenTime, True))
         k = float(k_result.ToDecimal())

@@ -104,9 +104,6 @@ class support_resistance_breakout_strategy(Strategy):
                 self.BuyMarket(abs(self.Position))
                 return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if is_bullish and self.Position <= 0 and close > self._resistance and self._resistance > 0:
             if self.Position < 0:
                 self.BuyMarket(abs(self.Position))

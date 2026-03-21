@@ -65,9 +65,6 @@ class adx_weakening_strategy(Strategy):
         if not adx_iv.IsFormed or not sma_iv.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         sma_value = float(sma_iv.Value)
 
         adx_ma = adx_iv.MovingAverage

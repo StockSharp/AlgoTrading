@@ -58,8 +58,6 @@ class aroon_oscillator_sign_alert_strategy(Strategy):
     def process_candle(self, candle, aroon_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         aroon_value = float(aroon_value)
         if self._previous_value is None:
             self._previous_value = aroon_value

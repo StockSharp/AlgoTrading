@@ -170,8 +170,6 @@ class stochastic_keltner_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         price = float(candle.ClosePrice)
 

@@ -163,10 +163,6 @@ class adx_breakout_strategy(Strategy):
         stdDev = Math.Abs(currentAdx - currentAdxAvg) * 2  # Simplified approximation
 
         # Check if trading is allowed
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_adx_value = currentAdx
-            self._prev_adx_avg_value = currentAdxAvg
-            return
 
         # ADX breakout detection (ADX increases significantly above its average)
         if currentAdx > currentAdxAvg + self.Multiplier * stdDev:

@@ -67,9 +67,6 @@ class supertrend_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if not atr_iv.IsFormed:
             return
 

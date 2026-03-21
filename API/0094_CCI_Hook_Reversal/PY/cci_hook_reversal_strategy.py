@@ -58,9 +58,6 @@ class cci_hook_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         cv = float(cci_val)
 
         if self._prev_cci is None:

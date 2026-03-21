@@ -136,8 +136,6 @@ class gold_rsi_divergence_strategy(Strategy):
     def OnProcess(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         rsi_value = float(rsi_val)
         self._bar_index += 1
         self._add_to_buffer(rsi_value, float(candle.LowPrice), float(candle.HighPrice))

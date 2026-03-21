@@ -80,9 +80,6 @@ class adaptive_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         alpha = 2.0 * abs(rsi_value / 100.0 - 0.5)
         src = float(candle.ClosePrice)
 

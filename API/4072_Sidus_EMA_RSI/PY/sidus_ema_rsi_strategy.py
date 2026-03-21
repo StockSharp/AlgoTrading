@@ -78,11 +78,6 @@ class sidus_ema_rsi_strategy(Strategy):
         elif self.Position < 0 and bullish_cross:
             self.BuyMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
-            return
-
         # Entry on crossover confirmed by RSI
         if self.Position == 0:
             if bullish_cross and rsi_val > 50:

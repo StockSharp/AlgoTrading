@@ -67,8 +67,6 @@ class adx_trend_strategy(Strategy):
     def _process_ma(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         adx_ma = self._current_adx_ma
         ma_value = float(ma_val)
@@ -84,9 +82,9 @@ class adx_trend_strategy(Strategy):
 
         if self._prev_ma_value != 0 and is_adx_strong and was_price_above_ma != is_price_above_ma:
             if is_price_above_ma and self.Position <= 0:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume + abs(self.Position))
             elif not is_price_above_ma and self.Position >= 0:
-                self.SellMarket()
+                self.SellMarket(self.Volume + abs(self.Position))
 
         self._prev_adx_value = adx_ma
         self._prev_ma_value = ma_value

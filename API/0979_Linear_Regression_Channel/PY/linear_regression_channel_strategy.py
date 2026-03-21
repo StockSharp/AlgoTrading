@@ -63,9 +63,6 @@ class linear_regression_channel_strategy(Strategy):
         if len(self._closes) < length:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         n = len(self._closes)
         sum_x = 0.0
         sum_y = 0.0

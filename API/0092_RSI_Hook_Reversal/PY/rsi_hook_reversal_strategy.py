@@ -60,9 +60,6 @@ class rsi_hook_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rv = float(rsi_val)
 
         if self._prev_rsi == 0:

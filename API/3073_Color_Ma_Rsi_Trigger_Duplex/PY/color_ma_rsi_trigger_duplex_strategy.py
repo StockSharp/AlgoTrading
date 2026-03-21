@@ -85,8 +85,6 @@ class color_ma_rsi_trigger_duplex_strategy(Strategy):
     def _on_process(self, candle, fast_ma_val, slow_ma_val, fast_rsi_val, slow_rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1

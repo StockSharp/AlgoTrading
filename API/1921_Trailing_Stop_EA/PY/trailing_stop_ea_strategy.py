@@ -73,12 +73,14 @@ class trailing_stop_ea_strategy(Strategy):
             return
 
         if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_fast = fast_val

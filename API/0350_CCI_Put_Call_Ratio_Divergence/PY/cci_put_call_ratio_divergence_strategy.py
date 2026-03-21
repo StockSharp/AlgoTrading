@@ -125,9 +125,6 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
             self._prev_pcr = self._current_pcr
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Check for divergences
         bullish_divergence = price < self._prev_price and self._current_pcr > self._prev_pcr
         bearish_divergence = price > self._prev_price and self._current_pcr < self._prev_pcr

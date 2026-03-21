@@ -49,8 +49,6 @@ class full_candle_strategy(Strategy):
     def _on_process(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not self._ema.IsFormed:
             return
         size = candle.HighPrice - candle.LowPrice

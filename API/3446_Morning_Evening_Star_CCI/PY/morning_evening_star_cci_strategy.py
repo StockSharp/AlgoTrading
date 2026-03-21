@@ -46,8 +46,6 @@ class morning_evening_star_cci_strategy(Strategy):
     def _process_candle(self, candle, cci_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         cci = float(cci_val)
         cci_level = float(self._cci_level.Value)
         if self._prev_candle is not None and self._prev_prev_candle is not None:

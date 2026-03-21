@@ -49,8 +49,6 @@ class martingale_ea_5_levels_strategy(Strategy):
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         ma = float(sma_val)
         tp_pct = float(self._take_profit_pct.Value) / 100.0

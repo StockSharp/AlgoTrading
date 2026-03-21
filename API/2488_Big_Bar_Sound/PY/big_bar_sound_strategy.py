@@ -82,9 +82,6 @@ class big_bar_sound_strategy(Strategy):
                 self._direction = 0
                 self._stop_price = 0.0
                 self._take_profit_price = 0.0
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self.Position != 0:
             return
         if atr_value <= 0:

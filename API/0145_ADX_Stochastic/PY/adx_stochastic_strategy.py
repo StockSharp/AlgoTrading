@@ -100,9 +100,6 @@ class adx_stochastic_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Extract ADX value
         if hasattr(adx_value, 'MovingAverage') and adx_value.MovingAverage is not None:
             self._adx_value = float(adx_value.MovingAverage)

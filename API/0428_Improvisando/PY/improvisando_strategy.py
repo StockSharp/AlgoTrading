@@ -44,8 +44,6 @@ class improvisando_strategy(Strategy):
     def _on_process(self, candle, ema_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if ema_val < candle.ClosePrice and rsi_val > 50 and self._show_long.Value and self.Position <= 0:
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
         elif ema_val > candle.ClosePrice and rsi_val < 50 and self._show_short.Value and self.Position >= 0:

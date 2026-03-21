@@ -122,9 +122,6 @@ class lube_strategy(Strategy):
             self._cooldown -= 1
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         long_signal = friction < lowf25 and trend == 1
         short_signal = friction < lowf25 and trend == -1
         end_signal = friction > midf5

@@ -77,8 +77,6 @@ class triple_supertrend_strategy(Strategy):
     def OnProcess(self, candle, m1, m2, m3, a1, a2, a3):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return

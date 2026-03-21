@@ -59,8 +59,6 @@ class accelerator_bot_usd_jpy_h4_strategy(Strategy):
     def process_candle(self, candle, adx_val, stoch_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         adx_ma = adx_val.MovingAverage
         if adx_ma is None:
             return

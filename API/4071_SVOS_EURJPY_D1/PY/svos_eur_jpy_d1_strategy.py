@@ -74,9 +74,6 @@ class svos_eur_jpy_d1_strategy(Strategy):
             elif not is_trending and close <= ema_val:
                 self.BuyMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry
         if self.Position == 0:
             if is_trending:

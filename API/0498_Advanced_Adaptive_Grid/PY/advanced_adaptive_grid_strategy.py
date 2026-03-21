@@ -79,8 +79,6 @@ class advanced_adaptive_grid_strategy(Strategy):
     def OnProcess(self, candle, rsi_val, short_ma_val, long_ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         current_price = float(candle.ClosePrice)
         rsi_v = float(rsi_val)
         short_v = float(short_ma_val)

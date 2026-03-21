@@ -142,8 +142,6 @@ class adx_donchian_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Process ADX
         if adx_value.MovingAverage is None:

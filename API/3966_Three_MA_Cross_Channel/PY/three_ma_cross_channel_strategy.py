@@ -119,9 +119,6 @@ class three_ma_cross_channel_strategy(Strategy):
         self._prev_fast_above_slow = fast_above
         self._prev_medium_above_slow = medium_above
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         buy_signal = fast_above and medium_above and (fast_cross_up or medium_cross_up)
         sell_signal = not fast_above and not medium_above and (fast_cross_down or medium_cross_down)
 

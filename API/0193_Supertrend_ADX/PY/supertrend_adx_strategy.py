@@ -142,8 +142,6 @@ class supertrend_adx_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
 
         # Determine current position relative to Supertrend

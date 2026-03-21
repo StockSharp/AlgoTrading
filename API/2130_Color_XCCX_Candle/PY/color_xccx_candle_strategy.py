@@ -75,8 +75,6 @@ class color_xccx_candle_strategy(Strategy):
         close_result = self._close_ema.Process(candle.ClosePrice, candle.OpenTime, True)
         if not open_result.IsFormed or not close_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         open_val = float(open_result)
         close_val = float(close_result)
         diff = close_val - open_val

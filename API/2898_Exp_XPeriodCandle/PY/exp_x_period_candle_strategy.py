@@ -103,9 +103,6 @@ class exp_x_period_candle_strategy(Strategy):
         if len(self._color_history) < sig_bar + 1:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._color_history) <= sig_bar:
             return
 

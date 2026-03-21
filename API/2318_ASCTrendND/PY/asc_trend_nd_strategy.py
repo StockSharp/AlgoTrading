@@ -69,8 +69,6 @@ class asc_trend_nd_strategy(Strategy):
     def process_candle(self, candle, sma_value, rsi_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         price = float(candle.ClosePrice)
         sma_value = float(sma_value)
         rsi_value = float(rsi_value)

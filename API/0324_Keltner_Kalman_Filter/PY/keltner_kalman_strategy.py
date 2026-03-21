@@ -163,9 +163,6 @@ class keltner_kalman_strategy(Strategy):
         if self.Position != 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if price > self._upper_band and kalman_slope > 0:
             self.BuyMarket()
         elif price < self._lower_band and kalman_slope < 0:

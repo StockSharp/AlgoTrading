@@ -63,9 +63,6 @@ class month_of_year_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         ma = float(ma_val)
         month = candle.OpenTime.Month

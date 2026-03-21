@@ -97,8 +97,6 @@ class bill_williams_strategy(Strategy):
 
         if not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         jaw = float(jaw_val.ToDecimal())
         teeth = float(teeth_val.ToDecimal())

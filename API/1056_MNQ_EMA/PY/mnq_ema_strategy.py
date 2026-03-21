@@ -55,8 +55,6 @@ class mnq_ema_strategy(Strategy):
     def _process_candle(self, candle, e5v, e13v, e30v, e200v):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         e5 = float(e5v)
         e13 = float(e13v)
         e30 = float(e30v)

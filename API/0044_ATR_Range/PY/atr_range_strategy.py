@@ -61,8 +61,6 @@ class atr_range_strategy(Strategy):
     def _process_candle(self, candle, ma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self._bar_counter += 1
         close = float(candle.ClosePrice)

@@ -77,11 +77,6 @@ class sidus_alligator_strategy(Strategy):
         tv = float(teeth_value)
         lv = float(lips_value)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_lips = lv
-            self._prev_teeth = tv
-            return
-
         if self._prev_lips is None or self._prev_teeth is None:
             self._prev_lips = lv
             self._prev_teeth = tv

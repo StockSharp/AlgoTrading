@@ -63,9 +63,6 @@ class renko_level_strategy(Strategy):
             self._initialize_levels(close, brick_size)
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         previous_upper = self._upper_level
         moved = False
 

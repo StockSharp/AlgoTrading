@@ -69,8 +69,6 @@ class rsi_bollinger_bands_ea_strategy(Strategy):
     def _on_process(self, candle, rsi_value, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rsi_val = float(rsi_value.ToDecimal())
         bb_upper = float(bb_value.UpBand)

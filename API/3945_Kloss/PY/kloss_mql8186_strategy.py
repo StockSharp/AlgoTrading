@@ -162,9 +162,6 @@ class kloss_mql8186_strategy(Strategy):
         if stoch_k is None:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         cci_val = float(cci_val)
         stoch_k_val = float(stoch_k)
 

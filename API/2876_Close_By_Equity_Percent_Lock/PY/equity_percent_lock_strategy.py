@@ -43,8 +43,6 @@ class equity_percent_lock_strategy(Strategy):
     def _on_process(self, candle, mom_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         mv = float(mom_value)
         if mv > 0 and self.Position <= 0:
             self.BuyMarket()

@@ -64,9 +64,6 @@ class simple_trade_flip_strategy(Strategy):
         if len(self._open_history) <= lookback:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

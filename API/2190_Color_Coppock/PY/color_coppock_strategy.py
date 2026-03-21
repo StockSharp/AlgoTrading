@@ -76,9 +76,6 @@ class color_coppock_strategy(Strategy):
         if len(self._closes) > max_period + sp + 5:
             self._closes.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._closes) <= max_period:
             return
 

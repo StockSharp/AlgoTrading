@@ -58,8 +58,6 @@ class jupiter_m_strategy(Strategy):
     def process_candle(self, candle, cci):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         cci = float(cci)
         if self._prev_cci is None:
             self._prev_cci = cci

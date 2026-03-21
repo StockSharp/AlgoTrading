@@ -60,11 +60,6 @@ class lego_ea_strategy(Strategy):
         fast = float(fast_val)
         slow = float(slow_val)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast
-            self._prev_slow = slow
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             self._prev_fast = fast

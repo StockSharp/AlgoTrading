@@ -67,8 +67,6 @@ class color_bulls_strategy(Strategy):
         smooth = float(self._bulls_ma.Process(bulls_input))
         if not self._bulls_ma.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if smooth > self._prev_value:
             color = 0
         elif smooth < self._prev_value:

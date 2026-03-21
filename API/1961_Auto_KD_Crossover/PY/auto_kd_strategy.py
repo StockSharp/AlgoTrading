@@ -64,9 +64,6 @@ class auto_kd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         k = stoch_value.K
         d = stoch_value.D
         if k is None or d is None:

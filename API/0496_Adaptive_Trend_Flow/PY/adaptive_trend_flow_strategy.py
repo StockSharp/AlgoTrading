@@ -74,8 +74,6 @@ class adaptive_trend_flow_strategy(Strategy):
     def OnProcess(self, candle, fast_val, slow_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast_v = float(fast_val)
         slow_v = float(slow_val)
         atr_v = float(atr_val)

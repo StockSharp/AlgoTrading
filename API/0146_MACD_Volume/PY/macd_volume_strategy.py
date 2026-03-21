@@ -63,9 +63,6 @@ class macd_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if macd_value.Macd is None or macd_value.Signal is None:
             return
 

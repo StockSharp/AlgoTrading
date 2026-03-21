@@ -149,8 +149,6 @@ class volatility_cluster_breakout_strategy(Strategy):
         atr_avg_val = process_float(self._atr_avg, atr_value, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate breakout levels
         upper_level = sma_value + self.std_dev_multiplier * std_dev_value

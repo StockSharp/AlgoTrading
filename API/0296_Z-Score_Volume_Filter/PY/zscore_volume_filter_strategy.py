@@ -150,9 +150,6 @@ class zscore_volume_filter_strategy(Strategy):
         if not self._price_sma.IsFormed or not self._price_std_dev.IsFormed or not self._volume_sma.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

@@ -81,8 +81,6 @@ class adaptive_fractal_grid_scalping_strategy(Strategy):
     def OnProcess(self, candle, atr_value, sma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         self._bar_count += 1
         self._h1 = self._h2
         self._h2 = self._h3

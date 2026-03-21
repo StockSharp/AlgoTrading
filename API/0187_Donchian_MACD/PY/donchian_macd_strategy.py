@@ -143,8 +143,6 @@ class donchian_macd_strategy(Strategy):
             return
 
         # Wait until strategy and indicators are ready
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         signalValue = macdValue.Signal
         macdDec = macdValue.Macd

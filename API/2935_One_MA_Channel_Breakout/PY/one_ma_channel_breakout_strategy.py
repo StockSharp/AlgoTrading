@@ -50,8 +50,6 @@ class one_ma_channel_breakout_strategy(Strategy):
     def _on_process(self, candle, ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         mv = float(ma_value)
         offset = float(self.ChannelOffset)

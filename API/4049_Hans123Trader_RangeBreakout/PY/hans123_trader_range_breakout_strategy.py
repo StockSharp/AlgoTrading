@@ -63,11 +63,6 @@ class hans123_trader_range_breakout_strategy(Strategy):
             self._prev_lowest = lv
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_highest = hv
-            self._prev_lowest = lv
-            return
-
         # Entry on breakout using previous levels
         if self.Position == 0 and self._prev_highest > 0 and self._prev_lowest > 0:
             close = float(candle.ClosePrice)

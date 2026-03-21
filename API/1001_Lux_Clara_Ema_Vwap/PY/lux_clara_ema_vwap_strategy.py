@@ -68,11 +68,6 @@ class lux_clara_ema_vwap_strategy(Strategy):
         v = float(vwap_val)
         close = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = f
-            self._prev_slow = s
-            return
-
         if not self._initialized:
             self._prev_fast = f
             self._prev_slow = s

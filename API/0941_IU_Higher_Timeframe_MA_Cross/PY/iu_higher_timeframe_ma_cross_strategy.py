@@ -142,9 +142,6 @@ class iu_higher_timeframe_ma_cross_strategy(Strategy):
                 self.BuyMarket(abs(pos))
                 self._reset_protection()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._prev_ma1 is not None and self._prev_ma2 is not None and self._ma1 is not None and self._ma2 is not None and self.Position == 0:
             cross_up = self._prev_ma1 < self._prev_ma2 and self._ma1 > self._ma2
             cross_down = self._prev_ma1 > self._prev_ma2 and self._ma1 < self._ma2

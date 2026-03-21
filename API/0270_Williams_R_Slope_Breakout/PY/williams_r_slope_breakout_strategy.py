@@ -143,8 +143,6 @@ class williams_r_slope_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate Williams %R slope
         current_slope = process_float(

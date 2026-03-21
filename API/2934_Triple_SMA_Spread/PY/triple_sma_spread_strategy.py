@@ -66,8 +66,6 @@ class triple_sma_spread_strategy(Strategy):
     def _on_process(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         fv = float(fast_value)

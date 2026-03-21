@@ -73,8 +73,6 @@ class ma_cci_strategy(Strategy):
     def ProcessCandle(self, candle, ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         mv = float(ma_value)

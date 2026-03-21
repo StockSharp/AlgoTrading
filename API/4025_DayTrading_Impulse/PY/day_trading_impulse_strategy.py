@@ -238,9 +238,6 @@ class day_trading_impulse_strategy(Strategy):
         if closed_position:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             if buy_signal:
                 entry_price = close_price

@@ -106,7 +106,7 @@ class bb_rsi_trailing_stop_strategy(Strategy):
         if not rsi_value.IsFormed:
             return
 
-        rsi = rsi_value.GetValue[float]()
+        rsi = float(rsi_value)
 
         if self._cooldown > 0:
             self._cooldown -= 1
@@ -133,7 +133,7 @@ class bb_rsi_trailing_stop_strategy(Strategy):
             if candle.LowPrice <= self._stop_price or (self._trailing_active and candle.LowPrice <= self._trailing_price):
                 self.SellMarket()
                 self._reset_stops()
-        elif self.Position < 0:
+        else:
             if not self._trailing_active and self._entry_price - float(candle.ClosePrice) >= self.trail_offset_points:
                 self._trailing_active = True
                 self._trailing_price = float(candle.ClosePrice) + self.trail_stop_points

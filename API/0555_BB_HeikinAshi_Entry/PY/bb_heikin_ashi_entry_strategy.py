@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
 
@@ -67,6 +67,10 @@ class bb_heikin_ashi_entry_strategy(Strategy):
         bb.Width = self._bb_width.Value
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(bb, self.OnProcess).Start()
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -104,14 +108,10 @@ class bb_heikin_ashi_entry_strategy(Strategy):
             green2 = self._ha_close_prev2 > self._ha_open_prev2 and self._ha_high_prev2 >= self._upper_bb_prev2
             red_confirm = ha_close < ha_open
             sell_signal = (green1 or green2) and red_confirm
-            if self._cooldown_remaining > 0:
-                self._cooldown_remaining -= 1
-            elif buy_signal and self.Position == 0:
+            if buy_signal and self.Position == 0:
                 self.BuyMarket()
-                self._cooldown_remaining = self.cooldown_bars
             elif sell_signal and self.Position == 0:
                 self.SellMarket()
-                self._cooldown_remaining = self.cooldown_bars
         self._shift(ha_open, ha_close, ha_high, ha_low, upper_v, lower_v)
 
     def _shift(self, ha_open, ha_close, ha_high, ha_low, upper, lower):

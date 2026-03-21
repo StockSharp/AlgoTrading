@@ -80,12 +80,14 @@ class di_napoli_stochastic_strategy(Strategy):
             return
 
         if self._prev_k <= self._prev_d and k > d and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_k >= self._prev_d and k < d and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_k = k

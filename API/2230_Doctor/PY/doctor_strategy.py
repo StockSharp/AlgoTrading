@@ -94,8 +94,6 @@ class doctor_strategy(Strategy):
 
         if self._wma40[1] == 0.0 or self._wma400[3] == 0.0:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         slope = 2 if self._wma40[0] > self._wma40[1] else 1
 

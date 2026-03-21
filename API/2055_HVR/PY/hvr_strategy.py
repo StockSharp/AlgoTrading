@@ -94,9 +94,6 @@ class hvr_strategy(Strategy):
         if not short_result.IsFormed or not long_result.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         short_val = float(short_result.ToDecimal())
         long_val = float(long_result.ToDecimal())
 

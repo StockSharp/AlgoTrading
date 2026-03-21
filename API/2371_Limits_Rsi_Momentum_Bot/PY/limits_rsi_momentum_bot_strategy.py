@@ -55,8 +55,6 @@ class limits_rsi_momentum_bot_strategy(Strategy):
     def _process_candle(self, candle, rsi_val, mom_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._cooldown > 0:
             self._cooldown -= 1
             return

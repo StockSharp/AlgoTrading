@@ -60,8 +60,6 @@ class over_hedge_v2_strategy(Strategy):
     def _on_process(self, candle, short_value, long_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         sv = float(short_value)
         lv = float(long_value)
         if sv > lv:

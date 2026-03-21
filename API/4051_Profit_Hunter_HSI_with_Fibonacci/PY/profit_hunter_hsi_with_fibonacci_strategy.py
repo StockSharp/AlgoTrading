@@ -76,9 +76,6 @@ class profit_hunter_hsi_with_fibonacci_strategy(Strategy):
             if close <= low_val or close > fib382:
                 self.BuyMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry logic
         if self.Position == 0:
             if close > ema_val and close <= fib382 and close > fib618:

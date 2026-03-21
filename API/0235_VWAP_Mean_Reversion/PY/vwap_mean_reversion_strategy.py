@@ -118,8 +118,6 @@ class vwap_mean_reversion_strategy(Strategy):
 
     def ProcessStrategy(self, current_price):
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Skip if we don't have valid VWAP or ATR yet
         if self._current_vwap <= 0 or self._current_atr <= 0:

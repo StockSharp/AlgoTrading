@@ -73,10 +73,6 @@ class three_kilos_btc_15m_strategy(Strategy):
             return
         fast = float(fast_val.GetValue[float]())
         slow = float(slow_val.GetValue[float]())
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast
-            self._prev_slow = slow
-            return
         is_up_trend = st_val.IsUpTrend
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1

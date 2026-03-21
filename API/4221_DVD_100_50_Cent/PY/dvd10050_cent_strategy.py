@@ -144,8 +144,6 @@ class dvd10050_cent_strategy(Strategy):
             return
         if self.Position != 0:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         # try buy
         buy_score = self._calc_buy_score(close, high, low)
         if buy_score is not None and buy_score >= 0:

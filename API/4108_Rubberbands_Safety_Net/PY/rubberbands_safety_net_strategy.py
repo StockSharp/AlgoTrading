@@ -76,9 +76,6 @@ class rubberbands_safety_net_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             if close <= lower:
                 self._entry_price = close

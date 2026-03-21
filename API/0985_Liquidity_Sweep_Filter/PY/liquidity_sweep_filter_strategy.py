@@ -59,9 +59,6 @@ class liquidity_sweep_filter_strategy(Strategy):
 
         self._bars_since_signal += 1
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         sma = float(sma_val)
         std = float(std_val)
         mult = self._multiplier.Value

@@ -56,8 +56,6 @@ class ma_rounding_candle_strategy(Strategy):
         close_val = float(self._close_ma.Process(float(candle.ClosePrice), candle.OpenTime, True).ToDecimal())
         if not self._open_ma.IsFormed or not self._close_ma.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if open_val < close_val:
             color = 2
         elif open_val > close_val:

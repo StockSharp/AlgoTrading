@@ -69,8 +69,6 @@ class ai_super_trend_strategy(Strategy):
     def OnProcess(self, candle, st_value, wma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         is_up_trend = st_value.IsUpTrend
         wma_v = float(wma_value.GetValue[float]())
         close = float(candle.ClosePrice)

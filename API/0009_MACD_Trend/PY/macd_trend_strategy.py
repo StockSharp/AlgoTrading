@@ -49,8 +49,6 @@ class macd_trend_strategy(Strategy):
     def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         typed_val = macd_value
         if typed_val.Macd is None or typed_val.Signal is None:
             return
@@ -64,9 +62,9 @@ class macd_trend_strategy(Strategy):
         crossed_above = is_above and not self._prev_above
         crossed_below = not is_above and self._prev_above
         if crossed_above and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif crossed_below and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
         self._prev_above = is_above
 
     def CreateClone(self):

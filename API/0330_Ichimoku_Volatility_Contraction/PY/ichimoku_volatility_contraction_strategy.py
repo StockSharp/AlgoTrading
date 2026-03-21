@@ -178,8 +178,6 @@ class ichimoku_volatility_contraction_strategy(Strategy):
             self._atr_std_dev = alpha * atr_dev + (1 - alpha) * self._atr_std_dev
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract Ichimoku values
 

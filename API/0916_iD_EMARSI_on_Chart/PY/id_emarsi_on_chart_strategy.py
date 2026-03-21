@@ -69,11 +69,6 @@ class id_emarsi_on_chart_strategy(Strategy):
             self._is_initialized = True
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_rsi = rsi
-            self._prev_ema = ema
-            return
-
         cross_up = self._prev_rsi <= self._prev_ema and rsi > ema
         cross_down = self._prev_rsi >= self._prev_ema and rsi < ema
 

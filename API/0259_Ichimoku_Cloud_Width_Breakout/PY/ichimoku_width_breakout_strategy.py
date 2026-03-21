@@ -188,9 +188,6 @@ class ichimoku_width_breakout_strategy(Strategy):
         if not self._ichimoku.IsFormed or not self._widthAverage.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Cloud width breakout detection
         if width > avg_width * self.Multiplier and self.Position == 0:
             # Determine trade direction based on price relative to cloud

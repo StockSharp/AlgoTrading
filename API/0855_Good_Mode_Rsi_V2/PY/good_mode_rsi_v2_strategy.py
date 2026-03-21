@@ -50,9 +50,6 @@ class good_mode_rsi_v2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast = float(fast_val)
         slow = float(slow_val)
 

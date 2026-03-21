@@ -149,9 +149,6 @@ class blau_ergodic_mdi_time_strategy(Strategy):
         if self._bars_processed < minimum_bars:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.UseTimeFilter:
             hour = candle.OpenTime.Hour
             if not (self.StartHour <= hour <= self.EndHour):

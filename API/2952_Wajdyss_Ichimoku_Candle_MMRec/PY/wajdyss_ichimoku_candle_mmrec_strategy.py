@@ -58,11 +58,6 @@ class wajdyss_ichimoku_candle_mmrec_strategy(Strategy):
         mv = float(mid_value)
         close = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_mid = mv
-            self._prev_close = close
-            return
-
         if self._prev_mid is None or self._prev_close is None:
             self._prev_mid = mv
             self._prev_close = close

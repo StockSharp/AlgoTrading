@@ -188,9 +188,6 @@ class hybrid_scalper_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if not self._is_trading_day(candle.OpenTime.DayOfWeek):
             return
 

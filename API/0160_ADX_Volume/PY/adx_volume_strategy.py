@@ -64,8 +64,6 @@ class adx_volume_strategy(Strategy):
     def ProcessCandle(self, candle, adx_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not adx_value.IsFormed:
             return
 

@@ -59,9 +59,6 @@ class hull_ma_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         hv = float(hma_val)
 
         if self._prev_hma == 0:

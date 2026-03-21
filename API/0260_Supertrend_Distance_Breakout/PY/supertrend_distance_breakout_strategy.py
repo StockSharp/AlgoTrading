@@ -150,8 +150,6 @@ class supertrend_distance_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate distances
         longDistance = 0

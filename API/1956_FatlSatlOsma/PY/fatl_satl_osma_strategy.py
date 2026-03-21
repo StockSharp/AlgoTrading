@@ -129,9 +129,6 @@ class fatl_satl_osma_strategy(Strategy):
 
         val = float(macd_raw)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._bars_since_trade < self.CooldownBars:
             self._bars_since_trade += 1
 

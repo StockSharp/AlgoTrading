@@ -171,9 +171,6 @@ class ma_shift_puria_method_strategy(Strategy):
                 prev_macd1 is None or prev_macd3 is None):
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if pip <= 0:
             pip = 0.0001
 

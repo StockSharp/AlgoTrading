@@ -159,8 +159,6 @@ class neural_network_macd_strategy(Strategy):
     def OnProcess(self, candle, macd_ind):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         macd_val = macd_ind.Macd if macd_ind.Macd is not None else 0
         signal_val = macd_ind.Signal if macd_ind.Signal is not None else 0

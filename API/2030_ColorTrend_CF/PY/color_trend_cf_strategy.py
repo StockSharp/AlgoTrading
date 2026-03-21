@@ -117,9 +117,6 @@ class color_trend_cf_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast = float(fast_value)
         slow = float(slow_value)
 

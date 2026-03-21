@@ -76,8 +76,6 @@ class rsi_ma_trend_strategy(Strategy):
     def process_candle(self, candle, rsi_value, fast_ma_value, slow_ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rsi_val = float(rsi_value)
         fast_val = float(fast_ma_value)

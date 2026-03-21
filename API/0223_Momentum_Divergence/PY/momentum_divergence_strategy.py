@@ -54,8 +54,6 @@ class momentum_divergence_strategy(Strategy):
     def _process_candle(self, candle, mom_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         self._prev_price = self._current_price
         self._prev_momentum = self._current_momentum
         self._current_price = float(candle.ClosePrice)

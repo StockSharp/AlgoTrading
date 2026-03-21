@@ -95,9 +95,6 @@ class five_ema_strategy(Strategy):
                 self._short_target = None
                 self._cooldown_remaining = self._cooldown_bars.Value
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Signal detection
         if high < ema_val:
             self._signal_high = high

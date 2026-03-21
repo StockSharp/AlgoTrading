@@ -64,8 +64,6 @@ class x_bug_strategy(Strategy):
             return
         if self.ReverseSignals:
             signal = -signal
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if signal > 0 and self.Position <= 0:
             self.BuyMarket()
         elif signal < 0 and self.Position >= 0:

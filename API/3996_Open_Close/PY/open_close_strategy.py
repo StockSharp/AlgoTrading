@@ -73,11 +73,6 @@ class open_close_strategy(Strategy):
             if open_price > self._prev_open and close > self._prev_close:
                 self.BuyMarket(Math.Abs(self.Position))
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_open = open_price
-            self._prev_close = close
-            return
-
         # Entry logic
         if self.Position == 0:
             if open_price > self._prev_open and close < self._prev_close:

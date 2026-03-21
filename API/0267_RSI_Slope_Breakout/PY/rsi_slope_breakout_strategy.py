@@ -159,8 +159,6 @@ class rsi_slope_breakout_strategy(Strategy):
         self._currentIndex = (self._currentIndex + 1) % self.LookbackPeriod
 
         # Calculate statistics once we have enough data
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self.CalculateStatistics()
 

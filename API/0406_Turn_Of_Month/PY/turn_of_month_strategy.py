@@ -50,8 +50,6 @@ class turn_of_month_strategy(Strategy):
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return

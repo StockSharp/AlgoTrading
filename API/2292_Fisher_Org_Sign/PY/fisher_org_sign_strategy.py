@@ -58,8 +58,6 @@ class fisher_org_sign_strategy(Strategy):
     def process_candle(self, candle, fisher_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         main_line = fisher_val.MainLine
         if main_line is None:
             return

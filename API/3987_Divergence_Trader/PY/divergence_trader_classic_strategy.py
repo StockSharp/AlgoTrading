@@ -153,9 +153,6 @@ class divergence_trader_classic_strategy(Strategy):
         divergence = current_spread - self._previous_spread if self._previous_spread is not None else 0.0
         self._previous_spread = current_spread
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if not self._is_within_trading_hours(candle.CloseTime):
             return
 

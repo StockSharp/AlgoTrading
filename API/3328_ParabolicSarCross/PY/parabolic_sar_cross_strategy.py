@@ -48,9 +48,6 @@ class parabolic_sar_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = candle.ClosePrice
 
         if self._prev_sar is not None and self._prev_close is not None:

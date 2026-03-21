@@ -91,8 +91,6 @@ class parabolic_sar_stochastic_strategy(Strategy):
             return
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._sar_value == 0 or not stoch_value.IsFormed:
             return
 

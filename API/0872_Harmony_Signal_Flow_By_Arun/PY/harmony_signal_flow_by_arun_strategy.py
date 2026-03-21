@@ -50,9 +50,6 @@ class harmony_signal_flow_by_arun_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast = float(fast_val)
         slow = float(slow_val)
 

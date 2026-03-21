@@ -72,8 +72,6 @@ class alligator_ma_trend_catcher_strategy(Strategy):
     def OnProcess(self, candle, jaw_val, teeth_val, lips_val, trend_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return

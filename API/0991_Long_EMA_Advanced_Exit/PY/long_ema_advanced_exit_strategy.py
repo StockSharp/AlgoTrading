@@ -64,10 +64,6 @@ class long_ema_advanced_exit_strategy(Strategy):
             self._prev_short = sv
             self._prev_mid = mv
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_short = sv
-            self._prev_mid = mv
-            return
         close = float(candle.ClosePrice)
         cross_up = self._prev_short <= self._prev_mid and sv > mv
         cross_down = self._prev_short >= self._prev_mid and sv < mv

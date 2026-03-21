@@ -61,11 +61,6 @@ class liquidity_grab_volume_trap_strategy(Strategy):
         hv = float(high_val)
         lv = float(low_val)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = hv
-            self._prev_low = lv
-            return
-
         range_high = self._prev_high
         range_low = self._prev_low
         self._prev_high = hv

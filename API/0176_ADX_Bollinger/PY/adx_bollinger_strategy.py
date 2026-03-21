@@ -147,8 +147,6 @@ class adx_bollinger_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get additional values from Bollinger Bands
 

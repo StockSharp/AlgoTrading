@@ -72,10 +72,6 @@ class color_x2_ma_digit_nn3_mmrec_strategy(Strategy):
             self._prev_fast = fv
             self._prev_slow = sv
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
         if fv > sv:
             signal = 1
         elif fv < sv:

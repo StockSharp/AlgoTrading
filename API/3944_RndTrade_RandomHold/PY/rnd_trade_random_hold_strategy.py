@@ -45,8 +45,6 @@ class rnd_trade_random_hold_strategy(Strategy):
     def OnProcess(self, candle, ema_val, mom_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = candle.ClosePrice
         if not self._has_prev:

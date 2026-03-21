@@ -61,8 +61,6 @@ class triple_ma_strategy(Strategy):
     def _process_candle(self, candle, short_val, middle_val, long_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         s = float(short_val)
         m = float(middle_val)
@@ -75,9 +73,9 @@ class triple_ma_strategy(Strategy):
         is_bearish = not is_short_above_middle and not is_middle_above_long
 
         if is_bullish and not self._prev_is_bullish and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif is_bearish and not self._prev_is_bearish and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
 
         self._prev_is_short_above_middle = is_short_above_middle
         self._prev_is_bullish = is_bullish

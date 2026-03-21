@@ -146,8 +146,6 @@ class supertrend_put_call_ratio_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Update PCR value (in a real system, this would come from market data)
         self.UpdatePCR(candle)

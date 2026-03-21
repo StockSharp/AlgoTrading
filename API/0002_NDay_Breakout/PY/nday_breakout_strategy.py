@@ -68,16 +68,13 @@ class nday_breakout_strategy(Strategy):
                 self._is_formed = True
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         h = float(highest_val)
         l = float(lowest_val)
 
         if float(candle.HighPrice) > self._n_day_high and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif float(candle.LowPrice) < self._n_day_low and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
 
         self._n_day_high = h
         self._n_day_low = l

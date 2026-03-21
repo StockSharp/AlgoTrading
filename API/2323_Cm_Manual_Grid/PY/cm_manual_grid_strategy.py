@@ -55,8 +55,6 @@ class cm_manual_grid_strategy(Strategy):
     def process_candle(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         price = float(candle.ClosePrice)
         sma_value = float(sma_value)
         step = float(self.grid_step)

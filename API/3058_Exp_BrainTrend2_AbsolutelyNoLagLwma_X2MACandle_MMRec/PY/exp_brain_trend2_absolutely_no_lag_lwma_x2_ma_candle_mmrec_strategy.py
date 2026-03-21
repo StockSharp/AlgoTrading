@@ -89,8 +89,6 @@ class exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy(Strate
     def _on_process(self, candle, atr_value, lwma_value, fast_ema_value, slow_ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         av = float(atr_value)
         lv = float(lwma_value)

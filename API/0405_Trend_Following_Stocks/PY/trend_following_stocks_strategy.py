@@ -64,8 +64,6 @@ class trend_following_stocks_strategy(Strategy):
     def ProcessCandle(self, candle, atr_val, highest_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1

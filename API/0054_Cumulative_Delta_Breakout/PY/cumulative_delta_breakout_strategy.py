@@ -58,8 +58,6 @@ class cumulative_delta_breakout_strategy(Strategy):
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Estimate delta from candle: bullish adds volume, bearish subtracts
         vol = float(candle.TotalVolume)

@@ -114,9 +114,6 @@ class app_price_level_cross_strategy(Strategy):
         if previous_close is None:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         app_price = float(self.AppPrice)
         crossed_above = close_price > app_price and previous_close <= app_price
         crossed_below = close_price < app_price and previous_close >= app_price

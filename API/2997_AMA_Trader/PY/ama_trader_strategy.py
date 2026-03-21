@@ -63,23 +63,20 @@ class ama_trader_strategy(Strategy):
 
         close = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_ama = ama_val
-            return
-
         if self._prev_close is None or self._prev_ama is None:
             self._prev_close = close
             self._prev_ama = ama_val
             return
 
         if self._prev_close <= self._prev_ama and close > ama_val and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_close >= self._prev_ama and close < ama_val and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_close = close

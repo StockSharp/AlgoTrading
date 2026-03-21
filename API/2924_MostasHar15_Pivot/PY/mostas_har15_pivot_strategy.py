@@ -71,8 +71,6 @@ class mostas_har15_pivot_strategy(Strategy):
     def _on_trade_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not self._has_pivot:
             return
         close = float(candle.ClosePrice)

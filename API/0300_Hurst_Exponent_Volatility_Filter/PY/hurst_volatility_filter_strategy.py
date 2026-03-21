@@ -169,9 +169,6 @@ class hurst_volatility_filter_strategy(Strategy):
         if not self._sma.IsFormed or not self._atr.IsFormed or not self._hurst_exponent.IsFormed or not self._atr_average.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

@@ -88,11 +88,6 @@ class kolier_super_trend_strategy(Strategy):
         cross_up = price_above and not self._prev_price_above
         cross_down = not price_above and self._prev_price_above
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_supertrend = supertrend
-            self._prev_price_above = price_above
-            return
-
         if cross_up and self.Position <= 0:
             if self.Position < 0:
                 self.BuyMarket()

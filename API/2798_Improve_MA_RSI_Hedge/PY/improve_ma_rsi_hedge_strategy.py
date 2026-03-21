@@ -76,9 +76,6 @@ class improve_ma_rsi_hedge_strategy(Strategy):
 
         self._base_last_close = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed or not self._rsi.IsFormed:
             return
 

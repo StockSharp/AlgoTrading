@@ -67,8 +67,6 @@ class volume_per_point_strategy(Strategy):
     def on_process(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
         if self._prev_range == 0:

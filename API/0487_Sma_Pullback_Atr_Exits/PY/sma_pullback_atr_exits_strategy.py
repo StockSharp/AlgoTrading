@@ -55,9 +55,6 @@ class sma_pullback_atr_exits_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
 
         # SL/TP exits

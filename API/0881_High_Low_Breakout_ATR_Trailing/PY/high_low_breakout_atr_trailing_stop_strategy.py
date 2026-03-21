@@ -50,9 +50,6 @@ class high_low_breakout_atr_trailing_stop_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast = float(fast_val)
         slow = float(slow_val)
 

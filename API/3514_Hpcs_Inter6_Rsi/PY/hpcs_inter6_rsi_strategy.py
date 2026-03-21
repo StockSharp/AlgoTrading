@@ -68,9 +68,6 @@ class hpcs_inter6_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rsi = float(rsi_val)
 
         if self._candles_since_trade < self._signal_cooldown_candles.Value:

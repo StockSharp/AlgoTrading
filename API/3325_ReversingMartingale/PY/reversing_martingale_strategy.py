@@ -50,8 +50,6 @@ class reversing_martingale_strategy(Strategy):
     def OnProcess(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._prev_fast == 0 or self._prev_slow == 0:
             self._prev_fast = fast_val
             self._prev_slow = slow_val

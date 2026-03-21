@@ -204,9 +204,6 @@ class open_tiks_strategy(Strategy):
         self._open2 = self._open1
         self._open1 = float(candle.OpenPrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if buy_signal:
             self._try_enter_long()
 

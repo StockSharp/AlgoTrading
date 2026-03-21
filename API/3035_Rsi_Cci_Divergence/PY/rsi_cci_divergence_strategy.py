@@ -58,10 +58,6 @@ class rsi_cci_divergence_strategy(Strategy):
             return
         rv = float(rsi_value)
         cv = float(cci_value)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_rsi = rv
-            self._prev_cci = cv
-            return
         if self._prev_rsi is None or self._prev_cci is None:
             self._prev_rsi = rv
             self._prev_cci = cv

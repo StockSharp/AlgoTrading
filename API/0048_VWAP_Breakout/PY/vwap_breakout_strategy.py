@@ -54,8 +54,6 @@ class vwap_breakout_strategy(Strategy):
     def _process_candle(self, candle, vwap_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         vp = float(vwap_val)

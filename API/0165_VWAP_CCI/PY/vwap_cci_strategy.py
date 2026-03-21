@@ -129,9 +129,6 @@ class vwap_cci_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Current price
         price = float(candle.ClosePrice)
 

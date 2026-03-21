@@ -84,12 +84,12 @@ class bbsr_extreme_strategy(Strategy):
         lower = bb.LowBand
         if upper is None or lower is None:
             return
-        if ma_value.IsEmpty or atr_value.IsEmpty:
+        if not ma_value.IsFormed or not atr_value.IsFormed:
             return
         upper_v = float(upper)
         lower_v = float(lower)
-        ma_v = float(ma_value.GetValue[float]())
-        atr_v = float(atr_value.GetValue[float]())
+        ma_v = float(ma_value)
+        atr_v = float(atr_value)
         close = float(candle.ClosePrice)
         low = float(candle.LowPrice)
         high = float(candle.HighPrice)

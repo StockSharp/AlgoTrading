@@ -168,8 +168,6 @@ class macd_with_sentiment_filter_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Update sentiment score (in a real system this would come from external source)
         self.UpdateSentimentScore(candle)

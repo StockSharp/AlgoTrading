@@ -80,9 +80,6 @@ class three_down_three_up_strategy(Strategy):
         self._prev_close = close
         self._has_prev = True
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return

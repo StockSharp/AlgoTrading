@@ -224,8 +224,6 @@ class beta_adjusted_pairs_strategy(Strategy):
         self.CalculateSpreadStatistics()
 
         # Check if we're ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check position management
         if self._inPosition:

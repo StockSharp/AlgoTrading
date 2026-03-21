@@ -151,8 +151,6 @@ class de_mark_lines_strategy(Strategy):
         self._last_short_signal = -1
 
     def _evaluate_breakouts(self, candle):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         current_index = self._processed_bars - 1
         price_buffer = self._breakout_buffer.Value * (self._pip_size if self._pip_size > 0 else 1.0)

@@ -78,8 +78,6 @@ class three_commas_bot_strategy(Strategy):
     def OnProcess(self, candle, fast_value, slow_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast_v = float(fast_value)
         slow_v = float(slow_value)
         atr_v = float(atr_value)

@@ -45,8 +45,6 @@ class kalman_filter_trend_strategy(Strategy):
     def _process_candle(self, candle, kf_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         kf = float(kf_val)
         if close > kf and self.Position <= 0:

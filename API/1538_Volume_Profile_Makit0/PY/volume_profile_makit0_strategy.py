@@ -54,8 +54,6 @@ class volume_profile_makit0_strategy(Strategy):
         if candle.TotalVolume > self._max_volume:
             self._max_volume = candle.TotalVolume
             self._poc_price = candle.ClosePrice
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         bullish_profile = candle.ClosePrice > self._poc_price and candle.ClosePrice > self._session_mid
         bearish_profile = candle.ClosePrice < self._poc_price and candle.ClosePrice < self._session_mid
         if not self._session_trade_done and self.Position == 0 and bullish_profile:

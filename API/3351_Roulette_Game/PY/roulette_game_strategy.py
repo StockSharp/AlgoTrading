@@ -48,8 +48,6 @@ class roulette_game_strategy(Strategy):
     def OnProcess(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = candle.ClosePrice
         is_bullish = close > candle.OpenPrice

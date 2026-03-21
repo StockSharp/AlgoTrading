@@ -80,9 +80,6 @@ class ichimoku_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Track highs and lows
         self._highs.append(float(candle.HighPrice))
         self._lows.append(float(candle.LowPrice))

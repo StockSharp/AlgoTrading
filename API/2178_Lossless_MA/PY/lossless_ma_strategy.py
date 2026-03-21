@@ -59,8 +59,6 @@ class lossless_ma_strategy(Strategy):
     def process_candle(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         f = float(fast_value)
         s = float(slow_value)

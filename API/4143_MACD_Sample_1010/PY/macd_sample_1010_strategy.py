@@ -47,8 +47,6 @@ class macd_sample_1010_strategy(Strategy):
     def _process_candle(self, candle, sma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         sma = float(sma_val)
         atr = float(atr_val)
         if atr <= 0:

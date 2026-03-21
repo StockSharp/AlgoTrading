@@ -72,9 +72,6 @@ class cspa143_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rsi = float(rsi_value)
 
         if self._bars_since_trade < self.CooldownBars:

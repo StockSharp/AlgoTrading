@@ -81,8 +81,6 @@ class scalp_wiz_bollinger_strategy(Strategy):
     def process_candle(self, candle, value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         upper = value.UpBand
         lower = value.LowBand

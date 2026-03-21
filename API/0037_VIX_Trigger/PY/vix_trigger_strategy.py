@@ -152,8 +152,6 @@ class vix_trigger_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check if we have received VIX data
         if self._prevVix == 0:

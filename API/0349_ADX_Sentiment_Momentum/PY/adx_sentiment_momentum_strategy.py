@@ -140,8 +140,6 @@ class adx_sentiment_momentum_strategy(Strategy):
         self.UpdateSentiment(candle)
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         typed_adx = adx_value
         adx_main = typed_adx.MovingAverage

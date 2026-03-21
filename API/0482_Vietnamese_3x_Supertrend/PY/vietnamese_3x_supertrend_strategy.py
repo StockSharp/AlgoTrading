@@ -80,8 +80,6 @@ class vietnamese_3x_supertrend_strategy(Strategy):
     def OnProcess(self, candle, fast_val, med_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast_st = fast_val
         med_st = med_val
         slow_st = slow_val

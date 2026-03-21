@@ -78,9 +78,6 @@ class fine_tuning_ma_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         val = float(ma_value)
 
         self._candle_count += 1

@@ -108,9 +108,6 @@ class master_mind_triple_wpr_strategy(Strategy):
         is_overbought = (wpr26_value >= overbought and wpr27_value >= overbought and
                          wpr29_value >= overbought and wpr30_value >= overbought)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if is_oversold:
             self._open_long(candle)
         elif is_overbought:

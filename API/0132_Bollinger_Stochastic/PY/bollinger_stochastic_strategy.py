@@ -76,8 +76,6 @@ class bollinger_stochastic_strategy(Strategy):
     def OnProcess(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
         upper = float(bb_value.UpBand)

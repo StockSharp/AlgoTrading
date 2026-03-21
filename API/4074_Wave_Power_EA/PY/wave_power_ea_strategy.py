@@ -114,11 +114,6 @@ class wave_power_ea_strategy(Strategy):
                 self.SellMarket()
                 self._grid_count += 1
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
-
         # New entry
         if self.Position == 0:
             if bullish_cross and rv > 50:

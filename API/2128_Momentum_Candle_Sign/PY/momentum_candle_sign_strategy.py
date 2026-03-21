@@ -65,8 +65,6 @@ class momentum_candle_sign_strategy(Strategy):
         close_input = DecimalIndicatorValue(self._close_momentum, candle.ClosePrice, candle.OpenTime)
         close_input.IsFinal = True
         close_mom = float(self._close_momentum.Process(close_input))
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not self._is_formed:
             self._prev_open_momentum = open_mom
             self._prev_close_momentum = close_mom

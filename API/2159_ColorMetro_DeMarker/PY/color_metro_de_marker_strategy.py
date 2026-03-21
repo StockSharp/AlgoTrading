@@ -84,8 +84,6 @@ class color_metro_de_marker_strategy(Strategy):
     def process_candle(self, candle, de_marker_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         dm = float(de_marker_val) * 100.0
         step_fast = float(self.step_size_fast)

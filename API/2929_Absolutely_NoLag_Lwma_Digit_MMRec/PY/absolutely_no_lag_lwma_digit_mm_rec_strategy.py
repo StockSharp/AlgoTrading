@@ -60,8 +60,6 @@ class absolutely_no_lag_lwma_digit_mm_rec_strategy(Strategy):
     def _on_process(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fv = float(fast_value)
         sv = float(slow_value)
         if fv > sv:

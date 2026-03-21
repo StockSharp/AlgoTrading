@@ -169,8 +169,6 @@ class macd_slope_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract MACD and Signal values
         macd = float(macd_value.Macd)

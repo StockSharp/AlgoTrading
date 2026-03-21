@@ -148,9 +148,6 @@ class rsi_slope_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Calculate RSI slope only if we have previous RSI value
         if self._previous_rsi_value != 0:
             # Calculate current slope

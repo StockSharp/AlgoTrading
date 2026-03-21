@@ -52,8 +52,6 @@ class limits_martin_strategy(Strategy):
     def process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         rsi_value = float(rsi_value)
         if rsi_value < float(self.oversold) and self.Position <= 0:
             self.BuyMarket()

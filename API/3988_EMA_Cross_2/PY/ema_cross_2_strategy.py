@@ -92,9 +92,6 @@ class ema_cross_2_strategy(Strategy):
         if signal == 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position != 0:
             return
 

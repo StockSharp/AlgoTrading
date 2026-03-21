@@ -154,8 +154,6 @@ class volume_slope_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Process volume through SMA
         volume_indicator_value = float(volume_ma_value)

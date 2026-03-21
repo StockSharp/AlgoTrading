@@ -158,9 +158,6 @@ class puncher_strategy(Strategy):
             self._close_short()
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if is_buy and self.Position <= 0:
             self._enter_long(candle)
             return

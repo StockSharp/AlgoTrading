@@ -60,11 +60,6 @@ class risk_monitor_strategy(Strategy):
             self._prev_slow = slow_val
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
-            return
-
         close = candle.ClosePrice
 
         # Check SL/TP for existing positions

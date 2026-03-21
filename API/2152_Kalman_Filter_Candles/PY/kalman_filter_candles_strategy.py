@@ -62,8 +62,6 @@ class kalman_filter_candles_strategy(Strategy):
         close_input.IsFinal = True
         open_res = self._open_filter.Process(open_input)
         close_res = self._close_filter.Process(close_input)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         open_val = float(open_res)
         close_val = float(close_res)
         if open_val < close_val:

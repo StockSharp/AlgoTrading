@@ -86,9 +86,6 @@ class obv_atr_strategy(Strategy):
         bear_signal = self._mode == -1 and self._prev_mode != -1
         self._prev_mode = self._mode
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if bull_signal and self.Position <= 0:
             self.BuyMarket()
         if bear_signal and self.Position >= 0:

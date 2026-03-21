@@ -53,8 +53,6 @@ class tradingview_supertrend_flip_strategy(Strategy):
     def _process_candle(self, candle, st_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         sv = float(st_val)
         if sv == 0:
@@ -75,9 +73,9 @@ class tradingview_supertrend_flip_strategy(Strategy):
         self._prev_supertrend_value = sv
 
         if flipped_bullish and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif flipped_bearish and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return tradingview_supertrend_flip_strategy()

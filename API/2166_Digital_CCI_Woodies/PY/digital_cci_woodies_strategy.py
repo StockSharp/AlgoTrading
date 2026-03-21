@@ -88,8 +88,6 @@ class digital_cci_woodies_strategy(Strategy):
     def process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         fast_val = float(fast)
         slow_val = float(slow)

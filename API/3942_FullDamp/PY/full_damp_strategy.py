@@ -49,8 +49,6 @@ class full_damp_strategy(Strategy):
     def ProcessCandle(self, candle, rsi):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rsi_val = float(rsi)
 

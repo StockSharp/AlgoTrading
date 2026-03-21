@@ -60,11 +60,6 @@ class strat_base_strategy(Strategy):
         close = float(candle.ClosePrice)
         ema = float(ema_val)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_ema = ema
-            return
-
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_close = close

@@ -79,9 +79,6 @@ class bitcoin_intraday_seasonality_strategy(Strategy):
 
         self._latest_price = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         hour = candle.OpenTime.Hour
         is_first_monday = candle.OpenTime.DayOfWeek == DayOfWeek.Monday and candle.OpenTime.Day <= 7
         in_season = is_first_monday and hour in self.HoursLong

@@ -76,8 +76,6 @@ class rijfie_pyramid_strategy(Strategy):
         stoch_result = self._stochastic.Process(candle)
         if not stoch_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         k = stoch_result.K
         if k is None:

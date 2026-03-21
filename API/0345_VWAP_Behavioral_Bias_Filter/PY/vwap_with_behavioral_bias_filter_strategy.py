@@ -131,8 +131,6 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Update behavioral bias score
         self.UpdateBehavioralBias(candle)

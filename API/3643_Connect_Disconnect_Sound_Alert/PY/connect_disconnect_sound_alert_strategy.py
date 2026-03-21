@@ -55,8 +55,6 @@ class connect_disconnect_sound_alert_strategy(Strategy):
     def on_process(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._prev_fast != 0.0 and self._prev_slow != 0.0:
             cross_up = self._prev_fast <= self._prev_slow and fast_val > slow_val

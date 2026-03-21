@@ -177,9 +177,6 @@ class cointegration_pairs_strategy(Strategy):
         if self._asset1Price == 0 or self._asset2Price == 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Calculate residual = Asset1Price - Beta * Asset2Price
         residual = self._asset1Price - self.Beta * self._asset2Price
 

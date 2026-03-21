@@ -66,9 +66,6 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
         if not ichimoku_iv.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         tenkan_val = ichimoku_iv.Tenkan
         kijun_val = ichimoku_iv.Kijun
         senkou_a_val = ichimoku_iv.SenkouA

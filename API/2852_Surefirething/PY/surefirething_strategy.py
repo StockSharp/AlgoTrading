@@ -60,8 +60,6 @@ class surefirething_strategy(Strategy):
     def _on_process(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         ev = float(ema_value)
         close = float(candle.ClosePrice)

@@ -73,8 +73,6 @@ class advanced_ema_cross_strategy(Strategy):
     def OnProcess(self, candle, ema_short_value, ema_long_value, adx_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         ema_s = float(ema_short_value.GetValue[float]())
         ema_l = float(ema_long_value.GetValue[float]())
         adx_typed = adx_value

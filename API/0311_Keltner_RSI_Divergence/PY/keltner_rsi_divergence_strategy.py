@@ -59,8 +59,6 @@ class keltner_rsi_divergence_strategy(Strategy):
     def _process_candle(self, candle, ema_val, atr_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         ema = float(ema_val)
         atr = float(atr_val)
         rsi = float(rsi_val)

@@ -67,11 +67,11 @@ class bb_rsi_strategy(Strategy):
         lower = bb.LowBand
         if upper is None or lower is None:
             return
-        if rsi_value.IsEmpty:
+        if not rsi_value.IsFormed:
             return
         upper_v = float(upper)
         lower_v = float(lower)
-        rsi_v = float(rsi_value.GetValue[float]())
+        rsi_v = float(rsi_value)
         close = float(candle.ClosePrice)
         buy_level = float(self._rsi_buy_level.Value)
         exit_level = float(self._rsi_exit_level.Value)

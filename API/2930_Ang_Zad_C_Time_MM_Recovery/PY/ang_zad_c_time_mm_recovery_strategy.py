@@ -84,8 +84,6 @@ class ang_zad_c_time_mm_recovery_strategy(Strategy):
     def _on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         price = float(candle.ClosePrice)
         upper, lower = self._update_indicator(price)

@@ -61,8 +61,6 @@ class renko_level_ea_strategy(Strategy):
     def _on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         sec = self.Security
         price_step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0

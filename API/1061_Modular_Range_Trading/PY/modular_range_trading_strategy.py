@@ -54,8 +54,6 @@ class modular_range_trading_strategy(Strategy):
     def _process_candle(self, candle, rsi_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         rsi = float(rsi_val)
         sma = float(sma_val)
         close = float(candle.ClosePrice)

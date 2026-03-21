@@ -215,8 +215,6 @@ class ichimoku_adx_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         is_strong_trend = self._last_adx_value > self.AdxThreshold
 

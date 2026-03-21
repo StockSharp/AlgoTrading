@@ -79,8 +79,6 @@ class average_high_low_range_ibs_reversal_strategy(Strategy):
     def OnProcess(self, candle, highest_value, lowest_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self._bar_index += 1
         cooldown_ok = self._bar_index - self._last_trade_bar > self.cooldown_bars

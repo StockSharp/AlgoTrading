@@ -94,9 +94,6 @@ class trendline_bounce_strategy(Strategy):
             self._highs.pop(0)
             self._lows.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._highs) < tp:
             return
 

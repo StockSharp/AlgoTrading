@@ -190,8 +190,6 @@ class volume_supertrend_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Trading logic:
         # Long: Volume > Avg(Volume) && Price > Supertrend (volume surge with uptrend)

@@ -74,9 +74,6 @@ class keltner_channel_by_kevin_davey_strategy(Strategy):
         upper = ema + mult * atr
         lower = ema - mult * atr
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._bars_since_signal < self._cooldown_bars.Value:
             return
 

@@ -60,8 +60,6 @@ class hv_breakout_strategy(Strategy):
     def _process_candle(self, candle, std_dev_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         hv = float(std_dev_val) / close if close > 0 else 0.0

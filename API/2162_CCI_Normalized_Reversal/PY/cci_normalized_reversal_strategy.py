@@ -64,8 +64,6 @@ class cci_normalized_reversal_strategy(Strategy):
     def process_candle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         cci_val = float(cci_value)
         color = self._get_color_index(cci_val)

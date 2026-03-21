@@ -70,8 +70,6 @@ class adaptive_smi_ergodic_strategy(Strategy):
     def OnProcess(self, candle, tsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         tv = tsi_value
         tsi_val = tv.Tsi
         signal_val = tv.Signal

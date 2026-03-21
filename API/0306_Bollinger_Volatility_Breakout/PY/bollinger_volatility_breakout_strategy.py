@@ -153,8 +153,6 @@ class bollinger_volatility_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         bb = bb_value  # BollingerBandsValue
         if bb.UpBand is None or bb.LowBand is None or bb.MovingAverage is None:

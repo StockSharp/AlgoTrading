@@ -44,8 +44,6 @@ class hurst_exponent_reversion_strategy(Strategy):
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         sma = float(sma_val)
         if close < sma and self.Position <= 0:

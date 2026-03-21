@@ -92,8 +92,6 @@ class altarius_rsi_stochastic_dual_strategy(Strategy):
     def ProcessIndicators(self, candle, rsi_value, slow_value, fast_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if rsi_value.IsEmpty or slow_value.IsEmpty or fast_value.IsEmpty:
             return
 

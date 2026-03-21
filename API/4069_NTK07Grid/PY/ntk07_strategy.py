@@ -84,9 +84,6 @@ class ntk07_strategy(Strategy):
                 self.BuyMarket()
                 self._reference_price = close
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry: price moves a full grid step from reference
         if self.Position == 0:
             if close > self._reference_price + grid_step and close > ema_val:

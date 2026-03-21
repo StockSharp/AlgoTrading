@@ -74,10 +74,6 @@ class deep_drawdown_ma_strategy(Strategy):
             self._prev_slow = sv
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
         if self._prev_fast <= self._prev_slow and fv > sv and self.Position <= 0:
             self.BuyMarket()
         elif self._prev_fast >= self._prev_slow and fv < sv and self.Position >= 0:

@@ -168,8 +168,6 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         self._avg_iv_skew = float(iv_skew_sma_value)
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         stoch_k = stoch_value.K
         stoch_d = stoch_value.D

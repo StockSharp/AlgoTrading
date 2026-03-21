@@ -186,8 +186,6 @@ class adaptive_bollinger_breakout_strategy(Strategy):
                     self._current_bollinger_period, self._current_bollinger_deviation, atr))
 
         # --- Bollinger logic (was ProcessBollinger) ---
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if bollinger_value.IsFinal and self._atr.IsFormed:
             atr_val = float(atr_value)  # use current ATR value

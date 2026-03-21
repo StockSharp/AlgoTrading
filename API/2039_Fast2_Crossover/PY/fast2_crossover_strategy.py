@@ -85,9 +85,6 @@ class fast2_crossover_strategy(Strategy):
         if fast_result.IsEmpty or slow_result.IsEmpty or not self._fast.IsFormed or not self._slow.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         f = float(fast_result.ToDecimal())
         s = float(slow_result.ToDecimal())
 

@@ -69,8 +69,6 @@ class stochastic_automated_strategy(Strategy):
     def process_candle(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         k = stoch_value.K
         d = stoch_value.D

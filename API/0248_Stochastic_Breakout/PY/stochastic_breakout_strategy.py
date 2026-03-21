@@ -148,8 +148,6 @@ class stochastic_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get stochastic value (K line)
         if stochValue.K is None:

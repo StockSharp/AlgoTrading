@@ -63,12 +63,14 @@ class farhad_crab_strategy(Strategy):
             return
 
         if self._prev_ema <= self._prev_sma and ema_val > sma_val and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_ema >= self._prev_sma and ema_val < sma_val and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_ema = ema_val

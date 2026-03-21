@@ -60,8 +60,6 @@ class vcp_strategy(Strategy):
     def _process_candle(self, candle, ma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         av = float(atr_val)
 

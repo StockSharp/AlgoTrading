@@ -47,8 +47,6 @@ class bands_pending_breakout_strategy(Strategy):
     def OnProcess(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         upper = bb_value.UpBand
         lower = bb_value.LowBand

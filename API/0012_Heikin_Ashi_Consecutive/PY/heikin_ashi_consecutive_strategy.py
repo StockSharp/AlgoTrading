@@ -74,9 +74,6 @@ class heikin_ashi_consecutive_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         o = float(candle.OpenPrice)
         c = float(candle.ClosePrice)
         h = float(candle.HighPrice)

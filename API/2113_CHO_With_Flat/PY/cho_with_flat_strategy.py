@@ -108,8 +108,6 @@ class cho_with_flat_strategy(Strategy):
         sig_result = self._signal_ema.Process(osc_value, candle.OpenTime, True)
         if not sig_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         signal_value = float(sig_result)
         if not self._is_initialized:
             self._prev_osc = osc_value

@@ -56,8 +56,6 @@ class stochastic_rsi_cross_strategy(Strategy):
     def _process_candle(self, candle, stoch_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if stoch_val.K is None or stoch_val.D is None:
             return
@@ -79,11 +77,11 @@ class stochastic_rsi_cross_strategy(Strategy):
 
         # %K crosses above %D in oversold zone (< 20)
         if self._prev_k <= self._prev_d and k > d and k < 20 and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = 5
         # %K crosses below %D in overbought zone (> 80)
         elif self._prev_k >= self._prev_d and k < d and k > 80 and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = 5
 
         self._prev_k = k

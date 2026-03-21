@@ -129,9 +129,6 @@ class svm_trader_strategy(Strategy):
                 or not macd_value.IsFinal or not stochastic_value.IsFinal or not force_value.IsFinal):
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._bars_since_trade < self.CooldownBars:
             self._bars_since_trade += 1
 

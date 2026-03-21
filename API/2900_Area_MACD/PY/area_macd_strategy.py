@@ -89,9 +89,6 @@ class area_macd_strategy(Strategy):
                 self._pos_area -= old
             else:
                 self._neg_area -= abs(old)
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if len(self._diff_history) < self.HistoryLength:
             return
 

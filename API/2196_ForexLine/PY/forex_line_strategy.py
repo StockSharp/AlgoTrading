@@ -42,10 +42,6 @@ class forex_line_strategy(Strategy):
         if candle.State != CandleStates.Finished: return
         f = float(fast)
         s = float(slow)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = f
-            self._prev_slow = s
-            return
         if self._prev_fast is not None and self._prev_slow is not None:
             if self._prev_fast <= self._prev_slow and f > s and self.Position <= 0:
                 self.BuyMarket()

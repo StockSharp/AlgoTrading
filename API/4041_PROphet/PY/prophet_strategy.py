@@ -81,9 +81,6 @@ class prophet_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry
         if self.Position == 0:
             buy_signal = self._calculate_signal(False)

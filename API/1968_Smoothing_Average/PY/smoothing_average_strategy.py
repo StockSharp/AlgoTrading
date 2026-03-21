@@ -78,9 +78,6 @@ class smoothing_average_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

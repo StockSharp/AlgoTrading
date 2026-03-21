@@ -119,10 +119,8 @@ class ai_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        volume_result = process_float(self._volume_sma, float(candle.TotalVolume), candle.ServerTime, candle.State == CandleStates.Finished)
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
+        from StockSharp.Algo.Indicators import DecimalIndicatorValue
+        volume_result = self._volume_sma.Process(DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.ServerTime))
 
         # Time-based exit
         if self.Position != 0:
@@ -140,14 +138,16 @@ class ai_volume_strategy(Strategy):
             self._cooldown_remaining -= 1
             return
 
-        avg_volume = float(volume_result) if self._volume_sma.IsFormed else 0.0
-        volume_spike = avg_volume > 0 and float(candle.TotalVolume) > avg_volume * self.VolumeMultiplier
+        avg_volume = float(to_decimal(volume_result)) if self._volume_sma.IsFormed else 0.0
+        volume_spike = avg_volume > 0 and float(candle.TotalVolume) > avg_volume * float(self.VolumeMultiplier)
         use_volume_filter = avg_volume > 0
 
-        trend_up = float(candle.ClosePrice) > price_ema_value
-        trend_down = float(candle.ClosePrice) < price_ema_value
-        is_bullish = float(candle.ClosePrice) > float(candle.OpenPrice)
-        is_bearish = float(candle.ClosePrice) < float(candle.OpenPrice)
+        close = float(candle.ClosePrice)
+        ema_val = float(price_ema_value)
+        trend_up = close > ema_val
+        trend_down = close < ema_val
+        is_bullish = close > float(candle.OpenPrice)
+        is_bearish = close < float(candle.OpenPrice)
 
         long_ok = trend_up and is_bullish and (not use_volume_filter or volume_spike)
         short_ok = trend_down and is_bearish and (not use_volume_filter or volume_spike)

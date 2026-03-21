@@ -75,9 +75,6 @@ class hull_ma_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         hma_f = float(hma_value)
 
         if self._prev_hma_value == 0:

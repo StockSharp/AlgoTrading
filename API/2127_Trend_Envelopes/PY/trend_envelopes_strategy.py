@@ -125,8 +125,6 @@ class trend_envelopes_strategy(Strategy):
         atr_result = self._atr.Process(candle)
         if not ma_result.IsFormed or not atr_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         ma_value = float(ma_result)
         atr_value = float(atr_result)
         dev = float(self.deviation)

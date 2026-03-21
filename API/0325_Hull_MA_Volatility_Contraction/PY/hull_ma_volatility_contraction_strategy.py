@@ -78,8 +78,6 @@ class hull_ma_volatility_contraction_strategy(Strategy):
         contracted = self._is_volatility_contracted()
         rising = self._cur_hma > self._prev_hma
         falling = self._cur_hma < self._prev_hma
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if rising and contracted and self.Position <= 0:
             self.BuyMarket()
             self._is_long = True

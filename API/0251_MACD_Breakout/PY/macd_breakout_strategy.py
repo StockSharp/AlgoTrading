@@ -57,8 +57,6 @@ class macd_breakout_strategy(Strategy):
     def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         typed_val = macd_value
         if typed_val.Macd is None or typed_val.Signal is None:
             return

@@ -61,8 +61,6 @@ class atr_trailing_strategy(Strategy):
     def _process_candle(self, candle, atr_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         av = float(atr_val)
         sv = float(sma_val)

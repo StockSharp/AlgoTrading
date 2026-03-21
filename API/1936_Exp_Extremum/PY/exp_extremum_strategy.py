@@ -110,9 +110,6 @@ class exp_extremum_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         min_high_value = float(self._min_high.Process(
             DecimalIndicatorValue(self._min_high, candle.HighPrice, candle.OpenTime, True)))
         max_low_value = float(self._max_low.Process(

@@ -65,8 +65,6 @@ class expert_ichimoku_strategy(Strategy):
     def _on_process(self, candle, t_high_value, t_low_value, k_high_value, k_low_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         th = float(t_high_value)
         tl = float(t_low_value)

@@ -54,8 +54,6 @@ class mtf_oscillator_framework_strategy(Strategy):
     def _process_candle(self, candle, rsi_val, ema_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         rsi = float(rsi_val)
         self._bar_index += 1
         if not self._has_prev:

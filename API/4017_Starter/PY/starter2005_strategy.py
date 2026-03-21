@@ -144,9 +144,6 @@ class starter2005_strategy(Strategy):
         tp_distance = self._get_take_profit_distance()
         price = self._get_decision_price(candle)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             if ma_rising and laguerre <= entry_tolerance and cci < -float(self.CciThreshold):
                 volume = self._calculate_order_volume(price)

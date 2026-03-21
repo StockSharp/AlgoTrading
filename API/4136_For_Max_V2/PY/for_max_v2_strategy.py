@@ -97,11 +97,6 @@ class for_max_v2_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = high
-            self._prev_low = low
-            return
-
         if self.Position == 0:
             if close > self._prev_high and close > ev:
                 self._entry_price = close

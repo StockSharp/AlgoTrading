@@ -93,8 +93,6 @@ class adaptive_fibonacci_pullback_strategy(Strategy):
     def OnProcess(self, candle, st1_val, st2_val, st3_val, mid_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         st1_v = float(st1_val)
         st2_v = float(st2_val)
         st3_v = float(st3_val)

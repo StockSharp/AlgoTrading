@@ -130,9 +130,6 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         if self._cooldown_remaining > 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if previous_color != 0 and color == 0 and self.Position <= 0:
             if self.Position < 0:
                 self.BuyMarket()

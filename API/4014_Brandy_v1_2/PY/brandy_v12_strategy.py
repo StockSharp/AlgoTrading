@@ -97,9 +97,6 @@ class brandy_v12_strategy(Strategy):
         if self._manage_existing_position(candle, long_prev, long_shifted):
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             bullish = long_prev > long_shifted and short_prev > short_shifted
             bearish = long_prev < long_shifted and short_prev < short_shifted

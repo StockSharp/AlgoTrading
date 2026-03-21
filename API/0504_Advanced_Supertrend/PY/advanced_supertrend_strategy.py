@@ -82,8 +82,6 @@ class advanced_supertrend_strategy(Strategy):
     def OnProcess(self, candle, st_value, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if st_value.IsEmpty or ema_value.IsEmpty or atr_value.IsEmpty:
             return
         up_trend = st_value.IsUpTrend

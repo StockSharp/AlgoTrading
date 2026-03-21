@@ -55,8 +55,6 @@ class ad_strategy(Strategy):
     def _process_candle(self, candle, ma_val, ad_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         av = float(ad_val)
 

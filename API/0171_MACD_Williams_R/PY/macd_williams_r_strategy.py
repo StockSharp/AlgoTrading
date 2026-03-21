@@ -70,8 +70,6 @@ class macd_williams_r_strategy(Strategy):
     def ProcessCandle(self, candle, macd_value, williams_r_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if macd_value.Macd is None or macd_value.Signal is None:
             return

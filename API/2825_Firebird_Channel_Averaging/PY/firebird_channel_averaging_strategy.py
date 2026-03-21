@@ -69,9 +69,6 @@ class firebird_channel_averaging_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma_val = float(ma_value)
 
         shifted = self._apply_shift(ma_val)

@@ -104,9 +104,6 @@ class tst_strategy(Strategy):
                 self._take_price = 0.0
                 return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry: deep pullback from high = buy reversal
         if self.Position == 0:
             if open_p > close and high - close > threshold:

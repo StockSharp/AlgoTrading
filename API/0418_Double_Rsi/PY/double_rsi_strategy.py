@@ -59,8 +59,6 @@ class double_rsi_strategy(Strategy):
     def OnProcess(self, candle, rsi_short_val, rsi_long_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return

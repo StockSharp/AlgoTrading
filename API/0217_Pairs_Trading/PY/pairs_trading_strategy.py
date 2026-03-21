@@ -156,8 +156,6 @@ class pairs_trading_strategy(Strategy):
             return
 
         # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate the spread: Asset1 - Asset2
         self._spread = float(candle.ClosePrice - self._last_second_price)

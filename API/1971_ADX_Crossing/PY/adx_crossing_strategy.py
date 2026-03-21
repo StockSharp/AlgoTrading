@@ -134,9 +134,6 @@ class adx_crossing_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         plus_raw = adx_value.Dx.Plus
         minus_raw = adx_value.Dx.Minus
         if plus_raw is None or minus_raw is None:

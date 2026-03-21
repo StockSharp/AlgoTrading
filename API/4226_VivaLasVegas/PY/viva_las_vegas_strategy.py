@@ -88,8 +88,6 @@ class viva_las_vegas_strategy(Strategy):
                 self._entry_price = 0.0
                 self._best_price = 0.0
                 return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self.Position == 0:
             self._active_seed = (self._active_seed * 1103515245 + 12345) & 0x7FFFFFFF
             is_buy = ((self._active_seed >> 16) & 1) == 0

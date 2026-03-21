@@ -189,9 +189,6 @@ class exp_hans_indicator_cloud_system_tm_plus_strategy(Strategy):
         if self._day_entry_taken:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if buy_entry_signal and self.Position <= 0:
             if self.Position < 0:
                 self.BuyMarket()

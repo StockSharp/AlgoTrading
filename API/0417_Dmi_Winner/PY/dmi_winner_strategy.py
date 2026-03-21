@@ -76,8 +76,6 @@ class dmi_winner_strategy(Strategy):
     def OnProcess(self, candle, dmi_value, adx_value, ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if dmi_value.Plus is None or dmi_value.Minus is None:
             return
         if adx_value.MovingAverage is None:

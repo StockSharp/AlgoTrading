@@ -79,11 +79,6 @@ class average_change_candle_strategy(Strategy):
         prev_bullish = self._prev_smoothed_close > self._prev_smoothed_open
         curr_bullish = smoothed_close > smoothed_open
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_smoothed_open = smoothed_open
-            self._prev_smoothed_close = smoothed_close
-            return
-
         if curr_bullish and not prev_bullish and c > ev and self.Position <= 0:
             self.BuyMarket()
         elif not curr_bullish and prev_bullish and c < ev and self.Position >= 0:

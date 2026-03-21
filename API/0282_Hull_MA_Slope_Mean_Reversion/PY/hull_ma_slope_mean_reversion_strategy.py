@@ -162,8 +162,6 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self._currentAtr = float(atrValue)
 

@@ -57,8 +57,6 @@ class moving_average_trade_system_strategy(Strategy):
     def _process_candle(self, candle, fast_val, medium_val, signal_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast_val)
         medium = float(medium_val)
         sig = float(signal_val)

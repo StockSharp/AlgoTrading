@@ -75,8 +75,6 @@ class bollinger_kmeans_strategy(Strategy):
     def OnProcess(self, candle, bollinger_value, rsi_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if bollinger_value.UpBand is None or bollinger_value.LowBand is None or bollinger_value.MovingAverage is None:
             return
         upper = float(bollinger_value.UpBand)

@@ -59,9 +59,6 @@ class three_white_soldiers_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Shift candles
         prev2 = self._candle1
         prev1 = self._candle2

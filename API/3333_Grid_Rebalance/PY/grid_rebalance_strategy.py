@@ -57,9 +57,6 @@ class grid_rebalance_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         rsi = float(rsi_val)
         ema = float(ema_val)

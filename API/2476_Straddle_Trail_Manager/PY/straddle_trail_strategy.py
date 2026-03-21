@@ -126,9 +126,6 @@ class straddle_trail_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         atr = float(atr_val)
         sma = float(sma_val)

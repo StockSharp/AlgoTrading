@@ -114,11 +114,6 @@ class elite_efibo_trader_strategy(Strategy):
                 self._add_count += 1
                 self.SellMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
-
         # Entry: MA crossover with RSI confirmation
         if self.Position == 0:
             if self._prev_fast <= self._prev_slow and fv > sv and rv > 50:

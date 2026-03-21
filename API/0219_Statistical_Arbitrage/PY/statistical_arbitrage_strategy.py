@@ -149,8 +149,6 @@ class statistical_arbitrage_strategy(Strategy):
             return
 
         # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Store current price
         self._last_first_price = float(candle.ClosePrice)

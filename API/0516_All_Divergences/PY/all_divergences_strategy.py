@@ -82,8 +82,6 @@ class all_divergences_strategy(Strategy):
     def OnProcess(self, candle, rsi_val, ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         rsi_v = float(rsi_val)
         ma_v = float(ma_val)
         low = float(candle.LowPrice)

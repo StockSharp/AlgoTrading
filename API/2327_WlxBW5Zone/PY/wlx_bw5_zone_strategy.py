@@ -91,8 +91,6 @@ class wlx_bw5_zone_strategy(Strategy):
         self._ac0 = ac
         if self._ao4 is None or self._ac4 is None:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         is_up_seq = (self._ao0 > self._ao1 and self._ao1 > self._ao2 and
                      self._ao2 > self._ao3 and self._ao3 > self._ao4 and
                      self._ac0 > self._ac1 and self._ac1 > self._ac2 and

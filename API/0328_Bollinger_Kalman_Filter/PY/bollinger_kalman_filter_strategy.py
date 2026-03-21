@@ -146,8 +146,6 @@ class bollinger_kalman_filter_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract values from indicators
         upper_band = bollinger_value.UpBand

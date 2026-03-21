@@ -62,8 +62,6 @@ class mikuls_ichimoku_cloud_v2_strategy(Strategy):
     def _process_candle(self, candle, ich_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         self._bar_index += 1
         self._bars_from_signal += 1
         close = float(candle.ClosePrice)

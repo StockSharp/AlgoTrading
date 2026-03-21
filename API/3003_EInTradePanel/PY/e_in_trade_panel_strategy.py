@@ -60,10 +60,6 @@ class e_in_trade_panel_strategy(Strategy):
             return
         av = float(atr_value)
         close = float(candle.ClosePrice)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_atr = av
-            return
         if self._prev_close is None or self._prev_atr is None:
             self._prev_close = close
             self._prev_atr = av

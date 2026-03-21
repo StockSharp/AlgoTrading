@@ -141,8 +141,6 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         smaValue = process_float(self._rsiSma, rsiValue, candle.ServerTime, candle.State == CandleStates.Finished)
         stdDevValue = process_float(self._rsiStdDev, rsiValue, candle.ServerTime, candle.State == CandleStates.Finished)

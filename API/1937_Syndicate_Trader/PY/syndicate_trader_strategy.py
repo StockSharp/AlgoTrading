@@ -176,9 +176,6 @@ class syndicate_trader_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.UseSessionFilter:
             time_of_day = candle.OpenTime.TimeOfDay
             start = TimeSpan(self.SessionStartHour, self.SessionStartMinute, 0)

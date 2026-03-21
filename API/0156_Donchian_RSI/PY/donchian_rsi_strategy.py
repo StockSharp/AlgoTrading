@@ -65,8 +65,6 @@ class donchian_rsi_strategy(Strategy):
     def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

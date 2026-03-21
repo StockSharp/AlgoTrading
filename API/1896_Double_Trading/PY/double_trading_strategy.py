@@ -51,8 +51,6 @@ class double_trading_strategy(Strategy):
     def on_process(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         fast_val = float(fast_val)
         slow_val = float(slow_val)
@@ -62,16 +60,15 @@ class double_trading_strategy(Strategy):
             self._prev_slow_ema = slow_val
             return
 
-        buy_signal = self._prev_fast_ema <= self._prev_slow_ema and fast_val > slow_val
-        sell_signal = self._prev_fast_ema >= self._prev_slow_ema and fast_val < slow_val
+        if self._prev_fast_ema <= self._prev_slow_ema and fast_val > slow_val and self.Position <= 0:
 
-        if buy_signal and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
             self.BuyMarket()
-        elif sell_signal and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
+        elif self._prev_fast_ema >= self._prev_slow_ema and fast_val < slow_val and self.Position >= 0:
+
+
             self.SellMarket()
 
         self._prev_fast_ema = fast_val

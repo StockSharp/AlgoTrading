@@ -68,10 +68,6 @@ class ema50_crossover_monthly_dca_strategy(Strategy):
         ema_v = float(ema_value)
         rsi_v = float(rsi_value)
         close = float(candle.ClosePrice)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_ema = ema_v
-            return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_close = close

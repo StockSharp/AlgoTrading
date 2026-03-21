@@ -54,8 +54,6 @@ class bollinger_squeeze_strategy(Strategy):
     def OnProcess(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
         upper = float(bb_value.UpBand)
@@ -78,10 +76,10 @@ class bollinger_squeeze_strategy(Strategy):
 
         price = float(candle.ClosePrice)
         if price > upper and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = 10
         elif price < lower and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = 10
 
         self._prev_band_width = band_width

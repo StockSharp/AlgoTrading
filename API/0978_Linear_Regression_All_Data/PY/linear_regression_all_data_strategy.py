@@ -72,9 +72,6 @@ class linear_regression_all_data_strategy(Strategy):
         if self._index < 20:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         n = float(self._index)
         denom = n * self._sum_x2 - self._sum_x * self._sum_x
         if denom == 0:

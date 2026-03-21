@@ -82,13 +82,19 @@ class parabolic_sar_rsi_strategy(Strategy):
         super(parabolic_sar_rsi_strategy, self).OnStarted(time)
 
         self._cooldown = 0
+        self._sar_value = 0
 
         parabolic_sar = ParabolicSar()
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(parabolic_sar, rsi, self.ProcessCandle).Start()
+
+        # ParabolicSar takes candle input - use BindEx
+        subscription.BindEx(parabolic_sar, self.OnSar)
+
+        # RSI for main logic
+        subscription.Bind(rsi, self.ProcessCandle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -100,15 +106,16 @@ class parabolic_sar_rsi_strategy(Strategy):
             if rsi_area is not None:
                 self.DrawIndicator(rsi_area, rsi)
 
-    def ProcessCandle(self, candle, sar_value, rsi_value):
+    def OnSar(self, candle, sar_value):
+        if sar_value.IsFormed:
+            self._sar_value = float(sar_value)
+
+    def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
-        sv = float(sar_value)
+        sv = self._sar_value
 
         if sv == 0:
             return
@@ -138,6 +145,7 @@ class parabolic_sar_rsi_strategy(Strategy):
     def OnReseted(self):
         super(parabolic_sar_rsi_strategy, self).OnReseted()
         self._cooldown = 0
+        self._sar_value = 0
 
     def CreateClone(self):
         return parabolic_sar_rsi_strategy()

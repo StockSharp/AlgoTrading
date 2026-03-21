@@ -95,9 +95,6 @@ class anchored_momentum_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         momentum = 0.0 if sma_value == 0 else 100.0 * (ema_value / sma_value - 1.0)
 
         if self._is_first_value:

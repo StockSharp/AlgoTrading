@@ -86,11 +86,6 @@ class iu_opening_range_breakout_strategy(Strategy):
             self._prev_low = low
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = high
-            self._prev_low = low
-            return
-
         if self.Position == 0 and self._trades_today < self._max_trades.Value:
             if high > self._or_high:
                 self.BuyMarket()

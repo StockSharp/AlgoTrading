@@ -49,8 +49,6 @@ class volume_weighted_ma_digit_system_strategy(Strategy):
     def process_candle(self, candle, vwma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         vwma_value = float(vwma_value)
         if self._prev_vwma is not None:
             slope = vwma_value - self._prev_vwma

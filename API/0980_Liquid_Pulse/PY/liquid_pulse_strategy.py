@@ -78,11 +78,6 @@ class liquid_pulse_strategy(Strategy):
             self._day = day
             self._daily_trades = 0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast
-            self._prev_slow = slow
-            return
-
         # Check SL/TP
         if self.Position > 0 and self._stop > 0:
             if low <= self._stop or high >= self._tp:

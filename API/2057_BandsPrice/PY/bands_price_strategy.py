@@ -123,9 +123,6 @@ class bands_price_strategy(Strategy):
         if not smooth_result.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         jres = float(smooth_result.ToDecimal())
         up = float(self.UpLevel)
         dn = float(self.DnLevel)

@@ -172,8 +172,6 @@ class ilan_dynamic_ht_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessCandle(self, candle, rsi_value, highest_value, lowest_value):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if candle.State != CandleStates.Finished:
             return

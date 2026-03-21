@@ -102,9 +102,6 @@ class zig_and_zag_scalpel_strategy(Strategy):
         self._update_major_trend(float(major_value))
         self._update_minor_pivot(float(minor_value))
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         self._manage_existing_position()
 
         if self.Position != 0:

@@ -156,8 +156,6 @@ class ichimoku_implied_volatility_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get Ichimoku values
         if ichimoku_value.Tenkan is None:

@@ -58,8 +58,6 @@ class ma_crossover_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         fv = float(fast_val)
         sv = float(slow_val)

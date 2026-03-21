@@ -52,8 +52,6 @@ class darvas_boxes_system_strategy(Strategy):
     def process_candle(self, candle, value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         upper = value.UpperBand
         lower = value.LowerBand
         if upper is None or lower is None:

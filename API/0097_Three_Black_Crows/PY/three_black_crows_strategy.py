@@ -59,9 +59,6 @@ class three_black_crows_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         prev2 = self._candle1
         prev1 = self._candle2
         self._candle1 = self._candle2

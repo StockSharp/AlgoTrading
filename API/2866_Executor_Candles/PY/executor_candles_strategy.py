@@ -82,9 +82,6 @@ class executor_candles_strategy(Strategy):
         self._prev2 = self._prev1
         self._prev1 = c
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             self._try_open()
 

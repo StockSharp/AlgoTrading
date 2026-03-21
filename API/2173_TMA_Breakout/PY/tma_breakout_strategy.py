@@ -62,8 +62,6 @@ class tma_breakout_strategy(Strategy):
     def process_candle(self, candle, tma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         tma_val = float(tma_value)
         close = float(candle.ClosePrice)

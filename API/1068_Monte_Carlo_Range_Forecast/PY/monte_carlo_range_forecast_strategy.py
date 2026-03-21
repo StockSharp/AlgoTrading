@@ -48,8 +48,6 @@ class monte_carlo_range_forecast_strategy(Strategy):
     def _process_candle(self, candle, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         current = float(candle.ClosePrice)
         atr = float(atr_val)
         if current <= 0 or atr <= 0:

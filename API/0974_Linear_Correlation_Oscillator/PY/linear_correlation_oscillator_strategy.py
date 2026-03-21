@@ -63,9 +63,6 @@ class linear_correlation_oscillator_strategy(Strategy):
         if len(self._prices) < length:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         correlation = self._calculate_correlation()
         self._bars_from_signal += 1
         entry = self._entry_level.Value

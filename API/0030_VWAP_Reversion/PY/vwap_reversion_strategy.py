@@ -49,8 +49,6 @@ class vwap_reversion_strategy(Strategy):
     def _process_candle(self, candle, vwap_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         vv = float(vwap_val)
         if vv <= 0:

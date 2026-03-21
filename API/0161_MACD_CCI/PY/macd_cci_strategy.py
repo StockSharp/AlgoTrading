@@ -75,8 +75,6 @@ class macd_cci_strategy(Strategy):
     def ProcessCandle(self, candle, macd_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not macd_value.IsFormed or not cci_value.IsFormed:
             return
 

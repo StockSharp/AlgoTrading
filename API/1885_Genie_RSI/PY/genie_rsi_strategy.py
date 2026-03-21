@@ -75,9 +75,6 @@ class genie_rsi_strategy(Strategy):
         crossed_up = self._prev_rsi is not None and self._prev_rsi <= 80.0 and rsi > 80.0
         self._prev_rsi = rsi
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0 and self._cooldown_remaining == 0:
             if crossed_up:
                 self.SellMarket()

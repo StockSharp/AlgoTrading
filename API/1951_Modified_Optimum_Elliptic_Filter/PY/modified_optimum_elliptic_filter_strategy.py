@@ -94,9 +94,6 @@ class modified_optimum_elliptic_filter_strategy(Strategy):
         if not self._is_formed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._bars_since_trade < self.CooldownBars:
             self._bars_since_trade += 1
 

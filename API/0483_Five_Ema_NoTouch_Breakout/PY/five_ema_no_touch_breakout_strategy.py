@@ -74,9 +74,6 @@ class five_ema_no_touch_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ema_val = float(ema_value)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

@@ -56,8 +56,6 @@ class volume_weighted_price_breakout_strategy(Strategy):
     def _process_candle(self, candle, ma_val, vwma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown > 0:
             self._cooldown -= 1

@@ -64,8 +64,6 @@ class auto_adx_strategy(Strategy):
     def _on_process(self, candle, rsi_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         rv = float(rsi_value)
         ev = float(ema_value)

@@ -52,9 +52,6 @@ class hello_smart_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         price = float(candle.ClosePrice)
         step_price = self._step_ticks.Value * 0.01
 

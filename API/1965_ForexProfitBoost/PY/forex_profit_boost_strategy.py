@@ -116,9 +116,6 @@ class forex_profit_boost_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast_val = float(fast_value)
         slow_val = float(slow_value)
         is_fast_above_slow = fast_val > slow_val

@@ -61,11 +61,6 @@ class exp_rj_sliding_range_rj_digit_system_tm_plus_strategy(Strategy):
         uv = float(upper_value)
         lv = float(lower_value)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_upper = uv
-            self._prev_lower = lv
-            return
-
         close = float(candle.ClosePrice)
 
         if self._prev_upper is None or self._prev_lower is None:

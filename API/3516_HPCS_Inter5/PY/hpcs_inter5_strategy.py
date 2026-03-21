@@ -83,9 +83,6 @@ class hpcs_inter5_strategy(Strategy):
         if last_close is None or older_close is None:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         threshold = last_close * 0.005
         long_signal = older_close - last_close > threshold
         short_signal = last_close - older_close > threshold

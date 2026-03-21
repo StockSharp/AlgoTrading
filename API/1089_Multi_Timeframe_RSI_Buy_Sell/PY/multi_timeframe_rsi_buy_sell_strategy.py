@@ -108,8 +108,6 @@ class multi_timeframe_rsi_buy_sell_strategy(Strategy):
         self._rsi3 = float(value)
 
     def _try_trade(self, candle):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if (self._rsi1_enabled.Value and self._rsi1 is None) or \
            (self._rsi2_enabled.Value and self._rsi2 is None) or \

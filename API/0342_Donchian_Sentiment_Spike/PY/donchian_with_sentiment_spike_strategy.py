@@ -134,9 +134,6 @@ class donchian_with_sentiment_spike_strategy(Strategy):
         if self.Position != 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if price >= upper_val and self._current_sentiment > 0:
             self.BuyMarket()
         elif price <= lower_val and self._current_sentiment < 0:

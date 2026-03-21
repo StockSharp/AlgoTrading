@@ -87,11 +87,6 @@ class knux_strategy(Strategy):
             self._is_initialized = True
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fast
-            self._prev_slow = slow
-            return
-
         cross_up = self._prev_fast <= self._prev_slow and fast > slow
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
 

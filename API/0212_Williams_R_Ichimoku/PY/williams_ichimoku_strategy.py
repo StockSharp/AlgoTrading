@@ -150,8 +150,6 @@ class williams_ichimoku_strategy(Strategy):
             return
 
         # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract Ichimoku values
         tenkan = float(ichimoku_value.Tenkan) if ichimoku_value.Tenkan is not None else None

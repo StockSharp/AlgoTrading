@@ -120,11 +120,6 @@ class two_ma_four_level_bands_strategy(Strategy):
             self.BuyMarket()
             self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
-
         # Entry
         if self.Position == 0:
             if bullish:

@@ -153,8 +153,6 @@ class adx_slope_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if adx_value.MovingAverage is None:
             return

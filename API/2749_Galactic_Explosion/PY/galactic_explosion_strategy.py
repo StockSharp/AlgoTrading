@@ -64,9 +64,6 @@ class galactic_explosion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma_val = float(ma_value)
         close = float(candle.ClosePrice)
 

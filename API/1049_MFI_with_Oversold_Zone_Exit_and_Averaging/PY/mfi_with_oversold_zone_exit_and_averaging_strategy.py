@@ -56,8 +56,6 @@ class mfi_with_oversold_zone_exit_and_averaging_strategy(Strategy):
     def _process_candle(self, candle, mfi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         mfi = float(mfi_val)
         self._bars_from_signal += 1
         oversold = float(self._mfi_oversold.Value)

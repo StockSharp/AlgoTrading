@@ -89,9 +89,6 @@ class obv_divergence_strategy(Strategy):
             self._price_history.pop(0)
             self._obv_history.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._price_history) <= lb:
             return
 

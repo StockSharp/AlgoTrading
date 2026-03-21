@@ -40,10 +40,6 @@ class rvi_histogram_reversal_strategy(Strategy):
         if avg is None or sig is None: return
         avg = float(avg)
         sig = float(sig)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_avg = avg
-            self._prev_sig = sig
-            return
         if self._prev_avg is not None and self._prev_sig is not None:
             if self._prev_avg <= self._prev_sig and avg > sig and self.Position <= 0:
                 self.BuyMarket()

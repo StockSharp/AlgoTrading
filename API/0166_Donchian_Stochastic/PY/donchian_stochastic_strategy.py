@@ -66,8 +66,6 @@ class donchian_stochastic_strategy(Strategy):
     def _process_candle(self, candle, donchian_value, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         upper = donchian_value.UpperBand
         lower = donchian_value.LowerBand

@@ -69,8 +69,6 @@ class kwan_rdp_strategy(Strategy):
     def _on_process(self, candle, dem_value, mom_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         dv = float(dem_value)
         mv = float(mom_value)

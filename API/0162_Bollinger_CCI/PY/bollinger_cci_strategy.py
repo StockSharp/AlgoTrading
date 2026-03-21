@@ -68,8 +68,6 @@ class bollinger_cci_strategy(Strategy):
     def ProcessCandle(self, candle, bb_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not bb_value.IsFormed or not cci_value.IsFormed:
             return
 

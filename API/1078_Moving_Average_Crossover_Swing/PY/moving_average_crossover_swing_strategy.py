@@ -65,8 +65,6 @@ class moving_average_crossover_swing_strategy(Strategy):
     def _process_candle(self, candle, fast_val, medium_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast_val)
         medium = float(medium_val)
         atr = float(atr_val)

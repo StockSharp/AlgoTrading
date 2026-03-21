@@ -122,9 +122,6 @@ class vwap_slope_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Calculate VWAP slope only if we have previous VWAP value
         if self._previous_vwap_value != 0:
             # Calculate current slope

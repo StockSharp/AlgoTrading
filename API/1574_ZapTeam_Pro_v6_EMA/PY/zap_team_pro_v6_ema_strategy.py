@@ -68,8 +68,6 @@ class zap_team_pro_v6_ema_strategy(Strategy):
     def on_process(self, candle, ema21, ema50, ema200):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._prev21 is None:
             self._prev21 = ema21
             self._prev50 = ema50

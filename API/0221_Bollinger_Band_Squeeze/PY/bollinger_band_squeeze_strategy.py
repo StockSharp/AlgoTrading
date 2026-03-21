@@ -65,8 +65,6 @@ class bollinger_band_squeeze_strategy(Strategy):
     def OnProcess(self, candle, bollinger_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if bollinger_value.UpBand is None:
             return

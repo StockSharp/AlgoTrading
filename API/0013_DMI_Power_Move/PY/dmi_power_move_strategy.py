@@ -54,8 +54,6 @@ class dmi_power_move_strategy(Strategy):
     def _process_candle(self, candle, dmi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if dmi_value.MovingAverage is None:
             return
@@ -77,13 +75,9 @@ class dmi_power_move_strategy(Strategy):
 
         if signal != self._prev_signal and signal != 0:
             if signal == 1 and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
+                self.BuyMarket(self.Volume + abs(self.Position))
             elif signal == -1 and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+                self.SellMarket(self.Volume + abs(self.Position))
             self._prev_signal = signal
 
     def CreateClone(self):

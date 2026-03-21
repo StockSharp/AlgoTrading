@@ -200,8 +200,6 @@ class rsi_with_option_open_interest_strategy(Strategy):
         self._stddev_put_oi = float(put_oi_value_stddev)
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate OI thresholds
         call_oi_threshold = self._avg_call_oi + self.OiDeviationFactor * self._stddev_call_oi

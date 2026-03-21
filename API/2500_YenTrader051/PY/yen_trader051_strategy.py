@@ -222,8 +222,6 @@ class yen_trader051_strategy(Strategy):
     def _try_long(self, candle):
         if not self.AllowHedging and self.Position < 0:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         vol = self.Volume
         if self.CloseOnOpposite and self.Position < 0:
             vol += abs(self.Position)
@@ -234,8 +232,6 @@ class yen_trader051_strategy(Strategy):
 
     def _try_short(self, candle):
         if not self.AllowHedging and self.Position > 0:
-            return
-        if not self.IsFormedAndOnlineAndAllowTrading():
             return
         vol = self.Volume
         if self.CloseOnOpposite and self.Position > 0:

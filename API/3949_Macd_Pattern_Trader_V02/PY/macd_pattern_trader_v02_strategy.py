@@ -130,8 +130,6 @@ class macd_pattern_trader_v02_strategy(Strategy):
         self._macd_prev1 = mv
 
     def _execute_pattern_logic(self, candle, mc, mp1, mp2, mp3):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._point_size <= 0:
             return
         min_thr = float(self.MinThreshold)

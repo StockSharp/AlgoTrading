@@ -168,9 +168,6 @@ class color_metro_duplex_strategy(Strategy):
         self._prev_fast_band = fast_band
         self._prev_slow_band = slow_band
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         long_open = prev_up > prev_down and up <= down
         short_open = prev_up < prev_down and up >= down
 

@@ -154,8 +154,6 @@ class williams_percent_r_with_momentum_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check momentum - rising or falling
         isMomentumRising = momentumValue > momentumAvg

@@ -148,8 +148,6 @@ class adx_slope_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get ADX value
         typedAdx = adxValue

@@ -61,13 +61,11 @@ class elder_impulse_strategy(Strategy):
     def _process_candle(self, candle, ema_value, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if ema_value.IsEmpty:
             return
 
-        ema_dec = float(ema_value.GetValue[float]())
+        ema_dec = float(ema_value)
         if ema_dec == 0.0:
             return
 
@@ -104,14 +102,10 @@ class elder_impulse_strategy(Strategy):
             return
 
         if impulse == 1 and self._prev_impulse != 1 and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = 65
         elif impulse == -1 and self._prev_impulse != -1 and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = 65
 
         self._prev_ema = ema_dec

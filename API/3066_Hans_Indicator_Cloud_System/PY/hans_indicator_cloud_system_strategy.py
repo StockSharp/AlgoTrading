@@ -131,9 +131,6 @@ class hans_indicator_cloud_system_strategy(Strategy):
         if len(self._color_history) > max_history:
             self._color_history.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         target_index = len(self._color_history) - 1 - self.SignalBar
         if target_index <= 0:
             return

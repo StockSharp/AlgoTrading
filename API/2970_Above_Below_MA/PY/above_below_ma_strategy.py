@@ -72,11 +72,6 @@ class above_below_ma_strategy(Strategy):
 
         close = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_ma = ma_val
-            return
-
         if self._prev_close is None or self._prev_ma is None:
             self._prev_close = close
             self._prev_ma = ma_val

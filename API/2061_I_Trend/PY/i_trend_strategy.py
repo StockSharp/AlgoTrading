@@ -79,9 +79,6 @@ class i_trend_strategy(Strategy):
             return
         upper_band = float(upper_band)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         price = float(candle.ClosePrice)
         low = float(candle.LowPrice)
         high = float(candle.HighPrice)

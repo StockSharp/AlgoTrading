@@ -60,9 +60,6 @@ class sidus_v1_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         diff_buy = fast_val - slow_val
         diff_sell = fast2_val - slow2_val
 

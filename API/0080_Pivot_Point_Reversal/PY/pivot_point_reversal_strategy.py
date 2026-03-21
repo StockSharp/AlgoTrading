@@ -73,9 +73,6 @@ class pivot_point_reversal_strategy(Strategy):
             self._lows.pop(0)
             self._closes.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._highs) < lb:
             return
 

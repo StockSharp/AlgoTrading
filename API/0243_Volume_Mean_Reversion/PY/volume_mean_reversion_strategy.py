@@ -136,8 +136,6 @@ class volume_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract Volume value (for candles, this is TotalVolume)
         current_volume = float(candle.TotalVolume)

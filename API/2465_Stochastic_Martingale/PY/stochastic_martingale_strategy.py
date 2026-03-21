@@ -60,9 +60,6 @@ class stochastic_martingale_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         k_value = stoch_val.ToDecimal()
         inner = stoch_val.InnerValues
         d_value = None

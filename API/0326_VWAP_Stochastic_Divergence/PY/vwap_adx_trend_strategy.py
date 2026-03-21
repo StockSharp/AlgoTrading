@@ -146,9 +146,6 @@ class vwap_adx_trend_strategy(Strategy):
         self._plus_di_value = plus_di  # +DI
         self._minus_di_value = minus_di  # -DI
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Log current values
         self.LogInfo(
             f"VWAP: {self._vwap_value:.2f}, ADX: {self._adx_value:.2f}, +DI: {self._plus_di_value:.2f}, -DI: {self._minus_di_value:.2f}")

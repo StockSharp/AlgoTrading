@@ -70,8 +70,6 @@ class zz_fibo_trader_strategy(Strategy):
     def process_candle(self, candle, highest, lowest):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         highest = float(highest)
         lowest = float(lowest)
         high_price = float(candle.HighPrice)

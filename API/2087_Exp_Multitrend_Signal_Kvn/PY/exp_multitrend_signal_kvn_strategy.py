@@ -80,8 +80,6 @@ class exp_multitrend_signal_kvn_strategy(Strategy):
 
         if not max_result.IsFormed or not min_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         ss_max = float(max_result.ToDecimal())
         ss_min = float(min_result.ToDecimal())

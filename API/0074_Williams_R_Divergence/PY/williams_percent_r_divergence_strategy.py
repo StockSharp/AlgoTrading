@@ -58,8 +58,6 @@ class williams_percent_r_divergence_strategy(Strategy):
     def _process_candle(self, candle, wr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         wv = float(wr_val)

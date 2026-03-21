@@ -61,9 +61,6 @@ class ultra_fatl_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rsi = float(rsi_value)
         current = max(0.0, min(8.0, rsi / 12.5))
 

@@ -166,9 +166,6 @@ class dealers_trade_zero_lag_macd_strategy(Strategy):
         if not continue_opening:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if direction == 2:
             self._try_open_long(candle, open_positions)
         elif direction == 1:

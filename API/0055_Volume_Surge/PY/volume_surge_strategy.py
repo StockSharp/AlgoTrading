@@ -61,8 +61,6 @@ class volume_surge_strategy(Strategy):
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         mv = float(ma_val)

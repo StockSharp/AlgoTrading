@@ -60,9 +60,6 @@ class vwap_bounce_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         vv = float(vwma_val)
         sv = float(sma_val)

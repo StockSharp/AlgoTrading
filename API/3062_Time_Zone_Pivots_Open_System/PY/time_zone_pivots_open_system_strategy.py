@@ -88,9 +88,6 @@ class time_zone_pivots_open_system_strategy(Strategy):
         if len(self._signal_history) <= self.SignalBar:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         confirm_index = self.SignalBar
         current_index = self.SignalBar - 1
 

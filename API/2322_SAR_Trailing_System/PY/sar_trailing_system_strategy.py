@@ -48,8 +48,6 @@ class sar_trailing_system_strategy(Strategy):
     def process_candle(self, candle, sar_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close_price = float(candle.ClosePrice)
         sar_value = float(sar_value)
         if close_price > sar_value and self.Position <= 0:

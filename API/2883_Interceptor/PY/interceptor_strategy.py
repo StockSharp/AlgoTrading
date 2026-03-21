@@ -52,8 +52,6 @@ class interceptor_strategy(Strategy):
     def _on_process(self, candle, ema_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         ev = float(ema_value)
         rv = float(rsi_value)

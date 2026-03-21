@@ -89,8 +89,6 @@ class baseline2_strategy(Strategy):
     def OnProcess(self, candle, fast_value, slow_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self._bar_index += 1
         cooldown_ok = self._bar_index - self._last_trade_bar > self.cooldown_bars

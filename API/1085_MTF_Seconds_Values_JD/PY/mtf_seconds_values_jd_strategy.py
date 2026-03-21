@@ -52,8 +52,6 @@ class mtf_seconds_values_jd_strategy(Strategy):
     def _process_candle(self, candle, sma_val, d2):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         sma = float(sma_val)
         self._bar_index += 1

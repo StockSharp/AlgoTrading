@@ -50,9 +50,6 @@ class get_value_from_n_years_ago_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast = float(fast_val)
         slow = float(slow_val)
 

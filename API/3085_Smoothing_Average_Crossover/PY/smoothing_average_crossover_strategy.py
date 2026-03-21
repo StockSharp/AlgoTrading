@@ -93,9 +93,6 @@ class smoothing_average_crossover_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         shifted_ma = self._apply_shift(float(ma_value))
 
         close = float(candle.ClosePrice)

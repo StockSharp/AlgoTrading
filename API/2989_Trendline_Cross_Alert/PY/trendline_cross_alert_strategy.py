@@ -60,12 +60,14 @@ class trendline_cross_alert_strategy(Strategy):
             return
 
         if self._prev_close <= self._prev_ma and close > ma and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_close >= self._prev_ma and close < ma and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_close = close

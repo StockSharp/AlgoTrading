@@ -63,9 +63,6 @@ class any_range_cloud_tail_system_tm_plus_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         mid = (high + low) / 2.0
         close = float(candle.ClosePrice)
         open_price = float(candle.OpenPrice)

@@ -284,8 +284,6 @@ class range_ea_strategy(Strategy):
                 self._next_step_price += float(self.StepDown)
 
         else:
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
 
             if price >= ma_val + float(self.Range):
                 self.BuyMarket(self.OrderVolume)

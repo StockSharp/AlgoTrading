@@ -46,8 +46,6 @@ class corr_time_strategy(Strategy):
     def on_process(self, candle, bb_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         upper = bb_val.UpBand
         lower = bb_val.LowBand

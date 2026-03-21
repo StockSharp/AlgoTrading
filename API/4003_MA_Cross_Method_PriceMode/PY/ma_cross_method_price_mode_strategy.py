@@ -59,8 +59,6 @@ class ma_cross_method_price_mode_strategy(Strategy):
             self._second_values.pop(0)
         if len(self._first_values) < 2:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         prev_f = self._first_values[-2]
         curr_f = self._first_values[-1]
         curr_s = self._second_values[-1]

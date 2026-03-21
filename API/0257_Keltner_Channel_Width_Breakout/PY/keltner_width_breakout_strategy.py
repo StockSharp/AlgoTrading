@@ -127,9 +127,6 @@ class keltner_width_breakout_strategy(Strategy):
         if avg_width <= 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Width breakout detection
         if width > avg_width * self.WidthThreshold and self.Position == 0:
             # Determine direction based on price relative to EMA

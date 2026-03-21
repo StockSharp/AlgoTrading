@@ -125,8 +125,6 @@ class z_score_reversal_strategy(Strategy):
             return
 
         # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Skip if standard deviation is zero (avoid division by zero)
         if std_dev_value == 0:

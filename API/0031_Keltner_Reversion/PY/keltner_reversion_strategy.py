@@ -56,8 +56,6 @@ class keltner_reversion_strategy(Strategy):
     def _process_candle(self, candle, ema_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown > 0:
             self._cooldown -= 1

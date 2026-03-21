@@ -59,8 +59,6 @@ class color_metro_xrsx_strategy(Strategy):
     def process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         f = float(fast_val)
         s = float(slow_val)

@@ -63,9 +63,6 @@ class kprm_st_cross_strategy(Strategy):
         if not stoch_result.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         k = stoch_result.K
         d = stoch_result.D
         if k is None or d is None:

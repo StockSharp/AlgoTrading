@@ -56,8 +56,6 @@ class nq_phantom_scalper_pro_strategy(Strategy):
     def OnProcess(self, candle, vwap_val, atr_val, std_val, trend_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if atr_val <= 0 or std_val <= 0:
             return
 

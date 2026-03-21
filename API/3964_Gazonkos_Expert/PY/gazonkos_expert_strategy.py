@@ -86,9 +86,6 @@ class gazonkos_expert_strategy(Strategy):
         while len(self._close_history) > capacity:
             self._close_history.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         t1 = self._t1_shift.Value
         t2 = self._t2_shift.Value
         if len(self._close_history) - 1 - t1 < 0 or len(self._close_history) - 1 - t2 < 0:

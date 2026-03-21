@@ -56,8 +56,6 @@ class ma_crossover_tp_sl_5_ema_filter_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val, ema_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         f = float(fast_val)
         s = float(slow_val)
         if not self._initialized:

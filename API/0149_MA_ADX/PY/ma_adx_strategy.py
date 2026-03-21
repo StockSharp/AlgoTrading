@@ -90,9 +90,6 @@ class ma_adx_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         close = float(candle.ClosePrice)

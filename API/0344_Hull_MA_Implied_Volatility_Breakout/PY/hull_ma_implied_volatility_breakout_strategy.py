@@ -75,9 +75,6 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         hma_value = float(hma_val)
         atr_value = float(atr_val)
         self._current_atr = atr_value

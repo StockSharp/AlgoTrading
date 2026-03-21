@@ -101,8 +101,6 @@ class vwap_williams_r_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Store previous value to detect changes
         previous_williams_r = self._previous_williams_r

@@ -61,8 +61,6 @@ class ma2_cci_ema_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val, cci_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         f = float(fast_val)
         s = float(slow_val)
         c = float(cci_val)

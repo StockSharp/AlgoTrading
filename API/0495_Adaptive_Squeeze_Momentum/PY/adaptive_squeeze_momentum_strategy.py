@@ -95,8 +95,6 @@ class adaptive_squeeze_momentum_strategy(Strategy):
     def OnProcess(self, candle, bb_value, kc_value, mom_value, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if bb_value.IsEmpty or kc_value.IsEmpty or mom_value.IsEmpty or ema_value.IsEmpty or atr_value.IsEmpty:
             return
         bb = bb_value

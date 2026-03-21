@@ -64,8 +64,6 @@ class p_channel_system_strategy(Strategy):
     def process_candle(self, candle, high_val, low_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         high_val = float(high_val)
         low_val = float(low_val)
         shift = int(self.shift)

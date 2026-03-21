@@ -54,9 +54,6 @@ class overnight_gap_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         open_price = float(candle.OpenPrice)
         ma = float(ma_val)

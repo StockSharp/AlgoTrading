@@ -61,8 +61,6 @@ class low_vol_reversion_strategy(Strategy):
     def _process_candle(self, candle, sma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         sv = float(sma_val)
         av = float(atr_val)

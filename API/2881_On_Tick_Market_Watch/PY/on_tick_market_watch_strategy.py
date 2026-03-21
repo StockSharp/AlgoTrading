@@ -44,8 +44,6 @@ class on_tick_market_watch_strategy(Strategy):
     def _on_process(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         ev = float(ema_value)
         if close > ev and self.Position <= 0:

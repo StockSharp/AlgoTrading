@@ -82,9 +82,6 @@ class ais1_trading_robot_strategy(Strategy):
                 if close <= self._entry_price - take_distance or close >= self._entry_price + stop_distance:
                     self.BuyMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry: breakout above/below EMA
         if self.Position == 0:
             if close > ema_val + atr_val * 1.5:

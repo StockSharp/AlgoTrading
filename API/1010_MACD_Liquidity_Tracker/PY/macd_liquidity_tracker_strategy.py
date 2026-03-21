@@ -52,8 +52,6 @@ class macd_liquidity_tracker_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast_val)
         slow = float(slow_val)
         if fast == 0 or slow == 0:

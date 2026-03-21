@@ -70,9 +70,6 @@ class atr_macd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if macd_iv.Macd is None or macd_iv.Signal is None:
             return
 

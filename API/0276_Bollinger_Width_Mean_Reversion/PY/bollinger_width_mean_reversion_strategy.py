@@ -193,8 +193,6 @@ class bollinger_width_mean_reversion_strategy(Strategy):
             self._lastWidthStdDev = float(widthStdDev)
 
             # Check if strategy is ready to trade
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
 
             # Calculate thresholds
             lowerThreshold = self._lastWidthAvg - self.WidthDeviationMultiplier * self._lastWidthStdDev

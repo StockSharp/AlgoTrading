@@ -64,9 +64,6 @@ class ma_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         sma = float(sma_val)
         vol = float(candle.TotalVolume)

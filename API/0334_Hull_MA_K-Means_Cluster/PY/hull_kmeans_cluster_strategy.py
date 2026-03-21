@@ -134,8 +134,6 @@ class hull_kmeans_cluster_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Update feature data for clustering
         self.UpdateFeatureData(candle, rsi_value)

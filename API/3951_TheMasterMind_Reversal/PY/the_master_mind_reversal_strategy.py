@@ -101,9 +101,6 @@ class the_master_mind_reversal_strategy(Strategy):
         if williams_value is None:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         buy_threshold = float(self.StochasticBuyThreshold)
         sell_threshold = float(self.StochasticSellThreshold)
         williams_buy = float(self.WilliamsBuyLevel)

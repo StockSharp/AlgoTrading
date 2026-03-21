@@ -56,8 +56,6 @@ class eighty_twenty_strategy(Strategy):
     def _process_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1

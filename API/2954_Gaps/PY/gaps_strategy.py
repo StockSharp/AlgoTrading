@@ -60,9 +60,6 @@ class gaps_strategy(Strategy):
         if prev_close == 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         gap_pct = (open_price - prev_close) / prev_close * 100.0
         gp = float(self.GapPercent)
 

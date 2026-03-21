@@ -81,8 +81,6 @@ class bollinger_rsi_strategy(Strategy):
     def OnProcess(self, candle, bollinger_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         bb = bollinger_value
         if bb.UpBand is None or bb.LowBand is None or bb.MovingAverage is None:
             return

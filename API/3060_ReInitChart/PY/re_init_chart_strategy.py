@@ -44,8 +44,6 @@ class re_init_chart_strategy(Strategy):
     def OnProcess(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = candle.ClosePrice
         if close > sma_val:

@@ -54,8 +54,6 @@ class gpf_tcp_pivot_limit_strategy(Strategy):
     def _process_candle(self, candle, highest_val, lowest_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         h = float(highest_val)

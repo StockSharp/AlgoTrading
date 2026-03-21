@@ -147,8 +147,6 @@ class cci_with_volatility_filter_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check volatility - only trade in low volatility environment
         isLowVolatility = atrValue < atrAvg

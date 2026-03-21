@@ -143,9 +143,6 @@ class vortex_indicator_duplex_strategy(Strategy):
         if not self._long_vortex.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         pair = self._try_get_history_pair(self._long_history, self.LongSignalBar)
         if pair is None:
             return
@@ -186,9 +183,6 @@ class vortex_indicator_duplex_strategy(Strategy):
             self._short_history.pop(0)
 
         if not self._short_vortex.IsFormed:
-            return
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         pair = self._try_get_history_pair(self._short_history, self.ShortSignalBar)

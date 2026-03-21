@@ -52,8 +52,6 @@ class caudate_x_period_candle_tm_plus_strategy(Strategy):
     def _on_process(self, candle, atr_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         av = float(atr_value)
         if av <= 0:
             return

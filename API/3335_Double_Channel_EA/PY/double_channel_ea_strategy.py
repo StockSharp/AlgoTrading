@@ -51,8 +51,6 @@ class double_channel_ea_strategy(Strategy):
     def _process_candle(self, candle, bb_val, ema_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if ema_val.IsEmpty:
             return

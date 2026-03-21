@@ -50,9 +50,6 @@ class gc_with_trend_filter_and_sudden_move_profit_taking_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         fast = float(fast_val)
         slow = float(slow_val)
 

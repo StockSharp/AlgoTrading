@@ -73,8 +73,6 @@ class rsi_bollinger_bands_strategy(Strategy):
     def process_candle(self, candle, rsi_value, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if not rsi_value.IsFormed:
             return

@@ -111,9 +111,6 @@ class volatility_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Save values for the next candle
         current_sma = sma_value
         current_atr = atr_value

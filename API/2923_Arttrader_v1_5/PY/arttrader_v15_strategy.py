@@ -79,8 +79,6 @@ class arttrader_v15_strategy(Strategy):
     def _on_trade_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if not self._has_previous_ema:
             return
         ema_slope = self._current_ema - self._previous_ema

@@ -70,8 +70,6 @@ class backbone_basket_strategy(Strategy):
     def OnProcess(self, candle, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if atr_value <= 0:
             return
 

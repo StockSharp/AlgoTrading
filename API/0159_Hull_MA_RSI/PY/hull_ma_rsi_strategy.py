@@ -74,8 +74,6 @@ class hull_ma_rsi_strategy(Strategy):
     def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._hma_value == 0:
             return
 

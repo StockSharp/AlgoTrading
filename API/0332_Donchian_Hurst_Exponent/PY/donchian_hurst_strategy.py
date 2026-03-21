@@ -121,9 +121,6 @@ class donchian_hurst_strategy(Strategy):
         fractal_dim = float(fractal_dimension_value)
         self._hurst_value = 2.0 - fractal_dim
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if donchian_value.UpperBand is None or donchian_value.LowerBand is None or donchian_value.Middle is None:
             return
 

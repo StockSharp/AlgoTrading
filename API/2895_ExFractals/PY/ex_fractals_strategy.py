@@ -125,9 +125,6 @@ class ex_fractals_strategy(Strategy):
         if len(self._body_queue) > self.ExPeriod:
             self._body_sum -= self._body_queue.popleft()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ex_vol = None
         if len(self._body_queue) >= self.ExPeriod:
             ex_vol = self._body_sum / self.ExPeriod

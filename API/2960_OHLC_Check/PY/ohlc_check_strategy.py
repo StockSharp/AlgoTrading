@@ -49,8 +49,6 @@ class ohlc_check_strategy(Strategy):
     def _on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         open_price = float(candle.OpenPrice)

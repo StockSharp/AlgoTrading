@@ -73,8 +73,6 @@ class spectr_analysis_wpr_strategy(Strategy):
     def process_candle(self, candle, wpr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         wpr_value = float(wpr_value)
         if self._prev is None or self._prev2 is None:
             self._prev2 = self._prev

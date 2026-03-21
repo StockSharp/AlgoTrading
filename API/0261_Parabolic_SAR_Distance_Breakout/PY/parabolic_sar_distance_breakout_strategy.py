@@ -152,8 +152,6 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate distances
         long_distance = 0

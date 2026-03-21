@@ -112,8 +112,6 @@ class vwap_hidden_markov_model_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Update data for HMM
         self.UpdateHmmData(candle)

@@ -81,8 +81,6 @@ class color_bears_gap_strategy(Strategy):
         bulls_o = float(candle.HighPrice) - smooth_open
         xbulls_c = float(self._sma_bulls_c.Process(bulls_c, t, True))
         xbulls_o = float(self._sma_bulls_o.Process(bulls_o, t, True))
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self._is_first:
             self._prev_xbulls_c = xbulls_c
             self._is_first = False

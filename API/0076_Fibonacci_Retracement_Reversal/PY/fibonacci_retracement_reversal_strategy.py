@@ -71,9 +71,6 @@ class fibonacci_retracement_reversal_strategy(Strategy):
             self._highs.pop(0)
             self._lows.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._highs) < lb:
             return
 

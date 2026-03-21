@@ -113,9 +113,6 @@ class r_point250_strategy(Strategy):
             if self._best_long_price is None or high_price > self._best_long_price:
                 self._best_long_price = high_price
 
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
-
             if (self._trailing_distance > 0 and self._best_long_price is not None
                     and self._best_long_price - low_price >= self._trailing_distance):
                 self.SellMarket(self.Position)
@@ -131,9 +128,6 @@ class r_point250_strategy(Strategy):
             if self._best_short_price is None or low_price < self._best_short_price:
                 self._best_short_price = low_price
 
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
-
             if (self._trailing_distance > 0 and self._best_short_price is not None
                     and high_price - self._best_short_price >= self._trailing_distance):
                 self.BuyMarket(-self.Position)
@@ -147,9 +141,6 @@ class r_point250_strategy(Strategy):
         else:
             self._best_long_price = None
             self._best_short_price = None
-
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
 
             ov = float(self.OrderVolume)
             if ov <= 0:

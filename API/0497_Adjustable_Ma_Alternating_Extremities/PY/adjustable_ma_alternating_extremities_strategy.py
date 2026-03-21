@@ -62,8 +62,6 @@ class adjustable_ma_alternating_extremities_strategy(Strategy):
     def OnProcess(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         bb = bb_value
         upper = bb.UpBand
         lower = bb.LowBand

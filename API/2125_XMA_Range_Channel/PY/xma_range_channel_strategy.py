@@ -54,8 +54,6 @@ class xma_range_channel_strategy(Strategy):
         lower_result = self._low_ma.Process(low_input)
         if not self._high_ma.IsFormed or not self._low_ma.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         upper = float(upper_result)
         lower = float(lower_result)
         close = float(candle.ClosePrice)

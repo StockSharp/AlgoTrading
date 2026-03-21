@@ -74,8 +74,6 @@ class advanced_position_management_strategy(Strategy):
     def OnProcess(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast_val)
         slow = float(slow_val)
         close = float(candle.ClosePrice)

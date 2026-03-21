@@ -77,10 +77,6 @@ class early_top_prorate_v1_strategy(Strategy):
             if (fv > sv and self._prev_fast <= self._prev_slow) or close >= self._entry_price + av * 1.5:
                 self.BuyMarket()
                 self._entry_price = 0.0
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
         if self.Position == 0:
             if fv > sv and self._prev_fast <= self._prev_slow and rv > 55:
                 self._entry_price = close

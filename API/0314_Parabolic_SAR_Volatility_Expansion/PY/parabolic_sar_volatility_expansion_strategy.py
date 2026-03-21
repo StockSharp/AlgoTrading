@@ -146,8 +146,6 @@ class parabolic_sar_volatility_expansion_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check if volatility is expanding
         volatility_threshold = atr_avg + (self.VolatilityExpansionFactor * atr_std_dev)

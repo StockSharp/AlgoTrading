@@ -62,9 +62,6 @@ class stochastic_failure_swing_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         k_val = stoch_iv.K
         if k_val is None:
             return

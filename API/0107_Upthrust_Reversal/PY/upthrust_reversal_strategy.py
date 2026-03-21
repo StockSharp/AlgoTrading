@@ -60,9 +60,6 @@ class upthrust_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         lookback = self._lookback_period.Value
 
         self._highs.append(float(candle.HighPrice))

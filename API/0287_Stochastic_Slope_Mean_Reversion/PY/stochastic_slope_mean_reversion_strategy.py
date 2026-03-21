@@ -169,9 +169,6 @@ class stochastic_slope_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if stoch_value.K is None:
             return
 

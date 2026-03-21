@@ -191,8 +191,6 @@ class delta_neutral_arbitrage_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate the spread
         self._current_spread = self._last_asset1_price - self._last_asset2_price

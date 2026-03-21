@@ -50,8 +50,6 @@ class martingale_with_macd_kdj_opening_conditions_strategy(Strategy):
     def _process_candle(self, candle, macd_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         macd = float(macd_val)
         if not self._has_prev:
             self._prev_macd = macd

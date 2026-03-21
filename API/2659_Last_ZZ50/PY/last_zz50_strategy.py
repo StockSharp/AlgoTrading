@@ -72,8 +72,6 @@ class last_zz50_strategy(Strategy):
 
         if len(self._pivots) < 3:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         b = self._pivots[-2]
         c = self._pivots[-3]

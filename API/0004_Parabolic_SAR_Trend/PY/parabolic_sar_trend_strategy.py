@@ -51,8 +51,6 @@ class parabolic_sar_trend_strategy(Strategy):
     def _process_candle(self, candle, sar_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         sv = float(sar_val)
         if sv <= 0:
@@ -62,10 +60,11 @@ class parabolic_sar_trend_strategy(Strategy):
         is_entry_signal = self._prev_sar_value > 0 and is_price_above_sar != self._prev_is_price_above_sar
 
         if is_entry_signal:
+            vol = self.Volume + abs(self.Position)
             if is_price_above_sar and self.Position <= 0:
-                self.BuyMarket()
+                self.BuyMarket(vol)
             elif not is_price_above_sar and self.Position >= 0:
-                self.SellMarket()
+                self.SellMarket(vol)
 
         self._prev_sar_value = sv
         self._prev_is_price_above_sar = is_price_above_sar

@@ -77,8 +77,6 @@ class ema_wma_crossover_strategy(Strategy):
     def _process_candle(self, candle, ema_val, wma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         ema_val = float(ema_val)
         wma_val = float(wma_val)

@@ -50,8 +50,6 @@ class martingail_expert_sequence_strategy(Strategy):
     def _process_candle(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         k_val = stoch_value.K
         d_val = stoch_value.D
         if k_val is None or d_val is None:

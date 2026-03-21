@@ -66,8 +66,6 @@ class bollinger_adx_strategy(Strategy):
     def ProcessCandle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

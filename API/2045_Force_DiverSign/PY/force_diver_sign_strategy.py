@@ -101,9 +101,6 @@ class force_diver_sign_strategy(Strategy):
             self._count += 1
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         sell_signal = (self._opens[3] < self._closes[3] and
                        self._opens[2] > self._closes[2] and
                        self._opens[1] < self._closes[1] and

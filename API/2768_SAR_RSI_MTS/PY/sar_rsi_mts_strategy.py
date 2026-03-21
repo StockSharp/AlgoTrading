@@ -82,11 +82,6 @@ class sar_rsi_mts_strategy(Strategy):
             self._prev_rsi = rsi_val
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_sar = sar_val
-            self._prev_rsi = rsi_val
-            return
-
         prev_sar = self._prev_sar
         prev_rsi = self._prev_rsi
 

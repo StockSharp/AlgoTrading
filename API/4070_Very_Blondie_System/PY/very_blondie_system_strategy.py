@@ -58,9 +58,6 @@ class very_blondie_system_strategy(Strategy):
         elif self.Position < 0 and close <= sma_val:
             self.BuyMarket()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Entry: at channel extremes
         if self.Position == 0:
             if position_pct < 0.15:

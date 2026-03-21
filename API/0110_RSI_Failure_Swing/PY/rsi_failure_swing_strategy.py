@@ -60,9 +60,6 @@ class rsi_failure_swing_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         rv = float(rsi_val)
 
         # Need at least 2 previous RSI values

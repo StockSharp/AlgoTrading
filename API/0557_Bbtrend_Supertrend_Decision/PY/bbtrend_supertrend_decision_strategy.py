@@ -66,7 +66,7 @@ class bbtrend_supertrend_decision_strategy(Strategy):
         long_bb.Length = self.long_bb_length
         long_bb.Width = self.std_dev
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx([short_bb, long_bb], self.OnProcess).Start()
+        subscription.BindEx(short_bb, long_bb, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -74,12 +74,9 @@ class bbtrend_supertrend_decision_strategy(Strategy):
             self.DrawIndicator(area, long_bb)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, values):
+    def OnProcess(self, candle, short_bb_val, long_bb_val):
         if candle.State != CandleStates.Finished:
             return
-
-        short_bb_val = values[0]
-        long_bb_val = values[1]
 
         short_upper = short_bb_val.UpBand
         short_lower = short_bb_val.LowBand

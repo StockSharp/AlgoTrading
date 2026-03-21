@@ -50,8 +50,6 @@ class pipsover8167_strategy(Strategy):
     def ProcessCandle(self, candle, ema):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         ema_val = float(ema)

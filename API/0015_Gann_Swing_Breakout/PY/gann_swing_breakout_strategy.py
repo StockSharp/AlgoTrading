@@ -63,9 +63,6 @@ class gann_swing_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         ma = float(ma_value)
         if ma == 0:
             return
@@ -100,14 +97,10 @@ class gann_swing_breakout_strategy(Strategy):
         self._candles_since_last_trade += 1
 
         if self._candles_since_last_trade >= 10 and close > self._prev_channel_high and close > ma and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._candles_since_last_trade = 0
         elif self._candles_since_last_trade >= 10 and close < self._prev_channel_low and close < ma and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._candles_since_last_trade = 0
 
         self._prev_channel_high = channel_high

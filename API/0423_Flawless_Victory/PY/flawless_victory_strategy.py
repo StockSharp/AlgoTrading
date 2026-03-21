@@ -66,9 +66,6 @@ class flawless_victory_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         upper = bb_value.UpBand
         lower = bb_value.LowBand
         middle = bb_value.MovingAverage

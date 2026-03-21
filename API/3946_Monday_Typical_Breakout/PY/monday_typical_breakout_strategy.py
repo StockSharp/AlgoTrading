@@ -132,9 +132,6 @@ class monday_typical_breakout_strategy(Strategy):
         if previous is None:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position != 0:
             return
 

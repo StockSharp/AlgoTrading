@@ -114,8 +114,6 @@ class regularities_of_exchange_rates_strategy(Strategy):
 
         # Check for breakout entry
         if self._waiting_for_breakout and self.Position == 0 and self._reference_price > 0:
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
 
             offset = float(self.EntryOffsetPoints) * self._point_size
             buy_level = self._reference_price + offset

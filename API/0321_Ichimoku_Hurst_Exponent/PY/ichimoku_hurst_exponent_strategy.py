@@ -168,8 +168,6 @@ class ichimoku_hurst_exponent_strategy(Strategy):
             self.CalculateHurstExponent()
 
         # Continue with position checks
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check if price is above/below Kumo (cloud)
         isPriceAboveKumo = candle.ClosePrice > max(senkou_a, senkou_b)

@@ -152,8 +152,6 @@ class rsi_supertrend_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate Supertrend
         close_price = float(candle.ClosePrice)

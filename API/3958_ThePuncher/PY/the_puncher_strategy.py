@@ -64,9 +64,6 @@ class the_puncher_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Extract %D from stochastic
         stoch_signal = None
         inner = stoch_val.InnerValues

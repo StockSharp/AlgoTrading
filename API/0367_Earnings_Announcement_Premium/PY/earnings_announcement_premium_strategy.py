@@ -98,9 +98,6 @@ class earnings_announcement_premium_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         latest_trend = float(trend_val)
 
         if self._cooldown_remaining > 0:

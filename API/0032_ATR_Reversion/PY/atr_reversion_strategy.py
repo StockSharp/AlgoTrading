@@ -56,8 +56,6 @@ class atr_reversion_strategy(Strategy):
     def _process_candle(self, candle, atr_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
 

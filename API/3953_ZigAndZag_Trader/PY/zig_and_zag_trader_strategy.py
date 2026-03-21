@@ -168,8 +168,6 @@ class zig_and_zag_trader_strategy(Strategy):
                 elif not sc and self._limit_armed:
                     self._limit_armed = False
                 self._sell_armed = False
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         self._execute_signals(buy_signal, sell_signal, close_signal)
 
     def _execute_signals(self, buy_signal, sell_signal, close_signal):

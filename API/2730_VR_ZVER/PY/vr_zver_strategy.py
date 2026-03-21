@@ -182,9 +182,6 @@ class vr_zver_strategy(Strategy):
 
         if self.Position == 0:
             self._reset_state()
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if self.Position != 0:
             return
         if not self.UseMovingAverage and not self.UseStochastic and not self.UseRsi:

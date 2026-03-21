@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
+from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -14,24 +14,39 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
         super(bayesian_bbsma_oscillator_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._bb_period = self.Param("BbSmaPeriod", 20) \
+        self._bb_sma_period = self.Param("BbSmaPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("BB SMA Period", "Bollinger Bands SMA period", "Bollinger Bands")
-        self._bb_width = self.Param("BbStdDevMult", 2.5) \
-            .SetDisplay("BB StdDev Mult", "Bollinger Bands std dev multiplier", "Bollinger Bands")
+        self._bb_std_dev_mult = self.Param("BbStdDevMult", 2.5) \
+            .SetDisplay("BB StdDev Mult", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
+        self._ao_fast = self.Param("AoFast", 5) \
+            .SetGreaterThanZero() \
+            .SetDisplay("AO Fast", "Fast period for Awesome Oscillator", "Oscillators")
+        self._ao_slow = self.Param("AoSlow", 34) \
+            .SetGreaterThanZero() \
+            .SetDisplay("AO Slow", "Slow period for Awesome Oscillator", "Oscillators")
+        self._ac_fast = self.Param("AcFast", 5) \
+            .SetGreaterThanZero() \
+            .SetDisplay("AC Fast", "Smoothing period for Accelerator Oscillator", "Oscillators")
         self._sma_period = self.Param("SmaPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("SMA Period", "Simple moving average period", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 30) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._prev_close_above_upper = 0.0
-        self._prev_close_below_upper = 0.0
-        self._prev_close_above_basis = 0.0
-        self._prev_close_below_basis = 0.0
-        self._prev_close_above_sma = 0.0
-        self._prev_close_below_sma = 0.0
-        self._count = 0
-        self._cooldown_remaining = 0
+        self._bayes_period = self.Param("BayesPeriod", 10) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Bayes Period", "Lookback period for probability calculation", "Bayesian")
+        self._lower_threshold = self.Param("LowerThreshold", 30.0) \
+            .SetDisplay("Lower Threshold", "Probability threshold (%)", "Bayesian")
+        self._use_bw_confirmation = self.Param("UseBwConfirmation", False) \
+            .SetDisplay("Use BW Confirmation", "Require Bill Williams confirmation", "Filters")
+        self._jaw_length = self.Param("JawLength", 13) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Jaw Length", "Alligator jaw SMA length", "Filters")
+
+        self._prev_ao = 0.0
+        self._prev_ac = 0.0
+        self._prev_sigma_probs_up = 0.0
+        self._prev_sigma_probs_down = 0.0
+        self._prev_prob_prime = 0.0
 
     @property
     def candle_type(self):
@@ -41,108 +56,191 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
-
     def OnReseted(self):
         super(bayesian_bbsma_oscillator_strategy, self).OnReseted()
-        self._prev_close_above_upper = 0.0
-        self._prev_close_below_upper = 0.0
-        self._prev_close_above_basis = 0.0
-        self._prev_close_below_basis = 0.0
-        self._prev_close_above_sma = 0.0
-        self._prev_close_below_sma = 0.0
-        self._count = 0
-        self._cooldown_remaining = 0
+        self._prev_ao = 0.0
+        self._prev_ac = 0.0
+        self._prev_sigma_probs_up = 0.0
+        self._prev_sigma_probs_down = 0.0
+        self._prev_prob_prime = 0.0
 
     def OnStarted(self, time):
         super(bayesian_bbsma_oscillator_strategy, self).OnStarted(time)
-        bb = BollingerBands()
-        bb.Length = self._bb_period.Value
-        bb.Width = self._bb_width.Value
-        sma = SimpleMovingAverage()
-        sma.Length = self._sma_period.Value
+
+        self._bb = BollingerBands()
+        self._bb.Length = self._bb_sma_period.Value
+        self._bb.Width = self._bb_std_dev_mult.Value
+
+        self._sma_close = SimpleMovingAverage()
+        self._sma_close.Length = self._sma_period.Value
+
+        self._ao_fast_sma = SimpleMovingAverage()
+        self._ao_fast_sma.Length = self._ao_fast.Value
+
+        self._ao_slow_sma = SimpleMovingAverage()
+        self._ao_slow_sma.Length = self._ao_slow.Value
+
+        self._ac_sma = SimpleMovingAverage()
+        self._ac_sma.Length = self._ac_fast.Value
+
+        self._jaw_sma = SimpleMovingAverage()
+        self._jaw_sma.Length = self._jaw_length.Value
+
+        self._bb_upper_up_sma = SimpleMovingAverage()
+        self._bb_upper_up_sma.Length = self._bayes_period.Value
+
+        self._bb_upper_down_sma = SimpleMovingAverage()
+        self._bb_upper_down_sma.Length = self._bayes_period.Value
+
+        self._bb_basis_up_sma = SimpleMovingAverage()
+        self._bb_basis_up_sma.Length = self._bayes_period.Value
+
+        self._bb_basis_down_sma = SimpleMovingAverage()
+        self._bb_basis_down_sma.Length = self._bayes_period.Value
+
+        self._sma_up_sma = SimpleMovingAverage()
+        self._sma_up_sma.Length = self._bayes_period.Value
+
+        self._sma_down_sma = SimpleMovingAverage()
+        self._sma_down_sma.Length = self._bayes_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bb, sma, self.OnProcess).Start()
+        subscription.BindEx(self._bb, self._process_candle).Start()
+
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, bb)
+            self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, bb_value, sma_value):
+    def _make_iv(self, ind, val, t):
+        iv = DecimalIndicatorValue(ind, val, t)
+        iv.IsFinal = True
+        return iv
+
+    def _process_candle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        bb = bb_value
-        upper = bb.UpBand
-        lower = bb.LowBand
-        basis = bb.MovingAverage
-        if upper is None or lower is None or basis is None:
+
+        bb_upper = bb_value.UpBand
+        bb_lower = bb_value.LowBand
+        bb_basis = bb_value.MovingAverage
+
+        if bb_upper is None or bb_lower is None or bb_basis is None:
             return
-        upper_v = float(upper)
-        basis_v = float(basis)
-        sma_v = float(sma_value.GetValue[float]())
+
+        bb_upper = float(bb_upper)
+        bb_lower = float(bb_lower)
+        bb_basis = float(bb_basis)
+
+        t = candle.ServerTime
         close = float(candle.ClosePrice)
-        alpha = 0.1
-        self._count += 1
-        if close > upper_v:
-            self._prev_close_above_upper = self._prev_close_above_upper * (1 - alpha) + alpha
-        else:
-            self._prev_close_above_upper = self._prev_close_above_upper * (1 - alpha)
-        if close < upper_v:
-            self._prev_close_below_upper = self._prev_close_below_upper * (1 - alpha) + alpha
-        else:
-            self._prev_close_below_upper = self._prev_close_below_upper * (1 - alpha)
-        if close > basis_v:
-            self._prev_close_above_basis = self._prev_close_above_basis * (1 - alpha) + alpha
-        else:
-            self._prev_close_above_basis = self._prev_close_above_basis * (1 - alpha)
-        if close < basis_v:
-            self._prev_close_below_basis = self._prev_close_below_basis * (1 - alpha) + alpha
-        else:
-            self._prev_close_below_basis = self._prev_close_below_basis * (1 - alpha)
-        if close > sma_v:
-            self._prev_close_above_sma = self._prev_close_above_sma * (1 - alpha) + alpha
-        else:
-            self._prev_close_above_sma = self._prev_close_above_sma * (1 - alpha)
-        if close < sma_v:
-            self._prev_close_below_sma = self._prev_close_below_sma * (1 - alpha) + alpha
-        else:
-            self._prev_close_below_sma = self._prev_close_below_sma * (1 - alpha)
-        if self._count < 20:
+        median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
+
+        sma_val = self._sma_close.Process(self._make_iv(self._sma_close, close, t))
+        ao_fast_val = self._ao_fast_sma.Process(self._make_iv(self._ao_fast_sma, median, t))
+        ao_slow_val = self._ao_slow_sma.Process(self._make_iv(self._ao_slow_sma, median, t))
+        jaw_val = self._jaw_sma.Process(self._make_iv(self._jaw_sma, close, t))
+
+        if not ao_slow_val.IsFormed or not sma_val.IsFormed:
             return
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
+
+        sma_close = float(sma_val)
+        ao_fast_v = float(ao_fast_val)
+        ao_slow_v = float(ao_slow_val)
+        jaw = float(jaw_val)
+
+        ao = ao_fast_v - ao_slow_v
+        ao_sma_value = self._ac_sma.Process(self._make_iv(self._ac_sma, ao, t))
+        if not ao_sma_value.IsFormed:
             return
-        s_up = self._prev_close_above_upper + self._prev_close_below_upper
-        s_ba = self._prev_close_above_basis + self._prev_close_below_basis
-        s_sm = self._prev_close_above_sma + self._prev_close_below_sma
-        if s_up == 0 or s_ba == 0 or s_sm == 0:
+
+        ac = ao - float(ao_sma_value)
+
+        ac_is_blue = ac > self._prev_ac
+        ao_is_green = ao > self._prev_ao
+
+        prob_bb_upper_up = float(self._bb_upper_up_sma.Process(
+            self._make_iv(self._bb_upper_up_sma, 1.0 if close > bb_upper else 0.0, t)
+        ))
+
+        prob_bb_upper_down = float(self._bb_upper_down_sma.Process(
+            self._make_iv(self._bb_upper_down_sma, 1.0 if close < bb_upper else 0.0, t)
+        ))
+
+        prob_bb_basis_up = float(self._bb_basis_up_sma.Process(
+            self._make_iv(self._bb_basis_up_sma, 1.0 if close > bb_basis else 0.0, t)
+        ))
+
+        prob_bb_basis_down = float(self._bb_basis_down_sma.Process(
+            self._make_iv(self._bb_basis_down_sma, 1.0 if close < bb_basis else 0.0, t)
+        ))
+
+        prob_sma_up = float(self._sma_up_sma.Process(
+            self._make_iv(self._sma_up_sma, 1.0 if close > sma_close else 0.0, t)
+        ))
+
+        prob_sma_down = float(self._sma_down_sma.Process(
+            self._make_iv(self._sma_down_sma, 1.0 if close < sma_close else 0.0, t)
+        ))
+
+        if not self._bb_upper_up_sma.IsFormed:
             return
-        p_up_u = self._prev_close_above_upper / s_up
-        p_up_b = self._prev_close_above_basis / s_ba
-        p_up_s = self._prev_close_above_sma / s_sm
-        p_dn_u = self._prev_close_below_upper / s_up
-        p_dn_b = self._prev_close_below_basis / s_ba
-        p_dn_s = self._prev_close_below_sma / s_sm
-        num_up = p_dn_u * p_dn_b * p_dn_s
-        den_up = num_up + (1 - p_dn_u) * (1 - p_dn_b) * (1 - p_dn_s)
-        sigma_up = num_up / den_up if den_up != 0 else 0
-        if sigma_up > 0.7 and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+        sum_bb_upper = prob_bb_upper_up + prob_bb_upper_down
+        sum_bb_basis = prob_bb_basis_up + prob_bb_basis_down
+        sum_sma = prob_sma_up + prob_sma_down
+
+        if sum_bb_upper == 0 or sum_bb_basis == 0 or sum_sma == 0:
+            self._prev_ao = ao
+            self._prev_ac = ac
+            return
+
+        p_up_bb_upper = prob_bb_upper_up / sum_bb_upper
+        p_up_bb_basis = prob_bb_basis_up / sum_bb_basis
+        p_up_sma = prob_sma_up / sum_sma
+
+        num_down = p_up_bb_upper * p_up_bb_basis * p_up_sma
+        den_down = num_down + (1.0 - p_up_bb_upper) * (1.0 - p_up_bb_basis) * (1.0 - p_up_sma)
+        sigma_probs_down = num_down / den_down if den_down != 0 else 0.0
+
+        p_down_bb_upper = prob_bb_upper_down / sum_bb_upper
+        p_down_bb_basis = prob_bb_basis_down / sum_bb_basis
+        p_down_sma = prob_sma_down / sum_sma
+
+        num_up = p_down_bb_upper * p_down_bb_basis * p_down_sma
+        den_up = num_up + (1.0 - p_down_bb_upper) * (1.0 - p_down_bb_basis) * (1.0 - p_down_sma)
+        sigma_probs_up = num_up / den_up if den_up != 0 else 0.0
+
+        num_prime = sigma_probs_down * sigma_probs_up
+        den_prime = num_prime + (1.0 - sigma_probs_down) * (1.0 - sigma_probs_up)
+        prob_prime = num_prime / den_prime if den_prime != 0 else 0.0
+
+        threshold = float(self._lower_threshold.Value) / 100.0
+
+        upper_threshold = 1.0 - threshold
+
+        long_signal = (sigma_probs_up > upper_threshold and self._prev_sigma_probs_up <= upper_threshold) or \
+                      (prob_prime > upper_threshold and self._prev_prob_prime <= upper_threshold)
+
+        short_signal = (sigma_probs_down > upper_threshold and self._prev_sigma_probs_down <= upper_threshold) or \
+                       (prob_prime < threshold and self._prev_prob_prime >= threshold)
+
+        if long_signal and self.Position == 0:
             self.BuyMarket()
-            self._cooldown_remaining = self.cooldown_bars
-        elif sigma_up < 0.3 and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+        elif short_signal and self.Position == 0:
             self.SellMarket()
-            self._cooldown_remaining = self.cooldown_bars
+
+        self._prev_ao = ao
+        self._prev_ac = ac
+        self._prev_sigma_probs_up = sigma_probs_up
+        self._prev_sigma_probs_down = sigma_probs_down
+        self._prev_prob_prime = prob_prime
 
     def CreateClone(self):
         return bayesian_bbsma_oscillator_strategy()

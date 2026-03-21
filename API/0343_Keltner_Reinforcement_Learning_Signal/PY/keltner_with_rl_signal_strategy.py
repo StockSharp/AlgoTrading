@@ -157,8 +157,6 @@ class keltner_with_rl_signal_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
 
         upper_band = keltner_value.Upper

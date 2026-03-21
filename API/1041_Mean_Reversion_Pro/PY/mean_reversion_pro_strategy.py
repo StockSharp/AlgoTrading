@@ -44,8 +44,6 @@ class mean_reversion_pro_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast_val)
         slow = float(slow_val)
         close = float(candle.ClosePrice)

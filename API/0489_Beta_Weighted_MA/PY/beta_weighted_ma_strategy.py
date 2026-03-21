@@ -72,8 +72,6 @@ class beta_weighted_ma_strategy(Strategy):
     def OnProcess(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         length = self._length.Value
         self._prices.insert(0, float(candle.ClosePrice))
         if len(self._prices) > length:

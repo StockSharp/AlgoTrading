@@ -83,9 +83,6 @@ class bullish_abandoned_baby_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         self._candle_count += 1
 
         close = float(candle.ClosePrice)

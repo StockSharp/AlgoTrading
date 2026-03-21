@@ -82,11 +82,6 @@ class mare51_shift_crossover_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
-
         if self.Position == 0:
             if fv > sv and self._prev_fast <= self._prev_slow:
                 self._entry_price = close

@@ -55,8 +55,6 @@ class bobnaley_strategy(Strategy):
     def OnProcess(self, candle, ema_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
 

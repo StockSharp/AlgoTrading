@@ -171,8 +171,6 @@ class obv_slope_breakout_strategy(Strategy):
             self._lastSlopeStdDev = float(stdDevValue)
 
             # Check if strategy is ready to trade
-            if not self.IsFormedAndOnlineAndAllowTrading():
-                return
 
             # Calculate breakout thresholds
             upperThreshold = self._lastSlopeAvg + self.Multiplier * self._lastSlopeStdDev

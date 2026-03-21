@@ -212,9 +212,6 @@ class twenty_pips_once_a_day_strategy(Strategy):
             if self._position_direction != 0:
                 self._enforce_session_limits(candle)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         self._try_open_position(candle)
 
     def _add_close_to_history(self, close_price):

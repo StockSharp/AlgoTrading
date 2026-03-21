@@ -74,8 +74,6 @@ class adaptive_kdj_mtf_strategy(Strategy):
     def OnProcess(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if stoch_value.IsEmpty:
             return
         sv = stoch_value

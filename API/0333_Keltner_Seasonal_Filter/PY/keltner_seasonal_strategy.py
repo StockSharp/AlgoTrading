@@ -138,8 +138,6 @@ class keltner_seasonal_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check if we need to update seasonal strength (month changed)
         candle_month = candle.OpenTime.Month

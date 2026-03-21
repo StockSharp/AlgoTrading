@@ -147,9 +147,6 @@ class cyberia_trader_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         macd_typed = macd_val
         adx_typed = adx_val
 

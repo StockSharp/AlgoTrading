@@ -164,8 +164,6 @@ class ichimoku_volume_cluster_strategy(Strategy):
         volume_std_dev_value = float(process_float(self._volume_std_dev, volume, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
 
         # Extract Ichimoku values

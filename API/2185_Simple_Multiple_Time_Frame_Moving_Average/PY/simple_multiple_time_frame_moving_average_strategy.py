@@ -63,11 +63,6 @@ class simple_multiple_time_frame_moving_average_strategy(Strategy):
         f = float(fast)
         s = float(slow)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = f
-            self._prev_slow = s
-            return
-
         if self._prev_fast is not None and self._prev_slow is not None:
             fast_up = f > self._prev_fast
             fast_down = f < self._prev_fast

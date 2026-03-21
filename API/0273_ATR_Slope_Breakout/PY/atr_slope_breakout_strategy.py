@@ -150,8 +150,6 @@ class atr_slope_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get ATR value and track it for stop loss calculations
         atr = float(atr_value)

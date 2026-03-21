@@ -66,9 +66,6 @@ class long_and_short_with_multi_indicators_strategy(Strategy):
 
         self._bars_since_signal += 1
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._bars_since_signal < self._cooldown_bars.Value:
             return
 

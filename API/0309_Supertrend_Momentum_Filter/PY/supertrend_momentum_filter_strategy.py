@@ -122,8 +122,6 @@ class supertrend_momentum_filter_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         is_above_supertrend = candle.ClosePrice > supertrend_value
         is_momentum_rising = momentum_value > self._prev_momentum

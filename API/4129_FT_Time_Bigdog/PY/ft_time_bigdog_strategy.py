@@ -91,9 +91,6 @@ class ft_time_bigdog_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position == 0:
             if close > prev_high:
                 self._entry_price = close

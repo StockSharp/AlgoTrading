@@ -64,8 +64,6 @@ class fib_hurst_breakout_strategy(Strategy):
     def OnProcess(self, candle, hurst_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         hurst_v = float(hurst_val)
         lookback = self._lookback_period.Value
         self._highs.append(float(candle.HighPrice))

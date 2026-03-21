@@ -51,8 +51,6 @@ class rsi_divergence_strategy(Strategy):
     def _process_candle(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         rv = float(rsi_val)
         if rv == 0:
@@ -70,11 +68,11 @@ class rsi_divergence_strategy(Strategy):
 
         # RSI crosses from oversold into neutral zone - buy
         if self._prev_rsi < 30 and rv >= 30 and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = 15
         # RSI crosses from overbought into neutral zone - sell
         elif self._prev_rsi > 70 and rv <= 70 and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = 15
 
         self._prev_rsi = rv

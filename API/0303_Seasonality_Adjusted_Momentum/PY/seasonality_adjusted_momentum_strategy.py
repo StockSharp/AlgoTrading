@@ -142,9 +142,6 @@ class seasonality_adjusted_momentum_strategy(Strategy):
         if not self._momentum.IsFormed or not self._momentum_average.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

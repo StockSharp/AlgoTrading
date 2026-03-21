@@ -43,8 +43,6 @@ class waddah_attar_win_grid_strategy(Strategy):
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         price_step = 0.01
         if self.Security is not None and self.Security.PriceStep is not None and float(self.Security.PriceStep) > 0:

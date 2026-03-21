@@ -212,8 +212,6 @@ class cyberia_trader_adaptive_strategy(Strategy):
             self._apply_reversal_detector()
 
     def _execute_trading_logic(self):
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         allow_buy = not self._disable_buy and not self._block_buy_flag
         allow_sell = not self._disable_sell and not self._block_sell_flag

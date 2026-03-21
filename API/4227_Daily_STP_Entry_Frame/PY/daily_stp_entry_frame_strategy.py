@@ -109,8 +109,6 @@ class daily_stp_entry_frame_strategy(Strategy):
             return
         if self._traded_today or self.Position != 0:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if close > self._prev_day_high:
             self._entry_price = close
             self._long_stop = close - self._sl_offset if self._sl_offset > 0 else None

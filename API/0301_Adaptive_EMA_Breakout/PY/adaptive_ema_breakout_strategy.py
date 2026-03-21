@@ -139,8 +139,6 @@ class adaptive_ema_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Initialize values on first candle
         if self._is_first_candle:

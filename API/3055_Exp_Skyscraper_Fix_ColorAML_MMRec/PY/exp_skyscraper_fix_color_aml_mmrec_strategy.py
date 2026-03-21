@@ -68,8 +68,6 @@ class exp_skyscraper_fix_color_aml_mmrec_strategy(Strategy):
         previous_trend = self._previous_trend
         self._previous_close = float(candle.ClosePrice)
         self._previous_trend = tv
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         if previous_close is None or previous_trend is None:
             return
         crossed_up = previous_close <= previous_trend and float(candle.ClosePrice) > tv

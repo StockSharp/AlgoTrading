@@ -145,8 +145,6 @@ class parabolic_sar_volume_strategy(Strategy):
             return
 
         # Wait until strategy and indicators are ready
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get current price and volume
         currentPrice = float(candle.ClosePrice)

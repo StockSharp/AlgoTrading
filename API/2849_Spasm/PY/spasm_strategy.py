@@ -58,8 +58,6 @@ class spasm_strategy(Strategy):
     def _on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

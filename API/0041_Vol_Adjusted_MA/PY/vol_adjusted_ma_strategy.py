@@ -55,8 +55,6 @@ class vol_adjusted_ma_strategy(Strategy):
     def _process_candle(self, candle, ma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._cooldown > 0:
             self._cooldown -= 1

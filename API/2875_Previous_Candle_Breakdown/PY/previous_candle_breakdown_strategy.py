@@ -55,10 +55,6 @@ class previous_candle_breakdown_strategy(Strategy):
             self._prev_low = l
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = h
-            self._prev_low = l
-            return
         if c > self._prev_high and self.Position <= 0:
             self.BuyMarket()
         elif c < self._prev_low and self.Position >= 0:

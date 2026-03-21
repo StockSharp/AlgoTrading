@@ -59,9 +59,6 @@ class williams_r_hook_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         wv = float(wr_val)
 
         if self._prev_wr is None:

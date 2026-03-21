@@ -141,9 +141,6 @@ class ema_slope_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Calculate EMA slope only if we have previous EMA value
         if self._previousEmaValue != 0:
             # Calculate current slope

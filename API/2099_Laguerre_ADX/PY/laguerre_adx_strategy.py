@@ -113,8 +113,6 @@ class laguerre_adx_strategy(Strategy):
         adx_result = self._adx.Process(candle)
         if not adx_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         plus = adx_result.Dx.Plus
         minus = adx_result.Dx.Minus
@@ -136,12 +134,14 @@ class laguerre_adx_strategy(Strategy):
             return
 
         if self._prev_up <= self._prev_down and up > down and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+
             self.BuyMarket()
+
+
         elif self._prev_up >= self._prev_down and up < down and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+
+
             self.SellMarket()
 
         self._prev_up = up

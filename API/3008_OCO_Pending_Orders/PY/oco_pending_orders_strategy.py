@@ -56,10 +56,6 @@ class oco_pending_orders_strategy(Strategy):
             return
         hv = float(high_value)
         lv = float(low_value)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = hv
-            self._prev_low = lv
-            return
         if self._prev_high is None or self._prev_low is None:
             self._prev_high = hv
             self._prev_low = lv

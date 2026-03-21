@@ -173,8 +173,6 @@ class volatility_adjusted_momentum_strategy(Strategy):
         self._current_index = (self._current_index + 1) % self.LookbackPeriod
 
         # Calculate statistics once we have enough data
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         self.CalculateStatistics()
 

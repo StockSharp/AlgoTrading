@@ -172,8 +172,6 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
             return
 
         # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Check if Stochastic is reversing
         is_reversing_up = stoch_k > self._prev_stoch_k

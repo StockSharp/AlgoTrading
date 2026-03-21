@@ -60,9 +60,6 @@ class open_drive_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         close = float(candle.ClosePrice)
         open_price = float(candle.OpenPrice)
         sma = float(sma_val)

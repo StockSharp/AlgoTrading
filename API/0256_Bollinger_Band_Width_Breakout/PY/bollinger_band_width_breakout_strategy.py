@@ -166,8 +166,6 @@ class bollinger_band_width_breakout_strategy(Strategy):
             return
 
         # Check if trading is allowed
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Bollinger width breakout detection
         if last_width > avg_width * (1.0 + self.Multiplier / 10.0):

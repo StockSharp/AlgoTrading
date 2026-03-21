@@ -67,8 +67,6 @@ class exp_adx_cross_hull_style_strategy(Strategy):
     def process_candle(self, candle, adx_value, fast_hull_value, slow_hull_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         plus_di = adx_value.Dx.Plus
         minus_di = adx_value.Dx.Minus

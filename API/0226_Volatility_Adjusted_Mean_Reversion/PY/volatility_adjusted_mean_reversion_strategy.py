@@ -110,9 +110,6 @@ class volatility_adjusted_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Skip if standard deviation is too small to avoid division by zero
         if std_dev_value < 0.0001:
             return

@@ -140,9 +140,6 @@ class cci_slope_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Calculate CCI slope only if we have previous CCI value
         if self._previous_cci_value != 0:
             # Calculate current slope

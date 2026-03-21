@@ -85,11 +85,6 @@ class ema_rsi_va_cross_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
-
         if self.Position == 0:
             if fv > sv and self._prev_fast <= self._prev_slow and rv > 40 and rv < 70:
                 self._entry_price = close

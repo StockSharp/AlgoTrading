@@ -72,8 +72,6 @@ class adx_cci_ma_strategy(Strategy):
     def OnProcess(self, candle, adx_value, cci_value, ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         adx_typed = adx_value
         adx_ma = adx_typed.MovingAverage
         if adx_ma is None:

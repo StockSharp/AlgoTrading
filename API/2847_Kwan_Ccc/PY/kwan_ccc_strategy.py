@@ -60,8 +60,6 @@ class kwan_ccc_strategy(Strategy):
     def _on_process(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         cv = float(cci_value)
         close = float(candle.ClosePrice)

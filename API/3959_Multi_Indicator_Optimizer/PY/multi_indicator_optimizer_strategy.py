@@ -81,8 +81,6 @@ class multi_indicator_optimizer_strategy(Strategy):
     def _process_candle(self, candle, macd_value, osma_value, ao_value, williams_value, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         macd_typed = macd_value
         cur_macd = macd_typed.Macd
         cur_macd_sig = macd_typed.Signal

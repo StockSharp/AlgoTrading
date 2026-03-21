@@ -140,8 +140,6 @@ class cci_slope_breakout_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Calculate CCI slope
         currentSlope = process_float(

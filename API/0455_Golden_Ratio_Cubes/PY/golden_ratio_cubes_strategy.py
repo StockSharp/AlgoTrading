@@ -62,9 +62,6 @@ class golden_ratio_cubes_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         upper = bb_value.UpBand
         lower = bb_value.LowBand
         mid = bb_value.MovingAverage

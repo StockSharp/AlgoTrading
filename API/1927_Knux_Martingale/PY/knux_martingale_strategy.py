@@ -117,9 +117,6 @@ class knux_martingale_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         sma_val = float(sma_value)
 
         if self._bars_since_exit < self.CooldownBars:

@@ -67,10 +67,6 @@ class silver_trend_crazy_chart_strategy(Strategy):
             self._prev_low = lv
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = hv
-            self._prev_low = lv
-            return
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)
         mid = (hv + lv) / 2.0

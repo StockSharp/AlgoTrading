@@ -79,9 +79,6 @@ class hull_ma_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         hv = float(hull_value)
 
         if self._prev_hull_value == 0:

@@ -99,8 +99,6 @@ class volatile_action_strategy(Strategy):
         if (not atr1_val.IsFormed or not atr_base_val.IsFormed or
                 not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed):
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         atr1 = float(atr1_val.ToDecimal())
         atr_base = float(atr_base_val.ToDecimal())

@@ -64,8 +64,6 @@ class magic_wand_stsm_strategy(Strategy):
     def _process_candle(self, candle, atr_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         atr = float(atr_val)
         sma = float(sma_val)
         high = float(candle.HighPrice)

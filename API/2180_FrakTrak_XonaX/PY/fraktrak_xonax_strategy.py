@@ -43,8 +43,6 @@ class fraktrak_xonax_strategy(Strategy):
     def _process_candle(self, candle, *args):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         # Trading logic placeholder
         pass
 

@@ -51,8 +51,6 @@ class momentum_percentage_strategy(Strategy):
     def _process_candle(self, candle, mom_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         mom = float(mom_val)
         sma = float(sma_val)
         if sma == 0:
@@ -67,10 +65,10 @@ class momentum_percentage_strategy(Strategy):
             return
         price = float(candle.ClosePrice)
         if self._prev_mom <= 0 and mom > 0 and price > sma and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = 30
         elif self._prev_mom >= 0 and mom < 0 and price < sma and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = 30
         self._prev_mom = mom
 

@@ -7,16 +7,14 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class volume_support_resistance_zones_strategy(Strategy):
     """EMA crossover (120/450) for support/resistance zone breakout signals."""
     def __init__(self):
         super(volume_support_resistance_zones_strategy, self).__init__()
-        self._fast_period = self.Param("FastEmaPeriod", 120).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowEmaPeriod", 450).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._fast_period = self.Param("FastEmaPeriod", 120).SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
+        self._slow_period = self.Param("SlowEmaPeriod", 450).SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

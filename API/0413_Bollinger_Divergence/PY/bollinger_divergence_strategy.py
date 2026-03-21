@@ -66,11 +66,6 @@ class bollinger_divergence_strategy(Strategy):
         lower_band = float(bb.LowBand)
         middle_band = float(bb.MovingAverage)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_upper_band = upper_band
-            self._prev_lower_band = lower_band
-            return
-
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_upper_band = upper_band

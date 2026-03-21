@@ -73,10 +73,6 @@ class bollinger_band_two_ma_zig_zag_strategy(Strategy):
             self._prev_slow = sv
             self._has_prev = True
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
         close = float(candle.ClosePrice)
         bullish_cross = self._prev_fast <= self._prev_slow and fv > sv
         bearish_cross = self._prev_fast >= self._prev_slow and fv < sv

@@ -119,9 +119,6 @@ class ultra_wpr_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         wpr_val = float(wpr_value)
 
         fast = float(self._fast_ma.Process(

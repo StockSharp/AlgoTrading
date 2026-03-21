@@ -68,9 +68,6 @@ class autotrader_momentum_strategy(Strategy):
         if len(self._close_history) > max_count:
             self._close_history.pop(0)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown_left > 0:
             return
 

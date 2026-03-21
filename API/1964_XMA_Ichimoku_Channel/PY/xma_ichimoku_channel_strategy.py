@@ -102,9 +102,6 @@ class xma_ichimoku_channel_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         self._highs.append(float(candle.HighPrice))
         if len(self._highs) > self.UpPeriod:
             self._highs.popleft()

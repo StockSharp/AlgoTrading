@@ -149,8 +149,6 @@ class donchian_width_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract upper and lower bands from the indicator value
         if donchian_value.UpperBand is None or donchian_value.LowerBand is None:

@@ -52,8 +52,6 @@ class e_keyboard_trader_strategy(Strategy):
     def _process_candle(self, candle, cci_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         cci_val = float(cci_val)
 

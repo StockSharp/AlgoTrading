@@ -72,9 +72,6 @@ class grid_trading_at_volatile_market_strategy(Strategy):
         while len(self._sma_queue) > sma_period:
             self._sma_sum -= self._sma_queue.popleft()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if len(self._sma_queue) < sma_period:
             return
 

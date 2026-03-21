@@ -75,10 +75,6 @@ class xwami_multi_layer_mmrec_strategy(Strategy):
         fv = float(fast_value)
         mv = float(mid_value)
         sv = float(slow_value)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_mid = mv
-            return
         if self._prev_fast is None or self._prev_mid is None:
             self._prev_fast = fv
             self._prev_mid = mv

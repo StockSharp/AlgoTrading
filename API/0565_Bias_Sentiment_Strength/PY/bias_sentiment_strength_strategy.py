@@ -3,11 +3,11 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (MovingAverageConvergenceDivergenceSignal,
     RelativeStrengthIndex, StochasticOscillator, AwesomeOscillator,
-    VolumeWeightedMovingAverage, SimpleMovingAverage, SmoothedMovingAverage)
+    VolumeWeightedMovingAverage, SimpleMovingAverage, SmoothedMovingAverage, IIndicator)
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -69,7 +69,8 @@ class bias_sentiment_strength_strategy(Strategy):
         lips = SmoothedMovingAverage()
         lips.Length = 5
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx([macd, rsi, stoch, ao, vwma, sma, jaw, teeth, lips], self.OnProcess).Start()
+        indicators = Array[IIndicator]([macd, rsi, stoch, ao, vwma, sma, jaw, teeth, lips])
+        subscription.BindEx(indicators, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -78,18 +79,18 @@ class bias_sentiment_strength_strategy(Strategy):
     def OnProcess(self, candle, values):
         if candle.State != CandleStates.Finished:
             return
-        if len(values) < 9:
+        if values.Length < 9:
             return
-        for v in values:
-            if v is None or not v.IsFinal:
+        for i in range(values.Length):
+            if values[i] is None or not values[i].IsFinal:
                 return
         try:
             macd_val = values[0]
-            macd_line = macd_val.Macd if macd_val.Macd is not None else 0.0
-            signal_line = macd_val.Signal if macd_val.Signal is not None else 0.0
-            macd_hist = (float(macd_line) - float(signal_line)) * 2.0
+            macd_line = float(macd_val.Macd) if macd_val.Macd is not None else 0.0
+            signal_line = float(macd_val.Signal) if macd_val.Signal is not None else 0.0
+            macd_hist = (macd_line - signal_line) * 2.0
 
-            rsi = float(values[1].ToDecimal())
+            rsi = float(values[1])
             rsi_hist = (rsi - 50.0) / 5.0
 
             stoch_val = values[2]
@@ -99,15 +100,15 @@ class bias_sentiment_strength_strategy(Strategy):
                 return
             stoch_hist = ((float(stoch_k_val) - float(stoch_d_val)) / 10.0) * 1.5
 
-            ao_val = float(values[3].ToDecimal()) * 0.6
+            ao_val = float(values[3]) * 0.6
 
-            vwma_val = float(values[4].ToDecimal())
-            sma_val = float(values[5].ToDecimal())
+            vwma_val = float(values[4])
+            sma_val = float(values[5])
             volume_hist = vwma_val - sma_val
 
-            jaw_val = float(values[6].ToDecimal())
-            teeth_val = float(values[7].ToDecimal())
-            lips_val = float(values[8].ToDecimal())
+            jaw_val = float(values[6])
+            teeth_val = float(values[7])
+            lips_val = float(values[8])
             gator_hist = (lips_val - teeth_val) + (teeth_val - jaw_val)
         except Exception:
             return

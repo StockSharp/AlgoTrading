@@ -80,11 +80,6 @@ class imacd_sniper_strategy(Strategy):
         ema = float(IndicatorHelper.ToDecimal(ema_value))
         close = float(candle.ClosePrice)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_macd = macd
-            self._prev_signal = signal
-            return
-
         macd_delta = abs(macd - signal)
         delta_min = self._macd_delta_min.Value
 

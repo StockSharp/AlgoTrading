@@ -56,8 +56,6 @@ class average_candle_cross_strategy(Strategy):
     def OnProcess(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self._has_prev:
             if self._prev_close <= self._prev_sma and candle.ClosePrice > sma_value and self.Position <= 0:

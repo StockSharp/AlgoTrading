@@ -59,8 +59,6 @@ class moving_regression_strategy(Strategy):
             self._prices = self._prices[-win:]
         if len(self._prices) < win:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         slope = self._calc_slope(self._prices)
         slope_pct = slope / close * 100.0 if close != 0 else 0.0
         threshold = float(self._slope_threshold.Value) * (1.0 + self._degree.Value * 0.05)

@@ -56,8 +56,6 @@ class murrey_bband_stochastic_strategy(Strategy):
     def _process_candle(self, candle, high_value, low_value, bb_value, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         n_high = float(high_value.ToDecimal())
         n_low = float(low_value.ToDecimal())
         rng = n_high - n_low

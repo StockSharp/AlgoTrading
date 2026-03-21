@@ -100,9 +100,6 @@ class master_mind2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if not stochastic_value.IsFinal or not williams_value.IsFinal:
             return
 

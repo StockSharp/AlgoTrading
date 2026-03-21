@@ -147,8 +147,6 @@ class volatility_mean_reversion_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Extract ATR value
         currentAtr = float(atrValue)

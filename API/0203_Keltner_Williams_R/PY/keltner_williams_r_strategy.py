@@ -125,8 +125,6 @@ class keltner_williams_r_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         upper = keltner_value.Upper
         lower = keltner_value.Lower

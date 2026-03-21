@@ -90,8 +90,6 @@ class coin_flip_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         close = float(candle.ClosePrice)
         tp = int(self.take_profit)
         sl = int(self.stop_loss)

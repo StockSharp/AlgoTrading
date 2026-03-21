@@ -100,9 +100,6 @@ class fisher_cyber_cycle_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._bars_since_trade < self.CooldownBars:
             self._bars_since_trade += 1
 

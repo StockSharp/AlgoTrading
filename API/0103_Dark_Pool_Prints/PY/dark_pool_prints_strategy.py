@@ -58,9 +58,6 @@ class dark_pool_prints_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         lookback = self._volume_lookback.Value
 
         # Track volume history

@@ -165,8 +165,6 @@ class supertrend_stochastic_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Get indicator values
         supertrend_line = float(supertrend_value)

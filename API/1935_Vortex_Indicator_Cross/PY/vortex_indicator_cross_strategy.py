@@ -99,9 +99,6 @@ class vortex_indicator_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         plus_raw = vortex_value.PlusVi
         minus_raw = vortex_value.MinusVi
         if plus_raw is None or minus_raw is None:

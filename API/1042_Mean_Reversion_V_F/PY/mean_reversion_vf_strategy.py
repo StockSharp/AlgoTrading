@@ -52,8 +52,6 @@ class mean_reversion_vf_strategy(Strategy):
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         ma = float(ma_val)
         if ma == 0:
             return

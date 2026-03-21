@@ -53,8 +53,6 @@ class hawaiian_tsunami_surfer_strategy(Strategy):
     def process_candle(self, candle, momentum_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         mom = float(momentum_value)

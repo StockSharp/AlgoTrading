@@ -84,9 +84,6 @@ class day_trading_indicator_fusion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         macd_typed = macd_value
         macd_v = float(macd_typed.Macd) if macd_typed.Macd is not None else None
         macd_signal = float(macd_typed.Signal) if macd_typed.Signal is not None else None

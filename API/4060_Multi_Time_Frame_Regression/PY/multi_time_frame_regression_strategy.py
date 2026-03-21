@@ -50,8 +50,6 @@ class multi_time_frame_regression_strategy(Strategy):
     def _process_candle(self, candle, lr_val, high_val, low_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         lr = float(lr_val)
         h = float(high_val)
         l = float(low_val)

@@ -65,9 +65,6 @@ class the_master_mind_2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         # Extract %D from stochastic
         signal = None
         inner = stoch_val.InnerValues

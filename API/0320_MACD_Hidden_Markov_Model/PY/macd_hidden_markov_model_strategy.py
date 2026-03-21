@@ -143,8 +143,6 @@ class macd_hidden_markov_model_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Update HMM data
         self.UpdateHmmData(candle)

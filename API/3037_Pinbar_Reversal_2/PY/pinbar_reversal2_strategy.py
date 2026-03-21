@@ -60,10 +60,6 @@ class pinbar_reversal2_strategy(Strategy):
             return
         fv = float(fast_value)
         sv = float(slow_value)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = fv
-            self._prev_slow = sv
-            return
         if self._prev_fast is None or self._prev_slow is None:
             self._prev_fast = fv
             self._prev_slow = sv

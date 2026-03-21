@@ -67,8 +67,6 @@ class jma_candle_sign_strategy(Strategy):
         close_result = self._jma_close.Process(close_input)
         if not open_result.IsFormed or not close_result.IsFormed:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         open_jma = float(open_result)
         close_jma = float(close_result)
         if not self._has_prev:

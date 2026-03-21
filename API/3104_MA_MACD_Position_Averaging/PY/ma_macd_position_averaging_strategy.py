@@ -51,10 +51,6 @@ class ma_macd_position_averaging_strategy(Strategy):
             return
         f = float(fast_val)
         s = float(slow_val)
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = f
-            self._prev_slow = s
-            return
         if self._cooldown > 0:
             self._cooldown -= 1
             self._prev_fast = f

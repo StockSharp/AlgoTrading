@@ -116,9 +116,6 @@ class supertrend_rsi_divergence_strategy(Strategy):
         if self.Position != 0:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if float(candle.ClosePrice) > self._supertrend_value and rsi < 60.0:
             self.BuyMarket()
         elif float(candle.ClosePrice) < self._supertrend_value and rsi > 40.0:

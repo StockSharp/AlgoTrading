@@ -58,9 +58,6 @@ class bollinger_band_reversal_strategy(Strategy):
         if not bb_value.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

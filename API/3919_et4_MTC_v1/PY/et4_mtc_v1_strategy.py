@@ -53,8 +53,6 @@ class et4_mtc_v1_strategy(Strategy):
     def _process_candle(self, candle, ema_val, mom_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         close = float(candle.ClosePrice)
         ema_val = float(ema_val)

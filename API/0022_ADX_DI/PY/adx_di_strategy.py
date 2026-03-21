@@ -67,9 +67,6 @@ class adx_di_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if adx_value.IsEmpty:
             return
 

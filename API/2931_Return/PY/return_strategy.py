@@ -50,8 +50,6 @@ class return_strategy(Strategy):
     def _on_process(self, candle, ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         middle = float(ma_value)
         band_width = float(self.Width) / 100.0

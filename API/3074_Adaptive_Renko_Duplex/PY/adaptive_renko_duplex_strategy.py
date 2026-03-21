@@ -283,9 +283,6 @@ class adaptive_renko_duplex_strategy(Strategy):
 
         trend, support, resistance = signal
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self.Position > 0 and trend == _AdaptiveRenkoProcessor.TREND_DOWN:
             self.SellMarket()
             self._long_entry_price = None
@@ -323,9 +320,6 @@ class adaptive_renko_duplex_strategy(Strategy):
             return
 
         trend, support, resistance = signal
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         if self.Position < 0 and trend == _AdaptiveRenkoProcessor.TREND_UP:
             self.BuyMarket()

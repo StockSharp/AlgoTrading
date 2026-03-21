@@ -62,9 +62,6 @@ class linear_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         mean = float(mean_val)
         deviation = float(dev_val)
 

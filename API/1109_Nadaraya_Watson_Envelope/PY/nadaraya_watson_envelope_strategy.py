@@ -56,8 +56,6 @@ class nadaraya_watson_envelope_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
         fast = float(fast_val)
         slow = float(slow_val)
         rsi = float(rsi_val)

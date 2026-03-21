@@ -63,8 +63,6 @@ class ichimoku_volume_strategy(Strategy):
     def ProcessCandle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

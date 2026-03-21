@@ -203,9 +203,6 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
             sum_sq += diff * diff
         std_width = Math.Sqrt(sum_sq / self.LookbackPeriod)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         if self._cooldown > 0:
             self._cooldown -= 1
             return

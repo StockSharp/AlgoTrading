@@ -69,9 +69,6 @@ class straddle_trail_v240_strategy(Strategy):
         if len(self._highs) < cp:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
         upper = max(self._highs[:-1])
         lower = min(self._lows[:-1])
 

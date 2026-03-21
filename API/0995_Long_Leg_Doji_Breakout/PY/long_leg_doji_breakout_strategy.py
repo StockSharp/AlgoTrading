@@ -101,11 +101,6 @@ class long_leg_doji_breakout_strategy(Strategy):
                 self._doji_low = low
                 self._waiting = True
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = close
-            self._prev_sma = sma
-            return
-
         if self.Position == 0 and self._prev_close > 0:
             doji_long = self._waiting and close > self._doji_high and close > sma
             doji_short = self._waiting and close < self._doji_low and close < sma

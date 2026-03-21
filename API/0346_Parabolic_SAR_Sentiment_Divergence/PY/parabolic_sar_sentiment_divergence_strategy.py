@@ -119,8 +119,6 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
             return
 
         # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
 
         # Bullish divergence: Price falling but sentiment rising
         bullish_divergence = price < self._prev_price and sentiment > self._prev_sentiment
