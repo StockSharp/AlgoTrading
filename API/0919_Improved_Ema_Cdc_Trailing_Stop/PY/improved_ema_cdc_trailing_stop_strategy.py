@@ -64,9 +64,9 @@ class improved_ema_cdc_trailing_stop_strategy(Strategy):
             return
         macd_d = float(macd_v)
         signal_d = float(signal_v)
-        ema60_v = float(ema60_val.ToDecimal())
-        ema90_v = float(ema90_val.ToDecimal())
-        atr_v = float(atr_val.ToDecimal())
+        ema60_v = float(ema60_val)
+        ema90_v = float(ema90_val)
+        atr_v = float(atr_val)
         if atr_v <= 0:
             return
         close = float(candle.ClosePrice)

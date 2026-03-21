@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Ichimoku, ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import Ichimoku, ExponentialMovingAverage, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -48,15 +48,18 @@ class ichimoku_cloud_buy_sell_strategy(Strategy):
         self._ichimoku.SenkouB.Length = self._senkou_span_b_period.Value
         self._ema = ExponentialMovingAverage()
         self._ema.Length = self._ema_period.Value
+        volume_ma = SimpleMovingAverage()
+        volume_ma.Length = 10
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._ichimoku, self._ema, self.OnProcess).Start()
+        subscription.BindEx(self._ichimoku, self._ema, volume_ma, self.OnProcess).Start()
+        self.StartProtection(None, Unit(2, UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, ichimoku_val, ema_val):
+    def OnProcess(self, candle, ichimoku_val, ema_val, volume_val):
         if candle.State != CandleStates.Finished:
             return
         if self._cooldown > 0:
@@ -64,7 +67,7 @@ class ichimoku_cloud_buy_sell_strategy(Strategy):
             return
         if ema_val.IsEmpty or ichimoku_val.IsEmpty:
             return
-        ema_v = float(ema_val.ToDecimal())
+        ema_v = float(ema_val)
         senkou_a = ichimoku_val.SenkouA
         senkou_b = ichimoku_val.SenkouB
         if senkou_a is None or senkou_b is None:

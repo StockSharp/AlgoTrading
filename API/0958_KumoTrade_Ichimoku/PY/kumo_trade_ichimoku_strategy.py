@@ -101,7 +101,7 @@ class kumo_trade_ichimoku_strategy(Strategy):
         if stoch_d_val is None:
             return
         stoch_d = float(stoch_d_val)
-        atr_v = float(atr_val.ToDecimal())
+        atr_v = float(atr_val)
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

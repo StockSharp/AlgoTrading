@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -58,6 +58,7 @@ class intelle_city_world_cycle_ath_atl_logarithmic_strategy(Strategy):
         ma_atl_short.Length = self._atl_short_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(ma_ath_long, ma_ath_short, ma_atl_long, ma_atl_short, self.OnProcess).Start()
+        self.StartProtection(Unit(2, UnitTypes.Percent), Unit(1, UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)

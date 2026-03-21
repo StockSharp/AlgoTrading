@@ -54,7 +54,7 @@ class iu_4_bar_up_strategy(Strategy):
             return
         if st_val.IsEmpty:
             return
-        st_v = float(st_val.ToDecimal())
+        st_v = float(st_val)
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)
         bullish = close > open_p

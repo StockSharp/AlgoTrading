@@ -27,6 +27,14 @@ class ichimoku_clouds_long_and_short_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop loss percentage (0 - disabled)", "Risk Management")
         self._trade_direction = self.Param("TradeDirection", "Long") \
             .SetDisplay("Trading Mode", "Trade direction: Long or Short", "General")
+        self._entry_signal_options_long = self.Param("EntrySignalOptionsLong", "Bullish All") \
+            .SetDisplay("Entry Signal (Long)", "Entry signal filter for long mode", "Long Mode Signals")
+        self._exit_signal_options_long = self.Param("ExitSignalOptionsLong", "Bearish Weak") \
+            .SetDisplay("Exit Signal (Long)", "Exit signal filter for long mode", "Long Mode Signals")
+        self._entry_signal_options_short = self.Param("EntrySignalOptionsShort", "None") \
+            .SetDisplay("Entry Signal (Short)", "Entry signal filter for short mode", "Short Mode Signals")
+        self._exit_signal_options_short = self.Param("ExitSignalOptionsShort", "None") \
+            .SetDisplay("Exit Signal (Short)", "Exit signal filter for short mode", "Short Mode Signals")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Candle type for the strategy", "General")
         self._prev_tenkan = 0.0
@@ -60,6 +68,42 @@ class ichimoku_clouds_long_and_short_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
+    def _is_signal_allowed(self, option, strength, bullish):
+        if option == "None":
+            return False
+        if bullish:
+            if option == "Bullish Strong":
+                return strength == "Strong"
+            elif option == "Bullish Neutral":
+                return strength == "Neutral"
+            elif option == "Bullish Weak":
+                return strength == "Weak"
+            elif option == "Bullish Strong and Neutral":
+                return strength in ("Strong", "Neutral")
+            elif option == "Bullish Neutral and Weak":
+                return strength in ("Neutral", "Weak")
+            elif option == "Bullish Strong and Weak":
+                return strength in ("Strong", "Weak")
+            elif option == "Bullish All":
+                return True
+            return False
+        else:
+            if option == "Bearish Strong":
+                return strength == "Strong"
+            elif option == "Bearish Neutral":
+                return strength == "Neutral"
+            elif option == "Bearish Weak":
+                return strength == "Weak"
+            elif option == "Bearish Strong and Neutral":
+                return strength in ("Strong", "Neutral")
+            elif option == "Bearish Neutral and Weak":
+                return strength in ("Neutral", "Weak")
+            elif option == "Bearish Strong and Weak":
+                return strength in ("Strong", "Weak")
+            elif option == "Bearish All":
+                return True
+            return False
+
     def OnProcess(self, candle, ichimoku_val):
         if candle.State != CandleStates.Finished:
             return
@@ -77,19 +121,31 @@ class ichimoku_clouds_long_and_short_strategy(Strategy):
         lower_cloud = min(sa, sb)
         close = float(candle.ClosePrice)
         direction = str(self._trade_direction.Value)
-        cross_up = tenkan > kijun and self._prev_tenkan <= self._prev_kijun and self._prev_tenkan != 0
-        cross_down = tenkan < kijun and self._prev_tenkan >= self._prev_kijun and self._prev_tenkan != 0
+        cross_up = tenkan > kijun and self._prev_tenkan <= self._prev_kijun
+        cross_down = tenkan < kijun and self._prev_tenkan >= self._prev_kijun
         if cross_up:
-            if direction == "Long" and self.Position <= 0:
+            if tenkan > upper_cloud:
+                strength = "Strong"
+            elif tenkan < lower_cloud:
+                strength = "Weak"
+            else:
+                strength = "Neutral"
+            if direction == "Long" and self._is_signal_allowed(str(self._entry_signal_options_long.Value), strength, True) and self.Position <= 0:
                 self.BuyMarket()
                 self._entry_price = close
-            elif direction == "Short" and self.Position < 0:
+            elif direction == "Short" and self._is_signal_allowed(str(self._exit_signal_options_short.Value), strength, True) and self.Position < 0:
                 self.BuyMarket()
         elif cross_down:
-            if direction == "Short" and self.Position >= 0:
+            if tenkan < lower_cloud:
+                strength = "Strong"
+            elif tenkan > upper_cloud:
+                strength = "Weak"
+            else:
+                strength = "Neutral"
+            if direction == "Short" and self._is_signal_allowed(str(self._entry_signal_options_short.Value), strength, False) and self.Position >= 0:
                 self.SellMarket()
                 self._entry_price = close
-            elif direction == "Long" and self.Position > 0:
+            elif direction == "Long" and self._is_signal_allowed(str(self._exit_signal_options_long.Value), strength, False) and self.Position > 0:
                 self.SellMarket()
         tp_pct = float(self._take_profit_pct.Value)
         sl_pct = float(self._stop_loss_pct.Value)

@@ -6,8 +6,10 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (RateOfChange, SimpleMovingAverage, AverageTrueRange,
-                                         ChoppinessIndex, SmoothedMovingAverage, ExponentialMovingAverage)
+                                         ChoppinessIndex, SmoothedMovingAverage, LinearRegressionForecast,
+                                         Shift, DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
+from System import Decimal
 
 
 class kst_skyrexio_strategy(Strategy):
@@ -112,58 +114,72 @@ class kst_skyrexio_strategy(Strategy):
         self._atr.Length = 14
         self._chop = ChoppinessIndex()
         self._chop.Length = self._chop_length.Value
-        self._filter_ma = ExponentialMovingAverage()
+        self._jaw = SmoothedMovingAverage()
+        self._jaw.Length = 13
+        self._jaw_shift = Shift()
+        self._jaw_shift.Length = 8
+        self._filter_ma = LinearRegressionForecast()
         self._filter_ma.Length = self._filter_ma_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._filter_ma, self.OnProcess).Start()
+        subscription.BindEx(self._atr, self._chop, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._filter_ma)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, filter_val):
+    def OnProcess(self, candle, atr_val, chop_val):
         if candle.State != CandleStates.Finished:
             return
         self._bars_since_signal += 1
         close = float(candle.ClosePrice)
-        fv = float(filter_val)
-        atr_result = self._atr.Process(candle)
-        chop_result = self._chop.Process(candle)
-        if not self._atr.IsFormed or not self._chop.IsFormed:
+        if atr_val.IsEmpty or chop_val.IsEmpty:
             return
-        atr_v = float(atr_result.ToDecimal())
-        chop_v = float(chop_result.ToDecimal())
-        from StockSharp.Algo.Indicators import DecimalIndicatorValue
+        # Process jaw manually
+        median = Decimal((float(candle.HighPrice) + float(candle.LowPrice)) / 2.0)
         t = candle.OpenTime
-        iv = DecimalIndicatorValue(self._roc1, close, t)
-        iv.IsFinal = True
-        r1 = float(self._sma1.Process(self._roc1.Process(iv)).ToDecimal())
-        iv2 = DecimalIndicatorValue(self._roc2, close, t)
+        jaw_iv = DecimalIndicatorValue(self._jaw, median, t)
+        jaw_iv.IsFinal = True
+        jaw_result = self._jaw_shift.Process(self._jaw.Process(jaw_iv))
+        # Process filter manually
+        filter_iv = DecimalIndicatorValue(self._filter_ma, candle.ClosePrice, t)
+        filter_iv.IsFinal = True
+        filter_result = self._filter_ma.Process(filter_iv)
+        if not self._atr.IsFormed or not self._chop.IsFormed or not self._filter_ma.IsFormed or not self._jaw.IsFormed:
+            return
+        atr_v = float(atr_val)
+        chop_v = float(chop_val)
+        fv = float(filter_result)
+        jaw_v = float(jaw_result)
+        # KST calculation
+        iv1 = DecimalIndicatorValue(self._roc1, candle.ClosePrice, t)
+        iv1.IsFinal = True
+        r1 = float(self._sma1.Process(self._roc1.Process(iv1)))
+        iv2 = DecimalIndicatorValue(self._roc2, candle.ClosePrice, t)
         iv2.IsFinal = True
-        r2 = float(self._sma2.Process(self._roc2.Process(iv2)).ToDecimal())
-        iv3 = DecimalIndicatorValue(self._roc3, close, t)
+        r2 = float(self._sma2.Process(self._roc2.Process(iv2)))
+        iv3 = DecimalIndicatorValue(self._roc3, candle.ClosePrice, t)
         iv3.IsFinal = True
-        r3 = float(self._sma3.Process(self._roc3.Process(iv3)).ToDecimal())
-        iv4 = DecimalIndicatorValue(self._roc4, close, t)
+        r3 = float(self._sma3.Process(self._roc3.Process(iv3)))
+        iv4 = DecimalIndicatorValue(self._roc4, candle.ClosePrice, t)
         iv4.IsFinal = True
-        r4 = float(self._sma4.Process(self._roc4.Process(iv4)).ToDecimal())
+        r4 = float(self._sma4.Process(self._roc4.Process(iv4)))
         if not self._sma1.IsFormed or not self._sma2.IsFormed or not self._sma3.IsFormed or not self._sma4.IsFormed:
             return
         kst = r1 + 2.0 * r2 + 3.0 * r3 + 4.0 * r4
-        sig_iv = DecimalIndicatorValue(self._signal_sma, kst, t)
+        sig_iv = DecimalIndicatorValue(self._signal_sma, Decimal(kst), t)
         sig_iv.IsFinal = True
         sig_result = self._signal_sma.Process(sig_iv)
         if not self._signal_sma.IsFormed:
             self._prev_kst = kst
             return
-        sig = float(sig_result.ToDecimal())
+        sig = float(sig_result)
         chop_cond = chop_v < float(self._chop_threshold.Value)
         cross_up = self._prev_kst <= self._prev_sig and kst > sig
         sl_mult = float(self._atr_stop_loss.Value)
         tp_mult = float(self._atr_take_profit.Value)
         if self._entries_executed < self._max_entries.Value and self._bars_since_signal >= self._cooldown_bars.Value:
-            if cross_up and close > fv and chop_cond and self.Position == 0:
+            if cross_up and close > fv and close > jaw_v and chop_cond and self.Position == 0:
                 self._stop_loss = float(candle.LowPrice) - sl_mult * atr_v
                 self._take_profit = close + tp_mult * atr_v
                 self.BuyMarket()

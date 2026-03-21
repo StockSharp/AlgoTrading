@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, TimeZoneInfo
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
@@ -17,6 +17,7 @@ class lanz_6_0_backtest_strategy(Strategy):
             .SetDisplay("Enable Sell", "Allow short entries", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._ny_zone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
         self._bar_count = 0
 
     @property
@@ -42,7 +43,8 @@ class lanz_6_0_backtest_strategy(Strategy):
         self._bar_count += 1
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)
-        hour = candle.OpenTime.Hour
+        ny_time = TimeZoneInfo.ConvertTime(candle.OpenTime, self._ny_zone)
+        hour = ny_time.Hour
         if hour == 15 and self.Position != 0:
             if self.Position > 0:
                 self.SellMarket()

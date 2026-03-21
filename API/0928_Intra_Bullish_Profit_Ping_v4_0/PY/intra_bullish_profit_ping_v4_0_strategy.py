@@ -66,9 +66,9 @@ class intra_bullish_profit_ping_v4_0_strategy(Strategy):
             return
         if ema_short_val.IsEmpty or ema_long_val.IsEmpty or rsi_val.IsEmpty or macd_val.IsEmpty:
             return
-        ema_s = float(ema_short_val.ToDecimal())
-        ema_l = float(ema_long_val.ToDecimal())
-        self._last_rsi = float(rsi_val.ToDecimal())
+        ema_s = float(ema_short_val)
+        ema_l = float(ema_long_val)
+        self._last_rsi = float(rsi_val)
         macd_v = macd_val.Macd
         signal_v = macd_val.Signal
         if macd_v is not None and signal_v is not None:
