@@ -5,10 +5,9 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, MovingAverageConvergenceDivergenceSignalValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-import random
+
 
 class macd_with_sentiment_filter_strategy(Strategy):
     """
@@ -16,202 +15,132 @@ class macd_with_sentiment_filter_strategy(Strategy):
     Entry condition:
     Long: MACD > Signal && Sentiment_Score > Threshold
     Short: MACD < Signal && Sentiment_Score < -Threshold
-    Exit condition:
-    Long: MACD < Signal
-    Short: MACD > Signal
     """
 
     def __init__(self):
         super(macd_with_sentiment_filter_strategy, self).__init__()
 
-        # MACD Fast period.
-        self._macd_fast = (
-            self.Param("MacdFast", 12)
-            .SetGreaterThanZero()
+        self._macd_fast = self.Param("MacdFast", 12) \
+            .SetGreaterThanZero() \
             .SetDisplay("MACD Fast", "Fast moving average period for MACD", "MACD Settings")
-            .SetCanOptimize(True)
-            .SetOptimize(8, 20, 1)
-        )
 
-        # MACD Slow period.
-        self._macd_slow = (
-            self.Param("MacdSlow", 26)
-            .SetGreaterThanZero()
+        self._macd_slow = self.Param("MacdSlow", 26) \
+            .SetGreaterThanZero() \
             .SetDisplay("MACD Slow", "Slow moving average period for MACD", "MACD Settings")
-            .SetCanOptimize(True)
-            .SetOptimize(20, 34, 2)
-        )
 
-        # MACD Signal period.
-        self._macd_signal = (
-            self.Param("MacdSignal", 9)
-            .SetGreaterThanZero()
+        self._macd_signal = self.Param("MacdSignal", 9) \
+            .SetGreaterThanZero() \
             .SetDisplay("MACD Signal", "Signal line period for MACD", "MACD Settings")
-            .SetCanOptimize(True)
-            .SetOptimize(5, 13, 1)
-        )
 
-        # Sentiment threshold for entry signal.
-        self._threshold = (
-            self.Param("Threshold", 0.5)
-            .SetGreaterThanZero()
+        self._threshold = self.Param("Threshold", 0.1) \
+            .SetGreaterThanZero() \
             .SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
-            .SetCanOptimize(True)
-            .SetOptimize(0.2, 0.8, 0.1)
-        )
 
-        # Stop-loss percentage.
-        self._stop_loss = (
-            self.Param("StopLoss", 2.0)
-            .SetGreaterThanZero()
+        self._cooldown_bars = self.Param("CooldownBars", 24) \
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General")
+
+        self._stop_loss = self.Param("StopLoss", 2.0) \
+            .SetGreaterThanZero() \
             .SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
-            .SetCanOptimize(True)
-            .SetOptimize(1.0, 3.0, 0.5)
-        )
 
-        # Type of candles to use.
-        self._candle_type = (
-            self.Param("CandleType", tf(15))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        )
 
-        # Sentiment score from external data source (simplified with simulation for this example)
         self._sentiment_score = 0.0
-        # Last MACD and Signal values stored from the previous candle
         self._prev_macd = 0.0
         self._prev_signal = 0.0
-
-    @property
-    def macd_fast(self):
-        return self._macd_fast.Value
-
-    @macd_fast.setter
-    def macd_fast(self, value):
-        self._macd_fast.Value = value
-
-    @property
-    def macd_slow(self):
-        return self._macd_slow.Value
-
-    @macd_slow.setter
-    def macd_slow(self, value):
-        self._macd_slow.Value = value
-
-    @property
-    def macd_signal(self):
-        return self._macd_signal.Value
-
-    @macd_signal.setter
-    def macd_signal(self, value):
-        self._macd_signal.Value = value
-
-    @property
-    def threshold(self):
-        return self._threshold.Value
-
-    @threshold.setter
-    def threshold(self, value):
-        self._threshold.Value = value
-
-    @property
-    def stop_loss(self):
-        return self._stop_loss.Value
-
-    @stop_loss.setter
-    def stop_loss(self, value):
-        self._stop_loss.Value = value
+        self._has_previous_macd = False
+        self._cooldown_remaining = 0
+        self._macd_ind = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(macd_with_sentiment_filter_strategy, self).OnReseted()
-        # reset stored values
         self._prev_macd = 0.0
         self._prev_signal = 0.0
         self._sentiment_score = 0.0
+        self._has_previous_macd = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(macd_with_sentiment_filter_strategy, self).OnStarted(time)
 
-        # Create MACD indicator
-        macd = MovingAverageConvergenceDivergenceSignal()
-        macd.Macd.ShortMa.Length = self.macd_fast
-        macd.Macd.LongMa.Length = self.macd_slow
-        macd.SignalMa.Length = self.macd_signal
+        self._macd_ind = MovingAverageConvergenceDivergenceSignal()
+        self._macd_ind.Macd.ShortMa.Length = int(self._macd_fast.Value)
+        self._macd_ind.Macd.LongMa.Length = int(self._macd_slow.Value)
+        self._macd_ind.SignalMa.Length = int(self._macd_signal.Value)
 
-        # Subscribe to candles and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(macd, self.ProcessCandle).Start()
+        subscription.Bind(self.ProcessCandle).Start()
 
-        # Create chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, macd)
+            self.DrawIndicator(area, self._macd_ind)
             self.DrawOwnTrades(area)
 
-        # Enable position protection with stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.stop_loss, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(float(self._stop_loss.Value), UnitTypes.Percent)
         )
-    def ProcessCandle(self, candle, macd_value):
-        """Process each candle and MACD values."""
-        # Skip unfinished candles
+
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Update sentiment score (in a real system this would come from external source)
         self.UpdateSentimentScore(candle)
 
-        if macd_value.Macd is None or macd_value.Signal is None:
+        civ = CandleIndicatorValue(self._macd_ind, candle)
+        civ.IsFinal = True
+        macd_result = self._macd_ind.Process(civ)
+
+        if not self._macd_ind.IsFormed:
             return
 
-        # Store previous MACD values for state tracking
+        macd_typed = macd_result
+        macd_val = macd_typed.Macd
+        signal_val = macd_typed.Signal
+
+        if macd_val is None or signal_val is None:
+            return
+
+        macd = float(macd_val)
+        signal = float(signal_val)
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        if not self._has_previous_macd:
+            self._prev_macd = macd
+            self._prev_signal = signal
+            self._has_previous_macd = True
+            return
+
         prev_macd_over_signal = self._prev_macd > self._prev_signal
-        curr_macd_over_signal = macd_value.Macd > macd_value.Signal
+        curr_macd_over_signal = macd > signal
 
-        # Update previous values for next candle
-        self._prev_macd = macd_value.Macd
-        self._prev_signal = macd_value.Signal
+        threshold = float(self._threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        # First candle, just store values
-        if self.IsFirstRun():
-            return
+        if self._cooldown_remaining == 0 and prev_macd_over_signal != curr_macd_over_signal and self.Position == 0:
+            if curr_macd_over_signal and self._sentiment_score > threshold:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif not curr_macd_over_signal and self._sentiment_score < -threshold:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
 
-        # Entry conditions with sentiment filter
-        if prev_macd_over_signal != curr_macd_over_signal:
-            # MACD crossed above signal with positive sentiment - go long
-            if curr_macd_over_signal and self._sentiment_score > self.threshold and self.Position <= 0:
-                self.LogInfo("Long signal: MACD crossed above signal with positive sentiment")
-                self.BuyMarket(self.Volume)
-            # MACD crossed below signal with negative sentiment - go short
-            elif not curr_macd_over_signal and self._sentiment_score < -self.threshold and self.Position >= 0:
-                self.LogInfo("Short signal: MACD crossed below signal with negative sentiment")
-                self.SellMarket(self.Volume)
-        # Exit conditions (without sentiment filter)
-        else:
-            # MACD below signal - exit long position
-            if not curr_macd_over_signal and self.Position > 0:
-                self.LogInfo("Exit long: MACD below signal")
-                self.SellMarket(abs(self.Position))
-            # MACD above signal - exit short position
-            elif curr_macd_over_signal and self.Position < 0:
-                self.LogInfo("Exit short: MACD above signal")
-                self.BuyMarket(abs(self.Position))
+        self._prev_macd = macd
+        self._prev_signal = signal
 
     def UpdateSentimentScore(self, candle):
-        """Update sentiment score based on candle data (simulation)."""
-        # Simple simulation of sentiment based on candle pattern
-        # In reality, this would be a call to a sentiment API or database
         body_size = float(abs(candle.ClosePrice - candle.OpenPrice))
         total_size = float(candle.HighPrice - candle.LowPrice)
 
@@ -219,24 +148,14 @@ class macd_with_sentiment_filter_strategy(Strategy):
             return
 
         body_ratio = body_size / total_size
+        self._sentiment_score *= 0.85
 
-        # Bullish candle with strong body
         if candle.ClosePrice > candle.OpenPrice and body_ratio > 0.7:
-            self._sentiment_score = min(self._sentiment_score + 0.2, 1.0)
-        # Bearish candle with strong body
+            self._sentiment_score = min(self._sentiment_score + 0.25, 1.0)
         elif candle.ClosePrice < candle.OpenPrice and body_ratio > 0.7:
-            self._sentiment_score = max(self._sentiment_score - 0.2, -1.0)
-        # Add random noise to sentiment
-        else:
-            self._sentiment_score += (random.random() - 0.5) * 0.1
-            self._sentiment_score = max(min(self._sentiment_score, 1.0), -1.0)
+            self._sentiment_score = max(self._sentiment_score - 0.25, -1.0)
 
         self.LogInfo("Updated sentiment score: {0}".format(self._sentiment_score))
 
-    def IsFirstRun(self):
-        """Check if this is the first run to avoid trading on first candle."""
-        return self._prev_macd == 0 and self._prev_signal == 0
-
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return macd_with_sentiment_filter_strategy()

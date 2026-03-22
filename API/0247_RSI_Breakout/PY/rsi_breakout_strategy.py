@@ -148,8 +148,7 @@ class rsi_breakout_strategy(Strategy):
         self._currentRsiAvg = float(avg_value)
         self._currentRsiStdDev = float(std_dev_value)
 
-        # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading() or not self._rsiAverage.IsFormed or not self._rsiStdDev.IsFormed:
+        if not self._rsiAverage.IsFormed or not self._rsiStdDev.IsFormed:
             return
 
         # Calculate bands
@@ -160,25 +159,12 @@ class rsi_breakout_strategy(Strategy):
             "RSI: {0}, RSI Avg: {1}, Upper: {2}, Lower: {3}".format(
                 self._currentRsiValue, self._currentRsiAvg, upper_band, lower_band))
 
-        # Entry logic - BREAKOUT
+        # Entry logic - BREAKOUT only when flat (no exit logic in CS)
         if self.Position == 0:
-            # Long Entry: RSI breaks above upper band
             if self._currentRsiValue > upper_band:
-                self.LogInfo("Buy Signal - RSI ({0}) > Upper Band ({1})".format(self._currentRsiValue, upper_band))
-                self.BuyMarket(self.Volume)
-            # Short Entry: RSI breaks below lower band
+                self.BuyMarket()
             elif self._currentRsiValue < lower_band:
-                self.LogInfo("Sell Signal - RSI ({0}) < Lower Band ({1})".format(self._currentRsiValue, lower_band))
-                self.SellMarket(self.Volume)
-        # Exit logic
-        elif self.Position > 0 and self._currentRsiValue < self._currentRsiAvg:
-            # Exit Long: RSI returns below average
-            self.LogInfo("Exit Long - RSI ({0}) < RSI Avg ({1})".format(self._currentRsiValue, self._currentRsiAvg))
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and self._currentRsiValue > self._currentRsiAvg:
-            # Exit Short: RSI returns above average
-            self.LogInfo("Exit Short - RSI ({0}) > RSI Avg ({1})".format(self._currentRsiValue, self._currentRsiAvg))
-            self.BuyMarket(Math.Abs(self.Position))
+                self.SellMarket()
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

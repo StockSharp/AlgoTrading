@@ -63,7 +63,7 @@ class trailing_stop_ea_strategy(Strategy):
         slow_result = self._slow_ema.Process(inp)
         if not slow_result.IsFormed:
             return
-        slow_val = float(slow_result.ToDecimal())
+        slow_val = float(slow_result)
         fast_val = float(fast_val)
 
         if self._is_first:

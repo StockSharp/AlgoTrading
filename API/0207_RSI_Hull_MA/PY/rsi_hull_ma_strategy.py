@@ -4,11 +4,10 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, HullMovingAverage, AverageTrueRange
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
 
 class rsi_hull_ma_strategy(Strategy):
     """
@@ -18,105 +17,59 @@ class rsi_hull_ma_strategy(Strategy):
     def __init__(self):
         super(rsi_hull_ma_strategy, self).__init__()
 
-        # RSI period
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetRange(5, 30) \
-            .SetDisplay("RSI Period", "Period for RSI indicator", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
 
-        # Hull MA period
         self._hull_period = self.Param("HullPeriod", 9) \
             .SetRange(5, 20) \
-            .SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicators")
 
-        # ATR period for stop-loss
+        self._cooldown_bars = self.Param("CooldownBars", 30) \
+            .SetRange(1, 200) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetRange(7, 28) \
-            .SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management") \
-            .SetCanOptimize(True)
+            .SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management")
 
-        # ATR multiplier for stop-loss
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetRange(1.0, 4.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management") \
-            .SetCanOptimize(True)
+            .SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 
-        # Candle type for strategy
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", tf(30)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._previous_hull_value = 0
-
-    @property
-    def RsiPeriod(self):
-        """RSI period"""
-        return self._rsi_period.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def HullPeriod(self):
-        """Hull MA period"""
-        return self._hull_period.Value
-
-    @HullPeriod.setter
-    def HullPeriod(self, value):
-        self._hull_period.Value = value
-
-    @property
-    def AtrPeriod(self):
-        """ATR period for stop-loss"""
-        return self._atr_period.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def AtrMultiplier(self):
-        """ATR multiplier for stop-loss"""
-        return self._atr_multiplier.Value
-
-    @AtrMultiplier.setter
-    def AtrMultiplier(self, value):
-        self._atr_multiplier.Value = value
+        self._previous_hull_value = 0.0
+        self._previous_rsi_value = 50.0
+        self._cooldown = 0
 
     @property
     def CandleType(self):
-        """Candle type for strategy"""
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(rsi_hull_ma_strategy, self).OnReseted()
-        self._previous_hull_value = 0
+        self._previous_hull_value = 0.0
+        self._previous_rsi_value = 50.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(rsi_hull_ma_strategy, self).OnStarted(time)
-        # Initialize indicators
-        rsi = RelativeStrengthIndex(); rsi.Length = self.RsiPeriod
-        hull_ma = HullMovingAverage(); hull_ma.Length = self.HullPeriod
-        atr = AverageTrueRange(); atr.Length = self.AtrPeriod
+        self._previous_hull_value = 0.0
+        self._previous_rsi_value = 50.0
+        self._cooldown = 0
 
-        # Create subscription and bind indicators
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_period.Value
+        hull_ma = ExponentialMovingAverage()
+        hull_ma.Length = self._hull_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
+
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(rsi, hull_ma, atr, self.ProcessIndicators).Start()
 
-        # Enable ATR-based stop protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.AtrMultiplier, UnitTypes.Absolute)
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -125,42 +78,43 @@ class rsi_hull_ma_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessIndicators(self, candle, rsi_value, hull_value, atr_value):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Store previous Hull value for slope detection
-        previous_hull_value = self._previous_hull_value
-        self._previous_hull_value = hull_value
-
-        # Skip first candle until we have previous value
-        if previous_hull_value == 0:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Trading logic:
-        # Long: RSI < 30 && HMA(t) > HMA(t-1) (oversold with rising HMA)
-        # Short: RSI > 70 && HMA(t) < HMA(t-1) (overbought with falling HMA)
-        hull_slope = hull_value > previous_hull_value
+        previous_hull = self._previous_hull_value
+        self._previous_hull_value = float(hull_value)
+        previous_rsi = self._previous_rsi_value
+        self._previous_rsi_value = float(rsi_value)
 
-        if rsi_value < 30 and hull_slope and self.Position <= 0:
-            # Buy signal - RSI oversold with rising HMA
-            volume = self.Volume + Math.Abs(self.Position)
+        if previous_hull == 0:
+            return
+
+        hull_slope = float(hull_value) > previous_hull
+        crossed_below = previous_rsi >= 45 and float(rsi_value) < 45
+        crossed_above = previous_rsi <= 55 and float(rsi_value) > 55
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+
+        cooldown_val = int(self._cooldown_bars.Value)
+
+        if self._cooldown == 0 and crossed_below and hull_slope and self.Position <= 0:
+            volume = self.Volume + abs(self.Position)
             self.BuyMarket(volume)
-        elif rsi_value > 70 and not hull_slope and self.Position >= 0:
-            # Sell signal - RSI overbought with falling HMA
-            volume = self.Volume + Math.Abs(self.Position)
+            self._cooldown = cooldown_val
+        elif self._cooldown == 0 and crossed_above and not hull_slope and self.Position >= 0:
+            volume = self.Volume + abs(self.Position)
             self.SellMarket(volume)
-        # Exit conditions
-        elif self.Position > 0 and rsi_value > 50:
-            # Exit long position when RSI returns to neutral zone
+            self._cooldown = cooldown_val
+        elif self.Position > 0 and (float(rsi_value) > 52 or not hull_slope):
             self.SellMarket(self.Position)
-        elif self.Position < 0 and rsi_value < 50:
-            # Exit short position when RSI returns to neutral zone
-            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cooldown_val
+        elif self.Position < 0 and (float(rsi_value) < 48 or hull_slope):
+            self.BuyMarket(abs(self.Position))
+            self._cooldown = cooldown_val
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return rsi_hull_ma_strategy()
-

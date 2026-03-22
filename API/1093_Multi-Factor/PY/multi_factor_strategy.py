@@ -55,13 +55,17 @@ class multi_factor_strategy(Strategy):
         self._macd.SignalMa.Length = self._signal_length.Value
         self._sma50 = SimpleMovingAverage()
         self._sma50.Length = 50
+        self._dummy = SimpleMovingAverage()
+        self._dummy.Length = 2
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self.OnProcess).Start()
+        subscription.Bind(self._dummy, self.OnProcess).Start()
 
-    def OnProcess(self, candle):
+    def OnProcess(self, candle, dummy_value):
         if candle.State != CandleStates.Finished:
             return
-        macd_result = self._macd.Process(candle)
+        candle_input = DecimalIndicatorValue(self._macd, candle.ClosePrice, candle.ServerTime)
+        candle_input.IsFinal = True
+        macd_result = self._macd.Process(candle_input)
         sma_input = DecimalIndicatorValue(self._sma50, candle.ClosePrice, candle.ServerTime)
         sma_input.IsFinal = True
         sma50_result = self._sma50.Process(sma_input)
@@ -74,7 +78,7 @@ class multi_factor_strategy(Strategy):
         if macd_line is None or signal_line is None:
             return
         diff = float(macd_line) - float(signal_line)
-        sma50 = float(sma50_result.ToDecimal())
+        sma50 = float(sma50_result)
         close = float(candle.ClosePrice)
         if not self._has_prev_diff:
             self._prev_diff = diff

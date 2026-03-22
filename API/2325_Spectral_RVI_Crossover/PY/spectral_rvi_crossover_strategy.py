@@ -73,8 +73,8 @@ class spectral_rvi_crossover_strategy(Strategy):
         sm_sig_result = self._smooth_sig.Process(sig, t, True)
         if not self._smooth_rvi.IsFormed or not self._smooth_sig.IsFormed:
             return
-        sm_rvi = float(sm_rvi_result.ToDecimal())
-        sm_sig = float(sm_sig_result.ToDecimal())
+        sm_rvi = float(sm_rvi_result)
+        sm_sig = float(sm_sig_result)
         if self._prev_sm_rvi is not None and self._prev_sm_sig is not None:
             if self._prev_sm_rvi <= self._prev_sm_sig and sm_rvi > sm_sig and self.Position <= 0:
                 self.BuyMarket()

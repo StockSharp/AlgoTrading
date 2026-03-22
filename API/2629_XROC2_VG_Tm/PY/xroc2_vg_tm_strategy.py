@@ -157,8 +157,8 @@ class xroc2_vg_tm_strategy(Strategy):
         fast_out = self._smooth_fast.Process(DecimalIndicatorValue(self._smooth_fast, fast_roc, candle.OpenTime))
         slow_out = self._smooth_slow.Process(DecimalIndicatorValue(self._smooth_slow, slow_roc, candle.OpenTime))
 
-        fast_val = float(fast_out.ToDecimal())
-        slow_val = float(slow_out.ToDecimal())
+        fast_val = float(fast_out)
+        slow_val = float(slow_out)
 
         hist_cap = self.SignalShift + 3
         self._fast_history.insert(0, fast_val)

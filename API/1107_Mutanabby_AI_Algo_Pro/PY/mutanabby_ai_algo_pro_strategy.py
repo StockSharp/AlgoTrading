@@ -96,7 +96,7 @@ class mutanabby_ai_algo_pro_strategy(Strategy):
                 self._low_queue.pop(0)
             self._lowest_low = min(self._low_queue) if self._low_queue else 999999999.0
             return
-        rsi_value = float(rsi_result.ToDecimal())
+        rsi_value = float(rsi_result)
         lp = self._lookback_period.Value
         if len(self._low_queue) >= lp:
             self._low_queue.pop(0)

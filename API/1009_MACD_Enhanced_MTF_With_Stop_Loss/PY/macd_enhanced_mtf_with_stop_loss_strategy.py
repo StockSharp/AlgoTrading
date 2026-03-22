@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, IndicatorHelper
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
 class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
@@ -47,7 +47,7 @@ class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
         atr = AverageTrueRange()
         atr.Length = self._atr_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(fast, slow, atr, self._process_candle).Start()
+        subscription.Bind(fast, slow, atr, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -58,9 +58,9 @@ class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-        fast = float(IndicatorHelper.ToDecimal(fast_val))
-        slow = float(IndicatorHelper.ToDecimal(slow_val))
-        atr = float(IndicatorHelper.ToDecimal(atr_val))
+        fast = float(fast_val)
+        slow = float(slow_val)
+        atr = float(atr_val)
         if fast == 0 or slow == 0:
             return
         is_fast_above = fast > slow

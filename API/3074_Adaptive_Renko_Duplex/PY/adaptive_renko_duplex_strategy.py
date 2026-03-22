@@ -266,7 +266,7 @@ class adaptive_renko_duplex_strategy(Strategy):
         if not vol_result.IsFinal:
             return
 
-        volatility = float(vol_result.ToDecimal())
+        volatility = float(vol_result)
         step = self._get_price_step()
         self._long_processor.process(
             candle, volatility,
@@ -304,7 +304,7 @@ class adaptive_renko_duplex_strategy(Strategy):
         if not vol_result.IsFinal:
             return
 
-        volatility = float(vol_result.ToDecimal())
+        volatility = float(vol_result)
         step = self._get_price_step()
         self._short_processor.process(
             candle, volatility,

@@ -4,266 +4,197 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit
+from System.Collections.Generic import Queue
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
-import random
 
 
 class ichimoku_implied_volatility_strategy(Strategy):
     """
     Ichimoku with Implied Volatility strategy.
-    Entry condition:
-    Long: Price > Kumo && Tenkan > Kijun && IV > Avg(IV, N)
-    Short: Price < Kumo && Tenkan < Kijun && IV > Avg(IV, N)
-    Exit condition:
-    Long: Price < Kumo
-    Short: Price > Kumo
     """
 
     def __init__(self):
         super(ichimoku_implied_volatility_strategy, self).__init__()
 
-        # Tenkan-Sen period.
         self._tenkan_period = self.Param("TenkanPeriod", 9) \
             .SetGreaterThanZero() \
-            .SetDisplay("Tenkan-Sen Period", "Tenkan-Sen (Conversion Line) period", "Ichimoku Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 13, 2)
+            .SetDisplay("Tenkan-Sen Period", "Tenkan-Sen (Conversion Line) period", "Ichimoku Settings")
 
-        # Kijun-Sen period.
         self._kijun_period = self.Param("KijunPeriod", 26) \
             .SetGreaterThanZero() \
-            .SetDisplay("Kijun-Sen Period", "Kijun-Sen (Base Line) period", "Ichimoku Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 30, 2)
+            .SetDisplay("Kijun-Sen Period", "Kijun-Sen (Base Line) period", "Ichimoku Settings")
 
-        # Senkou Span B period.
         self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 52) \
             .SetGreaterThanZero() \
-            .SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(40, 60, 4)
+            .SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings")
 
-        # Implied Volatility averaging period.
         self._iv_period = self.Param("IVPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
 
-        # Type of candles to use.
-        self._candle_type = self.Param("CandleType", tf(15)) \
+        self._cooldown_bars = self.Param("CooldownBars", 24) \
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state
-        self._implied_volatility_history = []
-        self._avg_implied_volatility = 0.0
+        self._iv_history = []
+        self._avg_iv = 0.0
+        self._iv_sum = 0.0
+        self._current_iv = 0.0
         self._prev_price = 0.0
         self._prev_above_kumo = False
         self._prev_tenkan_above_kijun = False
+        self._cooldown_remaining = 0
 
     @property
-    def TenkanPeriod(self):
-        """Tenkan-Sen period."""
-        return self._tenkan_period.Value
-
-    @TenkanPeriod.setter
-    def TenkanPeriod(self, value):
-        self._tenkan_period.Value = value
-
-    @property
-    def KijunPeriod(self):
-        """Kijun-Sen period."""
-        return self._kijun_period.Value
-
-    @KijunPeriod.setter
-    def KijunPeriod(self, value):
-        self._kijun_period.Value = value
-
-    @property
-    def SenkouSpanBPeriod(self):
-        """Senkou Span B period."""
-        return self._senkou_span_b_period.Value
-
-    @SenkouSpanBPeriod.setter
-    def SenkouSpanBPeriod(self, value):
-        self._senkou_span_b_period.Value = value
-
-    @property
-    def IVPeriod(self):
-        """Implied Volatility averaging period."""
-        return self._iv_period.Value
-
-    @IVPeriod.setter
-    def IVPeriod(self, value):
-        self._iv_period.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def GetWorkingSecurities(self):
-        """Return the security and candle type this strategy works with."""
-        return [(self.Security, self.CandleType)]
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(ichimoku_implied_volatility_strategy, self).OnReseted()
-        # reset stored values
-        self._implied_volatility_history.clear()
+        self._iv_history = []
         self._prev_above_kumo = False
         self._prev_tenkan_above_kijun = False
         self._prev_price = 0.0
-        self._avg_implied_volatility = 0.0
+        self._avg_iv = 0.0
+        self._iv_sum = 0.0
+        self._current_iv = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(ichimoku_implied_volatility_strategy, self).OnStarted(time)
 
-        # Create Ichimoku indicator
         ichimoku = Ichimoku()
-        ichimoku.Tenkan.Length = self.TenkanPeriod
-        ichimoku.Kijun.Length = self.KijunPeriod
-        ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
+        ichimoku.Tenkan.Length = int(self._tenkan_period.Value)
+        ichimoku.Kijun.Length = int(self._kijun_period.Value)
+        ichimoku.SenkouB.Length = int(self._senkou_span_b_period.Value)
 
-        # Subscribe to candles and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-
+        subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(ichimoku, self.ProcessCandle).Start()
 
-        # Create chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ichimoku)
             self.DrawOwnTrades(area)
 
-        # Enable position protection using Kijun-Sen as stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(0)
+            Unit(0),
+            Unit(0)
         )
+
     def ProcessCandle(self, candle, ichimoku_value):
-        """Process each candle and Ichimoku values."""
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Get Ichimoku values
-        if ichimoku_value.Tenkan is None:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        tenkan = float(ichimoku_value.Tenkan)
 
-        if ichimoku_value.Kijun is None:
+        tenkan_val = ichimoku_value.Tenkan
+        if tenkan_val is None:
             return
-        kijun = float(ichimoku_value.Kijun)
+        tenkan = float(tenkan_val)
 
-        if ichimoku_value.SenkouA is None:
+        kijun_val = ichimoku_value.Kijun
+        if kijun_val is None:
             return
-        senkou_a = float(ichimoku_value.SenkouA)
+        kijun = float(kijun_val)
 
-        if ichimoku_value.SenkouB is None:
+        senkou_a_val = ichimoku_value.SenkouA
+        if senkou_a_val is None:
             return
-        senkou_b = float(ichimoku_value.SenkouB)
+        senkou_a = float(senkou_a_val)
 
-        # Determine if price is above Kumo (cloud)
-        kumo_top = Math.Max(senkou_a, senkou_b)
-        kumo_bottom = Math.Min(senkou_a, senkou_b)
-        price_above_kumo = candle.ClosePrice > kumo_top
-        price_below_kumo = candle.ClosePrice < kumo_bottom
+        senkou_b_val = ichimoku_value.SenkouB
+        if senkou_b_val is None:
+            return
+        senkou_b = float(senkou_b_val)
 
-        # Check Tenkan/Kijun cross
+        kumo_top = max(senkou_a, senkou_b)
+        kumo_bottom = min(senkou_a, senkou_b)
+        close = float(candle.ClosePrice)
+        price_above_kumo = close > kumo_top
+        price_below_kumo = close < kumo_bottom
+
         tenkan_above_kijun = tenkan > kijun
 
-        # Update Implied Volatility (in a real system, this would come from market data)
         self.UpdateImpliedVolatility(candle)
 
-        # Check IV condition
-        iv_higher_than_average = self.GetImpliedVolatility() > self._avg_implied_volatility
+        iv_higher = self._current_iv > self._avg_iv
 
-        # First run, just store values
-        if self._prev_price == 0:
-            self._prev_price = float(candle.ClosePrice)
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        iv_period = int(self._iv_period.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        if self._prev_price == 0.0:
+            self._prev_price = close
             self._prev_above_kumo = price_above_kumo
             self._prev_tenkan_above_kijun = tenkan_above_kijun
             return
 
-        # Trading logic based on Ichimoku and IV
+        bullish_setup = price_above_kumo and tenkan_above_kijun and iv_higher
+        bearish_setup = price_below_kumo and (not tenkan_above_kijun) and iv_higher
+        bullish_transition = bullish_setup and ((not self._prev_above_kumo) or (not self._prev_tenkan_above_kijun))
+        bearish_transition = bearish_setup and (self._prev_above_kumo or self._prev_tenkan_above_kijun)
 
-        # Long entry condition
-        if price_above_kumo and tenkan_above_kijun and iv_higher_than_average and self.Position <= 0:
-            self.LogInfo("Long signal: Price above Kumo, Tenkan above Kijun, IV elevated")
-            self.BuyMarket(self.Volume)
-        # Short entry condition
-        elif price_below_kumo and not tenkan_above_kijun and iv_higher_than_average and self.Position >= 0:
-            self.LogInfo("Short signal: Price below Kumo, Tenkan below Kijun, IV elevated")
-            self.SellMarket(self.Volume)
+        if self._cooldown_remaining == 0 and bullish_transition and self.Position <= 0:
+            vol = self.Volume
+            if self.Position < 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.BuyMarket(vol)
+            self._cooldown_remaining = cooldown
+        elif self._cooldown_remaining == 0 and bearish_transition and self.Position >= 0:
+            vol = self.Volume
+            if self.Position > 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.SellMarket(vol)
+            self._cooldown_remaining = cooldown
 
-        # Exit conditions
-
-        # Exit long if price falls below Kumo
         if self.Position > 0 and not price_above_kumo:
-            self.LogInfo("Exit long: Price fell below Kumo")
             self.SellMarket(Math.Abs(self.Position))
-        # Exit short if price rises above Kumo
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and not price_below_kumo:
-            self.LogInfo("Exit short: Price rose above Kumo")
             self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
-        # Use Kijun-Sen as trailing stop
         self.ApplyKijunAsStop(candle.ClosePrice, kijun)
 
-        # Update previous values
-        self._prev_price = float(candle.ClosePrice)
+        self._prev_price = close
         self._prev_above_kumo = price_above_kumo
         self._prev_tenkan_above_kijun = tenkan_above_kijun
 
     def UpdateImpliedVolatility(self, candle):
-        """Update implied volatility value.
-        In a real implementation, this would fetch data from market."""
-        # Simple IV simulation based on candle's high-low range
-        # In reality, this would come from option pricing data
         iv = float((candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100)
 
-        # Add some random fluctuation to simulate IV behavior
-        iv *= 0.8 + 0.4 * random.random()
+        self._current_iv = iv
+        self._iv_history.append(iv)
+        self._iv_sum += iv
 
-        # Add to history and maintain history length
-        self._implied_volatility_history.append(iv)
-        if len(self._implied_volatility_history) > self.IVPeriod:
-            self._implied_volatility_history.pop(0)
+        iv_period = int(self._iv_period.Value)
+        if len(self._iv_history) > iv_period:
+            self._iv_sum -= self._iv_history.pop(0)
 
-        # Calculate average IV
-        if self._implied_volatility_history:
-            self._avg_implied_volatility = sum(self._implied_volatility_history) / len(self._implied_volatility_history)
+        if len(self._iv_history) > 0:
+            self._avg_iv = self._iv_sum / len(self._iv_history)
         else:
-            self._avg_implied_volatility = 0
+            self._avg_iv = 0.0
 
-        self.LogInfo(f"IV: {iv}, Avg IV: {self._avg_implied_volatility}")
-
-    def GetImpliedVolatility(self):
-        """Get current implied volatility."""
-        return self._implied_volatility_history[-1] if self._implied_volatility_history else 0
+        self.LogInfo("IV: {0}, Avg IV: {1}".format(iv, self._avg_iv))
 
     def ApplyKijunAsStop(self, price, kijun):
-        """Use Kijun-Sen as a trailing stop level."""
-        # Long position: exit if price drops below Kijun
-        if self.Position > 0 and price < kijun:
-            self.LogInfo("Kijun-Sen stop triggered for long position")
+        if self.Position > 0 and float(price) < kijun:
             self.SellMarket(Math.Abs(self.Position))
-        # Short position: exit if price rises above Kijun
-        elif self.Position < 0 and price > kijun:
-            self.LogInfo("Kijun-Sen stop triggered for short position")
+        elif self.Position < 0 and float(price) > kijun:
             self.BuyMarket(Math.Abs(self.Position))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return ichimoku_implied_volatility_strategy()

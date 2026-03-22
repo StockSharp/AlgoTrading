@@ -111,9 +111,9 @@ class machine_learning_logistic_regression_strategy(Strategy):
             self._signal = 1 if close >= prev_close else -1
             self._hp_counter = 0
             if self._signal == 1 and self.Position <= 0:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume + abs(self.Position))
             elif self._signal == -1 and self.Position >= 0:
-                self.SellMarket()
+                self.SellMarket(self.Volume + abs(self.Position))
             return
         lr = float(self._learning_rate.Value)
         iters = self._iterations.Value
@@ -124,16 +124,16 @@ class machine_learning_logistic_regression_strategy(Strategy):
         if new_signal != self._signal:
             self._hp_counter = 0
             if new_signal == 1 and self.Position <= 0:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume + abs(self.Position))
             elif new_signal == -1 and self.Position >= 0:
-                self.SellMarket()
+                self.SellMarket(self.Volume + abs(self.Position))
         else:
             self._hp_counter += 1
             hp = self._holding_period.Value
             if self._signal == 1 and self._hp_counter >= hp and self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(self.Position)
             elif self._signal == -1 and self._hp_counter >= hp and self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
         self._signal = new_signal
 
     def CreateClone(self):

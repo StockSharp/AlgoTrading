@@ -115,11 +115,15 @@ class stochastic_mean_reversion_strategy(Strategy):
         self._stoch_stddev = StandardDeviation()
         self._stoch_stddev.Length = self.average_period
 
+        self.Indicators.Add(self._stochastic)
+        self.Indicators.Add(self._stoch_average)
+        self.Indicators.Add(self._stoch_stddev)
+
         # Create candle subscription
         subscription = self.SubscribeCandles(self.candle_type)
 
-        # Bind stochastic to candles
-        subscription.BindEx(self._stochastic, self.ProcessStochastic).Start()
+        # Bind candle processing (manual stochastic processing inside)
+        subscription.Bind(self.ProcessStochastic).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()
@@ -130,81 +134,46 @@ class stochastic_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            takeProfit=Unit(5, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
 
     def OnReseted(self):
         super(stochastic_mean_reversion_strategy, self).OnReseted()
         self._prev_stoch_k_value = 0.0
-    def ProcessStochastic(self, candle, stoch_value):
+    def ProcessStochastic(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Extract %K value from stochastic
-        if stoch_value.K is None:
+        stoch_result = process_candle(self._stochastic, candle)
+        if not self._stochastic.IsFormed:
             return
-        k_value = float(stoch_value.K)
+
+        k_value = stoch_result.K
+        if k_value is None:
+            return
+        k_value = float(k_value)
 
         # Process Stochastic %K through average and standard deviation indicators
-        stoch_avg_value = float(process_float(self._stoch_average, k_value, candle.ServerTime, candle.State == CandleStates.Finished))
-        stoch_stddev_value = float(process_float(self._stoch_stddev, k_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        stoch_avg_value = float(process_float(self._stoch_average, k_value, candle.OpenTime, True))
+        stoch_stddev_value = float(process_float(self._stoch_stddev, k_value, candle.OpenTime, True))
 
-        # Store previous Stochastic %K value for changes detection
-        current_stoch_k_value = k_value
-
-        # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading() or not self._stoch_average.IsFormed or not self._stoch_stddev.IsFormed:
-            self._prev_stoch_k_value = current_stoch_k_value
+        if not self._stoch_average.IsFormed or not self._stoch_stddev.IsFormed:
+            self._prev_stoch_k_value = k_value
             return
 
-        # Calculate bands
-        upper_band = stoch_avg_value + self.multiplier * stoch_stddev_value
-        lower_band = stoch_avg_value - self.multiplier * stoch_stddev_value
+        effective_stddev = max(1.0, stoch_stddev_value)
+        upper_band = stoch_avg_value + self.multiplier * effective_stddev
+        lower_band = stoch_avg_value - self.multiplier * effective_stddev
 
-        self.LogInfo(
-            "Stoch %K: {0}, Avg: {1}, Upper: {2}, Lower: {3}".format(
-                current_stoch_k_value, stoch_avg_value, upper_band, lower_band
-            )
-        )
-
-        # Entry logic
+        # Entry logic - only when flat
         if self.Position == 0:
-            # Long Entry: Stochastic %K is below lower band
-            if current_stoch_k_value < lower_band:
-                self.LogInfo(
-                    "Buy Signal - Stoch %K ({0}) < Lower Band ({1})".format(
-                        current_stoch_k_value, lower_band
-                    )
-                )
-                self.BuyMarket(self.Volume)
-            # Short Entry: Stochastic %K is above upper band
-            elif current_stoch_k_value > upper_band:
-                self.LogInfo(
-                    "Sell Signal - Stoch %K ({0}) > Upper Band ({1})".format(
-                        current_stoch_k_value, upper_band
-                    )
-                )
-                self.SellMarket(self.Volume)
-        # Exit logic
-        elif self.Position > 0 and current_stoch_k_value > stoch_avg_value:
-            # Exit Long: Stochastic %K returned to average
-            self.LogInfo(
-                "Exit Long - Stoch %K ({0}) > Avg ({1})".format(
-                    current_stoch_k_value, stoch_avg_value
-                )
-            )
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and current_stoch_k_value < stoch_avg_value:
-            # Exit Short: Stochastic %K returned to average
-            self.LogInfo(
-                "Exit Short - Stoch %K ({0}) < Avg ({1})".format(
-                    current_stoch_k_value, stoch_avg_value
-                )
-            )
-            self.BuyMarket(Math.Abs(self.Position))
+            if k_value < lower_band or k_value < 20.0:
+                self.BuyMarket()
+            elif k_value > upper_band or k_value > 80.0:
+                self.SellMarket()
 
-        self._prev_stoch_k_value = current_stoch_k_value
+        self._prev_stoch_k_value = k_value
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

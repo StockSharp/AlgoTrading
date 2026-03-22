@@ -223,7 +223,7 @@ class rabbit_m2_regime_swing_strategy(Strategy):
             previous_lower = min(self._low_history[:-1]) if len(self._low_history) > 1 else None
 
         cci_result = self._cci.Process(candle)
-        current_cci = float(cci_result.ToDecimal()) if cci_result is not None else 0.0
+        current_cci = float(cci_result) if cci_result is not None else 0.0
 
         self._handle_active_position(candle, previous_upper, previous_lower)
 

@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, Momentum
 from StockSharp.Algo.Strategies import Strategy
 
@@ -26,6 +26,9 @@ class momentum_keltner_stochastic_combo_strategy(Strategy):
         self._atr_length = self.Param("AtrLength", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Length", "ATR length for Keltner", "Indicators")
+        self._sl_points = self.Param("SlPoints", 1185.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Stop Loss Points", "Stop loss in price points", "Risk Management")
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 24) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Risk Management")
@@ -62,9 +65,15 @@ class momentum_keltner_stochastic_combo_strategy(Strategy):
         self._momentum.Length = self._mom_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._ema, self._atr, self._momentum, self.OnProcess).Start()
+        self.StartProtection(
+            Unit(0, UnitTypes.Absolute),
+            Unit(self._sl_points.Value, UnitTypes.Absolute)
+        )
 
     def OnProcess(self, candle, ema_value, atr_value, momentum_value):
         if candle.State != CandleStates.Finished:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
         ev = float(ema_value)
         av = float(atr_value)

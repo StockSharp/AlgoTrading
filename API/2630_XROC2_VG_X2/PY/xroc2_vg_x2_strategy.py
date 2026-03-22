@@ -30,7 +30,7 @@ class _RocSmoother(object):
 
         out = self._smoother.Process(DecimalIndicatorValue(self._smoother, roc, time))
         try:
-            return float(out.ToDecimal())
+            return float(out)
         except Exception:
             return None
 

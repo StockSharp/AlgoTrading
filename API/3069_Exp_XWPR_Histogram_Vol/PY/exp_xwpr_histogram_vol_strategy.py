@@ -90,7 +90,7 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         if not wpr_result.IsFormed:
             return
 
-        wpr = float(wpr_result.ToDecimal())
+        wpr = float(wpr_result)
         volume = float(candle.TotalVolume) if float(candle.TotalVolume) > 0.0 else 1.0
         hist_raw = (wpr + 50.0) * volume
 
@@ -105,11 +105,11 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         if not hist_smoothed.IsFormed or not vol_smoothed.IsFormed:
             return
 
-        baseline = float(vol_smoothed.ToDecimal())
+        baseline = float(vol_smoothed)
         if baseline == 0.0:
             return
 
-        hist = float(hist_smoothed.ToDecimal())
+        hist = float(hist_smoothed)
         strong_bull_level = float(self.HighLevel2) * baseline
         strong_bear_level = float(self.LowLevel2) * baseline
 

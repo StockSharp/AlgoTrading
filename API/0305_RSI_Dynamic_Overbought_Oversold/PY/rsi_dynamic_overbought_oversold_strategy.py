@@ -3,189 +3,132 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class rsi_dynamic_overbought_oversold_strategy(Strategy):
     """
-    Strategy based on RSI with dynamic overbought/oversold levels.
-
+    RSI strategy with dynamic overbought and oversold bands derived from
+    the rolling mean and volatility of RSI.
     """
 
     def __init__(self):
         super(rsi_dynamic_overbought_oversold_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._rsiPeriod = self.Param("RsiPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
+        self._rsi_period = self.Param("RsiPeriod", 14) \
+            .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
 
-        self._movingAvgPeriod = self.Param("MovingAvgPeriod", 50) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MA Period", "Period for moving average of RSI and price", "Indicator Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 100, 10)
+        self._moving_avg_period = self.Param("MovingAvgPeriod", 34) \
+            .SetDisplay("Average Period", "Period for moving averages and RSI volatility", "Indicators")
 
-        self._stdDevMultiplier = self.Param("StdDevMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to define overbought/oversold levels", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.3) \
+            .SetDisplay("StdDev Multiplier", "Multiplier for the dynamic RSI bands", "Signals")
 
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 48) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
 
-        self._rsiSma = None
-        self._rsiStdDev = None
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles for the strategy", "General")
+
+        self._rsi = None
+        self._price_sma = None
+        self._rsi_sma = None
+        self._rsi_std_dev = None
+        self._cooldown = 0
 
     @property
-    def RsiPeriod(self):
-        """Period for RSI calculation."""
-        return self._rsiPeriod.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsiPeriod.Value = value
-
-    @property
-    def MovingAvgPeriod(self):
-        """Period for moving average and standard deviation calculation."""
-        return self._movingAvgPeriod.Value
-
-    @MovingAvgPeriod.setter
-    def MovingAvgPeriod(self, value):
-        self._movingAvgPeriod.Value = value
-
-    @property
-    def StdDevMultiplier(self):
-        """Multiplier for standard deviation to define dynamic levels."""
-        return self._stdDevMultiplier.Value
-
-    @StdDevMultiplier.setter
-    def StdDevMultiplier(self, value):
-        self._stdDevMultiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop loss percentage."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type parameter."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(rsi_dynamic_overbought_oversold_strategy, self).OnReseted()
+        self._rsi = None
+        self._price_sma = None
+        self._rsi_sma = None
+        self._rsi_std_dev = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(rsi_dynamic_overbought_oversold_strategy, self).OnStarted(time)
 
-        self._rsiSma = SimpleMovingAverage()
-        self._rsiSma.Length = self.MovingAvgPeriod
-        self._rsiStdDev = StandardDeviation()
-        self._rsiStdDev.Length = self.MovingAvgPeriod
+        ma_period = int(self._moving_avg_period.Value)
 
-        # Create indicators
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
-        priceSma = SimpleMovingAverage()
-        priceSma.Length = self.MovingAvgPeriod
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_period.Value)
+        self._price_sma = SimpleMovingAverage()
+        self._price_sma.Length = ma_period
+        self._rsi_sma = SimpleMovingAverage()
+        self._rsi_sma.Length = ma_period
+        self._rsi_std_dev = StandardDeviation()
+        self._rsi_std_dev.Length = ma_period
+        self._cooldown = 0
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._rsi, self._price_sma, self._process_candle).Start()
 
-        # Create RSI and price SMA processing
-        subscription.Bind(rsi, priceSma, self.ProcessCandle).Start()
-
-        # Enable position protection with percentage stop-loss
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            useMarketOrders=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, rsi)
-            self.DrawIndicator(area, priceSma)
+            self.DrawIndicator(area, self._rsi)
+            self.DrawIndicator(area, self._price_sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, rsiValue, priceSmaValue):
-        """Process candle with RSI value and price SMA."""
-        # Skip unfinished candles
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
+
+    def _process_candle(self, candle, rsi_value, price_sma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        rv = float(rsi_value)
 
-        smaValue = process_float(self._rsiSma, rsiValue, candle.ServerTime, candle.State == CandleStates.Finished)
-        stdDevValue = process_float(self._rsiStdDev, rsiValue, candle.ServerTime, candle.State == CandleStates.Finished)
+        avg_input = DecimalIndicatorValue(self._rsi_sma, Decimal(rv), candle.OpenTime)
+        avg_input.IsFinal = True
+        rsi_average_value = float(self._rsi_sma.Process(avg_input))
 
-        # Get values from indicators
-        rsiSmaValue = float(smaValue)
-        rsiStdDevValue = float(stdDevValue)
+        std_input = DecimalIndicatorValue(self._rsi_std_dev, Decimal(rv), candle.OpenTime)
+        std_input.IsFinal = True
+        rsi_std_dev_value = float(self._rsi_std_dev.Process(std_input))
 
-        # Get the indicator containers using container names
+        if not self._rsi.IsFormed or not self._price_sma.IsFormed or not self._rsi_sma.IsFormed or not self._rsi_std_dev.IsFormed:
+            return
 
-        # Calculate dynamic overbought/oversold levels
-        dynamicOverbought = rsiSmaValue + self.StdDevMultiplier * rsiStdDevValue
-        dynamicOversold = rsiSmaValue - self.StdDevMultiplier * rsiStdDevValue
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Make sure levels are within RSI range (0-100)
-        dynamicOverbought = Math.Min(dynamicOverbought, 90.0)
-        dynamicOversold = Math.Max(dynamicOversold, 10.0)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        # Log current values
-        self.LogInfo("RSI: {0}, MA: {1}, DynamicOverbought: {2}, DynamicOversold: {3}".format(rsiValue, priceSmaValue, dynamicOverbought, dynamicOversold))
+        sdm = float(self._std_dev_multiplier.Value)
+        dynamic_overbought = min(rsi_average_value + sdm * rsi_std_dev_value, 85.0)
+        dynamic_oversold = max(rsi_average_value - sdm * rsi_std_dev_value, 15.0)
+        price = float(candle.ClosePrice)
+        psv = float(price_sma_value)
+        bullish_filter = price >= psv * 0.995
+        bearish_filter = price <= psv * 1.005
+        cd = int(self._cooldown_bars.Value)
 
-        # Define entry conditions
-        longEntryCondition = rsiValue < dynamicOversold and candle.ClosePrice > priceSmaValue and self.Position <= 0
-        shortEntryCondition = rsiValue > dynamicOverbought and candle.ClosePrice < priceSmaValue and self.Position >= 0
+        if self.Position == 0:
+            if rv <= dynamic_oversold and bullish_filter:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif rv >= dynamic_overbought and bearish_filter:
+                self.SellMarket()
+                self._cooldown = cd
+            return
 
-        # Define exit conditions
-        longExitCondition = rsiValue > 50 and self.Position > 0
-        shortExitCondition = rsiValue < 50 and self.Position < 0
-
-        # Execute trading logic
-        if longEntryCondition:
-            positionSize = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(positionSize)
-            self.LogInfo("Long entry: Price={0}, RSI={1}, Oversold={2}".format(candle.ClosePrice, rsiValue, dynamicOversold))
-        elif shortEntryCondition:
-            positionSize = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(positionSize)
-            self.LogInfo("Short entry: Price={0}, RSI={1}, Overbought={2}".format(candle.ClosePrice, rsiValue, dynamicOverbought))
-        elif longExitCondition:
+        if self.Position > 0 and (rv >= rsi_average_value or price < psv * 0.995):
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Long exit: Price={0}, RSI={1}".format(candle.ClosePrice, rsiValue))
-        elif shortExitCondition:
+            self._cooldown = cd
+        elif self.Position < 0 and (rv <= rsi_average_value or price > psv * 1.005):
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Short exit: Price={0}, RSI={1}".format(candle.ClosePrice, rsiValue))
+            self._cooldown = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return rsi_dynamic_overbought_oversold_strategy()

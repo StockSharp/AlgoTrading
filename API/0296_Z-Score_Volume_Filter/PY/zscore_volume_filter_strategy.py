@@ -5,10 +5,8 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class zscore_volume_filter_strategy(Strategy):
@@ -37,7 +35,7 @@ class zscore_volume_filter_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 20) \
             .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle series for signals", "General")
 
         self._price_sma = None
@@ -46,63 +44,8 @@ class zscore_volume_filter_strategy(Strategy):
         self._cooldown = 0
 
     @property
-    def LookbackPeriod(self):
-        return self._lookback_period.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def ZScoreThreshold(self):
-        return self._z_score_threshold.Value
-
-    @ZScoreThreshold.setter
-    def ZScoreThreshold(self, value):
-        self._z_score_threshold.Value = value
-
-    @property
-    def ExitThreshold(self):
-        return self._exit_threshold.Value
-
-    @ExitThreshold.setter
-    def ExitThreshold(self, value):
-        self._exit_threshold.Value = value
-
-    @property
-    def VolumeFactor(self):
-        return self._volume_factor.Value
-
-    @VolumeFactor.setter
-    def VolumeFactor(self, value):
-        self._volume_factor.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldown_bars.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(zscore_volume_filter_strategy, self).OnReseted()
@@ -114,16 +57,17 @@ class zscore_volume_filter_strategy(Strategy):
     def OnStarted(self, time):
         super(zscore_volume_filter_strategy, self).OnStarted(time)
 
+        lb = int(self._lookback_period.Value)
         self._price_sma = SimpleMovingAverage()
-        self._price_sma.Length = self.LookbackPeriod
+        self._price_sma.Length = lb
         self._price_std_dev = StandardDeviation()
-        self._price_std_dev.Length = self.LookbackPeriod
+        self._price_std_dev.Length = lb
         self._volume_sma = SimpleMovingAverage()
-        self._volume_sma.Length = self.LookbackPeriod
+        self._volume_sma.Length = lb
         self._cooldown = 0
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._price_sma, self._price_std_dev, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._price_sma, self._price_std_dev, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -131,53 +75,56 @@ class zscore_volume_filter_strategy(Strategy):
             self.DrawIndicator(area, self._price_sma)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
 
-    def ProcessCandle(self, candle, sma_value, std_dev_value):
+    def _process_candle(self, candle, sma_value, std_dev_value):
         if candle.State != CandleStates.Finished:
             return
 
-        sma_val = float(sma_value)
-        std_val = float(std_dev_value)
-
-        # Process volume through its own SMA
-        vol_result = process_float(self._volume_sma, float(candle.TotalVolume), candle.OpenTime, True)
+        vol_result = self._volume_sma.Process(
+            DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.OpenTime))
         volume_average = float(vol_result)
 
         if not self._price_sma.IsFormed or not self._price_std_dev.IsFormed or not self._volume_sma.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self._cooldown > 0:
             self._cooldown -= 1
             return
 
+        std_val = float(std_dev_value)
         if std_val <= 0:
             return
 
+        sma_val = float(sma_value)
         z_score = (float(candle.ClosePrice) - sma_val) / std_val
-        is_high_volume = float(candle.TotalVolume) >= volume_average * self.VolumeFactor
+        is_high_volume = float(candle.TotalVolume) >= volume_average * float(self._volume_factor.Value)
+
+        z_threshold = float(self._z_score_threshold.Value)
+        exit_threshold = float(self._exit_threshold.Value)
+        cd = int(self._cooldown_bars.Value)
 
         if self.Position == 0:
             if not is_high_volume:
                 return
 
-            if z_score <= -self.ZScoreThreshold:
+            if z_score <= -z_threshold:
                 self.BuyMarket()
-                self._cooldown = self.CooldownBars
-            elif z_score >= self.ZScoreThreshold:
+                self._cooldown = cd
+            elif z_score >= z_threshold:
                 self.SellMarket()
-                self._cooldown = self.CooldownBars
+                self._cooldown = cd
             return
 
-        if self.Position > 0 and z_score >= -self.ExitThreshold:
-            self.SellMarket(abs(self.Position))
-            self._cooldown = self.CooldownBars
-        elif self.Position < 0 and z_score <= self.ExitThreshold:
-            self.BuyMarket(abs(self.Position))
-            self._cooldown = self.CooldownBars
+        if self.Position > 0 and z_score >= -exit_threshold:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = cd
+        elif self.Position < 0 and z_score <= exit_threshold:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cd
 
     def CreateClone(self):
         return zscore_volume_filter_strategy()

@@ -164,7 +164,7 @@ class color_jfatl_digit_tm_strategy(Strategy):
         if not self._jma.IsFormed:
             return
 
-        jma_val = float(jma_out.ToDecimal())
+        jma_val = float(jma_out)
         rounding_step = self._get_rounding_step()
         rounded_line = self._round_to_step(jma_val, rounding_step)
 

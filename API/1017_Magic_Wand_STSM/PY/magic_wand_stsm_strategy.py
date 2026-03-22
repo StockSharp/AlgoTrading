@@ -48,21 +48,30 @@ class magic_wand_stsm_strategy(Strategy):
 
     def OnStarted(self, time):
         super(magic_wand_stsm_strategy, self).OnStarted(time)
-        atr = AverageTrueRange()
-        atr.Length = self._supertrend_period.Value
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_length.Value
+        self._prev_highest = 0.0
+        self._prev_lowest = 0.0
+        self._prev_supertrend = 0.0
+        self._prev_close = 0.0
+        self._is_first = True
+        self._stop = 0.0
+        self._take = 0.0
+        self._atr = AverageTrueRange()
+        self._atr.Length = self._supertrend_period.Value
+        self._sma = SimpleMovingAverage()
+        self._sma.Length = self._ma_length.Value
         self._bars_from_trade = self._cooldown_bars.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(atr, sma, self._process_candle).Start()
+        subscription.Bind(self._atr, self._sma, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
+            self.DrawIndicator(area, self._sma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, atr_val, sma_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._atr.IsFormed or not self._sma.IsFormed:
             return
         atr = float(atr_val)
         sma = float(sma_val)

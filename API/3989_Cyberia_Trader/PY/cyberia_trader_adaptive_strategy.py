@@ -162,8 +162,8 @@ class cyberia_trader_adaptive_strategy(Strategy):
         if not ema_val.IsFinal or not macd_val.IsFinal or not cci_val.IsFinal or not adx_val.IsFinal:
             return
 
-        ema_dec = float(ema_val.ToDecimal())
-        cci_dec = float(cci_val.ToDecimal())
+        ema_dec = float(ema_val)
+        cci_dec = float(cci_val)
 
         macd_typed = macd_val
         macd_v = float(macd_typed.Macd) if macd_typed.Macd is not None else None

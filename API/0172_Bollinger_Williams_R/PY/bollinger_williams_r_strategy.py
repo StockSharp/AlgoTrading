@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import BollingerBands, WilliamsR, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -73,6 +73,9 @@ class bollinger_williams_r_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
 
@@ -81,6 +84,10 @@ class bollinger_williams_r_strategy(Strategy):
         middle_band = float(bb_value.MovingAverage)
         price = float(candle.ClosePrice)
         wr_dec = float(wr_value)
+        atr_dec = float(atr_value)
+        atr_mult = float(self._atr_multiplier.Value)
+
+        stop_size = atr_dec * atr_mult
 
         is_below_lower = price <= lower_band * 1.001
         is_above_upper = price >= upper_band * 0.999
@@ -92,15 +99,29 @@ class bollinger_williams_r_strategy(Strategy):
             return
 
         if not self._was_below_lower and is_below_lower and wr_dec < -45 and self.Position <= 0:
-            self.BuyMarket()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
             self._cooldown = 6
+
+            # Set stop-loss
+            stop_price = price - stop_size
+            stop_vol = max(abs(self.Position + self.Volume), self.Volume)
+            self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, stop_vol))
+
         elif not self._was_above_upper and is_above_upper and wr_dec > -55 and self.Position >= 0:
-            self.SellMarket()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
             self._cooldown = 6
+
+            # Set stop-loss
+            stop_price = price + stop_size
+            stop_vol = max(abs(self.Position + self.Volume), self.Volume)
+            self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, stop_vol))
+
         elif price >= middle_band and self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(abs(self.Position))
         elif price <= middle_band and self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(self.Position)
 
         self._was_below_lower = is_below_lower
         self._was_above_upper = is_above_upper

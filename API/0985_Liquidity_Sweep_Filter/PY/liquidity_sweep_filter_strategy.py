@@ -40,13 +40,15 @@ class liquidity_sweep_filter_strategy(Strategy):
     def OnStarted(self, time):
         super(liquidity_sweep_filter_strategy, self).OnStarted(time)
 
-        sma = SimpleMovingAverage()
-        sma.Length = self._length.Value
-        std_dev = StandardDeviation()
-        std_dev.Length = self._length.Value
+        self._sma = SimpleMovingAverage()
+        self._sma.Length = self._length.Value
+        self._std_dev = StandardDeviation()
+        self._std_dev.Length = self._length.Value
+        self._trend = 0
+        self._bars_since_signal = 0
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, std_dev, self._process_candle).Start()
+        subscription.Bind(self._sma, self._std_dev, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -58,6 +60,9 @@ class liquidity_sweep_filter_strategy(Strategy):
             return
 
         self._bars_since_signal += 1
+
+        if not self._sma.IsFormed or not self._std_dev.IsFormed:
+            return
 
         sma = float(sma_val)
         std = float(std_val)
@@ -79,10 +84,10 @@ class liquidity_sweep_filter_strategy(Strategy):
             return
 
         if prev_trend != 1 and self._trend == 1 and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif prev_trend != -1 and self._trend == -1 and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
 
     def CreateClone(self):

@@ -3,185 +3,140 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ParabolicSar, AverageTrueRange, SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import ParabolicSar, AverageTrueRange, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class parabolic_sar_volatility_expansion_strategy(Strategy):
     """
-    Strategy based on Parabolic SAR with Volatility Expansion detection.
+    Trend-following strategy that activates Parabolic SAR signals only when ATR expands above its recent regime.
     """
 
     def __init__(self):
-        # Constructor.
         super(parabolic_sar_volatility_expansion_strategy, self).__init__()
 
-        # SAR acceleration factor parameter.
         self._sar_af = self.Param("SarAf", 0.02) \
-            .SetGreaterThanZero() \
-            .SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.01, 0.05, 0.01)
+            .SetRange(0.001, 1.0) \
+            .SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators")
 
-        # SAR maximum acceleration factor parameter.
         self._sar_max_af = self.Param("SarMaxAf", 0.2) \
-            .SetGreaterThanZero() \
-            .SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.1, 0.3, 0.05)
+            .SetRange(0.01, 2.0) \
+            .SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators")
 
-        # ATR period parameter.
         self._atr_period = self.Param("AtrPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 28, 7)
+            .SetRange(2, 100) \
+            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        # Volatility expansion factor parameter.
-        self._volatility_expansion_factor = self.Param("VolatilityExpansionFactor", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
+        self._volatility_expansion_factor = self.Param("VolatilityExpansionFactor", 1.6) \
+            .SetRange(0.1, 10.0) \
+            .SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Signals")
 
-        # Candle type parameter.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 84) \
+            .SetRange(1, 500) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
+
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Indicators
-        self._atr_sma = None
-        self._atr_std_dev = None
+        self._cooldown = 0
 
     @property
-    def SarAf(self):
-        return self._sar_af.Value
-
-    @SarAf.setter
-    def SarAf(self, value):
-        self._sar_af.Value = value
-
-    @property
-    def SarMaxAf(self):
-        return self._sar_max_af.Value
-
-    @SarMaxAf.setter
-    def SarMaxAf(self, value):
-        self._sar_max_af.Value = value
-
-    @property
-    def AtrPeriod(self):
-        return self._atr_period.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def VolatilityExpansionFactor(self):
-        return self._volatility_expansion_factor.Value
-
-    @VolatilityExpansionFactor.setter
-    def VolatilityExpansionFactor(self, value):
-        self._volatility_expansion_factor.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(parabolic_sar_volatility_expansion_strategy, self).OnReseted()
-        self._atr_sma = None
-        self._atr_std_dev = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(parabolic_sar_volatility_expansion_strategy, self).OnStarted(time)
 
-        # Create indicators
         parabolic_sar = ParabolicSar()
-        parabolic_sar.Acceleration = self.SarAf
-        parabolic_sar.AccelerationMax = self.SarMaxAf
+        parabolic_sar.Acceleration = Decimal(self._sar_af.Value)
+        parabolic_sar.AccelerationMax = Decimal(self._sar_max_af.Value)
 
-        atr = AverageTrueRange()
-        atr.Length = self.AtrPeriod
+        atr_period = int(self._atr_period.Value)
+        self._atr = AverageTrueRange()
+        self._atr.Length = atr_period
         self._atr_sma = SimpleMovingAverage()
-        self._atr_sma.Length = self.AtrPeriod
+        self._atr_sma.Length = atr_period
         self._atr_std_dev = StandardDeviation()
-        self._atr_std_dev.Length = self.AtrPeriod
+        self._atr_std_dev.Length = atr_period
+        self._cooldown = 0
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(parabolic_sar, atr, self._on_candle)
-        subscription.Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(parabolic_sar, self._process_candle).Start()
 
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, parabolic_sar)
-            self.DrawIndicator(area, atr)
+            self.DrawIndicator(area, self._atr)
             self.DrawOwnTrades(area)
 
-    def _on_candle(self, candle, sar_value, atr_value):
-        # Calculate ATR average and standard deviation
-        atr_avg = float(process_float(self._atr_sma, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
-        atr_std = float(process_float(self._atr_std_dev, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        self.StartProtection(
+            Unit(0, UnitTypes.Absolute),
+            Unit(self._stop_loss_percent.Value, UnitTypes.Percent),
+            False
+        )
 
-        # Process the strategy logic
-        self.ProcessStrategy(candle, sar_value, atr_value, atr_avg, atr_std)
-
-    def ProcessStrategy(self, candle, sar_value, atr_value, atr_avg, atr_std_dev):
-        # Skip unfinished candles
+    def _process_candle(self, candle, sar_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
+        atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
+        atr_value = float(atr_result)
 
-        # Check if volatility is expanding
-        volatility_threshold = atr_avg + (self.VolatilityExpansionFactor * atr_std_dev)
-        is_volatility_expanding = atr_value > volatility_threshold
+        atr_avg_input = DecimalIndicatorValue(self._atr_sma, Decimal(atr_value), candle.OpenTime)
+        atr_avg_input.IsFinal = True
+        atr_sma_value = float(self._atr_sma.Process(atr_avg_input))
 
-        # Trading logic - only trade during volatility expansion
-        if is_volatility_expanding:
-            # Check price relative to SAR
-            is_above_sar = candle.ClosePrice > sar_value
-            is_below_sar = candle.ClosePrice < sar_value
+        atr_std_input = DecimalIndicatorValue(self._atr_std_dev, Decimal(atr_value), candle.OpenTime)
+        atr_std_input.IsFinal = True
+        atr_std_dev_value = float(self._atr_std_dev.Process(atr_std_input))
 
-            if is_above_sar and self.Position <= 0:
-                # Price above SAR with volatility expansion - Go long
-                self.CancelActiveOrders()
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-                # Calculate position size
-                volume = self.Volume + Math.Abs(self.Position)
+        if not self._atr.IsFormed or not self._atr_sma.IsFormed or not self._atr_std_dev.IsFormed:
+            return
 
-                # Enter long position
-                self.BuyMarket(volume)
-            elif is_below_sar and self.Position >= 0:
-                # Price below SAR with volatility expansion - Go short
-                self.CancelActiveOrders()
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-                # Calculate position size
-                volume = self.Volume + Math.Abs(self.Position)
+        vef = float(self._volatility_expansion_factor.Value)
+        volatility_threshold = atr_sma_value + vef * atr_std_dev_value
+        is_volatility_expanding = atr_value >= volatility_threshold
 
-                # Enter short position
-                self.SellMarket(volume)
+        price = float(candle.ClosePrice)
+        sar_val = float(sar_value)
+        is_above_sar = price > sar_val
+        is_below_sar = price < sar_val
 
-        # Exit logic - when price crosses SAR
-        if (self.Position > 0 and candle.ClosePrice < sar_value) or \
-                (self.Position < 0 and candle.ClosePrice > sar_value):
-            # Close position
-            self.ClosePosition()
+        cd = int(self._cooldown_bars.Value)
+
+        if self.Position == 0:
+            if is_volatility_expanding and is_above_sar:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif is_volatility_expanding and is_below_sar:
+                self.SellMarket()
+                self._cooldown = cd
+            return
+
+        if self.Position > 0 and (not is_above_sar or not is_volatility_expanding):
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = cd
+        elif self.Position < 0 and (not is_below_sar or not is_volatility_expanding):
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return parabolic_sar_volatility_expansion_strategy()

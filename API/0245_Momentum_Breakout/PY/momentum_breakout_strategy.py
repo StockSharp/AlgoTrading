@@ -137,8 +137,7 @@ class momentum_breakout_strategy(Strategy):
         self._momentum_avg_value = float(avg_val)
         self._momentum_stddev_value = float(std_val)
 
-        # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading() or not self._momentum_average.IsFormed or not self._momentum_stddev.IsFormed:
+        if not self._momentum_average.IsFormed or not self._momentum_stddev.IsFormed:
             return
 
         # Ensure we have all needed values
@@ -152,25 +151,12 @@ class momentum_breakout_strategy(Strategy):
         self.LogInfo("Momentum: {0}, Avg: {1}, Upper: {2}, Lower: {3}".format(
             self._current_momentum, self._momentum_avg_value, upper_band, lower_band))
 
-        # Entry logic - BREAKOUT (not mean reversion)
+        # Entry logic - BREAKOUT only when flat (no exit logic in CS)
         if self.Position == 0:
-            # Long Entry: Momentum breaks above upper band (strong upward momentum)
             if self._current_momentum > upper_band:
-                self.LogInfo("Buy Signal - Momentum ({0}) > Upper Band ({1})".format(self._current_momentum, upper_band))
-                self.BuyMarket(self.Volume)
-            # Short Entry: Momentum breaks below lower band (strong downward momentum)
+                self.BuyMarket()
             elif self._current_momentum < lower_band:
-                self.LogInfo("Sell Signal - Momentum ({0}) < Lower Band ({1})".format(self._current_momentum, lower_band))
-                self.SellMarket(self.Volume)
-        # Exit logic
-        elif self.Position > 0 and self._current_momentum < self._momentum_avg_value:
-            # Exit Long: Momentum returned to average
-            self.LogInfo("Exit Long - Momentum ({0}) < Avg ({1})".format(self._current_momentum, self._momentum_avg_value))
-            self.SellMarket(abs(self.Position))
-        elif self.Position < 0 and self._current_momentum > self._momentum_avg_value:
-            # Exit Short: Momentum returned to average
-            self.LogInfo("Exit Short - Momentum ({0}) > Avg ({1})".format(self._current_momentum, self._momentum_avg_value))
-            self.BuyMarket(abs(self.Position))
+                self.SellMarket()
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Decimal
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, IndicatorHelper
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -54,36 +54,14 @@ class earnings_announcements_with_buybacks_strategy(Strategy):
         self._latest_buyback_value = 0.0
 
     @property
-    def DaysBefore(self):
-        return self._days_before.Value
-
-    @property
-    def DaysAfter(self):
-        return self._days_after.Value
-
-    @property
-    def EventCycleBars(self):
-        return self._event_cycle_bars.Value
-
-    @property
-    def BuybackLength(self):
-        return self._buyback_length.Value
-
-    @property
-    def BuybackThreshold(self):
-        return self._buyback_threshold.Value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @property
-    def StopLoss(self):
-        return self._stop_loss.Value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(earnings_announcements_with_buybacks_strategy, self).OnReseted()
@@ -97,28 +75,40 @@ class earnings_announcements_with_buybacks_strategy(Strategy):
         super(earnings_announcements_with_buybacks_strategy, self).OnStarted(time)
 
         self._buyback_proxy = ExponentialMovingAverage()
-        self._buyback_proxy.Length = self.BuybackLength
+        self._buyback_proxy.Length = int(self._buyback_length.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription \
-            .Bind(self.ProcessCandle) \
-            .Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self.ProcessCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
 
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLoss), UnitTypes.Percent))
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        buyback_signal = Decimal(self._calculate_buyback_signal(candle))
-        result = IndicatorHelper.Process(self._buyback_proxy, buyback_signal, candle.OpenTime, True)
+        buyback_signal = self.CalculateBuybackSignal(candle)
+        iv = DecimalIndicatorValue(self._buyback_proxy, buyback_signal, candle.OpenTime)
+        iv.IsFinal = True
+        result = self._buyback_proxy.Process(iv)
         self._latest_buyback_value = float(result)
 
         if not self._buyback_proxy.IsFormed or not self.IsFormedAndOnlineAndAllowTrading():
             self._bar_index += 1
             return
+
+        cooldown = int(self._cooldown_bars.Value)
+        days_before = int(self._days_before.Value)
+        days_after = int(self._days_after.Value)
+        event_cycle = int(self._event_cycle_bars.Value)
+        buyback_thresh = float(self._buyback_threshold.Value)
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
@@ -126,25 +116,27 @@ class earnings_announcements_with_buybacks_strategy(Strategy):
         if self._holding_remaining > 0:
             self._holding_remaining -= 1
             if self._holding_remaining == 0 and self.Position > 0:
-                self.SellMarket()
-                self._cooldown_remaining = self.CooldownBars
+                self.SellMarket(self.Position)
+                self._cooldown_remaining = cooldown
 
-        bars_to_event = self.EventCycleBars - (self._bar_index % self.EventCycleBars)
-        in_entry_window = bars_to_event <= self.DaysBefore and bars_to_event > 0
-        buyback_active = self._latest_buyback_value >= self.BuybackThreshold
+        bars_to_event = event_cycle - (self._bar_index % event_cycle)
+        in_entry_window = bars_to_event <= days_before and bars_to_event > 0
+        buyback_active = self._latest_buyback_value >= buyback_thresh
 
         if self._cooldown_remaining == 0 and self.Position == 0 and in_entry_window and buyback_active:
             self.BuyMarket()
-            self._holding_remaining = self.DaysAfter + 1
-            self._cooldown_remaining = self.CooldownBars
+            self._holding_remaining = days_after + 1
+            self._cooldown_remaining = cooldown
 
         self._bar_index += 1
 
-    def _calculate_buyback_signal(self, candle):
+    def CalculateBuybackSignal(self, candle):
         price_base = max(float(candle.OpenPrice), 1.0)
-        rng = max(float(candle.HighPrice) - float(candle.LowPrice), 0.01)
-        close_location = ((float(candle.ClosePrice) - float(candle.LowPrice)) - (float(candle.HighPrice) - float(candle.ClosePrice))) / rng
-        compression = 1.0 - min(0.2, rng / price_base)
+        price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        range_val = max(float(candle.HighPrice) - float(candle.LowPrice), price_step)
+        close_location = ((float(candle.ClosePrice) - float(candle.LowPrice)) - (float(candle.HighPrice) - float(candle.ClosePrice))) / range_val
+        compression = 1.0 - min(0.2, range_val / price_base)
+
         return (close_location * 2.0) + compression
 
     def CreateClone(self):

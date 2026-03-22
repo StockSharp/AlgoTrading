@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -13,174 +13,116 @@ from indicator_extensions import *
 class vwap_macd_strategy(Strategy):
     """
     Strategy based on VWAP and MACD.
-    Enters long when price is above VWAP and MACD > Signal.
-    Enters short when price is below VWAP and MACD < Signal.
+    Enters long when price is above VWAP and MACD crosses above Signal.
+    Enters short when price is below VWAP and MACD crosses below Signal.
     Exits when MACD crosses its signal line in the opposite direction.
     """
 
     def __init__(self):
         super(vwap_macd_strategy, self).__init__()
 
-        # MACD fast EMA period.
         self._macd_fast_period = self.Param("MacdFastPeriod", 12) \
-            .SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
 
-        # MACD slow EMA period.
         self._macd_slow_period = self.Param("MacdSlowPeriod", 26) \
-            .SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
 
-        # MACD signal line period.
         self._macd_signal_period = self.Param("MacdSignalPeriod", 9) \
-            .SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
 
-        # Stop loss percentage value.
+        self._cooldown_bars = self.Param("CooldownBars", 30) \
+            .SetRange(1, 200) \
+            .SetDisplay("Cooldown Bars", "Bars between entries", "General")
+
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss (%)", "Stop loss percentage from entry price", "Risk Management")
 
-        # Candle type for strategy.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Timeframe of data for strategy", "General")
 
-        self._macd = None
         self._vwap = None
-        self._prev_macd = 0
-        self._prev_signal = 0
+        self._prev_macd = 0.0
+        self._prev_signal = 0.0
+        self._cooldown = 0
 
     @property
-    def macd_fast_period(self):
-        return self._macd_fast_period.Value
-
-    @macd_fast_period.setter
-    def macd_fast_period(self, value):
-        self._macd_fast_period.Value = value
-
-    @property
-    def macd_slow_period(self):
-        return self._macd_slow_period.Value
-
-    @macd_slow_period.setter
-    def macd_slow_period(self, value):
-        self._macd_slow_period.Value = value
-
-    @property
-    def macd_signal_period(self):
-        return self._macd_signal_period.Value
-
-    @macd_signal_period.setter
-    def macd_signal_period(self, value):
-        self._macd_signal_period.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
 
     def OnReseted(self):
         super(vwap_macd_strategy, self).OnReseted()
-
-        if self._macd is not None:
-            self._macd.Reset()
-        if self._vwap is not None:
-            self._vwap.Reset()
-
-        self._prev_macd = 0
-        self._prev_signal = 0
+        self._vwap = None
+        self._prev_macd = 0.0
+        self._prev_signal = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(vwap_macd_strategy, self).OnStarted(time)
+        self._prev_macd = 0.0
+        self._prev_signal = 0.0
+        self._cooldown = 0
 
-        # Create MACD indicator
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self.macd_fast_period
-        self._macd.Macd.LongMa.Length = self.macd_slow_period
-        self._macd.SignalMa.Length = self.macd_signal_period
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._macd_fast_period.Value
+        macd.Macd.LongMa.Length = self._macd_slow_period.Value
+        macd.SignalMa.Length = self._macd_signal_period.Value
+
         self._vwap = VolumeWeightedMovingAverage()
-        self._vwap.Length = self.macd_signal_period
+        self._vwap.Length = self._macd_signal_period.Value
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Create subscription
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(macd, self.ProcessCandle).Start()
 
-        # Process candles with MACD
-        subscription.BindEx(self._macd, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-            # MACD in separate area
             macd_area = self.CreateChartArea()
             if macd_area is not None:
-                self.DrawIndicator(macd_area, self._macd)
+                self.DrawIndicator(macd_area, macd)
 
     def ProcessCandle(self, candle, macd_value):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Get VWAP value (calculated per day)
         vwap = float(process_candle(self._vwap, candle))
 
-
-        # Check if MACD and Signal values are available
         if macd_value.Macd is None or macd_value.Signal is None:
             return
 
-        # Extract MACD and Signal values
         macd = float(macd_value.Macd)
         signal = float(macd_value.Signal)
 
-        # Detect MACD crosses
-        macd_crossed_above_signal = self._prev_macd <= self._prev_signal and macd > signal
-        macd_crossed_below_signal = self._prev_macd >= self._prev_signal and macd < signal
+        macd_crossed_above = self._prev_macd <= self._prev_signal and macd > signal
+        macd_crossed_below = self._prev_macd >= self._prev_signal and macd < signal
 
-        # Check if strategy is ready for trading
         if not self.IsFormedAndOnlineAndAllowTrading():
-            # Store current values for next candle
             self._prev_macd = macd
             self._prev_signal = signal
             return
 
-        # Trading logic
-        if candle.ClosePrice > vwap and macd > signal and self.Position <= 0:
-            # Price above VWAP with bullish MACD - go long
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif candle.ClosePrice < vwap and macd < signal and self.Position >= 0:
-            # Price below VWAP with bearish MACD - go short
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
 
-        # Exit logic based on MACD crosses
-        if self.Position > 0 and macd_crossed_below_signal:
-            # Exit long position when MACD crosses below Signal
-            self.ClosePosition()
-        elif self.Position < 0 and macd_crossed_above_signal:
-            # Exit short position when MACD crosses above Signal
-            self.ClosePosition()
+        cooldown_val = int(self._cooldown_bars.Value)
 
-        # Store current values for next candle
+        if self._cooldown == 0 and float(candle.ClosePrice) > vwap * 1.001 and macd_crossed_above and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._cooldown = cooldown_val
+        elif self._cooldown == 0 and float(candle.ClosePrice) < vwap * 0.999 and macd_crossed_below and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._cooldown = cooldown_val
+
+        if self.Position > 0 and macd_crossed_below:
+            self.ClosePosition()
+            self._cooldown = cooldown_val
+        elif self.Position < 0 and macd_crossed_above:
+            self.ClosePosition()
+            self._cooldown = cooldown_val
+
         self._prev_macd = macd
         self._prev_signal = signal
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return vwap_macd_strategy()

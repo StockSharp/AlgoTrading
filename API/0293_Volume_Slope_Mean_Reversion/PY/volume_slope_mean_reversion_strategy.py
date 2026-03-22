@@ -3,230 +3,163 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Level1Fields
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class volume_slope_mean_reversion_strategy(Strategy):
     """
-    Volume Slope Mean Reversion Strategy.
-    This strategy trades based on volume slope reversions to the mean.
+    Volume slope mean reversion strategy.
+    Trades reversion of extreme volume-ratio slope values.
     """
 
     def __init__(self):
         super(volume_slope_mean_reversion_strategy, self).__init__()
 
-        # Volume Moving Average Period.
         self._volume_ma_period = self.Param("VolumeMaPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Volume MA Period", "Period for Volume Moving Average", "Indicator Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Volume MA Period", "Period for the volume moving average", "Indicator Parameters")
 
-        # Period for calculating slope average and standard deviation.
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
+        self._slope_lookback = self.Param("SlopeLookback", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Slope Lookback", "Period for slope statistics", "Strategy Parameters")
 
-        # The multiplier for standard deviation to determine entry threshold.
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
+        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entries", "Strategy Parameters")
 
-        # Stop loss percentage.
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        # Candle type for strategy.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._volume_ma = None
-        self._previous_volume_ratio = 0
-        self._current_volume_slope = 0
-        self._is_first_calculation = True
-
-        self._average_slope = 0
-        self._slope_std_dev = 0
-        self._sample_count = 0
-        self._sum_slopes = 0
-        self._sum_slopes_squared = 0
+        self._volume_average = None
+        self._previous_volume_ratio = 0.0
+        self._slope_history = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
-    def VolumeMaPeriod(self):
-        """Volume Moving Average Period."""
-        return self._volume_ma_period.Value
-
-    @VolumeMaPeriod.setter
-    def VolumeMaPeriod(self, value):
-        self._volume_ma_period.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        """Period for calculating slope average and standard deviation."""
-        return self._lookback_period.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        """The multiplier for standard deviation to determine entry threshold."""
-        return self._deviation_multiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(volume_slope_mean_reversion_strategy, self).OnReseted()
-        self._previous_volume_ratio = 0
-        self._current_volume_slope = 0
-        self._average_slope = 0
-        self._slope_std_dev = 0
-        self._sample_count = 0
-        self._sum_slopes = 0
-        self._sum_slopes_squared = 0
-        self._is_first_calculation = True
+        self._volume_average = None
+        self._previous_volume_ratio = 0.0
+        lb = int(self._slope_lookback.Value)
+        self._slope_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
+        super(volume_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Initialize indicators
-        self._volume_ma = SimpleMovingAverage()
-        self._volume_ma.Length = self.VolumeMaPeriod
+        lb = int(self._slope_lookback.Value)
+        self._slope_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
 
-        # Initialize statistics variables
+        self._volume_average = SimpleMovingAverage()
+        self._volume_average.Length = int(self._volume_ma_period.Value)
+        self._volume_average.Source = Level1Fields.Volume
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._volume_ma, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._volume_average, self._process_candle).Start()
 
-        # Set up chart visualization if available
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._volume_average)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        super(volume_slope_mean_reversion_strategy, self).OnStarted(time)
-
-    def ProcessCandle(self, candle, volume_ma_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, average_volume):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
-
-        # Process volume through SMA
-        volume_indicator_value = float(volume_ma_value)
-
-        # Skip if indicator is not formed yet
-        if not self._volume_ma.IsFormed:
+        if not self._volume_average.IsFormed:
             return
 
-        # Calculate volume ratio (current volume / average volume)
-        volume_ratio = candle.TotalVolume / volume_indicator_value
+        av = float(average_volume)
+        if av <= 0:
+            return
 
-        # Calculate volume ratio slope
-        if self._is_first_calculation:
+        volume_ratio = float(candle.TotalVolume) / av
+
+        if not self._is_initialized:
             self._previous_volume_ratio = volume_ratio
-            self._is_first_calculation = False
+            self._is_initialized = True
             return
 
-        self._current_volume_slope = volume_ratio - self._previous_volume_ratio
+        slope = volume_ratio - self._previous_volume_ratio
         self._previous_volume_ratio = volume_ratio
 
-        # Update statistics for slope values
-        self._sample_count += 1
-        self._sum_slopes += self._current_volume_slope
-        self._sum_slopes_squared += self._current_volume_slope * self._current_volume_slope
+        lb = int(self._slope_lookback.Value)
+        self._slope_history[self._current_index] = slope
+        self._current_index = (self._current_index + 1) % lb
 
-        # We need enough samples to calculate meaningful statistics
-        if self._sample_count < self.LookbackPeriod:
+        if self._filled_count < lb:
+            self._filled_count += 1
+
+        if self._filled_count < lb:
             return
 
-        # If we have more samples than our lookback period, adjust the statistics
-        if self._sample_count > self.LookbackPeriod:
-            # This is a simplified approach - ideally we would keep a circular buffer
-            # of the last N slopes for more accurate calculations
-            self._sample_count = self.LookbackPeriod
+        avg_slope = 0.0
+        for i in range(lb):
+            avg_slope += self._slope_history[i]
+        avg_slope /= float(lb)
 
-        # Calculate statistics
-        self._average_slope = self._sum_slopes / self._sample_count
-        variance = (self._sum_slopes_squared / self._sample_count) - (self._average_slope * self._average_slope)
-        self._slope_std_dev = 0 if variance <= 0 else Math.Sqrt(float(variance))
+        sum_sq = 0.0
+        for i in range(lb):
+            diff = self._slope_history[i] - avg_slope
+            sum_sq += diff * diff
+        std_slope = math.sqrt(sum_sq / float(lb))
 
-        # Calculate thresholds for entries
-        long_entry_threshold = self._average_slope - self.DeviationMultiplier * self._slope_std_dev
-        short_entry_threshold = self._average_slope + self.DeviationMultiplier * self._slope_std_dev
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Determine price direction based on candle
-        is_bullish_candle = candle.ClosePrice > candle.OpenPrice
+        if std_slope <= 0:
+            return
 
-        # Trading logic - we take into account both volume slope and price direction
-        if self._current_volume_slope < long_entry_threshold and self.Position <= 0:
-            if is_bullish_candle:
-                # Long entry: volume slope is significantly lower than average on a bullish candle
-                # This indicates potential for bullish continuation with volume mean reversion
-                self.LogInfo("Volume slope {0} below threshold {1} with bullish price, entering LONG".format(
-                    self._current_volume_slope, long_entry_threshold))
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif self._current_volume_slope > short_entry_threshold and self.Position >= 0:
-            if not is_bullish_candle:
-                # Short entry: volume slope is significantly higher than average on a bearish candle
-                # This indicates potential for bearish continuation with volume mean reversion
-                self.LogInfo("Volume slope {0} above threshold {1} with bearish price, entering SHORT".format(
-                    self._current_volume_slope, short_entry_threshold))
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        elif self.Position > 0 and self._current_volume_slope > self._average_slope:
-            # Exit long when volume slope returns to or above average
-            self.LogInfo("Volume slope {0} returned to average {1}, exiting LONG".format(
-                self._current_volume_slope, self._average_slope))
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and self._current_volume_slope < self._average_slope:
-            # Exit short when volume slope returns to or below average
-            self.LogInfo("Volume slope {0} returned to average {1}, exiting SHORT".format(
-                self._current_volume_slope, self._average_slope))
-            self.BuyMarket(Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        tm = float(self._threshold_multiplier.Value)
+        lower_threshold = avg_slope - tm * std_slope
+        upper_threshold = avg_slope + tm * std_slope
+        is_bullish_candle = float(candle.ClosePrice) >= float(candle.OpenPrice)
+        is_bearish_candle = float(candle.ClosePrice) <= float(candle.OpenPrice)
+
+        if self.Position == 0:
+            if slope <= lower_threshold and is_bullish_candle:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif slope >= upper_threshold and is_bearish_candle:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if slope >= avg_slope or is_bearish_candle:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if slope <= avg_slope or is_bullish_candle:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return volume_slope_mean_reversion_strategy()

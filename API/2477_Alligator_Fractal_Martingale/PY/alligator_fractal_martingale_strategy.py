@@ -207,19 +207,19 @@ class alligator_fractal_martingale_strategy(Strategy):
         jaw_iv.IsFinal = is_final
         jaw_result = self._jaw.Process(jaw_iv)
         if is_final:
-            self._add_indicator_value(self._jaw_history, float(jaw_result.ToDecimal()))
+            self._add_indicator_value(self._jaw_history, float(jaw_result))
 
         teeth_iv = DecimalIndicatorValue(self._teeth, median, candle.ServerTime)
         teeth_iv.IsFinal = is_final
         teeth_result = self._teeth.Process(teeth_iv)
         if is_final:
-            self._add_indicator_value(self._teeth_history, float(teeth_result.ToDecimal()))
+            self._add_indicator_value(self._teeth_history, float(teeth_result))
 
         lips_iv = DecimalIndicatorValue(self._lips, median, candle.ServerTime)
         lips_iv.IsFinal = is_final
         lips_result = self._lips.Process(lips_iv)
         if is_final:
-            self._add_indicator_value(self._lips_history, float(lips_result.ToDecimal()))
+            self._add_indicator_value(self._lips_history, float(lips_result))
 
         if not is_final:
             return

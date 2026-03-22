@@ -73,7 +73,7 @@ class i_trend_strategy(Strategy):
         if not ma_result.IsFormed:
             return
 
-        ma_val = float(ma_result.ToDecimal())
+        ma_val = float(ma_result)
         upper_band = bb_value.UpBand
         if upper_band is None:
             return

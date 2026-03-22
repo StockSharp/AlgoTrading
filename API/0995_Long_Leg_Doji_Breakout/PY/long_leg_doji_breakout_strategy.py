@@ -122,13 +122,13 @@ class long_leg_doji_breakout_strategy(Strategy):
             sma_cross = self._prev_close >= self._prev_sma and close < sma
             atr_stop = self._entry_price > 0 and close < self._entry_price - atr * 2
             if sma_cross or atr_stop:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._cooldown = self._cooldown_bars.Value
         elif self.Position < 0:
             sma_cross = self._prev_close <= self._prev_sma and close > sma
             atr_stop = self._entry_price > 0 and close > self._entry_price + atr * 2
             if sma_cross or atr_stop:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._cooldown = self._cooldown_bars.Value
 
         self._prev_close = close

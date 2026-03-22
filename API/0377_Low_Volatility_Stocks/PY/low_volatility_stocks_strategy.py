@@ -4,196 +4,246 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math, Array
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import StandardDeviation, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
+
 
 class low_volatility_stocks_strategy(Strategy):
-    """Long lowest-volatility stocks and short highest-volatility stocks."""
+    """Low volatility anomaly strategy that trades the primary instrument when its realized volatility diverges from a benchmark instrument."""
 
     def __init__(self):
         super(low_volatility_stocks_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", Array.Empty[Security]()) \
-            .SetDisplay("Universe", "Securities to trade", "General")
+        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
+            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
 
-        self._window = self.Param("VolWindowDays", 60) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Vol window", "Days in volatility window", "Parameters")
+        self._volatility_period = self.Param("VolatilityPeriod", 18) \
+            .SetRange(5, 120) \
+            .SetDisplay("Volatility Period", "Lookback period used to estimate realized volatility", "Indicators")
 
-        self._deciles = self.Param("Deciles", 10) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Deciles", "Number of deciles", "Parameters")
+        self._normalization_period = self.Param("NormalizationPeriod", 24) \
+            .SetRange(5, 120) \
+            .SetDisplay("Normalization Period", "Lookback period used to normalize the volatility spread", "Indicators")
 
-        self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters")
+        self._trend_period = self.Param("TrendPeriod", 30) \
+            .SetRange(5, 200) \
+            .SetDisplay("Trend Period", "Trend period used to align entries with the primary instrument direction", "Indicators")
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._entry_threshold = self.Param("EntryThreshold", 1.1) \
+            .SetRange(0.2, 5.0) \
+            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
+
+        self._exit_threshold = self.Param("ExitThreshold", 0.25) \
+            .SetRange(0.0, 2.0) \
+            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
+
+        self._cooldown_bars = self.Param("CooldownBars", 6) \
+            .SetRange(0, 120) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
+
+        self._stop_loss = self.Param("StopLoss", 2.5) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
-        self._ret = {}
-        self._weights = {}
-        self._latest_prices = {}
-        self._last_day = DateTime.MinValue
-
-    # region properties
-    @property
-    def Universe(self):
-        return self._universe.Value
-
-    @Universe.setter
-    def Universe(self, value):
-        self._universe.Value = value
-
-    @property
-    def VolWindowDays(self):
-        return self._window.Value
-
-    @VolWindowDays.setter
-    def VolWindowDays(self, value):
-        self._window.Value = value
+        self._benchmark = None
+        self._primary_volatility = None
+        self._benchmark_volatility = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._primary_trend = None
+        self._previous_primary_close = None
+        self._previous_benchmark_close = None
+        self._latest_primary_volatility = 0.0
+        self._latest_benchmark_volatility = 0.0
+        self._latest_primary_trend = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     @property
-    def Deciles(self):
-        return self._deciles.Value
-
-    @Deciles.setter
-    def Deciles(self, value):
-        self._deciles.Value = value
-
-    @property
-    def MinTradeUsd(self):
-        return self._min_trade_usd.Value
-
-    @MinTradeUsd.setter
-    def MinTradeUsd(self, value):
-        self._min_trade_usd.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-    # endregion
-
     def GetWorkingSecurities(self):
-        return [(s, self.CandleType) for s in self.Universe]
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._security2_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(low_volatility_stocks_strategy, self).OnReseted()
-        self._ret.clear()
-        self._weights.clear()
-        self._latest_prices.clear()
-        self._last_day = DateTime.MinValue
+        self._benchmark = None
+        self._primary_volatility = None
+        self._benchmark_volatility = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._primary_trend = None
+        self._previous_primary_close = None
+        self._previous_benchmark_close = None
+        self._latest_primary_volatility = 0.0
+        self._latest_benchmark_volatility = 0.0
+        self._latest_primary_trend = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(low_volatility_stocks_strategy, self).OnStarted(time)
 
-        if self.Universe is None or len(self.Universe) == 0:
-            raise Exception("Universe is empty.")
+        sec2_id = str(self._security2_id.Value)
+        if not sec2_id:
+            raise Exception("Benchmark security identifier is not specified.")
 
-        for s, dt in self.GetWorkingSecurities():
-            self._ret[s] = RollingWin(self.VolWindowDays + 1)
-            self.SubscribeCandles(dt, True, s) \
-                .Bind(lambda c, sec=s: self.ProcessCandle(c, sec)) \
-                .Start()
+        s = Security()
+        s.Id = sec2_id
+        self._benchmark = s
 
-    def ProcessCandle(self, candle, security):
+        vol_period = int(self._volatility_period.Value)
+        norm_period = int(self._normalization_period.Value)
+        trend_period = int(self._trend_period.Value)
+
+        self._primary_volatility = StandardDeviation()
+        self._primary_volatility.Length = vol_period
+        self._benchmark_volatility = StandardDeviation()
+        self._benchmark_volatility.Length = vol_period
+        self._spread_average = SimpleMovingAverage()
+        self._spread_average.Length = norm_period
+        self._spread_deviation = StandardDeviation()
+        self._spread_deviation.Length = norm_period
+        self._primary_trend = SimpleMovingAverage()
+        self._primary_trend.Length = trend_period
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
+
+        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
+        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, benchmark_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessPrimaryCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        self._latest_prices[security] = candle.ClosePrice
-        self.OnDaily(security, candle)
 
-    def OnDaily(self, sec, candle):
-        self._ret[sec].Add(candle.ClosePrice)
-        d = candle.OpenTime.Date
-        if d == self._last_day:
+        trend_iv = CandleIndicatorValue(self._primary_trend, candle)
+        trend_iv.IsFinal = True
+        trend_result = self._primary_trend.Process(trend_iv)
+        if not trend_result.IsEmpty and self._primary_trend.IsFormed:
+            self._latest_primary_trend = float(trend_result)
+
+        close_price = float(candle.ClosePrice)
+        if self._previous_primary_close is None or self._previous_primary_close <= 0.0:
+            self._previous_primary_close = close_price
             return
-        self._last_day = d
-        if d.Day != 1:
+
+        ret = (close_price - self._previous_primary_close) / self._previous_primary_close
+        self._previous_primary_close = close_price
+
+        abs_ret = abs(ret)
+        vol_iv = DecimalIndicatorValue(self._primary_volatility, abs_ret, candle.OpenTime)
+        vol_iv.IsFinal = True
+        vol_result = self._primary_volatility.Process(vol_iv)
+        if not vol_result.IsEmpty and self._primary_volatility.IsFormed:
+            self._latest_primary_volatility = float(vol_result)
+            self._primary_updated = True
+            self.TryProcessSpread(candle)
+
+    def ProcessBenchmarkCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
-        self.Rebalance()
 
-    def Rebalance(self):
-        vol = {}
-        for s, win in self._ret.items():
-            if not win.Full:
-                continue
-            r = win.ReturnSeries()
-            vol[s] = (decimal(Math.Sqrt(sum([float(x*x) for x in r]) / len(r))))
-        if len(vol) < self.Deciles * 2:
+        close_price = float(candle.ClosePrice)
+        if self._previous_benchmark_close is None or self._previous_benchmark_close <= 0.0:
+            self._previous_benchmark_close = close_price
             return
-        bucket = len(vol) // self.Deciles
-        low_vol = [kv[0] for kv in sorted(vol.items(), key=lambda kv: kv[1])[:bucket]]
-        high_vol = [kv[0] for kv in sorted(vol.items(), key=lambda kv: kv[1], reverse=True)[:bucket]]
-        self._weights.clear()
-        wl = 1.0 / len(low_vol)
-        ws = -1.0 / len(high_vol)
-        for s in low_vol:
-            self._weights[s] = wl
-        for s in high_vol:
-            self._weights[s] = ws
 
-        for p in self.Positions:
-            if p.Security not in self._weights:
-                self.Move(p.Security, 0)
+        ret = (close_price - self._previous_benchmark_close) / self._previous_benchmark_close
+        self._previous_benchmark_close = close_price
 
-        portfolio_value = self.Portfolio.CurrentValue or 0
-        for s, w in self._weights.items():
-            price = self.GetLatestPrice(s)
-            if price > 0:
-                self.Move(s, w * portfolio_value / price)
+        abs_ret = abs(ret)
+        vol_iv = DecimalIndicatorValue(self._benchmark_volatility, abs_ret, candle.OpenTime)
+        vol_iv.IsFinal = True
+        vol_result = self._benchmark_volatility.Process(vol_iv)
+        if not vol_result.IsEmpty and self._benchmark_volatility.IsFormed:
+            self._latest_benchmark_volatility = float(vol_result)
+            self._benchmark_updated = True
+            self.TryProcessSpread(candle)
 
-    def Move(self, sec, tgt):
-        diff = tgt - self.PositionBy(sec)
-        price = self.GetLatestPrice(sec)
-        if price <= 0 or Math.Abs(diff) * price < self.MinTradeUsd:
+    def TryProcessSpread(self, candle):
+        if not self._primary_updated or not self._benchmark_updated:
             return
-        order = Order()
-        order.Security = sec
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = Math.Abs(diff)
-        order.Type = OrderTypes.Market
-        order.Comment = "LowVol"
-        self.RegisterOrder(order)
 
-    def PositionBy(self, sec):
-        val = self.GetPositionValue(sec, self.Portfolio)
-        return val if val is not None else 0
+        self._primary_updated = False
+        self._benchmark_updated = False
 
-    def GetLatestPrice(self, sec):
-        return self._latest_prices.get(sec, 0)
+        spread = self._latest_benchmark_volatility - self._latest_primary_volatility
+
+        mean_iv = DecimalIndicatorValue(self._spread_average, spread, candle.OpenTime)
+        mean_iv.IsFinal = True
+        mean_result = self._spread_average.Process(mean_iv)
+        mean = float(mean_result)
+
+        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, candle.OpenTime)
+        dev_iv.IsFinal = True
+        dev_result = self._spread_deviation.Process(dev_iv)
+        deviation = float(dev_result)
+
+        if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
+            return
+
+        if not self._primary_trend.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        z_score = (spread - mean) / deviation
+        entry_thresh = float(self._entry_threshold.Value)
+        exit_thresh = float(self._exit_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        close_price = float(candle.ClosePrice)
+        bullish_trend = close_price >= self._latest_primary_trend
+        bearish_trend = close_price <= self._latest_primary_trend
+        bullish_entry = z_score >= entry_thresh and bullish_trend
+        bearish_entry = z_score <= -entry_thresh and bearish_trend
+
+        if self._cooldown_remaining == 0 and self.Position == 0:
+            if bullish_entry:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif bearish_entry:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
+        elif self.Position > 0 and (z_score <= exit_thresh or bearish_entry):
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and (z_score >= -exit_thresh or bullish_entry):
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return low_volatility_stocks_strategy()
-
-class RollingWin:
-    def __init__(self, n):
-        from collections import deque
-        self._n = n
-        self._q = deque()
-
-    @property
-    def Full(self):
-        return len(self._q) == self._n
-
-    def Add(self, v):
-        if len(self._q) == self._n:
-            self._q.popleft()
-        self._q.append(v)
-
-    def ReturnSeries(self):
-        arr = list(self._q)
-        res = []
-        for i in range(1, len(arr)):
-            prev = arr[i-1]
-            if prev != 0:
-                res.append((arr[i] - prev) / prev)
-        return res

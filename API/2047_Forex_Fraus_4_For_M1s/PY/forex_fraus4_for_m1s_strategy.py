@@ -83,7 +83,7 @@ class forex_fraus4_for_m1s_strategy(Strategy):
         if not wpr_value.IsFormed:
             return
 
-        wpr = float(wpr_value.ToDecimal())
+        wpr = float(wpr_value)
         buy_th = float(self.BuyThreshold)
         sell_th = float(self.SellThreshold)
 

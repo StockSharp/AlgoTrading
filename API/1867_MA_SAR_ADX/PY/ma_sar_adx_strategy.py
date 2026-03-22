@@ -60,9 +60,9 @@ class ma_sar_adx_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
         price = float(candle.ClosePrice)
-        ma = float(ma_val.ToDecimal())
-        sar = float(sar_val.ToDecimal())
-        rsi = float(rsi_val.ToDecimal())
+        ma = float(ma_val)
+        sar = float(sar_val)
+        rsi = float(rsi_val)
         long_signal = price > ma and price > sar and rsi >= self._rsi_long.Value
         short_signal = price < ma and price < sar and rsi <= self._rsi_short.Value
         long_exit = price < sar or price < ma

@@ -106,8 +106,8 @@ class kloss_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        ma = float(ma_value.ToDecimal())
-        cci = float(cci_value.ToDecimal())
+        ma = float(ma_value)
+        cci = float(cci_value)
 
         stoch_k = stoch_value.K
         stoch_d = stoch_value.D

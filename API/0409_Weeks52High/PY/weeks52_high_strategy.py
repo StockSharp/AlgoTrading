@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Strategies import Strategy
@@ -26,38 +26,35 @@ class weeks52_high_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._highest = None
         self._cooldown_remaining = 0
 
     @property
-    def HighPeriod(self):
-        return self._high_period.Value
-    @property
-    def EntryRatio(self):
-        return self._entry_ratio.Value
-    @property
-    def ExitRatio(self):
-        return self._exit_ratio.Value
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(weeks52_high_strategy, self).OnReseted()
+        self._highest = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(weeks52_high_strategy, self).OnStarted(time)
-        highest = Highest()
-        highest.Length = self.HighPeriod
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(highest, self.ProcessCandle).Start()
+        self._highest = Highest()
+        self._highest.Length = int(self._high_period.Value)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._highest, self._process_candle).Start()
 
-    def ProcessCandle(self, candle, highest_val):
+    def _process_candle(self, candle, highest_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._highest.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
@@ -67,15 +64,18 @@ class weeks52_high_strategy(Strategy):
             return
 
         ratio = float(candle.ClosePrice) / hv
+        entry_ratio = float(self._entry_ratio.Value)
+        exit_ratio = float(self._exit_ratio.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        if ratio >= self.EntryRatio and self.Position <= 0:
+        if ratio >= entry_ratio and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
-        elif ratio <= self.ExitRatio and self.Position > 0:
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif ratio <= exit_ratio and self.Position > 0:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return weeks52_high_strategy()

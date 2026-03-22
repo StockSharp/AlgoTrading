@@ -9,6 +9,7 @@ from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAver
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
+from StockSharp.Algo.Indicators import DecimalIndicatorValue
 
 class adx_breakout_strategy(Strategy):
     """
@@ -149,9 +150,9 @@ class adx_breakout_strategy(Strategy):
             return
         currentAdx = float(adxValue.MovingAverage)
 
-        # Process ADX through average indicator
-        adxAvgValue = process_float(self._adx_average, currentAdx, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentAdxAvg = float(adxAvgValue)
+        # Process ADX through average indicator (no IsFinal, matching CS)
+        div = DecimalIndicatorValue(self._adx_average, currentAdx, candle.ServerTime)
+        currentAdxAvg = float(self._adx_average.Process(div))
 
         # For first values, just save and skip
         if self._prev_adx_value == 0:
@@ -163,6 +164,10 @@ class adx_breakout_strategy(Strategy):
         stdDev = Math.Abs(currentAdx - currentAdxAvg) * 2  # Simplified approximation
 
         # Check if trading is allowed
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_adx_value = currentAdx
+            self._prev_adx_avg_value = currentAdxAvg
+            return
 
         # ADX breakout detection (ADX increases significantly above its average)
         if currentAdx > currentAdxAvg + self.Multiplier * stdDev:

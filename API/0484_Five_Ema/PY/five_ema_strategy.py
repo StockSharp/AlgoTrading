@@ -3,19 +3,18 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
+
 class five_ema_strategy(Strategy):
-    """
-    5 EMA Strategy: detects signal candle beyond EMA, enters on breakout.
-    Uses stop-loss and take-profit based on risk/reward ratio.
-    """
+    """5 EMA Strategy."""
 
     def __init__(self):
         super(five_ema_strategy, self).__init__()
+
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._ema_length = self.Param("EmaLength", 5) \
@@ -25,6 +24,7 @@ class five_ema_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
 
+        self._ema = None
         self._signal_high = None
         self._signal_low = None
         self._signal_index = None
@@ -43,6 +43,7 @@ class five_ema_strategy(Strategy):
 
     def OnReseted(self):
         super(five_ema_strategy, self).OnReseted()
+        self._ema = None
         self._signal_high = None
         self._signal_low = None
         self._signal_index = None
@@ -58,42 +59,50 @@ class five_ema_strategy(Strategy):
     def OnStarted(self, time):
         super(five_ema_strategy, self).OnStarted(time)
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self._ema_length.Value
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = int(self._ema_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ema, self._process_candle).Start()
+        subscription.Bind(self._ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
+            self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, ema_value):
+    def _on_process(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        ema_val = float(ema_value)
+        if not self._ema.IsFormed:
+            return
+
         self._bar_index += 1
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         close = float(candle.ClosePrice)
+        ema_val = float(ema_value)
+        cooldown = int(self._cooldown_bars.Value)
+        rr = float(self._target_rr.Value)
 
-        # Check stop/target exits
+        # Check stop/target exits first (always)
         if self.Position > 0 and self._long_stop is not None and self._long_target is not None:
             if low <= self._long_stop or high >= self._long_target:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
                 self._long_stop = None
                 self._long_target = None
-                self._cooldown_remaining = self._cooldown_bars.Value
+                self._cooldown_remaining = cooldown
         elif self.Position < 0 and self._short_stop is not None and self._short_target is not None:
             if high >= self._short_stop or low <= self._short_target:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._short_stop = None
                 self._short_target = None
-                self._cooldown_remaining = self._cooldown_bars.Value
+                self._cooldown_remaining = cooldown
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         # Signal detection
         if high < ema_val:
@@ -117,34 +126,38 @@ class five_ema_strategy(Strategy):
                          self._bar_index > self._signal_index and
                          self._bar_index <= self._signal_index + 3)
 
-        if self._is_buy_signal and within_window and self._signal_high is not None and high > self._signal_high and self.Position <= 0:
+        # Buy entry
+        if (self._is_buy_signal and within_window and self._signal_high is not None
+                and high > self._signal_high and self.Position <= 0):
             sl = self._signal_low if self._signal_low is not None else low
             risk = self._signal_high - sl
             if risk > 0:
                 if self.Position < 0:
-                    self.BuyMarket()
+                    self.BuyMarket(Math.Abs(self.Position))
                 self._long_stop = sl
-                self._long_target = self._signal_high + risk * self._target_rr.Value
-                self.BuyMarket()
+                self._long_target = self._signal_high + risk * rr
+                self.BuyMarket(self.Volume)
                 self._is_buy_signal = False
                 self._signal_high = None
                 self._signal_low = None
                 self._signal_index = None
-                self._cooldown_remaining = self._cooldown_bars.Value
-        elif self._is_sell_signal and within_window and self._signal_low is not None and low < self._signal_low and self.Position >= 0:
+                self._cooldown_remaining = cooldown
+        # Sell entry
+        elif (self._is_sell_signal and within_window and self._signal_low is not None
+              and low < self._signal_low and self.Position >= 0):
             sl = self._signal_high if self._signal_high is not None else high
             risk = sl - self._signal_low
             if risk > 0:
                 if self.Position > 0:
-                    self.SellMarket()
+                    self.SellMarket(Math.Abs(self.Position))
                 self._short_stop = sl
-                self._short_target = self._signal_low - risk * self._target_rr.Value
-                self.SellMarket()
+                self._short_target = self._signal_low - risk * rr
+                self.SellMarket(self.Volume)
                 self._is_sell_signal = False
                 self._signal_high = None
                 self._signal_low = None
                 self._signal_index = None
-                self._cooldown_remaining = self._cooldown_bars.Value
+                self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return five_ema_strategy()

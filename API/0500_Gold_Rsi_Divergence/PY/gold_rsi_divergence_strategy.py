@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
@@ -34,6 +34,7 @@ class gold_rsi_divergence_strategy(Strategy):
         self._rsi_buffer = []
         self._low_buffer = []
         self._high_buffer = []
+        self._buffer_count = 0
         self._bar_index = 0
         self._last_rsi_low = None
         self._last_price_low = None
@@ -46,18 +47,6 @@ class gold_rsi_divergence_strategy(Strategy):
     @property
     def candle_type(self):
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
 
     def OnReseted(self):
         super(gold_rsi_divergence_strategy, self).OnReseted()
@@ -72,7 +61,7 @@ class gold_rsi_divergence_strategy(Strategy):
         self._cooldown_remaining = 0
 
     def _initialize_buffers(self):
-        length = max(1, self._lookback_left.Value + self._lookback_right.Value + 1)
+        length = max(1, int(self._lookback_left.Value) + int(self._lookback_right.Value) + 1)
         self._rsi_buffer = [0.0] * length
         self._low_buffer = [0.0] * length
         self._high_buffer = [0.0] * length
@@ -81,10 +70,13 @@ class gold_rsi_divergence_strategy(Strategy):
     def OnStarted(self, time):
         super(gold_rsi_divergence_strategy, self).OnStarted(time)
         self._initialize_buffers()
+
         rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        rsi.Length = int(self._rsi_length.Value)
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self.OnProcess).Start()
+        subscription.Bind(rsi, self._on_process).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -103,7 +95,7 @@ class gold_rsi_divergence_strategy(Strategy):
             self._high_buffer = self._high_buffer[1:] + [high]
 
     def _is_pivot_low(self, value):
-        lr = self._lookback_right.Value
+        lr = int(self._lookback_right.Value)
         for i in range(len(self._rsi_buffer)):
             if i == lr:
                 continue
@@ -112,7 +104,7 @@ class gold_rsi_divergence_strategy(Strategy):
         return True
 
     def _is_pivot_high(self, value):
-        lr = self._lookback_right.Value
+        lr = int(self._lookback_right.Value)
         for i in range(len(self._rsi_buffer)):
             if i == lr:
                 continue
@@ -121,7 +113,7 @@ class gold_rsi_divergence_strategy(Strategy):
         return True
 
     def _check_pivots(self, rsi_value, candle):
-        lr = self._lookback_right.Value
+        lr = int(self._lookback_right.Value)
         candidate_rsi = self._rsi_buffer[lr]
         candidate_bar = self._bar_index - lr
         if self._is_pivot_low(candidate_rsi):
@@ -133,27 +125,38 @@ class gold_rsi_divergence_strategy(Strategy):
             self._last_price_high = self._high_buffer[lr]
             self._last_pivot_high_index = candidate_bar
 
-    def OnProcess(self, candle, rsi_val):
+    def _on_process(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         rsi_value = float(rsi_val)
         self._bar_index += 1
         self._add_to_buffer(rsi_value, float(candle.LowPrice), float(candle.HighPrice))
+
         if self._buffer_count < len(self._rsi_buffer):
             return
+
+        cooldown = int(self._cooldown_bars.Value)
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._check_pivots(rsi_value, candle)
             return
-        lr = self._lookback_right.Value
+
+        lr = int(self._lookback_right.Value)
         candidate_rsi = self._rsi_buffer[lr]
         candidate_low = self._low_buffer[lr]
         candidate_high = self._high_buffer[lr]
         candidate_bar = self._bar_index - lr
-        range_lo = self._range_lower.Value
-        range_up = self._range_upper.Value
+        range_lo = int(self._range_lower.Value)
+        range_up = int(self._range_upper.Value)
+
         is_pivot_low = self._is_pivot_low(candidate_rsi)
         is_pivot_high = self._is_pivot_high(candidate_rsi)
+
         if is_pivot_low:
             in_range = (self._last_pivot_low_index >= 0 and
                         candidate_bar - self._last_pivot_low_index >= range_lo and
@@ -165,12 +168,13 @@ class gold_rsi_divergence_strategy(Strategy):
                            candidate_low < self._last_price_low)
             if bullish_div and rsi_value < 40.0 and self.Position <= 0:
                 if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-                self._cooldown_remaining = self.cooldown_bars
+                    self.BuyMarket(Math.Abs(self.Position))
+                self.BuyMarket(self.Volume)
+                self._cooldown_remaining = cooldown
             self._last_rsi_low = candidate_rsi
             self._last_price_low = candidate_low
             self._last_pivot_low_index = candidate_bar
+
         if is_pivot_high:
             in_range = (self._last_pivot_high_index >= 0 and
                         candidate_bar - self._last_pivot_high_index >= range_lo and
@@ -182,9 +186,9 @@ class gold_rsi_divergence_strategy(Strategy):
                            candidate_high > self._last_price_high)
             if bearish_div and rsi_value > 60.0 and self.Position >= 0:
                 if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
-                self._cooldown_remaining = self.cooldown_bars
+                    self.SellMarket(Math.Abs(self.Position))
+                self.SellMarket(self.Volume)
+                self._cooldown_remaining = cooldown
             self._last_rsi_high = candidate_rsi
             self._last_price_high = candidate_high
             self._last_pivot_high_index = candidate_bar

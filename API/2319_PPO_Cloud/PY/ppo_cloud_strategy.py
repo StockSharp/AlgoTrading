@@ -80,7 +80,7 @@ class ppo_cloud_strategy(Strategy):
         sig_result = self._signal_ema.Process(sig_input)
         if not self._signal_ema.IsFormed:
             return
-        signal_value = float(sig_result.ToDecimal())
+        signal_value = float(sig_result)
         if not self.IsFormedAndOnlineAndAllowTrading():
             self._prev_ppo = ppo_value
             self._prev_signal = signal_value

@@ -68,7 +68,7 @@ class donchian_cci_strategy(Strategy):
         upper = float(upper)
         lower = float(lower)
         middle = float(middle)
-        cci_dec = float(cci_value.GetValue[float]())
+        cci_dec = float(cci_value)
         price = float(candle.ClosePrice)
 
         if self._cooldown > 0:

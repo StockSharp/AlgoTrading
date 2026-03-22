@@ -78,8 +78,8 @@ class malr_channel_breakout_strategy(Strategy):
         if not sma_result.IsFormed or not lwma_result.IsFormed:
             self._prev_close = close
             return
-        sma_val = float(sma_result.ToDecimal())
-        lwma_val = float(lwma_result.ToDecimal())
+        sma_val = float(sma_result)
+        lwma_val = float(lwma_result)
         ff = 3.0 * lwma_val - 2.0 * sma_val
         deviation = close - ff
         std_result = self._std_dev.Process(deviation, candle.OpenTime, True)
@@ -88,7 +88,7 @@ class malr_channel_breakout_strategy(Strategy):
             self._prev_upper = ff
             self._prev_lower = ff
             return
-        std = float(std_result.ToDecimal())
+        std = float(std_result)
         cr = float(self.channel_reversal)
         cb = float(self.channel_breakout)
         upper = ff + std * (cr + cb)

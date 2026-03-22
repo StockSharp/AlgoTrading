@@ -12,144 +12,67 @@ from datatype_extensions import *
 class ichimoku_stochastic_strategy(Strategy):
     """
     Strategy based on Ichimoku Cloud and Stochastic Oscillator indicators.
-    Enters long when price is above Kumo (cloud), Tenkan > Kijun, and Stochastic is oversold (< 20)
-    Enters short when price is below Kumo, Tenkan < Kijun, and Stochastic is overbought (> 80)
-
     """
 
     def __init__(self):
         super(ichimoku_stochastic_strategy, self).__init__()
 
-        # Tenkan-sen period
         self._tenkan_period = self.Param("TenkanPeriod", 9) \
-            .SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 12, 1)
+            .SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line", "Ichimoku")
 
-        # Kijun-sen period
         self._kijun_period = self.Param("KijunPeriod", 26) \
-            .SetDisplay("Kijun-sen Period", "Period for Kijun-sen line", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 30, 2)
+            .SetDisplay("Kijun-sen Period", "Period for Kijun-sen line", "Ichimoku")
 
-        # Senkou Span period
         self._senkou_period = self.Param("SenkouPeriod", 52) \
-            .SetDisplay("Senkou Span Period", "Period for Senkou Span B line", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(40, 60, 5)
+            .SetDisplay("Senkou Span Period", "Period for Senkou Span B line", "Ichimoku")
 
-        # Stochastic %K period
         self._stoch_period = self.Param("StochPeriod", 14) \
-            .SetDisplay("Stochastic Period", "Period for Stochastic Oscillator", "Stochastic") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 20, 2)
+            .SetDisplay("Stochastic Period", "Period for Stochastic Oscillator", "Stochastic")
 
-        # Stochastic %K smoothing period
         self._stoch_k = self.Param("StochK", 3) \
-            .SetDisplay("Stochastic %K", "Smoothing for Stochastic %K line", "Stochastic") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1, 5, 1)
+            .SetDisplay("Stochastic %K", "Smoothing for Stochastic %K line", "Stochastic")
 
-        # Stochastic %D period
         self._stoch_d = self.Param("StochD", 3) \
-            .SetDisplay("Stochastic %D", "Period for Stochastic %D line", "Stochastic") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1, 5, 1)
+            .SetDisplay("Stochastic %D", "Period for Stochastic %D line", "Stochastic")
 
-        # Candle type for strategy calculation
+        self._cooldown_bars = self.Param("CooldownBars", 4) \
+            .SetRange(1, 20) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+
         self._candle_type = self.Param("CandleType", tf(30)) \
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
 
-    @property
-    def TenkanPeriod(self):
-        """Tenkan-sen period"""
-        return self._tenkan_period.Value
-
-    @TenkanPeriod.setter
-    def TenkanPeriod(self, value):
-        self._tenkan_period.Value = value
-
-    @property
-    def KijunPeriod(self):
-        """Kijun-sen period"""
-        return self._kijun_period.Value
-
-    @KijunPeriod.setter
-    def KijunPeriod(self, value):
-        self._kijun_period.Value = value
-
-    @property
-    def SenkouPeriod(self):
-        """Senkou Span period"""
-        return self._senkou_period.Value
-
-    @SenkouPeriod.setter
-    def SenkouPeriod(self, value):
-        self._senkou_period.Value = value
-
-    @property
-    def StochPeriod(self):
-        """Stochastic %K period"""
-        return self._stoch_period.Value
-
-    @StochPeriod.setter
-    def StochPeriod(self, value):
-        self._stoch_period.Value = value
-
-    @property
-    def StochK(self):
-        """Stochastic %K smoothing period"""
-        return self._stoch_k.Value
-
-    @StochK.setter
-    def StochK(self, value):
-        self._stoch_k.Value = value
-
-    @property
-    def StochD(self):
-        """Stochastic %D period"""
-        return self._stoch_d.Value
-
-    @StochD.setter
-    def StochD(self, value):
-        self._stoch_d.Value = value
+        self._cooldown = 0
 
     @property
     def CandleType(self):
-        """Candle type for strategy calculation"""
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
 
     def OnReseted(self):
         super(ichimoku_stochastic_strategy, self).OnReseted()
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(ichimoku_stochastic_strategy, self).OnStarted(time)
+        self._cooldown = 0
 
-        # Create indicators
         ichimoku = Ichimoku()
-        ichimoku.Tenkan.Length = self.TenkanPeriod
-        ichimoku.Kijun.Length = self.KijunPeriod
-        ichimoku.SenkouB.Length = self.SenkouPeriod
+        ichimoku.Tenkan.Length = self._tenkan_period.Value
+        ichimoku.Kijun.Length = self._kijun_period.Value
+        ichimoku.SenkouB.Length = self._senkou_period.Value
 
         stochastic = StochasticOscillator()
-        stochastic.K.Length = self.StochK
-        stochastic.D.Length = self.StochD
+        stochastic.K.Length = self._stoch_k.Value
+        stochastic.D.Length = self._stoch_d.Value
 
-        # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(ichimoku, stochastic, self.ProcessCandle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ichimoku)
 
-            # Create a separate area for Stochastic
             stoch_area = self.CreateChartArea()
             if stoch_area is not None:
                 self.DrawIndicator(stoch_area, stochastic)
@@ -157,13 +80,11 @@ class ichimoku_stochastic_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessCandle(self, candle, ichimoku_value, stoch_value):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Get additional values from Ichimoku
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if ichimoku_value.Tenkan is None:
             return
@@ -181,46 +102,36 @@ class ichimoku_stochastic_strategy(Strategy):
             return
         senkou_b = float(ichimoku_value.SenkouB)
 
-        # Current price (close of the candle)
         price = float(candle.ClosePrice)
 
-        # Check if price is above/below Kumo cloud
-        is_above_kumo = price > Math.Max(senkou_a, senkou_b)
-        is_below_kumo = price < Math.Min(senkou_a, senkou_b)
+        is_above_kumo = price > max(senkou_a, senkou_b)
+        is_below_kumo = price < min(senkou_a, senkou_b)
 
-        # Check Tenkan/Kijun cross (trend direction)
         is_bullish_cross = tenkan > kijun
         is_bearish_cross = tenkan < kijun
 
-
-        # Get Stochastic %K value
         if stoch_value.K is None:
             return
         stochastic_k = float(stoch_value.K)
 
-        # Trading logic
-        if is_above_kumo and is_bullish_cross and stochastic_k < 20 and self.Position <= 0:
-            # Buy signal: price above cloud, bullish cross, and oversold stochastic
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-            # Use Kijun-sen as stop-loss
-            self.RegisterOrder(self.CreateOrder(Sides.Sell, kijun, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
-        elif is_below_kumo and is_bearish_cross and stochastic_k > 80 and self.Position >= 0:
-            # Sell signal: price below cloud, bearish cross, and overbought stochastic
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
+        cooldown = int(self._cooldown_bars.Value)
 
-            # Use Kijun-sen as stop-loss
-            self.RegisterOrder(self.CreateOrder(Sides.Buy, kijun, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
-        # Exit conditions
-        elif price < kijun and self.Position > 0:
-            # Exit long position when price falls below Kijun-sen
+        if is_above_kumo and is_bullish_cross and stochastic_k < 15 and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._cooldown = cooldown
+        elif is_below_kumo and is_bearish_cross and stochastic_k > 85 and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._cooldown = cooldown
+        elif is_bearish_cross and self.Position > 0:
             self.SellMarket(self.Position)
-        elif price > kijun and self.Position < 0:
-            # Exit short position when price rises above Kijun-sen
-            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cooldown
+        elif is_bullish_cross and self.Position < 0:
+            self.BuyMarket(abs(self.Position))
+            self._cooldown = cooldown
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return ichimoku_stochastic_strategy()

@@ -3,214 +3,171 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import VolumeIndicator, SimpleMovingAverage, ExponentialMovingAverage, LinearRegression, LinearRegressionValue
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class volume_slope_breakout_strategy(Strategy):
-    """Volume Slope Breakout Strategy"""
+    """
+    Strategy based on volume slope breakout with EMA direction filter.
+    Opens positions when candle volume slope deviates from its recent average and price confirms direction relative to EMA.
+    """
 
     def __init__(self):
         super(volume_slope_breakout_strategy, self).__init__()
 
-        self._volumeSmaPeriod = self.Param("VolumeSMAPeriod", 20) \
+        self._ema_period = self.Param("EmaPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Volume SMA Period", "Period for volume SMA calculation", "Indicator") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("EMA Period", "Period for EMA direction filter", "Indicator Parameters")
 
-        self._slopePeriod = self.Param("SlopePeriod", 20) \
+        self._slope_period = self.Param("SlopePeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters")
 
-        self._breakoutMultiplier = self.Param("BreakoutMultiplier", 2.0) \
+        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
 
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state
-        self._volumeIndicator = None
-        self._volumeSma = None
-        self._priceEma = None
-        self._volumeSlope = None
-        self._prevSlopeValue = 0
-        self._slopeAvg = 0
-        self._slopeStdDev = 0
-        self._sumSlope = 0
-        self._sumSlopeSquared = 0
-        self._slopeValues = []
+        self._ema = None
+        self._prev_volume = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        self._slopes = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
-    def VolumeSMAPeriod(self):
-        return self._volumeSmaPeriod.Value
-
-    @VolumeSMAPeriod.setter
-    def VolumeSMAPeriod(self, value):
-        self._volumeSmaPeriod.Value = value
-
-    @property
-    def SlopePeriod(self):
-        return self._slopePeriod.Value
-
-    @SlopePeriod.setter
-    def SlopePeriod(self, value):
-        self._slopePeriod.Value = value
-
-    @property
-    def BreakoutMultiplier(self):
-        return self._breakoutMultiplier.Value
-
-    @BreakoutMultiplier.setter
-    def BreakoutMultiplier(self, value):
-        self._breakoutMultiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(volume_slope_breakout_strategy, self).OnReseted()
-        self._prevSlopeValue = 0
-        self._slopeAvg = 0
-        self._slopeStdDev = 0
-        self._sumSlope = 0
-        self._sumSlopeSquared = 0
-        self._slopeValues = []
+        self._ema = None
+        self._prev_volume = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
         super(volume_slope_breakout_strategy, self).OnStarted(time)
 
-        # Initialize indicators
-        self._volumeIndicator = VolumeIndicator()
-        self._volumeSma = SimpleMovingAverage()
-        self._priceEma = ExponentialMovingAverage()
-        self._volumeSlope = LinearRegression()
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._cooldown = 0
+        self._filled_count = 0
+        self._current_index = 0
 
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = int(self._ema_period.Value)
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._ema, self._process_candle).Start()
 
-        # Bind indicators and processing logic using event handlers
-        # since we need to track multiple indicator values
-        subscription.Bind(self._volumeIndicator, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._volumeIndicator)
-            self.DrawIndicator(area, self._volumeSma)
-            self.DrawIndicator(area, self._priceEma)
+            self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, volumeValue):
-        # Check if strategy is ready to trade
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
 
-        # Process volume SMA
-        volumeSma = float(process_float(self._volumeSma, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
+    def _process_candle(self, candle, ema_value):
+        if candle.State != CandleStates.Finished:
+            return
 
-        # Process price EMA for trend direction
-        priceEma = float(process_candle(self._priceEma, candle))
-        priceAboveEma = candle.ClosePrice > priceEma
+        if not self._ema.IsFormed:
+            return
 
-        # Calculate volume slope (current volume relative to SMA)
-        volumeRatio = volumeValue / volumeSma
+        ema_val = float(ema_value)
+        volume = float(candle.TotalVolume)
 
-        # We use LinearRegression to calculate slope of this ratio
-        currentSlope = process_float(self._volumeSlope, volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished)
+        if not self._is_initialized:
+            self._prev_volume = volume
+            self._is_initialized = True
+            return
 
-        if currentSlope.LinearReg is None:
-            return  # Skip if slope is not available
-        currentSlopeValue = currentSlope.LinearReg
+        self._current_slope = volume - self._prev_volume
+        self._prev_volume = volume
 
-        # Update slope stats when we have 2 values to calculate slope
-        if self._prevSlopeValue != 0:
-            # Calculate simple slope from current and previous values
-            slope = currentSlopeValue - self._prevSlopeValue
+        sp = int(self._slope_period.Value)
+        self._slopes[self._current_index] = self._current_slope
+        self._current_index = (self._current_index + 1) % sp
 
-            # Update running statistics
-            self._slopeValues.append(slope)
-            self._sumSlope += slope
-            self._sumSlopeSquared += slope * slope
+        if self._filled_count < sp:
+            self._filled_count += 1
 
-            # Remove oldest value if we have enough
-            if len(self._slopeValues) > self.SlopePeriod:
-                oldSlope = self._slopeValues.pop(0)
-                self._sumSlope -= oldSlope
-                self._sumSlopeSquared -= oldSlope * oldSlope
+        if self._filled_count < sp:
+            return
 
-            # Calculate average and standard deviation
-            self._slopeAvg = self._sumSlope / len(self._slopeValues)
-            variance = (self._sumSlopeSquared / len(self._slopeValues)) - (self._slopeAvg * self._slopeAvg)
-            self._slopeStdDev = 0 if variance <= 0 else Math.Sqrt(float(variance))
+        self._calculate_statistics()
 
-            # Generate signals if we have enough data for statistics
-            if len(self._slopeValues) >= self.SlopePeriod and volumeValue > volumeSma:
-                # Breakout logic - Volume slope increase with price confirmation
-                if slope > self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev:
-                    if priceAboveEma and self.Position <= 0:
-                        # Go long on volume spike with price above EMA
-                        self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                        self.LogInfo("Long entry: Volume slope breakout above {0:F3} with price above EMA".format(
-                            self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev))
-                    elif not priceAboveEma and self.Position >= 0:
-                        # Go short on volume spike with price below EMA
-                        self.SellMarket(self.Volume + Math.Abs(self.Position))
-                        self.LogInfo("Short entry: Volume slope breakout above {0:F3} with price below EMA".format(
-                            self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev))
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-                # Exit logic - Volume spike down (unusual activity ending)
-                if slope < self._slopeAvg - self.BreakoutMultiplier * self._slopeStdDev:
-                    if self.Position > 0:
-                        self.SellMarket(Math.Abs(self.Position))
-                        self.LogInfo("Long exit: Volume activity declining")
-                    elif self.Position < 0:
-                        self.BuyMarket(Math.Abs(self.Position))
-                        self.LogInfo("Short exit: Volume activity declining")
+        if self._std_dev_slope <= 0:
+            return
 
-            # Additional exit rule - Return to mean with lower volume
-            if volumeValue < volumeSma and slope < self._slopeAvg:
-                if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self.LogInfo("Long exit: Volume returned to normal levels")
-                elif self.Position < 0:
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("Short exit: Volume returned to normal levels")
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        # Update previous value for next iteration
-        self._prevSlopeValue = currentSlopeValue
+        bm = float(self._breakout_multiplier.Value)
+        upper_threshold = self._avg_slope + bm * self._std_dev_slope
+        close_price = float(candle.ClosePrice)
+        price_above_ema = close_price > ema_val
+        price_below_ema = close_price < ema_val
+
+        if self.Position == 0:
+            if self._current_slope > upper_threshold and price_above_ema:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif self._current_slope > upper_threshold and price_below_ema:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if self._current_slope <= self._avg_slope or price_below_ema:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if self._current_slope <= self._avg_slope or price_above_ema:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+
+    def _calculate_statistics(self):
+        sp = int(self._slope_period.Value)
+        self._avg_slope = 0.0
+        sum_sq = 0.0
+
+        for i in range(sp):
+            self._avg_slope += self._slopes[i]
+        self._avg_slope /= float(sp)
+
+        for i in range(sp):
+            diff = self._slopes[i] - self._avg_slope
+            sum_sq += diff * diff
+
+        self._std_dev_slope = math.sqrt(sum_sq / float(sp))
 
     def CreateClone(self):
         return volume_slope_breakout_strategy()

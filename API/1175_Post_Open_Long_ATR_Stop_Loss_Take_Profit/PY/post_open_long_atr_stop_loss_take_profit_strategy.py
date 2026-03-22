@@ -42,7 +42,7 @@ class post_open_long_atr_stop_loss_take_profit_strategy(Strategy):
         self._initialized = False
         self._last_signal_ticks = 0
         self._fast = ExponentialMovingAverage()
-        self._fast.Length = 14
+        self._fast.Length = 10
         self._slow = ExponentialMovingAverage()
         self._slow.Length = self._slow_length.Value
         subscription = self.SubscribeCandles(self.candle_type)

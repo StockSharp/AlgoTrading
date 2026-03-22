@@ -65,7 +65,7 @@ class macd_diver_and_rsi_strategy(Strategy):
         macd_main = float(macd_value.Macd)
         signal = float(macd_value.Signal)
         histogram = macd_main - signal
-        rsi_val = float(rsi_value.ToDecimal())
+        rsi_val = float(rsi_value)
 
         if self._has_prev:
             if self._prev_histogram <= 0 and histogram > 0 and self._prev_rsi < 35 and self.Position <= 0:

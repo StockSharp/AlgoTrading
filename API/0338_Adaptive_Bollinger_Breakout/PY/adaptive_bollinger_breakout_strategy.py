@@ -5,224 +5,179 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class adaptive_bollinger_breakout_strategy(Strategy):
-    """Strategy that trades based on breakouts of Bollinger Bands with adaptively adjusted parameters
-    based on market volatility."""
+    """
+    Strategy that trades adaptive Bollinger mean reversion selected by ATR volatility regime.
+    """
 
     def __init__(self):
         super(adaptive_bollinger_breakout_strategy, self).__init__()
 
-        # Strategy parameter: Minimum Bollinger period.
         self._min_bollinger_period = self.Param("MinBollingerPeriod", 10) \
             .SetGreaterThanZero() \
-            .SetDisplay("Min Bollinger Period", "Minimum period for adaptive Bollinger Bands", "Indicator Settings")
+            .SetDisplay("Min Bollinger Period", "Short Bollinger period for volatile regimes", "Indicator Settings")
 
-        # Strategy parameter: Maximum Bollinger period.
         self._max_bollinger_period = self.Param("MaxBollingerPeriod", 30) \
             .SetGreaterThanZero() \
-            .SetDisplay("Max Bollinger Period", "Maximum period for adaptive Bollinger Bands", "Indicator Settings")
+            .SetDisplay("Max Bollinger Period", "Long Bollinger period for quiet regimes", "Indicator Settings")
 
-        # Strategy parameter: Minimum Bollinger deviation.
         self._min_bollinger_deviation = self.Param("MinBollingerDeviation", 1.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Min Bollinger Deviation", "Minimum standard deviation multiplier", "Indicator Settings")
+            .SetDisplay("Min Bollinger Deviation", "Narrow band width for quiet regimes", "Indicator Settings")
 
-        # Strategy parameter: Maximum Bollinger deviation.
         self._max_bollinger_deviation = self.Param("MaxBollingerDeviation", 2.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Max Bollinger Deviation", "Maximum standard deviation multiplier", "Indicator Settings")
+            .SetDisplay("Max Bollinger Deviation", "Wide band width for volatile regimes", "Indicator Settings")
 
-        # Strategy parameter: ATR period for volatility calculation.
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings")
 
-        # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 6) \
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another breakout entry", "Trading")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal fields
-        self._current_bollinger_period = 0
-        self._current_bollinger_deviation = 0.0
-        self._bollinger = None
+        self._fast_sma = None
+        self._slow_sma = None
+        self._fast_std = None
+        self._slow_std = None
         self._atr = None
         self._atr_sum = 0.0
         self._atr_count = 0
-
-    @property
-    def min_bollinger_period(self):
-        return self._min_bollinger_period.Value
-
-    @min_bollinger_period.setter
-    def min_bollinger_period(self, value):
-        self._min_bollinger_period.Value = value
-
-    @property
-    def max_bollinger_period(self):
-        return self._max_bollinger_period.Value
-
-    @max_bollinger_period.setter
-    def max_bollinger_period(self, value):
-        self._max_bollinger_period.Value = value
-
-    @property
-    def min_bollinger_deviation(self):
-        return self._min_bollinger_deviation.Value
-
-    @min_bollinger_deviation.setter
-    def min_bollinger_deviation(self, value):
-        self._min_bollinger_deviation.Value = value
-
-    @property
-    def max_bollinger_deviation(self):
-        return self._max_bollinger_deviation.Value
-
-    @max_bollinger_deviation.setter
-    def max_bollinger_deviation(self, value):
-        self._max_bollinger_deviation.Value = value
-
-    @property
-    def atr_period(self):
-        return self._atr_period.Value
-
-    @atr_period.setter
-    def atr_period(self, value):
-        self._atr_period.Value = value
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
 
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(adaptive_bollinger_breakout_strategy, self).OnReseted()
-        if self._atr is not None:
-            self._atr.Reset()
-            self._atr = None
-        if self._bollinger is not None:
-            self._bollinger.Reset()
-            self._bollinger = None
-        # Initialize adaptive parameters
-        self._current_bollinger_period = self.max_bollinger_period  # Start with maximum period
-        self._current_bollinger_deviation = self.min_bollinger_deviation  # Start with minimum deviation
         self._atr_sum = 0.0
         self._atr_count = 0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(adaptive_bollinger_breakout_strategy, self).OnStarted(time)
 
-        self._current_bollinger_period = self.max_bollinger_period  # Start with maximum period
-        self._current_bollinger_deviation = self.min_bollinger_deviation  # Start with minimum deviation
+        min_period = int(self._min_bollinger_period.Value)
+        max_period = int(self._max_bollinger_period.Value)
+        atr_period = int(self._atr_period.Value)
 
-        # Create ATR indicator for volatility measurement
+        self._fast_sma = SimpleMovingAverage()
+        self._fast_sma.Length = min_period
+
+        self._slow_sma = SimpleMovingAverage()
+        self._slow_sma.Length = max_period
+
+        self._fast_std = StandardDeviation()
+        self._fast_std.Length = min_period
+
+        self._slow_std = StandardDeviation()
+        self._slow_std.Length = max_period
+
         self._atr = AverageTrueRange()
-        self._atr.Length = self.atr_period
+        self._atr.Length = atr_period
 
-        # Create Bollinger Bands indicator with initial parameters
-        self._bollinger = BollingerBands()
-        self._bollinger.Length = self._current_bollinger_period
-        self._bollinger.Width = self._current_bollinger_deviation
-
-        # Create subscription for candles
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self.ProcessCandle).Start()
 
-        # Bind indicators to subscription and start
-        subscription.BindEx(self._atr, self._bollinger, self.ProcessIndicators).Start()
-
-        # Add chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._bollinger)
+            self.DrawIndicator(area, self._fast_sma)
+            self.DrawIndicator(area, self._slow_sma)
             self.DrawOwnTrades(area)
 
-        # Start position protection with ATR-based stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(2, UnitTypes.Absolute)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-    def ProcessIndicators(self, candle, atr_value, bollinger_value):
-        # Skip unfinished candles
+
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # --- ATR logic (was ProcessAtr) ---
-        if atr_value.IsFinal:
-            atr = float(atr_value)
-            # Maintain running average for ATR
-            self._atr_sum += atr
-            self._atr_count += 1
-            avg_atr = self._atr_sum / self._atr_count if self._atr_count > 0 else atr
-            volatility_ratio = float(max(min(atr / (candle.ClosePrice * 0.01), 1), 0))
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-            # Higher volatility = shorter period and wider bands
-            new_period = self.max_bollinger_period - int(round(volatility_ratio * (self.max_bollinger_period - self.min_bollinger_period)))
-            new_deviation = self.min_bollinger_deviation + volatility_ratio * (self.max_bollinger_deviation - self.min_bollinger_deviation)
+        aiv = CandleIndicatorValue(self._atr, candle)
+        aiv.IsFinal = True
+        atr_val = self._atr.Process(aiv)
 
-            # Ensure parameters stay within bounds
-            new_period = max(self.min_bollinger_period, min(self.max_bollinger_period, new_period))
-            new_deviation = max(self.min_bollinger_deviation, min(self.max_bollinger_deviation, new_deviation))
+        fsv = DecimalIndicatorValue(self._fast_sma, candle.ClosePrice, candle.OpenTime)
+        fsv.IsFinal = True
+        fast_sma_val = self._fast_sma.Process(fsv)
 
-            # Update Bollinger parameters if changed
-            if new_period != self._current_bollinger_period or new_deviation != self._current_bollinger_deviation:
-                self._current_bollinger_period = new_period
-                self._current_bollinger_deviation = new_deviation
+        ssv = DecimalIndicatorValue(self._slow_sma, candle.ClosePrice, candle.OpenTime)
+        ssv.IsFinal = True
+        slow_sma_val = self._slow_sma.Process(ssv)
 
-                self._bollinger.Length = self._current_bollinger_period
-                self._bollinger.Width = self._current_bollinger_deviation
+        fstv = DecimalIndicatorValue(self._fast_std, candle.ClosePrice, candle.OpenTime)
+        fstv.IsFinal = True
+        fast_std_val = self._fast_std.Process(fstv)
 
-                self.LogInfo("Adjusted Bollinger parameters: Period={0}, Deviation={1:.2f} based on ATR={2:.6f}".format(
-                    self._current_bollinger_period, self._current_bollinger_deviation, atr))
+        sstv = DecimalIndicatorValue(self._slow_std, candle.ClosePrice, candle.OpenTime)
+        sstv.IsFinal = True
+        slow_std_val = self._slow_std.Process(sstv)
 
-        # --- Bollinger logic (was ProcessBollinger) ---
+        if not self._atr.IsFormed or not self._fast_sma.IsFormed or not self._slow_sma.IsFormed or \
+           not self._fast_std.IsFormed or not self._slow_std.IsFormed:
+            return
+        if atr_val.IsEmpty or fast_sma_val.IsEmpty or slow_sma_val.IsEmpty or fast_std_val.IsEmpty or slow_std_val.IsEmpty:
+            return
 
-        if bollinger_value.IsFinal and self._atr.IsFormed:
-            atr_val = float(atr_value)  # use current ATR value
-            # use running average
-            is_high_volatility = atr_val > (self._atr_sum / self._atr_count if self._atr_count > 0 else atr_val)
+        current_atr = float(atr_val)
+        self._atr_sum += current_atr
+        self._atr_count += 1
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-            if (
-                bollinger_value.UpBand is None
-                or bollinger_value.LowBand is None
-                or bollinger_value.MovingAverage is None
-            ):
-                return  # Not enough data to calculate bands
+        average_atr = self._atr_sum / self._atr_count if self._atr_count > 0 else current_atr
+        use_fast_bands = current_atr >= average_atr
 
-            upper_band = float(bollinger_value.UpBand)
-            lower_band = float(bollinger_value.LowBand)
-            middle_band = float(bollinger_value.MovingAverage)
+        fast_sma = float(fast_sma_val)
+        slow_sma = float(slow_sma_val)
+        fast_std = float(fast_std_val)
+        slow_std = float(slow_std_val)
 
-            if is_high_volatility:
-                # Breakout above upper band - Sell signal
-                if candle.ClosePrice > upper_band and self.Position >= 0:
-                    self.LogInfo("Sell signal: Price ({0}) broke above upper Bollinger Band ({1}) in high volatility".format(
-                        candle.ClosePrice, upper_band))
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-                # Breakout below lower band - Buy signal
-                elif candle.ClosePrice < lower_band and self.Position <= 0:
-                    self.LogInfo("Buy signal: Price ({0}) broke below lower Bollinger Band ({1}) in high volatility".format(
-                        candle.ClosePrice, lower_band))
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
+        middle_band = fast_sma if use_fast_bands else slow_sma
+        std_dev = fast_std if use_fast_bands else slow_std
+        band_width = float(self._max_bollinger_deviation.Value) if use_fast_bands else float(self._min_bollinger_deviation.Value)
+        upper_band = middle_band + (std_dev * band_width)
+        lower_band = middle_band - (std_dev * band_width)
 
-            # Exit logic based on middle band reversion
-            if (self.Position > 0 and candle.ClosePrice > middle_band) or \
-               (self.Position < 0 and candle.ClosePrice < middle_band):
-                self.LogInfo("Exit signal: Price ({0}) reverted to middle band ({1})".format(
-                    candle.ClosePrice, middle_band))
-                self.ClosePosition()
+        close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
+
+        if self.Position > 0 and close >= middle_band:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and close <= middle_band:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self._cooldown_remaining == 0 and close < lower_band and self.Position <= 0:
+            vol = self.Volume
+            if self.Position < 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.BuyMarket(vol)
+            self._cooldown_remaining = cooldown
+        elif self._cooldown_remaining == 0 and close > upper_band and self.Position >= 0:
+            vol = self.Volume
+            if self.Position > 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.SellMarket(vol)
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adaptive_bollinger_breakout_strategy()

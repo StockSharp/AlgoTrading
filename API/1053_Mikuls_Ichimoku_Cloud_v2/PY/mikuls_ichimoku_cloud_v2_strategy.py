@@ -45,6 +45,12 @@ class mikuls_ichimoku_cloud_v2_strategy(Strategy):
 
     def OnStarted(self, time):
         super(mikuls_ichimoku_cloud_v2_strategy, self).OnStarted(time)
+        self._trail_price = None
+        self._prev_tenkan = None
+        self._prev_kijun = None
+        self._bars_from_signal = self._cooldown_bars.Value
+        self._bar_index = 0
+        self._entry_bar = -1
         ich = Ichimoku()
         ich.Tenkan.Length = self._tenkan_period.Value
         ich.Kijun.Length = self._kijun_period.Value
@@ -65,7 +71,7 @@ class mikuls_ichimoku_cloud_v2_strategy(Strategy):
         self._bar_index += 1
         self._bars_from_signal += 1
         close = float(candle.ClosePrice)
-        atr = float(atr_value.ToDecimal())
+        atr = float(atr_value)
         tenkan = ich_value.Tenkan
         kijun = ich_value.Kijun
         senkou_a = ich_value.SenkouA

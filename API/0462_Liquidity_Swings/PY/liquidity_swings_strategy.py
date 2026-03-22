@@ -10,18 +10,21 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class liquidity_swings_strategy(Strategy):
+    """Liquidity Swings Strategy."""
+
     def __init__(self):
         super(liquidity_swings_strategy, self).__init__()
+
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._lookback = self.Param("Lookback", 5) \
-            .SetGreaterThanZero() \
             .SetDisplay("Pivot Lookback", "Pivot detection lookback", "Parameters")
         self._ema_length = self.Param("EmaLength", 50) \
-            .SetGreaterThanZero() \
             .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
+
+        self._ema = None
         self._high_buffer = []
         self._low_buffer = []
         self._resistance = 0.0
@@ -32,18 +35,10 @@ class liquidity_swings_strategy(Strategy):
     @property
     def candle_type(self):
         return self._candle_type.Value
-    @property
-    def lookback(self):
-        return self._lookback.Value
-    @property
-    def ema_length(self):
-        return self._ema_length.Value
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
 
     def OnReseted(self):
         super(liquidity_swings_strategy, self).OnReseted()
+        self._ema = None
         self._high_buffer = []
         self._low_buffer = []
         self._resistance = 0.0
@@ -53,13 +48,12 @@ class liquidity_swings_strategy(Strategy):
 
     def OnStarted(self, time):
         super(liquidity_swings_strategy, self).OnStarted(time)
+
         self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.ema_length
+        self._ema.Length = int(self._ema_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription \
-            .Bind(self._ema, self.OnProcess) \
-            .Start()
+        subscription.Bind(self._ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -67,13 +61,17 @@ class liquidity_swings_strategy(Strategy):
             self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, ema_val):
+    def _on_process(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
+
         if not self._ema.IsFormed:
             return
 
         self._update_pivot_levels(candle)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
@@ -84,39 +82,42 @@ class liquidity_swings_strategy(Strategy):
 
         price = float(candle.ClosePrice)
         ema_v = float(ema_val)
+        cooldown = int(self._cooldown_bars.Value)
         rng = self._resistance - self._support
 
         if price > self._support and price < (self._support + rng * 0.3) and price > ema_v and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket(abs(self.Position))
-            self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
             self._entry_price = price
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif price < self._resistance and price > (self._resistance - rng * 0.3) and price < ema_v and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket(abs(self.Position))
-            self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
             self._entry_price = price
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and price >= self._resistance:
-            self.SellMarket(abs(self.Position))
+            self.SellMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and price <= self._support:
-            self.BuyMarket(abs(self.Position))
+            self.BuyMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and price < self._support:
-            self.SellMarket(abs(self.Position))
+            self.SellMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and price > self._resistance:
-            self.BuyMarket(abs(self.Position))
+            self.BuyMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
 
     def _update_pivot_levels(self, candle):
-        size = self.lookback * 2 + 1
+        lookback = int(self._lookback.Value)
+        size = lookback * 2 + 1
+
         self._high_buffer.append(float(candle.HighPrice))
         self._low_buffer.append(float(candle.LowPrice))
 
@@ -126,7 +127,7 @@ class liquidity_swings_strategy(Strategy):
             self._low_buffer.pop(0)
 
         if len(self._high_buffer) == size:
-            center = self.lookback
+            center = lookback
             candidate = self._high_buffer[center]
             is_pivot = True
             for i in range(size):
@@ -139,7 +140,7 @@ class liquidity_swings_strategy(Strategy):
                 self._resistance = candidate
 
         if len(self._low_buffer) == size:
-            center = self.lookback
+            center = lookback
             candidate = self._low_buffer[center]
             is_pivot = True
             for i in range(size):

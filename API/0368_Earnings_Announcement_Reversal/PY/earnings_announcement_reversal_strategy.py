@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange
+from StockSharp.Algo.Indicators import RateOfChange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -43,41 +43,25 @@ class earnings_announcement_reversal_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._momentum = None
         self._bar_index = 0
         self._holding_remaining = 0
         self._cooldown_remaining = 0
         self._latest_momentum = 0.0
 
     @property
-    def LookbackDays(self):
-        return self._lookback_days.Value
-
-    @property
-    def HoldingDays(self):
-        return self._holding_days.Value
-
-    @property
-    def EventCycleBars(self):
-        return self._event_cycle_bars.Value
-
-    @property
-    def ReversalThreshold(self):
-        return self._reversal_threshold.Value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @property
-    def StopLoss(self):
-        return self._stop_loss.Value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(earnings_announcement_reversal_strategy, self).OnReseted()
+        self._momentum = None
         self._bar_index = 0
         self._holding_remaining = 0
         self._cooldown_remaining = 0
@@ -86,27 +70,40 @@ class earnings_announcement_reversal_strategy(Strategy):
     def OnStarted(self, time):
         super(earnings_announcement_reversal_strategy, self).OnStarted(time)
 
-        momentum = RateOfChange()
-        momentum.Length = self.LookbackDays
+        self._momentum = RateOfChange()
+        self._momentum.Length = int(self._lookback_days.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription \
-            .Bind(momentum, self.ProcessCandle) \
-            .Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self.ProcessCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
 
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLoss), UnitTypes.Percent))
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
 
-    def ProcessCandle(self, candle, momentum_val):
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        civ = CandleIndicatorValue(self._momentum, candle)
+        civ.IsFinal = True
+        momentum_value = self._momentum.Process(civ)
+
+        if momentum_value.IsEmpty or not self._momentum.IsFormed or not self.IsFormedAndOnlineAndAllowTrading():
             self._bar_index += 1
             return
 
-        self._latest_momentum = float(momentum_val)
+        self._latest_momentum = float(momentum_value)
+
+        cooldown = int(self._cooldown_bars.Value)
+        holding_days = int(self._holding_days.Value)
+        event_cycle = int(self._event_cycle_bars.Value)
+        reversal_thresh = float(self._reversal_threshold.Value)
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
@@ -115,21 +112,21 @@ class earnings_announcement_reversal_strategy(Strategy):
             self._holding_remaining -= 1
             if self._holding_remaining == 0 and self.Position != 0:
                 if self.Position > 0:
-                    self.SellMarket()
+                    self.SellMarket(self.Position)
                 else:
-                    self.BuyMarket()
-                self._cooldown_remaining = self.CooldownBars
+                    self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown_remaining = cooldown
 
-        is_event_bar = self._bar_index > 0 and self._bar_index % self.EventCycleBars == 0
+        is_event_bar = self._bar_index > 0 and self._bar_index % event_cycle == 0
         if self._cooldown_remaining == 0 and self.Position == 0 and is_event_bar:
-            if self._latest_momentum >= self.ReversalThreshold:
+            if self._latest_momentum >= reversal_thresh:
                 self.SellMarket()
-                self._holding_remaining = self.HoldingDays
-                self._cooldown_remaining = self.CooldownBars
-            elif self._latest_momentum <= -self.ReversalThreshold:
+                self._holding_remaining = holding_days
+                self._cooldown_remaining = cooldown
+            elif self._latest_momentum <= -reversal_thresh:
                 self.BuyMarket()
-                self._holding_remaining = self.HoldingDays
-                self._cooldown_remaining = self.CooldownBars
+                self._holding_remaining = holding_days
+                self._cooldown_remaining = cooldown
 
         self._bar_index += 1
 

@@ -63,9 +63,9 @@ class tunnel_gen4_strategy(Strategy):
         for inner in bb_val.InnerValues:
             name = str(inner.Key.Name) if hasattr(inner.Key, 'Name') else str(inner.Key)
             if "Up" in name or "up" in name:
-                upper = float(inner.Value.ToDecimal()) if not inner.Value.IsEmpty else None
+                upper = float(inner.Value) if not inner.Value.IsEmpty else None
             elif "Low" in name or "low" in name or "Down" in name or "down" in name:
-                lower = float(inner.Value.ToDecimal()) if not inner.Value.IsEmpty else None
+                lower = float(inner.Value) if not inner.Value.IsEmpty else None
 
         if upper is None or lower is None:
             return

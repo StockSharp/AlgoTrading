@@ -28,19 +28,21 @@ class markdown_the_pine_editors_hidden_gem_strategy(Strategy):
 
     def OnStarted(self, time):
         super(markdown_the_pine_editors_hidden_gem_strategy, self).OnStarted(time)
-        bb = BollingerBands()
-        bb.Length = self._length.Value
-        bb.Width = self._multiplier.Value
+        self._bb = BollingerBands()
+        self._bb.Length = self._length.Value
+        self._bb.Width = self._multiplier.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bb, self._process_candle).Start()
+        subscription.BindEx(self._bb, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, bb)
+            self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._bb.IsFormed:
             return
         upper = bb_value.UpBand
         lower = bb_value.LowBand

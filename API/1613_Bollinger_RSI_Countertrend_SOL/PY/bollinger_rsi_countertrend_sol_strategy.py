@@ -98,7 +98,7 @@ class bollinger_rsi_countertrend_sol_strategy(Strategy):
         middle = float(bb_value.MovingAverage)
         if upper == 0 or lower == 0:
             return
-        rsi_value = float(rsi_val.ToDecimal()) if rsi_val.IsFormed else 50.0
+        rsi_value = float(rsi_val) if rsi_val.IsFormed else 50.0
         close = float(candle.ClosePrice)
         long_entry = self._prev_close != 0 and self._prev_close < self._prev_lower and close > lower and rsi_value < self.long_rsi
         short_entry = self._prev_close != 0 and self._prev_close > self._prev_upper and close < upper and rsi_value > self.short_rsi

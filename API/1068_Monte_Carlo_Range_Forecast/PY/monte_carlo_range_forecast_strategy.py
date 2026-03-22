@@ -57,7 +57,11 @@ class monte_carlo_range_forecast_strategy(Strategy):
         total = 0.0
         sims = self._simulations.Value
         fp = self._forecast_period.Value
-        rng = random.Random(int(candle.OpenTime.Ticks) & 0x7FFFFFFF)
+        ticks = int(candle.OpenTime.Ticks)
+        seed = ticks & 0xFFFFFFFF
+        if seed > 0x7FFFFFFF:
+            seed -= 0x100000000
+        rng = random.Random(int(seed))
         for i in range(sims):
             price = current
             for j in range(fp):

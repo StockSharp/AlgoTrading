@@ -2,203 +2,232 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math, Array
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
+
 
 class momentum_factor_stocks_strategy(Strategy):
-    """Classic momentum factor strategy for stocks."""
+    """Momentum factor strategy that trades the primary instrument when its medium-term momentum outperforms a benchmark after filtering out the most recent short-term move."""
 
     def __init__(self):
         super(momentum_factor_stocks_strategy, self).__init__()
 
-        self._univ = self.Param("Universe", Array.Empty[Security]()) \
-            .SetDisplay("Universe", "Securities to trade", "General")
+        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
+            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
 
-        self._look = self.Param("LookbackDays", 252) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback", "Trading days for momentum", "Parameters")
+        self._lookback_period = self.Param("LookbackPeriod", 36) \
+            .SetRange(8, 200) \
+            .SetDisplay("Lookback Period", "Long momentum lookback period", "Indicators")
 
-        self._skip = self.Param("SkipDays", 21) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Skip days", "Days skipped from recent data", "Parameters")
+        self._skip_period = self.Param("SkipPeriod", 8) \
+            .SetRange(2, 60) \
+            .SetDisplay("Skip Period", "Short lookback period removed from the long momentum signal", "Indicators")
 
-        self._quint = self.Param("Quintile", 5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Quintile", "Quintile for momentum ranking", "Parameters")
+        self._normalization_period = self.Param("NormalizationPeriod", 24) \
+            .SetRange(5, 120) \
+            .SetDisplay("Normalization Period", "Lookback period used to normalize the relative factor spread", "Indicators")
 
-        self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters")
+        self._entry_threshold = self.Param("EntryThreshold", 1.15) \
+            .SetRange(0.2, 5.0) \
+            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._exit_threshold = self.Param("ExitThreshold", 0.3) \
+            .SetRange(0.0, 2.0) \
+            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
+
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetRange(0, 120) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
+
+        self._stop_loss = self.Param("StopLoss", 2.5) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
-        self._px = {}
-        self._latest_prices = {}
-        self._weights = {}
-        self._last_day = DateTime.MinValue
-
-    # region properties
-    @property
-    def Universe(self):
-        return self._univ.Value
-
-    @Universe.setter
-    def Universe(self, value):
-        self._univ.Value = value
-
-    @property
-    def LookbackDays(self):
-        return self._look.Value
-
-    @LookbackDays.setter
-    def LookbackDays(self, value):
-        self._look.Value = value
+        self._benchmark = None
+        self._primary_long_momentum = None
+        self._benchmark_long_momentum = None
+        self._primary_short_momentum = None
+        self._benchmark_short_momentum = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._latest_primary_signal = 0.0
+        self._latest_benchmark_signal = 0.0
+        self._previous_z_score = None
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     @property
-    def SkipDays(self):
-        return self._skip.Value
-
-    @SkipDays.setter
-    def SkipDays(self, value):
-        self._skip.Value = value
-
-    @property
-    def Quintile(self):
-        return self._quint.Value
-
-    @Quintile.setter
-    def Quintile(self, value):
-        self._quint.Value = value
-
-    @property
-    def MinTradeUsd(self):
-        return self._min_trade_usd.Value
-
-    @MinTradeUsd.setter
-    def MinTradeUsd(self, value):
-        self._min_trade_usd.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-    # endregion
-
     def GetWorkingSecurities(self):
-        return [(s, self.CandleType) for s in self.Universe]
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._security2_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(momentum_factor_stocks_strategy, self).OnReseted()
-        self._px.clear()
-        self._latest_prices.clear()
-        self._weights.clear()
-        self._last_day = DateTime.MinValue
+        self._benchmark = None
+        self._primary_long_momentum = None
+        self._benchmark_long_momentum = None
+        self._primary_short_momentum = None
+        self._benchmark_short_momentum = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._latest_primary_signal = 0.0
+        self._latest_benchmark_signal = 0.0
+        self._previous_z_score = None
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(momentum_factor_stocks_strategy, self).OnStarted(time)
-        if self.Universe is None or len(self.Universe) == 0:
-            raise Exception("Universe is empty.")
-        for s, dt in self.GetWorkingSecurities():
-            self._px[s] = RollingWin(self.LookbackDays + 1)
-            self.SubscribeCandles(dt, True, s) \
-                .Bind(lambda c, sec=s: self.ProcessCandle(c, sec)) \
-                .Start()
 
-    def ProcessCandle(self, candle, security):
+        sec2_id = str(self._security2_id.Value)
+        if not sec2_id:
+            raise Exception("Benchmark security identifier is not specified.")
+
+        s = Security()
+        s.Id = sec2_id
+        self._benchmark = s
+
+        lookback = int(self._lookback_period.Value)
+        skip = int(self._skip_period.Value)
+        norm_period = int(self._normalization_period.Value)
+
+        self._primary_long_momentum = RateOfChange()
+        self._primary_long_momentum.Length = lookback
+        self._benchmark_long_momentum = RateOfChange()
+        self._benchmark_long_momentum.Length = lookback
+        self._primary_short_momentum = RateOfChange()
+        self._primary_short_momentum.Length = skip
+        self._benchmark_short_momentum = RateOfChange()
+        self._benchmark_short_momentum.Length = skip
+        self._spread_average = SimpleMovingAverage()
+        self._spread_average.Length = norm_period
+        self._spread_deviation = StandardDeviation()
+        self._spread_deviation.Length = norm_period
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
+
+        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
+        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, benchmark_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessPrimaryCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        self._latest_prices[security] = candle.ClosePrice
-        self.OnDaily(security, candle)
 
-    def OnDaily(self, sec, candle):
-        self._px[sec].Add(candle.ClosePrice)
-        d = candle.OpenTime.Date
-        if d == self._last_day:
+        long_iv = CandleIndicatorValue(self._primary_long_momentum, candle)
+        long_iv.IsFinal = True
+        long_result = self._primary_long_momentum.Process(long_iv)
+
+        short_iv = CandleIndicatorValue(self._primary_short_momentum, candle)
+        short_iv.IsFinal = True
+        short_result = self._primary_short_momentum.Process(short_iv)
+
+        if long_result.IsEmpty or short_result.IsEmpty or not self._primary_long_momentum.IsFormed or not self._primary_short_momentum.IsFormed:
             return
-        self._last_day = d
-        if d.Day != 1:
+
+        self._latest_primary_signal = float(long_result) - float(short_result)
+        self._primary_updated = True
+        self.TryProcessSpread(candle.OpenTime)
+
+    def ProcessBenchmarkCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
-        self.Rebalance()
 
-    def Rebalance(self):
-        mom = {}
-        for s, win in self._px.items():
-            if win.Full:
-                data = win.Data
-                if data[0] != 0:
-                    mom[s] = (data[-(self.SkipDays+1)] - data[0]) / data[0]
-        if len(mom) < self.Quintile * 2:
+        long_iv = CandleIndicatorValue(self._benchmark_long_momentum, candle)
+        long_iv.IsFinal = True
+        long_result = self._benchmark_long_momentum.Process(long_iv)
+
+        short_iv = CandleIndicatorValue(self._benchmark_short_momentum, candle)
+        short_iv.IsFinal = True
+        short_result = self._benchmark_short_momentum.Process(short_iv)
+
+        if long_result.IsEmpty or short_result.IsEmpty or not self._benchmark_long_momentum.IsFormed or not self._benchmark_short_momentum.IsFormed:
             return
-        q = len(mom) // self.Quintile
-        longs = [kv[0] for kv in sorted(mom.items(), key=lambda kv: kv[1], reverse=True)[:q]]
-        shorts = [kv[0] for kv in sorted(mom.items(), key=lambda kv: kv[1])[:q]]
 
-        self._weights.clear()
-        wl = 1.0 / len(longs)
-        ws = -1.0 / len(shorts)
-        for s in longs:
-            self._weights[s] = wl
-        for s in shorts:
-            self._weights[s] = ws
+        self._latest_benchmark_signal = float(long_result) - float(short_result)
+        self._benchmark_updated = True
+        self.TryProcessSpread(candle.OpenTime)
 
-        for p in self.Positions:
-            if p.Security not in self._weights:
-                self.Move(p.Security, 0)
-
-        portfolio_value = self.Portfolio.CurrentValue or 0
-        for s, w in self._weights.items():
-            price = self.GetLatestPrice(s)
-            if price > 0:
-                self.Move(s, w * portfolio_value / price)
-
-    def Move(self, sec, tgt):
-        diff = tgt - self.Pos(sec)
-        price = self.GetLatestPrice(sec)
-        if price <= 0 or Math.Abs(diff) * price < self.MinTradeUsd:
+    def TryProcessSpread(self, time):
+        if not self._primary_updated or not self._benchmark_updated:
             return
-        order = Order()
-        order.Security = sec
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = Math.Abs(diff)
-        order.Type = OrderTypes.Market
-        order.Comment = "MomStocks"
-        self.RegisterOrder(order)
 
-    def Pos(self, sec):
-        val = self.GetPositionValue(sec, self.Portfolio)
-        return val if val is not None else 0
+        self._primary_updated = False
+        self._benchmark_updated = False
 
-    def GetLatestPrice(self, sec):
-        return self._latest_prices.get(sec, 0)
+        spread = self._latest_primary_signal - self._latest_benchmark_signal
+
+        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
+        mean_iv.IsFinal = True
+        mean = float(self._spread_average.Process(mean_iv))
+
+        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
+        dev_iv.IsFinal = True
+        deviation = float(self._spread_deviation.Process(dev_iv))
+
+        if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        z_score = (spread - mean) / deviation
+        entry_thresh = float(self._entry_threshold.Value)
+        exit_thresh = float(self._exit_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_entry = self._previous_z_score is not None and self._previous_z_score < entry_thresh and z_score >= entry_thresh
+        bearish_entry = self._previous_z_score is not None and self._previous_z_score > -entry_thresh and z_score <= -entry_thresh
+
+        if self._cooldown_remaining == 0 and self.Position == 0:
+            if bullish_entry:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif bearish_entry:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
+        elif self.Position > 0 and z_score <= exit_thresh:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and z_score >= -exit_thresh:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+
+        self._previous_z_score = z_score
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return momentum_factor_stocks_strategy()
-
-class RollingWin:
-    def __init__(self, n):
-        from collections import deque
-        self._n = n
-        self._q = deque()
-
-    @property
-    def Full(self):
-        return len(self._q) == self._n
-
-    def Add(self, v):
-        if len(self._q) == self._n:
-            self._q.popleft()
-        self._q.append(v)
-
-    @property
-    def Data(self):
-        return list(self._q)

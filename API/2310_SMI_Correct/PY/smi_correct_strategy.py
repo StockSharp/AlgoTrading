@@ -80,7 +80,7 @@ class smi_correct_strategy(Strategy):
         if not self._signal.IsFormed:
             self._prev_smi = k
             return
-        signal = float(signal_result.ToDecimal())
+        signal = float(signal_result)
         if self._prev_smi is None or self._prev_signal is None:
             self._prev_smi = k
             self._prev_signal = signal

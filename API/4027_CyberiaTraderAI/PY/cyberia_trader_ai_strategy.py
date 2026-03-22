@@ -152,7 +152,7 @@ class cyberia_trader_ai_strategy(Strategy):
 
         ema_snapshot = None
         if ema_value.IsFinal:
-            ema_snapshot = float(ema_value.ToDecimal())
+            ema_snapshot = float(ema_value)
         elif self.EnableMa:
             return
 

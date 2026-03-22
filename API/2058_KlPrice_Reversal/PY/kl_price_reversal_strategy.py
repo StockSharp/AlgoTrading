@@ -90,8 +90,8 @@ class kl_price_reversal_strategy(Strategy):
         if not ma_value.IsFormed or not atr_value.IsFormed:
             return
 
-        ma = float(ma_value.ToDecimal())
-        tr = float(atr_value.ToDecimal())
+        ma = float(ma_value)
+        tr = float(atr_value)
         if tr == 0:
             return
 

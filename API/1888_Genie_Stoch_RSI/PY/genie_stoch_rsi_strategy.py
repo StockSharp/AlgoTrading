@@ -103,7 +103,7 @@ class genie_stoch_rsi_strategy(Strategy):
         if not self._rsi.IsFormed:
             return
 
-        rsi_val = float(rsi_result.ToDecimal())
+        rsi_val = float(rsi_result)
 
         k_val = stoch_value.K
         d_val = stoch_value.D

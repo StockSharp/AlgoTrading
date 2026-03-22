@@ -83,7 +83,7 @@ class tsi_de_marker_strategy(Strategy):
             return
         tsi_val = float(tsi_val)
         signal_val = float(signal_val)
-        demarker = float(demarker_value.ToDecimal())
+        demarker = float(demarker_value)
         if self._prev_tsi is None or self._prev_signal is None:
             self._prev_tsi = tsi_val
             self._prev_signal = signal_val

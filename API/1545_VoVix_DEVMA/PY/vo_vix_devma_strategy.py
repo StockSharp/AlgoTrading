@@ -105,9 +105,9 @@ class vo_vix_devma_strategy(Strategy):
             return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
-        fast_std_val = float(fast_std_value.ToDecimal())
-        slow_std_val = float(slow_std_value.ToDecimal())
-        ema_val = float(ema_value.ToDecimal())
+        fast_std_val = float(fast_std_value)
+        slow_std_val = float(slow_std_value)
+        ema_val = float(ema_value)
         close = float(candle.ClosePrice)
         if self.Position > 0 and self._entry_price > 0 and self._stop_dist > 0:
             if close <= self._entry_price - self._stop_dist or close >= self._entry_price + self._stop_dist * self.tp_mult:

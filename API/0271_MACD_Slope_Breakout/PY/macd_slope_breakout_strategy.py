@@ -2,233 +2,189 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("System.Collections")
 
+import math
 from System import TimeSpan, Math
-from System.Collections.Generic import Queue
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, LinearRegression
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class macd_slope_breakout_strategy(Strategy):
     """
-    MACD Slope Breakout Strategy
+    Strategy based on MACD histogram slope breakout.
+    Opens positions when MACD histogram slope deviates from its recent average by a multiple of standard deviation.
     """
 
     def __init__(self):
         super(macd_slope_breakout_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._fast_ema = self.Param("FastEma", 12) \
             .SetGreaterThanZero() \
-            .SetDisplay("Fast EMA", "Fast EMA period", "MACD") \
-            .SetCanOptimize(True) \
+            .SetDisplay("Fast EMA", "Fast EMA period", "Indicator Parameters") \
             .SetOptimize(8, 16, 2)
 
         self._slow_ema = self.Param("SlowEma", 26) \
             .SetGreaterThanZero() \
-            .SetDisplay("Slow EMA", "Slow EMA period", "MACD") \
-            .SetCanOptimize(True) \
+            .SetDisplay("Slow EMA", "Slow EMA period", "Indicator Parameters") \
             .SetOptimize(20, 30, 2)
 
         self._signal_ma = self.Param("SignalMa", 9) \
             .SetGreaterThanZero() \
-            .SetDisplay("Signal MA", "Signal MA period", "MACD") \
-            .SetCanOptimize(True) \
+            .SetDisplay("Signal MA", "Signal MA period", "Indicator Parameters") \
             .SetOptimize(7, 12, 1)
 
         self._slope_period = self.Param("SlopePeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Slope Period", "Period for slope average and standard deviation", "Signal") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters") \
+            .SetOptimize(10, 50, 5)
 
-        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.0) \
+        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters") \
+            .SetOptimize(1.5, 4.0, 0.5)
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._macd = None
-        self._macd_hist_slope = None
-        self._prev_slope_value = 0
-        self._slope_avg = 0
-        self._slope_std_dev = 0
-        self._sum_slope = 0
-        self._sum_slope_squared = 0
-        self._slope_values = Queue[float]()
-
-    @property
-    def fast_ema(self):
-        return self._fast_ema.Value
-
-    @fast_ema.setter
-    def fast_ema(self, value):
-        self._fast_ema.Value = value
-
-    @property
-    def slow_ema(self):
-        return self._slow_ema.Value
-
-    @slow_ema.setter
-    def slow_ema(self, value):
-        self._slow_ema.Value = value
-
-    @property
-    def signal_ma(self):
-        return self._signal_ma.Value
-
-    @signal_ma.setter
-    def signal_ma(self, value):
-        self._signal_ma.Value = value
-
-    @property
-    def slope_period(self):
-        return self._slope_period.Value
-
-    @slope_period.setter
-    def slope_period(self, value):
-        self._slope_period.Value = value
-
-    @property
-    def breakout_multiplier(self):
-        return self._breakout_multiplier.Value
-
-    @breakout_multiplier.setter
-    def breakout_multiplier(self, value):
-        self._breakout_multiplier.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._prev_histogram = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        self._slopes = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(macd_slope_breakout_strategy, self).OnReseted()
-        self._prev_slope_value = 0
-        self._slope_avg = 0
-        self._slope_std_dev = 0
-        self._sum_slope = 0
-        self._sum_slope_squared = 0
+        self._macd = None
+        self._prev_histogram = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
         super(macd_slope_breakout_strategy, self).OnStarted(time)
 
-        # Initialize indicators
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._cooldown = 0
+        self._filled_count = 0
+        self._current_index = 0
+
         self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self.fast_ema
-        self._macd.Macd.LongMa.Length = self.slow_ema
-        self._macd.SignalMa.Length = self.signal_ma
-        self._macd_hist_slope = LinearRegression()
-        self._macd_hist_slope.Length = 2  # For calculating slope
+        self._macd.Macd.ShortMa.Length = int(self._fast_ema.Value)
+        self._macd.Macd.LongMa.Length = int(self._slow_ema.Value)
+        self._macd.SignalMa.Length = int(self._signal_ma.Value)
 
-        self._slope_values.Clear()
-
-        # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._macd, self.ProcessCandle).Start()
+        subscription.BindEx(self._macd, self._process_candle).Start()
 
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._macd)
             self.DrawOwnTrades(area)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, macd_value):
-        # Skip unfinished candles
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
+    def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        if macd_value.Macd is None or macd_value.Signal is None:
+        if not self._macd.IsFormed:
             return
 
-        # Calculate MACD histogram value (MACD - Signal)
-        macd_hist = macd_value.Macd - macd_value.Signal
-
-        # Calculate MACD histogram slope
-        current_slope = process_float(self._macd_hist_slope, macd_hist, candle.ServerTime, candle.State == CandleStates.Finished)
-        current_slope_value = current_slope.LinearReg
-        if current_slope_value is None:
+        macd_val = macd_value.Macd
+        signal_val = macd_value.Signal
+        if macd_val is None or signal_val is None:
             return
 
-        # Update slope stats when we have 2 values to calculate slope
-        if self._prev_slope_value != 0:
-            # Calculate simple slope from current and previous values
-            slope = current_slope_value - self._prev_slope_value
+        histogram = float(macd_val) - float(signal_val)
 
-            # Update running statistics
-            self._slope_values.Enqueue(slope)
-            self._sum_slope += slope
-            self._sum_slope_squared += slope * slope
+        if not self._is_initialized:
+            self._prev_histogram = histogram
+            self._is_initialized = True
+            return
 
-            # Remove oldest value if we have enough
-            if self._slope_values.Count > self.slope_period:
-                old_slope = self._slope_values.Dequeue()
-                self._sum_slope -= old_slope
-                self._sum_slope_squared -= old_slope * old_slope
+        self._current_slope = histogram - self._prev_histogram
+        self._prev_histogram = histogram
 
-            # Calculate average and standard deviation
-            self._slope_avg = self._sum_slope / self._slope_values.Count
-            variance = (self._sum_slope_squared / self._slope_values.Count) - (self._slope_avg * self._slope_avg)
-            self._slope_std_dev = 0 if variance <= 0 else Math.Sqrt(float(variance))
+        sp = int(self._slope_period.Value)
+        self._slopes[self._current_index] = self._current_slope
+        self._current_index = (self._current_index + 1) % sp
 
-            # Generate signals if we have enough data for statistics
-            if self._slope_values.Count >= self.slope_period:
-                # Breakout logic
-                if slope > self._slope_avg + self.breakout_multiplier * self._slope_std_dev and self.Position <= 0:
-                    # Long position on bullish histogram slope breakout
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo("Long entry: MACD histogram slope breakout above {0:F5}".format(self._slope_avg + self.breakout_multiplier * self._slope_std_dev))
-                elif slope < self._slope_avg - self.breakout_multiplier * self._slope_std_dev and self.Position >= 0:
-                    # Short position on bearish histogram slope breakout
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo("Short entry: MACD histogram slope breakout below {0:F5}".format(self._slope_avg - self.breakout_multiplier * self._slope_std_dev))
+        if self._filled_count < sp:
+            self._filled_count += 1
 
-                # Exit logic - Return to mean
-                if self.Position > 0 and slope < self._slope_avg:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self.LogInfo("Long exit: MACD histogram slope returned to mean")
-                elif self.Position < 0 and slope > self._slope_avg:
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("Short exit: MACD histogram slope returned to mean")
+        if self._filled_count < sp:
+            return
 
-        # Update previous value for next iteration
-        self._prev_slope_value = current_slope_value
+        self._calculate_statistics()
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._std_dev_slope <= 0:
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        bm = float(self._breakout_multiplier.Value)
+        upper_threshold = self._avg_slope + bm * self._std_dev_slope
+        lower_threshold = self._avg_slope - bm * self._std_dev_slope
+
+        if self.Position == 0:
+            if self._current_slope > upper_threshold and histogram > 0:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif self._current_slope < lower_threshold and histogram < 0:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if self._current_slope <= self._avg_slope or histogram <= 0:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if self._current_slope >= self._avg_slope or histogram >= 0:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+
+    def _calculate_statistics(self):
+        sp = int(self._slope_period.Value)
+        self._avg_slope = 0.0
+        sum_sq = 0.0
+
+        for i in range(sp):
+            self._avg_slope += self._slopes[i]
+        self._avg_slope /= float(sp)
+
+        for i in range(sp):
+            diff = self._slopes[i] - self._avg_slope
+            sum_sq += diff * diff
+
+        self._std_dev_slope = math.sqrt(sum_sq / float(sp))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return macd_slope_breakout_strategy()

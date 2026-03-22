@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
@@ -18,6 +18,8 @@ class linear_mean_reversion_strategy(Strategy):
         super(linear_mean_reversion_strategy, self).__init__()
         self._half_life = self.Param("HalfLife", 30) \
             .SetDisplay("Half-Life", "Lookback window", "General")
+        self._scale = self.Param("Scale", 1.0) \
+            .SetDisplay("Scale", "Position scaling factor", "General")
         self._entry_threshold = self.Param("EntryThreshold", 2.2) \
             .SetDisplay("Entry Threshold", "Z-score entry threshold", "Parameters")
         self._exit_threshold = self.Param("ExitThreshold", 0.5) \
@@ -52,6 +54,8 @@ class linear_mean_reversion_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(sma, std, self._process_candle).Start()
 
+        self.StartProtection(None, None)
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -62,6 +66,9 @@ class linear_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         mean = float(mean_val)
         deviation = float(dev_val)
 
@@ -70,9 +77,13 @@ class linear_mean_reversion_strategy(Strategy):
 
         close = float(candle.ClosePrice)
         zscore = (close - mean) / deviation
+        volume = self.Volume * self._scale.Value
         self._bars_from_trade += 1
 
         if self._bars_from_trade < self._cooldown_bars.Value:
+            return
+
+        if volume <= 0:
             return
 
         entry_th = self._entry_threshold.Value
@@ -81,23 +92,27 @@ class linear_mean_reversion_strategy(Strategy):
 
         if self.Position == 0:
             if zscore < -entry_th:
-                self.BuyMarket()
+                self.BuyMarket(volume)
                 self._entry_price = close
                 self._bars_from_trade = 0
             elif zscore > entry_th:
-                self.SellMarket()
+                self.SellMarket(volume)
                 self._entry_price = close
                 self._bars_from_trade = 0
-        elif self.Position > 0:
+            return
+
+        if self.Position > 0:
             stop = self._entry_price - sl_pts
             if close <= stop or zscore >= -exit_th:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._entry_price = 0.0
                 self._bars_from_trade = 0
-        elif self.Position < 0:
+            return
+
+        if self.Position < 0:
             stop = self._entry_price + sl_pts
             if close >= stop or zscore <= exit_th:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._entry_price = 0.0
                 self._bars_from_trade = 0
 

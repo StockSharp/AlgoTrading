@@ -128,8 +128,8 @@ class x_fatl_x_satl_cloud_duplex_strategy(Strategy):
         t = candle.OpenTime
         fv = self._fast_smoother.Process(DecimalIndicatorValue(self._fast_smoother, fast_raw, t))
         sv = self._slow_smoother.Process(DecimalIndicatorValue(self._slow_smoother, slow_raw, t))
-        fast = float(fv.ToDecimal())
-        slow = float(sv.ToDecimal())
+        fast = float(fv)
+        slow = float(sv)
 
         self._long_history.insert(0, (fast, slow))
         max_size = max(self.LongSignalBar + 2, 2)

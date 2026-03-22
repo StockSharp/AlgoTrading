@@ -1,226 +1,192 @@
 import clr
 
-clr.AddReference("System.Collections")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from System.Collections.Generic import Queue
-from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, LinearRegression
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class adx_slope_breakout_strategy(Strategy):
     """
-    ADX Slope Breakout Strategy
-
+    Strategy based on ADX slope breakout.
+    Opens positions when ADX slope deviates from its recent average and the dominant DI confirms direction.
     """
 
     def __init__(self):
         super(adx_slope_breakout_strategy, self).__init__()
 
-        # Initialize internal state
-        self._adx = None
-        self._adxSlope = None
-        self._prevSlopeValue = 0.0
-        self._slopeAvg = 0.0
-        self._slopeStdDev = 0.0
-        self._sumSlope = 0.0
-        self._sumSlopeSquared = 0.0
-        self._slopeValues = Queue[float]()
-
-        # Initialize strategy parameters
-        self._adxPeriod = self.Param("AdxPeriod", 14) \
+        self._adx_period = self.Param("AdxPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("ADX Period", "Period for ADX calculation", "Indicator") \
-            .SetCanOptimize(True) \
+            .SetDisplay("ADX Period", "Period for ADX calculation", "Indicator Parameters") \
             .SetOptimize(10, 20, 2)
 
-        self._slopePeriod = self.Param("SlopePeriod", 20) \
+        self._slope_period = self.Param("SlopePeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters") \
+            .SetOptimize(10, 50, 5)
 
-        self._breakoutMultiplier = self.Param("BreakoutMultiplier", 2.0) \
+        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters") \
+            .SetOptimize(1.5, 4.0, 0.5)
 
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._min_adx = self.Param("MinAdx", 25.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Min ADX", "Minimum ADX level required for entries", "Signal Filters")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def AdxPeriod(self):
-        return self._adxPeriod.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adxPeriod.Value = value
-
-    @property
-    def SlopePeriod(self):
-        return self._slopePeriod.Value
-
-    @SlopePeriod.setter
-    def SlopePeriod(self, value):
-        self._slopePeriod.Value = value
+        self._adx = None
+        self._prev_adx = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        self._slopes = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
-    def BreakoutMultiplier(self):
-        return self._breakoutMultiplier.Value
-
-    @BreakoutMultiplier.setter
-    def BreakoutMultiplier(self, value):
-        self._breakoutMultiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Returns securities this strategy works with."""
-        return [(self.Security, self.CandleType)]
-
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(adx_slope_breakout_strategy, self).OnReseted()
-        self._prevSlopeValue = 0.0
-        self._slopeAvg = 0.0
-        self._slopeStdDev = 0.0
-        self._sumSlope = 0.0
-        self._sumSlopeSquared = 0.0
-        self._slopeValues = Queue[float]()
+        self._adx = None
+        self._prev_adx = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
         super(adx_slope_breakout_strategy, self).OnStarted(time)
 
-        # Initialize indicators
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._cooldown = 0
+        self._filled_count = 0
+        self._current_index = 0
+
         self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.AdxPeriod
-        self._adxSlope = LinearRegression()
-        self._adxSlope.Length = 2  # For calculating slope
+        self._adx.Length = int(self._adx_period.Value)
 
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._adx, self._process_candle).Start()
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._adx, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, adxValue):
-        # Skip unfinished candles
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
+    def _process_candle(self, candle, adx_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Get ADX value
-        typedAdx = adxValue
-        adx = typedAdx.MovingAverage
-        if adx is None:
+        if not self._adx.IsFormed:
             return
 
-        dx = typedAdx.Dx
-        diMinus = dx.Minus
-        diPlus = dx.Plus
-        if diMinus is None or diPlus is None:
+        adx_ma = adx_value.MovingAverage
+        if adx_ma is None:
             return
 
-        # Calculate ADX slope
-        currentSlope = process_float(self._adxSlope, adx, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentSlopeValue = currentSlope.LinearReg
-        if currentSlopeValue is None:
+        dx = adx_value.Dx
+        di_plus = dx.Plus
+        di_minus = dx.Minus
+        if di_plus is None or di_minus is None:
             return
 
-        # Update slope stats when we have 2 values to calculate slope
-        if self._prevSlopeValue != 0:
-            # Calculate simple slope from current and previous values
-            slope = currentSlopeValue - self._prevSlopeValue
+        adx_val = float(adx_ma)
+        di_plus_val = float(di_plus)
+        di_minus_val = float(di_minus)
 
-            # Update running statistics
-            self._slopeValues.Enqueue(slope)
-            self._sumSlope += slope
-            self._sumSlopeSquared += slope * slope
+        if not self._is_initialized:
+            self._prev_adx = adx_val
+            self._is_initialized = True
+            return
 
-            # Remove oldest value if we have enough
-            if self._slopeValues.Count > self.SlopePeriod:
-                oldSlope = self._slopeValues.Dequeue()
-                self._sumSlope -= oldSlope
-                self._sumSlopeSquared -= oldSlope * oldSlope
+        self._current_slope = adx_val - self._prev_adx
+        self._prev_adx = adx_val
 
-            # Calculate average and standard deviation
-            self._slopeAvg = self._sumSlope / self._slopeValues.Count
-            variance = (self._sumSlopeSquared / self._slopeValues.Count) - (self._slopeAvg * self._slopeAvg)
-            self._slopeStdDev = 0 if variance <= 0 else Math.Sqrt(variance)
+        sp = int(self._slope_period.Value)
+        self._slopes[self._current_index] = self._current_slope
+        self._current_index = (self._current_index + 1) % sp
 
-            # Generate signals if we have enough data for statistics
-            if self._slopeValues.Count >= self.SlopePeriod:
-                # Get DI+ and DI- from the ADX indicator for trend direction
-                isBullish = diPlus > diMinus
+        if self._filled_count < sp:
+            self._filled_count += 1
 
-                # Breakout logic
-                if slope > self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev and self.Position <= 0:
-                    # ADX slope breakout indicates stronger trend
-                    # Only go long if DI+ > DI- (bullish)
-                    if isBullish:
-                        self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                        self.LogInfo("Long entry: ADX slope breakout above {0:F2} with DI+ > DI-".format(
-                            self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev))
-                elif slope > self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev and self.Position >= 0:
-                    # ADX slope breakout indicates stronger trend
-                    # Only go short if DI+ < DI- (bearish)
-                    if not isBullish:
-                        self.SellMarket(self.Volume + Math.Abs(self.Position))
-                        self.LogInfo("Short entry: ADX slope breakout above {0:F2} with DI+ < DI-".format(
-                            self._slopeAvg + self.BreakoutMultiplier * self._slopeStdDev))
+        if self._filled_count < sp:
+            return
 
-                # Exit logic - Return to mean or ADX weakening
-                if self.Position > 0 and (slope < self._slopeAvg or not isBullish):
-                    self.SellMarket(Math.Abs(self.Position))
-                    self.LogInfo("Long exit: ADX slope returned to mean or trend changed to bearish")
-                elif self.Position < 0 and (slope < self._slopeAvg or isBullish):
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("Short exit: ADX slope returned to mean or trend changed to bullish")
+        self._calculate_statistics()
 
-        # Update previous value for next iteration
-        self._prevSlopeValue = currentSlopeValue
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._std_dev_slope <= 0:
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        bm = float(self._breakout_multiplier.Value)
+        upper_threshold = self._avg_slope + bm * self._std_dev_slope
+        is_bullish = di_plus_val > di_minus_val
+        is_bearish = di_minus_val > di_plus_val
+        min_adx = float(self._min_adx.Value)
+
+        if self.Position == 0:
+            if self._current_slope > upper_threshold and adx_val >= min_adx:
+                if is_bullish:
+                    self.BuyMarket()
+                    self._cooldown = int(self._cooldown_bars.Value)
+                elif is_bearish:
+                    self.SellMarket()
+                    self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if self._current_slope <= self._avg_slope or not is_bullish:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if self._current_slope <= self._avg_slope or not is_bearish:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+
+    def _calculate_statistics(self):
+        sp = int(self._slope_period.Value)
+        self._avg_slope = 0.0
+        sum_sq = 0.0
+
+        for i in range(sp):
+            self._avg_slope += self._slopes[i]
+        self._avg_slope /= float(sp)
+
+        for i in range(sp):
+            diff = self._slopes[i] - self._avg_slope
+            sum_sq += diff * diff
+
+        self._std_dev_slope = math.sqrt(sum_sq / float(sp))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adx_slope_breakout_strategy()
-

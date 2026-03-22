@@ -4,219 +4,151 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
-from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
-import random
 
 class stochastic_implied_volatility_skew_strategy(Strategy):
-    """Stochastic strategy with Implied Volatility Skew."""
+    """Stochastic strategy filtered by deterministic implied-volatility skew regime changes."""
 
     def __init__(self):
         super(stochastic_implied_volatility_skew_strategy, self).__init__()
 
-        # Stochastic length parameter.
         self._stoch_length = self.Param("StochLength", 14) \
             .SetRange(5, 30) \
-            .SetCanOptimize(True) \
-            .SetDisplay("Stoch Length", "Period for Stochastic Oscillator", "Indicators")
+            .SetDisplay("Stoch Length", "Period for stochastic oscillator", "Indicators")
 
-        # Stochastic %K smoothing parameter.
         self._stoch_k = self.Param("StochK", 3) \
             .SetRange(1, 10) \
-            .SetCanOptimize(True) \
-            .SetDisplay("Stoch %K", "Smoothing for Stochastic %K line", "Indicators")
+            .SetDisplay("Stoch %K", "Smoothing for stochastic %K line", "Indicators")
 
-        # Stochastic %D smoothing parameter.
         self._stoch_d = self.Param("StochD", 3) \
             .SetRange(1, 10) \
-            .SetCanOptimize(True) \
-            .SetDisplay("Stoch %D", "Smoothing for Stochastic %D line", "Indicators")
+            .SetDisplay("Stoch %D", "Smoothing for stochastic %D line", "Indicators")
 
-        # IV Skew averaging period.
         self._iv_period = self.Param("IvPeriod", 20) \
             .SetRange(10, 50) \
-            .SetCanOptimize(True) \
-            .SetDisplay("IV Period", "Period for IV Skew averaging", "Options")
+            .SetDisplay("IV Period", "Period for IV skew averaging", "Options")
 
-        # Stop loss percentage.
         self._stop_loss = self.Param("StopLoss", 2.0) \
             .SetRange(1.0, 5.0) \
-            .SetCanOptimize(True) \
-            .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        # Candle type for strategy calculation.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 18) \
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal fields
         self._stochastic = None
         self._iv_skew_sma = None
         self._current_iv_skew = 0.0
         self._avg_iv_skew = 0.0
+        self._prev_k = None
+        self._prev_high_skew = False
+        self._prev_low_skew = False
+        self._cooldown_remaining = 0
 
     @property
-    def StochLength(self):
-        """Stochastic length parameter."""
-        return self._stoch_length.Value
-
-    @StochLength.setter
-    def StochLength(self, value):
-        self._stoch_length.Value = value
-
-    @property
-    def StochK(self):
-        """Stochastic %K smoothing parameter."""
-        return self._stoch_k.Value
-
-    @StochK.setter
-    def StochK(self, value):
-        self._stoch_k.Value = value
-
-    @property
-    def StochD(self):
-        """Stochastic %D smoothing parameter."""
-        return self._stoch_d.Value
-
-    @StochD.setter
-    def StochD(self, value):
-        self._stoch_d.Value = value
-
-    @property
-    def IvPeriod(self):
-        """IV Skew averaging period."""
-        return self._iv_period.Value
-
-    @IvPeriod.setter
-    def IvPeriod(self, value):
-        self._iv_period.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage."""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy calculation."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def GetWorkingSecurities(self):
-        """!! REQUIRED !! Returns securities for strategy."""
-        return [(self.Security, self.CandleType)]
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(stochastic_implied_volatility_skew_strategy, self).OnReseted()
-        if self._stochastic:
-            self._stochastic.Reset()
-            self._stochastic = None
-        if self._iv_skew_sma:
-            self._iv_skew_sma.Reset()
-            self._iv_skew_sma = None
-        self._current_iv_skew = 0
-        self._avg_iv_skew = 0
+        self._stochastic = None
+        self._iv_skew_sma = None
+        self._current_iv_skew = 0.0
+        self._avg_iv_skew = 0.0
+        self._prev_k = None
+        self._prev_high_skew = False
+        self._prev_low_skew = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(stochastic_implied_volatility_skew_strategy, self).OnStarted(time)
 
-        # Create Stochastic Oscillator
         self._stochastic = StochasticOscillator()
-        self._stochastic.K.Length = self.StochK
-        self._stochastic.D.Length = self.StochD
+        self._stochastic.K.Length = int(self._stoch_length.Value)
+        self._stochastic.D.Length = int(self._stoch_d.Value)
 
-        # Create IV Skew SMA
         self._iv_skew_sma = SimpleMovingAverage()
-        self._iv_skew_sma.Length = self.IvPeriod
+        self._iv_skew_sma.Length = int(self._iv_period.Value)
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._stochastic, self.ProcessCandle).Start()
+        self.Indicators.Add(self._stochastic)
+        self.Indicators.Add(self._iv_skew_sma)
 
-        # Setup chart visualization
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self.ProcessCandle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._stochastic)
             self.DrawOwnTrades(area)
 
-        # Start position protection
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
         )
-    def ProcessCandle(self, candle: ICandleMessage, stoch_value):
-        # Skip unfinished candles
+
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Simulate IV Skew data (in real implementation, this would come from options data provider)
         self.SimulateIvSkew(candle)
 
-        # Process IV Skew with SMA
-        iv_skew_sma_value = process_float(self._iv_skew_sma, self._current_iv_skew, candle.ServerTime, candle.State == CandleStates.Finished)
-        self._avg_iv_skew = float(iv_skew_sma_value)
+        iv_sma_iv = DecimalIndicatorValue(self._iv_skew_sma, self._current_iv_skew, candle.OpenTime)
+        iv_sma_iv.IsFinal = True
+        iv_sma_result = self._iv_skew_sma.Process(iv_sma_iv)
+        if not self._iv_skew_sma.IsFormed or iv_sma_result.IsEmpty:
+            return
 
-        # Check if strategy is ready to trade
+        self._avg_iv_skew = float(iv_sma_result)
 
-        stoch_k = stoch_value.K
-        stoch_d = stoch_value.D
+        civ = CandleIndicatorValue(self._stochastic, candle)
+        civ.IsFinal = True
+        stoch_result = self._stochastic.Process(civ)
+        if not self._stochastic.IsFormed:
+            return
 
-        # Entry logic
-        if stoch_k < 20 and self._current_iv_skew > self._avg_iv_skew and self.Position <= 0:
-            # Stochastic in oversold territory and IV Skew above average - Long entry
-            self.BuyMarket(self.Volume)
-            self.LogInfo(f"Buy Signal: Stoch %K={stoch_k}, IV Skew={self._current_iv_skew}, Avg IV Skew={self._avg_iv_skew}")
-        elif stoch_k > 80 and self._current_iv_skew < self._avg_iv_skew and self.Position >= 0:
-            # Stochastic in overbought territory and IV Skew below average - Short entry
-            self.SellMarket(self.Volume)
-            self.LogInfo(f"Sell Signal: Stoch %K={stoch_k}, IV Skew={self._current_iv_skew}, Avg IV Skew={self._avg_iv_skew}")
+        stoch_k_val = stoch_result.K
+        if stoch_k_val is None:
+            return
 
-        # Exit logic
-        if self.Position > 0 and stoch_k > 50:
-            # Exit long position when Stochastic returns to neutral zone
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Exit Long: Stoch %K={stoch_k}")
-        elif self.Position < 0 and stoch_k < 50:
-            # Exit short position when Stochastic returns to neutral zone
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Exit Short: Stoch %K={stoch_k}")
+        stoch_k = float(stoch_k_val)
 
-    def SimulateIvSkew(self, candle: ICandleMessage):
-        # This is a placeholder for real IV Skew data
-        # In a real implementation, this would connect to an options data provider
-        # IV Skew measures the difference in IV between calls and puts at equidistant strikes
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Create pseudo-random but somewhat realistic values
+        cooldown = int(self._cooldown_bars.Value)
+        high_skew = self._current_iv_skew > self._avg_iv_skew
+        low_skew = self._current_iv_skew < self._avg_iv_skew
+        oversold = stoch_k < 25.0
+        overbought = stoch_k > 75.0
 
-        # Base IV Skew values on price movement and volatility
-        price_up = candle.OpenPrice < candle.ClosePrice
-        candle_range = float((candle.HighPrice - candle.LowPrice) / candle.LowPrice)
+        if self._cooldown_remaining == 0 and self.Position == 0 and oversold and high_skew:
+            self.BuyMarket()
+            self._cooldown_remaining = cooldown
+        elif self._cooldown_remaining == 0 and self.Position == 0 and overbought and low_skew:
+            self.SellMarket()
+            self._cooldown_remaining = cooldown
 
-        # When prices are rising, puts are often bid up for protection (negative skew)
-        # When prices are falling, calls become relatively cheaper (positive skew)
-        if price_up:
-            # During uptrends, skew tends to be more negative
-            self._current_iv_skew = -0.1 - candle_range - random.random() * 0.2
-        else:
-            # During downtrends, skew can become less negative or even positive
-            self._current_iv_skew = 0.05 - candle_range + random.random() * 0.2
+        self._prev_k = stoch_k
+        self._prev_high_skew = high_skew
+        self._prev_low_skew = low_skew
 
-        # Add some randomness for market events
-        if random.random() > 0.95:
-            # Occasional extreme skew events (e.g., market fear or greed)
-            self._current_iv_skew *= 1.5
+    def SimulateIvSkew(self, candle):
+        range_val = max(float(candle.HighPrice - candle.LowPrice), 1.0)
+        body = float(candle.ClosePrice - candle.OpenPrice)
+        range_ratio = range_val / max(float(candle.OpenPrice), 1.0)
+        body_ratio = body / range_val
+
+        self._current_iv_skew = (body_ratio * 0.2) - min(0.15, range_ratio * 10.0)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return stochastic_implied_volatility_skew_strategy()

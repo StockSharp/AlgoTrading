@@ -50,7 +50,7 @@ class option_expiration_week_strategy(Strategy):
             self._entered_month_key = month_key
             self._exited_month_key = 0
         elif not in_exp and self.Position > 0 and self._entered_month_key == month_key and self._exited_month_key != month_key:
-            self.SellMarket()
+            self.SellMarket(self.Position)
             self._exited_month_key = month_key
 
     def _is_exp_week(self, d):

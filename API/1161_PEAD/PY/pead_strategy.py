@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RateOfChange
 from StockSharp.Algo.Strategies import Strategy
 
@@ -50,6 +50,10 @@ class pead_strategy(Strategy):
         self._roc.Length = self._perf_days.Value + 1
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._ema, self._roc, self.OnProcess).Start()
+        self.StartProtection(
+            Unit(3, UnitTypes.Percent),
+            Unit(self._stop_pct.Value, UnitTypes.Percent)
+        )
 
     def OnProcess(self, candle, ema_val, roc_val):
         if candle.State != CandleStates.Finished:
@@ -64,18 +68,6 @@ class pead_strategy(Strategy):
         perf_pos = self._prev_roc > 0
         if perf_pos and strong_move and self.Position == 0:
             self.BuyMarket()
-            self._entry_price = close
-            self._bars_in_trade = 0
-        if self.Position > 0:
-            self._bars_in_trade += 1
-            sp = float(self._stop_pct.Value)
-            mhb = self._max_hold_bars.Value
-            sl = self._entry_price * (1.0 - sp / 100.0)
-            tp = self._entry_price * 1.03
-            if close <= sl or close >= tp or self._bars_in_trade >= mhb:
-                self.SellMarket()
-                self._entry_price = 0.0
-                self._bars_in_trade = 0
         self._prev_close = close
         self._prev_roc = rv
 

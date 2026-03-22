@@ -1,12 +1,11 @@
 import clr
-import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class macd_breakout_strategy(Strategy):
@@ -24,9 +23,10 @@ class macd_breakout_strategy(Strategy):
         self._sl_pct = self.Param("StopLossPercent", 2.0).SetDisplay("SL %", "Stop loss percent", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
-        self._hist_values = []
-        self._prev_hist = 0.0
-        self._prev_hist_sma = 0.0
+        self._macd_hist_sma = None
+        self._macd_hist_stddev = None
+        self._prev_macd_hist_value = 0.0
+        self._prev_macd_hist_sma_value = 0.0
 
     @property
     def candle_type(self):
@@ -34,9 +34,8 @@ class macd_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(macd_breakout_strategy, self).OnReseted()
-        self._hist_values = []
-        self._prev_hist = 0.0
-        self._prev_hist_sma = 0.0
+        self._prev_macd_hist_value = 0.0
+        self._prev_macd_hist_sma_value = 0.0
 
     def OnStarted(self, time):
         super(macd_breakout_strategy, self).OnStarted(time)
@@ -44,6 +43,12 @@ class macd_breakout_strategy(Strategy):
         macd.Macd.ShortMa.Length = self._fast_ema.Value
         macd.Macd.LongMa.Length = self._slow_ema.Value
         macd.SignalMa.Length = self._signal_period.Value
+
+        self._macd_hist_sma = SimpleMovingAverage()
+        self._macd_hist_sma.Length = self._sma_period.Value
+        self._macd_hist_stddev = StandardDeviation()
+        self._macd_hist_stddev.Length = self._sma_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(macd, self._process_candle).Start()
         sl = self._sl_pct.Value
@@ -57,32 +62,44 @@ class macd_breakout_strategy(Strategy):
     def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         typed_val = macd_value
         if typed_val.Macd is None or typed_val.Signal is None:
             return
-        macd_line = float(typed_val.Macd)
-        signal_line = float(typed_val.Signal)
-        hist = macd_line - signal_line
-        lb = self._sma_period.Value
-        self._hist_values.append(hist)
-        if len(self._hist_values) > lb:
-            self._hist_values.pop(0)
-        if len(self._hist_values) < lb:
+        macd_val = float(typed_val.Macd)
+
+        # Process using DecimalIndicatorValue like CS does (no IsFinal)
+        div_sma = DecimalIndicatorValue(self._macd_hist_sma, macd_val, candle.ServerTime)
+        div_std = DecimalIndicatorValue(self._macd_hist_stddev, macd_val, candle.ServerTime)
+        macd_hist_sma_value = float(self._macd_hist_sma.Process(div_sma))
+        macd_hist_stddev_value = float(self._macd_hist_stddev.Process(div_std))
+
+        # Store previous values on first call
+        if self._prev_macd_hist_value == 0.0 and self._prev_macd_hist_sma_value == 0.0:
+            self._prev_macd_hist_value = macd_val
+            self._prev_macd_hist_sma_value = macd_hist_sma_value
             return
-        avg = sum(self._hist_values) / lb
-        var = sum((h - avg) ** 2 for h in self._hist_values) / lb
-        std = math.sqrt(var) if var > 0 else 0.0
-        dm = self._dev_mult.Value
-        upper = avg + dm * std
-        lower = avg - dm * std
-        if hist > upper and self.Position <= 0:
-            self.BuyMarket()
-        elif hist < lower and self.Position >= 0:
-            self.SellMarket()
-        elif self.Position > 0 and hist < avg:
-            self.SellMarket()
-        elif self.Position < 0 and hist > avg:
-            self.BuyMarket()
+
+        # Calculate breakout thresholds
+        dm = float(self._dev_mult.Value)
+        upper_threshold = macd_hist_sma_value + dm * macd_hist_stddev_value
+        lower_threshold = macd_hist_sma_value - dm * macd_hist_stddev_value
+
+        # Trading logic
+        if macd_val > upper_threshold and self.Position <= 0:
+            self.BuyMarket(self.Volume)
+        elif macd_val < lower_threshold and self.Position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
+        elif self.Position > 0 and macd_val < macd_hist_sma_value:
+            self.SellMarket(Math.Abs(self.Position))
+        elif self.Position < 0 and macd_val > macd_hist_sma_value:
+            self.BuyMarket(Math.Abs(self.Position))
+
+        self._prev_macd_hist_value = macd_val
+        self._prev_macd_hist_sma_value = macd_hist_sma_value
 
     def CreateClone(self):
         return macd_breakout_strategy()

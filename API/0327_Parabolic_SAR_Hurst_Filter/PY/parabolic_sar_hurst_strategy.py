@@ -3,25 +3,21 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ParabolicSar, HurstExponent
+from StockSharp.Algo.Indicators import ParabolicSar, HurstExponent, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class parabolic_sar_hurst_strategy(Strategy):
     """
     Parabolic SAR with Hurst Filter Strategy.
     Enters a position when price crosses SAR and Hurst exponent indicates a persistent trend.
-
     """
 
     def __init__(self):
         super(parabolic_sar_hurst_strategy, self).__init__()
 
-        # Initialize strategy.
         self._sar_acceleration_factor = self.Param("SarAccelerationFactor", 0.02) \
             .SetRange(0.01, 0.2) \
             .SetDisplay("SAR Acceleration Factor", "Initial acceleration factor for Parabolic SAR", "SAR Settings") \
@@ -40,138 +36,113 @@ class parabolic_sar_hurst_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(50, 150, 25)
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_sar_value = 0
-        self._hurst_value = 0.5  # Default value (random walk)
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 4) \
+            .SetNotNegative() \
+            .SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new SAR crossover entry", "General")
+
+        self._parabolic_sar = None
+        self._hurst_indicator = None
+        self._prev_sar_value = 0.0
+        self._hurst_value = 0.5
+        self._prev_price_above_sar = None
+        self._cooldown_remaining = 0
 
     @property
-    def SarAccelerationFactor(self):
-        """Parabolic SAR acceleration factor."""
-        return self._sar_acceleration_factor.Value
-
-    @SarAccelerationFactor.setter
-    def SarAccelerationFactor(self, value):
-        self._sar_acceleration_factor.Value = value
-
-    @property
-    def SarMaxAccelerationFactor(self):
-        """Parabolic SAR maximum acceleration factor."""
-        return self._sar_max_acceleration_factor.Value
-
-    @SarMaxAccelerationFactor.setter
-    def SarMaxAccelerationFactor(self, value):
-        self._sar_max_acceleration_factor.Value = value
-
-    @property
-    def HurstPeriod(self):
-        """Hurst exponent calculation period."""
-        return self._hurst_period.Value
-
-    @HurstPeriod.setter
-    def HurstPeriod(self, value):
-        self._hurst_period.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy calculation."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(parabolic_sar_hurst_strategy, self).OnReseted()
-        self._prev_sar_value = 0
-        self._hurst_value = 0.5  # Default value (random walk)
+        self._parabolic_sar = None
+        self._hurst_indicator = None
+        self._prev_sar_value = 0.0
+        self._hurst_value = 0.5
+        self._prev_price_above_sar = None
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(parabolic_sar_hurst_strategy, self).OnStarted(time)
 
-        # Create indicators
-        parabolic_sar = ParabolicSar()
-        parabolic_sar.Acceleration = self.SarAccelerationFactor
-        parabolic_sar.AccelerationMax = self.SarMaxAccelerationFactor
+        self._parabolic_sar = ParabolicSar()
+        self._parabolic_sar.Acceleration = Decimal(self._sar_acceleration_factor.Value)
+        self._parabolic_sar.AccelerationMax = Decimal(self._sar_max_acceleration_factor.Value)
 
-        hurst_indicator = HurstExponent()
-        hurst_indicator.Length = self.HurstPeriod
+        self._hurst_indicator = HurstExponent()
+        self._hurst_indicator.Length = int(self._hurst_period.Value)
 
-        # Create subscription for candles
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self.ProcessCandle).Start()
 
-        # Bind indicators to the subscription
-        subscription.BindEx(parabolic_sar, hurst_indicator, self.ProcessCandle).Start()
-
-        # Start position protection
         self.StartProtection(
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(1, UnitTypes.Percent)
         )
-        # Setup chart visualization if available
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, parabolic_sar)
-            self.DrawIndicator(area, hurst_indicator)
+            self.DrawIndicator(area, self._parabolic_sar)
+            self.DrawIndicator(area, self._hurst_indicator)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, sar_value, hurst_value):
-        # Skip unfinished candles
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Get SAR and Hurst values
-        sar_price = float(sar_value)
-        self._hurst_value = float(hurst_value)
+        sar_val = self._parabolic_sar.Process(CandleIndicatorValue(self._parabolic_sar, candle))
+        hurst_val = self._hurst_indicator.Process(CandleIndicatorValue(self._hurst_indicator, candle))
 
-        # Store previous SAR for comparison
-        current_sar_value = sar_price
-
-        # Log the values
-        self.LogInfo("SAR: {0}, Hurst: {1}, Price: {2}".format(sar_price, self._hurst_value, candle.ClosePrice))
-
-        # Skip first candle (need previous SAR value for comparison)
-        if self._prev_sar_value == 0:
-            self._prev_sar_value = current_sar_value
+        if not self._parabolic_sar.IsFormed or not self._hurst_indicator.IsFormed or sar_val.IsEmpty or hurst_val.IsEmpty:
             return
 
-        # Trading logic based on Parabolic SAR and Hurst exponent
-        # Hurst > 0.5 indicates trending market (persistence)
-        if self._hurst_value > 0.5:
-            # Long signal: Price crossed above SAR
-            if candle.ClosePrice > sar_price and self.Position <= 0:
-                # Close any existing short position
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        sar_price = float(sar_val)
+        self._hurst_value = float(hurst_val)
+        current_sar_value = sar_price
+        price_above_sar = float(candle.ClosePrice) > sar_price
+
+        if self._prev_price_above_sar is None or self._prev_sar_value == 0.0:
+            self._prev_sar_value = current_sar_value
+            self._prev_price_above_sar = price_above_sar
+            return
+
+        cooldown_bars = int(self._signal_cooldown_bars.Value)
+
+        if self._hurst_value > 0.55:
+            bullish_cross = not self._prev_price_above_sar and price_above_sar
+            bearish_cross = self._prev_price_above_sar and not price_above_sar
+
+            if self._cooldown_remaining == 0 and bullish_cross and self.Position <= 0:
+                vol = self.Volume
                 if self.Position < 0:
-                    self.BuyMarket(Math.Abs(self.Position))
-
-                # Open long position
-                self.BuyMarket(self.Volume)
-                self.LogInfo("Long signal: SAR={0}, Price={1}, Hurst={2}".format(sar_price, candle.ClosePrice, self._hurst_value))
-            # Short signal: Price crossed below SAR
-            elif candle.ClosePrice < sar_price and self.Position >= 0:
-                # Close any existing long position
+                    vol = self.Volume + Math.Abs(self.Position)
+                self.BuyMarket(vol)
+                self._cooldown_remaining = cooldown_bars
+            elif self._cooldown_remaining == 0 and bearish_cross and self.Position >= 0:
+                vol = self.Volume
                 if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-
-                # Open short position
-                self.SellMarket(self.Volume)
-                self.LogInfo("Short signal: SAR={0}, Price={1}, Hurst={2}".format(sar_price, candle.ClosePrice, self._hurst_value))
+                    vol = self.Volume + Math.Abs(self.Position)
+                self.SellMarket(vol)
+                self._cooldown_remaining = cooldown_bars
         else:
-            # If Hurst < 0.5, consider closing positions as market is not trending
-            if self.Position != 0:
-                self.LogInfo("Closing position as Hurst < 0.5: Hurst={0}".format(self._hurst_value))
-                self.ClosePosition()
+            if self.Position > 0:
+                self.SellMarket(self.Position)
+            elif self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
 
-        # Update previous SAR value
         self._prev_sar_value = current_sar_value
+        self._prev_price_above_sar = price_above_sar
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return parabolic_sar_hurst_strategy()

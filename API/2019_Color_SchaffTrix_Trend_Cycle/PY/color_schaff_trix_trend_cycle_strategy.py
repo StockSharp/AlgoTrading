@@ -240,7 +240,7 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         e1 = self._fast_ema1.Process(inp)
         e2 = self._fast_ema2.Process(e1)
         e3 = self._fast_ema3.Process(e2)
-        fast_val = float(e3.ToDecimal())
+        fast_val = float(e3)
         fast_trix = 0.0
         if self._fast_prev is not None and self._fast_prev != 0:
             fast_trix = (fast_val - self._fast_prev) / self._fast_prev
@@ -251,7 +251,7 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         s1 = self._slow_ema1.Process(inp2)
         s2 = self._slow_ema2.Process(s1)
         s3 = self._slow_ema3.Process(s2)
-        slow_val = float(s3.ToDecimal())
+        slow_val = float(s3)
         slow_trix = 0.0
         if self._slow_prev is not None and self._slow_prev != 0:
             slow_trix = (slow_val - self._slow_prev) / self._slow_prev
@@ -262,8 +262,8 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         # STC calculation
         mh_result = self._macd_high.Process(DecimalIndicatorValue(self._macd_high, macd, t, True))
         ml_result = self._macd_low.Process(DecimalIndicatorValue(self._macd_low, macd, t, True))
-        macd_high = float(mh_result.ToDecimal())
-        macd_low = float(ml_result.ToDecimal())
+        macd_high = float(mh_result)
+        macd_low = float(ml_result)
 
         if macd_high - macd_low != 0:
             st = (macd - macd_low) / (macd_high - macd_low) * 100.0
@@ -277,8 +277,8 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
 
         sh_result = self._st_high.Process(DecimalIndicatorValue(self._st_high, st, t, True))
         sl_result = self._st_low.Process(DecimalIndicatorValue(self._st_low, st, t, True))
-        st_high = float(sh_result.ToDecimal())
-        st_low = float(sl_result.ToDecimal())
+        st_high = float(sh_result)
+        st_low = float(sl_result)
 
         if st_high - st_low != 0:
             stc = (st - st_low) / (st_high - st_low) * 200.0 - 100.0

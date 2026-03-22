@@ -218,7 +218,7 @@ class color_jfatl_digit_tm_plus_strategy(Strategy):
         if not self._jma.IsFormed:
             return
 
-        smoothed = round(float(jma_val.ToDecimal()), self.RoundingDigits)
+        smoothed = round(float(jma_val), self.RoundingDigits)
 
         color = 1
         if self._prev_line is not None:

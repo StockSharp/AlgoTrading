@@ -78,8 +78,8 @@ class exp_candles_x_smoothed_strategy(Strategy):
             return
         step = self.Security.PriceStep if self.Security.PriceStep is not None else 1.0
         lvl = float(self.level) * float(step)
-        smoothed_high = float(high_val.ToDecimal())
-        smoothed_low = float(low_val.ToDecimal())
+        smoothed_high = float(high_val)
+        smoothed_low = float(low_val)
         close = float(candle.ClosePrice)
         break_up = close > smoothed_high + lvl
         break_down = close < smoothed_low - lvl

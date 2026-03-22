@@ -73,8 +73,8 @@ class candle_stop_trailing_strategy(Strategy):
         low_result = self._lowest.Process(candle)
         if not high_result.IsFormed or not low_result.IsFormed:
             return
-        upper = float(high_result.ToDecimal())
-        lower = float(low_result.ToDecimal())
+        upper = float(high_result)
+        lower = float(low_result)
 
         if self.Position == 0:
             if fast_val > slow_val and float(candle.ClosePrice) > slow_val:

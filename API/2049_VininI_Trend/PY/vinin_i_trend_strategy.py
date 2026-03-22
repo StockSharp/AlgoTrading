@@ -51,7 +51,7 @@ class vinin_i_trend_strategy(Strategy):
         if not cci_ind_val.IsFormed:
             return
 
-        cci_val = float(cci_ind_val.ToDecimal())
+        cci_val = float(cci_ind_val)
         up = self._up_level.Value
         down = self._down_level.Value
 

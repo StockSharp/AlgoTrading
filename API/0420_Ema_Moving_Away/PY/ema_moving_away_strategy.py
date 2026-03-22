@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -24,64 +24,74 @@ class ema_moving_away_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._ema = None
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-    @property
-    def EmaLength(self):
-        return self._ema_length.Value
-    @property
-    def MovingAwayPercent(self):
-        return self._moving_away_pct.Value
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
 
     def OnReseted(self):
         super(ema_moving_away_strategy, self).OnReseted()
+        self._ema = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(ema_moving_away_strategy, self).OnStarted(time)
-        ema = ExponentialMovingAverage()
-        ema.Length = self.EmaLength
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ema, self.OnProcess).Start()
 
-    def OnProcess(self, candle, ema_val):
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = int(self._ema_length.Value)
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._ema, self._on_process).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._ema)
+            self.DrawOwnTrades(area)
+
+    def _on_process(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._ema.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
 
         close = float(candle.ClosePrice)
         ev = float(ema_val)
+        pct = float(self._moving_away_pct.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        long_entry = ev * (1.0 - self.MovingAwayPercent / 100.0)
-        short_entry = ev * (1.0 + self.MovingAwayPercent / 100.0)
+        long_entry = ev * (1.0 - pct / 100.0)
+        short_entry = ev * (1.0 + pct / 100.0)
 
         if self.Position > 0 and close >= ev:
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
             return
         elif self.Position < 0 and close <= ev:
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
             return
 
         if close <= long_entry and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif close >= short_entry and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return ema_moving_away_strategy()

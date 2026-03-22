@@ -3,16 +3,14 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class strat_base_strategy(Strategy):
-    """Strategy Base - EMA trend following strategy.
-    Buys when price crosses above EMA, sells when price crosses below EMA.
-    """
+    """Strategy Base - EMA trend following strategy."""
 
     def __init__(self):
         super(strat_base_strategy, self).__init__()
@@ -24,16 +22,18 @@ class strat_base_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._ema = None
         self._prev_close = 0.0
         self._prev_ema = 0.0
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(strat_base_strategy, self).OnReseted()
+        self._ema = None
         self._prev_close = 0.0
         self._prev_ema = 0.0
         self._cooldown_remaining = 0
@@ -41,20 +41,30 @@ class strat_base_strategy(Strategy):
     def OnStarted(self, time):
         super(strat_base_strategy, self).OnStarted(time)
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self._ema_length.Value
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = int(self._ema_length.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ema, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
+            self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, ema_val):
+    def _on_process(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._ema.IsFormed:
+            self._prev_close = float(candle.ClosePrice)
+            self._prev_ema = float(ema_val)
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_close = float(candle.ClosePrice)
+            self._prev_ema = float(ema_val)
             return
 
         close = float(candle.ClosePrice)
@@ -71,21 +81,21 @@ class strat_base_strategy(Strategy):
             self._prev_ema = ema
             return
 
-        # Price crosses above EMA
+        cooldown = int(self._cooldown_bars.Value)
+
         cross_up = close > ema and self._prev_close <= self._prev_ema
-        # Price crosses below EMA
         cross_down = close < ema and self._prev_close >= self._prev_ema
 
         if cross_up and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif cross_down and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
 
         self._prev_close = close
         self._prev_ema = ema

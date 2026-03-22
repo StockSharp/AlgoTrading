@@ -3,204 +3,175 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import WilliamsR, LinearRegression
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-from collections import deque
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class williams_r_slope_breakout_strategy(Strategy):
-    """Williams %R Slope Breakout Strategy"""
+    """
+    Strategy based on Williams %R slope breakout.
+    Opens positions when Williams %R slope deviates from its recent average by a multiple of standard deviation.
+    """
 
     def __init__(self):
         super(williams_r_slope_breakout_strategy, self).__init__()
 
         self._williams_r_period = self.Param("WilliamsRPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicator") \
-            .SetCanOptimize(True) \
+            .SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicator Parameters") \
             .SetOptimize(10, 20, 2)
 
         self._slope_period = self.Param("SlopePeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters") \
+            .SetOptimize(10, 50, 5)
 
-        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.0) \
+        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters") \
+            .SetOptimize(1.5, 4.0, 0.5)
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._center_level = self.Param("CenterLevel", -50.0) \
+            .SetDisplay("Center Level", "Zone separator for bullish and bearish entries", "Signal Filters")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._williams_r = None
-        self._williams_r_slope = None
-        self._prev_slope_value = 0
-        self._slope_avg = 0
-        self._slope_std_dev = 0
-        self._sum_slope = 0
-        self._sum_slope_squared = 0
-        self._slope_values = deque()
-
-    # Properties
-    @property
-    def williams_r_period(self):
-        return self._williams_r_period.Value
-
-    @williams_r_period.setter
-    def williams_r_period(self, value):
-        self._williams_r_period.Value = value
-
-    @property
-    def slope_period(self):
-        return self._slope_period.Value
-
-    @slope_period.setter
-    def slope_period(self, value):
-        self._slope_period.Value = value
-
-    @property
-    def breakout_multiplier(self):
-        return self._breakout_multiplier.Value
-
-    @breakout_multiplier.setter
-    def breakout_multiplier(self, value):
-        self._breakout_multiplier.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._prev_wr = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        self._slopes = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.candle_type)]
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(williams_r_slope_breakout_strategy, self).OnReseted()
-        self._prev_slope_value = 0
-        self._slope_avg = 0
-        self._slope_std_dev = 0
-        self._sum_slope = 0
-        self._sum_slope_squared = 0
+        self._williams_r = None
+        self._prev_wr = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
         super(williams_r_slope_breakout_strategy, self).OnStarted(time)
 
-        # Initialize indicators
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._cooldown = 0
+        self._filled_count = 0
+        self._current_index = 0
+
         self._williams_r = WilliamsR()
-        self._williams_r.Length = self.williams_r_period
-        self._williams_r_slope = LinearRegression()
-        self._williams_r_slope.Length = 2  # For calculating slope
+        self._williams_r.Length = int(self._williams_r_period.Value)
 
-        self._slope_values.clear()
-
-        # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._williams_r, self.ProcessCandle).Start()
+        subscription.Bind(self._williams_r, self._process_candle).Start()
 
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._williams_r)
             self.DrawOwnTrades(area)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, williams_r_value):
-        # Skip unfinished candles
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
+    def _process_candle(self, candle, wr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not self._williams_r.IsFormed:
+            return
 
-        # Calculate Williams %R slope
-        current_slope = process_float(
-            self._williams_r_slope,
-            williams_r_value,
-            candle.ServerTime,
-            candle.State == CandleStates.Finished,
-        )
-        if current_slope.LinearReg is None:
-            return  # Skip if slope is not available
-        current_slope_value = current_slope.LinearReg
+        wr_val = float(wr_value)
 
-        # Update slope stats when we have 2 values to calculate slope
-        if self._prev_slope_value != 0:
-            # Calculate simple slope from current and previous values
-            slope = current_slope_value - self._prev_slope_value
+        if not self._is_initialized:
+            self._prev_wr = wr_val
+            self._is_initialized = True
+            return
 
-            # Update running statistics
-            self._slope_values.append(slope)
-            self._sum_slope += slope
-            self._sum_slope_squared += slope * slope
+        self._current_slope = wr_val - self._prev_wr
+        self._prev_wr = wr_val
 
-            # Remove oldest value if we have enough
-            if len(self._slope_values) > self.slope_period:
-                old_slope = self._slope_values.popleft()
-                self._sum_slope -= old_slope
-                self._sum_slope_squared -= old_slope * old_slope
+        sp = int(self._slope_period.Value)
+        self._slopes[self._current_index] = self._current_slope
+        self._current_index = (self._current_index + 1) % sp
 
-            # Calculate average and standard deviation
-            self._slope_avg = self._sum_slope / len(self._slope_values)
-            variance = (self._sum_slope_squared / len(self._slope_values)) - (self._slope_avg * self._slope_avg)
-            self._slope_std_dev = 0 if variance <= 0 else Math.Sqrt(float(variance))
+        if self._filled_count < sp:
+            self._filled_count += 1
 
-            # Generate signals if we have enough data for statistics
-            if len(self._slope_values) >= self.slope_period:
-                # Breakout logic (Note: Williams %R is inverted, positive slope = bullish)
-                if slope > self._slope_avg + self.breakout_multiplier * self._slope_std_dev and self.Position <= 0:
-                    # Long position on bullish slope breakout
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo(
-                        f"Long entry: Williams %R slope breakout above {self._slope_avg + self.breakout_multiplier * self._slope_std_dev:F2}")
-                elif slope < self._slope_avg - self.breakout_multiplier * self._slope_std_dev and self.Position >= 0:
-                    # Short position on bearish slope breakout
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo(
-                        f"Short entry: Williams %R slope breakout below {self._slope_avg - self.breakout_multiplier * self._slope_std_dev:F2}")
+        if self._filled_count < sp:
+            return
 
-                # Exit logic - Return to mean
-                if self.Position > 0 and slope < self._slope_avg:
-                    self.SellMarket(Math.Abs(self.Position))
-                    self.LogInfo("Long exit: Williams %R slope returned to mean")
-                elif self.Position < 0 and slope > self._slope_avg:
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("Short exit: Williams %R slope returned to mean")
+        self._calculate_statistics()
 
-        # Update previous value for next iteration
-        self._prev_slope_value = current_slope_value
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._std_dev_slope <= 0:
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        bm = float(self._breakout_multiplier.Value)
+        upper_threshold = self._avg_slope + bm * self._std_dev_slope
+        lower_threshold = self._avg_slope - bm * self._std_dev_slope
+        center = float(self._center_level.Value)
+
+        if self.Position == 0:
+            if self._current_slope > upper_threshold and wr_val > center:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif self._current_slope < lower_threshold and wr_val < center:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if self._current_slope <= self._avg_slope:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if self._current_slope >= self._avg_slope:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+
+    def _calculate_statistics(self):
+        sp = int(self._slope_period.Value)
+        self._avg_slope = 0.0
+        sum_sq = 0.0
+
+        for i in range(sp):
+            self._avg_slope += self._slopes[i]
+        self._avg_slope /= float(sp)
+
+        for i in range(sp):
+            diff = self._slopes[i] - self._avg_slope
+            sum_sq += diff * diff
+
+        self._std_dev_slope = math.sqrt(sum_sq / float(sp))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return williams_r_slope_breakout_strategy()

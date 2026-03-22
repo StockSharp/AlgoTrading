@@ -96,7 +96,7 @@ class the_master_mind_reversal_strategy(Strategy):
 
         williams_value = None
         if not williams_raw_value.IsEmpty:
-            williams_value = float(williams_raw_value.ToDecimal())
+            williams_value = float(williams_raw_value)
 
         if williams_value is None:
             return

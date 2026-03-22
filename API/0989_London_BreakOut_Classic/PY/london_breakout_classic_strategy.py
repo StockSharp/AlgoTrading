@@ -68,10 +68,10 @@ class london_breakout_classic_strategy(Strategy):
             return
         close = float(candle.ClosePrice)
         if close > self._prev_high and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif close < self._prev_low and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         self._prev_high = hv
         self._prev_low = lv

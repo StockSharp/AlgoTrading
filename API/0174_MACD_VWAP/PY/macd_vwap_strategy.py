@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -19,6 +19,7 @@ class macd_vwap_strategy(Strategy):
         self._macd_slow = self.Param("MacdSlow", 26).SetDisplay("MACD Slow", "Slow EMA period", "Indicators")
         self._macd_signal = self.Param("MacdSignal", 9).SetDisplay("MACD Signal", "Signal line period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 35).SetDisplay("Cooldown Bars", "Bars between entries", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetDisplay("Stop Loss %", "Stop loss pct", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
         self._cooldown = 0
@@ -37,6 +38,10 @@ class macd_vwap_strategy(Strategy):
 
     def OnStarted(self, time):
         super(macd_vwap_strategy, self).OnStarted(time)
+        self._cooldown = 0
+        self._has_prev_diff = False
+        self._prev_diff = 0.0
+
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self._macd_fast.Value
         macd.Macd.LongMa.Length = self._macd_slow.Value
@@ -54,38 +59,46 @@ class macd_vwap_strategy(Strategy):
     def _process_candle(self, candle, macd_value, vwap_value):
         if candle.State != CandleStates.Finished:
             return
-        typed_val = macd_value
-        macd_line = typed_val.Macd
-        signal_line = typed_val.Signal
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        macd_line = macd_value.Macd
+        signal_line = macd_value.Signal
         if macd_line is None or signal_line is None:
             return
         macd_f = float(macd_line)
         signal_f = float(signal_line)
-        vwap_f = float(vwap_value.ToDecimal())
+        vwap_f = float(vwap_value)
         price = float(candle.ClosePrice)
         diff = macd_f - signal_f
+
         if not self._has_prev_diff:
             self._has_prev_diff = True
             self._prev_diff = diff
             return
+
         cross_up = self._prev_diff <= 0 and diff > 0
         cross_down = self._prev_diff >= 0 and diff < 0
+
         if self._cooldown > 0:
             self._cooldown -= 1
             self._prev_diff = diff
             return
+
         if cross_up and price > vwap_f * 1.001 and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = self._cooldown_bars.Value
         elif cross_down and price < vwap_f * 0.999 and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = self._cooldown_bars.Value
         elif cross_down and self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(self.Position)
             self._cooldown = self._cooldown_bars.Value
         elif cross_up and self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(abs(self.Position))
             self._cooldown = self._cooldown_bars.Value
+
         self._prev_diff = diff
 
     def CreateClone(self):

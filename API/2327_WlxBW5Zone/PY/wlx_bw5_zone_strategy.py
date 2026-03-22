@@ -78,7 +78,7 @@ class wlx_bw5_zone_strategy(Strategy):
         sma_input = DecimalIndicatorValue(self._ao_sma, ao, candle.CloseTime)
         sma_input.IsFinal = True
         sma_result = self._ao_sma.Process(sma_input)
-        ac = ao - float(sma_result.ToDecimal())
+        ac = ao - float(sma_result)
         self._ao4 = self._ao3
         self._ao3 = self._ao2
         self._ao2 = self._ao1

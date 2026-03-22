@@ -43,16 +43,19 @@ class function_matrix_library_strategy(Strategy):
 
         self._bars_from_signal = self._signal_cooldown_bars.Value
 
-        fast_sma = SimpleMovingAverage()
-        fast_sma.Length = self._fast_length.Value
-        slow_sma = SimpleMovingAverage()
-        slow_sma.Length = self._slow_length.Value
+        self._fast_sma = SimpleMovingAverage()
+        self._fast_sma.Length = self._fast_length.Value
+        self._slow_sma = SimpleMovingAverage()
+        self._slow_sma.Length = self._slow_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_sma, slow_sma, self._process_candle).Start()
+        subscription.Bind(self._fast_sma, self._slow_sma, self._process_candle).Start()
 
     def _process_candle(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._fast_sma.IsFormed or not self._slow_sma.IsFormed:
             return
 
         close = float(candle.ClosePrice)

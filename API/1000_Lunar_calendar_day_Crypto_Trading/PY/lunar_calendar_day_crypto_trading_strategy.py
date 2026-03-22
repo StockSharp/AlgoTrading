@@ -29,7 +29,7 @@ class lunar_calendar_day_crypto_trading_strategy(Strategy):
             .SetDisplay("Sell Day", "Lunar day to exit", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
-        self._last_trade_date = None
+        self._last_trade_date = DateTimeOffset.MinValue
 
     @property
     def candle_type(self):
@@ -41,11 +41,11 @@ class lunar_calendar_day_crypto_trading_strategy(Strategy):
 
     def OnReseted(self):
         super(lunar_calendar_day_crypto_trading_strategy, self).OnReseted()
-        self._last_trade_date = None
+        self._last_trade_date = DateTimeOffset.MinValue
 
     def OnStarted(self, time):
         super(lunar_calendar_day_crypto_trading_strategy, self).OnStarted(time)
-        self._last_trade_date = None
+        self._last_trade_date = DateTimeOffset.MinValue
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.OnProcess).Start()
         area = self.CreateChartArea()
@@ -70,7 +70,7 @@ class lunar_calendar_day_crypto_trading_strategy(Strategy):
             start = DateTimeOffset(sy, sm, sd, 0, 0, 0, TimeSpan.FromHours(self.SEOUL_OFFSET_HOURS))
         except:
             return None
-        if open_time < start:
+        if open_time.Ticks < start.Ticks:
             return None
         days = (open_time.Date - start.Date).Days
         offset = 0
@@ -86,15 +86,16 @@ class lunar_calendar_day_crypto_trading_strategy(Strategy):
         day = self._get_lunar_day(candle.OpenTime)
         if day is None:
             return
-        candle_date = candle.OpenTime.Date
-        if self._last_trade_date is not None and candle_date == self._last_trade_date:
+        if candle.OpenTime.Date == self._last_trade_date.Date:
             return
         if day == self._buy_day.Value and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
-            self._last_trade_date = candle_date
+            self._last_trade_date = candle.OpenTime
         if day == self._sell_day.Value and self.Position > 0:
             self.SellMarket()
-            self._last_trade_date = candle_date
+            self._last_trade_date = candle.OpenTime
 
     def CreateClone(self):
         return lunar_calendar_day_crypto_trading_strategy()

@@ -115,7 +115,10 @@ class hull_ma_stochastic_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        hma_f = float(hma_value.ToDecimal())
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        hma_f = float(hma_value)
         stoch_k = stoch_value.K
         if stoch_k is None:
             return

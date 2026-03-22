@@ -43,21 +43,22 @@ class long_and_short_with_multi_indicators_strategy(Strategy):
 
     def OnStarted(self, time):
         super(long_and_short_with_multi_indicators_strategy, self).OnStarted(time)
+        self._bars_since_signal = 0
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
-        roc = RateOfChange()
-        roc.Length = self._roc_length.Value
-        ma = ExponentialMovingAverage()
-        ma.Length = self._ma_length.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self._rsi_length.Value
+        self._roc = RateOfChange()
+        self._roc.Length = self._roc_length.Value
+        self._ma = ExponentialMovingAverage()
+        self._ma.Length = self._ma_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, roc, ma, self._process_candle).Start()
+        subscription.Bind(self._rsi, self._roc, self._ma, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
+            self.DrawIndicator(area, self._ma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, rsi_val, roc_val, ma_val):
@@ -65,6 +66,9 @@ class long_and_short_with_multi_indicators_strategy(Strategy):
             return
 
         self._bars_since_signal += 1
+
+        if not self._rsi.IsFormed or not self._roc.IsFormed or not self._ma.IsFormed:
+            return
 
         if self._bars_since_signal < self._cooldown_bars.Value:
             return
@@ -78,10 +82,10 @@ class long_and_short_with_multi_indicators_strategy(Strategy):
         short_signal = close < ma and rsi > self._rsi_oversold.Value and roc < 0
 
         if long_signal and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif short_signal and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
 
     def CreateClone(self):

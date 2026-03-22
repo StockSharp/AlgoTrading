@@ -3,12 +3,11 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
     """
@@ -19,142 +18,71 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
     def __init__(self):
         super(ichimoku_cloud_width_mean_reversion_strategy, self).__init__()
 
-        self._tenkanPeriod = self.Param("TenkanPeriod", 9) \
+        self._tenkan_period = self.Param("TenkanPeriod", 9) \
             .SetGreaterThanZero() \
-            .SetDisplay("Tenkan Period", "Tenkan-sen period", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 20, 1)
+            .SetDisplay("Tenkan Period", "Tenkan-sen period", "Ichimoku")
 
-        self._kijunPeriod = self.Param("KijunPeriod", 26) \
+        self._kijun_period = self.Param("KijunPeriod", 26) \
             .SetGreaterThanZero() \
-            .SetDisplay("Kijun Period", "Kijun-sen period", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 40, 2)
+            .SetDisplay("Kijun Period", "Kijun-sen period", "Ichimoku")
 
-        self._senkouSpanBPeriod = self.Param("SenkouSpanBPeriod", 52) \
+        self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 52) \
             .SetGreaterThanZero() \
-            .SetDisplay("Senkou Span B Period", "Senkou Span B period", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(40, 80, 4)
+            .SetDisplay("Senkou Span B Period", "Senkou Span B period", "Ichimoku")
 
-        self._lookbackPeriod = self.Param("LookbackPeriod", 20) \
+        self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Lookback period for cloud width statistics", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Lookback Period", "Lookback period for cloud width statistics", "Strategy Parameters")
 
-        self._deviationMultiplier = self.Param("DeviationMultiplier", 1.5) \
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 1.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
 
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._cooldownBars = self.Param("CooldownBars", 1200) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
             .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
 
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         self._ichimoku = None
-        self._cloudWidthHistory = []
-        self._currentIndex = 0
-        self._filledCount = 0
+        self._cloud_width_history = None
+        self._current_index = 0
+        self._filled_count = 0
         self._cooldown = 0
 
     @property
-    def TenkanPeriod(self):
-        return self._tenkanPeriod.Value
-
-    @TenkanPeriod.setter
-    def TenkanPeriod(self, value):
-        self._tenkanPeriod.Value = value
-
-    @property
-    def KijunPeriod(self):
-        return self._kijunPeriod.Value
-
-    @KijunPeriod.setter
-    def KijunPeriod(self, value):
-        self._kijunPeriod.Value = value
-
-    @property
-    def SenkouSpanBPeriod(self):
-        return self._senkouSpanBPeriod.Value
-
-    @SenkouSpanBPeriod.setter
-    def SenkouSpanBPeriod(self, value):
-        self._senkouSpanBPeriod.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        return self._lookbackPeriod.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookbackPeriod.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        return self._deviationMultiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviationMultiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldownBars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldownBars.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(ichimoku_cloud_width_mean_reversion_strategy, self).OnReseted()
         self._ichimoku = None
-        self._currentIndex = 0
-        self._filledCount = 0
+        lb = int(self._lookback_period.Value)
+        self._cloud_width_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
         self._cooldown = 0
-        self._cloudWidthHistory = [0.0] * self.LookbackPeriod
 
     def OnStarted(self, time):
         super(ichimoku_cloud_width_mean_reversion_strategy, self).OnStarted(time)
 
-        self._ichimoku = Ichimoku()
-        self._ichimoku.Tenkan.Length = self.TenkanPeriod
-        self._ichimoku.Kijun.Length = self.KijunPeriod
-        self._ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
-
-        self._cloudWidthHistory = [0.0] * self.LookbackPeriod
-        self._currentIndex = 0
-        self._filledCount = 0
+        lb = int(self._lookback_period.Value)
+        self._cloud_width_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
         self._cooldown = 0
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._ichimoku, self.ProcessIchimoku).Start()
+        self._ichimoku = Ichimoku()
+        self._ichimoku.Tenkan.Length = int(self._tenkan_period.Value)
+        self._ichimoku.Kijun.Length = int(self._kijun_period.Value)
+        self._ichimoku.SenkouB.Length = int(self._senkou_span_b_period.Value)
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._ichimoku, self._process_ichimoku).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -162,12 +90,9 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
             self.DrawIndicator(area, self._ichimoku)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
 
-    def ProcessIchimoku(self, candle, ichimoku_value):
+    def _process_ichimoku(self, candle, ichimoku_value):
         if candle.State != CandleStates.Finished:
             return
 
@@ -179,63 +104,68 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         if senkou_a is None or senkou_b is None:
             return
 
-        senkou_a = float(senkou_a)
-        senkou_b = float(senkou_b)
-        cloud_width = abs(senkou_a - senkou_b)
+        senkou_a_val = float(senkou_a)
+        senkou_b_val = float(senkou_b)
+        cloud_width = Math.Abs(senkou_a_val - senkou_b_val)
 
-        # Store in circular buffer
-        self._cloudWidthHistory[self._currentIndex] = cloud_width
-        self._currentIndex = (self._currentIndex + 1) % self.LookbackPeriod
+        lb = int(self._lookback_period.Value)
+        self._cloud_width_history[self._current_index] = cloud_width
+        self._current_index = (self._current_index + 1) % lb
 
-        if self._filledCount < self.LookbackPeriod:
-            self._filledCount += 1
+        if self._filled_count < lb:
+            self._filled_count += 1
 
-        if self._filledCount < self.LookbackPeriod:
+        if self._filled_count < lb:
             return
 
-        # Calculate average
-        avg_width = sum(self._cloudWidthHistory) / self.LookbackPeriod
+        avg_width = 0.0
+        for i in range(lb):
+            avg_width += self._cloud_width_history[i]
+        avg_width /= float(lb)
 
-        # Calculate standard deviation
         sum_sq = 0.0
-        for w in self._cloudWidthHistory:
-            diff = w - avg_width
+        for i in range(lb):
+            diff = self._cloud_width_history[i] - avg_width
             sum_sq += diff * diff
-        std_width = Math.Sqrt(sum_sq / self.LookbackPeriod)
+        std_width = math.sqrt(sum_sq / float(lb))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if self._cooldown > 0:
             self._cooldown -= 1
             return
 
-        narrow_threshold = avg_width - std_width * self.DeviationMultiplier
-        wide_threshold = avg_width + std_width * self.DeviationMultiplier
-        upper_cloud = max(senkou_a, senkou_b)
-        lower_cloud = min(senkou_a, senkou_b)
-        close = float(candle.ClosePrice)
-        price_above_cloud = close > upper_cloud
-        price_below_cloud = close < lower_cloud
+        dm = float(self._deviation_multiplier.Value)
+        narrow_threshold = avg_width - std_width * dm
+        wide_threshold = avg_width + std_width * dm
+        upper_cloud = max(senkou_a_val, senkou_b_val)
+        lower_cloud = min(senkou_a_val, senkou_b_val)
+        close_price = float(candle.ClosePrice)
+        price_above_cloud = close_price > upper_cloud
+        price_below_cloud = close_price < lower_cloud
 
         if self.Position == 0:
             if cloud_width < narrow_threshold:
                 if price_above_cloud:
                     self.BuyMarket()
-                    self._cooldown = self.CooldownBars
+                    self._cooldown = int(self._cooldown_bars.Value)
                 elif price_below_cloud:
                     self.SellMarket()
-                    self._cooldown = self.CooldownBars
+                    self._cooldown = int(self._cooldown_bars.Value)
             elif cloud_width > wide_threshold:
                 if price_below_cloud:
                     self.SellMarket()
-                    self._cooldown = self.CooldownBars
+                    self._cooldown = int(self._cooldown_bars.Value)
                 elif price_above_cloud:
                     self.BuyMarket()
-                    self._cooldown = self.CooldownBars
+                    self._cooldown = int(self._cooldown_bars.Value)
         elif self.Position > 0 and cloud_width >= avg_width:
-            self.SellMarket(abs(self.Position))
-            self._cooldown = self.CooldownBars
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
         elif self.Position < 0 and cloud_width <= avg_width:
-            self.BuyMarket(abs(self.Position))
-            self._cooldown = self.CooldownBars
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
         return ichimoku_cloud_width_mean_reversion_strategy()

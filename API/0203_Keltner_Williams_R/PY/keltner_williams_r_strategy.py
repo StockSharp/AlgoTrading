@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import KeltnerChannels, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -16,102 +16,56 @@ class keltner_williams_r_strategy(Strategy):
     def __init__(self):
         super(keltner_williams_r_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetRange(10, 50) \
-            .SetDisplay("EMA Period", "EMA period for Keltner Channel", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("EMA Period", "EMA period for Keltner Channel", "Indicators")
 
         self._keltner_multiplier = self.Param("KeltnerMultiplier", 2.0) \
             .SetRange(1.0, 4.0) \
-            .SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Indicators")
 
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetRange(7, 28) \
-            .SetDisplay("ATR Period", "ATR period for Keltner Channel", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("ATR Period", "ATR period for Keltner Channel", "Indicators")
 
         self._williams_r_period = self.Param("WilliamsRPeriod", 14) \
             .SetRange(5, 30) \
-            .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 40) \
+            .SetRange(1, 200) \
+            .SetDisplay("Cooldown Bars", "Bars between entries", "General")
+
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def ema_period(self):
-        """EMA period for Keltner Channel"""
-        return self._ema_period.Value
-
-    @ema_period.setter
-    def ema_period(self, value):
-        self._ema_period.Value = value
+        self._prev_williams_r = 0.0
+        self._cooldown = 0
 
     @property
-    def keltner_multiplier(self):
-        """Keltner Channel multiplier (k)"""
-        return self._keltner_multiplier.Value
-
-    @keltner_multiplier.setter
-    def keltner_multiplier(self, value):
-        self._keltner_multiplier.Value = value
-
-    @property
-    def atr_period(self):
-        """ATR period for Keltner Channel"""
-        return self._atr_period.Value
-
-    @atr_period.setter
-    def atr_period(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def williams_r_period(self):
-        """Williams %R period"""
-        return self._williams_r_period.Value
-
-    @williams_r_period.setter
-    def williams_r_period(self, value):
-        self._williams_r_period.Value = value
-
-    @property
-    def candle_type(self):
-        """Candle type for strategy"""
+    def CandleType(self):
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(keltner_williams_r_strategy, self).OnReseted()
+        self._prev_williams_r = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(keltner_williams_r_strategy, self).OnStarted(time)
+        self._prev_williams_r = 0.0
+        self._cooldown = 0
 
-        # Initialize indicators
         keltner = KeltnerChannels()
-        keltner.Length = self.ema_period
-        keltner.Multiplier = self.keltner_multiplier
+        keltner.Length = self._ema_period.Value
+        keltner.Multiplier = self._keltner_multiplier.Value
 
         williams_r = WilliamsR()
-        williams_r.Length = self.williams_r_period
+        williams_r.Length = self._williams_r_period.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(keltner, williams_r, self.ProcessIndicators).Start()
 
-        # Enable stop-loss protection based on ATR
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(2, UnitTypes.Absolute)
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -120,41 +74,40 @@ class keltner_williams_r_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessIndicators(self, candle, keltner_value, williams_r_value):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         upper = keltner_value.Upper
         lower = keltner_value.Lower
-        middle = keltner_value.Middle
+        if upper is None or lower is None:
+            return
 
-        williams_r = float(williams_r_value)
+        upper = float(upper)
+        lower = float(lower)
+
+        wr = float(williams_r_value)
+        crossed_into_oversold = self._prev_williams_r > -80 and wr <= -80
+        crossed_into_overbought = self._prev_williams_r < -20 and wr >= -20
+        self._prev_williams_r = wr
 
         price = float(candle.ClosePrice)
 
-        # Trading logic:
-        # Long: Price < lower Keltner band && Williams %R < -80 (oversold at lower band)
-        # Short: Price > upper Keltner band && Williams %R > -20 (overbought at upper band)
+        if self._cooldown > 0:
+            self._cooldown -= 1
 
-        if price < lower and williams_r < -80 and self.Position <= 0:
-            # Buy signal
-            volume = self.Volume + Math.Abs(self.Position)
+        cooldown_val = int(self._cooldown_bars.Value)
+
+        if self._cooldown == 0 and price <= lower * 1.001 and crossed_into_oversold and self.Position <= 0:
+            volume = self.Volume + abs(self.Position)
             self.BuyMarket(volume)
-        elif price > upper and williams_r > -20 and self.Position >= 0:
-            # Sell signal
-            volume = self.Volume + Math.Abs(self.Position)
+            self._cooldown = cooldown_val
+        elif self._cooldown == 0 and price >= upper * 0.999 and crossed_into_overbought and self.Position >= 0:
+            volume = self.Volume + abs(self.Position)
             self.SellMarket(volume)
-        # Exit conditions
-        elif self.Position > 0 and price > middle:
-            # Exit long position when price returns to middle band
-            self.SellMarket(self.Position)
-        elif self.Position < 0 and price < middle:
-            # Exit short position when price returns to middle band
-            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cooldown_val
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return keltner_williams_r_strategy()
-

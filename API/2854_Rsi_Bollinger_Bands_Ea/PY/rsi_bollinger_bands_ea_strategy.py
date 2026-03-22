@@ -70,7 +70,7 @@ class rsi_bollinger_bands_ea_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        rsi_val = float(rsi_value.ToDecimal())
+        rsi_val = float(rsi_value)
         bb_upper = float(bb_value.UpBand)
         bb_lower = float(bb_value.LowBand)
         close = float(candle.ClosePrice)

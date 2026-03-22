@@ -117,7 +117,7 @@ class color_momentum_ama_strategy(Strategy):
         ama_result = self._ama.Process(DecimalIndicatorValue(self._ama, mom_val, candle.OpenTime, True))
         if not self._ama.IsFormed or ama_result.IsEmpty:
             return
-        ama_value = float(ama_result.ToDecimal())
+        ama_value = float(ama_result)
 
         for i in range(len(self._buffer) - 1, 0, -1):
             self._buffer[i] = self._buffer[i - 1]

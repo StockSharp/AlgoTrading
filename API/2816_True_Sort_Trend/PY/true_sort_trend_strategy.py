@@ -81,7 +81,7 @@ class true_sort_trend_strategy(Strategy):
         adx_result = self._adx.Process(inp)
         if not self._adx.IsFormed:
             return
-        adx_val = float(adx_result.ToDecimal()) if not adx_result.IsEmpty else 0
+        adx_val = float(adx_result) if not adx_result.IsEmpty else 0
 
         vals = [float(v1), float(v2), float(v3), float(v4), float(v5)]
         close = float(candle.ClosePrice)

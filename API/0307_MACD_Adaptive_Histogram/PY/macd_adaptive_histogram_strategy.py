@@ -1,13 +1,13 @@
 import clr
-import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
+
 
 class macd_adaptive_histogram_strategy(Strategy):
     """
@@ -16,19 +16,35 @@ class macd_adaptive_histogram_strategy(Strategy):
 
     def __init__(self):
         super(macd_adaptive_histogram_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 12).SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD")
-        self._slow_period = self.Param("SlowPeriod", 26).SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD")
-        self._signal_period = self.Param("SignalPeriod", 9).SetDisplay("Signal Period", "Signal line period for MACD", "MACD")
-        self._histogram_avg_period = self.Param("HistogramAvgPeriod", 20).SetDisplay("Histogram Avg Period", "Lookback period for histogram statistics", "Signals")
-        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.2).SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Signals")
-        self._stop_loss_pct = self.Param("StopLossPercent", 2.0).SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-        self._cooldown_bars = self.Param("CooldownBars", 16).SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
+        self._fast_period = self.Param("FastPeriod", 12) \
+            .SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD")
+
+        self._slow_period = self.Param("SlowPeriod", 26) \
+            .SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD")
+
+        self._signal_period = self.Param("SignalPeriod", 9) \
+            .SetDisplay("Signal Period", "Signal line period for MACD", "MACD")
+
+        self._histogram_avg_period = self.Param("HistogramAvgPeriod", 20) \
+            .SetDisplay("Histogram Avg Period", "Lookback period for histogram statistics", "Signals")
+
+        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.2) \
+            .SetDisplay("StdDev Multiplier", "Standard deviation multiplier for adaptive thresholds", "Signals")
+
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._cooldown_bars = self.Param("CooldownBars", 16) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("Candle Type", "Type of candles for the strategy", "General")
+
+        self._macd = None
         self._hist_avg = None
         self._hist_std_dev = None
         self._cooldown = 0
-        self._hist_values = []
 
     @property
     def candle_type(self):
@@ -36,66 +52,93 @@ class macd_adaptive_histogram_strategy(Strategy):
 
     def OnReseted(self):
         super(macd_adaptive_histogram_strategy, self).OnReseted()
+        self._macd = None
         self._hist_avg = None
         self._hist_std_dev = None
         self._cooldown = 0
-        self._hist_values = []
 
     def OnStarted(self, time):
         super(macd_adaptive_histogram_strategy, self).OnStarted(time)
-        macd = MovingAverageConvergenceDivergenceSignal()
-        macd.Macd.ShortMa.Length = self._fast_period.Value
-        macd.Macd.LongMa.Length = self._slow_period.Value
-        macd.SignalMa.Length = self._signal_period.Value
+
+        hist_period = int(self._histogram_avg_period.Value)
+
+        self._macd = MovingAverageConvergenceDivergenceSignal()
+        self._macd.Macd.ShortMa.Length = int(self._fast_period.Value)
+        self._macd.Macd.LongMa.Length = int(self._slow_period.Value)
+        self._macd.SignalMa.Length = int(self._signal_period.Value)
+
+        self._hist_avg = SimpleMovingAverage()
+        self._hist_avg.Length = hist_period
+        self._hist_std_dev = StandardDeviation()
+        self._hist_std_dev.Length = hist_period
+        self._cooldown = 0
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(macd, self._process_candle).Start()
-        self.StartProtection(None, Unit(self._stop_loss_pct.Value, UnitTypes.Percent))
+        subscription.BindEx(self._macd, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, macd)
+            self.DrawIndicator(area, self._macd)
             self.DrawOwnTrades(area)
+
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
 
     def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        typed_val = macd_value
-        if typed_val.Macd is None or typed_val.Signal is None:
+
+        macd_val = macd_value.Macd
+        signal_val = macd_value.Signal
+
+        if macd_val is None or signal_val is None:
             return
-        macd_line = float(typed_val.Macd)
-        signal_line = float(typed_val.Signal)
-        histogram = macd_line - signal_line
-        lb = self._histogram_avg_period.Value
-        self._hist_values.append(histogram)
-        if len(self._hist_values) > lb:
-            self._hist_values.pop(0)
-        if len(self._hist_values) < lb:
+
+        macd_f = float(macd_val)
+        signal_f = float(signal_val)
+        histogram = macd_f - signal_f
+
+        avg_input = DecimalIndicatorValue(self._hist_avg, Decimal(histogram), candle.OpenTime)
+        avg_input.IsFinal = True
+        histogram_average = float(self._hist_avg.Process(avg_input))
+
+        std_input = DecimalIndicatorValue(self._hist_std_dev, Decimal(histogram), candle.OpenTime)
+        std_input.IsFinal = True
+        histogram_std_dev = float(self._hist_std_dev.Process(std_input))
+
+        if not self._macd.IsFormed or not self._hist_avg.IsFormed or not self._hist_std_dev.IsFormed:
             return
-        avg = sum(self._hist_values) / lb
-        var = sum((h - avg) ** 2 for h in self._hist_values) / lb
-        std = math.sqrt(var) if var > 0 else 0.0
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._cooldown > 0:
             self._cooldown -= 1
             return
-        if std <= 0:
+
+        if histogram_std_dev <= 0:
             return
-        mult = self._std_dev_multiplier.Value
-        upper = avg + mult * std
-        lower = avg - mult * std
+
+        sdm = float(self._std_dev_multiplier.Value)
+        upper_threshold = histogram_average + sdm * histogram_std_dev
+        lower_threshold = histogram_average - sdm * histogram_std_dev
+        cd = int(self._cooldown_bars.Value)
+
         if self.Position == 0:
-            if histogram >= upper and histogram > 0:
+            if histogram >= upper_threshold and histogram > 0:
                 self.BuyMarket()
-                self._cooldown = self._cooldown_bars.Value
-            elif histogram <= lower and histogram < 0:
+                self._cooldown = cd
+            elif histogram <= lower_threshold and histogram < 0:
                 self.SellMarket()
-                self._cooldown = self._cooldown_bars.Value
+                self._cooldown = cd
             return
-        if self.Position > 0 and histogram <= avg:
-            self.SellMarket()
-            self._cooldown = self._cooldown_bars.Value
-        elif self.Position < 0 and histogram >= avg:
-            self.BuyMarket()
-            self._cooldown = self._cooldown_bars.Value
+
+        if self.Position > 0 and histogram <= histogram_average:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = cd
+        elif self.Position < 0 and histogram >= histogram_average:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cd
 
     def CreateClone(self):
         return macd_adaptive_histogram_strategy()

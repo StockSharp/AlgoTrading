@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SuperTrend, ExponentialMovingAverage, AverageTrueRange
+from StockSharp.Algo.Indicators import SuperTrend, ExponentialMovingAverage, AverageTrueRange, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -41,18 +41,6 @@ class advanced_supertrend_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
-
     def OnReseted(self):
         super(advanced_supertrend_strategy, self).OnReseted()
         self._prev_up_trend = False
@@ -64,14 +52,16 @@ class advanced_supertrend_strategy(Strategy):
     def OnStarted(self, time):
         super(advanced_supertrend_strategy, self).OnStarted(time)
         st = SuperTrend()
-        st.Length = self._atr_length.Value
+        st.Length = int(self._atr_length.Value)
         st.Multiplier = self._multiplier.Value
         ema = ExponentialMovingAverage()
-        ema.Length = self._ma_length.Value
+        ema.Length = int(self._ma_length.Value)
         atr = AverageTrueRange()
-        atr.Length = self._atr_stop_length.Value
+        atr.Length = int(self._atr_stop_length.Value)
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(st, ema, atr, self.OnProcess).Start()
+        subscription.BindEx(st, ema, atr, self._on_process).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -79,59 +69,73 @@ class advanced_supertrend_strategy(Strategy):
             self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, st_value, ema_value, atr_value):
+    def _on_process(self, candle, st_value, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if st_value.IsEmpty or ema_value.IsEmpty or atr_value.IsEmpty:
             return
+
         up_trend = st_value.IsUpTrend
-        ema_v = float(ema_value.GetValue[float]())
-        atr_v = float(atr_value.GetValue[float]())
+        ema_v = float(IndicatorHelper.ToDecimal(ema_value))
+        atr_v = float(IndicatorHelper.ToDecimal(atr_value))
         close = float(candle.ClosePrice)
+
         if not self._has_prev:
             self._prev_up_trend = up_trend
             self._has_prev = True
             return
+
         sl_mult = float(self._sl_multiplier.Value)
         tp_mult = float(self._tp_multiplier.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        # Check stop/TP
         if self.Position > 0 and self._entry_price > 0 and self._atr_at_entry > 0:
             sl = self._entry_price - self._atr_at_entry * sl_mult
             tp = self._entry_price + self._atr_at_entry * tp_mult
             if close <= sl or close >= tp:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.cooldown_bars
+                self._cooldown_remaining = cooldown
                 self._prev_up_trend = up_trend
                 return
         elif self.Position < 0 and self._entry_price > 0 and self._atr_at_entry > 0:
             sl = self._entry_price + self._atr_at_entry * sl_mult
             tp = self._entry_price - self._atr_at_entry * tp_mult
             if close >= sl or close <= tp:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.cooldown_bars
+                self._cooldown_remaining = cooldown
                 self._prev_up_trend = up_trend
                 return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_up_trend = up_trend
             return
+
         bullish_flip = up_trend and not self._prev_up_trend
         bearish_flip = not up_trend and self._prev_up_trend
+
         if bullish_flip and close > ema_v and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
             self._entry_price = close
             self._atr_at_entry = atr_v
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif bearish_flip and close < ema_v and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
             self._entry_price = close
             self._atr_at_entry = atr_v
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
+
         self._prev_up_trend = up_trend
 
     def CreateClone(self):

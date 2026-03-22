@@ -54,12 +54,14 @@ class modified_obv_with_divergence_detection_strategy(Strategy):
     def OnProcess(self, candle, obv_value):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         if not self._obv.IsFormed:
             return
         obvm_result = self._obv_ma.Process(obv_value)
-        obvm = float(obvm_result.ToDecimal())
+        obvm = float(obvm_result)
         signal_result = self._signal_ma.Process(obvm_result)
-        signal = float(signal_result.ToDecimal())
+        signal = float(signal_result)
         if not self._obv_ma.IsFormed or not self._signal_ma.IsFormed:
             return
         if not self._is_initialized:
@@ -73,9 +75,13 @@ class modified_obv_with_divergence_detection_strategy(Strategy):
         cd = self._signal_cooldown_bars.Value
         min_gap = float(self._min_cross_gap_percent.Value)
         if self._bars_from_signal >= cd and gap_percent >= min_gap and self._was_below_signal and not is_below and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(abs(self.Position))
             self.BuyMarket()
             self._bars_from_signal = 0
         elif self._bars_from_signal >= cd and gap_percent >= min_gap and not self._was_below_signal and is_below and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(self.Position)
             self.SellMarket()
             self._bars_from_signal = 0
         self._was_below_signal = is_below

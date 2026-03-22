@@ -5,29 +5,33 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, StochasticOscillator, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import (MovingAverageConvergenceDivergenceSignal, StochasticOscillator,
+                                         RelativeStrengthIndex, IndicatorHelper)
 from StockSharp.Algo.Strategies import Strategy
 
 
 class three_signal_directional_trend_strategy(Strategy):
+    """Three Signal Directional Trend Strategy."""
+
     def __init__(self):
         super(three_signal_directional_trend_strategy, self).__init__()
+
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._macd_fast_length = self.Param("MacdFastLength", 12) \
-            .SetGreaterThanZero() \
             .SetDisplay("MACD Fast", "Fast EMA length", "MACD")
         self._macd_slow_length = self.Param("MacdSlowLength", 26) \
-            .SetGreaterThanZero() \
             .SetDisplay("MACD Slow", "Slow EMA length", "MACD")
         self._macd_avg_length = self.Param("MacdAvgLength", 9) \
-            .SetGreaterThanZero() \
             .SetDisplay("MACD Signal", "Signal EMA length", "MACD")
         self._rsi_length = self.Param("RsiLength", 14) \
-            .SetGreaterThanZero() \
             .SetDisplay("RSI Length", "RSI period", "RSI")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
+
+        self._macd = None
+        self._stochastic = None
+        self._rsi = None
         self._prev_macd_signal = 0.0
         self._macd_init = False
         self._cooldown_remaining = 0
@@ -35,68 +39,64 @@ class three_signal_directional_trend_strategy(Strategy):
     @property
     def candle_type(self):
         return self._candle_type.Value
-    @property
-    def macd_fast_length(self):
-        return self._macd_fast_length.Value
-    @property
-    def macd_slow_length(self):
-        return self._macd_slow_length.Value
-    @property
-    def macd_avg_length(self):
-        return self._macd_avg_length.Value
-    @property
-    def rsi_length(self):
-        return self._rsi_length.Value
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
 
     def OnReseted(self):
         super(three_signal_directional_trend_strategy, self).OnReseted()
+        self._macd = None
+        self._stochastic = None
+        self._rsi = None
         self._prev_macd_signal = 0.0
         self._macd_init = False
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(three_signal_directional_trend_strategy, self).OnStarted(time)
+
         self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self.macd_fast_length
-        self._macd.Macd.LongMa.Length = self.macd_slow_length
-        self._macd.SignalMa.Length = self.macd_avg_length
+        self._macd.Macd.ShortMa.Length = int(self._macd_fast_length.Value)
+        self._macd.Macd.LongMa.Length = int(self._macd_slow_length.Value)
+        self._macd.SignalMa.Length = int(self._macd_avg_length.Value)
+
         self._stochastic = StochasticOscillator()
         self._stochastic.K.Length = 14
         self._stochastic.D.Length = 3
+
         self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.rsi_length
+        self._rsi.Length = int(self._rsi_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription \
-            .BindEx(self._macd, self._stochastic, self._rsi, self.OnProcess) \
-            .Start()
+        subscription.BindEx(self._macd, self._stochastic, self._rsi, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, macd_val, stoch_val, rsi_val):
+    def _on_process(self, candle, macd_val, stoch_val, rsi_val):
         if candle.State != CandleStates.Finished:
             return
+
         if not self._macd.IsFormed or not self._stochastic.IsFormed or not self._rsi.IsFormed:
             return
+
         if macd_val.IsEmpty or stoch_val.IsEmpty or rsi_val.IsEmpty:
             return
 
-        macd_signal = macd_val.Signal
-        if macd_signal is None:
+        if macd_val.Signal is None:
             return
-        macd_signal = float(macd_signal)
 
-        stoch_k = stoch_val.K
-        if stoch_k is None:
+        macd_signal = float(macd_val.Signal)
+
+        if stoch_val.K is None:
             return
-        stoch_k = float(stoch_k)
-        rsi = float(rsi_val)
+
+        stoch_k = float(stoch_val.K)
+        rsi = float(IndicatorHelper.ToDecimal(rsi_val))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_macd_signal = macd_signal
+            self._macd_init = True
+            return
 
         if not self._macd_init:
             self._prev_macd_signal = macd_signal
@@ -108,6 +108,7 @@ class three_signal_directional_trend_strategy(Strategy):
             self._prev_macd_signal = macd_signal
             return
 
+        cooldown = int(self._cooldown_bars.Value)
         long_count = 0
         short_count = 0
 
@@ -128,14 +129,14 @@ class three_signal_directional_trend_strategy(Strategy):
 
         if long_count >= 2 and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket(abs(self.Position))
-            self.BuyMarket()
-            self._cooldown_remaining = self.cooldown_bars
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif short_count >= 2 and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket(abs(self.Position))
-            self.SellMarket()
-            self._cooldown_remaining = self.cooldown_bars
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
 
         self._prev_macd_signal = macd_signal
 

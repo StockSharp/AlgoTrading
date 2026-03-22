@@ -7,197 +7,152 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
-import random
 
 class adx_sentiment_momentum_strategy(Strategy):
-    """ADX strategy with Sentiment Momentum filter."""
+    """ADX trend strategy filtered by deterministic sentiment momentum."""
 
     def __init__(self):
-        """Initialize adx_sentiment_momentum_strategy."""
         super(adx_sentiment_momentum_strategy, self).__init__()
 
-        # ADX Period.
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetRange(5, 30) \
-            .SetCanOptimize(True) \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 
-        # ADX Threshold for strong trend.
         self._adx_threshold = self.Param("AdxThreshold", 25.0) \
             .SetRange(15.0, 35.0) \
-            .SetCanOptimize(True) \
             .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
 
-        # Period for sentiment momentum calculation.
         self._sentiment_period = self.Param("SentimentPeriod", 5) \
             .SetRange(3, 10) \
-            .SetCanOptimize(True) \
             .SetDisplay("Sentiment Period", "Period for sentiment momentum calculation", "Sentiment")
 
-        # Stop loss percentage.
         self._stop_loss = self.Param("StopLoss", 2.0) \
             .SetRange(1.0, 5.0) \
-            .SetCanOptimize(True) \
-            .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        # Candle type for strategy calculation.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 24) \
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._adx = None
-        self._prev_sentiment = 0
-        self._current_sentiment = 0
-        self._sentiment_momentum = 0
+        self._prev_sentiment = 0.0
+        self._current_sentiment = 0.0
+        self._sentiment_momentum = 0.0
+        self._prev_di_plus = None
+        self._prev_di_minus = None
+        self._cooldown_remaining = 0
 
     @property
-    def AdxPeriod(self):
-        """ADX Period."""
-        return self._adx_period.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def AdxThreshold(self):
-        """ADX Threshold for strong trend."""
-        return self._adx_threshold.Value
-
-    @AdxThreshold.setter
-    def AdxThreshold(self, value):
-        self._adx_threshold.Value = value
-
-    @property
-    def SentimentPeriod(self):
-        """Period for sentiment momentum calculation."""
-        return self._sentiment_period.Value
-
-    @SentimentPeriod.setter
-    def SentimentPeriod(self, value):
-        self._sentiment_period.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss percentage."""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy calculation."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(adx_sentiment_momentum_strategy, self).OnReseted()
-        if self._adx:
-            self._adx.Reset()
-            self._adx = None
-        self._prev_sentiment = 0
-        self._current_sentiment = 0
-        self._sentiment_momentum = 0
+        self._adx = None
+        self._prev_sentiment = 0.0
+        self._current_sentiment = 0.0
+        self._sentiment_momentum = 0.0
+        self._prev_di_plus = None
+        self._prev_di_minus = None
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(adx_sentiment_momentum_strategy, self).OnStarted(time)
 
-        # Create ADX Indicator
         self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.AdxPeriod
+        self._adx.Length = int(self._adx_period.Value)
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(self._adx, self.ProcessCandle).Start()
 
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
 
-        # Start position protection
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
         )
+
     def ProcessCandle(self, candle, adx_value):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Simulate sentiment data and calculate momentum
         self.UpdateSentiment(candle)
 
-        # Check if strategy is ready to trade
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        typed_adx = adx_value
-        adx_main = typed_adx.MovingAverage
-        di_plus = typed_adx.Dx.Plus
-        di_minus = typed_adx.Dx.Minus
+        adx_main_val = adx_value.MovingAverage
+        di_plus_val = adx_value.Dx.Plus
+        di_minus_val = adx_value.Dx.Minus
 
-        # Entry logic based on ADX and sentiment momentum
-        if adx_main > self.AdxThreshold and di_plus > di_minus and self._sentiment_momentum > 0 and self.Position <= 0:
-            # Strong uptrend with positive sentiment momentum - Long entry
-            self.BuyMarket(self.Volume)
-            self.LogInfo("Buy Signal: ADX={0}, +DI={1}, -DI={2}, Sentiment Momentum={3}".format(
-                adx_main, di_plus, di_minus, self._sentiment_momentum))
-        elif adx_main > self.AdxThreshold and di_minus > di_plus and self._sentiment_momentum < 0 and self.Position >= 0:
-            # Strong downtrend with negative sentiment momentum - Short entry
-            self.SellMarket(self.Volume)
-            self.LogInfo("Sell Signal: ADX={0}, +DI={1}, -DI={2}, Sentiment Momentum={3}".format(
-                adx_main, di_plus, di_minus, self._sentiment_momentum))
+        if adx_main_val is None or di_plus_val is None or di_minus_val is None:
+            return
 
-        # Exit logic
-        if adx_main < 20 and self.Position != 0:
-            # Exit when trend weakens (ADX below 20)
+        adx_main = float(adx_main_val)
+        di_plus = float(di_plus_val)
+        di_minus = float(di_minus_val)
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        adx_threshold = float(self._adx_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_cross = self._prev_di_plus is not None and self._prev_di_minus is not None and \
+            self._prev_di_plus <= self._prev_di_minus and di_plus > di_minus
+        bearish_cross = self._prev_di_plus is not None and self._prev_di_minus is not None and \
+            self._prev_di_plus >= self._prev_di_minus and di_minus > di_plus
+        strong_trend = adx_main >= adx_threshold
+
+        if self._cooldown_remaining == 0 and strong_trend and bullish_cross and self._sentiment_momentum > 0 and self.Position <= 0:
+            vol = self.Volume
+            if self.Position < 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.BuyMarket(vol)
+            self._cooldown_remaining = cooldown
+        elif self._cooldown_remaining == 0 and strong_trend and bearish_cross and self._sentiment_momentum < 0 and self.Position >= 0:
+            vol = self.Volume
             if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit Long: ADX={0}".format(adx_main))
-            elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit Short: ADX={0}".format(adx_main))
+                vol = self.Volume + Math.Abs(self.Position)
+            self.SellMarket(vol)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and (adx_main < 20.0 or self._sentiment_momentum < 0):
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and (adx_main < 20.0 or self._sentiment_momentum > 0):
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+
+        self._prev_di_plus = di_plus
+        self._prev_di_minus = di_minus
 
     def UpdateSentiment(self, candle):
-        # This is a placeholder for real sentiment analysis data
-        # In a real implementation, this would connect to a sentiment data provider
-
-        # Update sentiment values
         self._prev_sentiment = self._current_sentiment
-
-        # Simulate sentiment based on price action and some randomness
         self._current_sentiment = self.SimulateSentiment(candle)
-
-        # Calculate momentum as the change in sentiment
         self._sentiment_momentum = self._current_sentiment - self._prev_sentiment
 
     def SimulateSentiment(self, candle):
-        # Base sentiment on price movement (up = positive sentiment, down = negative sentiment)
-        price_up = candle.OpenPrice < candle.ClosePrice
-        price_change = float((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice)
+        range_val = max(float(candle.HighPrice - candle.LowPrice), 1.0)
+        body = float(candle.ClosePrice - candle.OpenPrice)
+        body_ratio = body / range_val
+        range_ratio = range_val / max(float(candle.OpenPrice), 1.0)
+        sentiment_period = int(self._sentiment_period.Value)
+        trend_factor = min(0.3, range_ratio * sentiment_period)
 
-        # Calculate base sentiment from price change
-        base_sentiment = price_change * 10  # Scale up for easier interpretation
-
-        # Add noise to simulate real-world sentiment data
-        noise = random.random() * 0.2 - 0.1
-
-        # Sometimes sentiment can diverge from price action
-        if random.random() > 0.7:
-            noise *= 2  # Occasionally larger divergences
-
-        return base_sentiment + noise
+        sign = 1 if body > 0 else (-1 if body < 0 else 0)
+        result = body_ratio + (sign * trend_factor)
+        return max(-1.0, min(1.0, result))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adx_sentiment_momentum_strategy()

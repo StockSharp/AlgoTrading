@@ -3,199 +3,143 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class volatility_cluster_breakout_strategy(Strategy):
     """
-    Strategy based on breakouts during high volatility clusters.
+    Breakout strategy that trades only when ATR expands into a high-volatility cluster.
     """
 
     def __init__(self):
-        """Initialize a new instance of :class:`volatility_cluster_breakout_strategy`."""
         super(volatility_cluster_breakout_strategy, self).__init__()
 
-        # Period for price average and standard deviation calculation.
         self._price_avg_period = self.Param("PriceAvgPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Price Average Period", "Period for calculating price average and standard deviation", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Price Average Period", "Period for moving average and standard deviation", "Indicators")
 
-        # Period for ATR calculation.
         self._atr_period = self.Param("AtrPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("ATR Period", "Period for calculating Average True Range", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
+            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        # Standard deviation multiplier for breakout threshold.
-        self._std_dev_multiplier = self.Param("StdDevMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to determine breakout levels", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.3) \
+            .SetDisplay("StdDev Multiplier", "Multiplier for breakout levels", "Signals")
 
-        # Stop-loss multiplier relative to ATR.
-        self._stop_multiplier = self.Param("StopMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop ATR Multiplier", "ATR multiplier for stop-loss", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._stop_multiplier = self.Param("StopMultiplier", 1.8) \
+            .SetDisplay("Stop ATR Multiplier", "ATR multiplier used for stop distance", "Risk")
 
-        # Candle type parameter.
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 60) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
 
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles for the strategy", "General")
+
+        self._sma = None
+        self._std_dev = None
+        self._atr = None
         self._atr_avg = None
-
-    @property
-    def price_avg_period(self):
-        """Period for price average and standard deviation calculation."""
-        return self._price_avg_period.Value
-
-    @price_avg_period.setter
-    def price_avg_period(self, value):
-        self._price_avg_period.Value = value
-
-    @property
-    def atr_period(self):
-        """Period for ATR calculation."""
-        return self._atr_period.Value
-
-    @atr_period.setter
-    def atr_period(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def std_dev_multiplier(self):
-        """Standard deviation multiplier for breakout threshold."""
-        return self._std_dev_multiplier.Value
-
-    @std_dev_multiplier.setter
-    def std_dev_multiplier(self, value):
-        self._std_dev_multiplier.Value = value
-
-    @property
-    def stop_multiplier(self):
-        """Stop-loss multiplier relative to ATR."""
-        return self._stop_multiplier.Value
-
-    @stop_multiplier.setter
-    def stop_multiplier(self, value):
-        self._stop_multiplier.Value = value
+        self._entry_price = 0.0
+        self._entry_atr = 0.0
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type parameter."""
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        """Return security and timeframe used by the strategy."""
-        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(volatility_cluster_breakout_strategy, self).OnReseted()
+        self._sma = None
+        self._std_dev = None
+        self._atr = None
+        self._atr_avg = None
+        self._entry_price = 0.0
+        self._entry_atr = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(volatility_cluster_breakout_strategy, self).OnStarted(time)
 
+        atr_period = int(self._atr_period.Value)
+        price_period = int(self._price_avg_period.Value)
+
+        self._sma = SimpleMovingAverage()
+        self._sma.Length = price_period
+        self._std_dev = StandardDeviation()
+        self._std_dev.Length = price_period
+        self._atr = AverageTrueRange()
+        self._atr.Length = atr_period
         self._atr_avg = SimpleMovingAverage()
-        self._atr_avg.Length = self.atr_period
+        self._atr_avg.Length = max(atr_period * 2, 10)
+        self._cooldown = 0
 
-        # Create indicators
-        sma = SimpleMovingAverage()
-        sma.Length = self.price_avg_period
-        std_dev = StandardDeviation()
-        std_dev.Length = self.price_avg_period
-        atr = AverageTrueRange()
-        atr.Length = self.atr_period
-
-        # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._sma, self._std_dev, self._atr, self._process_candle).Start()
 
-        # Bind indicators to subscription
-        subscription.Bind(sma, std_dev, atr, self.ProcessCandle).Start()
-
-        # Enable position protection with dynamic stops
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(0),
-            useMarketOrders=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
-            self.DrawIndicator(area, atr)
+            self.DrawIndicator(area, self._sma)
+            self.DrawIndicator(area, self._atr)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, sma_value, std_dev_value, atr_value):
-        # Skip unfinished candles
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_multiplier.Value, UnitTypes.Percent), False)
+
+    def _process_candle(self, candle, sma_value, std_dev_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        atr_avg_val = process_float(self._atr_avg, atr_value, candle.ServerTime, candle.State == CandleStates.Finished)
+        av = float(atr_value)
+        atr_avg_input = DecimalIndicatorValue(self._atr_avg, Decimal(av), candle.OpenTime)
+        atr_avg_input.IsFinal = True
+        atr_avg_value = float(self._atr_avg.Process(atr_avg_input))
 
-        # Check if strategy is ready to trade
+        if not self._sma.IsFormed or not self._std_dev.IsFormed or not self._atr.IsFormed or not self._atr_avg.IsFormed:
+            return
 
-        # Calculate breakout levels
-        upper_level = sma_value + self.std_dev_multiplier * std_dev_value
-        lower_level = sma_value - self.std_dev_multiplier * std_dev_value
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Check if we're in high volatility cluster
-        is_high_volatility = atr_value > sma_value * 0.01  # ATR > 1% of price as simplification
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        # Exit conditions based on volatility
-        exit_condition = not is_high_volatility
+        sv = float(sma_value)
+        sdv = float(std_dev_value)
+        sdm = float(self._std_dev_multiplier.Value)
+        upper_level = sv + sdm * sdv
+        lower_level = sv - sdm * sdv
+        is_high_volatility = av >= atr_avg_value * 1.15
+        price = float(candle.ClosePrice)
+        cd = int(self._cooldown_bars.Value)
+        sm = float(self._stop_multiplier.Value)
 
-        # Entry conditions
-        long_entry_condition = candle.ClosePrice > upper_level and is_high_volatility and self.Position <= 0
-        short_entry_condition = candle.ClosePrice < lower_level and is_high_volatility and self.Position >= 0
+        if self.Position == 0:
+            if not is_high_volatility:
+                return
 
-        # Execute trading logic
-        if exit_condition:
-            # Exit positions when volatility drops
-            if self.Position > 0:
+            if price >= upper_level:
+                self._entry_price = price
+                self._entry_atr = av
+                self.BuyMarket()
+                self._cooldown = cd
+            elif price <= lower_level:
+                self._entry_price = price
+                self._entry_atr = av
+                self.SellMarket()
+                self._cooldown = cd
+            return
+
+        stop_distance = self._entry_atr * sm
+
+        if self.Position > 0:
+            if price <= sv or not is_high_volatility or price <= self._entry_price - stop_distance:
                 self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Long exit on volatility drop: Price={0}, ATR={1}".format(candle.ClosePrice, atr_value))
-            elif self.Position < 0:
+                self._cooldown = cd
+        elif self.Position < 0:
+            if price >= sv or not is_high_volatility or price >= self._entry_price + stop_distance:
                 self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Short exit on volatility drop: Price={0}, ATR={1}".format(candle.ClosePrice, atr_value))
-        elif long_entry_condition:
-            # Calculate position size
-            position_size = self.Volume + Math.Abs(self.Position)
-
-            # Calculate stop loss level
-            stop_price = float(candle.ClosePrice - atr_value * self.stop_multiplier)
-
-            # Enter long position
-            self.BuyMarket(position_size)
-
-            self.LogInfo("Long entry: Price={0}, Upper={1}, ATR={2}, Stop={3}".format(candle.ClosePrice, upper_level, atr_value, stop_price))
-        elif short_entry_condition:
-            # Calculate position size
-            position_size = self.Volume + Math.Abs(self.Position)
-
-            # Calculate stop loss level
-            stop_price = float(candle.ClosePrice + atr_value * self.stop_multiplier)
-
-            # Enter short position
-            self.SellMarket(position_size)
-
-            self.LogInfo("Short entry: Price={0}, Lower={1}, ATR={2}, Stop={3}".format(candle.ClosePrice, lower_level, atr_value, stop_price))
+                self._cooldown = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return volatility_cluster_breakout_strategy()

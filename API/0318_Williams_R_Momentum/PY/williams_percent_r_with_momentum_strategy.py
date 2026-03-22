@@ -3,12 +3,11 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import WilliamsR, Momentum, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import WilliamsR, Momentum, SimpleMovingAverage
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class williams_percent_r_with_momentum_strategy(Strategy):
     """
@@ -18,171 +17,83 @@ class williams_percent_r_with_momentum_strategy(Strategy):
     def __init__(self):
         super(williams_percent_r_with_momentum_strategy, self).__init__()
 
-        # Williams %R period parameter.
-        self._williamsRPeriod = self.Param("WilliamsRPeriod", 14) \
+        self._williams_r_period = self.Param("WilliamsRPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 30, 5)
+            .SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicators")
 
-        # Momentum period parameter.
-        self._momentumPeriod = self.Param("MomentumPeriod", 14) \
+        self._momentum_period = self.Param("MomentumPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("Momentum Period", "Period for Momentum calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 30, 5)
+            .SetDisplay("Momentum Period", "Period for Momentum calculation", "Indicators")
 
-        # Williams %R oversold level parameter.
-        self._williamsROversold = self.Param("WilliamsROversold", -80) \
-            .SetDisplay("Williams %R Oversold", "Williams %R oversold level", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(-90, -70, 5)
+        self._williams_r_oversold = self.Param("WilliamsROversold", -80.0) \
+            .SetDisplay("Williams %R Oversold", "Williams %R oversold level", "Indicators")
 
-        # Williams %R overbought level parameter.
-        self._williamsROverbought = self.Param("WilliamsROverbought", -20) \
-            .SetDisplay("Williams %R Overbought", "Williams %R overbought level", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(-30, -10, 5)
+        self._williams_r_overbought = self.Param("WilliamsROverbought", -20.0) \
+            .SetDisplay("Williams %R Overbought", "Williams %R overbought level", "Indicators")
 
-        # Candle type parameter.
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._williams_r = None
-        self._momentum = None
-        self._momentum_sma = None
-
     @property
-    def WilliamsRPeriod(self):
-        """Williams %R period parameter."""
-        return self._williamsRPeriod.Value
-
-    @WilliamsRPeriod.setter
-    def WilliamsRPeriod(self, value):
-        self._williamsRPeriod.Value = value
-
-    @property
-    def MomentumPeriod(self):
-        """Momentum period parameter."""
-        return self._momentumPeriod.Value
-
-    @MomentumPeriod.setter
-    def MomentumPeriod(self, value):
-        self._momentumPeriod.Value = value
-
-    @property
-    def WilliamsROversold(self):
-        """Williams %R oversold level parameter."""
-        return self._williamsROversold.Value
-
-    @WilliamsROversold.setter
-    def WilliamsROversold(self, value):
-        self._williamsROversold.Value = value
-
-    @property
-    def WilliamsROverbought(self):
-        """Williams %R overbought level parameter."""
-        return self._williamsROverbought.Value
-
-    @WilliamsROverbought.setter
-    def WilliamsROverbought(self, value):
-        self._williamsROverbought.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type parameter."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        return [
-            (self.Security, self.CandleType)
-        ]
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(williams_percent_r_with_momentum_strategy, self).OnReseted()
 
-        if self._williams_r is not None:
-            self._williams_r.Reset()
-        if self._momentum is not None:
-            self._momentum.Reset()
-        if self._momentum_sma is not None:
-            self._momentum_sma.Reset()
-
     def OnStarted(self, time):
         super(williams_percent_r_with_momentum_strategy, self).OnStarted(time)
 
-        # Create indicators
-        self._williams_r = WilliamsR()
-        self._williams_r.Length = self.WilliamsRPeriod
-        self._momentum = Momentum()
-        self._momentum.Length = self.MomentumPeriod
+        williams_r = WilliamsR()
+        williams_r.Length = int(self._williams_r_period.Value)
+        momentum = Momentum()
+        momentum.Length = int(self._momentum_period.Value)
         self._momentum_sma = SimpleMovingAverage()
-        self._momentum_sma.Length = self.MomentumPeriod
+        self._momentum_sma.Length = int(self._momentum_period.Value)
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(williams_r, momentum, self._process_candle).Start()
 
-        def on_process(candle, williamsRValue, momentumValue):
-            # Calculate momentum average
-            momentumAvg = float(process_float(self._momentum_sma, momentumValue, candle.ServerTime, candle.State == CandleStates.Finished))
-
-            # Process the strategy logic
-            self.ProcessStrategy(candle, williamsRValue, momentumValue, momentumAvg)
-
-        subscription.Bind(self._williams_r, self._momentum, on_process).Start()
-
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._williams_r)
-            self.DrawIndicator(area, self._momentum)
+            self.DrawIndicator(area, williams_r)
+            self.DrawIndicator(area, momentum)
             self.DrawOwnTrades(area)
 
-        # Setup position protection
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent)
+            Unit(2, UnitTypes.Percent),
+            Unit(1, UnitTypes.Percent)
         )
-    def ProcessStrategy(self, candle, williamsRValue, momentumValue, momentumAvg):
-        # Skip unfinished candles
+
+    def _process_candle(self, candle, williams_r_value, momentum_value):
+        mom_avg_input = DecimalIndicatorValue(self._momentum_sma, Decimal(float(momentum_value)), candle.ServerTime)
+        momentum_avg = float(self._momentum_sma.Process(mom_avg_input))
+
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Check momentum - rising or falling
-        isMomentumRising = momentumValue > momentumAvg
+        wr = float(williams_r_value)
+        mom = float(momentum_value)
+        is_momentum_rising = mom > momentum_avg
 
-        # Trading logic
-        if williamsRValue < self.WilliamsROversold and isMomentumRising and self.Position <= 0:
-            # Williams %R oversold with rising momentum - Go long
-            self.CancelActiveOrders()
+        oversold = float(self._williams_r_oversold.Value)
+        overbought = float(self._williams_r_overbought.Value)
 
-            # Calculate position size
+        if wr < oversold and is_momentum_rising and self.Position <= 0:
             volume = self.Volume + Math.Abs(self.Position)
-
-            # Enter long position
             self.BuyMarket(volume)
-        elif williamsRValue > self.WilliamsROverbought and not isMomentumRising and self.Position >= 0:
-            # Williams %R overbought with falling momentum - Go short
-            self.CancelActiveOrders()
-
-            # Calculate position size
+        elif wr > overbought and not is_momentum_rising and self.Position >= 0:
             volume = self.Volume + Math.Abs(self.Position)
-
-            # Enter short position
             self.SellMarket(volume)
 
-        # Exit logic - when Williams %R crosses the middle (-50) level
-        if (self.Position > 0 and williamsRValue > -50) or (self.Position < 0 and williamsRValue < -50):
-            # Close position
-            self.ClosePosition()
+        if self.Position > 0 and wr > -50:
+            self.SellMarket(Math.Abs(self.Position))
+        elif self.Position < 0 and wr < -50:
+            self.BuyMarket(Math.Abs(self.Position))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return williams_percent_r_with_momentum_strategy()

@@ -2,124 +2,207 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
 
 
 class overnight_sentiment_anomaly_strategy(Strategy):
-    """Trades an equity ETF overnight based on external sentiment indicator."""
+    """Overnight sentiment anomaly strategy that trades the primary instrument when its opening gap diverges from benchmark sentiment."""
 
     def __init__(self):
-        super().__init__()
-        self._sentiment = self.Param("SentimentSymbol", None) \
-            .SetDisplay("Sentiment Symbol", "Symbol providing sentiment", "Universe")
-        self._threshold = self.Param("Threshold", 0.0) \
-            .SetDisplay("Threshold", "Sentiment threshold", "Parameters")
-        self._min_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetDisplay("Min USD", "Minimum trade value", "Risk")
-        self._tf = self.Param("CandleType", tf(1)) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._latest = {}
+        super(overnight_sentiment_anomaly_strategy, self).__init__()
 
-    @property
-    def sentiment_symbol(self):
-        return self._sentiment.Value
+        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
+            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security used as a sentiment proxy", "General")
 
-    @sentiment_symbol.setter
-    def sentiment_symbol(self, value):
-        self._sentiment.Value = value
+        self._sentiment_period = self.Param("SentimentPeriod", 4) \
+            .SetRange(2, 80) \
+            .SetDisplay("Sentiment Period", "Lookback period used to estimate benchmark sentiment", "Indicators")
 
-    @property
-    def threshold(self):
-        return self._threshold.Value
+        self._normalization_period = self.Param("NormalizationPeriod", 8) \
+            .SetRange(5, 120) \
+            .SetDisplay("Normalization Period", "Lookback period used to normalize the anomaly signal", "Indicators")
 
-    @threshold.setter
-    def threshold(self, value):
-        self._threshold.Value = value
+        self._entry_threshold = self.Param("EntryThreshold", 0.4) \
+            .SetRange(0.2, 5.0) \
+            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
 
-    @property
-    def min_trade_usd(self):
-        return self._min_usd.Value
+        self._exit_threshold = self.Param("ExitThreshold", 0.1) \
+            .SetRange(0.0, 2.0) \
+            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
 
-    @min_trade_usd.setter
-    def min_trade_usd(self, value):
-        self._min_usd.Value = value
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetRange(0, 120) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
+
+        self._stop_loss = self.Param("StopLoss", 3.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Time frame for candles", "General")
+
+        self._benchmark = None
+        self._benchmark_sentiment = None
+        self._gap_average = None
+        self._signal_average = None
+        self._signal_deviation = None
+        self._latest_benchmark_sentiment = 0.0
+        self._latest_gap = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
-        return self._tf.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._tf.Value = value
+        return self._candle_type.Value
 
     def GetWorkingSecurities(self):
-        if self.Security is None:
-            raise Exception("EquityETF not set")
-        yield self.Security, self.candle_type
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._security2_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
-        super().OnReseted()
-        self._latest.clear()
+        super(overnight_sentiment_anomaly_strategy, self).OnReseted()
+        self._benchmark = None
+        self._benchmark_sentiment = None
+        self._gap_average = None
+        self._signal_average = None
+        self._signal_deviation = None
+        self._latest_benchmark_sentiment = 0.0
+        self._latest_gap = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
-        super().OnStarted(time)
-        if self.Security is None or self.sentiment_symbol is None:
-            raise Exception("Security and SentimentSymbol must be set")
-        self.SubscribeCandles(self.candle_type, True, self.Security) \
-            .Bind(lambda c, s=self.Security: self._process(c, s)) \
-            .Start()
+        super(overnight_sentiment_anomaly_strategy, self).OnStarted(time)
 
-    def _process(self, candle, sec):
+        sec2_id = str(self._security2_id.Value)
+        if not sec2_id:
+            raise Exception("Benchmark security identifier is not specified.")
+
+        s = Security()
+        s.Id = sec2_id
+        self._benchmark = s
+
+        sentiment_period = int(self._sentiment_period.Value)
+        norm_period = int(self._normalization_period.Value)
+
+        self._benchmark_sentiment = RateOfChange()
+        self._benchmark_sentiment.Length = sentiment_period
+        self._gap_average = ExponentialMovingAverage()
+        self._gap_average.Length = max(2, sentiment_period)
+        self._signal_average = SimpleMovingAverage()
+        self._signal_average.Length = norm_period
+        self._signal_deviation = StandardDeviation()
+        self._signal_deviation.Length = norm_period
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
+
+        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
+        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, benchmark_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessPrimaryCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        self._latest[sec] = candle.ClosePrice
-        self._on_minute(candle)
 
-    def _on_minute(self, candle):
-        utc = candle.OpenTime.UtcDateTime
-        if utc.Hour == 20 and utc.Minute == 55:
-            self._close_entry()
-        elif utc.Hour == 14 and utc.Minute == 35:
-            self._open_exit()
+        gap = (float(candle.OpenPrice) - float(candle.LowPrice)) / max(float(candle.LowPrice), 1.0)
+        gap_iv = DecimalIndicatorValue(self._gap_average, gap, candle.OpenTime)
+        gap_iv.IsFinal = True
+        smoothed_gap = float(self._gap_average.Process(gap_iv))
 
-    def _close_entry(self):
-        ok, s_val = self._try_get_sentiment()
-        if not ok or s_val < self.threshold:
+        if not self._gap_average.IsFormed:
             return
-        port = self.Portfolio.CurrentValue or 0.0
-        price = self._latest.get(self.Security, 0)
-        if price <= 0:
+
+        self._latest_gap = smoothed_gap
+        self._primary_updated = True
+        self.TryProcessSignal(candle)
+
+    def ProcessBenchmarkCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
-        qty = port / price
-        if qty * price < self.min_trade_usd:
+
+        sent_iv = CandleIndicatorValue(self._benchmark_sentiment, candle)
+        sent_iv.IsFinal = True
+        sent_result = self._benchmark_sentiment.Process(sent_iv)
+        if sent_result.IsEmpty or not self._benchmark_sentiment.IsFormed:
             return
-        self._move(qty)
 
-    def _open_exit(self):
-        self._move(0)
+        self._latest_benchmark_sentiment = float(sent_result)
+        self._benchmark_updated = True
+        self.TryProcessSignal(candle)
 
-    def _move(self, tgt):
-        diff = tgt - self._pos()
-        price = self._latest.get(self.Security, 0)
-        if price <= 0 or abs(diff) * price < self.min_trade_usd:
+    def TryProcessSignal(self, candle):
+        if not self._primary_updated or not self._benchmark_updated:
             return
-        side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order, Security
-        self.RegisterOrder(Order(Security=self.Security, Portfolio=self.Portfolio,
-                                 Side=side, Volume=abs(diff), Type=OrderTypes.Market,
-                                 Comment="OvernightSent"))
 
-    def _pos(self):
-        val = self.GetPositionValue(self.Security, self.Portfolio)
-        return val or 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
 
-    def _try_get_sentiment(self):
-        # placeholder: return (False, 0)
-        return (False, 0)
+        signal = self._latest_benchmark_sentiment - (self._latest_gap * 10.0)
+
+        mean_iv = DecimalIndicatorValue(self._signal_average, signal, candle.OpenTime)
+        mean_iv.IsFinal = True
+        mean = float(self._signal_average.Process(mean_iv))
+
+        dev_iv = DecimalIndicatorValue(self._signal_deviation, signal, candle.OpenTime)
+        dev_iv.IsFinal = True
+        deviation = float(self._signal_deviation.Process(dev_iv))
+
+        if not self._signal_average.IsFormed or not self._signal_deviation.IsFormed or deviation <= 0:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        z_score = (signal - mean) / deviation
+        entry_thresh = float(self._entry_threshold.Value)
+        exit_thresh = float(self._exit_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_entry = z_score >= entry_thresh
+        bearish_entry = z_score <= -entry_thresh
+
+        if self._cooldown_remaining == 0 and self.Position == 0:
+            if bullish_entry:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif bearish_entry:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
+        elif self.Position > 0 and z_score <= exit_thresh:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and z_score >= -exit_thresh:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return overnight_sentiment_anomaly_strategy()

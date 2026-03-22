@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
@@ -34,18 +34,6 @@ class aggressive_high_iv_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
-
     def OnReseted(self):
         super(aggressive_high_iv_strategy, self).OnReseted()
         self._prev_fast = 0.0
@@ -56,13 +44,15 @@ class aggressive_high_iv_strategy(Strategy):
     def OnStarted(self, time):
         super(aggressive_high_iv_strategy, self).OnStarted(time)
         fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_length.Value
+        fast_ema.Length = int(self._fast_ema_length.Value)
         slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_length.Value
+        slow_ema.Length = int(self._slow_ema_length.Value)
         atr = AverageTrueRange()
-        atr.Length = self._atr_length.Value
+        atr.Length = int(self._atr_length.Value)
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, atr, self.OnProcess).Start()
+        subscription.Bind(fast_ema, slow_ema, atr, self._on_process).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -70,56 +60,66 @@ class aggressive_high_iv_strategy(Strategy):
             self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, fast_val, slow_val, atr_val):
+    def _on_process(self, candle, fast_val, slow_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             self._prev_fast = float(fast_val)
             self._prev_slow = float(slow_val)
             return
+
         fast = float(fast_val)
         slow = float(slow_val)
         atr_v = float(atr_val)
         close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
+
         if self._prev_fast == 0:
             self._prev_fast = fast
             self._prev_slow = slow
             return
+
+        # Check ATR-based stop/take for existing positions
         if self.Position > 0 and self._entry_price > 0 and atr_v > 0:
             if close <= self._entry_price - 2.0 * atr_v or close >= self._entry_price + 4.0 * atr_v:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.cooldown_bars
+                self._cooldown_remaining = cooldown
                 self._prev_fast = fast
                 self._prev_slow = slow
                 return
         elif self.Position < 0 and self._entry_price > 0 and atr_v > 0:
             if close >= self._entry_price + 2.0 * atr_v or close <= self._entry_price - 4.0 * atr_v:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.cooldown_bars
+                self._cooldown_remaining = cooldown
                 self._prev_fast = fast
                 self._prev_slow = slow
                 return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_fast = fast
             self._prev_slow = slow
             return
+
         long_cross = self._prev_fast <= self._prev_slow and fast > slow
         short_cross = self._prev_fast >= self._prev_slow and fast < slow
+
         if long_cross and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
             self._entry_price = close
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif short_cross and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
             self._entry_price = close
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
+
         self._prev_fast = fast
         self._prev_slow = slow
 

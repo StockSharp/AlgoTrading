@@ -3,107 +3,73 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SuperTrend, Momentum
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class supertrend_momentum_filter_strategy(Strategy):
     """
-    Strategy based on Supertrend and Momentum indicators.
+    Trend-following strategy that trades SuperTrend direction only when momentum confirms acceleration.
     """
 
     def __init__(self):
         super(supertrend_momentum_filter_strategy, self).__init__()
 
-        # Supertrend period parameter.
         self._supertrend_period = self.Param("SupertrendPeriod", 10) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Supertrend Period", "Period of the Supertrend indicator", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 20, 1)
+            .SetRange(2, 50) \
+            .SetDisplay("Supertrend Period", "Period of the SuperTrend indicator", "Indicators")
 
-        # Supertrend multiplier parameter.
         self._supertrend_multiplier = self.Param("SupertrendMultiplier", 3.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Supertrend Multiplier", "Multiplier for the Supertrend indicator", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Supertrend Multiplier", "Multiplier of the SuperTrend indicator", "Indicators")
 
-        # Momentum period parameter.
         self._momentum_period = self.Param("MomentumPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Momentum Period", "Period of the Momentum indicator", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 30, 5)
+            .SetRange(2, 100) \
+            .SetDisplay("Momentum Period", "Period of the Momentum indicator", "Indicators")
 
-        # Candle type parameter.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 84) \
+            .SetRange(1, 500) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk")
+
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Store previous values to detect changes
         self._prev_momentum = 0.0
+        self._is_initialized = False
+        self._cooldown = 0
 
     @property
-    def SupertrendPeriod(self):
-        """Supertrend period parameter."""
-        return self._supertrend_period.Value
-
-    @SupertrendPeriod.setter
-    def SupertrendPeriod(self, value):
-        self._supertrend_period.Value = value
-
-    @property
-    def SupertrendMultiplier(self):
-        """Supertrend multiplier parameter."""
-        return self._supertrend_multiplier.Value
-
-    @SupertrendMultiplier.setter
-    def SupertrendMultiplier(self, value):
-        self._supertrend_multiplier.Value = value
-
-    @property
-    def MomentumPeriod(self):
-        """Momentum period parameter."""
-        return self._momentum_period.Value
-
-    @MomentumPeriod.setter
-    def MomentumPeriod(self, value):
-        self._momentum_period.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type parameter."""
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(supertrend_momentum_filter_strategy, self).OnReseted()
         self._prev_momentum = 0.0
+        self._is_initialized = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(supertrend_momentum_filter_strategy, self).OnStarted(time)
 
-        # Create indicators
         supertrend = SuperTrend()
-        supertrend.Length = self.SupertrendPeriod
-        supertrend.Multiplier = self.SupertrendMultiplier
+        supertrend.Length = int(self._supertrend_period.Value)
+        supertrend.Multiplier = Decimal(self._supertrend_multiplier.Value)
 
         momentum = Momentum()
-        momentum.Length = self.MomentumPeriod
+        momentum.Length = int(self._momentum_period.Value)
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(supertrend, momentum, self.ProcessCandle).Start()
+        self._cooldown = 0
+        self._is_initialized = False
 
-        # Setup chart if available
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(supertrend, momentum, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -111,46 +77,56 @@ class supertrend_momentum_filter_strategy(Strategy):
             self.DrawIndicator(area, momentum)
             self.DrawOwnTrades(area)
 
-        # Setup position protection
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent)
+            Unit(0, UnitTypes.Absolute),
+            Unit(self._stop_loss_percent.Value, UnitTypes.Percent),
+            False
         )
-    def ProcessCandle(self, candle, supertrend_value, momentum_value):
-        # Skip unfinished candles
+
+    def _process_candle(self, candle, supertrend_value, momentum_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        is_above_supertrend = candle.ClosePrice > supertrend_value
-        is_momentum_rising = momentum_value > self._prev_momentum
+        if not self._is_initialized:
+            self._prev_momentum = float(momentum_value)
+            self._is_initialized = True
+            return
 
-        # Strategy logic:
-        # Buy when price is above Supertrend and Momentum is rising
-        # Sell when price is below Supertrend and Momentum is falling
-        if is_above_supertrend and is_momentum_rising and self.Position <= 0:
-            # Cancel any active orders before entering a new position
-            self.CancelActiveOrders()
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_momentum = float(momentum_value)
+            return
 
-            # Calculate position size
-            volume = self.Volume + Math.Abs(self.Position)
+        price = float(candle.ClosePrice)
+        st_val = float(supertrend_value)
+        mom_val = float(momentum_value)
+        is_above_supertrend = price > st_val
+        is_below_supertrend = price < st_val
+        is_momentum_rising = mom_val > self._prev_momentum
+        is_momentum_falling = mom_val < self._prev_momentum
 
-            # Enter long position
-            self.BuyMarket(volume)
-        elif not is_above_supertrend and not is_momentum_rising and self.Position >= 0:
-            # Cancel any active orders before entering a new position
-            self.CancelActiveOrders()
+        cd = int(self._cooldown_bars.Value)
 
-            # Calculate position size
-            volume = self.Volume + Math.Abs(self.Position)
+        if self.Position == 0:
+            if is_above_supertrend and is_momentum_rising and mom_val >= 100.0:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif is_below_supertrend and is_momentum_falling and mom_val <= 100.0:
+                self.SellMarket()
+                self._cooldown = cd
+        elif self.Position > 0:
+            if is_below_supertrend or is_momentum_falling:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = cd
+        elif self.Position < 0:
+            if is_above_supertrend or is_momentum_rising:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = cd
 
-            # Enter short position
-            self.SellMarket(volume)
-
-        # Store current momentum value for next comparison
-        self._prev_momentum = momentum_value
+        self._prev_momentum = mom_val
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return supertrend_momentum_filter_strategy()

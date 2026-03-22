@@ -72,7 +72,7 @@ class macd_parabolic_sar_wizard_strategy(Strategy):
             return
         macd_f = float(macd_line)
         signal_f = float(signal_line)
-        sar_f = float(sar_value.ToDecimal())
+        sar_f = float(sar_value)
         close = float(candle.ClosePrice)
         macd_bull = 100.0 if macd_f > signal_f else 0.0
         macd_bear = 100.0 if macd_f < signal_f else 0.0

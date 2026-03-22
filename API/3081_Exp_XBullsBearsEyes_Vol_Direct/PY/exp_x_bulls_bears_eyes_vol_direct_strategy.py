@@ -153,7 +153,7 @@ class exp_x_bulls_bears_eyes_vol_direct_strategy(Strategy):
         ema_result = self._ema.Process(DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime))
         if not self._ema.IsFormed:
             return
-        ema = float(ema_result.ToDecimal())
+        ema = float(ema_result)
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
@@ -203,7 +203,7 @@ class exp_x_bulls_bears_eyes_vol_direct_strategy(Strategy):
         if not self._histogram_smoother.IsFormed or not self._volume_smoother.IsFormed:
             return
 
-        smoothed_histogram = float(hist_result.ToDecimal())
+        smoothed_histogram = float(hist_result)
         direction = self._calculate_direction(smoothed_histogram)
         self._update_history(direction)
 

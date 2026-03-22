@@ -81,8 +81,8 @@ class exp_multitrend_signal_kvn_strategy(Strategy):
         if not max_result.IsFormed or not min_result.IsFormed:
             return
 
-        ss_max = float(max_result.ToDecimal())
-        ss_min = float(min_result.ToDecimal())
+        ss_max = float(max_result)
+        ss_min = float(min_result)
 
         swing = (ss_max - ss_min) * float(self.k) / 100.0
         smin = ss_min + swing

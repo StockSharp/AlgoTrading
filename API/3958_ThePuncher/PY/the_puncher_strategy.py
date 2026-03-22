@@ -69,12 +69,12 @@ class the_puncher_strategy(Strategy):
         inner = stoch_val.InnerValues
         if inner is not None:
             for iv in inner:
-                stoch_signal = float(iv.Value.ToDecimal())
+                stoch_signal = float(iv.Value)
                 break
         if stoch_signal is None:
             return
 
-        rsi = float(rsi_val.ToDecimal())
+        rsi = float(rsi_val)
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

@@ -154,8 +154,8 @@ class exp_trend_magic_strategy(Strategy):
         if not cci.IsFormed or not atr.IsFormed:
             return
 
-        atr_decimal = float(atr_value.ToDecimal())
-        cci_decimal = float(cci_indicator_value.ToDecimal())
+        atr_decimal = float(atr_value)
+        cci_decimal = float(cci_indicator_value)
 
         self._update_trend_magic(candle, cci_decimal, atr_decimal)
 

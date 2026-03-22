@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import DirectionalIndex, AverageDirectionalIndex, ExponentialMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
@@ -29,31 +29,22 @@ class dmi_winner_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._dmi = None
+        self._adx = None
+        self._ma = None
         self._prev_di_plus = 0.0
         self._prev_di_minus = 0.0
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-    @property
-    def DILength(self):
-        return self._di_length.Value
-    @property
-    def ADXSmoothing(self):
-        return self._adx_smoothing.Value
-    @property
-    def KeyLevel(self):
-        return self._key_level.Value
-    @property
-    def MALength(self):
-        return self._ma_length.Value
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
 
     def OnReseted(self):
         super(dmi_winner_strategy, self).OnReseted()
+        self._dmi = None
+        self._adx = None
+        self._ma = None
         self._prev_di_plus = 0.0
         self._prev_di_minus = 0.0
         self._cooldown_remaining = 0
@@ -61,21 +52,31 @@ class dmi_winner_strategy(Strategy):
     def OnStarted(self, time):
         super(dmi_winner_strategy, self).OnStarted(time)
 
-        dmi = DirectionalIndex()
-        dmi.Length = self.DILength
+        self._dmi = DirectionalIndex()
+        self._dmi.Length = int(self._di_length.Value)
 
-        adx = AverageDirectionalIndex()
-        adx.Length = self.ADXSmoothing
+        self._adx = AverageDirectionalIndex()
+        self._adx.Length = int(self._adx_smoothing.Value)
 
-        ma = ExponentialMovingAverage()
-        ma.Length = self.MALength
+        self._ma = ExponentialMovingAverage()
+        self._ma.Length = int(self._ma_length.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(dmi, adx, ma, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._dmi, self._adx, self._ma, self._on_process).Start()
 
-    def OnProcess(self, candle, dmi_value, adx_value, ma_value):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._ma)
+            self.DrawOwnTrades(area)
+
+    def _on_process(self, candle, dmi_value, adx_value, ma_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._dmi.IsFormed or not self._adx.IsFormed or not self._ma.IsFormed:
+            return
+
         if dmi_value.Plus is None or dmi_value.Minus is None:
             return
         if adx_value.MovingAverage is None:
@@ -88,6 +89,11 @@ class dmi_winner_strategy(Strategy):
         adx_val = float(adx_value.MovingAverage)
         ma_val = float(IndicatorHelper.ToDecimal(ma_value))
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_di_plus = di_plus
+            self._prev_di_minus = di_minus
+            return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             self._prev_di_plus = di_plus
@@ -95,26 +101,28 @@ class dmi_winner_strategy(Strategy):
             return
 
         close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
+        key_level = float(self._key_level.Value)
 
         di_plus_cross_up = di_plus > di_minus and self._prev_di_plus <= self._prev_di_minus and self._prev_di_plus > 0
         di_plus_cross_down = di_plus < di_minus and self._prev_di_plus >= self._prev_di_minus and self._prev_di_plus > 0
 
-        if di_plus_cross_up and adx_val > self.KeyLevel and close > ma_val and self.Position <= 0:
+        if di_plus_cross_up and adx_val > key_level and close > ma_val and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
-        elif di_plus_cross_down and adx_val > self.KeyLevel and close < ma_val and self.Position >= 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif di_plus_cross_down and adx_val > key_level and close < ma_val and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and di_plus_cross_down:
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and di_plus_cross_up:
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
         self._prev_di_plus = di_plus
         self._prev_di_minus = di_minus

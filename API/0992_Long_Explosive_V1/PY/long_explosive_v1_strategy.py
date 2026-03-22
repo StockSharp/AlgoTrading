@@ -61,10 +61,10 @@ class long_explosive_v1_strategy(Strategy):
         inc = float(self._price_increase_percent.Value)
         dec = float(self._price_decrease_percent.Value)
         if change > inc and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif change < -dec and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
 
     def CreateClone(self):

@@ -76,8 +76,8 @@ class trix_candle_strategy(Strategy):
         close_result = self._close_tema.Process(DecimalIndicatorValue(self._close_tema, candle.ClosePrice, candle.OpenTime))
         if not open_result.IsFormed or not close_result.IsFormed:
             return
-        open_value = float(open_result.ToDecimal())
-        close_value = float(close_result.ToDecimal())
+        open_value = float(open_result)
+        close_value = float(close_result)
         if open_value < close_value:
             color = 2
         elif open_value > close_value:

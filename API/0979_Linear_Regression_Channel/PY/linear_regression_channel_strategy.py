@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class linear_regression_channel_strategy(Strategy):
@@ -40,16 +41,22 @@ class linear_regression_channel_strategy(Strategy):
     def OnStarted(self, time):
         super(linear_regression_channel_strategy, self).OnStarted(time)
         self._bars_from_signal = self._cooldown_bars.Value
+        self._closes = []
+
+        dummy_ema1 = ExponentialMovingAverage()
+        dummy_ema1.Length = 10
+        dummy_ema2 = ExponentialMovingAverage()
+        dummy_ema2.Length = 20
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._process_candle).Start()
+        subscription.Bind(dummy_ema1, dummy_ema2, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle):
+    def _process_candle(self, candle, d1, d2):
         if candle.State != CandleStates.Finished:
             return
 

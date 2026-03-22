@@ -126,9 +126,11 @@ class stochastic_breakout_strategy(Strategy):
         self._stochStdDev = StandardDeviation()
         self._stochStdDev.Length = self.LookbackPeriod
 
+        self.Indicators.Add(self._stochastic)
+
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._stochastic, self.ProcessStochastic).Start()
+        subscription.Bind(self.ProcessStochastic).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()
@@ -142,22 +144,28 @@ class stochastic_breakout_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(2, UnitTypes.Percent)
         )
-    def ProcessStochastic(self, candle, stochValue):
-        # Skip unfinished candles
+    def ProcessStochastic(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Get stochastic value (K line)
-        if stochValue.K is None:
+        stoch_result = process_candle(self._stochastic, candle)
+        if not self._stochastic.IsFormed:
             return
 
-        stochK = stochValue.K
+        k_val = stoch_result.K
+        if k_val is None:
+            return
+        stochK = float(k_val)
 
         # Calculate average and standard deviation of stochastic
-        stochAvgValue = float(process_float(self._stochAverage, stochK, candle.ServerTime, candle.State == CandleStates.Finished))
-        tempStdDevValue = float(process_float(self._stochStdDev, stochK, candle.ServerTime, candle.State == CandleStates.Finished))
+        stochAvgValue = float(process_float(self._stochAverage, stochK, candle.ServerTime, True))
+        tempStdDevValue = float(process_float(self._stochStdDev, stochK, candle.ServerTime, True))
+
+        if not self._stochAverage.IsFormed or not self._stochStdDev.IsFormed:
+            self._prevStochValue = stochK
+            self._prevStochAverage = stochAvgValue
+            self._prevStochStdDev = tempStdDevValue
+            return
 
         # First values initialization - skip trading decision
         if self._prevStochValue == 0:
@@ -167,25 +175,14 @@ class stochastic_breakout_strategy(Strategy):
             return
 
         # Calculate breakout thresholds
-        upperThreshold = self._prevStochAverage + self._prevStochStdDev * self.DeviationMultiplier
-        lowerThreshold = self._prevStochAverage - self._prevStochStdDev * self.DeviationMultiplier
+        upperThreshold = self._prevStochAverage + self._prevStochStdDev * float(self.DeviationMultiplier)
+        lowerThreshold = self._prevStochAverage - self._prevStochStdDev * float(self.DeviationMultiplier)
 
-        # Trading logic:
-        # Buy when stochastic breaks above upper threshold
-        if stochK > upperThreshold and self._prevStochValue <= upperThreshold and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Stochastic breakout UP: {0} > {1}. Buying at {2}".format(stochK, upperThreshold, candle.ClosePrice))
-        # Sell when stochastic breaks below lower threshold
-        elif stochK < lowerThreshold and self._prevStochValue >= lowerThreshold and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Stochastic breakout DOWN: {0} < {1}. Selling at {2}".format(stochK, lowerThreshold, candle.ClosePrice))
-        # Exit positions when stochastic returns to average
-        elif self.Position > 0 and stochK < self._prevStochAverage and self._prevStochValue >= self._prevStochAverage:
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Stochastic returned to average: {0} < {1}. Closing long position at {2}".format(stochK, self._prevStochAverage, candle.ClosePrice))
-        elif self.Position < 0 and stochK > self._prevStochAverage and self._prevStochValue <= self._prevStochAverage:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Stochastic returned to average: {0} > {1}. Closing short position at {2}".format(stochK, self._prevStochAverage, candle.ClosePrice))
+        # Entry only when flat (no exit logic in CS)
+        if stochK > upperThreshold and self._prevStochValue <= upperThreshold and self.Position == 0:
+            self.BuyMarket()
+        elif stochK < lowerThreshold and self._prevStochValue >= lowerThreshold and self.Position == 0:
+            self.SellMarket()
 
         # Store current values for next comparison
         self._prevStochValue = stochK

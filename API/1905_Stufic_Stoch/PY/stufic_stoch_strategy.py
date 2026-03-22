@@ -99,8 +99,8 @@ class stufic_stoch_strategy(Strategy):
         slow_result = self._slow_ma.Process(candle.ClosePrice, candle.OpenTime, True)
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
-        fast = float(fast_result.ToDecimal())
-        slow = float(slow_result.ToDecimal())
+        fast = float(fast_result)
+        slow = float(slow_result)
         k_val = stoch_value.K
         d_val = stoch_value.D
         if k_val is None or d_val is None:

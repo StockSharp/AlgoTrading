@@ -89,10 +89,14 @@ class long_only_mtf_ema_cloud_strategy(Strategy):
         crossed_up = self._prev_short <= self._prev_long and sv > lv
         crossed_down = self._prev_short >= self._prev_long and sv < lv
         if crossed_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(abs(self.Position))
             self.BuyMarket()
             self._entry_price = close
             self._cooldown = 10
         elif crossed_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(abs(self.Position))
             self.SellMarket()
             self._entry_price = close
             self._cooldown = 10
@@ -102,13 +106,13 @@ class long_only_mtf_ema_cloud_strategy(Strategy):
             sl = self._entry_price * (1.0 - sl_pct)
             tp = self._entry_price * (1.0 + tp_pct)
             if close <= sl or close >= tp:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._cooldown = 20
         if self.Position < 0 and self._entry_price > 0.0:
             sl = self._entry_price * (1.0 + sl_pct)
             tp = self._entry_price * (1.0 - tp_pct)
             if close >= sl or close <= tp:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._cooldown = 20
         self._prev_short = sv
         self._prev_long = lv

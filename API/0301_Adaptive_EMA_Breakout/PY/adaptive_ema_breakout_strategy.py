@@ -7,195 +7,128 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import KaufmanAdaptiveMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class adaptive_ema_breakout_strategy(Strategy):
     """
-    Strategy based on Adaptive EMA breakout with trend confirmation.
+    Breakout strategy that trades in the direction of a rising or falling adaptive
+    moving average when price extends beyond an ATR buffer.
     """
 
     def __init__(self):
         super(adaptive_ema_breakout_strategy, self).__init__()
 
-        # Fast EMA Period parameter for KAMA calculation.
         self._fast = self.Param("Fast", 2) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Fast period", "Fast (EMA) period for calculating KAMA", "KAMA Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(2, 10, 1)
+            .SetDisplay("Fast Period", "Fast period for KAMA smoothing", "KAMA")
 
-        # Slow EMA Period parameter for KAMA calculation.
         self._slow = self.Param("Slow", 30) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Slow period", "Slow (EMA) period for calculating KAMA", "KAMA Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 40, 5)
+            .SetDisplay("Slow Period", "Slow period for KAMA smoothing", "KAMA")
 
-        # Lookback period for KAMA calculation.
         self._lookback = self.Param("Lookback", 10) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback", "Main period for calculating KAMA", "KAMA Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 20, 5)
+            .SetDisplay("Lookback", "Main lookback period for KAMA", "KAMA")
 
-        # Stop-loss multiplier relative to ATR.
-        self._stopMultiplier = self.Param("StopMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop ATR multiplier", "ATR multiplier for stop-loss", "Strategy Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._breakout_atr_multiplier = self.Param("BreakoutAtrMultiplier", 0.75) \
+            .SetDisplay("Breakout ATR", "ATR multiple required for entry", "Signals")
 
-        # Candle type parameter.
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle type", "Type of candles for strategy", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-        # Internal state variables
-        self._is_first_candle = True
+        self._cooldown_bars = self.Param("CooldownBars", 72) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
 
-    @property
-    def Fast(self):
-        # Fast EMA Period parameter for KAMA calculation.
-        return self._fast.Value
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles for the strategy", "General")
 
-    @Fast.setter
-    def Fast(self, value):
-        self._fast.Value = value
+        self._adaptive_ema = None
+        self._atr = None
+        self._previous_adaptive_ema_value = 0.0
+        self._is_initialized = False
+        self._cooldown = 0
 
     @property
-    def Slow(self):
-        # Slow EMA Period parameter for KAMA calculation.
-        return self._slow.Value
-
-    @Slow.setter
-    def Slow(self, value):
-        self._slow.Value = value
-
-    @property
-    def Lookback(self):
-        # Lookback period for KAMA calculation.
-        return self._lookback.Value
-
-    @Lookback.setter
-    def Lookback(self, value):
-        self._lookback.Value = value
-
-    @property
-    def StopMultiplier(self):
-        # Stop-loss multiplier relative to ATR.
-        return self._stopMultiplier.Value
-
-    @StopMultiplier.setter
-    def StopMultiplier(self, value):
-        self._stopMultiplier.Value = value
-
-    @property
-    def CandleType(self):
-        # Candle type parameter.
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(adaptive_ema_breakout_strategy, self).OnReseted()
-        self._prevAdaptiveEmaValue = 0.0
-        self._is_first_candle = True
+        self._adaptive_ema = None
+        self._atr = None
+        self._previous_adaptive_ema_value = 0.0
+        self._is_initialized = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(adaptive_ema_breakout_strategy, self).OnStarted(time)
 
-        # Create indicators
-        adaptive_ema = KaufmanAdaptiveMovingAverage()
-        adaptive_ema.Length = self.Lookback
-        adaptive_ema.FastSCPeriod = self.Fast
-        adaptive_ema.SlowSCPeriod = self.Slow
-        atr = AverageTrueRange()
-        atr.Length = 14
+        self._adaptive_ema = KaufmanAdaptiveMovingAverage()
+        self._adaptive_ema.Length = int(self._lookback.Value)
+        self._adaptive_ema.FastSCPeriod = int(self._fast.Value)
+        self._adaptive_ema.SlowSCPeriod = int(self._slow.Value)
 
+        self._atr = AverageTrueRange()
+        self._atr.Length = 14
+        self._cooldown = 0
+        self._is_initialized = False
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._adaptive_ema, self._atr, self._process_candle).Start()
 
-        # Bind indicators to subscription
-        subscription.Bind(adaptive_ema, atr, self.ProcessCandle).Start()
-
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(0),
-            isStopTrailing=True
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adaptive_ema)
+            self.DrawIndicator(area, self._adaptive_ema)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, adaptive_ema_value, atr_value):
-        # Skip unfinished candles
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
+
+    def _process_candle(self, candle, adaptive_ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Initialize values on first candle
-        if self._is_first_candle:
-            self._prevAdaptiveEmaValue = adaptive_ema_value
-            self._is_first_candle = False
+        if not self._adaptive_ema.IsFormed or not self._atr.IsFormed:
             return
 
-        # Calculate trend direction
-        adaptive_ema_trend_up = adaptive_ema_value > self._prevAdaptiveEmaValue
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Define entry conditions
-        long_entry_condition = candle.ClosePrice > adaptive_ema_value and adaptive_ema_trend_up and self.Position <= 0
-        short_entry_condition = candle.ClosePrice < adaptive_ema_value and not adaptive_ema_trend_up and self.Position >= 0
+        ae = float(adaptive_ema_value)
+        av = float(atr_value)
 
-        # Define exit conditions
-        long_exit_condition = candle.ClosePrice < adaptive_ema_value and self.Position > 0
-        short_exit_condition = candle.ClosePrice > adaptive_ema_value and self.Position < 0
+        if not self._is_initialized:
+            self._previous_adaptive_ema_value = ae
+            self._is_initialized = True
+            return
 
-        # Execute trading logic
-        if long_entry_condition:
-            # Calculate position size
-            position_size = self.Volume + Math.Abs(self.Position)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._previous_adaptive_ema_value = ae
+            return
 
-            # Calculate stop loss level
-            stop_price = float(candle.ClosePrice - atr_value * self.StopMultiplier)
+        is_trend_up = ae > self._previous_adaptive_ema_value
+        is_trend_down = ae < self._previous_adaptive_ema_value
+        close_price = float(candle.ClosePrice)
+        breakout_distance = close_price - ae
+        bam = float(self._breakout_atr_multiplier.Value)
+        required_distance = av * bam
+        cd = int(self._cooldown_bars.Value)
 
-            # Enter long position
-            self.BuyMarket(position_size)
+        if self.Position == 0:
+            if is_trend_up and breakout_distance >= required_distance:
+                self.BuyMarket()
+                self._cooldown = cd
+            elif is_trend_down and breakout_distance <= -required_distance:
+                self.SellMarket()
+                self._cooldown = cd
+        elif self.Position > 0:
+            if close_price <= ae or is_trend_down:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = cd
+        elif self.Position < 0:
+            if close_price >= ae or is_trend_up:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = cd
 
-            self.LogInfo("Long entry: Price={0}, KAMA={1}, ATR={2}, Stop={3}".format(
-                candle.ClosePrice, adaptive_ema_value, atr_value, stop_price))
-        elif short_entry_condition:
-            # Calculate position size
-            position_size = self.Volume + Math.Abs(self.Position)
-
-            # Calculate stop loss level
-            stop_price = float(candle.ClosePrice + atr_value * self.StopMultiplier)
-
-            # Enter short position
-            self.SellMarket(position_size)
-
-            self.LogInfo("Short entry: Price={0}, KAMA={1}, ATR={2}, Stop={3}".format(
-                candle.ClosePrice, adaptive_ema_value, atr_value, stop_price))
-        elif long_exit_condition:
-            # Exit long position
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Long exit: Price={0}, KAMA={1}".format(
-                candle.ClosePrice, adaptive_ema_value))
-        elif short_exit_condition:
-            # Exit short position
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Short exit: Price={0}, KAMA={1}".format(
-                candle.ClosePrice, adaptive_ema_value))
-
-        # Store current value for next candle
-        self._prevAdaptiveEmaValue = adaptive_ema_value
+        self._previous_adaptive_ema_value = ae
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adaptive_ema_breakout_strategy()

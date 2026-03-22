@@ -66,12 +66,12 @@ class long_ema_advanced_exit_strategy(Strategy):
             return
         close = float(candle.ClosePrice)
         cross_up = self._prev_short <= self._prev_mid and sv > mv
-        cross_down = self._prev_short >= self._prev_mid and sv < mv
         if cross_up and close > lv and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
-        elif cross_down and close < lv and self.Position >= 0:
-            self.SellMarket()
+        cross_down = self._prev_short >= self._prev_mid and sv < mv
+        if cross_down and close < lv and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         self._prev_short = sv
         self._prev_mid = mv

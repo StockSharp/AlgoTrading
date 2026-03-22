@@ -47,7 +47,7 @@ class lorenzo_super_scalp_strategy(Strategy):
             return
         if not rsi_val.IsFormed or not bb_val.IsFormed:
             return
-        r = float(rsi_val.ToDecimal())
+        r = float(rsi_val)
         bb_upper = bb_val.UpBand
         bb_lower = bb_val.LowBand
         if bb_upper is None or bb_lower is None:

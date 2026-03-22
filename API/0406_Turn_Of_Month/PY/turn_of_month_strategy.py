@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, DayOfWeek, DateTime
+from System import TimeSpan, DayOfWeek, DateTime, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
@@ -26,16 +26,7 @@ class turn_of_month_strategy(Strategy):
         self._cooldown_remaining = 0
 
     @property
-    def DaysPrior(self):
-        return self._prior.Value
-    @property
-    def DaysAfter(self):
-        return self._after.Value
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
@@ -44,12 +35,16 @@ class turn_of_month_strategy(Strategy):
 
     def OnStarted(self, time):
         super(turn_of_month_strategy, self).OnStarted(time)
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._process_candle).Start()
 
-    def ProcessCandle(self, candle):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
@@ -57,16 +52,20 @@ class turn_of_month_strategy(Strategy):
         d = candle.OpenTime.Date
         td_left = self._trading_days_left(d)
         td_num = self._trading_day_number(d)
-        in_window = td_left <= self.DaysPrior or td_num <= self.DaysAfter
+        days_prior = int(self._prior.Value)
+        days_after = int(self._after.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        in_window = td_left <= days_prior or td_num <= days_after
 
         if in_window and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif not in_window and self.Position > 0:
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def _trading_days_left(self, d):
         cnt = 0

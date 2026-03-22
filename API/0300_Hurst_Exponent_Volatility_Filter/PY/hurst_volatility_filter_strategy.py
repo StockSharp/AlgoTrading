@@ -3,18 +3,16 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, HurstExponent
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, HurstExponent, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class hurst_volatility_filter_strategy(Strategy):
     """
-    Strategy using the Hurst exponent to identify mean-reversion markets
-    with an ATR-based volatility filter to confirm entry signals.
+    Mean-reversion strategy that enters only when Hurst indicates anti-persistent
+    behavior and ATR confirms a quiet regime.
     """
 
     def __init__(self):
@@ -41,7 +39,7 @@ class hurst_volatility_filter_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 90) \
             .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._sma = None
@@ -51,71 +49,8 @@ class hurst_volatility_filter_strategy(Strategy):
         self._cooldown = 0
 
     @property
-    def HurstPeriod(self):
-        return self._hurst_period.Value
-
-    @HurstPeriod.setter
-    def HurstPeriod(self, value):
-        self._hurst_period.Value = value
-
-    @property
-    def MAPeriod(self):
-        return self._ma_period.Value
-
-    @MAPeriod.setter
-    def MAPeriod(self, value):
-        self._ma_period.Value = value
-
-    @property
-    def ATRPeriod(self):
-        return self._atr_period.Value
-
-    @ATRPeriod.setter
-    def ATRPeriod(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def HurstThreshold(self):
-        return self._hurst_threshold.Value
-
-    @HurstThreshold.setter
-    def HurstThreshold(self, value):
-        self._hurst_threshold.Value = value
-
-    @property
-    def DeviationAtrMultiplier(self):
-        return self._deviation_atr_multiplier.Value
-
-    @DeviationAtrMultiplier.setter
-    def DeviationAtrMultiplier(self, value):
-        self._deviation_atr_multiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldown_bars.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(hurst_volatility_filter_strategy, self).OnReseted()
@@ -128,18 +63,20 @@ class hurst_volatility_filter_strategy(Strategy):
     def OnStarted(self, time):
         super(hurst_volatility_filter_strategy, self).OnStarted(time)
 
+        atr_period = int(self._atr_period.Value)
+
         self._sma = SimpleMovingAverage()
-        self._sma.Length = self.MAPeriod
+        self._sma.Length = int(self._ma_period.Value)
         self._atr = AverageTrueRange()
-        self._atr.Length = self.ATRPeriod
+        self._atr.Length = atr_period
         self._hurst_exponent = HurstExponent()
-        self._hurst_exponent.Length = self.HurstPeriod
+        self._hurst_exponent.Length = int(self._hurst_period.Value)
         self._atr_average = SimpleMovingAverage()
-        self._atr_average.Length = max(self.ATRPeriod * 2, 10)
+        self._atr_average.Length = max(atr_period * 2, 10)
         self._cooldown = 0
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._sma, self._atr, self._hurst_exponent, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._sma, self._atr, self._hurst_exponent, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -149,12 +86,9 @@ class hurst_volatility_filter_strategy(Strategy):
             self.DrawIndicator(area, self._hurst_exponent)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
 
-    def ProcessCandle(self, candle, sma_value, atr_value, hurst_value):
+    def _process_candle(self, candle, sma_value, atr_value, hurst_value):
         if candle.State != CandleStates.Finished:
             return
 
@@ -162,11 +96,14 @@ class hurst_volatility_filter_strategy(Strategy):
         atr_val = float(atr_value)
         hurst_val = float(hurst_value)
 
-        # Process ATR through average
-        atr_avg_result = process_float(self._atr_average, atr_val, candle.OpenTime, True)
-        atr_average_value = float(atr_avg_result)
+        atr_avg_input = DecimalIndicatorValue(self._atr_average, Decimal(atr_val), candle.OpenTime)
+        atr_avg_input.IsFinal = True
+        atr_average_value = float(self._atr_average.Process(atr_avg_input))
 
         if not self._sma.IsFormed or not self._atr.IsFormed or not self._hurst_exponent.IsFormed or not self._atr_average.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self._cooldown > 0:
@@ -175,9 +112,12 @@ class hurst_volatility_filter_strategy(Strategy):
 
         price = float(candle.ClosePrice)
         deviation = price - sma_val
-        required_deviation = atr_val * self.DeviationAtrMultiplier
-        is_mean_reversion_regime = hurst_val <= self.HurstThreshold
+        dev_mult = float(self._deviation_atr_multiplier.Value)
+        required_deviation = atr_val * dev_mult
+        hurst_thresh = float(self._hurst_threshold.Value)
+        is_mean_reversion_regime = hurst_val <= hurst_thresh
         is_quiet_volatility = atr_val <= atr_average_value * 1.5
+        cd = int(self._cooldown_bars.Value)
 
         if self.Position == 0:
             if not is_mean_reversion_regime or not is_quiet_volatility:
@@ -185,18 +125,18 @@ class hurst_volatility_filter_strategy(Strategy):
 
             if deviation <= -required_deviation:
                 self.BuyMarket()
-                self._cooldown = self.CooldownBars
+                self._cooldown = cd
             elif deviation >= required_deviation:
                 self.SellMarket()
-                self._cooldown = self.CooldownBars
+                self._cooldown = cd
             return
 
         if self.Position > 0 and (price >= sma_val or deviation >= -atr_val * 0.2 or not is_mean_reversion_regime):
-            self.SellMarket(abs(self.Position))
-            self._cooldown = self.CooldownBars
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = cd
         elif self.Position < 0 and (price <= sma_val or deviation <= atr_val * 0.2 or not is_mean_reversion_regime):
-            self.BuyMarket(abs(self.Position))
-            self._cooldown = self.CooldownBars
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cd
 
     def CreateClone(self):
         return hurst_volatility_filter_strategy()

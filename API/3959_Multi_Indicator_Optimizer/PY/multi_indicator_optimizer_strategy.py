@@ -94,8 +94,8 @@ class multi_indicator_optimizer_strategy(Strategy):
         cur_osma = float(osma_m) - float(osma_s) if osma_m is not None and osma_s is not None else None
         if cur_osma is None:
             return
-        cur_ao = float(ao_value.ToDecimal())
-        cur_williams = float(williams_value.ToDecimal())
+        cur_ao = float(ao_value)
+        cur_williams = float(williams_value)
         stoch_typed = stoch_value
         cur_k = stoch_typed.K
         cur_d = stoch_typed.D

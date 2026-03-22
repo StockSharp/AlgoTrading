@@ -3,19 +3,14 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, ExponentialMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 
 class golden_ratio_cubes_strategy(Strategy):
-    """Golden Ratio Cubes Strategy.
-    Uses BB width as a range proxy and golden ratio extensions for breakout levels.
-    Buys when price breaks above upper BB.
-    Sells when price breaks below lower BB.
-    Exits at middle band.
-    """
+    """Golden Ratio Cubes Strategy."""
 
     def __init__(self):
         super(golden_ratio_cubes_strategy, self).__init__()
@@ -29,76 +24,84 @@ class golden_ratio_cubes_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._bb = None
+        self._ema = None
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(golden_ratio_cubes_strategy, self).OnReseted()
+        self._bb = None
+        self._ema = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(golden_ratio_cubes_strategy, self).OnStarted(time)
 
-        bb = BollingerBands()
-        bb.Length = self._bb_length.Value
-        bb.Width = 2.0
+        bb_len = int(self._bb_length.Value)
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self._bb_length.Value
+        self._bb = BollingerBands()
+        self._bb.Length = bb_len
+        self._bb.Width = 2.0
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(bb, ema, self.OnProcess).Start()
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = bb_len
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._bb, self._ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, bb)
+            self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, bb_value, ema_value):
+    def _on_process(self, candle, bb_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        upper = bb_value.UpBand
-        lower = bb_value.LowBand
-        mid = bb_value.MovingAverage
-
-        if upper is None or lower is None or mid is None:
+        if not self._bb.IsFormed or not self._ema.IsFormed:
             return
 
-        upper = float(upper)
-        lower = float(lower)
-        mid = float(mid)
+        if bb_value.IsEmpty or ema_value.IsEmpty:
+            return
+
+        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
+            return
+
+        upper = float(bb_value.UpBand)
+        lower = float(bb_value.LowBand)
+        mid = float(bb_value.MovingAverage)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
 
         price = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
 
-        # Buy: price breaks above upper BB
         if price > upper and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Sell: price breaks below lower BB
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif price < lower and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Exit long: price returns to middle
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and price < mid:
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Exit short: price returns to middle
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and price > mid:
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return golden_ratio_cubes_strategy()

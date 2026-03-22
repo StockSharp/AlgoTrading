@@ -47,7 +47,7 @@ class octopus_nest_strategy(Strategy):
             return
         if not ema_value.IsFormed or not bb_value.IsFormed:
             return
-        ema_val = float(ema_value.ToDecimal())
+        ema_val = float(ema_value)
         bb_upper = bb_value.UpBand
         bb_lower = bb_value.LowBand
         if bb_upper is None or bb_lower is None:

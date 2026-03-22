@@ -81,7 +81,7 @@ class xkri_histogram_strategy(Strategy):
         smooth_result = self._smooth.Process(kri, candle.OpenTime, True)
         if not smooth_result.IsFormed:
             return
-        smooth = float(smooth_result.ToDecimal())
+        smooth = float(smooth_result)
 
         self._prev2 = self._prev
         self._prev = self._last

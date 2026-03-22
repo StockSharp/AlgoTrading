@@ -4,130 +4,205 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math, Array
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
 
 
 class rd_expenditures_strategy(Strategy):
-    """Long stocks with high R&D-to-market-value ratio and short low ones."""
+    """R&D expenditures strategy that trades the primary instrument when its synthetic innovation intensity outperforms a benchmark instrument."""
 
     def __init__(self):
-        super().__init__()
-        self._univ = self.Param("Universe", Array.Empty[Security]()) \
-            .SetDisplay("Universe", "Securities to trade", "General")
-        self._quint = self.Param("Quintile", 5) \
-            .SetDisplay("Quintile", "Number of quintiles", "General")
-        self._min_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetDisplay("Min Trade USD", "Minimum trade value in USD", "General")
-        self._tf = self.Param("CandleType", tf(1 * 1440)) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._weights = {}
-        self._latest = {}
-        self._last = None
+        super(rd_expenditures_strategy, self).__init__()
 
-    @property
-    def universe(self):
-        return self._univ.Value
+        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
+            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
 
-    @universe.setter
-    def universe(self, value):
-        self._univ.Value = value
+        self._research_length = self.Param("ResearchLength", 10) \
+            .SetRange(2, 80) \
+            .SetDisplay("Research Length", "Smoothing length for the synthetic research intensity", "Indicators")
+
+        self._normalization_period = self.Param("NormalizationPeriod", 24) \
+            .SetRange(5, 120) \
+            .SetDisplay("Normalization Period", "Lookback period used to normalize the innovation spread", "Indicators")
+
+        self._entry_threshold = self.Param("EntryThreshold", 1.1) \
+            .SetRange(0.2, 5.0) \
+            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
+
+        self._exit_threshold = self.Param("ExitThreshold", 0.25) \
+            .SetRange(0.0, 2.0) \
+            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
+
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetRange(0, 120) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
+
+        self._stop_loss = self.Param("StopLoss", 3.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Time frame for candles", "General")
+
+        self._benchmark = None
+        self._primary_research_base = None
+        self._benchmark_research_base = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._latest_primary_score = 0.0
+        self._latest_benchmark_score = 0.0
+        self._previous_z_score = None
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
-        return self._tf.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._tf.Value = value
-
-    @property
-    def min_trade_usd(self):
-        return self._min_usd.Value
-
-    @min_trade_usd.setter
-    def min_trade_usd(self, value):
-        self._min_usd.Value = value
+        return self._candle_type.Value
 
     def GetWorkingSecurities(self):
-        for s in self.universe:
-            yield s, self.candle_type
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._security2_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
-        super().OnReseted()
-        self._weights.clear()
-        self._latest.clear()
-        self._last = None
+        super(rd_expenditures_strategy, self).OnReseted()
+        self._benchmark = None
+        self._primary_research_base = None
+        self._benchmark_research_base = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._latest_primary_score = 0.0
+        self._latest_benchmark_score = 0.0
+        self._previous_z_score = None
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
-        if not self.universe:
-            raise Exception("Universe must not be empty")
-        super().OnStarted(time)
-        trig = self.universe[0]
-        self.SubscribeCandles(self.candle_type, True, trig).Bind(lambda c, s=trig: self._process(c, s)).Start()
+        super(rd_expenditures_strategy, self).OnStarted(time)
 
-    def _process(self, candle, sec):
+        sec2_id = str(self._security2_id.Value)
+        if not sec2_id:
+            raise Exception("Benchmark security identifier is not specified.")
+
+        s = Security()
+        s.Id = sec2_id
+        self._benchmark = s
+
+        research_len = int(self._research_length.Value)
+        norm_period = int(self._normalization_period.Value)
+
+        self._primary_research_base = ExponentialMovingAverage()
+        self._primary_research_base.Length = research_len
+        self._benchmark_research_base = ExponentialMovingAverage()
+        self._benchmark_research_base.Length = research_len
+        self._spread_average = SimpleMovingAverage()
+        self._spread_average.Length = norm_period
+        self._spread_deviation = StandardDeviation()
+        self._spread_deviation.Length = norm_period
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
+
+        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
+        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, benchmark_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessPrimaryCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        self._latest[sec] = candle.ClosePrice
-        self._on_daily(candle.OpenTime.Date)
 
-    def _on_daily(self, d):
-        if self._last == d:
+        self._latest_primary_score = self.UpdateResearchScore(self._primary_research_base, candle)
+        self._primary_updated = True
+        self.TryProcessSpread(candle.OpenTime)
+
+    def ProcessBenchmarkCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
-        self._last = d
-        if d.Day != 1:
+
+        self._latest_benchmark_score = self.UpdateResearchScore(self._benchmark_research_base, candle)
+        self._benchmark_updated = True
+        self.TryProcessSpread(candle.OpenTime)
+
+    def UpdateResearchScore(self, average, candle):
+        price_base = max(float(candle.OpenPrice), 1.0)
+        range_ratio = (float(candle.HighPrice) - float(candle.LowPrice)) / price_base
+        body_ratio = abs(float(candle.ClosePrice) - float(candle.OpenPrice)) / price_base
+        innovation_proxy = (range_ratio * 8.0) + (body_ratio * 4.0) + 1.0
+
+        iv = DecimalIndicatorValue(average, innovation_proxy, candle.OpenTime)
+        iv.IsFinal = True
+        return float(average.Process(iv))
+
+    def TryProcessSpread(self, time):
+        if not self._primary_updated or not self._benchmark_updated:
             return
-        self._rebalance()
 
-    def _rebalance(self):
-        ratio = {}
-        for s in self.universe:
-            ok, r = self._try_get_ratio(s)
-            if ok:
-                ratio[s] = r
-        if len(ratio) < self._quint.Value * 2:
+        self._primary_updated = False
+        self._benchmark_updated = False
+
+        spread = self._latest_primary_score - self._latest_benchmark_score
+
+        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
+        mean_iv.IsFinal = True
+        mean = float(self._spread_average.Process(mean_iv))
+
+        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
+        dev_iv.IsFinal = True
+        deviation = float(self._spread_deviation.Process(dev_iv))
+
+        if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return
-        q = len(ratio) // self._quint.Value
-        longs = sorted(ratio.items(), key=lambda kv: kv[1], reverse=True)[:q]
-        shorts = sorted(ratio.items(), key=lambda kv: kv[1])[:q]
-        self._weights.clear()
-        wl = 1.0 / len(longs)
-        ws = -1.0 / len(shorts)
-        for s, _ in longs:
-            self._weights[s] = wl
-        for s, _ in shorts:
-            self._weights[s] = ws
-        for pos in list(self.Positions):
-            if pos.Security not in self._weights:
-                self._move(pos.Security, 0)
-        port = self.Portfolio.CurrentValue or 0.0
-        for sec, w in self._weights.items():
-            price = self._latest.get(sec, 0)
-            if price > 0:
-                self._move(sec, w * port / price)
 
-    def _move(self, sec, tgt):
-        diff = tgt - self._pos(sec)
-        price = self._latest.get(sec, 0)
-        if price <= 0 or abs(diff) * price < self.min_trade_usd:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order, Security
-        self.RegisterOrder(Order(Security=sec, Portfolio=self.Portfolio, Side=side,
-                                 Volume=abs(diff), Type=OrderTypes.Market,
-                                 Comment="RDmom"))
 
-    def _pos(self, sec):
-        val = self.GetPositionValue(sec, self.Portfolio)
-        return val or 0.0
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-    def _try_get_ratio(self, sec):
-        # placeholder
-        return False, 0
+        z_score = (spread - mean) / deviation
+        entry_thresh = float(self._entry_threshold.Value)
+        exit_thresh = float(self._exit_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_entry = self._previous_z_score is not None and self._previous_z_score < entry_thresh and z_score >= entry_thresh
+        bearish_entry = self._previous_z_score is not None and self._previous_z_score > -entry_thresh and z_score <= -entry_thresh
+
+        if self._cooldown_remaining == 0 and self.Position == 0:
+            if bullish_entry:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif bearish_entry:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
+        elif self.Position > 0 and z_score <= exit_thresh:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and z_score >= -exit_thresh:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+
+        self._previous_z_score = z_score
 
     def CreateClone(self):
         return rd_expenditures_strategy()

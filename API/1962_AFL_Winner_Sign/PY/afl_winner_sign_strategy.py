@@ -92,11 +92,11 @@ class afl_winner_sign_strategy(Strategy):
 
         k_result = self._fast.Process(
             DecimalIndicatorValue(self._fast, float(momentum), candle.OpenTime, True))
-        k = float(k_result.ToDecimal())
+        k = float(k_result)
 
         d_result = self._slow.Process(
             DecimalIndicatorValue(self._slow, k, candle.OpenTime, True))
-        d = float(d_result.ToDecimal())
+        d = float(d_result)
 
         if not self._fast.IsFormed or not self._slow.IsFormed:
             return

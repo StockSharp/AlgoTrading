@@ -79,7 +79,7 @@ class knux_strategy(Strategy):
             self._prev_fast = fast
             return
 
-        slow = float(slow_result.ToDecimal())
+        slow = float(slow_result)
 
         if not self._is_initialized:
             self._prev_fast = fast

@@ -195,14 +195,14 @@ class day_trading_impulse_strategy(Strategy):
         if not sar_value.IsFinal or not macd_value.IsFinal or not stochastic_value.IsFinal or not momentum_value.IsFinal:
             return
 
-        sar = float(sar_value.ToDecimal())
+        sar = float(sar_value)
         previous_sar = self._previous_sar
         self._previous_sar = sar
 
         if previous_sar is None:
             return
 
-        mom = float(momentum_value.ToDecimal())
+        mom = float(momentum_value)
         close_price = float(candle.ClosePrice)
 
         macd_val = float(macd_value.Macd) if hasattr(macd_value, 'Macd') else 0.0

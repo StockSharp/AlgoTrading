@@ -87,8 +87,8 @@ class genie_strategy(Strategy):
             return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
-        sar_current = float(sar_value.ToDecimal())
-        rsi = float(rsi_value.ToDecimal())
+        sar_current = float(sar_value)
+        rsi = float(rsi_value)
         if self._prev_candle is None:
             self._prev_sar = sar_current
             self._prev_candle = candle

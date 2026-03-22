@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -42,18 +42,6 @@ class advanced_adaptive_grid_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
-
     def OnReseted(self):
         super(advanced_adaptive_grid_strategy, self).OnReseted()
         self._entry_price = 0.0
@@ -62,13 +50,15 @@ class advanced_adaptive_grid_strategy(Strategy):
     def OnStarted(self, time):
         super(advanced_adaptive_grid_strategy, self).OnStarted(time)
         rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        rsi.Length = int(self._rsi_length.Value)
         short_ma = SimpleMovingAverage()
-        short_ma.Length = self._short_ma_length.Value
+        short_ma.Length = int(self._short_ma_length.Value)
         long_ma = SimpleMovingAverage()
-        long_ma.Length = self._long_ma_length.Value
+        long_ma.Length = int(self._long_ma_length.Value)
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, short_ma, long_ma, self.OnProcess).Start()
+        subscription.Bind(rsi, short_ma, long_ma, self._on_process).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -76,9 +66,13 @@ class advanced_adaptive_grid_strategy(Strategy):
             self.DrawIndicator(area, long_ma)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, rsi_val, short_ma_val, long_ma_val):
+    def _on_process(self, candle, rsi_val, short_ma_val, long_ma_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         current_price = float(candle.ClosePrice)
         rsi_v = float(rsi_val)
         short_v = float(short_ma_val)
@@ -89,45 +83,52 @@ class advanced_adaptive_grid_strategy(Strategy):
         tp_pct = float(self._take_profit_percent.Value)
         ob = float(self._rsi_overbought.Value)
         os_level = float(self._rsi_oversold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        # Check stop/TP for existing positions
         if self.Position > 0 and self._entry_price > 0:
             stop_price = self._entry_price * (1.0 - sl_pct / 100.0)
             tp_price = self._entry_price * (1.0 + tp_pct / 100.0)
             if current_price <= stop_price or current_price >= tp_price:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.cooldown_bars
+                self._cooldown_remaining = cooldown
                 return
         elif self.Position < 0 and self._entry_price > 0:
             stop_price = self._entry_price * (1.0 + sl_pct / 100.0)
             tp_price = self._entry_price * (1.0 - tp_pct / 100.0)
             if current_price >= stop_price or current_price <= tp_price:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.cooldown_bars
+                self._cooldown_remaining = cooldown
                 return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
+
+        # Entry logic
         if bullish and rsi_v < os_level and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
             self._entry_price = current_price
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif bearish and rsi_v > ob and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
             self._entry_price = current_price
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
+        # Trend reversal exit
         elif self.Position > 0 and bearish and rsi_v > ob:
-            self.SellMarket()
+            self.SellMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and bullish and rsi_v < os_level:
-            self.BuyMarket()
+            self.BuyMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return advanced_adaptive_grid_strategy()

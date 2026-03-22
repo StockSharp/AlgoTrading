@@ -3,183 +3,115 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange, SimpleMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class cci_with_volatility_filter_strategy(Strategy):
     """
-    Strategy based on CCI with Volatility Filter.
+    Strategy based on CCI with an ATR-based volatility filter.
     """
 
     def __init__(self):
         super(cci_with_volatility_filter_strategy, self).__init__()
 
-        # CCI period parameter.
-        self._cciPeriod = self.Param("CciPeriod", 20) \
+        self._cci_period = self.Param("CciPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("CCI Period", "Period for CCI calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
 
-        # ATR period parameter.
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 28, 7)
+            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        # CCI oversold level parameter.
-        self._cciOversold = self.Param("CciOversold", -100) \
-            .SetDisplay("CCI Oversold", "CCI oversold level", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(-150, -50, 25)
+        self._cci_oversold = self.Param("CciOversold", -100.0) \
+            .SetDisplay("CCI Oversold", "CCI oversold level", "Indicators")
 
-        # CCI overbought level parameter.
-        self._cciOverbought = self.Param("CciOverbought", 100) \
-            .SetDisplay("CCI Overbought", "CCI overbought level", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(50, 150, 25)
+        self._cci_overbought = self.Param("CciOverbought", 100.0) \
+            .SetDisplay("CCI Overbought", "CCI overbought level", "Indicators")
 
-        # Candle type parameter.
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 24) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal indicators
-        self._atrSma = None
+        self._cooldown_remaining = 0
 
     @property
-    def CciPeriod(self):
-        return self._cciPeriod.Value
-
-    @CciPeriod.setter
-    def CciPeriod(self, value):
-        self._cciPeriod.Value = value
-
-    @property
-    def AtrPeriod(self):
-        return self._atrPeriod.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atrPeriod.Value = value
-
-    @property
-    def CciOversold(self):
-        return self._cciOversold.Value
-
-    @CciOversold.setter
-    def CciOversold(self, value):
-        self._cciOversold.Value = value
-
-    @property
-    def CciOverbought(self):
-        return self._cciOverbought.Value
-
-    @CciOverbought.setter
-    def CciOverbought(self, value):
-        self._cciOverbought.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(cci_with_volatility_filter_strategy, self).OnReseted()
-        self._atrSma = None
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(cci_with_volatility_filter_strategy, self).OnStarted(time)
 
-        # Create indicators
-        cci = CommodityChannelIndex()
-        cci.Length = self.CciPeriod
-        atr = AverageTrueRange()
-        atr.Length = self.AtrPeriod
-        self._atrSma = SimpleMovingAverage()
-        self._atrSma.Length = self.AtrPeriod
+        self._cci = CommodityChannelIndex()
+        self._cci.Length = int(self._cci_period.Value)
+        self._atr = AverageTrueRange()
+        self._atr.Length = int(self._atr_period.Value)
+        self._atr_sma = SimpleMovingAverage()
+        self._atr_sma.Length = int(self._atr_period.Value)
+        self._cooldown_remaining = 0
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._process_candle).Start()
 
-        subscription.Bind(cci, atr, lambda candle, cci_value, atr_value: self._on_candle(candle, cci_value, atr_value)).Start()
-
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, cci)
-            self.DrawIndicator(area, atr)
             self.DrawOwnTrades(area)
 
-        # Setup position protection
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent)
-        )
-    def _on_candle(self, candle, cci_value, atr_value):
-        # Calculate ATR average
-        atr_avg = float(
-            process_float(
-                self._atrSma,
-                atr_value,
-                candle.ServerTime,
-                candle.State == CandleStates.Finished,
-            )
+            Unit(2, UnitTypes.Percent),
+            Unit(1, UnitTypes.Percent)
         )
 
-        # Process the strategy logic
-        self.ProcessStrategy(candle, cci_value, atr_value, atr_avg)
-
-    def ProcessStrategy(self, candle, cciValue, atrValue, atrAvg):
-        # Skip unfinished candles
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Check volatility - only trade in low volatility environment
-        isLowVolatility = atrValue < atrAvg
+        cci_result = self._cci.Process(CandleIndicatorValue(self._cci, candle))
+        atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
 
-        # Trading logic - only enter during low volatility
-        if isLowVolatility:
-            if cciValue < self.CciOversold and self.Position <= 0:
-                # CCI oversold in low volatility - Go long
-                self.CancelActiveOrders()
+        if not cci_result.IsFormed or not atr_result.IsFormed:
+            return
 
-                # Calculate position size
-                volume = self.Volume + Math.Abs(self.Position)
+        atr_val = float(atr_result)
 
-                # Enter long position
-                self.BuyMarket(volume)
-            elif cciValue > self.CciOverbought and self.Position >= 0:
-                # CCI overbought in low volatility - Go short
-                self.CancelActiveOrders()
+        atr_avg_input = DecimalIndicatorValue(self._atr_sma, Decimal(atr_val), candle.ServerTime)
+        atr_avg_input.IsFinal = True
+        atr_avg_result = self._atr_sma.Process(atr_avg_input)
 
-                # Calculate position size
-                volume = self.Volume + Math.Abs(self.Position)
+        if not atr_avg_result.IsFormed:
+            return
 
-                # Enter short position
-                self.SellMarket(volume)
+        cci_val = float(cci_result)
+        average_atr = float(atr_avg_result)
 
-        # Exit logic - when CCI crosses over zero
-        if (self.Position > 0 and cciValue > 0) or (self.Position < 0 and cciValue < 0):
-            # Close position
-            self.ClosePosition()
+        is_tradable_volatility = average_atr <= 0.0 or atr_val <= average_atr * 10.0
+
+        if self._cooldown_remaining > 0 or not is_tradable_volatility:
+            return
+
+        oversold = float(self._cci_oversold.Value)
+        overbought = float(self._cci_overbought.Value)
+        cd = int(self._signal_cooldown_bars.Value)
+
+        if self.Position == 0 and cci_val <= oversold:
+            self.BuyMarket()
+            self._cooldown_remaining = cd
+        elif self.Position == 0 and cci_val >= overbought:
+            self.SellMarket()
+            self._cooldown_remaining = cd
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return cci_with_volatility_filter_strategy()
-

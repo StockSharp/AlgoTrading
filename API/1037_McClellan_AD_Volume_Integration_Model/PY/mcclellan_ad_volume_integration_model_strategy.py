@@ -72,8 +72,8 @@ class mcclellan_ad_volume_integration_model_strategy(Strategy):
         weighted_ad = ad_line * vol
         short_res = self._ema_short.Process(DecimalIndicatorValue(self._ema_short, weighted_ad, candle.OpenTime))
         long_res = self._ema_long.Process(DecimalIndicatorValue(self._ema_long, weighted_ad, candle.OpenTime))
-        short_val = float(short_res.ToDecimal())
-        long_val = float(long_res.ToDecimal())
+        short_val = float(short_res)
+        long_val = float(long_res)
         oscillator = short_val - long_val
         threshold = float(self._osc_threshold_long.Value)
         long_entry = self._has_prev_oscillator and self._previous_oscillator < threshold and oscillator > threshold

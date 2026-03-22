@@ -85,8 +85,8 @@ class fast2_crossover_strategy(Strategy):
         if fast_result.IsEmpty or slow_result.IsEmpty or not self._fast.IsFormed or not self._slow.IsFormed:
             return
 
-        f = float(fast_result.ToDecimal())
-        s = float(slow_result.ToDecimal())
+        f = float(fast_result)
+        s = float(slow_result)
 
         if self._has_prev_average:
             if self._prev_fast > self._prev_slow and f < s and self.Position <= 0:

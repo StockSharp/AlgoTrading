@@ -91,6 +91,8 @@ class medico_action_zone_self_adjust_tf_version_2_strategy(Strategy):
     def _process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         same_tf = (self.higher_candle_type == self.candle_type)
 

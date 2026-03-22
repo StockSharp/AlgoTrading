@@ -122,7 +122,7 @@ class starter2005_strategy(Strategy):
         ma = float(ma_value)
 
         cci_result = self._cci.Process(candle)
-        cci = float(cci_result.ToDecimal()) if cci_result is not None else 0.0
+        cci = float(cci_result) if cci_result is not None else 0.0
 
         if not self._ema.IsFormed or not self._cci.IsFormed:
             self._previous_ma = ma

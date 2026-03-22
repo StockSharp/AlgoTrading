@@ -4,28 +4,21 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import CandleStates
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class adaptive_hma_plus_strategy(Strategy):
-    """
-    Strategy based on Hull Moving Average slope with ATR volatility filter.
-    Enters long when HMA slope is positive and volatility is expanding.
-    Enters short when HMA slope is negative and volatility is expanding.
-    """
+    """Adaptive HMA Plus Strategy."""
 
     def __init__(self):
         super(adaptive_hma_plus_strategy, self).__init__()
 
         self._hma_length = self.Param("HmaLength", 20) \
-            .SetGreaterThanZero() \
             .SetDisplay("HMA Length", "Hull Moving Average period", "General")
-
-        self._candle_type = self.Param("CandleType", tf(30)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
 
@@ -33,28 +26,8 @@ class adaptive_hma_plus_strategy(Strategy):
         self._cooldown_remaining = 0
 
     @property
-    def HmaLength(self):
-        return self._hma_length.Value
-
-    @HmaLength.setter
-    def HmaLength(self, value):
-        self._hma_length.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldown_bars.Value = value
 
     def OnReseted(self):
         super(adaptive_hma_plus_strategy, self).OnReseted()
@@ -65,14 +38,14 @@ class adaptive_hma_plus_strategy(Strategy):
         super(adaptive_hma_plus_strategy, self).OnStarted(time)
 
         hma = HullMovingAverage()
-        hma.Length = self.HmaLength
+        hma.Length = int(self._hma_length.Value)
         atr_short = AverageTrueRange()
         atr_short.Length = 14
         atr_long = AverageTrueRange()
         atr_long.Length = 46
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(hma, atr_short, atr_long, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(hma, atr_short, atr_long, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -80,49 +53,47 @@ class adaptive_hma_plus_strategy(Strategy):
             self.DrawIndicator(area, hma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, hma_value, atr_short_value, atr_long_value):
+    def _on_process(self, candle, hma_value, atr_short_value, atr_long_value):
         if candle.State != CandleStates.Finished:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_hma = hma_value
+            self._prev_hma = float(hma_value)
             return
 
+        hma_v = float(hma_value)
+
         if self._prev_hma == 0:
-            self._prev_hma = hma_value
+            self._prev_hma = hma_v
             return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
-            self._prev_hma = hma_value
+            self._prev_hma = hma_v
             return
 
-        slope = hma_value - self._prev_hma
-        vol_expanding = atr_short_value > atr_long_value
+        slope = hma_v - self._prev_hma
+        vol_expanding = float(atr_short_value) > float(atr_long_value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        # Buy: HMA slope positive + volatility expanding
         if slope > 0 and vol_expanding and self.Position <= 0:
             if self.Position < 0:
                 self.BuyMarket(Math.Abs(self.Position))
             self.BuyMarket(self.Volume)
-            self._cooldown_remaining = self.CooldownBars
-        # Sell: HMA slope negative + volatility expanding
+            self._cooldown_remaining = cooldown
         elif slope < 0 and vol_expanding and self.Position >= 0:
             if self.Position > 0:
                 self.SellMarket(Math.Abs(self.Position))
             self.SellMarket(self.Volume)
-            self._cooldown_remaining = self.CooldownBars
-        # Exit long: slope turns negative
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and slope <= 0:
             self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = self.CooldownBars
-        # Exit short: slope turns positive
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and slope >= 0:
             self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = self.CooldownBars
+            self._cooldown_remaining = cooldown
 
-        self._prev_hma = hma_value
+        self._prev_hma = hma_v
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adaptive_hma_plus_strategy()

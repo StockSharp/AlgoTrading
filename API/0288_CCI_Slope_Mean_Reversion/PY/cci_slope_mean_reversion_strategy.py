@@ -3,198 +3,156 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class cci_slope_mean_reversion_strategy(Strategy):
-    """CCI Slope Mean Reversion Strategy - strategy based on mean reversion of CCI slope.
-
+    """
+    CCI slope mean reversion strategy.
+    Trades reversions from extreme CCI slopes and exits when the slope returns to its recent average.
     """
 
     def __init__(self):
         super(cci_slope_mean_reversion_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._cci_period = self.Param("CciPeriod", 20) \
-            .SetDisplay("CCI Period", "Commodity Channel Index period", "CCI Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 40, 5)
+            .SetGreaterThanZero() \
+            .SetDisplay("CCI Period", "Commodity Channel Index period", "CCI Settings")
 
         self._slope_lookback = self.Param("SlopeLookback", 20) \
-            .SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetGreaterThanZero() \
+            .SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings")
 
-        self._threshold_multiplier = self.Param("ThresholdMultiplier", 2.0) \
-            .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetGreaterThanZero() \
+            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._entry_cci_magnitude = self.Param("EntryCciMagnitude", 100.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Entry CCI Magnitude", "Minimum absolute CCI value required for entries", "Signal Filters")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state variables
+        self._cci = None
         self._previous_cci_value = 0.0
-        self._current_slope = 0.0
-        self._average_slope = 0.0
-        self._slope_std_dev = 0.0
-        self._slope_count = 0
-        self._sum_slopes = 0.0
-        self._sum_squared_diff = 0.0
+        self._slope_history = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
-    # CCI period.
-    @property
-    def cci_period(self):
-        return self._cci_period.Value
-
-    @cci_period.setter
-    def cci_period(self, value):
-        self._cci_period.Value = value
-
-    # Period for calculating slope statistics.
-    @property
-    def slope_lookback(self):
-        return self._slope_lookback.Value
-
-    @slope_lookback.setter
-    def slope_lookback(self, value):
-        self._slope_lookback.Value = value
-
-    # Threshold multiplier for standard deviation.
-    @property
-    def threshold_multiplier(self):
-        return self._threshold_multiplier.Value
-
-    @threshold_multiplier.setter
-    def threshold_multiplier(self, value):
-        self._threshold_multiplier.Value = value
-
-    # Stop-loss percentage.
-    @property
-    def stop_loss_percent(self):
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    # Candle type.
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(cci_slope_mean_reversion_strategy, self).OnReseted()
+        self._cci = None
         self._previous_cci_value = 0.0
-        self._current_slope = 0.0
-        self._average_slope = 0.0
-        self._slope_std_dev = 0.0
-        self._slope_count = 0
-        self._sum_slopes = 0.0
-        self._sum_squared_diff = 0.0
+        lb = int(self._slope_lookback.Value)
+        self._slope_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
-        """Initialize cci_slope_mean_reversion_strategy."""
         super(cci_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Reset variables
+        lb = int(self._slope_lookback.Value)
+        self._slope_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
 
-        # Create CCI indicator
-        cci = CommodityChannelIndex()
-        cci.Length = self.cci_period
+        self._cci = CommodityChannelIndex()
+        self._cci.Length = int(self._cci_period.Value)
 
-        # Subscribe to candles and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(cci, self.ProcessCandle).Start()
+        subscription.Bind(self._cci, self._process_candle).Start()
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart if available
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, cci)
+            self.DrawIndicator(area, self._cci)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, cci_value):
+    def _process_candle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Calculate CCI slope only if we have previous CCI value
-        if self._previous_cci_value != 0:
-            # Calculate current slope
-            self._current_slope = cci_value - self._previous_cci_value
+        if not self._cci.IsFormed:
+            return
 
-            # Update statistics
-            self._slope_count += 1
-            self._sum_slopes += self._current_slope
+        cv = float(cci_value)
 
-            # Update average slope
-            if self._slope_count > 0:
-                self._average_slope = self._sum_slopes / self._slope_count
+        if not self._is_initialized:
+            self._previous_cci_value = cv
+            self._is_initialized = True
+            return
 
-            # Calculate sum of squared differences for std dev
-            self._sum_squared_diff += (self._current_slope - self._average_slope) * (self._current_slope - self._average_slope)
+        slope = cv - self._previous_cci_value
+        self._previous_cci_value = cv
 
-            # Calculate standard deviation after we have enough samples
-            if self._slope_count >= self.slope_lookback:
-                self._slope_std_dev = Math.Sqrt(self._sum_squared_diff / self._slope_count)
+        lb = int(self._slope_lookback.Value)
+        self._slope_history[self._current_index] = slope
+        self._current_index = (self._current_index + 1) % lb
 
-                # Remove oldest slope value contribution (simple approximation)
-                if self._slope_count > self.slope_lookback:
-                    self._slope_count = self.slope_lookback
-                    self._sum_slopes = self._average_slope * self.slope_lookback
-                    self._sum_squared_diff = self._slope_std_dev * self._slope_std_dev * self.slope_lookback
+        if self._filled_count < lb:
+            self._filled_count += 1
 
-                # Calculate entry thresholds
-                lower_threshold = self._average_slope - self.threshold_multiplier * self._slope_std_dev
-                upper_threshold = self._average_slope + self.threshold_multiplier * self._slope_std_dev
+        if self._filled_count < lb:
+            return
 
-                # Trading logic
-                if self._current_slope < lower_threshold and self.Position <= 0:
-                    # Slope is below lower threshold (CCI falling rapidly) - mean reversion buy signal
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo("BUY Signal: CCI Slope {0:F6} < Lower Threshold {1:F6}".format(
-                        self._current_slope, lower_threshold))
-                elif self._current_slope > upper_threshold and self.Position >= 0:
-                    # Slope is above upper threshold (CCI rising rapidly) - mean reversion sell signal
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-                    self.LogInfo("SELL Signal: CCI Slope {0:F6} > Upper Threshold {1:F6}".format(
-                        self._current_slope, upper_threshold))
-                elif self._current_slope > self._average_slope and self.Position > 0:
-                    # Exit long position when slope returns to average (profit target)
-                    self.SellMarket(self.Position)
-                    self.LogInfo("EXIT LONG: CCI Slope {0:F6} returned to average {1:F6}".format(
-                        self._current_slope, self._average_slope))
-                elif self._current_slope < self._average_slope and self.Position < 0:
-                    # Exit short position when slope returns to average (profit target)
-                    self.BuyMarket(Math.Abs(self.Position))
-                    self.LogInfo("EXIT SHORT: CCI Slope {0:F6} returned to average {1:F6}".format(
-                        self._current_slope, self._average_slope))
+        avg_slope = 0.0
+        for i in range(lb):
+            avg_slope += self._slope_history[i]
+        avg_slope /= float(lb)
 
-        # Save current CCI value for next calculation
-        self._previous_cci_value = cci_value
+        sum_sq = 0.0
+        for i in range(lb):
+            diff = self._slope_history[i] - avg_slope
+            sum_sq += diff * diff
+        std_slope = math.sqrt(sum_sq / float(lb))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        tm = float(self._threshold_multiplier.Value)
+        lower_threshold = avg_slope - tm * std_slope
+        upper_threshold = avg_slope + tm * std_slope
+        entry_mag = float(self._entry_cci_magnitude.Value)
+
+        if self.Position == 0:
+            if slope < lower_threshold and cv <= -entry_mag:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif slope > upper_threshold and cv >= entry_mag:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0 and slope >= avg_slope:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0 and slope <= avg_slope:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return cci_slope_mean_reversion_strategy()

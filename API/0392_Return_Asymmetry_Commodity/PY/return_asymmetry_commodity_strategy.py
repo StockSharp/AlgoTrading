@@ -1,162 +1,244 @@
 import clr
+import collections
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Array, Math
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
+
 
 class return_asymmetry_commodity_strategy(Strategy):
-    """Commodity return asymmetry strategy."""
-
-    class Win:
-        def __init__(self):
-            self.px = []
+    """Return asymmetry strategy that trades the primary commodity when its positive-versus-negative return balance diverges from a benchmark commodity."""
 
     def __init__(self):
         super(return_asymmetry_commodity_strategy, self).__init__()
 
-        self._futs = self.Param("Futures", Array.Empty[Security]()) \
-            .SetDisplay("Futures", "Commodity futures to trade", "General")
-        self._window = self.Param("WindowDays", 120) \
-            .SetDisplay("Window", "Lookback window in days", "General")
-        self._top = self.Param("TopN", 5) \
-            .SetDisplay("Top N", "Number of instruments to long/short", "General")
-        self._min_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General")
-        self._candle_type = self.Param("CandleType", tf(1)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
+            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark commodity", "General")
 
-        self._map = {}
-        self._latest_prices = {}
-        self._last_day = None
-        self._weights = {}
+        self._window_length = self.Param("WindowLength", 20) \
+            .SetRange(5, 120) \
+            .SetDisplay("Window Length", "Lookback period used to compute return asymmetry", "Indicators")
 
-    # properties
-    @property
-    def Futures(self):
-        return self._futs.Value
+        self._normalization_period = self.Param("NormalizationPeriod", 16) \
+            .SetRange(5, 120) \
+            .SetDisplay("Normalization Period", "Lookback period used to normalize the asymmetry spread", "Indicators")
 
-    @Futures.setter
-    def Futures(self, value):
-        self._futs.Value = value
+        self._entry_threshold = self.Param("EntryThreshold", 1.1) \
+            .SetRange(0.2, 5.0) \
+            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
 
-    @property
-    def WindowDays(self):
-        return self._window.Value
+        self._exit_threshold = self.Param("ExitThreshold", 0.25) \
+            .SetRange(0.0, 2.0) \
+            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
 
-    @WindowDays.setter
-    def WindowDays(self, value):
-        self._window.Value = value
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetRange(0, 120) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
 
-    @property
-    def TopN(self):
-        return self._top.Value
+        self._stop_loss = self.Param("StopLoss", 3.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-    @TopN.setter
-    def TopN(self, value):
-        self._top.Value = value
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Time frame for candles", "General")
 
-    @property
-    def MinTradeUsd(self):
-        return self._min_usd.Value
-
-    @MinTradeUsd.setter
-    def MinTradeUsd(self, value):
-        self._min_usd.Value = value
+        self._benchmark = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._primary_returns = collections.deque()
+        self._benchmark_returns = collections.deque()
+        self._previous_primary_close = None
+        self._previous_benchmark_close = None
+        self._previous_z_score = None
+        self._latest_primary_asymmetry = 0.0
+        self._latest_benchmark_asymmetry = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+    def GetWorkingSecurities(self):
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._security2_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(return_asymmetry_commodity_strategy, self).OnReseted()
-        self._map.clear()
-        self._latest_prices.clear()
-        self._last_day = None
-        self._weights.clear()
+        self._benchmark = None
+        self._spread_average = None
+        self._spread_deviation = None
+        self._primary_returns = collections.deque()
+        self._benchmark_returns = collections.deque()
+        self._previous_primary_close = None
+        self._previous_benchmark_close = None
+        self._previous_z_score = None
+        self._latest_primary_asymmetry = 0.0
+        self._latest_benchmark_asymmetry = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(return_asymmetry_commodity_strategy, self).OnStarted(time)
-        if not self.Futures:
-            raise Exception("Futures cannot be empty.")
-        for sec in self.Futures:
-            self._map[sec] = self.Win()
-            self.SubscribeCandles(self.CandleType, True, sec) \
-                .Bind(lambda c, s=sec: self._process_candle(c, s)) \
-                .Start()
 
-    def _process_candle(self, candle, sec):
+        sec2_id = str(self._security2_id.Value)
+        if not sec2_id:
+            raise Exception("Benchmark security identifier is not specified.")
+
+        s = Security()
+        s.Id = sec2_id
+        self._benchmark = s
+
+        norm_period = int(self._normalization_period.Value)
+
+        self._spread_average = SimpleMovingAverage()
+        self._spread_average.Length = norm_period
+        self._spread_deviation = StandardDeviation()
+        self._spread_deviation.Length = norm_period
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
+
+        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
+        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, benchmark_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessPrimaryCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        self._latest_prices[sec] = candle.ClosePrice
-        self._on_daily(sec, candle)
 
-    def _on_daily(self, sec, c):
-        w = self._map[sec].px
-        if len(w) == self.WindowDays:
-            w.pop(0)
-        w.append(c.ClosePrice)
-        d = c.OpenTime.Date
-        if d == self._last_day:
+        ret = self._update_returns(self._primary_returns, float(candle.ClosePrice), "primary")
+        if ret is None:
             return
-        self._last_day = d
-        if d.Day != 1:
-            return
-        self._rebalance()
 
-    def _rebalance(self):
-        asym = {}
-        for sec, win in self._map.items():
-            q = win.px
-            if len(q) < self.WindowDays:
-                continue
-            pos = 0
-            neg = 0
-            for i in range(1, len(q)):
-                r = (q[i] - q[i-1]) / q[i-1]
-                if r > 0:
-                    pos += r
-                else:
-                    neg += r
-            if neg != 0:
-                asym[sec] = pos / abs(neg)
-        if len(asym) < self.TopN * 2:
-            return
-        longs = [s for s,_ in sorted(asym.items(), key=lambda kv: kv[1], reverse=True)[:self.TopN]]
-        shorts = [s for s,_ in sorted(asym.items(), key=lambda kv: kv[1])[:self.TopN]]
-        self._weights.clear()
-        wl = 1.0/len(longs)
-        ws = -1.0/len(shorts)
-        for s in longs:
-            self._weights[s]=wl
-        for s in shorts:
-            self._weights[s]=ws
-        for pos in self.Positions:
-            if pos.Security not in self._weights:
-                self._move(pos.Security,0)
-        pv = self.Portfolio.CurrentValue or 0.0
-        for sec,w in self._weights.items():
-            price = self._latest_prices.get(sec,0)
-            if price>0:
-                self._move(sec, w*pv/price)
+        self._latest_primary_asymmetry = self._calculate_asymmetry(self._primary_returns)
+        self._primary_updated = True
+        self.TryProcessSpread(candle.OpenTime)
 
-    def _move(self, sec, tgt):
-        diff = tgt - (self.GetPositionValue(sec, self.Portfolio) or 0)
-        price = self._latest_prices.get(sec,0)
-        if price<=0 or abs(diff)*price < self.MinTradeUsd:
+    def ProcessBenchmarkCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
-        self.RegisterOrder(Order(Security=sec, Portfolio=self.Portfolio,
-                                 Side=Sides.Buy if diff>0 else Sides.Sell,
-                                 Volume=abs(diff), Type=OrderTypes.Market,
-                                 Comment="AsymCom"))
+
+        ret = self._update_returns(self._benchmark_returns, float(candle.ClosePrice), "benchmark")
+        if ret is None:
+            return
+
+        self._latest_benchmark_asymmetry = self._calculate_asymmetry(self._benchmark_returns)
+        self._benchmark_updated = True
+        self.TryProcessSpread(candle.OpenTime)
+
+    def _update_returns(self, queue, close_price, which):
+        if which == "primary":
+            prev = self._previous_primary_close
+        else:
+            prev = self._previous_benchmark_close
+
+        if prev is None or prev <= 0:
+            if which == "primary":
+                self._previous_primary_close = close_price
+            else:
+                self._previous_benchmark_close = close_price
+            return None
+
+        ret = (close_price - prev) / prev
+
+        if which == "primary":
+            self._previous_primary_close = close_price
+        else:
+            self._previous_benchmark_close = close_price
+
+        window_len = int(self._window_length.Value)
+        if len(queue) == window_len:
+            queue.popleft()
+
+        queue.append(ret)
+        return ret
+
+    def _calculate_asymmetry(self, returns):
+        positive = 0.0
+        negative = 0.0
+        for ret in returns:
+            if ret > 0:
+                positive += ret
+            else:
+                negative += abs(ret)
+        return positive / max(negative, 0.0001)
+
+    def TryProcessSpread(self, time):
+        window_len = int(self._window_length.Value)
+        if not self._primary_updated or not self._benchmark_updated or len(self._primary_returns) < window_len or len(self._benchmark_returns) < window_len:
+            return
+
+        self._primary_updated = False
+        self._benchmark_updated = False
+
+        spread = self._latest_primary_asymmetry - self._latest_benchmark_asymmetry
+
+        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
+        mean_iv.IsFinal = True
+        mean = float(self._spread_average.Process(mean_iv))
+
+        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
+        dev_iv.IsFinal = True
+        deviation = float(self._spread_deviation.Process(dev_iv))
+
+        if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        z_score = (spread - mean) / deviation
+        entry_thresh = float(self._entry_threshold.Value)
+        exit_thresh = float(self._exit_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_entry = self._previous_z_score is not None and self._previous_z_score < entry_thresh and z_score >= entry_thresh
+        bearish_entry = self._previous_z_score is not None and self._previous_z_score > -entry_thresh and z_score <= -entry_thresh
+
+        if self._cooldown_remaining == 0 and self.Position == 0:
+            if bullish_entry:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif bearish_entry:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
+        elif self.Position > 0 and z_score <= exit_thresh:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and z_score >= -exit_thresh:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+
+        self._previous_z_score = z_score
 
     def CreateClone(self):
         return return_asymmetry_commodity_strategy()

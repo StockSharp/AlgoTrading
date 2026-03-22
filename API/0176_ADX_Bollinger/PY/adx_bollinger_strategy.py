@@ -15,13 +15,11 @@ class adx_bollinger_strategy(Strategy):
     Strategy based on ADX and Bollinger Bands indicators.
     Enters long when ADX > 25 and price breaks above upper Bollinger band
     Enters short when ADX > 25 and price breaks below lower Bollinger band
-
     """
 
     def __init__(self):
         super(adx_bollinger_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
 
@@ -41,92 +39,33 @@ class adx_bollinger_strategy(Strategy):
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
 
     @property
-    def adx_period(self):
-        """ADX period."""
-        return self._adx_period.Value
-
-    @adx_period.setter
-    def adx_period(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def bollinger_period(self):
-        """Bollinger Bands period."""
-        return self._bollinger_period.Value
-
-    @bollinger_period.setter
-    def bollinger_period(self, value):
-        self._bollinger_period.Value = value
-
-    @property
-    def bollinger_deviation(self):
-        """Bollinger Bands deviation."""
-        return self._bollinger_deviation.Value
-
-    @bollinger_deviation.setter
-    def bollinger_deviation(self, value):
-        self._bollinger_deviation.Value = value
-
-    @property
-    def atr_period(self):
-        """ATR period for stop-loss calculation."""
-        return self._atr_period.Value
-
-    @atr_period.setter
-    def atr_period(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def atr_multiplier(self):
-        """ATR multiplier for stop-loss."""
-        return self._atr_multiplier.Value
-
-    @atr_multiplier.setter
-    def atr_multiplier(self, value):
-        self._atr_multiplier.Value = value
-
-    @property
     def candle_type(self):
-        """Candle type for strategy calculation."""
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
 
     def OnReseted(self):
         super(adx_bollinger_strategy, self).OnReseted()
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(adx_bollinger_strategy, self).OnStarted(time)
 
-        # Create indicators
         adx = AverageDirectionalIndex()
-        adx.Length = self.adx_period
+        adx.Length = self._adx_period.Value
 
         bollinger = BollingerBands()
-        bollinger.Length = self.bollinger_period
-        bollinger.Width = self.bollinger_deviation
+        bollinger.Length = self._bollinger_period.Value
+        bollinger.Width = self._bollinger_deviation.Value
 
         atr = AverageTrueRange()
-        atr.Length = self.atr_period
+        atr.Length = self._atr_period.Value
 
-        # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(adx, bollinger, atr, self.ProcessCandle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
 
-            # Create a separate area for ADX
             adx_area = self.CreateChartArea()
             if adx_area is not None:
                 self.DrawIndicator(adx_area, adx)
@@ -134,67 +73,50 @@ class adx_bollinger_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessCandle(self, candle, adx_value, bollinger_value, atr_value):
-        """
-        Process candle and execute trading logic
-
-        :param candle: The candle message.
-        :param adx_value: The ADX value.
-        :param bollinger_value: The Bollinger Bands value.
-        :param atr_value: The ATR value.
-        """
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Get additional values from Bollinger Bands
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if bollinger_value.UpBand is None or bollinger_value.LowBand is None:
             return
 
+        adx_ma = adx_value.MovingAverage
+        if adx_ma is None:
+            return
+        adx_ma_f = float(adx_ma)
+
         upper_band = float(bollinger_value.UpBand)
         lower_band = float(bollinger_value.LowBand)
-        middle_band = (upper_band - lower_band) / 2 + lower_band
+        middle_band = (upper_band - lower_band) / 2.0 + lower_band
 
-        # Current price (close of the candle)
         price = float(candle.ClosePrice)
-
-        # Stop-loss size based on ATR
-        stop_size = float(atr_value) * self.atr_multiplier
-
+        stop_size = float(atr_value) * float(self._atr_multiplier.Value)
 
         # Trading logic
-        if adx_value.MovingAverage > 25:  # Strong trend
+        if adx_ma_f > 25:  # Strong trend
             if price > upper_band and self.Position <= 0:
-                # Buy signal: price above upper Bollinger band with strong trend
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
+                self.BuyMarket(self.Volume + abs(self.Position))
 
-                # Set stop-loss
                 stop_price = price - stop_size
-                self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, max(Math.Abs(self.Position + self.Volume), self.Volume)))
+                stop_vol = max(abs(self.Position + self.Volume), self.Volume)
+                self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, stop_vol))
             elif price < lower_band and self.Position >= 0:
-                # Sell signal: price below lower Bollinger band with strong trend
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
+                self.SellMarket(self.Volume + abs(self.Position))
 
-                # Set stop-loss
                 stop_price = price + stop_size
-                self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, max(Math.Abs(self.Position + self.Volume), self.Volume)))
-        elif adx_value.MovingAverage < 20:
-            # Trend is weakening - close any position
+                stop_vol = max(abs(self.Position + self.Volume), self.Volume)
+                self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, stop_vol))
+        elif adx_ma_f < 20:
             if self.Position > 0:
                 self.SellMarket(self.Position)
             elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
+                self.BuyMarket(abs(self.Position))
         elif price < middle_band and self.Position > 0:
-            # Exit long position when price returns to middle band
             self.SellMarket(self.Position)
         elif price > middle_band and self.Position < 0:
-            # Exit short position when price returns to middle band
-            self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(abs(self.Position))
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return adx_bollinger_strategy()

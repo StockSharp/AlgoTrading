@@ -1,4 +1,5 @@
 import clr
+import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
@@ -7,7 +8,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class ichimoku_hurst_exponent_strategy(Strategy):
     """
@@ -15,228 +16,156 @@ class ichimoku_hurst_exponent_strategy(Strategy):
     """
 
     def __init__(self):
-        """Initializes a new instance of the strategy."""
         super(ichimoku_hurst_exponent_strategy, self).__init__()
 
-        # Tenkan-sen (conversion line) period.
         self._tenkan_period = self.Param("TenkanPeriod", 9) \
-            .SetDisplay("Tenkan Period", "Tenkan-sen (conversion line) period", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 15, 1)
+            .SetDisplay("Tenkan Period", "Tenkan-sen (conversion line) period", "Ichimoku")
 
-        # Kijun-sen (base line) period.
         self._kijun_period = self.Param("KijunPeriod", 26) \
-            .SetDisplay("Kijun Period", "Kijun-sen (base line) period", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 40, 2)
+            .SetDisplay("Kijun Period", "Kijun-sen (base line) period", "Ichimoku")
 
-        # Senkou Span B (leading span B) period.
         self._senkou_spanb_period = self.Param("SenkouSpanBPeriod", 52) \
-            .SetDisplay("Senkou Span B Period", "Senkou Span B (leading span B) period", "Ichimoku") \
-            .SetCanOptimize(True) \
-            .SetOptimize(40, 70, 5)
+            .SetDisplay("Senkou Span B Period", "Senkou Span B (leading span B) period", "Ichimoku")
 
-        # Hurst exponent calculation period.
         self._hurst_period = self.Param("HurstPeriod", 100) \
-            .SetDisplay("Hurst Period", "Hurst exponent calculation period", "Hurst Exponent") \
-            .SetCanOptimize(True) \
-            .SetOptimize(50, 200, 10)
+            .SetDisplay("Hurst Period", "Hurst exponent calculation period", "Hurst Exponent")
 
-        # Hurst exponent threshold for trend strength.
         self._hurst_threshold = self.Param("HurstThreshold", 0.5) \
-            .SetDisplay("Hurst Threshold", "Hurst exponent threshold for trend strength", "Hurst Exponent") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.45, 0.6, 0.05)
+            .SetDisplay("Hurst Threshold", "Hurst exponent threshold for trend strength", "Hurst Exponent")
 
-        # Candle type to use for the strategy.
-        self._candle_type = self.Param("CandleType", tf(15)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Data for Hurst exponent calculations
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 6) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Trading")
+
         self._prices = []
         self._hurst_exponent = 0.5
-        self._ichimoku = None
+        self._prev_tenkan = None
+        self._prev_kijun = None
+        self._cooldown_remaining = 0
 
     @property
-    def TenkanPeriod(self):
-        return self._tenkan_period.Value
-
-    @TenkanPeriod.setter
-    def TenkanPeriod(self, value):
-        self._tenkan_period.Value = value
-
-    @property
-    def KijunPeriod(self):
-        return self._kijun_period.Value
-
-    @KijunPeriod.setter
-    def KijunPeriod(self, value):
-        self._kijun_period.Value = value
-
-    @property
-    def SenkouSpanBPeriod(self):
-        return self._senkou_spanb_period.Value
-
-    @SenkouSpanBPeriod.setter
-    def SenkouSpanBPeriod(self, value):
-        self._senkou_spanb_period.Value = value
-
-    @property
-    def HurstPeriod(self):
-        return self._hurst_period.Value
-
-    @HurstPeriod.setter
-    def HurstPeriod(self, value):
-        self._hurst_period.Value = value
-
-    @property
-    def HurstThreshold(self):
-        return self._hurst_threshold.Value
-
-    @HurstThreshold.setter
-    def HurstThreshold(self, value):
-        self._hurst_threshold.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED !! Return securities used by the strategy."""
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(ichimoku_hurst_exponent_strategy, self).OnReseted()
-        self._prices.clear()
-        self._hurst_exponent = 0.5  # Default Hurst exponent value
+        self._prices = []
+        self._hurst_exponent = 0.5
+        self._prev_tenkan = None
+        self._prev_kijun = None
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(ichimoku_hurst_exponent_strategy, self).OnStarted(time)
 
-        # Create Ichimoku indicator
-        self._ichimoku = Ichimoku()
-        self._ichimoku.Tenkan.Length = self.TenkanPeriod
-        self._ichimoku.Kijun.Length = self.KijunPeriod
-        self._ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
+        ichimoku = Ichimoku()
+        ichimoku.Tenkan.Length = int(self._tenkan_period.Value)
+        ichimoku.Kijun.Length = int(self._kijun_period.Value)
+        ichimoku.SenkouB.Length = int(self._senkou_spanb_period.Value)
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._ichimoku, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(ichimoku, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ichimoku)
+            self.DrawIndicator(area, ichimoku)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, ichimoku_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, ichimoku_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Store Ichimoku values
-        if ichimoku_value.Tenkan is None:
+        tenkan_val = ichimoku_value.Tenkan
+        kijun_val = ichimoku_value.Kijun
+        senkou_a_val = ichimoku_value.SenkouA
+        senkou_b_val = ichimoku_value.SenkouB
+
+        if tenkan_val is None or kijun_val is None or senkou_a_val is None or senkou_b_val is None:
             return
-        tenkan = float(ichimoku_value.Tenkan)
 
-        if ichimoku_value.Kijun is None:
-            return
-        kijun = float(ichimoku_value.Kijun)
+        tenkan = float(tenkan_val)
+        kijun = float(kijun_val)
+        senkou_a = float(senkou_a_val)
+        senkou_b = float(senkou_b_val)
 
-        if ichimoku_value.SenkouA is None:
-            return
-        senkou_a = float(ichimoku_value.SenkouA)
-
-        if ichimoku_value.SenkouB is None:
-            return
-        senkou_b = float(ichimoku_value.SenkouB)
-
-        # Update price data for Hurst exponent calculation
-        self._prices.append(candle.ClosePrice)
-
-        # Keep only the number of prices needed for Hurst calculation
-        while len(self._prices) > self.HurstPeriod:
+        hurst_period = int(self._hurst_period.Value)
+        self._prices.append(float(candle.ClosePrice))
+        while len(self._prices) > hurst_period:
             self._prices.pop(0)
 
-        # Calculate Hurst exponent when we have enough data
-        if len(self._prices) >= self.HurstPeriod:
-            self.CalculateHurstExponent()
+        if len(self._prices) >= hurst_period:
+            self._calculate_hurst_exponent()
 
-        # Continue with position checks
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Check if price is above/below Kumo (cloud)
-        isPriceAboveKumo = candle.ClosePrice > max(senkou_a, senkou_b)
-        isPriceBelowKumo = candle.ClosePrice < min(senkou_a, senkou_b)
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Trading logic
-        # Buy when price is above the cloud, Tenkan > Kijun, and Hurst > threshold (trending market)
-        if isPriceAboveKumo and tenkan > kijun and self._hurst_exponent > self.HurstThreshold and self.Position <= 0:
-            self.BuyMarket(self.Volume)
-            self.LogInfo("Buy Signal: Price {0:F2} above Kumo, Tenkan {1:F2} > Kijun {2:F2}, Hurst {3:F3}".format(
-                candle.ClosePrice, tenkan, kijun, self._hurst_exponent))
-        # Sell when price is below the cloud, Tenkan < Kijun, and Hurst > threshold (trending market)
-        elif isPriceBelowKumo and tenkan < kijun and self._hurst_exponent > self.HurstThreshold and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Sell Signal: Price {0:F2} below Kumo, Tenkan {1:F2} < Kijun {2:F2}, Hurst {3:F3}".format(
-                candle.ClosePrice, tenkan, kijun, self._hurst_exponent))
-        # Exit long position when price falls below the cloud
-        elif self.Position > 0 and isPriceBelowKumo:
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit Long: Price {0:F2} fell below Kumo".format(candle.ClosePrice))
-        # Exit short position when price rises above the cloud
-        elif self.Position < 0 and isPriceAboveKumo:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit Short: Price {0:F2} rose above Kumo".format(candle.ClosePrice))
+        close_price = float(candle.ClosePrice)
+        is_price_above_kumo = close_price > max(senkou_a, senkou_b)
+        is_price_below_kumo = close_price < min(senkou_a, senkou_b)
 
-    def CalculateHurstExponent(self):
-        # This is a simplified Hurst exponent calculation using R/S analysis
-        # Note: A full implementation would use multiple time scales
+        cd = int(self._signal_cooldown_bars.Value)
+        ht = float(self._hurst_threshold.Value)
 
-        # Calculate log returns
+        if self._prev_tenkan is not None and self._prev_kijun is not None:
+            cross_up = self._prev_tenkan <= self._prev_kijun and tenkan > kijun
+            cross_down = self._prev_tenkan >= self._prev_kijun and tenkan < kijun
+
+            long_exit = self.Position > 0 and (is_price_below_kumo or cross_down)
+            short_exit = self.Position < 0 and (is_price_above_kumo or cross_up)
+
+            if long_exit:
+                self.SellMarket(self.Position)
+                self._cooldown_remaining = cd
+            elif short_exit:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown_remaining = cd
+            elif self._cooldown_remaining == 0 and is_price_above_kumo and cross_up and self._hurst_exponent > ht and self.Position <= 0:
+                self.BuyMarket(self.Volume + Math.Abs(self.Position))
+                self._cooldown_remaining = cd
+            elif self._cooldown_remaining == 0 and is_price_below_kumo and cross_down and self._hurst_exponent > ht and self.Position >= 0:
+                self.SellMarket(self.Volume + Math.Abs(self.Position))
+                self._cooldown_remaining = cd
+
+        self._prev_tenkan = tenkan
+        self._prev_kijun = kijun
+
+    def _calculate_hurst_exponent(self):
         log_returns = []
         for i in range(1, len(self._prices)):
-            if self._prices[i-1] != 0:
-                log_returns.append(Math.Log(float(self._prices[i] / self._prices[i-1])))
+            if self._prices[i - 1] != 0:
+                log_returns.append(math.log(self._prices[i] / self._prices[i - 1]))
 
         if len(log_returns) < 10:
             return
 
-        # Calculate mean
         mean = sum(log_returns) / len(log_returns)
 
-        # Calculate cumulative deviation series
         cumulative_deviation = []
         sum_val = 0.0
-        for log_return in log_returns:
-            sum_val += (log_return - mean)
+        for lr in log_returns:
+            sum_val += (lr - mean)
             cumulative_deviation.append(sum_val)
 
-        # Calculate range (max - min of cumulative deviation)
         range_val = max(cumulative_deviation) - min(cumulative_deviation)
 
-        # Calculate standard deviation
-        sum_squares = sum((x - mean) * (x - mean) for x in log_returns)
-        std_dev = Math.Sqrt(sum_squares / len(log_returns))
+        sum_squares = sum((x - mean) ** 2 for x in log_returns)
+        std_dev = math.sqrt(sum_squares / len(log_returns))
 
         if std_dev == 0:
             return
 
-        # Calculate R/S statistic
         rs = range_val / std_dev
 
-        # Hurst = log(R/S) / log(N)
-        logN = Math.Log(float(len(log_returns)))
-        if logN != 0:
-            self._hurst_exponent = Math.Log(rs) / logN
-
-        self.LogInfo("Calculated Hurst Exponent: {0:F3} (R/S: {1:F3}, N: {2})".format(
-            self._hurst_exponent, rs, len(log_returns)))
+        log_n = math.log(len(log_returns))
+        if log_n != 0:
+            self._hurst_exponent = math.log(rs) / log_n
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return ichimoku_hurst_exponent_strategy()

@@ -71,7 +71,7 @@ class t3_ma_direction_change_strategy(Strategy):
             self._enqueue_signal(0)
             return
 
-        smoothed_val = float(ema_smooth_result.ToDecimal())
+        smoothed_val = float(ema_smooth_result)
         shift = self._ma_shift.Value
         required = shift + 2
 

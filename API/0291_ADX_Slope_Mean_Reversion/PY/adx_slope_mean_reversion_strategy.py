@@ -3,216 +3,173 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class adx_slope_mean_reversion_strategy(Strategy):
     """
-    ADX Slope Mean Reversion Strategy.
-    This strategy trades based on ADX slope reversions to the mean.
-
+    ADX slope mean reversion strategy.
+    Trades reversion of extreme ADX slope moves once the recent slope distribution is formed.
     """
 
     def __init__(self):
         super(adx_slope_mean_reversion_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("ADX Period", "Period for ADX indicator", "Indicator Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 2)
+            .SetDisplay("ADX Period", "Period for ADX calculation", "Indicator Parameters")
 
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
+        self._slope_lookback = self.Param("SlopeLookback", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Slope Lookback", "Period for slope statistics", "Strategy Parameters")
 
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 1.0) \
+        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
             .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entries", "Strategy Parameters")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._min_adx = self.Param("MinAdx", 18.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Min ADX", "Minimum ADX level required for entries", "Signal Filters")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state
         self._adx = None
-        self._previous_adx = 0.0
-        self._current_adx_slope = 0.0
-        self._is_first_calculation = True
-
-        self._average_slope = 0.0
-        self._slope_std_dev = 0.0
-        self._sample_count = 0
-        self._sum_slopes = 0.0
-        self._sum_slopes_squared = 0.0
+        self._previous_adx_value = 0.0
+        self._slope_history = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
-    def AdxPeriod(self):
-        """ADX Period."""
-        return self._adx_period.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        """Period for calculating slope average and standard deviation."""
-        return self._lookback_period.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        """The multiplier for standard deviation to determine entry threshold."""
-        return self._deviation_multiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(adx_slope_mean_reversion_strategy, self).OnReseted()
-        self._previous_adx = 0.0
-        self._current_adx_slope = 0.0
-        self._is_first_calculation = True
-        self._average_slope = 0.0
-        self._slope_std_dev = 0.0
-        self._sample_count = 0
-        self._sum_slopes = 0.0
-        self._sum_slopes_squared = 0.0
+        self._adx = None
+        self._previous_adx_value = 0.0
+        lb = int(self._slope_lookback.Value)
+        self._slope_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(adx_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Initialize indicators
+        lb = int(self._slope_lookback.Value)
+        self._slope_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+
         self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.AdxPeriod
+        self._adx.Length = int(self._adx_period.Value)
 
-        # Initialize statistics variables
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._adx, self._process_candle).Start()
 
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._adx, self.ProcessCandle).Start()
-
-        # Set up chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, adx_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, adx_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
-
-        if adx_value.MovingAverage is None:
+        if not self._adx.IsFormed:
             return
 
-        adx = float(adx_value.MovingAverage)
+        adx_ma = adx_value.MovingAverage
+        if adx_ma is None:
+            return
+
+        adx_val = float(adx_ma)
         dx = adx_value.Dx
         if dx is None or dx.Plus is None or dx.Minus is None:
             return
 
-        # Calculate ADX slope
-        if self._is_first_calculation:
-            self._previous_adx = adx
-            self._is_first_calculation = False
+        di_plus = float(dx.Plus)
+        di_minus = float(dx.Minus)
+
+        if not self._is_initialized:
+            self._previous_adx_value = adx_val
+            self._is_initialized = True
             return
 
-        self._current_adx_slope = adx - self._previous_adx
-        self._previous_adx = adx
+        slope = adx_val - self._previous_adx_value
+        self._previous_adx_value = adx_val
 
-        # Update statistics for slope values
-        self._sample_count += 1
-        self._sum_slopes += self._current_adx_slope
-        self._sum_slopes_squared += self._current_adx_slope * self._current_adx_slope
+        lb = int(self._slope_lookback.Value)
+        self._slope_history[self._current_index] = slope
+        self._current_index = (self._current_index + 1) % lb
 
-        # We need enough samples to calculate meaningful statistics
-        if self._sample_count < self.LookbackPeriod:
+        if self._filled_count < lb:
+            self._filled_count += 1
+
+        if self._filled_count < lb:
             return
 
-        # If we have more samples than our lookback period, adjust the statistics
-        if self._sample_count > self.LookbackPeriod:
-            # This is a simplified approach - ideally we would keep a circular buffer
-            # of the last N slopes for more accurate calculations
-            self._sample_count = self.LookbackPeriod
+        avg_slope = 0.0
+        for i in range(lb):
+            avg_slope += self._slope_history[i]
+        avg_slope /= float(lb)
 
-        # Calculate statistics
-        self._average_slope = self._sum_slopes / self._sample_count
-        variance = (self._sum_slopes_squared / self._sample_count) - (self._average_slope * self._average_slope)
-        self._slope_std_dev = 0 if variance <= 0 else Math.Sqrt(variance)
+        sum_sq = 0.0
+        for i in range(lb):
+            diff = self._slope_history[i] - avg_slope
+            sum_sq += diff * diff
+        std_slope = math.sqrt(sum_sq / float(lb))
 
-        # Calculate thresholds for entries
-        long_entry_threshold = self._average_slope - self.DeviationMultiplier * self._slope_std_dev
-        short_entry_threshold = self._average_slope + self.DeviationMultiplier * self._slope_std_dev
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Trading logic
-        if self._current_adx_slope < long_entry_threshold and self.Position <= 0:
-            # Long entry: slope is significantly lower than average (mean reversion expected)
-            self.LogInfo("ADX slope {0} below threshold {1}, entering LONG".format(self._current_adx_slope, long_entry_threshold))
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif self._current_adx_slope > short_entry_threshold and self.Position >= 0:
-            # Short entry: slope is significantly higher than average (mean reversion expected)
-            self.LogInfo("ADX slope {0} above threshold {1}, entering SHORT".format(self._current_adx_slope, short_entry_threshold))
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-        elif self.Position > 0 and self._current_adx_slope > self._average_slope:
-            # Exit long when slope returns to or above average
-            self.LogInfo("ADX slope {0} returned to average {1}, exiting LONG".format(self._current_adx_slope, self._average_slope))
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and self._current_adx_slope < self._average_slope:
-            # Exit short when slope returns to or below average
-            self.LogInfo("ADX slope {0} returned to average {1}, exiting SHORT".format(self._current_adx_slope, self._average_slope))
-            self.BuyMarket(Math.Abs(self.Position))
+        if std_slope <= 0:
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        tm = float(self._threshold_multiplier.Value)
+        lower_threshold = avg_slope - tm * std_slope
+        upper_threshold = avg_slope + tm * std_slope
+        min_adx = float(self._min_adx.Value)
+        is_bullish = di_plus >= di_minus
+        is_bearish = di_minus > di_plus
+
+        if self.Position == 0:
+            if adx_val >= min_adx and slope <= lower_threshold and is_bullish:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif adx_val >= min_adx and slope >= upper_threshold and is_bearish:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if slope >= avg_slope or not is_bullish:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if slope <= avg_slope or not is_bearish:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adx_slope_mean_reversion_strategy()

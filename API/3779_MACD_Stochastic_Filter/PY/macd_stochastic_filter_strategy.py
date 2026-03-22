@@ -122,7 +122,7 @@ class macd_stochastic_filter_strategy(Strategy):
         k_val = float(k_raw)
         d_val = float(d_raw)
 
-        ema_val = float(ema_value.ToDecimal())
+        ema_val = float(ema_value)
 
         if self._prev_macd is None or self._prev_signal is None:
             self._prev_macd = macd_main

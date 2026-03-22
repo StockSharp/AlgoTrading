@@ -64,7 +64,7 @@ class breakout_bars_trend_strategy(Strategy):
         sar_result = self._parabolic.Process(candle)
         if not sar_result.IsFormed:
             return
-        sar_value = float(sar_result.ToDecimal())
+        sar_value = float(sar_result)
         trend = 1 if sar_value < float(candle.ClosePrice) else -1
 
         if self._last_trend != 0 and self._last_trend != trend:

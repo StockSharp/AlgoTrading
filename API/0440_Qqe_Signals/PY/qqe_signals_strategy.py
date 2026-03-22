@@ -3,19 +3,14 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 
 class qqe_signals_strategy(Strategy):
-    """QQE Signals Strategy.
-    Uses RSI with threshold crossover for trade signals.
-    Buys when RSI crosses above upper threshold.
-    Sells when RSI crosses below lower threshold.
-    Exits at the 50 midline crossover.
-    """
+    """QQE Signals Strategy."""
 
     def __init__(self):
         super(qqe_signals_strategy, self).__init__()
@@ -31,41 +26,47 @@ class qqe_signals_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._rsi = None
         self._prev_rsi = 0.0
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(qqe_signals_strategy, self).OnReseted()
+        self._rsi = None
         self._prev_rsi = 0.0
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(qqe_signals_strategy, self).OnStarted(time)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_period.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_period.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._rsi, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, rsi_val):
+    def _on_process(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
 
-        rsi = float(rsi_val)
+        if not self._rsi.IsFormed:
+            self._prev_rsi = float(rsi_val)
+            return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_rsi = rsi
+            self._prev_rsi = float(rsi_val)
             return
+
+        rsi = float(rsi_val)
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
@@ -76,32 +77,29 @@ class qqe_signals_strategy(Strategy):
             self._prev_rsi = rsi
             return
 
-        upper = self._upper_threshold.Value
-        lower = self._lower_threshold.Value
+        upper = float(self._upper_threshold.Value)
+        lower = float(self._lower_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        # RSI crosses above upper threshold (bullish signal)
         cross_up = rsi > upper and self._prev_rsi <= upper
-        # RSI crosses below lower threshold (bearish signal)
         cross_down = rsi < lower and self._prev_rsi >= lower
 
         if cross_up and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif cross_down and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Exit long: RSI drops below 50
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and rsi < 50 and self._prev_rsi >= 50:
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Exit short: RSI rises above 50
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and rsi > 50 and self._prev_rsi <= 50:
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
         self._prev_rsi = rsi
 

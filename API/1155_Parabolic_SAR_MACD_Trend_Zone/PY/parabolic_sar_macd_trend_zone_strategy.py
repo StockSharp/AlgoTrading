@@ -56,8 +56,8 @@ class parabolic_sar_macd_trend_zone_strategy(Strategy):
             return
         if not f_val.IsFormed or not s_val.IsFormed or not macd_val.IsFormed:
             return
-        fv = float(f_val.ToDecimal())
-        sv = float(s_val.ToDecimal())
+        fv = float(f_val)
+        sv = float(s_val)
         macd_line = macd_val.Macd
         signal_line = macd_val.Signal
         if macd_line is None or signal_line is None:

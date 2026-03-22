@@ -84,7 +84,7 @@ class order_expert_strategy(Strategy):
         slow_result = self._slow_ema.Process(candle.ClosePrice, candle.OpenTime, True)
         if not slow_result.IsFormed:
             return
-        slow = float(slow_result.ToDecimal())
+        slow = float(slow_result)
         f = float(fast)
         if self._is_first:
             self._prev_fast = f

@@ -26,43 +26,41 @@ class trend_following_stocks_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._atr = None
+        self._highest = None
         self._trail_stop = 0.0
         self._entry_price = 0.0
         self._cooldown_remaining = 0
 
     @property
-    def AtrLen(self):
-        return self._atr_len.Value
-    @property
-    def HighestLen(self):
-        return self._highest_len.Value
-    @property
-    def AtrMultiplier(self):
-        return self._atr_multiplier.Value
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(trend_following_stocks_strategy, self).OnReseted()
+        self._atr = None
+        self._highest = None
         self._trail_stop = 0.0
         self._entry_price = 0.0
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(trend_following_stocks_strategy, self).OnStarted(time)
-        atr = AverageTrueRange()
-        atr.Length = self.AtrLen
-        highest = Highest()
-        highest.Length = self.HighestLen
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(atr, highest, self.ProcessCandle).Start()
+        self._atr = AverageTrueRange()
+        self._atr.Length = int(self._atr_len.Value)
+        self._highest = Highest()
+        self._highest.Length = int(self._highest_len.Value)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._atr, self._highest, self._process_candle).Start()
 
-    def ProcessCandle(self, candle, atr_val, highest_val):
+    def _process_candle(self, candle, atr_val, highest_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._atr.IsFormed or not self._highest.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self._cooldown_remaining > 0:
@@ -71,22 +69,24 @@ class trend_following_stocks_strategy(Strategy):
         close = float(candle.ClosePrice)
         av = float(atr_val)
         hv = float(highest_val)
+        atr_mult = float(self._atr_multiplier.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
         if self.Position > 0:
-            candidate = close - av * self.AtrMultiplier
+            candidate = close - av * atr_mult
             if candidate > self._trail_stop:
                 self._trail_stop = candidate
             if close <= self._trail_stop:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
                 self._trail_stop = 0.0
                 self._entry_price = 0.0
-                self._cooldown_remaining = self.CooldownBars
+                self._cooldown_remaining = cooldown
         elif self._cooldown_remaining <= 0:
             if close >= hv:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume)
                 self._entry_price = close
-                self._trail_stop = close - av * self.AtrMultiplier
-                self._cooldown_remaining = self.CooldownBars
+                self._trail_stop = close - av * atr_mult
+                self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return trend_following_stocks_strategy()

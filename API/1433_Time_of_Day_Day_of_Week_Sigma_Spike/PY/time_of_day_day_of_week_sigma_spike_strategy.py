@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, DateTimeOffset
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -20,8 +20,7 @@ class time_of_day_day_of_week_sigma_spike_strategy(Strategy):
         self._prev_f = 0.0
         self._prev_s = 0.0
         self._init = False
-        self._last_signal = DateTimeOffset.MinValue
-        self._cooldown = TimeSpan.FromMinutes(360)
+        self._last_signal_ticks = 0
 
     @property
     def slow_length(self):
@@ -36,7 +35,7 @@ class time_of_day_day_of_week_sigma_spike_strategy(Strategy):
         self._prev_f = 0.0
         self._prev_s = 0.0
         self._init = False
-        self._last_signal = DateTimeOffset.MinValue
+        self._last_signal_ticks = 0
 
     def OnStarted(self, time):
         super(time_of_day_day_of_week_sigma_spike_strategy, self).OnStarted(time)
@@ -65,13 +64,15 @@ class time_of_day_day_of_week_sigma_spike_strategy(Strategy):
             self._prev_s = s
             self._init = True
             return
-        if candle.OpenTime - self._last_signal >= self._cooldown:
+        cooldown_ticks = TimeSpan.FromMinutes(360).Ticks
+        current_ticks = candle.OpenTime.Ticks
+        if current_ticks - self._last_signal_ticks >= cooldown_ticks:
             if self._prev_f <= self._prev_s and f > s and self.Position <= 0:
                 self.BuyMarket()
-                self._last_signal = candle.OpenTime
+                self._last_signal_ticks = current_ticks
             elif self._prev_f >= self._prev_s and f < s and self.Position >= 0:
                 self.SellMarket()
-                self._last_signal = candle.OpenTime
+                self._last_signal_ticks = current_ticks
         self._prev_f = f
         self._prev_s = s
 

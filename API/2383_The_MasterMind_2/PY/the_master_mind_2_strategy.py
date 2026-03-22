@@ -70,12 +70,12 @@ class the_master_mind_2_strategy(Strategy):
         inner = stoch_val.InnerValues
         if inner is not None:
             for iv in inner:
-                signal = float(iv.Value.ToDecimal())
+                signal = float(iv.Value)
                 break
         if signal is None:
             return
 
-        wpr = float(wpr_val.ToDecimal())
+        wpr = float(wpr_val)
         close = float(candle.ClosePrice)
         low = float(candle.LowPrice)
         high = float(candle.HighPrice)

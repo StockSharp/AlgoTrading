@@ -163,7 +163,7 @@ class color_schaff_momentum_trend_cycle_strategy(Strategy):
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
 
-        diff = float(fast_result.ToDecimal()) - float(slow_result.ToDecimal())
+        diff = float(fast_result) - float(slow_result)
         cycle = self.Cycle
 
         self._add_value(self._macd_history, diff, cycle)

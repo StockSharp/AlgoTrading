@@ -37,6 +37,9 @@ class macd_of_relative_strenght_strategy(Strategy):
 
     def OnStarted(self, time):
         super(macd_of_relative_strenght_strategy, self).OnStarted(time)
+        self._prev_fast_above = False
+        self._initialized = False
+        self._bars_from_signal = 0
         fast = ExponentialMovingAverage()
         fast.Length = self._fast_length.Value
         slow = ExponentialMovingAverage()

@@ -155,15 +155,15 @@ class yen_trader051_strategy(Strategy):
 
         rsi_out = self._rsi.Process(DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.CloseTime))
         if rsi_out.IsFinal:
-            self._rsi_value = float(rsi_out.ToDecimal())
+            self._rsi_value = float(rsi_out)
 
         cci_out = self._cci.Process(candle)
         if cci_out.IsFinal:
-            self._cci_value = float(cci_out.ToDecimal())
+            self._cci_value = float(cci_out)
 
         ma_out = self._ma.Process(DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.CloseTime))
         if ma_out.IsFinal:
-            self._ma_value = float(ma_out.ToDecimal())
+            self._ma_value = float(ma_out)
 
         self._last_close = close
 

@@ -2,172 +2,73 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Array
-from StockSharp.Messages import DataType, CandleStates, Sides
-from StockSharp.Algo.Indicators import (
-    RelativeStrengthIndex,
-    Highest,
-    Lowest,
-    SimpleMovingAverage,
-    ExponentialMovingAverage,
-    AverageTrueRange,
-    IIndicator
-)
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class stoch_rsi_crossover_strategy(Strategy):
-    """Stochastic RSI crossover strategy with triple EMA trend filter.
-
-    The system calculates a standard RSI, transforms it into a Stochastic RSI,
-    and then applies smoothing to derive %K and %D lines. Trading signals are
-    generated when %K crosses %D within predefined zones while a triple EMA
-    structure confirms trend direction. ATR‑based multipliers outline
-    theoretical stop‑loss and profit targets.
-    """
+    """Stochastic RSI Crossover Strategy."""
 
     def __init__(self):
         super(stoch_rsi_crossover_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._smooth_k = self.Param("SmoothK", 3) \
-            .SetDisplay("Smooth %K", "%K smoothing periods", "StochRSI")
-
-        self._smooth_d = self.Param("SmoothD", 3) \
-            .SetDisplay("Smooth %D", "%D smoothing periods", "StochRSI")
-
         self._rsi_length = self.Param("RsiLength", 14) \
-            .SetDisplay("RSI Length", "RSI calculation length", "StochRSI")
-
-        self._stoch_length = self.Param("StochLength", 14) \
-            .SetDisplay("Stoch Length", "Stochastic RSI period", "StochRSI")
-
-        self._ema1_length = self.Param("Ema1Length", 20) \
-            .SetDisplay("EMA1 Length", "Fast EMA period", "Moving Averages")
-
-        self._ema2_length = self.Param("Ema2Length", 50) \
-            .SetDisplay("EMA2 Length", "Middle EMA period", "Moving Averages")
-
-        self._ema3_length = self.Param("Ema3Length", 100) \
-            .SetDisplay("EMA3 Length", "Slow EMA period", "Moving Averages")
-
-        self._atr_length = self.Param("AtrLength", 14) \
-            .SetDisplay("ATR Length", "ATR period for risk levels", "ATR")
-
-        self._atr_loss_multiplier = self.Param("AtrLossMultiplier", 1.5) \
-            .SetDisplay("ATR Loss Mult", "ATR multiplier for stop loss", "ATR")
-
-        self._atr_profit_multiplier = self.Param("AtrProfitMultiplier", 2.0) \
-            .SetDisplay("ATR Profit Mult", "ATR multiplier for take profit", "ATR")
+            .SetDisplay("RSI Length", "RSI period", "RSI")
+        self._rsi_oversold = self.Param("RsiOversold", 40) \
+            .SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
+        self._rsi_overbought = self.Param("RsiOverbought", 60) \
+            .SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
+        self._ema1_length = self.Param("Ema1Length", 8) \
+            .SetDisplay("EMA 1 Length", "Fast EMA length", "Moving Averages")
+        self._ema2_length = self.Param("Ema2Length", 14) \
+            .SetDisplay("EMA 2 Length", "Medium EMA length", "Moving Averages")
+        self._ema3_length = self.Param("Ema3Length", 50) \
+            .SetDisplay("EMA 3 Length", "Slow EMA length", "Moving Averages")
+        self._cooldown_bars = self.Param("CooldownBars", 15) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
         self._rsi = None
-        self._high = None
-        self._low = None
-        self._smooth_k_sma = None
-        self._smooth_d_sma = None
         self._ema1 = None
         self._ema2 = None
         self._ema3 = None
-        self._atr = None
+        self._prev_rsi = 0.0
+        self._cooldown_remaining = 0
 
-        self._prev_k = 0
-        self._prev_d = 0
-
-    # region parameter properties
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @property
-    def smooth_k(self):
-        return self._smooth_k.Value
-
-    @property
-    def smooth_d(self):
-        return self._smooth_d.Value
-
-    @property
-    def rsi_length(self):
-        return self._rsi_length.Value
-
-    @property
-    def stoch_length(self):
-        return self._stoch_length.Value
-
-    @property
-    def ema1_length(self):
-        return self._ema1_length.Value
-
-    @property
-    def ema2_length(self):
-        return self._ema2_length.Value
-
-    @property
-    def ema3_length(self):
-        return self._ema3_length.Value
-
-    @property
-    def atr_length(self):
-        return self._atr_length.Value
-
-    @property
-    def atr_loss_multiplier(self):
-        return self._atr_loss_multiplier.Value
-
-    @property
-    def atr_profit_multiplier(self):
-        return self._atr_profit_multiplier.Value
-    # endregion
-
     def OnReseted(self):
         super(stoch_rsi_crossover_strategy, self).OnReseted()
-        self._prev_k = 0
-        self._prev_d = 0
+        self._rsi = None
+        self._ema1 = None
+        self._ema2 = None
+        self._ema3 = None
+        self._prev_rsi = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(stoch_rsi_crossover_strategy, self).OnStarted(time)
 
         self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.rsi_length
+        self._rsi.Length = int(self._rsi_length.Value)
 
-        self._high = Highest()
-        self._high.Length = self.stoch_length
+        self._ema1 = ExponentialMovingAverage()
+        self._ema1.Length = int(self._ema1_length.Value)
 
-        self._low = Lowest()
-        self._low.Length = self.stoch_length
+        self._ema2 = ExponentialMovingAverage()
+        self._ema2.Length = int(self._ema2_length.Value)
 
-        self._smooth_k_sma = SimpleMovingAverage()
-        self._smooth_k_sma.Length = self.smooth_k
-
-        self._smooth_d_sma = SimpleMovingAverage()
-        self._smooth_d_sma.Length = self.smooth_d
-
-        self._ema1 = ExponentialMovingAverage();
-        self._ema1.Length = self.ema1_length
-
-        self._ema2 = ExponentialMovingAverage();
-        self._ema2.Length = self.ema2_length
-
-        self._ema3 = ExponentialMovingAverage();
-        self._ema3.Length = self.ema3_length
-
-        self._atr = AverageTrueRange();
-        self._atr.Length = self.atr_length
+        self._ema3 = ExponentialMovingAverage()
+        self._ema3.Length = int(self._ema3_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        indicators_array = Array.CreateInstance(IIndicator, 5)
-        indicators_array[0] = self._rsi
-        indicators_array[1] = self._ema1
-        indicators_array[2] = self._ema2
-        indicators_array[3] = self._ema3
-        indicators_array[4] = self._atr
-        
-        subscription.BindEx(indicators_array, self.ProcessCandle).Start()
+        subscription.Bind(self._rsi, self._ema1, self._ema2, self._ema3, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -177,65 +78,60 @@ class stoch_rsi_crossover_strategy(Strategy):
             self.DrawIndicator(area, self._ema3)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, indicator_values):
+    def _on_process(self, candle, rsi_val, ema1_val, ema2_val, ema3_val):
         if candle.State != CandleStates.Finished:
             return
 
-        if not (self._rsi.IsFormed and self._ema1.IsFormed and self._ema2.IsFormed and self._ema3.IsFormed and self._atr.IsFormed):
+        if not self._rsi.IsFormed or not self._ema1.IsFormed or not self._ema2.IsFormed or not self._ema3.IsFormed:
+            self._prev_rsi = float(rsi_val)
             return
 
-        rsi_value = float(indicator_values[0])
-        ema1_value = float(indicator_values[1]) 
-        ema2_value = float(indicator_values[2])
-        ema3_value = float(indicator_values[3])
-        atr_value = float(indicator_values[4])
-
-        rsi_price = float(rsi_value)
-        highest = process_float(self._high, rsi_price, candle.ServerTime, True)
-        lowest = process_float(self._low, rsi_price, candle.ServerTime, True)
-        if not (highest.IsFormed and lowest.IsFormed):
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_rsi = float(rsi_val)
             return
 
-        high_val = float(highest)
-        low_val = float(lowest)
-        stoch_rsi = 50 if high_val == low_val else (rsi_price - low_val) / (high_val - low_val) * 100
+        rsi = float(rsi_val)
+        ema1 = float(ema1_val)
+        ema2 = float(ema2_val)
+        ema3 = float(ema3_val)
 
-        k_val = process_float(self._smooth_k_sma, stoch_rsi, candle.ServerTime, True)
-        d_val = process_float(self._smooth_d_sma, k_val, candle.ServerTime, True)
-        if not (k_val.IsFormed and d_val.IsFormed):
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self._prev_rsi = rsi
             return
 
-        k = float(k_val)
-        d = float(d_val)
+        if self._prev_rsi == 0.0:
+            self._prev_rsi = rsi
+            return
 
-        crossed_over = self._prev_k <= self._prev_d and k > d
-        crossed_under = self._prev_k >= self._prev_d and k < d
+        rsi_os = int(self._rsi_oversold.Value)
+        rsi_ob = int(self._rsi_overbought.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        price = candle.ClosePrice
-        ema1_val = float(ema1_value)
-        ema2_val = float(ema2_value)
-        ema3_val = float(ema3_value)
-        atr_val = float(atr_value)
+        bullish_ema = ema1 > ema3
+        bearish_ema = ema1 < ema3
 
-        if (crossed_over and 10 <= k <= 60 and
-                ema1_val > ema2_val > ema3_val and
-                price > ema1_val and self.Position == 0):
-            stop_loss = price - atr_val * self.atr_loss_multiplier
-            take_profit = price + atr_val * self.atr_profit_multiplier
-            self.RegisterOrder(self.CreateOrder(Sides.Buy, price, self.Volume))
+        rsi_cross_up_oversold = rsi > rsi_os and self._prev_rsi <= rsi_os
+        rsi_cross_down_overbought = rsi < rsi_ob and self._prev_rsi >= rsi_ob
 
-        if (crossed_under and 40 <= k <= 95 and
-                ema3_val > ema2_val > ema1_val and
-                price < ema1_val and self.Position == 0):
-            stop_loss = price + atr_val * self.atr_loss_multiplier
-            take_profit = price - atr_val * self.atr_profit_multiplier
-            self.RegisterOrder(self.CreateOrder(Sides.Sell, price, self.Volume))
+        if rsi_cross_up_oversold and bullish_ema and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif rsi_cross_down_overbought and bearish_ema and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and (rsi > rsi_ob or ema1 < ema2):
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and (rsi < rsi_os or ema1 > ema2):
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
-        self._prev_k = k
-        self._prev_d = d
+        self._prev_rsi = rsi
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return stoch_rsi_crossover_strategy()

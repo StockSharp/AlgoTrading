@@ -4,167 +4,166 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math, Array
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
+
 
 class crude_oil_predicts_equity_strategy(Strategy):
-    """Invest in equity ETF when crude oil return is positive, otherwise hold cash ETF."""
+    """Strategy that holds equity when oil momentum is positive and equity is above trend."""
 
     def __init__(self):
         super(crude_oil_predicts_equity_strategy, self).__init__()
 
-        self._oil = self.Param("Oil", None) \
-            .SetDisplay("Oil", "Crude oil security for signal", "General")
+        self._oil_security_id = self.Param("OilSecurityId", "TONUSDT@BNBFT") \
+            .SetDisplay("Oil Security Id", "Identifier of the crude-oil benchmark security", "General")
 
-        self._cash = self.Param("CashEtf", None) \
-            .SetDisplay("Cash ETF", "Cash ETF when not invested", "General")
+        self._lookback = self.Param("Lookback", 20) \
+            .SetRange(5, 120) \
+            .SetDisplay("Lookback", "Number of candles used to compute oil momentum", "Indicators")
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
-            .SetDisplay("Candle Type", "Timeframe for analysis", "General")
+        self._trend_length = self.Param("TrendLength", 20) \
+            .SetRange(5, 120) \
+            .SetDisplay("Trend Length", "Equity trend filter length", "Indicators")
 
-        self._lookback = self.Param("Lookback", 22) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback", "Number of candles for return calculation", "General")
+        self._oil_threshold = self.Param("OilThreshold", 0.0) \
+            .SetRange(-20.0, 20.0) \
+            .SetDisplay("Oil Threshold", "Minimum oil momentum required to hold equity exposure", "Signals")
 
-        self._wins = {}
-        self._latest_prices = {}
-        self._last_day = DateTime.MinValue
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetRange(0, 100) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
 
-    # region Properties
-    @property
-    def Equity(self):
-        return self.Security
+        self._stop_loss = self.Param("StopLoss", 2.5) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-    @Equity.setter
-    def Equity(self, value):
-        self.Security = value
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle series for both instruments", "General")
 
-    @property
-    def Oil(self):
-        return self._oil.Value
-
-    @Oil.setter
-    def Oil(self, value):
-        self._oil.Value = value
-
-    @property
-    def CashEtf(self):
-        return self._cash.Value
-
-    @CashEtf.setter
-    def CashEtf(self, value):
-        self._cash.Value = value
+        self._oil_security = None
+        self._oil_momentum = None
+        self._equity_trend = None
+        self._latest_equity_price = 0.0
+        self._latest_equity_trend = 0.0
+        self._latest_oil_momentum = 0.0
+        self._equity_updated = False
+        self._oil_updated = False
+        self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def Lookback(self):
-        return self._lookback.Value
-
-    @Lookback.setter
-    def Lookback(self, value):
-        self._lookback.Value = value
-    # endregion
-
     def GetWorkingSecurities(self):
-        if self.Equity is None or self.Oil is None or self.CashEtf is None:
-            raise Exception("Set securities")
-        return [(self.Equity, self.CandleType), (self.Oil, self.CandleType), (self.CashEtf, self.CandleType)]
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._oil_security_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(crude_oil_predicts_equity_strategy, self).OnReseted()
-        self._wins.clear()
-        self._latest_prices.clear()
-        self._last_day = DateTime.MinValue
+        self._oil_security = None
+        self._oil_momentum = None
+        self._equity_trend = None
+        self._latest_equity_price = 0.0
+        self._latest_equity_trend = 0.0
+        self._latest_oil_momentum = 0.0
+        self._equity_updated = False
+        self._oil_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(crude_oil_predicts_equity_strategy, self).OnStarted(time)
 
-        for s, dt in self.GetWorkingSecurities():
-            self._wins[s] = RollingWindow(self.Lookback + 1)
-            self.SubscribeCandles(dt, True, s) \
-                .Bind(lambda candle, security=s: self.ProcessCandle(candle, security)) \
-                .Start()
+        sec2_id = str(self._oil_security_id.Value)
+        if not sec2_id:
+            raise Exception("Oil security identifier is not specified.")
 
-    def ProcessCandle(self, candle, security):
+        s = Security()
+        s.Id = sec2_id
+        self._oil_security = s
+
+        self._oil_momentum = RateOfChange()
+        self._oil_momentum.Length = int(self._lookback.Value)
+        self._equity_trend = SimpleMovingAverage()
+        self._equity_trend.Length = int(self._trend_length.Value)
+
+        equity_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        oil_subscription = self.SubscribeCandles(self.candle_type, True, self._oil_security)
+
+        equity_subscription.Bind(self.ProcessEquityCandle).Start()
+        oil_subscription.Bind(self.ProcessOilCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, equity_subscription)
+            self.DrawCandles(area, oil_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessEquityCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._latest_prices[security] = candle.ClosePrice
-        self._wins[security].add(candle.ClosePrice)
-        day = candle.OpenTime.Date
-        if day == self._last_day:
+        self._latest_equity_price = float(candle.ClosePrice)
+
+        civ = CandleIndicatorValue(self._equity_trend, candle)
+        civ.IsFinal = True
+        trend_result = self._equity_trend.Process(civ)
+        self._latest_equity_trend = float(trend_result)
+        self._equity_updated = self._equity_trend.IsFormed
+        self.TryProcessSignal()
+
+    def ProcessOilCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
-        self._last_day = day
-        if day.Day == 1:
-            self.Rebalance()
 
-    def Rebalance(self):
-        win = self._wins.get(self.Oil)
-        if win is None or not win.is_full():
+        civ = CandleIndicatorValue(self._oil_momentum, candle)
+        civ.IsFinal = True
+        oil_result = self._oil_momentum.Process(civ)
+
+        if not oil_result.IsEmpty and self._oil_momentum.IsFormed:
+            self._latest_oil_momentum = float(oil_result)
+            self._oil_updated = True
+            self.TryProcessSignal()
+
+    def TryProcessSignal(self):
+        if not self._equity_updated or not self._oil_updated:
             return
-        oil_ret = (win.last() - win[0]) / win[0]
-        target = self.Equity if oil_ret > 0 else self.CashEtf
-        self.MoveTo(target)
 
-    def MoveTo(self, target):
-        for position in self.Positions:
-            if position.Security != target:
-                self.Move(position.Security, 0)
-        portfolio_value = self.Portfolio.CurrentValue or 0
-        price = self.GetLatestPrice(target)
-        if price > 0:
-            self.Move(target, portfolio_value / price)
+        self._equity_updated = False
+        self._oil_updated = False
 
-    def GetLatestPrice(self, security):
-        return self._latest_prices.get(security, 0)
-
-    def Move(self, security, target):
-        diff = target - self.PositionBy(security)
-        price = self.GetLatestPrice(security)
-        if price <= 0 or Math.Abs(diff) * price < 100:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        order = Order()
-        order.Security = security
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = Math.Abs(diff)
-        order.Type = OrderTypes.Market
-        order.Comment = "OilEq"
-        self.RegisterOrder(order)
 
-    def PositionBy(self, security):
-        val = self.GetPositionValue(security, self.Portfolio)
-        return val if val is not None else 0
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        oil_threshold = float(self._oil_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_signal = self._latest_oil_momentum > oil_threshold and self._latest_equity_price >= self._latest_equity_trend
+        exit_signal = self._latest_oil_momentum <= oil_threshold or self._latest_equity_price < self._latest_equity_trend
+
+        if self._cooldown_remaining == 0 and self.Position == 0 and bullish_signal:
+            self.BuyMarket()
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and exit_signal:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return crude_oil_predicts_equity_strategy()
-
-# Helper class for rolling window functionality
-class RollingWindow:
-    def __init__(self, n):
-        self._n = n
-        self._q = []
-
-    def add(self, v):
-        if len(self._q) == self._n:
-            self._q.pop(0)
-        self._q.append(v)
-
-    def is_full(self):
-        return len(self._q) == self._n
-
-    def last(self):
-        return self._q[-1]
-
-    def __getitem__(self, idx):
-        return self._q[idx]

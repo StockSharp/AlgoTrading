@@ -42,25 +42,29 @@ class lux_clara_ema_vwap_strategy(Strategy):
     def OnStarted(self, time):
         super(lux_clara_ema_vwap_strategy, self).OnStarted(time)
 
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_length.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_length.Value
-        vwap = VolumeWeightedMovingAverage()
-        vwap.Length = 20
+        self._fast_ema = ExponentialMovingAverage()
+        self._fast_ema.Length = self._fast_length.Value
+        self._slow_ema = ExponentialMovingAverage()
+        self._slow_ema.Length = self._slow_length.Value
+        self._vwap = VolumeWeightedMovingAverage()
+        self._vwap.Length = 20
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, vwap, self._process_candle).Start()
+        subscription.Bind(self._fast_ema, self._slow_ema, self._vwap, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._fast_ema)
+            self.DrawIndicator(area, self._slow_ema)
+            self.DrawIndicator(area, self._vwap)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val, vwap_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
             return
 
         f = float(fast_val)
@@ -83,12 +87,15 @@ class lux_clara_ema_vwap_strategy(Strategy):
         cross_above = self._prev_fast <= self._prev_slow and f > s
         cross_below = self._prev_fast >= self._prev_slow and f < s
 
-        if self.Position <= 0 and cross_above and close > v:
+        above_vwap = not self._vwap.IsFormed or close > v
+        below_vwap = not self._vwap.IsFormed or close < v
+
+        if self.Position <= 0 and cross_above and above_vwap:
             if self.Position < 0:
                 self.BuyMarket()
             self.BuyMarket()
             self._cooldown = 12
-        elif self.Position >= 0 and cross_below and close < v:
+        elif self.Position >= 0 and cross_below and below_vwap:
             if self.Position > 0:
                 self.SellMarket()
             self.SellMarket()

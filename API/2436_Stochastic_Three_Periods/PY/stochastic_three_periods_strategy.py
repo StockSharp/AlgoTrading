@@ -58,7 +58,7 @@ class stochastic_three_periods_strategy(Strategy):
         slow_result = self._slow_rsi.Process(inp)
         if not self._slow_rsi.IsFormed or slow_result.IsEmpty:
             return
-        slow_value = float(slow_result.ToDecimal())
+        slow_value = float(slow_result)
         fast_value = float(fast_value)
 
         if fast_value > slow_value and fast_value > 55 and slow_value > 50 and slow_value > self._prev_slow and self._last_signal != 1 and self.Position <= 0:

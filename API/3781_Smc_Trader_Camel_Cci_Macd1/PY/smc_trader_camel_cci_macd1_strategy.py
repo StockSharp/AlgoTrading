@@ -106,8 +106,8 @@ class smc_trader_camel_cci_macd1_strategy(Strategy):
         macd_main = float(macd_raw)
         macd_signal = float(signal_raw)
 
-        cci_val = float(cci_value.ToDecimal())
-        ema_val = float(ema_value.ToDecimal())
+        cci_val = float(cci_value)
+        ema_val = float(ema_value)
 
         if self._prev_macd_main is None or self._prev_macd_signal is None:
             self._prev_macd_main = macd_main

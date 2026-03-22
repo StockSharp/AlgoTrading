@@ -3,237 +3,221 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import StochasticOscillator, StochasticOscillatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class stochastic_slope_mean_reversion_strategy(Strategy):
     """
-    Stochastic Slope Mean Reversion Strategy - strategy based on mean reversion of Stochastic %K slope.
+    Stochastic slope mean reversion strategy.
+    Trades reversions from extreme smoothed stochastic slopes and exits when the slope returns to its recent average.
     """
 
     def __init__(self):
         super(stochastic_slope_mean_reversion_strategy, self).__init__()
 
-        # Initialize strategy parameters
-        self._stoch_period = self.Param("StochPeriod", 14) \
-            .SetDisplay("Stoch Period", "Stochastic oscillator period", "Stochastic Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 30, 5)
-
-        self._stoch_k_period = self.Param("StochKPeriod", 3) \
-            .SetDisplay("Stoch %K Period", "Stochastic %K smoothing period", "Stochastic Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1, 5, 1)
+        self._stoch_k_period = self.Param("StochKPeriod", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Stoch %K Period", "Stochastic lookback period", "Stochastic")
 
         self._stoch_d_period = self.Param("StochDPeriod", 3) \
-            .SetDisplay("Stoch %D Period", "Stochastic %D smoothing period", "Stochastic Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1, 5, 1)
+            .SetGreaterThanZero() \
+            .SetDisplay("Stoch %D Period", "Smoothing period for stochastic %K", "Stochastic")
 
         self._slope_lookback = self.Param("SlopeLookback", 20) \
-            .SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetGreaterThanZero() \
+            .SetDisplay("Slope Lookback", "Period for slope statistics", "Slope")
 
-        self._threshold_multiplier = self.Param("ThresholdMultiplier", 2.0) \
-            .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Threshold Multiplier", "Std dev multiplier for entry", "Slope")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetGreaterThanZero() \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._long_stoch_level = self.Param("LongStochLevel", 30.0) \
+            .SetDisplay("Long Stoch Level", "Maximum stochastic level for long entries", "Signal Filters")
+
+        self._short_stoch_level = self.Param("ShortStochLevel", 70.0) \
+            .SetDisplay("Short Stoch Level", "Minimum stochastic level for short entries", "Signal Filters")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal variables
-        self._previous_stoch_k_value = 0
-        self._current_slope = 0
-        self._average_slope = 0
-        self._slope_std_dev = 0
-        self._slope_count = 0
-        self._sum_slopes = 0
-        self._sum_squared_diff = 0
+        self._highs = None
+        self._lows = None
+        self._price_index = 0
+        self._price_filled = 0
+        self._k_values = None
+        self._k_index = 0
+        self._k_filled = 0
+        self._previous_stoch_k = 0.0
+        self._slope_history = None
+        self._slope_index = 0
+        self._slope_filled = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
-    def StochPeriod(self):
-        """Stochastic period."""
-        return self._stoch_period.Value
-
-    @StochPeriod.setter
-    def StochPeriod(self, value):
-        self._stoch_period.Value = value
-
-    @property
-    def StochKPeriod(self):
-        """Stochastic %K period."""
-        return self._stoch_k_period.Value
-
-    @StochKPeriod.setter
-    def StochKPeriod(self, value):
-        self._stoch_k_period.Value = value
-
-    @property
-    def StochDPeriod(self):
-        """Stochastic %D period."""
-        return self._stoch_d_period.Value
-
-    @StochDPeriod.setter
-    def StochDPeriod(self, value):
-        self._stoch_d_period.Value = value
-
-    @property
-    def SlopeLookback(self):
-        """Period for calculating slope statistics."""
-        return self._slope_lookback.Value
-
-    @SlopeLookback.setter
-    def SlopeLookback(self, value):
-        self._slope_lookback.Value = value
-
-    @property
-    def ThresholdMultiplier(self):
-        """Threshold multiplier for standard deviation."""
-        return self._threshold_multiplier.Value
-
-    @ThresholdMultiplier.setter
-    def ThresholdMultiplier(self, value):
-        self._threshold_multiplier.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(stochastic_slope_mean_reversion_strategy, self).OnReseted()
-        self._previous_stoch_k_value = 0
-        self._current_slope = 0
-        self._average_slope = 0
-        self._slope_std_dev = 0
-        self._slope_count = 0
-        self._sum_slopes = 0
-        self._sum_squared_diff = 0
+        kp = int(self._stoch_k_period.Value)
+        dp = int(self._stoch_d_period.Value)
+        lb = int(self._slope_lookback.Value)
+        self._highs = [0.0] * kp
+        self._lows = [0.0] * kp
+        self._price_index = 0
+        self._price_filled = 0
+        self._k_values = [0.0] * dp
+        self._k_index = 0
+        self._k_filled = 0
+        self._previous_stoch_k = 0.0
+        self._slope_history = [0.0] * lb
+        self._slope_index = 0
+        self._slope_filled = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(stochastic_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Reset variables
+        kp = int(self._stoch_k_period.Value)
+        dp = int(self._stoch_d_period.Value)
+        lb = int(self._slope_lookback.Value)
+        self._highs = [0.0] * kp
+        self._lows = [0.0] * kp
+        self._k_values = [0.0] * dp
+        self._slope_history = [0.0] * lb
+        self._price_index = 0
+        self._price_filled = 0
+        self._k_index = 0
+        self._k_filled = 0
+        self._slope_index = 0
+        self._slope_filled = 0
+        self._cooldown = 0
 
-        # Create Stochastic indicator
-        stochastic = StochasticOscillator()
-        stochastic.K.Length = self.StochKPeriod
-        stochastic.D.Length = self.StochDPeriod
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._process_candle).Start()
 
-        # Subscribe to candles and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(stochastic, self.ProcessCandle).Start()
-
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, stochastic)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, stoch_value):
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if stoch_value.K is None:
+        kp = int(self._stoch_k_period.Value)
+        dp = int(self._stoch_d_period.Value)
+        lb = int(self._slope_lookback.Value)
+
+        high_price = float(candle.HighPrice)
+        low_price = float(candle.LowPrice)
+        close_price = float(candle.ClosePrice)
+
+        self._highs[self._price_index] = high_price
+        self._lows[self._price_index] = low_price
+        self._price_index = (self._price_index + 1) % kp
+
+        if self._price_filled < kp:
+            self._price_filled += 1
+
+        if self._price_filled < kp:
             return
 
-        stoch_k = float(stoch_value.K)
+        highest = -1e18
+        lowest = 1e18
+        for i in range(kp):
+            if self._highs[i] > highest:
+                highest = self._highs[i]
+            if self._lows[i] < lowest:
+                lowest = self._lows[i]
 
-        # Calculate Stochastic %K slope only if we have previous %K value
-        if self._previous_stoch_k_value != 0:
-            # Calculate current slope
-            self._current_slope = stoch_k - self._previous_stoch_k_value
+        rng = highest - lowest
+        if rng <= 0:
+            return
 
-            # Update statistics
-            self._slope_count += 1
-            self._sum_slopes += self._current_slope
+        raw_k = (close_price - lowest) / rng * 100.0
 
-            # Update average slope
-            if self._slope_count > 0:
-                self._average_slope = self._sum_slopes / self._slope_count
+        self._k_values[self._k_index] = raw_k
+        self._k_index = (self._k_index + 1) % dp
 
-            # Calculate sum of squared differences for std dev
-            self._sum_squared_diff += (self._current_slope - self._average_slope) * (self._current_slope - self._average_slope)
+        if self._k_filled < dp:
+            self._k_filled += 1
 
-            # Calculate standard deviation after we have enough samples
-            if self._slope_count >= self.SlopeLookback:
-                self._slope_std_dev = Math.Sqrt(self._sum_squared_diff / self._slope_count)
+        if self._k_filled < dp:
+            return
 
-                # Remove oldest slope value contribution (simple approximation)
-                if self._slope_count > self.SlopeLookback:
-                    self._slope_count = self.SlopeLookback
-                    self._sum_slopes = self._average_slope * self.SlopeLookback
-                    self._sum_squared_diff = self._slope_std_dev * self._slope_std_dev * self.SlopeLookback
+        stoch_k = 0.0
+        for i in range(dp):
+            stoch_k += self._k_values[i]
+        stoch_k /= float(dp)
 
-                # Calculate entry thresholds
-                lower_threshold = self._average_slope - self.ThresholdMultiplier * self._slope_std_dev
-                upper_threshold = self._average_slope + self.ThresholdMultiplier * self._slope_std_dev
+        if not self._is_initialized:
+            self._previous_stoch_k = stoch_k
+            self._is_initialized = True
+            return
 
-                # Trading logic
-                if self._current_slope < lower_threshold and self.Position <= 0:
-                    # Slope is below lower threshold (Stochastic %K falling rapidly) - mean reversion buy signal
-                    self.BuyMarket(self.Volume + abs(self.Position))
-                    self.LogInfo(
-                        "BUY Signal: Stoch %K Slope {0:F6} < Lower Threshold {1:F6}".format(
-                            self._current_slope, lower_threshold))
-                elif self._current_slope > upper_threshold and self.Position >= 0:
-                    # Slope is above upper threshold (Stochastic %K rising rapidly) - mean reversion sell signal
-                    self.SellMarket(self.Volume + abs(self.Position))
-                    self.LogInfo(
-                        "SELL Signal: Stoch %K Slope {0:F6} > Upper Threshold {1:F6}".format(
-                            self._current_slope, upper_threshold))
-                elif self._current_slope > self._average_slope and self.Position > 0:
-                    # Exit long position when slope returns to average (profit target)
-                    self.SellMarket(self.Position)
-                    self.LogInfo(
-                        "EXIT LONG: Stoch %K Slope {0:F6} returned to average {1:F6}".format(
-                            self._current_slope, self._average_slope))
-                elif self._current_slope < self._average_slope and self.Position < 0:
-                    # Exit short position when slope returns to average (profit target)
-                    self.BuyMarket(abs(self.Position))
-                    self.LogInfo(
-                        "EXIT SHORT: Stoch %K Slope {0:F6} returned to average {1:F6}".format(
-                            self._current_slope, self._average_slope))
+        slope = stoch_k - self._previous_stoch_k
+        self._previous_stoch_k = stoch_k
 
-        # Save current Stochastic %K value for next calculation
-        self._previous_stoch_k_value = stoch_k
+        self._slope_history[self._slope_index] = slope
+        self._slope_index = (self._slope_index + 1) % lb
+
+        if self._slope_filled < lb:
+            self._slope_filled += 1
+
+        if self._slope_filled < lb:
+            return
+
+        avg_slope = 0.0
+        for i in range(lb):
+            avg_slope += self._slope_history[i]
+        avg_slope /= float(lb)
+
+        sum_sq = 0.0
+        for i in range(lb):
+            diff = self._slope_history[i] - avg_slope
+            sum_sq += diff * diff
+        std_dev = math.sqrt(sum_sq / float(lb))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        tm = float(self._threshold_multiplier.Value)
+        lower_threshold = avg_slope - tm * std_dev
+        upper_threshold = avg_slope + tm * std_dev
+        long_level = float(self._long_stoch_level.Value)
+        short_level = float(self._short_stoch_level.Value)
+
+        if self.Position == 0:
+            if slope < lower_threshold and stoch_k <= long_level:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif slope > upper_threshold and stoch_k >= short_level:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0 and slope >= avg_slope:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0 and slope <= avg_slope:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return stochastic_slope_mean_reversion_strategy()
-

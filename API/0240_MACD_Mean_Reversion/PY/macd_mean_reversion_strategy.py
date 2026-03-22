@@ -27,6 +27,9 @@ class macd_mean_reversion_strategy(Strategy):
         self._hist_values = []
         self._avg_hist = 0.0
         self._std_hist = 0.0
+        self._sum = 0.0
+        self._sum_sq = 0.0
+        self._cnt = 0
 
     @property
     def candle_type(self):
@@ -37,6 +40,9 @@ class macd_mean_reversion_strategy(Strategy):
         self._hist_values = []
         self._avg_hist = 0.0
         self._std_hist = 0.0
+        self._sum = 0.0
+        self._sum_sq = 0.0
+        self._cnt = 0
 
     def OnStarted(self, time):
         super(macd_mean_reversion_strategy, self).OnStarted(time)
@@ -56,36 +62,57 @@ class macd_mean_reversion_strategy(Strategy):
     def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         typed_val = macd_value
         if typed_val.Macd is None or typed_val.Signal is None:
             return
         macd_line = float(typed_val.Macd)
-        signal_line = float(typed_val.Signal)
-        hist = macd_line - signal_line
-        lb = self._average_period.Value
-        self._hist_values.append(hist)
+
+        # CS uses macd line value for statistics (not histogram)
+        lb = int(self._average_period.Value)
+        self._hist_values.append(macd_line)
+        self._sum += macd_line
+        self._sum_sq += macd_line * macd_line
+        self._cnt += 1
+
         if len(self._hist_values) > lb:
-            self._hist_values.pop(0)
-        if len(self._hist_values) < lb:
-            return
-        cnt = len(self._hist_values)
-        avg = sum(self._hist_values) / cnt
-        var = sum((h - avg) ** 2 for h in self._hist_values) / cnt
-        std = math.sqrt(var) if var > 0 else 0.0
+            oldest = self._hist_values.pop(0)
+            self._sum -= oldest
+            self._sum_sq -= oldest * oldest
+            self._cnt -= 1
+
+        if self._cnt > 0:
+            avg = self._sum / self._cnt
+            if self._cnt > 1:
+                variance = (self._sum_sq - (self._sum * self._sum) / self._cnt) / (self._cnt - 1)
+                std = math.sqrt(variance) if variance > 0 else 0.0
+            else:
+                std = 0.0
+        else:
+            avg = 0.0
+            std = 0.0
+
         self._avg_hist = avg
         self._std_hist = std
-        dm = self._dev_mult.Value
+
+        if self._cnt < lb:
+            return
+
+        dm = float(self._dev_mult.Value)
         if self.Position == 0:
-            if hist < avg - dm * std:
-                self.BuyMarket()
-            elif hist > avg + dm * std:
-                self.SellMarket()
+            if macd_line < avg - dm * std:
+                self.BuyMarket(self.Volume)
+            elif macd_line > avg + dm * std:
+                self.SellMarket(self.Volume)
         elif self.Position > 0:
-            if hist > avg:
-                self.SellMarket()
+            if macd_line > avg:
+                self.ClosePosition()
         elif self.Position < 0:
-            if hist < avg:
-                self.BuyMarket()
+            if macd_line < avg:
+                self.ClosePosition()
 
     def CreateClone(self):
         return macd_mean_reversion_strategy()

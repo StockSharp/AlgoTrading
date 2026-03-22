@@ -165,7 +165,7 @@ class rm_stochastic_band_strategy(Strategy):
         if k is not None:
             self._stoch_m15 = float(k)
 
-        self._atr_value = float(atr_value.ToDecimal())
+        self._atr_value = float(atr_value)
 
     def _process_base_candle(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:

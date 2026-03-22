@@ -89,10 +89,14 @@ class ma_crossover_demand_supply_zones_sltp_strategy(Strategy):
         cross_up = self._prev_short <= self._prev_long and sv > lv
         cross_down = self._prev_short >= self._prev_long and sv < lv
         if cross_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._entry_price = close
             self._cooldown = 10
         elif cross_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._entry_price = close
             self._cooldown = 10

@@ -122,7 +122,7 @@ class puria_strategy(Strategy):
         ma75_f = float(ma75_val)
         ma85_f = float(ma85_val)
         ma5_f = float(ma5_val)
-        macd_val = float(macd_result.ToDecimal())
+        macd_val = float(macd_result)
 
         if not self._initialized:
             self._prev_ma75 = ma75_f

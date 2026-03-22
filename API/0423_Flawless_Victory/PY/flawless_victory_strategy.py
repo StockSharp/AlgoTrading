@@ -3,23 +3,19 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
+
 class flawless_victory_strategy(Strategy):
-    """
-    FlawlessVictory: Bollinger Bands + RSI mean reversion.
-    Buys when price below lower BB with RSI oversold.
-    Sells when price above upper BB with RSI overbought.
-    Exits at middle band.
-    """
+    """Flawless Victory Strategy. Bollinger Bands + RSI mean reversion."""
 
     def __init__(self):
         super(flawless_victory_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle Type", "Candle type for strategy calculation", "General")
+            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._bb_length = self.Param("BBLength", 20) \
             .SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
         self._bb_width = self.Param("BBWidth", 1.5) \
@@ -33,6 +29,8 @@ class flawless_victory_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._bollinger = None
+        self._rsi = None
         self._cooldown_remaining = 0
 
     @property
@@ -41,68 +39,72 @@ class flawless_victory_strategy(Strategy):
 
     def OnReseted(self):
         super(flawless_victory_strategy, self).OnReseted()
+        self._bollinger = None
+        self._rsi = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(flawless_victory_strategy, self).OnStarted(time)
 
-        bb = BollingerBands()
-        bb.Length = self._bb_length.Value
-        bb.Width = self._bb_width.Value
+        self._bollinger = BollingerBands()
+        self._bollinger.Length = int(self._bb_length.Value)
+        self._bollinger.Width = float(self._bb_width.Value)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bb, rsi, self._process_candle).Start()
+        subscription.BindEx(self._bollinger, self._rsi, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, bb)
+            self.DrawIndicator(area, self._bollinger)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, bb_value, rsi_value):
+    def _on_process(self, candle, bb_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        upper = bb_value.UpBand
-        lower = bb_value.LowBand
-        middle = bb_value.MovingAverage
-
-        if upper is None or lower is None or middle is None:
+        if not self._bollinger.IsFormed or not self._rsi.IsFormed:
             return
 
+        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
+            return
         if rsi_value.IsEmpty:
             return
 
-        upper = float(upper)
-        lower = float(lower)
-        middle = float(middle)
         rsi = float(IndicatorHelper.ToDecimal(rsi_value))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
 
+        upper = float(bb_value.UpBand)
+        lower = float(bb_value.LowBand)
+        middle = float(bb_value.MovingAverage)
         close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
 
-        if close < lower and rsi < self._rsi_oversold.Value and self.Position <= 0:
+        if close < lower and rsi < float(self._rsi_oversold.Value) and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        elif close > upper and rsi > self._rsi_overbought.Value and self.Position >= 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif close > upper and rsi > float(self._rsi_overbought.Value) and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and close >= middle:
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and close <= middle:
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return flawless_victory_strategy()

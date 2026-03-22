@@ -152,7 +152,7 @@ class total_power_indicator_x_strategy(Strategy):
         if not self._ema.IsFormed:
             return
 
-        ema_val = float(ema_out.ToDecimal())
+        ema_val = float(ema_out)
 
         bull_contrib = 1 if high > ema_val else 0
         bear_contrib = 1 if low < ema_val else 0

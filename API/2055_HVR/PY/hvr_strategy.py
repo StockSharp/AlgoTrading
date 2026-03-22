@@ -94,8 +94,8 @@ class hvr_strategy(Strategy):
         if not short_result.IsFormed or not long_result.IsFormed:
             return
 
-        short_val = float(short_result.ToDecimal())
-        long_val = float(long_result.ToDecimal())
+        short_val = float(short_result)
+        long_val = float(long_result)
 
         if long_val == 0:
             return

@@ -90,14 +90,14 @@ class color_xxdpo_strategy(Strategy):
         if not self._ma1.IsFormed or ma1_result.IsEmpty:
             return
 
-        ma1_val = float(ma1_result.ToDecimal())
+        ma1_val = float(ma1_result)
         dpo = close - ma1_val
 
         xxdpo_result = self._ma2.Process(DecimalIndicatorValue(self._ma2, dpo, t, True))
         if not self._ma2.IsFormed or xxdpo_result.IsEmpty:
             return
 
-        xxdpo = float(xxdpo_result.ToDecimal())
+        xxdpo = float(xxdpo_result)
 
         if not self._is_initialized:
             self._prev2 = xxdpo

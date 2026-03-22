@@ -101,8 +101,8 @@ class trend_catcher_strategy(Strategy):
         if not sar_value.IsFormed or not fast_ma_value.IsFormed:
             return
 
-        sar = float(sar_value.ToDecimal())
-        fast_val = float(fast_ma_value.ToDecimal())
+        sar = float(sar_value)
+        fast_val = float(fast_ma_value)
 
         close = float(candle.ClosePrice)
         t = candle.OpenTime
@@ -111,7 +111,7 @@ class trend_catcher_strategy(Strategy):
         if not slow_result.IsFormed:
             return
 
-        slow_val = float(slow_result.ToDecimal())
+        slow_val = float(slow_result)
 
         is_price_above_sar = close > sar
 

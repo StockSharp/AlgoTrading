@@ -66,7 +66,7 @@ class macd_divergence_rsi_strategy(Strategy):
 
         macd_main = float(macd_value.Macd)
         signal = float(macd_value.Signal)
-        rsi_val = float(rsi_value.ToDecimal())
+        rsi_val = float(rsi_value)
 
         if self._has_prev:
             if self._prev_macd <= self._prev_signal and macd_main > signal and rsi_val < 40 and self.Position <= 0:

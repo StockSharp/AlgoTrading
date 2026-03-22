@@ -194,7 +194,7 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         ema_result = self._ema.Process(DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime))
         if not self._ema.IsFormed:
             return
-        ema_val = float(ema_result.ToDecimal())
+        ema_val = float(ema_result)
 
         bulls = high - ema_val
         bears = low - ema_val
@@ -240,8 +240,8 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         if not self._value_smoother.IsFormed or not self._volume_smoother.IsFormed:
             return
 
-        smoothed_value = float(sv_result.ToDecimal())
-        smoothed_volume = float(vv_result.ToDecimal())
+        smoothed_value = float(sv_result)
+        smoothed_volume = float(vv_result)
 
         color = self._determine_color(smoothed_value, smoothed_volume)
 

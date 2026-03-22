@@ -100,11 +100,11 @@ class volatile_action_strategy(Strategy):
                 not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed):
             return
 
-        atr1 = float(atr1_val.ToDecimal())
-        atr_base = float(atr_base_val.ToDecimal())
-        jaw = float(jaw_val.ToDecimal())
-        teeth = float(teeth_val.ToDecimal())
-        lips = float(lips_val.ToDecimal())
+        atr1 = float(atr1_val)
+        atr_base = float(atr_base_val)
+        jaw = float(jaw_val)
+        teeth = float(teeth_val)
+        lips = float(lips_val)
 
         bull_gator = lips > teeth and teeth > jaw
         bear_gator = lips < teeth and teeth < jaw

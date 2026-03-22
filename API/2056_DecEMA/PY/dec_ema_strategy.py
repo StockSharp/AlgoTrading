@@ -92,7 +92,7 @@ class dec_ema_strategy(Strategy):
         if not self._base_ema.IsFormed:
             return
 
-        ema0 = float(ema_result.ToDecimal())
+        ema0 = float(ema_result)
         alpha = 2.0 / (1.0 + float(self.Length))
 
         self._ema1 = alpha * ema0 + (1.0 - alpha) * self._ema1

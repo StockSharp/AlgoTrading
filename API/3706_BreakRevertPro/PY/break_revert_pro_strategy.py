@@ -164,7 +164,7 @@ class break_revert_pro_strategy(Strategy):
         if self._m1_trend_average is not None:
             trend_val = self._m1_trend_average.Process(
                 DecimalIndicatorValue(self._m1_trend_average, candle.ClosePrice, ctime))
-            tv = float(trend_val.ToDecimal())
+            tv = float(trend_val)
             if self._m1_trend_average.IsFormed:
                 self._m1_trend = close - tv
 
@@ -176,14 +176,14 @@ class break_revert_pro_strategy(Strategy):
                 from decimal import Decimal
                 avg_result = self._event_frequency.Process(
                     DecimalIndicatorValue(self._event_frequency, event_value, ctime))
-                avg = float(avg_result.ToDecimal())
+                avg = float(avg_result)
                 if self._event_frequency.IsFormed:
                     self._poisson_probability = max(0.0, min(1.0, avg))
 
             if self._volatility_ema is not None:
                 ema_result = self._volatility_ema.Process(
                     DecimalIndicatorValue(self._volatility_ema, move, ctime))
-                ema = float(ema_result.ToDecimal())
+                ema = float(ema_result)
                 if self._volatility_ema.IsFormed:
                     normalized = ema / (pip * 10.0) if pip > 0 else 0.0
                     self._exponential_probability = max(0.0, min(1.0, normalized))
@@ -204,7 +204,7 @@ class break_revert_pro_strategy(Strategy):
         close = float(candle.ClosePrice)
         trend_val = self._m15_trend_average.Process(
             DecimalIndicatorValue(self._m15_trend_average, candle.ClosePrice, candle.CloseTime))
-        tv = float(trend_val.ToDecimal())
+        tv = float(trend_val)
         if self._m15_trend_average.IsFormed:
             self._m15_trend = close - tv
 
@@ -220,7 +220,7 @@ class break_revert_pro_strategy(Strategy):
         close = float(candle.ClosePrice)
         trend_val = self._h1_trend_average.Process(
             DecimalIndicatorValue(self._h1_trend_average, candle.ClosePrice, candle.CloseTime))
-        tv = float(trend_val.ToDecimal())
+        tv = float(trend_val)
         if self._h1_trend_average.IsFormed:
             self._h1_trend = close - tv
 

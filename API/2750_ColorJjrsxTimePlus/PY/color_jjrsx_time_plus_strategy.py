@@ -134,7 +134,7 @@ class color_jjrsx_time_plus_strategy(Strategy):
         if not self._smoother.IsFormed:
             return
 
-        sv = float(smooth_val.ToDecimal())
+        sv = float(smooth_val)
         self._smoothed_values.append(sv)
 
         required = self.SignalShift + 3

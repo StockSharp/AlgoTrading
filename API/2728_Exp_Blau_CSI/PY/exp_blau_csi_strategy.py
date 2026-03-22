@@ -315,18 +315,18 @@ class _BlauCsiCalc:
 
         mr1 = self._m1.Process(DecimalIndicatorValue(self._m1, momentum, t))
         rr1 = self._r1.Process(DecimalIndicatorValue(self._r1, rng, t))
-        m1v = float(mr1.ToDecimal())
-        r1v = float(rr1.ToDecimal())
+        m1v = float(mr1)
+        r1v = float(rr1)
 
         mr2 = self._m2.Process(DecimalIndicatorValue(self._m2, m1v, t))
         rr2 = self._r2.Process(DecimalIndicatorValue(self._r2, r1v, t))
-        m2v = float(mr2.ToDecimal())
-        r2v = float(rr2.ToDecimal())
+        m2v = float(mr2)
+        r2v = float(rr2)
 
         mr3 = self._m3.Process(DecimalIndicatorValue(self._m3, m2v, t))
         rr3 = self._r3.Process(DecimalIndicatorValue(self._r3, r2v, t))
-        m3v = float(mr3.ToDecimal())
-        r3v = float(rr3.ToDecimal())
+        m3v = float(mr3)
+        r3v = float(rr3)
 
         if r3v != 0.0:
             return 100.0 * m3v / r3v

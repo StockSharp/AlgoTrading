@@ -59,7 +59,7 @@ class go_risk_managed_strategy(Strategy):
         if not self._open_ma.IsFormed:
             return
 
-        open_v = float(open_result.ToDecimal())
+        open_v = float(open_result)
         close_v = float(close_val)
         go = close_v - open_v
 

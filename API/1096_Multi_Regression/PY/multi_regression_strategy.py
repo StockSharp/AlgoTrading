@@ -61,6 +61,8 @@ class multi_regression_strategy(Strategy):
     def OnProcess(self, candle, sma_val, std_val):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         sv = float(sma_val)
         sdv = float(std_val)
         price = float(candle.ClosePrice)

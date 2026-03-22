@@ -156,19 +156,19 @@ class blau_ergodic_mdi_strategy(Strategy):
         base_val = self._price_average.Process(DecimalIndicatorValue(self._price_average, price, t))
         if not base_val.IsFormed:
             return
-        base_price = float(base_val.ToDecimal())
+        base_price = float(base_val)
         momentum = (float(price) - base_price) / self._point_value if self._point_value != 0 else 0.0
         first_val = self._first_smoothing.Process(DecimalIndicatorValue(self._first_smoothing, momentum, t))
         if not first_val.IsFormed:
             return
-        second_val = self._second_smoothing.Process(DecimalIndicatorValue(self._second_smoothing, float(first_val.ToDecimal()), t))
+        second_val = self._second_smoothing.Process(DecimalIndicatorValue(self._second_smoothing, float(first_val), t))
         if not second_val.IsFormed:
             return
-        histogram = float(second_val.ToDecimal())
+        histogram = float(second_val)
         signal_val = self._signal_smoothing.Process(DecimalIndicatorValue(self._signal_smoothing, histogram, t))
         if not signal_val.IsFormed:
             return
-        signal = float(signal_val.ToDecimal())
+        signal = float(signal_val)
         self._add_to_buffer(histogram, signal)
         shift = self.SignalBarShift
         latest_hist = self._try_get_hist(shift)

@@ -105,7 +105,7 @@ class j_brain_ultra_rsi_strategy(Strategy):
         if not rsi_result.IsFormed:
             return
 
-        rsi = float(rsi_result.ToDecimal())
+        rsi = float(rsi_result)
 
         k_val = stoch_value.K
         d_val = stoch_value.D

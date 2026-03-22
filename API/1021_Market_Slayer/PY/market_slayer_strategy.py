@@ -61,11 +61,11 @@ class market_slayer_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.ServerTime
-        high_result = self._trend_wma_high.Process(DecimalIndicatorValue(self._trend_wma_high, float(candle.HighPrice), t))
-        low_result = self._trend_wma_low.Process(DecimalIndicatorValue(self._trend_wma_low, float(candle.LowPrice), t))
+        high_result = self._trend_wma_high.Process(DecimalIndicatorValue(self._trend_wma_high, candle.HighPrice, t))
+        low_result = self._trend_wma_low.Process(DecimalIndicatorValue(self._trend_wma_low, candle.LowPrice, t))
         if self._trend_wma_high.IsFormed and self._trend_wma_low.IsFormed:
-            high_v = float(high_result.ToDecimal())
-            low_v = float(low_result.ToDecimal())
+            high_v = float(high_result)
+            low_v = float(low_result)
             close = float(candle.ClosePrice)
             if close > high_v:
                 self._trend_hlv = 1

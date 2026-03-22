@@ -10,6 +10,8 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class bollinger_winner_lite_strategy(Strategy):
+    """Bollinger Bands Winner LITE Strategy. Buys when candle body extends below lower BB, sells when above upper BB."""
+
     def __init__(self):
         super(bollinger_winner_lite_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
@@ -24,71 +26,67 @@ class bollinger_winner_lite_strategy(Strategy):
             .SetDisplay("Short entries", "Enable short entries", "Strategy")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
+
+        self._bollinger = None
         self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
         return self._candle_type.Value
-    @property
-    def bb_length(self):
-        return self._bb_length.Value
-    @property
-    def bb_multiplier(self):
-        return self._bb_multiplier.Value
-    @property
-    def candle_percent(self):
-        return self._candle_percent.Value
-    @property
-    def show_short(self):
-        return self._show_short.Value
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
 
     def OnReseted(self):
         super(bollinger_winner_lite_strategy, self).OnReseted()
+        self._bollinger = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(bollinger_winner_lite_strategy, self).OnStarted(time)
-        bollinger = BollingerBands()
-        bollinger.Length = self.bb_length
-        bollinger.Width = self.bb_multiplier
+        self._bollinger = BollingerBands()
+        self._bollinger.Length = int(self._bb_length.Value)
+        self._bollinger.Width = float(self._bb_multiplier.Value)
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bollinger, self.OnProcess).Start()
+        subscription.BindEx(self._bollinger, self._on_process).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, bollinger)
+            self.DrawIndicator(area, self._bollinger)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, bollinger_value):
+    def _on_process(self, candle, bollinger_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._bollinger.IsFormed:
+            return
+
         bb = bollinger_value
         if bb.UpBand is None or bb.LowBand is None:
             return
-        upper_band = float(bb.UpBand)
-        lower_band = float(bb.LowBand)
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
             return
 
+        upper_band = float(bb.UpBand)
+        lower_band = float(bb.LowBand)
         close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
+
         buy = close <= lower_band
         sell = close >= upper_band
 
         if buy and self.Position <= 0:
-            self.BuyMarket()
-            self._cooldown_remaining = self.cooldown_bars
+            if self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif sell:
             if self.Position > 0:
-                self.SellMarket()
-                self._cooldown_remaining = self.cooldown_bars
-            elif self.show_short and self.Position == 0:
-                self.SellMarket()
-                self._cooldown_remaining = self.cooldown_bars
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown_remaining = cooldown
+            elif bool(self._show_short.Value) and self.Position == 0:
+                self.SellMarket(self.Volume)
+                self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return bollinger_winner_lite_strategy()

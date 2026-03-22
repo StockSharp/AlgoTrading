@@ -76,8 +76,8 @@ class x2_ma_digit_dm_361_strategy(Strategy):
             return
         if not fast_ma_value.IsFinal or not slow_ma_value.IsFinal or not adx_value.IsFinal:
             return
-        fast = float(fast_ma_value.ToDecimal())
-        slow = float(slow_ma_value.ToDecimal())
+        fast = float(fast_ma_value)
+        slow = float(slow_ma_value)
         adx_typed = adx_value
         plus_di = adx_typed.Dx.Plus
         minus_di = adx_typed.Dx.Minus

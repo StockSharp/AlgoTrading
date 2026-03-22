@@ -163,9 +163,9 @@ class trading_lab_best_macd_strategy(Strategy):
 
         self._check_protective_levels(candle)
 
-        sma_value = float(sma_val.ToDecimal())
-        resistance_value = float(highest_val.ToDecimal())
-        support_value = float(lowest_val.ToDecimal())
+        sma_value = float(sma_val)
+        resistance_value = float(highest_val)
+        support_value = float(lowest_val)
 
         macd_main_raw = macd_val.Macd
         macd_signal_raw = macd_val.Signal

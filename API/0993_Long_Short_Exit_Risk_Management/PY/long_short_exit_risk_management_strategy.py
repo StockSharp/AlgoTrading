@@ -81,10 +81,10 @@ class long_short_exit_risk_management_strategy(Strategy):
         cross_up = self._prev_fast <= self._prev_slow and fv > sv
         cross_down = self._prev_fast >= self._prev_slow and fv < sv
         if cross_up and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif cross_down and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         self._prev_fast = fv
         self._prev_slow = sv

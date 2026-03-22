@@ -135,8 +135,8 @@ class liquidex_keltner_strategy(Strategy):
             self._prev_price = price
             return
 
-        ma = float(ma_result.ToDecimal())
-        rsi_val = float(rsi_result.ToDecimal()) if rsi_result.IsFormed else 50.0
+        ma = float(ma_result)
+        rsi_val = float(rsi_result) if rsi_result.IsFormed else 50.0
 
         if self.use_keltner_filter:
             upper_val = keltner_value.Upper

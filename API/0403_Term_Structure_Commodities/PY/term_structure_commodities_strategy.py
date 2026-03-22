@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -27,44 +27,42 @@ class term_structure_commodities_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._fast_ema = None
+        self._slow_ema = None
         self._cooldown_remaining = 0
 
     @property
-    def FastPeriod(self):
-        return self._fast_period.Value
-
-    @property
-    def SlowPeriod(self):
-        return self._slow_period.Value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(term_structure_commodities_strategy, self).OnReseted()
+        self._fast_ema = None
+        self._slow_ema = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(term_structure_commodities_strategy, self).OnStarted(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.FastPeriod
+        self._fast_ema = ExponentialMovingAverage()
+        self._fast_ema.Length = int(self._fast_period.Value)
 
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.SlowPeriod
+        self._slow_ema = ExponentialMovingAverage()
+        self._slow_ema.Length = int(self._slow_period.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
         subscription \
-            .Bind(fast_ema, slow_ema, self.ProcessCandle) \
+            .Bind(self._fast_ema, self._slow_ema, self._process_candle) \
             .Start()
 
-    def ProcessCandle(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self._cooldown_remaining > 0:
@@ -76,14 +74,14 @@ class term_structure_commodities_strategy(Strategy):
 
         if fv > sv and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = int(self._cooldown_bars.Value)
         elif fv < sv and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
         return term_structure_commodities_strategy()

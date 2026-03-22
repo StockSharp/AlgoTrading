@@ -3,67 +3,33 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Array, Math
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import (
-    SimpleMovingAverage,
-    ExponentialMovingAverage,
-    AverageTrueRange,
-)
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class pin_bar_magic_strategy(Strategy):
-    """Pin Bar Magic strategy using trend filters and wick analysis.
-
-    Identifies bullish and bearish pin bars within EMA/SMA trends. Orders
-    are placed at candle extremes and cancelled after a number of bars if
-    not triggered.
-    """
+    """Pin Bar Magic Strategy."""
 
     def __init__(self):
         super(pin_bar_magic_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(60)).SetDisplay(
-            "Candle type", "Candle type for strategy calculation.", "General"
-        )
-        self._equity_risk = self.Param("EquityRisk", 3.0).SetDisplay(
-            "Equity Risk %", "Equity risk percentage", "Risk Management"
-        )
-        self._atr_multiplier = self.Param("AtrMultiplier", 0.5).SetDisplay(
-            "ATR Multiplier", "Stop loss ATR multiplier", "Risk Management"
-        )
-        self._slow_sma_len = self.Param("SlowSmaLength", 50).SetDisplay(
-            "Slow SMA Period", "Slow SMA period", "Indicators"
-        )
-        self._med_ema_len = self.Param("MediumEmaLength", 18).SetDisplay(
-            "Medium EMA Period", "Medium EMA period", "Indicators"
-        )
-        self._fast_ema_len = self.Param("FastEmaLength", 6).SetDisplay(
-            "Fast EMA Period", "Fast EMA period", "Indicators"
-        )
-        self._atr_len = self.Param("AtrLength", 14).SetDisplay(
-            "ATR Period", "ATR period", "Indicators"
-        )
-        self._cancel_bars = self.Param("CancelEntryBars", 3).SetDisplay(
-            "Cancel Entry Bars", "Cancel entry after X bars", "Strategy"
-        )
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
+        self._slow_sma_length = self.Param("SlowSmaLength", 50) \
+            .SetDisplay("Slow SMA Period", "Slow SMA period", "Indicators")
+        self._medium_ema_length = self.Param("MediumEmaLength", 18) \
+            .SetDisplay("Medium EMA Period", "Medium EMA period", "Indicators")
+        self._fast_ema_length = self.Param("FastEmaLength", 6) \
+            .SetDisplay("Fast EMA Period", "Fast EMA period", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 10) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
         self._slow_sma = None
-        self._med_ema = None
+        self._medium_ema = None
         self._fast_ema = None
-        self._atr = None
-
-        self._bars_since_signal = 0
-        self._pending_long = False
-        self._pending_short = False
-        self._entry_price = 0.0
-        self._stop_loss = 0.0
-        
-        # Store previous indicator values
-        self._prev_fast_ema = 0.0
-        self._prev_med_ema = 0.0
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
@@ -71,125 +37,105 @@ class pin_bar_magic_strategy(Strategy):
 
     def OnReseted(self):
         super(pin_bar_magic_strategy, self).OnReseted()
-        self._bars_since_signal = 0
-        self._pending_long = False
-        self._pending_short = False
-        self._entry_price = 0.0
-        self._stop_loss = 0.0
-        self._prev_fast_ema = 0.0
-        self._prev_med_ema = 0.0
+        self._slow_sma = None
+        self._medium_ema = None
+        self._fast_ema = None
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(pin_bar_magic_strategy, self).OnStarted(time)
 
         self._slow_sma = SimpleMovingAverage()
-        self._slow_sma.Length = self._slow_sma_len.Value
-        self._med_ema = ExponentialMovingAverage()
-        self._med_ema.Length = self._med_ema_len.Value
-        self._fast_ema = ExponentialMovingAverage()
-        self._fast_ema.Length = self._fast_ema_len.Value
-        self._atr = AverageTrueRange()
-        self._atr.Length = self._atr_len.Value
+        self._slow_sma.Length = int(self._slow_sma_length.Value)
 
-        sub = self.SubscribeCandles(self.candle_type)
-        sub.Bind(self._slow_sma, self._med_ema, self._fast_ema, self._atr, self.OnProcess).Start()
+        self._medium_ema = ExponentialMovingAverage()
+        self._medium_ema.Length = int(self._medium_ema_length.Value)
+
+        self._fast_ema = ExponentialMovingAverage()
+        self._fast_ema.Length = int(self._fast_ema_length.Value)
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._slow_sma, self._medium_ema, self._fast_ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, sub)
+            self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._slow_sma)
-            self.DrawIndicator(area, self._med_ema)
+            self.DrawIndicator(area, self._medium_ema)
             self.DrawIndicator(area, self._fast_ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, slow_sma, med_ema, fast_ema, atr_val):
+    def _on_process(self, candle, slow_sma, medium_ema, fast_ema):
         if candle.State != CandleStates.Finished:
             return
-        if not self._slow_sma.IsFormed or not self._med_ema.IsFormed or not self._fast_ema.IsFormed or not self._atr.IsFormed:
+
+        if not self._slow_sma.IsFormed or not self._medium_ema.IsFormed or not self._fast_ema.IsFormed:
             return
 
-        candle_range = candle.HighPrice - candle.LowPrice
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            return
+
+        candle_range = float(candle.HighPrice - candle.LowPrice)
         if candle_range == 0:
             return
 
-        bullish_pin = False
-        bearish_pin = False
-        if candle.ClosePrice > candle.OpenPrice:
-            lower_wick = candle.OpenPrice - candle.LowPrice
-            bullish_pin = lower_wick > 0.66 * candle_range
-            upper_wick = candle.HighPrice - candle.ClosePrice
-            bearish_pin = upper_wick > 0.66 * candle_range
+        bullish_pin_bar = False
+        bearish_pin_bar = False
+
+        if float(candle.ClosePrice) > float(candle.OpenPrice):
+            lower_wick = float(candle.OpenPrice - candle.LowPrice)
+            bullish_pin_bar = lower_wick > 0.60 * candle_range
+
+            upper_wick = float(candle.HighPrice - candle.ClosePrice)
+            bearish_pin_bar = upper_wick > 0.60 * candle_range
         else:
-            lower_wick = candle.ClosePrice - candle.LowPrice
-            bullish_pin = lower_wick > 0.66 * candle_range
-            upper_wick = candle.HighPrice - candle.OpenPrice
-            bearish_pin = upper_wick > 0.66 * candle_range
+            lower_wick = float(candle.ClosePrice - candle.LowPrice)
+            bullish_pin_bar = lower_wick > 0.60 * candle_range
 
-        # Convert indicator values to float
-        fast_ema_val = float(fast_ema)
-        med_ema_val = float(med_ema)
+            upper_wick = float(candle.HighPrice - candle.OpenPrice)
+            bearish_pin_bar = upper_wick > 0.60 * candle_range
+
         slow_sma_val = float(slow_sma)
+        medium_ema_val = float(medium_ema)
+        fast_ema_val = float(fast_ema)
 
-        fan_up = fast_ema_val > med_ema_val and med_ema_val > slow_sma_val
-        fan_dn = fast_ema_val < med_ema_val and med_ema_val < slow_sma_val
+        fan_up_trend = fast_ema_val > medium_ema_val and medium_ema_val > slow_sma_val
+        fan_dn_trend = fast_ema_val < medium_ema_val and medium_ema_val < slow_sma_val
 
-        bull_pierce = (
-            (candle.LowPrice < fast_ema_val and candle.OpenPrice > fast_ema_val and candle.ClosePrice > fast_ema_val)
-            or (candle.LowPrice < med_ema_val and candle.OpenPrice > med_ema_val and candle.ClosePrice > med_ema_val)
-            or (candle.LowPrice < slow_sma_val and candle.OpenPrice > slow_sma_val and candle.ClosePrice > slow_sma_val)
-        )
-        bear_pierce = (
-            (candle.HighPrice > fast_ema_val and candle.OpenPrice < fast_ema_val and candle.ClosePrice < fast_ema_val)
-            or (candle.HighPrice > med_ema_val and candle.OpenPrice < med_ema_val and candle.ClosePrice < med_ema_val)
-            or (candle.HighPrice > slow_sma_val and candle.OpenPrice < slow_sma_val and candle.ClosePrice < slow_sma_val)
-        )
+        close = float(candle.ClosePrice)
+        low = float(candle.LowPrice)
+        high = float(candle.HighPrice)
 
-        long_entry = fan_up and bullish_pin and bull_pierce
-        short_entry = fan_dn and bearish_pin and bear_pierce
+        bull_pierce = (low < fast_ema_val and close > fast_ema_val) or \
+                      (low < medium_ema_val and close > medium_ema_val) or \
+                      (low < slow_sma_val and close > slow_sma_val)
 
-        if self._pending_long:
-            self._bars_since_signal += 1
-            if self._bars_since_signal > self._cancel_bars.Value:
-                self._pending_long = False
-                self._bars_since_signal = 0
-            elif candle.HighPrice >= self._entry_price and self.Position <= 0:
-                risk = self._equity_risk.Value * 0.01 * self.Portfolio.CurrentValue
-                units = risk / (self._entry_price - self._stop_loss)
-                self.BuyMarket(units)
-                self._pending_long = False
-                self._bars_since_signal = 0
-        if self._pending_short:
-            self._bars_since_signal += 1
-            if self._bars_since_signal > self._cancel_bars.Value:
-                self._pending_short = False
-                self._bars_since_signal = 0
-            elif candle.LowPrice <= self._entry_price and self.Position >= 0:
-                risk = self._equity_risk.Value * 0.01 * self.Portfolio.CurrentValue
-                units = risk / (self._stop_loss - self._entry_price)
-                self.SellMarket(units)
-                self._pending_short = False
-                self._bars_since_signal = 0
+        bear_pierce = (high > fast_ema_val and close < fast_ema_val) or \
+                      (high > medium_ema_val and close < medium_ema_val) or \
+                      (high > slow_sma_val and close < slow_sma_val)
 
-        if long_entry and not self._pending_long and not self._pending_short and self.Position == 0:
-            self._pending_long = True
-            self._entry_price = candle.HighPrice
-            self._stop_loss = candle.LowPrice - float(atr_val) * self._atr_multiplier.Value
-            self._bars_since_signal = 0
-        elif short_entry and not self._pending_long and not self._pending_short and self.Position == 0:
-            self._pending_short = True
-            self._entry_price = candle.LowPrice
-            self._stop_loss = candle.HighPrice + float(atr_val) * self._atr_multiplier.Value
-            self._bars_since_signal = 0
+        cooldown = int(self._cooldown_bars.Value)
 
-        # Use stored previous values instead of GetValue()
-        if self.Position > 0 and fast_ema_val < med_ema_val and self._prev_fast_ema >= self._prev_med_ema:
-            self.ClosePosition()
-        elif self.Position < 0 and fast_ema_val > med_ema_val and self._prev_fast_ema <= self._prev_med_ema:
-            self.ClosePosition()
-
-        # Store current values for next iteration
-        self._prev_fast_ema = fast_ema_val
-        self._prev_med_ema = med_ema_val
+        if fan_up_trend and bullish_pin_bar and bull_pierce and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif fan_dn_trend and bearish_pin_bar and bear_pierce and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and fast_ema_val < medium_ema_val:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and fast_ema_val > medium_ema_val:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return pin_bar_magic_strategy()

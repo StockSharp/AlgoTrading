@@ -72,10 +72,10 @@ class logistic_rsi_stoch_roc_ao_strategy(Strategy):
             cross_up = prev <= 0.0 and signal > 0.0
             cross_down = prev >= 0.0 and signal < 0.0
             if cross_up and self.Position <= 0:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume + abs(self.Position))
                 self._bars_since_signal = 0
             elif cross_down and self.Position >= 0:
-                self.SellMarket()
+                self.SellMarket(self.Volume + abs(self.Position))
                 self._bars_since_signal = 0
         self._prev_signal = signal
 

@@ -4,201 +4,125 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, StandardDeviation
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class adx_with_volume_breakout_strategy(Strategy):
-    """Strategy based on ADX with Volume Breakout."""
+    """
+    Strategy based on ADX with a volume breakout confirmation.
+    """
 
     def __init__(self):
         super(adx_with_volume_breakout_strategy, self).__init__()
 
-        # ADX period parameter.
-        self._adx_period = self.Param("AdxPeriod", 14) \
+        self._adx_period = self.Param("AdxPeriod", 10) \
             .SetGreaterThanZero() \
-            .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 28, 7)
+            .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 
-        # ADX threshold parameter.
         self._adx_threshold = self.Param("AdxThreshold", 25.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(15, 35, 5)
+            .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
 
-        # Volume average period parameter.
-        self._volume_avg_period = self.Param("VolumeAvgPeriod", 20) \
+        self._volume_avg_period = self.Param("VolumeAvgPeriod", 10) \
             .SetGreaterThanZero() \
-            .SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
 
-        # Volume threshold factor parameter.
-        self._volume_threshold_factor = self.Param("VolumeThresholdFactor", 2.0) \
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 15) \
             .SetGreaterThanZero() \
-            .SetDisplay("Volume Threshold Factor", "Factor for volume breakout detection", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
+            .SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading")
 
-        # Candle type parameter.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._adx = None
-        self._volume_sma = None
-        self._volume_std_dev = None
+        self._cooldown_remaining = 0
 
     @property
-    def AdxPeriod(self):
-        return self._adx_period.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def AdxThreshold(self):
-        return self._adx_threshold.Value
-
-    @AdxThreshold.setter
-    def AdxThreshold(self, value):
-        self._adx_threshold.Value = value
-
-    @property
-    def VolumeAvgPeriod(self):
-        return self._volume_avg_period.Value
-
-    @VolumeAvgPeriod.setter
-    def VolumeAvgPeriod(self, value):
-        self._volume_avg_period.Value = value
-
-    @property
-    def VolumeThresholdFactor(self):
-        return self._volume_threshold_factor.Value
-
-    @VolumeThresholdFactor.setter
-    def VolumeThresholdFactor(self, value):
-        self._volume_threshold_factor.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(adx_with_volume_breakout_strategy, self).OnReseted()
-
-        if self._adx is not None:
-            self._adx.Reset()
-        if self._volume_sma is not None:
-            self._volume_sma.Reset()
-        if self._volume_std_dev is not None:
-            self._volume_std_dev.Reset()
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(adx_with_volume_breakout_strategy, self).OnStarted(time)
 
-        # Create indicators
-        self._adx = AverageDirectionalIndex(); self._adx.Length = self.AdxPeriod
-        self._volume_sma = SimpleMovingAverage(); self._volume_sma.Length = self.VolumeAvgPeriod
-        self._volume_std_dev = StandardDeviation(); self._volume_std_dev.Length = self.VolumeAvgPeriod
+        adx = AverageDirectionalIndex()
+        adx.Length = int(self._adx_period.Value)
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
+        self._volume_sma = SimpleMovingAverage()
+        self._volume_sma.Length = int(self._volume_avg_period.Value)
+        self._cooldown_remaining = 0
 
-        def process(candle, adx_value):
-            if adx_value.MovingAverage is None:
-                return
-            adx_ma = adx_value.MovingAverage
-            if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
-                return
-            dx = adx_value.Dx
-            plus_di = dx.Plus
-            minus_di = dx.Minus
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(adx, self._process_candle).Start()
 
-            # Process volume indicators
-            sma_val = float(process_float(self._volume_sma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
-            std_dev_val = float(process_float(self._volume_std_dev, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
-
-            # Process the strategy logic
-            self.ProcessStrategy(
-                candle,
-                adx_ma,
-                plus_di,
-                minus_di,
-                candle.TotalVolume,
-                sma_val,
-                std_dev_val
-            )
-
-        subscription.BindEx(self._adx, process).Start()
-
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
 
-        # Setup position protection
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent)
+            Unit(2, UnitTypes.Percent),
+            Unit(1, UnitTypes.Percent)
         )
-    def ProcessStrategy(self, candle, adx, di_plus, di_minus, volume, volume_avg, volume_std_dev):
-        # Skip unfinished candles
+
+    def _process_candle(self, candle, adx_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
+        if not adx_value.IsFinal:
+            return
 
-        # Check for strong trend
-        is_strong_trend = adx > self.AdxThreshold
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Check directional indicators
-        is_bullish_trend = di_plus > di_minus
-        is_bearish_trend = di_minus > di_plus
+        volume_avg_result = self._volume_sma.Process(DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.ServerTime))
 
-        # Check for volume breakout
-        volume_threshold = volume_avg + (self.VolumeThresholdFactor * volume_std_dev)
-        is_volume_breakout = volume > volume_threshold
+        adx_typed = adx_value
 
-        # Trading logic - only enter with strong trend and volume breakout
-        if is_strong_trend and is_volume_breakout:
-            if is_bullish_trend and self.Position <= 0:
-                # Strong bullish trend with volume breakout - Go long
-                self.CancelActiveOrders()
+        adx_ma = adx_typed.MovingAverage
+        if adx_ma is None:
+            return
 
-                # Calculate position size
-                ord_volume = self.Volume + Math.Abs(self.Position)
+        dx = adx_typed.Dx
+        if dx is None:
+            return
 
-                # Enter long position
-                self.BuyMarket(ord_volume)
-            elif is_bearish_trend and self.Position >= 0:
-                # Strong bearish trend with volume breakout - Go short
-                self.CancelActiveOrders()
+        plus_di = dx.Plus
+        minus_di = dx.Minus
+        if plus_di is None or minus_di is None:
+            return
 
-                # Calculate position size
-                ord_volume = self.Volume + Math.Abs(self.Position)
+        adx_val = float(adx_ma)
+        plus_di_val = float(plus_di)
+        minus_di_val = float(minus_di)
 
-                # Enter short position
-                self.SellMarket(ord_volume)
+        volume_average = float(volume_avg_result) if volume_avg_result.IsFormed else 0.0
 
-        # Exit logic - when ADX drops below threshold (trend weakens)
-        if adx < 20:
-            # Close position on trend weakening
-            self.ClosePosition()
+        threshold = float(self._adx_threshold.Value)
+        is_strong_trend = adx_val > threshold
+        is_volume_breakout = volume_average <= 0.0 or float(candle.TotalVolume) >= volume_average
+        is_bullish = plus_di_val > minus_di_val
+        is_bearish = minus_di_val > plus_di_val
+
+        if self._cooldown_remaining > 0:
+            return
+
+        if not is_strong_trend or not is_volume_breakout:
+            return
+
+        cd = int(self._signal_cooldown_bars.Value)
+
+        if self.Position == 0:
+            if is_bullish:
+                self.BuyMarket()
+                self._cooldown_remaining = cd
+            elif is_bearish:
+                self.SellMarket()
+                self._cooldown_remaining = cd
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adx_with_volume_breakout_strategy()

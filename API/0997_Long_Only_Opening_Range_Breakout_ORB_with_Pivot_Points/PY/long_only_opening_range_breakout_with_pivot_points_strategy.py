@@ -131,12 +131,16 @@ class long_only_opening_range_breakout_with_pivot_points_strategy(Strategy):
             return
         sl_pct = float(self._stop_loss_percent.Value) / 100.0
         if self._prev_ready and self.Position <= 0 and close > self._prev_highest and self._r1 > 0.0:
+            if self.Position < 0:
+                self.BuyMarket()
             self._entry_price = close
             self._sl0 = self._entry_price * (1.0 - sl_pct)
             self._trail_stop = 0.0
             self.BuyMarket()
             self._cooldown = 40
         elif self._prev_ready and self.Position >= 0 and close < self._prev_lowest and self._s1 > 0.0:
+            if self.Position > 0:
+                self.SellMarket()
             self._entry_price = close
             self._sl0 = self._entry_price * (1.0 + sl_pct)
             self._trail_stop = 0.0

@@ -115,7 +115,7 @@ class executor_ao_strategy(Strategy):
 
         position_closed = self._handle_active_positions(candle, previous_ao)
 
-        self._store_ao_value(float(ao_result.ToDecimal()))
+        self._store_ao_value(float(ao_result))
 
         if position_closed:
             return

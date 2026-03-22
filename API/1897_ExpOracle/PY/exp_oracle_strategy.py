@@ -102,8 +102,8 @@ class exp_oracle_strategy(Strategy):
         if not rsi_result.IsFormed or not cci_result.IsFormed:
             return
 
-        rsi_val = float(rsi_result.ToDecimal())
-        cci_val = float(cci_result.ToDecimal())
+        rsi_val = float(rsi_result)
+        cci_val = float(cci_result)
 
         # shift buffers
         self._rsi_buf[3] = self._rsi_buf[2]
@@ -134,7 +134,7 @@ class exp_oracle_strategy(Strategy):
         if not signal_result.IsFormed:
             return
 
-        signal = float(signal_result.ToDecimal())
+        signal = float(signal_result)
         self._bars_since_trade += 1
 
         m = self.mode

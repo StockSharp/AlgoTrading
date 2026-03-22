@@ -2,183 +2,149 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math, Array
-from StockSharp.Messages import CandleStates, Sides
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, ExponentialMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, Highest, Lowest, SimpleMovingAverage, LinearRegression, RelativeStrengthIndex, IIndicator
-from datatype_extensions import *
-from indicator_extensions import *
+
+import sys
+
 
 class ttm_squeeze_strategy(Strategy):
-    """TTM Squeeze strategy.
-
-    Detects volatility contraction when Bollinger Bands fall inside Keltner Channels
-    and waits for expansion. Momentum measured by a linear regression oscillator and
-    a RSI filter confirm entries. Optional take-profit can be enabled via parameter.
-    """
+    """TTM Squeeze Strategy."""
 
     def __init__(self):
         super(ttm_squeeze_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._squeeze_length = self.Param("SqueezeLength", 20) \
-            .SetDisplay("Squeeze Length", "TTM Squeeze calculation length", "TTM Squeeze")
+        self._bb_length = self.Param("BbLength", 20) \
+            .SetDisplay("BB Length", "Bollinger Bands period", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14) \
-            .SetDisplay("RSI Length", "RSI calculation length", "RSI")
-        self._use_tp = self.Param("UseTP", False) \
-            .SetDisplay("Enable Take Profit", "Use take profit", "Take Profit")
-        self._tp_percent = self.Param("TpPercent", 1.2) \
-            .SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
+            .SetDisplay("RSI Length", "RSI period", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 15) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
-        self._bollinger = None
-        self._keltner = None
-        self._highest = None
-        self._lowest = None
-        self._close_sma = None
-        self._momentum = None
+        self._bb = None
         self._rsi = None
-
-        self._previous_momentum = 0.0
-        self._current_momentum = 0.0
+        self._ema = None
+        self._prev_bb_width = 0.0
+        self._min_bb_width = float(sys.maxsize)
+        self._narrow_bars = 0
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def squeeze_length(self):
-        return self._squeeze_length.Value
-
-    @squeeze_length.setter
-    def squeeze_length(self, value):
-        self._squeeze_length.Value = value
-
-    @property
-    def rsi_length(self):
-        return self._rsi_length.Value
-
-    @rsi_length.setter
-    def rsi_length(self, value):
-        self._rsi_length.Value = value
-
-    @property
-    def use_tp(self):
-        return self._use_tp.Value
-
-    @use_tp.setter
-    def use_tp(self, value):
-        self._use_tp.Value = value
-
-    @property
-    def tp_percent(self):
-        return self._tp_percent.Value
-
-    @tp_percent.setter
-    def tp_percent(self, value):
-        self._tp_percent.Value = value
-
     def OnReseted(self):
         super(ttm_squeeze_strategy, self).OnReseted()
-        self._previous_momentum = 0.0
-        self._current_momentum = 0.0
+        self._bb = None
+        self._rsi = None
+        self._ema = None
+        self._prev_bb_width = 0.0
+        self._min_bb_width = float(sys.maxsize)
+        self._narrow_bars = 0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(ttm_squeeze_strategy, self).OnStarted(time)
 
-        self._bollinger = BollingerBands()
-        self._bollinger.Length = self.squeeze_length
-        self._bollinger.Width = 2.0
+        bb_len = int(self._bb_length.Value)
 
-        self._keltner = KeltnerChannels()
-        self._keltner.Length = self.squeeze_length
-        self._keltner.Multiplier = 1.5
+        self._bb = BollingerBands()
+        self._bb.Length = bb_len
+        self._bb.Width = 2.0
 
-        self._highest = Highest()
-        self._highest.Length = self.squeeze_length
-        self._lowest = Lowest()
-        self._lowest.Length = self.squeeze_length
-        self._close_sma = SimpleMovingAverage()
-        self._close_sma.Length = self.squeeze_length
-        self._momentum = LinearRegression()
-        self._momentum.Length = self.squeeze_length
         self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.rsi_length
+        self._rsi.Length = int(self._rsi_length.Value)
+
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = bb_len
 
         subscription = self.SubscribeCandles(self.candle_type)
-        
-        indicators_array = Array.CreateInstance(IIndicator, 5)
-        indicators_array[0] = self._rsi
-        indicators_array[1] = self._highest
-        indicators_array[2] = self._lowest
-        indicators_array[3] = self._close_sma
-        indicators_array[4] = self._momentum
-        
-        subscription.BindEx(indicators_array, self.ProcessCandle).Start()
+        subscription.BindEx(self._bb, self._rsi, self._ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
-        if self.use_tp:
-            self.StartProtection(Unit(self.tp_percent / 100.0, UnitTypes.Percent), Unit())
-
-    def ProcessCandle(self, candle, values):
+    def _on_process(self, candle, bb_value, rsi_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._momentum.IsFormed or not self._rsi.IsFormed:
+        if not self._bb.IsFormed or not self._rsi.IsFormed or not self._ema.IsFormed:
             return
 
-        rsi_value = float(values[0])
-        highest_value = float(values[1])
-        lowest_value = float(values[2])
-        close_sma_value = float(values[3])
-        lin_reg_val = values[4]
-        if (rsi_value is None or highest_value is None or lowest_value is None or close_sma_value is None):
+        if bb_value.IsEmpty or rsi_value.IsEmpty or ema_value.IsEmpty:
             return
 
-        momentum_value = lin_reg_val.LinearRegSlope if hasattr(lin_reg_val, 'LinearRegSlope') else None
-        if momentum_value is None:
+        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
 
-        bb_val = process_candle(self._bollinger, candle)
-        kc_val = process_candle(self._keltner, candle)
-        if not self._bollinger.IsFormed or not self._keltner.IsFormed:
+        upper = float(bb_value.UpBand)
+        lower = float(bb_value.LowBand)
+        mid = float(bb_value.MovingAverage)
+        rsi_val = float(IndicatorHelper.ToDecimal(rsi_value))
+        ema_val = float(IndicatorHelper.ToDecimal(ema_value))
+
+        bb_width = (upper - lower) / mid * 100 if mid > 0 else 0.0
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_bb_width = bb_width
+            self._min_bb_width = min(self._min_bb_width, bb_width)
             return
 
-        # Cast to typed values to access properties like C# version
-        bb_upper = bb_val.UpBand if bb_val.UpBand is not None else None
-        bb_lower = bb_val.LowBand if bb_val.LowBand is not None else None
-        kc_upper = kc_val.Upper if kc_val.Upper is not None else None
-        kc_lower = kc_val.Lower if kc_val.Lower is not None else None
-        
-        if None in (bb_upper, bb_lower, kc_upper, kc_lower):
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self._prev_bb_width = bb_width
+            self._min_bb_width = min(self._min_bb_width, bb_width)
             return
 
-        squeeze_on = bb_upper < kc_upper and bb_lower > kc_lower
-
-        self._current_momentum = momentum_value
-        self._check_entry(candle, rsi_value, squeeze_on)
-        self._previous_momentum = self._current_momentum
-
-    def _check_entry(self, candle, rsi_value, squeeze_on):
-        if squeeze_on:
+        if self._prev_bb_width == 0.0:
+            self._prev_bb_width = bb_width
+            self._min_bb_width = bb_width
             return
-        price = candle.ClosePrice
-        if (self._current_momentum < 0 and self._previous_momentum != 0 and
-                self._current_momentum > self._previous_momentum and rsi_value > 30 and self.Position == 0):
-            self.RegisterOrder(self.CreateOrder(Sides.Buy, price, self.Volume))
-        if (self._current_momentum > 0 and self._previous_momentum != 0 and
-                self._current_momentum < self._previous_momentum and rsi_value < 70 and self.Position == 0):
-            self.RegisterOrder(self.CreateOrder(Sides.Sell, price, self.Volume))
+
+        close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
+
+        if bb_width <= self._min_bb_width * 1.1:
+            self._narrow_bars += 1
+            self._min_bb_width = min(self._min_bb_width, bb_width)
+        elif bb_width > self._prev_bb_width and self._narrow_bars >= 3:
+            if rsi_val > 50 and close > ema_val and self.Position <= 0:
+                if self.Position < 0:
+                    self.BuyMarket(Math.Abs(self.Position))
+                self.BuyMarket(self.Volume)
+                self._cooldown_remaining = cooldown
+                self._narrow_bars = 0
+                self._min_bb_width = bb_width
+            elif rsi_val < 50 and close < ema_val and self.Position >= 0:
+                if self.Position > 0:
+                    self.SellMarket(Math.Abs(self.Position))
+                self.SellMarket(self.Volume)
+                self._cooldown_remaining = cooldown
+                self._narrow_bars = 0
+                self._min_bb_width = bb_width
+            else:
+                self._narrow_bars = 0
+                self._min_bb_width = bb_width
+        else:
+            self._narrow_bars = 0
+            self._min_bb_width = bb_width
+
+        if self.Position > 0 and close < lower:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and close > upper:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+
+        self._prev_bb_width = bb_width
 
     def CreateClone(self):
         return ttm_squeeze_strategy()

@@ -61,7 +61,7 @@ class kolier_super_trend_strategy(Strategy):
         if not atr_result.IsFormed:
             return
 
-        atr_val = float(atr_result.ToDecimal())
+        atr_val = float(atr_result)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         close = float(candle.ClosePrice)

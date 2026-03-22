@@ -5,218 +5,159 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 
 class adaptive_rsi_volume_strategy(Strategy):
     """
-    Strategy that trades based on Adaptive RSI with volume confirmation.
-    The RSI period adapts based on market volatility (ATR).
+    Strategy that trades an ATR-adaptive RSI confirmed by relative volume.
     """
 
     def __init__(self):
         super(adaptive_rsi_volume_strategy, self).__init__()
 
-        # Strategy parameter: Minimum RSI period.
-        self._minRsiPeriod = self.Param("MinRsiPeriod", 10) \
+        self._min_rsi_period = self.Param("MinRsiPeriod", 8) \
             .SetGreaterThanZero() \
-            .SetDisplay("Min RSI Period", "Minimum period for adaptive RSI", "Indicator Settings")
+            .SetDisplay("Min RSI Period", "Fast RSI period used in high volatility", "Indicator Settings")
 
-        # Strategy parameter: Maximum RSI period.
-        self._maxRsiPeriod = self.Param("MaxRsiPeriod", 20) \
+        self._max_rsi_period = self.Param("MaxRsiPeriod", 21) \
             .SetGreaterThanZero() \
-            .SetDisplay("Max RSI Period", "Maximum period for adaptive RSI", "Indicator Settings")
+            .SetDisplay("Max RSI Period", "Slow RSI period used in low volatility", "Indicator Settings")
 
-        # Strategy parameter: ATR period for volatility calculation.
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings")
 
-        # Strategy parameter: Volume lookback period.
-        self._volumeLookback = self.Param("VolumeLookback", 20) \
+        self._volume_lookback = self.Param("VolumeLookback", 12) \
             .SetGreaterThanZero() \
-            .SetDisplay("Volume Lookback", "Number of periods to calculate volume average", "Volume Settings")
+            .SetDisplay("Volume Lookback", "Periods used for average volume", "Volume Settings")
 
-        # Strategy parameter: Candle type.
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another signal", "Trading")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state
-        self._adaptiveRsiValue = 0.0
-        self._avgVolume = 0.0
-        self._currentRsiPeriod = 0
-
-        # Indicators
-        self._rsi = None
+        self._fast_rsi = None
+        self._slow_rsi = None
         self._atr = None
-        self._volumeSma = None
+        self._volume_sma = None
+        self._adaptive_rsi_value = 50.0
+        self._avg_volume = 0.0
+        self._atr_value = 0.0
+        self._cooldown_remaining = 0
 
     @property
-    def MinRsiPeriod(self):
-        """Strategy parameter: Minimum RSI period."""
-        return self._minRsiPeriod.Value
-
-    @MinRsiPeriod.setter
-    def MinRsiPeriod(self, value):
-        self._minRsiPeriod.Value = value
-
-    @property
-    def MaxRsiPeriod(self):
-        """Strategy parameter: Maximum RSI period."""
-        return self._maxRsiPeriod.Value
-
-    @MaxRsiPeriod.setter
-    def MaxRsiPeriod(self, value):
-        self._maxRsiPeriod.Value = value
-
-    @property
-    def AtrPeriod(self):
-        """Strategy parameter: ATR period for volatility calculation."""
-        return self._atrPeriod.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atrPeriod.Value = value
-
-    @property
-    def VolumeLookback(self):
-        """Strategy parameter: Volume lookback period."""
-        return self._volumeLookback.Value
-
-    @VolumeLookback.setter
-    def VolumeLookback(self, value):
-        self._volumeLookback.Value = value
-
-    @property
-    def CandleType(self):
-        """Strategy parameter: Candle type."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(adaptive_rsi_volume_strategy, self).OnReseted()
-        self._adaptiveRsiValue = 50
-        self._avgVolume = 0
-        self._currentRsiPeriod = self.MaxRsiPeriod
-        self._atr = None
-        self._rsi = None
-        self._volumeSma = None
+        self._adaptive_rsi_value = 50.0
+        self._avg_volume = 0.0
+        self._atr_value = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(adaptive_rsi_volume_strategy, self).OnStarted(time)
 
-        self._adaptiveRsiValue = 50
-        self._currentRsiPeriod = self.MaxRsiPeriod
+        self._fast_rsi = RelativeStrengthIndex()
+        self._fast_rsi.Length = int(self._min_rsi_period.Value)
 
-        # Create indicators
+        self._slow_rsi = RelativeStrengthIndex()
+        self._slow_rsi.Length = int(self._max_rsi_period.Value)
+
         self._atr = AverageTrueRange()
-        self._atr.Length = self.AtrPeriod
+        self._atr.Length = int(self._atr_period.Value)
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self._currentRsiPeriod
+        self._volume_sma = SimpleMovingAverage()
+        self._volume_sma.Length = int(self._volume_lookback.Value)
 
-        self._volumeSma = SimpleMovingAverage()
-        self._volumeSma.Length = self.VolumeLookback
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self.ProcessCandle).Start()
 
-        # Create subscription for candles
-        subscription = self.SubscribeCandles(self.CandleType)
-
-        # Bind indicators to subscription and start
-        subscription.BindEx(self._atr, self._rsi, self.ProcessCandle).Start()
-
-        # Add chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._rsi)
+            self.DrawIndicator(area, self._fast_rsi)
+            self.DrawIndicator(area, self._slow_rsi)
             self.DrawOwnTrades(area)
 
-        # Start position protection with percentage-based stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-    def ProcessCandle(self, candle, atr_value, rsi_value):
-        # Skip unfinished candles
+
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Process volume to calculate average
-        self.ProcessVolume(candle)
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
 
-        # Calculate adaptive RSI period based on ATR
-        if atr_value.IsFinal:
-            atr = float(atr_value)
+        frv = DecimalIndicatorValue(self._fast_rsi, candle.ClosePrice, candle.OpenTime)
+        frv.IsFinal = True
+        fast_rsi_val = self._fast_rsi.Process(frv)
 
-            # Normalize ATR to a value between 0 and 1 using historical range
-            # This is a simplified approach - in a real implementation you would
-            # track ATR range over a longer period
-            normalizedAtr = float(Math.Min(Math.Max(atr / (candle.ClosePrice * 0.1), 0), 1))
+        srv = DecimalIndicatorValue(self._slow_rsi, candle.ClosePrice, candle.OpenTime)
+        srv.IsFinal = True
+        slow_rsi_val = self._slow_rsi.Process(srv)
 
-            # Adjust RSI period - higher volatility (ATR) = shorter period
-            newPeriod = self.MaxRsiPeriod - int(Math.Round(normalizedAtr * (self.MaxRsiPeriod - self.MinRsiPeriod)))
+        aiv = CandleIndicatorValue(self._atr, candle)
+        aiv.IsFinal = True
+        atr_val = self._atr.Process(aiv)
 
-            # Ensure period stays within bounds
-            newPeriod = max(self.MinRsiPeriod, min(self.MaxRsiPeriod, newPeriod))
+        viv = DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.OpenTime)
+        viv.IsFinal = True
+        volume_val = self._volume_sma.Process(viv)
 
-            # Update RSI period if changed
-            if newPeriod != self._currentRsiPeriod:
-                self._currentRsiPeriod = newPeriod
-                self._rsi.Length = self._currentRsiPeriod
+        if not self._fast_rsi.IsFormed or not self._slow_rsi.IsFormed or not self._atr.IsFormed or not self._volume_sma.IsFormed:
+            return
+        if fast_rsi_val.IsEmpty or slow_rsi_val.IsEmpty or atr_val.IsEmpty or volume_val.IsEmpty:
+            return
 
-                self.LogInfo("Adjusted RSI period to {0} based on ATR ({1})".format(self._currentRsiPeriod, atr))
+        self._avg_volume = float(volume_val)
+        self._atr_value = float(atr_val)
 
-        # Check if strategy is ready to trade
+        fast_rsi = float(fast_rsi_val)
+        slow_rsi = float(slow_rsi_val)
+        close_price = float(candle.ClosePrice)
+        normalized_atr = min(max(self._atr_value / max(close_price * 0.02, 1.0), 0.0), 1.0)
 
-        # Store RSI value
-        if rsi_value.IsFinal:
-            self._adaptiveRsiValue = float(rsi_value)
+        self._adaptive_rsi_value = slow_rsi + ((fast_rsi - slow_rsi) * normalized_atr)
 
-            # Trading logic based on RSI with volume confirmation
-            if self._avgVolume > 0:  # Make sure we have volume data
-                isHighVolume = candle.TotalVolume > self._avgVolume
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-                # Oversold condition with volume confirmation
-                if self._adaptiveRsiValue < 30 and isHighVolume and self.Position <= 0:
-                    self.LogInfo(
-                        "Buy signal: RSI oversold ({0}) with high volume ({1} > {2})".format(
-                            self._adaptiveRsiValue, candle.TotalVolume, self._avgVolume))
-                    self.BuyMarket(self.Volume + abs(self.Position))
-                # Overbought condition with volume confirmation
-                elif self._adaptiveRsiValue > 70 and isHighVolume and self.Position >= 0:
-                    self.LogInfo(
-                        "Sell signal: RSI overbought ({0}) with high volume ({1} > {2})".format(
-                            self._adaptiveRsiValue, candle.TotalVolume, self._avgVolume))
-                    self.SellMarket(self.Volume + abs(self.Position))
+        total_volume = float(candle.TotalVolume)
+        is_high_volume = total_volume >= (self._avg_volume * 0.9)
+        oversold_level = 45.0 - (normalized_atr * 5.0)
+        overbought_level = 55.0 + (normalized_atr * 5.0)
+        cooldown = int(self._cooldown_bars.Value)
 
-            # Exit logic based on RSI returning to neutral zone
-            if (self.Position > 0 and self._adaptiveRsiValue > 50) or \
-               (self.Position < 0 and self._adaptiveRsiValue < 50):
-                self.LogInfo(
-                    "Exit signal: RSI returned to neutral zone ({0})".format(self._adaptiveRsiValue))
-                self.ClosePosition()
-
-    def ProcessVolume(self, candle):
-        # Process volume with SMA
-        volumeValue = process_float(
-            self._volumeSma,
-            candle.TotalVolume,
-            candle.ServerTime,
-            candle.State == CandleStates.Finished,
-        )
-
-        if volumeValue.IsFinal:
-            self._avgVolume = float(volumeValue)
+        if self._cooldown_remaining == 0 and is_high_volume and self._adaptive_rsi_value <= oversold_level and self.Position <= 0:
+            vol = self.Volume
+            if self.Position < 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.BuyMarket(vol)
+            self._cooldown_remaining = cooldown
+        elif self._cooldown_remaining == 0 and is_high_volume and self._adaptive_rsi_value >= overbought_level and self.Position >= 0:
+            vol = self.Volume
+            if self.Position > 0:
+                vol = self.Volume + Math.Abs(self.Position)
+            self.SellMarket(vol)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and self._adaptive_rsi_value >= 52.0:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and self._adaptive_rsi_value <= 48.0:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adaptive_rsi_volume_strategy()

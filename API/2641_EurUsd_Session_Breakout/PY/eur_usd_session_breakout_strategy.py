@@ -77,8 +77,8 @@ class eur_usd_session_breakout_strategy(Strategy):
 
         h_result = self._highest.Process(candle)
         l_result = self._lowest.Process(candle)
-        self._current_highest = float(h_result.ToDecimal()) if not h_result.IsEmpty else self._current_highest
-        self._current_lowest = float(l_result.ToDecimal()) if not l_result.IsEmpty else self._current_lowest
+        self._current_highest = float(h_result) if not h_result.IsEmpty else self._current_highest
+        self._current_lowest = float(l_result) if not l_result.IsEmpty else self._current_lowest
 
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return

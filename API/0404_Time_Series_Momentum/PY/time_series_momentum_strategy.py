@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RateOfChange, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
@@ -27,44 +27,42 @@ class time_series_momentum_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._momentum = None
+        self._volatility = None
         self._cooldown_remaining = 0
 
     @property
-    def MomentumPeriod(self):
-        return self._momentum_period.Value
-
-    @property
-    def VolPeriod(self):
-        return self._vol_period.Value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(time_series_momentum_strategy, self).OnReseted()
+        self._momentum = None
+        self._volatility = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(time_series_momentum_strategy, self).OnStarted(time)
 
-        momentum = RateOfChange()
-        momentum.Length = self.MomentumPeriod
+        self._momentum = RateOfChange()
+        self._momentum.Length = int(self._momentum_period.Value)
 
-        volatility = StandardDeviation()
-        volatility.Length = self.VolPeriod
+        self._volatility = StandardDeviation()
+        self._volatility.Length = int(self._vol_period.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
         subscription \
-            .Bind(momentum, volatility, self.ProcessCandle) \
+            .Bind(self._momentum, self._volatility, self._process_candle) \
             .Start()
 
-    def ProcessCandle(self, candle, momentum_val, vol_val):
+    def _process_candle(self, candle, momentum_val, vol_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._momentum.IsFormed or not self._volatility.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self._cooldown_remaining > 0:
@@ -75,14 +73,14 @@ class time_series_momentum_strategy(Strategy):
 
         if mv > 0 and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = int(self._cooldown_bars.Value)
         elif mv < 0 and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self.CooldownBars
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
         return time_series_momentum_strategy()

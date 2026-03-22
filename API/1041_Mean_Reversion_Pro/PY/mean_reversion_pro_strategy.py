@@ -28,21 +28,23 @@ class mean_reversion_pro_strategy(Strategy):
 
     def OnStarted(self, time):
         super(mean_reversion_pro_strategy, self).OnStarted(time)
-        fast = SimpleMovingAverage()
-        fast.Length = self._fast_length.Value
-        slow = SimpleMovingAverage()
-        slow.Length = self._slow_length.Value
+        self._fast_sma = SimpleMovingAverage()
+        self._fast_sma.Length = self._fast_length.Value
+        self._slow_sma = SimpleMovingAverage()
+        self._slow_sma.Length = self._slow_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, self._process_candle).Start()
+        subscription.Bind(self._fast_sma, self._slow_sma, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._fast_sma)
+            self.DrawIndicator(area, self._slow_sma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._fast_sma.IsFormed or not self._slow_sma.IsFormed:
             return
         fast = float(fast_val)
         slow = float(slow_val)

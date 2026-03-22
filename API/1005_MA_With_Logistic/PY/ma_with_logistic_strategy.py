@@ -37,21 +37,23 @@ class ma_with_logistic_strategy(Strategy):
 
     def OnStarted(self, time):
         super(ma_with_logistic_strategy, self).OnStarted(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_length.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_length.Value
+        self._fast_ma = ExponentialMovingAverage()
+        self._fast_ma.Length = self._fast_length.Value
+        self._slow_ma = ExponentialMovingAverage()
+        self._slow_ma.Length = self._slow_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, self._process_candle).Start()
+        subscription.Bind(self._fast_ma, self._slow_ma, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._fast_ma)
+            self.DrawIndicator(area, self._slow_ma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             return
         fast = float(fast_val)
         slow = float(slow_val)
@@ -68,9 +70,13 @@ class ma_with_logistic_strategy(Strategy):
         cross_up = self._prev_fast <= self._prev_slow and fast > slow
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
         if cross_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._cooldown = 5
         elif cross_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._cooldown = 5
         self._prev_fast = fast

@@ -77,7 +77,7 @@ class volume_weighted_ma_st_dev_strategy(Strategy):
         if not self._std_dev.IsFormed:
             self._prev_vwma = vwma_value
             return
-        std_value = float(std_result.ToDecimal())
+        std_value = float(std_result)
         k1 = float(self.k1)
         filter_val = k1 * std_value
         if diff > filter_val and self.Position <= 0:

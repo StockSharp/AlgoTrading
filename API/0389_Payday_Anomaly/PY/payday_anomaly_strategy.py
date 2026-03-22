@@ -58,7 +58,7 @@ class payday_anomaly_strategy(Strategy):
             self._entered_month_key = month_key
             self._exited_month_key = 0
         elif not in_window and self.Position > 0 and self._entered_month_key == month_key and self._exited_month_key != month_key:
-            self.SellMarket()
+            self.SellMarket(self.Position)
             self._exited_month_key = month_key
 
     def _trading_days_left(self, d):

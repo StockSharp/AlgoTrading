@@ -3,224 +3,180 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, ExponentialMovingAverage, LinearRegression
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import AverageTrueRange, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class atr_slope_breakout_strategy(Strategy):
     """
-    ATR Slope Breakout Strategy
+    Strategy based on ATR slope breakout with EMA direction filter.
+    Opens positions when ATR slope deviates from its recent average and price confirms direction relative to EMA.
     """
 
     def __init__(self):
         super(atr_slope_breakout_strategy, self).__init__()
 
-        # Initialize strategy parameters
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicator") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 20, 2)
+            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicator Parameters")
+
+        self._ema_period = self.Param("EmaPeriod", 20) \
+            .SetGreaterThanZero() \
+            .SetDisplay("EMA Period", "Period for EMA direction filter", "Indicator Parameters")
 
         self._slope_period = self.Param("SlopePeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
+            .SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters")
 
         self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
 
-        self._stop_loss_atr_multiplier = self.Param("StopLossAtrMultiplier", 2.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state
         self._atr = None
-        self._price_ema = None
-        self._atr_slope = None
-        self._prev_slope_value = 0.0
-        self._slope_avg = 0.0
-        self._slope_std_dev = 0.0
-        self._sum_slope = 0.0
-        self._sum_slope_squared = 0.0
-        self._slope_values = []
-        self._last_atr = 0.0
+        self._ema = None
+        self._prev_atr = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        self._slopes = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     @property
-    def AtrPeriod(self):
-        return self._atr_period.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def SlopePeriod(self):
-        return self._slope_period.Value
-
-    @SlopePeriod.setter
-    def SlopePeriod(self, value):
-        self._slope_period.Value = value
-
-    @property
-    def BreakoutMultiplier(self):
-        return self._breakout_multiplier.Value
-
-    @BreakoutMultiplier.setter
-    def BreakoutMultiplier(self, value):
-        self._breakout_multiplier.Value = value
-
-    @property
-    def StopLossAtrMultiplier(self):
-        return self._stop_loss_atr_multiplier.Value
-
-    @StopLossAtrMultiplier.setter
-    def StopLossAtrMultiplier(self, value):
-        self._stop_loss_atr_multiplier.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Return securities and candle types used."""
-        return [(self.Security, self.CandleType)]
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(atr_slope_breakout_strategy, self).OnReseted()
-        self._prev_slope_value = 0.0
-        self._slope_avg = 0.0
-        self._slope_std_dev = 0.0
-        self._sum_slope = 0.0
-        self._sum_slope_squared = 0.0
+        self._atr = None
+        self._ema = None
+        self._prev_atr = 0.0
+        self._current_slope = 0.0
+        self._avg_slope = 0.0
+        self._std_dev_slope = 0.0
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
+        self._is_initialized = False
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(atr_slope_breakout_strategy, self).OnStarted(time)
 
-        # Initialize indicators
+        sp = int(self._slope_period.Value)
+        self._slopes = [0.0] * sp
+        self._cooldown = 0
+        self._filled_count = 0
+        self._current_index = 0
+
         self._atr = AverageTrueRange()
-        self._atr.Length = self.AtrPeriod
-        self._price_ema = ExponentialMovingAverage()
-        self._price_ema.Length = 20  # For trend direction
-        self._atr_slope = LinearRegression()
-        self._atr_slope.Length = 2  # For calculating slope
+        self._atr.Length = int(self._atr_period.Value)
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = int(self._ema_period.Value)
 
-        self._slope_values.clear()
-        self._last_atr = 0.0
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._atr, self._ema, self._process_candle).Start()
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-
-        # Using BindEx to get the full indicator value
-        subscription.BindEx(self._atr, self.ProcessCandle).Start()
-
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._ema)
             self.DrawIndicator(area, self._atr)
-            self.DrawIndicator(area, self._price_ema)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, atr_value):
-        """Process candle and execute trading logic."""
-        # Skip unfinished candles
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
+    def _process_candle(self, candle, atr_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not self._atr.IsFormed or not self._ema.IsFormed:
+            return
 
-        # Get ATR value and track it for stop loss calculations
-        atr = float(atr_value)
-        self._last_atr = atr
+        atr_val = float(atr_value)
+        ema_val = float(ema_value)
 
-        # Process price for trend direction
-        ema_value = float(process_candle(self._price_ema, candle))
-        price_above_ema = candle.ClosePrice > ema_value
+        if not self._is_initialized:
+            self._prev_atr = atr_val
+            self._is_initialized = True
+            return
 
-        # Calculate ATR slope
-        current_slope = process_float(
-            self._atr_slope,
-            atr,
-            candle.ServerTime,
-            candle.State == CandleStates.Finished,
-        )
-        if current_slope.LinearReg is None:
-            return  # Skip if we can't get the slope value
-        current_slope_value = float(current_slope.LinearReg)
+        self._current_slope = atr_val - self._prev_atr
+        self._prev_atr = atr_val
 
-        # Update slope stats when we have 2 values to calculate slope
-        if self._prev_slope_value != 0:
-            # Calculate simple slope from current and previous values
-            slope = current_slope_value - self._prev_slope_value
+        sp = int(self._slope_period.Value)
+        self._slopes[self._current_index] = self._current_slope
+        self._current_index = (self._current_index + 1) % sp
 
-            # Update running statistics
-            self._slope_values.append(slope)
-            self._sum_slope += slope
-            self._sum_slope_squared += slope * slope
+        if self._filled_count < sp:
+            self._filled_count += 1
 
-            # Remove oldest value if we have enough
-            if len(self._slope_values) > self.SlopePeriod:
-                old_slope = self._slope_values.pop(0)
-                self._sum_slope -= old_slope
-                self._sum_slope_squared -= old_slope * old_slope
+        if self._filled_count < sp:
+            return
 
-            # Calculate average and standard deviation
-            self._slope_avg = self._sum_slope / len(self._slope_values)
-            variance = (self._sum_slope_squared / len(self._slope_values)) - (self._slope_avg * self._slope_avg)
-            self._slope_std_dev = 0 if variance <= 0 else Math.Sqrt(float(variance))
+        self._calculate_statistics()
 
-            # Generate signals if we have enough data for statistics
-            if len(self._slope_values) >= self.SlopePeriod:
-                # Breakout logic - ATR slope increase indicates volatility expansion
-                if slope > self._slope_avg + self.BreakoutMultiplier * self._slope_std_dev:
-                    # Volatility breakout with price direction
-                    if price_above_ema and self.Position <= 0:
-                        # Go long when price is above EMA (uptrend) during volatility expansion
-                        self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                        self.LogInfo(
-                            "Long entry: ATR slope breakout above {0:F5} with price above EMA".format(
-                                self._slope_avg + self.BreakoutMultiplier * self._slope_std_dev))
-                    elif not price_above_ema and self.Position >= 0:
-                        # Go short when price is below EMA (downtrend) during volatility expansion
-                        self.SellMarket(self.Volume + Math.Abs(self.Position))
-                        self.LogInfo(
-                            "Short entry: ATR slope breakout above {0:F5} with price below EMA".format(
-                                self._slope_avg + self.BreakoutMultiplier * self._slope_std_dev))
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-                # Exit logic - Return to mean (volatility contraction)
-                if slope < self._slope_avg:
-                    if self.Position > 0:
-                        self.SellMarket(Math.Abs(self.Position))
-                        self.LogInfo("Long exit: ATR slope returned to mean (volatility contraction)")
-                    elif self.Position < 0:
-                        self.BuyMarket(Math.Abs(self.Position))
-                        self.LogInfo("Short exit: ATR slope returned to mean (volatility contraction)")
+        if self._std_dev_slope <= 0:
+            return
 
-        # Update previous value for next iteration
-        self._prev_slope_value = current_slope_value
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        bm = float(self._breakout_multiplier.Value)
+        upper_threshold = self._avg_slope + bm * self._std_dev_slope
+        close_price = float(candle.ClosePrice)
+        price_above_ema = close_price > ema_val
+        price_below_ema = close_price < ema_val
+
+        if self.Position == 0:
+            if self._current_slope > upper_threshold and price_above_ema:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif self._current_slope > upper_threshold and price_below_ema:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0:
+            if self._current_slope <= self._avg_slope or price_below_ema:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0:
+            if self._current_slope <= self._avg_slope or price_above_ema:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = int(self._cooldown_bars.Value)
+
+    def _calculate_statistics(self):
+        sp = int(self._slope_period.Value)
+        self._avg_slope = 0.0
+        sum_sq = 0.0
+
+        for i in range(sp):
+            self._avg_slope += self._slopes[i]
+        self._avg_slope /= float(sp)
+
+        for i in range(sp):
+            diff = self._slopes[i] - self._avg_slope
+            sum_sq += diff * diff
+
+        self._std_dev_slope = math.sqrt(sum_sq / float(sp))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return atr_slope_breakout_strategy()

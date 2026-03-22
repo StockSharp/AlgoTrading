@@ -73,7 +73,7 @@ class x_derivative_strategy(Strategy):
         jma_result = self._jma.Process(float(roc_value), candle.OpenTime, True)
         if not jma_result.IsFormed:
             return
-        value = float(jma_result.ToDecimal())
+        value = float(jma_result)
 
         if self._prev_value is not None and self._prev_prev_value is not None:
             turn_up = self._prev_value < self._prev_prev_value and value > self._prev_value

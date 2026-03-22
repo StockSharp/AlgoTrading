@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex, AverageDirectionalIndex, IndicatorHelper
+from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex, AverageDirectionalIndex, AverageDirectionalIndexValue
 from StockSharp.Algo.Strategies import Strategy
 
 class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
@@ -16,6 +16,9 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
 
     def __init__(self):
         super(momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy, self).__init__()
+        self._sar_start = self.Param("SarStart", 0.02).SetDisplay("SAR Start", "SAR start", "Indicators")
+        self._sar_increment = self.Param("SarIncrement", 0.02).SetDisplay("SAR Increment", "SAR increment", "Indicators")
+        self._sar_max = self.Param("SarMax", 0.2).SetDisplay("SAR Max", "SAR max", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "RSI period", "Indicators")
         self._adx_period = self.Param("AdxPeriod", 14).SetDisplay("ADX Period", "ADX period", "Indicators")
         self._rsi_threshold = self.Param("RsiThreshold", 40.0).SetDisplay("RSI Threshold", "Min RSI for entry", "Signals")
@@ -38,7 +41,13 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
 
     def OnStarted(self, time):
         super(momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy, self).OnStarted(time)
+        self._psar_above_prev1 = False
+        self._psar_above_prev2 = False
+        self._bars_since_bearish_flip = -1
         psar = ParabolicSar()
+        psar.Acceleration = self._sar_start.Value
+        psar.AccelerationStep = self._sar_increment.Value
+        psar.AccelerationMax = self._sar_max.Value
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value
         adx = AverageDirectionalIndex()
@@ -54,17 +63,18 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
     def _process_candle(self, candle, psar_value, rsi_value, adx_value):
         if candle.State != CandleStates.Finished:
             return
-        psar = float(IndicatorHelper.ToDecimal(psar_value))
-        rsi = float(IndicatorHelper.ToDecimal(rsi_value))
-        adx_typed = adx_value
-        ma_val = adx_typed.MovingAverage
+        psar_v = float(psar_value)
+        rsi_v = float(rsi_value)
+        if not hasattr(adx_value, 'MovingAverage'):
+            return
+        ma_val = adx_value.MovingAverage
         if ma_val is None:
             return
-        adx = float(ma_val)
+        adx_v = float(ma_val)
         close = float(candle.ClosePrice)
-        psar_bullish_flip = psar < close and self._psar_above_prev1 and self._psar_above_prev2
-        psar_bearish_flip = psar > close and not self._psar_above_prev1 and not self._psar_above_prev2
-        rsi_adx_ok = rsi > float(self._rsi_threshold.Value) and adx > float(self._adx_threshold.Value)
+        psar_bullish_flip = psar_v < close and self._psar_above_prev1 and self._psar_above_prev2
+        psar_bearish_flip = psar_v > close and not self._psar_above_prev1 and not self._psar_above_prev2
+        rsi_adx_ok = rsi_v > float(self._rsi_threshold.Value) and adx_v > float(self._adx_threshold.Value)
         if self.Position == 0 and psar_bullish_flip and rsi_adx_ok:
             self.BuyMarket()
         if self.Position > 0:
@@ -78,7 +88,7 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
         else:
             self._bars_since_bearish_flip = -1
         self._psar_above_prev2 = self._psar_above_prev1
-        self._psar_above_prev1 = psar > close
+        self._psar_above_prev1 = psar_v > close
 
     def CreateClone(self):
         return momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy()

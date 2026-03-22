@@ -72,10 +72,10 @@ class smart_ass_trade_v2_strategy(Strategy):
         rsi_result = self._rsi.Process(candle.ClosePrice, candle.OpenTime, True)
         if not macd_result.IsFormed or not ma_result.IsFormed or not wpr_result.IsFormed or not rsi_result.IsFormed:
             return
-        curr_macd = float(macd_result.ToDecimal())
-        curr_ma = float(ma_result.ToDecimal())
-        curr_wpr = float(wpr_result.ToDecimal())
-        curr_rsi = float(rsi_result.ToDecimal())
+        curr_macd = float(macd_result)
+        curr_ma = float(ma_result)
+        curr_wpr = float(wpr_result)
+        curr_rsi = float(rsi_result)
         if self._prev_macd is None or self._prev_ma is None or self._prev_wpr is None or self._prev_rsi is None:
             self._prev_macd = curr_macd
             self._prev_ma = curr_ma

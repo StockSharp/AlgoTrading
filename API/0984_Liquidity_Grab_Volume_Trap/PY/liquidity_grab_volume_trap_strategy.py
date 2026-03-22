@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
@@ -23,6 +23,8 @@ class liquidity_grab_volume_trap_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candles for calculations", "General")
 
+        self._highest = None
+        self._lowest = None
         self._bars_since_signal = 0
         self._prev_high = 0.0
         self._prev_low = 0.0
@@ -33,6 +35,8 @@ class liquidity_grab_volume_trap_strategy(Strategy):
 
     def OnReseted(self):
         super(liquidity_grab_volume_trap_strategy, self).OnReseted()
+        self._highest = None
+        self._lowest = None
         self._bars_since_signal = 0
         self._prev_high = 0.0
         self._prev_low = 0.0
@@ -40,13 +44,16 @@ class liquidity_grab_volume_trap_strategy(Strategy):
     def OnStarted(self, time):
         super(liquidity_grab_volume_trap_strategy, self).OnStarted(time)
 
-        highest = Highest()
-        highest.Length = self._lookback.Value
-        lowest = Lowest()
-        lowest.Length = self._lookback.Value
+        self._highest = Highest()
+        self._highest.Length = self._lookback.Value
+        self._lowest = Lowest()
+        self._lowest.Length = self._lookback.Value
+        self._bars_since_signal = 0
+        self._prev_high = 0.0
+        self._prev_low = 0.0
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(highest, lowest, self._process_candle).Start()
+        subscription.Bind(self._highest, self._lowest, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -61,13 +68,15 @@ class liquidity_grab_volume_trap_strategy(Strategy):
         hv = float(high_val)
         lv = float(low_val)
 
+        if not self._highest.IsFormed or not self._lowest.IsFormed:
+            self._prev_high = hv
+            self._prev_low = lv
+            return
+
         range_high = self._prev_high
         range_low = self._prev_low
         self._prev_high = hv
         self._prev_low = lv
-
-        if range_high == 0 or range_low == 0:
-            return
 
         close = float(candle.ClosePrice)
         low = float(candle.LowPrice)
@@ -80,10 +89,10 @@ class liquidity_grab_volume_trap_strategy(Strategy):
             return
 
         if bull_grab and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif bear_grab and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
 
     def CreateClone(self):

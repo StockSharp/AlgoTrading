@@ -83,11 +83,11 @@ class renko_live_charts_pimped_strategy(Strategy):
         if self.calculate_best_box_size and self._atr is not None:
             atr_result = self._atr.Process(candle)
             if atr_result.IsFormed:
-                atr_val = float(atr_result.ToDecimal())
+                atr_val = float(atr_result)
                 if self.use_atr_ma and self._atr_ma is not None:
                     ma_result = self._atr_ma.Process(atr_val, candle.OpenTime, True)
                     if ma_result.IsFormed:
-                        self._dynamic_box_size = float(ma_result.ToDecimal())
+                        self._dynamic_box_size = float(ma_result)
                 else:
                     self._dynamic_box_size = atr_val
 

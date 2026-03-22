@@ -56,8 +56,8 @@ class percent_x_trend_follower_strategy(Strategy):
             return
         if not self._fast.IsFormed or not self._slow.IsFormed or not self._atr.IsFormed:
             return
-        fv = float(f_val.ToDecimal()) if f_val.IsFormed else 0.0
-        sv = float(s_val.ToDecimal()) if s_val.IsFormed else 0.0
+        fv = float(f_val) if f_val.IsFormed else 0.0
+        sv = float(s_val) if s_val.IsFormed else 0.0
         if not self._initialized:
             self._prev_fast = fv
             self._prev_slow = sv

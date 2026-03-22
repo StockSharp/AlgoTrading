@@ -74,7 +74,7 @@ class fractal_wpr_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        wpr = float(wpr_value.ToDecimal())
+        wpr = float(wpr_value)
 
         if self._prev_wpr is not None and self.IsFormedAndOnlineAndAllowTrading():
             high_level = self._high_level.Value

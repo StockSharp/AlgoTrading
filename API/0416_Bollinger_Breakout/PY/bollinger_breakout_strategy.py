@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, ExponentialMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
@@ -34,71 +34,64 @@ class bollinger_breakout_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 15) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._bollinger = None
+        self._rsi = None
+        self._ma = None
         self._entry_price = None
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-    @property
-    def BBLength(self):
-        return self._bb_length.Value
-    @property
-    def BBMultiplier(self):
-        return self._bb_multiplier.Value
-    @property
-    def RSILength(self):
-        return self._rsi_length.Value
-    @property
-    def RSIOversold(self):
-        return self._rsi_oversold.Value
-    @property
-    def RSIOverbought(self):
-        return self._rsi_overbought.Value
-    @property
-    def MALength(self):
-        return self._ma_length.Value
-    @property
-    def CandlePercent(self):
-        return self._candle_percent.Value
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
 
     def OnReseted(self):
         super(bollinger_breakout_strategy, self).OnReseted()
+        self._bollinger = None
+        self._rsi = None
+        self._ma = None
         self._entry_price = None
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(bollinger_breakout_strategy, self).OnStarted(time)
 
-        bb = BollingerBands()
-        bb.Length = self.BBLength
-        bb.Width = self.BBMultiplier
+        self._bollinger = BollingerBands()
+        self._bollinger.Length = int(self._bb_length.Value)
+        self._bollinger.Width = float(self._bb_multiplier.Value)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.RSILength
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_length.Value)
 
-        ma = ExponentialMovingAverage()
-        ma.Length = self.MALength
+        self._ma = ExponentialMovingAverage()
+        self._ma.Length = int(self._ma_length.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(bb, rsi, ma, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._bollinger, self._rsi, self._ma, self._on_process).Start()
 
-    def OnProcess(self, candle, bb_value, rsi_value, ma_value):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._bollinger)
+            self.DrawIndicator(area, self._ma)
+            self.DrawOwnTrades(area)
+
+    def _on_process(self, candle, bb_value, rsi_value, ma_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._bollinger.IsFormed or not self._rsi.IsFormed or not self._ma.IsFormed:
+            return
+
         if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
         if rsi_value.IsEmpty or ma_value.IsEmpty:
             return
 
-        upper = float(bb_value.UpBand)
-        lower = float(bb_value.LowBand)
-        middle = float(bb_value.MovingAverage)
         rsi = float(IndicatorHelper.ToDecimal(rsi_value))
         ma_val = float(IndicatorHelper.ToDecimal(ma_value))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
@@ -109,39 +102,46 @@ class bollinger_breakout_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
+        upper = float(bb_value.UpBand)
+        lower = float(bb_value.LowBand)
+        middle = float(bb_value.MovingAverage)
+
         candle_size = high - low
         if candle_size <= 0:
             return
 
-        buy_zone = candle_size * self.CandlePercent + low
-        sell_zone = high - candle_size * self.CandlePercent
+        candle_pct = float(self._candle_percent.Value)
+        cooldown = int(self._cooldown_bars.Value)
 
-        buy_signal = buy_zone < lower and close < opn and rsi < self.RSIOversold and close > ma_val
-        sell_signal = sell_zone > upper and close > opn and rsi > self.RSIOverbought and close < ma_val
+        buy_zone = candle_size * candle_pct + low
+        sell_zone = high - candle_size * candle_pct
+
+        buy_signal = buy_zone < lower and close < opn and rsi < float(self._rsi_oversold.Value) and close > ma_val
+        sell_signal = sell_zone > upper and close > opn and rsi > float(self._rsi_overbought.Value) and close < ma_val
 
         if self.Position > 0 and close >= middle:
-            self.SellMarket()
+            self.SellMarket(Math.Abs(self.Position))
             self._entry_price = None
-            self._cooldown_remaining = self.CooldownBars
+            self._cooldown_remaining = cooldown
             return
         elif self.Position < 0 and close <= middle:
-            self.BuyMarket()
+            self.BuyMarket(Math.Abs(self.Position))
             self._entry_price = None
-            self._cooldown_remaining = self.CooldownBars
+            self._cooldown_remaining = cooldown
             return
 
         if buy_signal and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
             self._entry_price = close
-            self._cooldown_remaining = self.CooldownBars
+            self._cooldown_remaining = cooldown
         elif sell_signal and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
             self._entry_price = close
-            self._cooldown_remaining = self.CooldownBars
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return bollinger_breakout_strategy()

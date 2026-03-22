@@ -8,7 +8,6 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from collections import deque
-from datatype_extensions import *
 
 class MarketState:
     """Market states for Hidden Markov Model."""
@@ -34,7 +33,7 @@ class vwap_hidden_markov_model_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management")
 
         # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # HMM state and data
@@ -111,7 +110,8 @@ class vwap_hidden_markov_model_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         # Update data for HMM
         self.UpdateHmmData(candle)
@@ -169,8 +169,12 @@ class vwap_hidden_markov_model_strategy(Strategy):
         volumes = list(self._volume_data)
 
         for i in range(1, len(prices)):
-            price_change = (prices[i] - prices[i - 1]) / prices[i - 1]
-            volume_ratio = volumes[i] / max(1, volumes[i - 1])
+            prev_price = float(prices[i - 1])
+            if prev_price <= 0:
+                continue
+            prev_volume = float(volumes[i - 1])
+            price_change = (float(prices[i]) - prev_price) / prev_price
+            volume_ratio = float(volumes[i]) / prev_volume if prev_volume > 0 else 1.0
 
             # Classify observation:
             # 0: Price down, low volume

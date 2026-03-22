@@ -218,8 +218,8 @@ class smart_trend_follower_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        fast = float(fast_value.ToDecimal())
-        slow = float(slow_value.ToDecimal())
+        fast = float(fast_value)
+        slow = float(slow_value)
 
         self._manage_exits(candle)
 
@@ -236,7 +236,7 @@ class smart_trend_follower_strategy(Strategy):
                     signal = 2
         else:
             if self._stochastic is not None and self._stochastic.IsFormed:
-                k_value = float(stochastic_value.ToDecimal())
+                k_value = float(stochastic_value)
                 bullish = float(candle.ClosePrice) > float(candle.OpenPrice)
                 bearish = float(candle.ClosePrice) < float(candle.OpenPrice)
                 if fast > slow and bullish and k_value <= 30:

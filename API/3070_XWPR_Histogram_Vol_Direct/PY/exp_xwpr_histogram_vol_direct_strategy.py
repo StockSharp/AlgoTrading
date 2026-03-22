@@ -62,7 +62,7 @@ class exp_xwpr_histogram_vol_direct_strategy(Strategy):
         if not self._williams.IsFormed:
             return
 
-        wpr_value = float(williams_value.ToDecimal())
+        wpr_value = float(williams_value)
         normalized = wpr_value + 100.0
         bullish_level = 80.0
         bearish_level = 20.0

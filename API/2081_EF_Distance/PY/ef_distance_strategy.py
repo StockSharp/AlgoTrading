@@ -80,8 +80,8 @@ class ef_distance_strategy(Strategy):
         if not ema_val.IsFormed or not atr_val.IsFormed:
             return
 
-        sma_value = float(ema_val.ToDecimal())
-        atr_value = float(atr_val.ToDecimal())
+        sma_value = float(ema_val)
+        atr_value = float(atr_val)
 
         if self._prev is None or self._prev2 is None:
             self._prev2 = self._prev

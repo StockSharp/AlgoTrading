@@ -1,12 +1,10 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -18,14 +16,13 @@ class donchian_macd_strategy(Strategy):
     def __init__(self):
         super(donchian_macd_strategy, self).__init__()
 
-        # Initialize internal state
-        self._previousHighest = 0
+        self._previousHighest = 0.0
         self._previousLowest = float("inf")
-        self._previousMacd = 0
-        self._previousSignal = 0
+        self._previousMacd = None
+        self._previousSignal = None
         self._entryPrice = None
+        self._cooldown = 0
 
-        # Initialize strategy parameters
         self._donchianPeriod = self.Param("DonchianPeriod", 20) \
             .SetDisplay("Donchian Period", "Channel lookback period", "Indicators")
 
@@ -38,156 +35,123 @@ class donchian_macd_strategy(Strategy):
         self._macdSignal = self.Param("MacdSignal", 9) \
             .SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators")
 
+        self._cooldownBars = self.Param("CooldownBars", 50) \
+            .SetRange(1, 200) \
+            .SetDisplay("Cooldown Bars", "Bars between entries", "General")
+
         self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
-    def DonchianPeriod(self):
-        """Donchian channel period."""
-        return self._donchianPeriod.Value
-
-    @DonchianPeriod.setter
-    def DonchianPeriod(self, value):
-        self._donchianPeriod.Value = value
-
-    @property
-    def MacdFast(self):
-        """MACD fast period."""
-        return self._macdFast.Value
-
-    @MacdFast.setter
-    def MacdFast(self, value):
-        self._macdFast.Value = value
-
-    @property
-    def MacdSlow(self):
-        """MACD slow period."""
-        return self._macdSlow.Value
-
-    @MacdSlow.setter
-    def MacdSlow(self, value):
-        self._macdSlow.Value = value
-
-    @property
-    def MacdSignal(self):
-        """MACD signal period."""
-        return self._macdSignal.Value
-
-    @MacdSignal.setter
-    def MacdSignal(self, value):
-        self._macdSignal.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop loss percentage."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
     def CandleType(self):
-        """Candle type for strategy."""
         return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
 
     def OnReseted(self):
         super(donchian_macd_strategy, self).OnReseted()
-        self._previousHighest = 0
+        self._previousHighest = 0.0
         self._previousLowest = float('inf')
-        self._previousMacd = 0
-        self._previousSignal = 0
+        self._previousMacd = None
+        self._previousSignal = None
         self._entryPrice = None
-        self._donchian = None
-        self._macd = None
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(donchian_macd_strategy, self).OnStarted(time)
+        self._previousHighest = 0.0
+        self._previousLowest = float('inf')
+        self._previousMacd = None
+        self._previousSignal = None
+        self._entryPrice = None
+        self._cooldown = 0
 
-        # Initialize indicators
-        self._donchian = DonchianChannels()
-        self._donchian.Length = self.DonchianPeriod
+        donchian = DonchianChannels()
+        donchian.Length = self._donchianPeriod.Value
 
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self.MacdFast
-        self._macd.Macd.LongMa.Length = self.MacdSlow
-        self._macd.SignalMa.Length = self.MacdSignal
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._macdFast.Value
+        macd.Macd.LongMa.Length = self._macdSlow.Value
+        macd.SignalMa.Length = self._macdSignal.Value
 
-        # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._donchian, self._macd, self.ProcessCandle).Start()
+        subscription.BindEx(donchian, macd, self.ProcessCandle).Start()
 
-        # Setup position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._donchian)
-            self.DrawIndicator(area, self._macd)
+            self.DrawIndicator(area, donchian)
+            self.DrawIndicator(area, macd)
             self.DrawOwnTrades(area)
 
     def ProcessCandle(self, candle, donchianValue, macdValue):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Wait until strategy and indicators are ready
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         signalValue = macdValue.Signal
         macdDec = macdValue.Macd
 
-        # Check for breakouts with MACD trend confirmation
-        # Long entry: Price breaks above Donchian high and MACD > Signal
-        if candle.ClosePrice > self._previousHighest and self.Position <= 0 and macdDec > signalValue:
-            # Cancel existing orders before entering new position
-            self.CancelActiveOrders()
-
-            # Enter long position
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self._entryPrice = float(candle.ClosePrice)
-
-            self.LogInfo("Long entry signal: Price {0} broke above Donchian high {1} with MACD confirmation".format(candle.ClosePrice, self._previousHighest))
-        # Short entry: Price breaks below Donchian low and MACD < Signal
-        elif candle.ClosePrice < self._previousLowest and self.Position >= 0 and macdDec < signalValue:
-            # Cancel existing orders before entering new position
-            self.CancelActiveOrders()
-
-            # Enter short position
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-            self._entryPrice = float(candle.ClosePrice)
-
-            self.LogInfo("Short entry signal: Price {0} broke below Donchian low {1} with MACD confirmation".format(candle.ClosePrice, self._previousLowest))
-        # MACD trend reversal exit
-        elif ((self.Position > 0 and macdDec < signalValue and self._previousMacd > self._previousSignal) or
-              (self.Position < 0 and macdDec > signalValue and self._previousMacd < self._previousSignal)):
-            # Close position on MACD signal reversal
-            self.ClosePosition()
-            self._entryPrice = None
-
-            self.LogInfo("Exit signal: MACD trend reversal. MACD: {0}, Signal: {1}".format(macdDec, signalValue))
-
-        if donchianValue.UpperBand is None or donchianValue.LowerBand is None:
+        if signalValue is None or macdDec is None:
+            # Update donchian values
+            if donchianValue.UpperBand is not None:
+                self._previousHighest = float(donchianValue.UpperBand)
+            if donchianValue.LowerBand is not None:
+                self._previousLowest = float(donchianValue.LowerBand)
+            self._previousMacd = macdDec
+            self._previousSignal = signalValue
             return
 
-        # Update previous values for next candle
-        self._previousHighest = float(donchianValue.UpperBand)
-        self._previousLowest = float(donchianValue.LowerBand)
+        macd_f = float(macdDec)
+        signal_f = float(signalValue)
+
+        # Determine MACD crosses
+        isBullishCross = False
+        isBearishCross = False
+        if self._previousMacd is not None and self._previousSignal is not None:
+            prev_m = float(self._previousMacd)
+            prev_s = float(self._previousSignal)
+            isBullishCross = prev_m <= prev_s and macd_f > signal_f
+            isBearishCross = prev_m >= prev_s and macd_f < signal_f
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+
+        price = float(candle.ClosePrice)
+        cooldown_val = int(self._cooldownBars.Value)
+
+        # Long entry
+        if self._cooldown == 0 and price > self._previousHighest * 1.001 and self.Position <= 0 and isBullishCross:
+            self.CancelActiveOrders()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
+            self._entryPrice = price
+            self._cooldown = cooldown_val
+
+        # Short entry
+        elif self._cooldown == 0 and price < self._previousLowest * 0.999 and self.Position >= 0 and isBearishCross:
+            self.CancelActiveOrders()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
+            self._entryPrice = price
+            self._cooldown = cooldown_val
+
+        # MACD trend reversal exit
+        elif (self.Position > 0 and isBearishCross) or (self.Position < 0 and isBullishCross):
+            self.ClosePosition()
+            self._entryPrice = None
+            self._cooldown = cooldown_val
+
+        # Update previous values
+        if donchianValue.UpperBand is not None:
+            self._previousHighest = float(donchianValue.UpperBand)
+        if donchianValue.LowerBand is not None:
+            self._previousLowest = float(donchianValue.LowerBand)
         self._previousMacd = macdDec
         self._previousSignal = signalValue
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_macd_strategy()

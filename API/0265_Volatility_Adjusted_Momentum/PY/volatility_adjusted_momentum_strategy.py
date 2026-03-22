@@ -132,8 +132,9 @@ class volatility_adjusted_momentum_strategy(Strategy):
         self._ratios = [0.0] * self.LookbackPeriod
 
         self._momentum = Momentum()
+        self._momentum.Length = self.MomentumPeriod
         self._atr = AverageTrueRange()
-
+        self._atr.Length = self.AtrPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._momentum, self._atr, self.ProcessCandle).Start()
@@ -173,6 +174,8 @@ class volatility_adjusted_momentum_strategy(Strategy):
         self._current_index = (self._current_index + 1) % self.LookbackPeriod
 
         # Calculate statistics once we have enough data
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         self.CalculateStatistics()
 

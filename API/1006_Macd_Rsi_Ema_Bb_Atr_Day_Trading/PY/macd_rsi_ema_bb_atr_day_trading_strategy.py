@@ -42,25 +42,27 @@ class macd_rsi_ema_bb_atr_day_trading_strategy(Strategy):
 
     def OnStarted(self, time):
         super(macd_rsi_ema_bb_atr_day_trading_strategy, self).OnStarted(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self._ema_fast_len.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._ema_slow_len.Value
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
-        atr = AverageTrueRange()
-        atr.Length = self._atr_length.Value
+        self._ema_fast = ExponentialMovingAverage()
+        self._ema_fast.Length = self._ema_fast_len.Value
+        self._ema_slow = ExponentialMovingAverage()
+        self._ema_slow.Length = self._ema_slow_len.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self._rsi_length.Value
+        self._atr = AverageTrueRange()
+        self._atr.Length = self._atr_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, rsi, atr, self._process_candle).Start()
+        subscription.Bind(self._ema_fast, self._ema_slow, self._rsi, self._atr, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._ema_fast)
+            self.DrawIndicator(area, self._ema_slow)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val, rsi_val, atr_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._ema_fast.IsFormed or not self._ema_slow.IsFormed or not self._rsi.IsFormed or not self._atr.IsFormed:
             return
         fast = float(fast_val)
         slow = float(slow_val)
@@ -80,10 +82,14 @@ class macd_rsi_ema_bb_atr_day_trading_strategy(Strategy):
         cross_up = self._prev_fast <= self._prev_slow and fast > slow
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
         if cross_up and rsi > 25 and rsi < 80 and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._stop_price = close - atr * float(self._atr_multiplier.Value)
             self._cooldown = 8
         elif cross_down and rsi > 20 and rsi < 75 and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._stop_price = close + atr * float(self._atr_multiplier.Value)
             self._cooldown = 8

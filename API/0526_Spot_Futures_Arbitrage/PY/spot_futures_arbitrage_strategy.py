@@ -103,9 +103,9 @@ class spot_futures_arbitrage_strategy(Strategy):
         spread = (self._future_price - self._spot_price) / self._spot_price
 
         avg_val = self._spread_average.Process(DecimalIndicatorValue(self._spread_average, spread, candle.ServerTime))
-        avg = float(avg_val.ToDecimal())
+        avg = float(avg_val)
         std_val = self._spread_std.Process(DecimalIndicatorValue(self._spread_std, spread, candle.ServerTime))
-        std = float(std_val.ToDecimal())
+        std = float(std_val)
 
         min_spread = float(self.min_spread_pct) / 100.0
         entry_long = min_spread

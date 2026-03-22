@@ -62,9 +62,13 @@ class lsma_fast_simple_alternative_calculation_strategy(Strategy):
             self._prev_diff = diff
             return
         if self._prev_diff <= 0.0 and diff > 0.0 and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._cooldown = 10
         elif self._prev_diff >= 0.0 and diff < 0.0 and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._cooldown = 10
         self._prev_diff = diff

@@ -20,7 +20,7 @@ class mnq_ema_strategy(Strategy):
         self._ema13_len = self.Param("Ema13Length", 13).SetDisplay("EMA 13", "EMA 13 length", "Indicators")
         self._ema30_len = self.Param("Ema30Length", 30).SetDisplay("EMA 30", "EMA 30 length", "Indicators")
         self._ema200_len = self.Param("Ema200Length", 50).SetDisplay("EMA 200", "EMA 200 length", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 12).SetDisplay("Cooldown", "Min bars between signals", "General")
+        self._cooldown_bars = self.Param("SignalCooldownBars", 12).SetDisplay("Cooldown", "Min bars between signals", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
         self._prev_e5 = 0.0
@@ -41,6 +41,10 @@ class mnq_ema_strategy(Strategy):
 
     def OnStarted(self, time):
         super(mnq_ema_strategy, self).OnStarted(time)
+        self._prev_e5 = 0.0
+        self._prev_e13 = 0.0
+        self._has_prev = False
+        self._bars_from_signal = self._cooldown_bars.Value
         e5 = ExponentialMovingAverage()
         e5.Length = self._ema5_len.Value
         e13 = ExponentialMovingAverage()
@@ -54,6 +58,8 @@ class mnq_ema_strategy(Strategy):
 
     def _process_candle(self, candle, e5v, e13v, e30v, e200v):
         if candle.State != CandleStates.Finished:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
         e5 = float(e5v)
         e13 = float(e13v)

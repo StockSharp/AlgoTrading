@@ -286,7 +286,7 @@ class reduce_risks_strategy(Strategy):
         iv = sma.Process(DecimalIndicatorValue(sma, input_val, time))
         if not sma.IsFormed:
             return
-        v = float(iv.ToDecimal())
+        v = float(iv)
         vals[3] = vals[2]
         vals[2] = vals[1]
         vals[1] = vals[0]

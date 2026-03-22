@@ -38,23 +38,25 @@ class ma_crossover_tp_sl_5_ema_filter_strategy(Strategy):
 
     def OnStarted(self, time):
         super(ma_crossover_tp_sl_5_ema_filter_strategy, self).OnStarted(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_length.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_length.Value
-        ema = ExponentialMovingAverage()
-        ema.Length = self._ema_length.Value
+        self._fast_ma = ExponentialMovingAverage()
+        self._fast_ma.Length = self._fast_length.Value
+        self._slow_ma = ExponentialMovingAverage()
+        self._slow_ma.Length = self._slow_length.Value
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self._ema_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, ema, self._process_candle).Start()
+        subscription.Bind(self._fast_ma, self._slow_ma, self._ema, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._fast_ma)
+            self.DrawIndicator(area, self._slow_ma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val, ema_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed or not self._ema.IsFormed:
             return
         f = float(fast_val)
         s = float(slow_val)

@@ -76,7 +76,7 @@ class figurelli_series_strategy(Strategy):
             if not ema.IsFormed:
                 all_formed = False
                 continue
-            ma_val = float(result.ToDecimal())
+            ma_val = float(result)
             if price > ma_val:
                 bids += 1
             elif price < ma_val:

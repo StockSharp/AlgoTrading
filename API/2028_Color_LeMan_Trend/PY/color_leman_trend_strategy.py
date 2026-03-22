@@ -179,8 +179,8 @@ class color_leman_trend_strategy(Strategy):
         if not self._bulls_ema.IsFormed or not self._bears_ema.IsFormed:
             return
 
-        bulls = float(bulls_result.ToDecimal())
-        bears = float(bears_result.ToDecimal())
+        bulls = float(bulls_result)
+        bears = float(bears_result)
 
         buy_open = False
         sell_open = False

@@ -119,7 +119,7 @@ class xma_ichimoku_channel_strategy(Strategy):
 
         result = self._sma.Process(
             DecimalIndicatorValue(self._sma, mid_value, candle.OpenTime, True))
-        middle = float(result.ToDecimal())
+        middle = float(result)
 
         if not self._sma.IsFormed:
             return

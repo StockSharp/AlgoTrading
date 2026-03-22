@@ -173,7 +173,7 @@ class rabbit_m3_strategy(Strategy):
         williams_val = float(williams_value)
 
         cci_result = self._cci.Process(candle)
-        cci_val = float(cci_result.ToDecimal()) if cci_result is not None else 0.0
+        cci_val = float(cci_result) if cci_result is not None else 0.0
 
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)

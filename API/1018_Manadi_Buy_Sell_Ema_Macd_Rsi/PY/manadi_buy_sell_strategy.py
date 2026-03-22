@@ -43,19 +43,24 @@ class manadi_buy_sell_strategy(Strategy):
 
     def OnStarted(self, time):
         super(manadi_buy_sell_strategy, self).OnStarted(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_ema_length.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_ema_length.Value
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._stop_price = 0.0
+        self._take_profit_price = 0.0
+        self._bars_from_trade = self._cooldown_bars.Value
+        self._ema_fast = ExponentialMovingAverage()
+        self._ema_fast.Length = self._fast_ema_length.Value
+        self._ema_slow = ExponentialMovingAverage()
+        self._ema_slow.Length = self._slow_ema_length.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self._rsi_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, rsi, self._process_candle).Start()
+        subscription.Bind(self._ema_fast, self._ema_slow, self._rsi, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._ema_fast)
+            self.DrawIndicator(area, self._ema_slow)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val, rsi_val):
@@ -64,6 +69,10 @@ class manadi_buy_sell_strategy(Strategy):
         fast = float(fast_val)
         slow = float(slow_val)
         rsi = float(rsi_val)
+        if not self._ema_fast.IsFormed or not self._ema_slow.IsFormed or not self._rsi.IsFormed:
+            self._prev_fast = fast
+            self._prev_slow = slow
+            return
         if self._prev_fast == 0.0 or self._prev_slow == 0.0:
             self._prev_fast = fast
             self._prev_slow = slow

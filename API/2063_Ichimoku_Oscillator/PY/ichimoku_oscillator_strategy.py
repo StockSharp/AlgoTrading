@@ -139,7 +139,7 @@ class ichimoku_oscillator_strategy(Strategy):
         if not ema_result.IsFormed:
             return
 
-        current = float(ema_result.ToDecimal())
+        current = float(ema_result)
 
         if self._prev_value is not None and self._prev_prev_value is not None:
             prev = self._prev_value

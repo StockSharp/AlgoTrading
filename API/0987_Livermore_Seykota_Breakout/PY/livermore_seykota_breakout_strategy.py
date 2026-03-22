@@ -81,10 +81,10 @@ class livermore_seykota_breakout_strategy(Strategy):
             return
         close = float(candle.ClosePrice)
         if close > self._prev_highest and close > ev and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         elif close < self._prev_lowest and close < ev and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_signal = 0
         self._prev_highest = hv
         self._prev_lowest = lv

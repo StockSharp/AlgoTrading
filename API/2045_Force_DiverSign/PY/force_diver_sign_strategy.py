@@ -92,8 +92,8 @@ class force_diver_sign_strategy(Strategy):
             self._count += 1
             return
 
-        f1 = float(f1v.ToDecimal())
-        f2 = float(f2v.ToDecimal())
+        f1 = float(f1v)
+        f2 = float(f2v)
         self._shift(self._f1, f1)
         self._shift(self._f2, f2)
 

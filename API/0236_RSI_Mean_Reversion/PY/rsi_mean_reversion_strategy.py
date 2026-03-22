@@ -126,8 +126,8 @@ class rsi_mean_reversion_strategy(Strategy):
         # Store previous RSI value for changes detection
         current_rsi_value = rsi_value
 
-        # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading() or not self._rsi_average.IsFormed or not self._rsi_std_dev.IsFormed:
+        # Check if indicators are formed
+        if not self._rsi_average.IsFormed or not self._rsi_std_dev.IsFormed:
             self._prev_rsi_value = current_rsi_value
             return
 
@@ -138,25 +138,14 @@ class rsi_mean_reversion_strategy(Strategy):
         self.LogInfo("RSI: {0}, RSI Avg: {1}, Upper: {2}, Lower: {3}".format(
             current_rsi_value, rsi_avg_value, upper_band, lower_band))
 
-        # Entry logic
+        # Entry logic - only enter when flat (no exit logic in CS)
         if self.Position == 0:
             # Long Entry: RSI is below lower band
             if current_rsi_value < lower_band:
-                self.LogInfo("Buy Signal - RSI ({0}) < Lower Band ({1})".format(current_rsi_value, lower_band))
-                self.BuyMarket(self.Volume)
+                self.BuyMarket()
             # Short Entry: RSI is above upper band
             elif current_rsi_value > upper_band:
-                self.LogInfo("Sell Signal - RSI ({0}) > Upper Band ({1})".format(current_rsi_value, upper_band))
-                self.SellMarket(self.Volume)
-        # Exit logic
-        elif self.Position > 0 and current_rsi_value > rsi_avg_value:
-            # Exit Long: RSI returned to average
-            self.LogInfo("Exit Long - RSI ({0}) > RSI Avg ({1})".format(current_rsi_value, rsi_avg_value))
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and current_rsi_value < rsi_avg_value:
-            # Exit Short: RSI returned to average
-            self.LogInfo("Exit Short - RSI ({0}) < RSI Avg ({1})".format(current_rsi_value, rsi_avg_value))
-            self.BuyMarket(Math.Abs(self.Position))
+                self.SellMarket()
 
         self._prev_rsi_value = current_rsi_value
 

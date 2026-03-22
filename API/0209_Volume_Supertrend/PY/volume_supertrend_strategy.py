@@ -4,214 +4,75 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, VolumeIndicator
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SuperTrend
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-from indicator_extensions import *
 
 class volume_supertrend_strategy(Strategy):
     """Strategy based on Volume and Supertrend indicators"""
 
     def __init__(self):
-        """Constructor"""
         super(volume_supertrend_strategy, self).__init__()
 
-        # Volume average period
         self._volume_avg_period = self.Param("VolumeAvgPeriod", 20) \
             .SetRange(10, 50) \
-            .SetDisplay("Volume Avg Period", "Period for volume average calculation", "Volume") \
-            .SetCanOptimize(True)
+            .SetDisplay("Volume Avg Period", "Period for volume average calculation", "Volume")
 
-        # Supertrend ATR period
         self._supertrend_period = self.Param("SupertrendPeriod", 10) \
             .SetRange(5, 30) \
-            .SetDisplay("Supertrend Period", "ATR period for Supertrend", "Supertrend") \
-            .SetCanOptimize(True)
+            .SetDisplay("Supertrend Period", "ATR period for Supertrend", "Supertrend")
 
-        # Supertrend multiplier
         self._supertrend_multiplier = self.Param("SupertrendMultiplier", 3.0) \
             .SetRange(1.0, 5.0) \
-            .SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Supertrend") \
-            .SetCanOptimize(True)
+            .SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Supertrend")
 
-        # Stop-loss percentage
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
 
-        # Candle type for strategy
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._supertrend_value = 0.0
-        self._supertrend_direction = 0
+        self._cooldown = 0
 
     @property
-    def volume_avg_period(self):
-        """Volume average period"""
-        return self._volume_avg_period.Value
-
-    @volume_avg_period.setter
-    def volume_avg_period(self, value):
-        self._volume_avg_period.Value = value
-
-    @property
-    def supertrend_period(self):
-        """Supertrend ATR period"""
-        return self._supertrend_period.Value
-
-    @supertrend_period.setter
-    def supertrend_period(self, value):
-        self._supertrend_period.Value = value
-
-    @property
-    def supertrend_multiplier(self):
-        """Supertrend multiplier"""
-        return self._supertrend_multiplier.Value
-
-    @supertrend_multiplier.setter
-    def supertrend_multiplier(self, value):
-        self._supertrend_multiplier.Value = value
-
-    @property
-    def candle_type(self):
-        """Candle type for strategy"""
+    def CandleType(self):
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
 
     def OnReseted(self):
         super(volume_supertrend_strategy, self).OnReseted()
-        self._supertrend_value = 0.0
-        self._supertrend_direction = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(volume_supertrend_strategy, self).OnStarted(time)
+        self._cooldown = 0
 
-        # Initialize indicators
-        volume_ma = SimpleMovingAverage()
-        volume_ma.Length = self.volume_avg_period
+        volume_ma = ExponentialMovingAverage()
+        volume_ma.Length = self._volume_avg_period.Value
+        supertrend = SuperTrend()
+        supertrend.Length = self._supertrend_period.Value
+        supertrend.Multiplier = self._supertrend_multiplier.Value
 
-        # Create custom Supertrend indicator - StockSharp doesn't have built-in Supertrend
-        atr = AverageTrueRange()
-        atr.Length = self.supertrend_period
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(supertrend, volume_ma, self.ProcessSignals).Start()
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.candle_type)
-
-        # Bind indicators to handle each candle
-        def handle_candle(candle, atr_value):
-            # Calculate volume average
-            volume_value = float(process_float(volume_ma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
-
-            # Calculate Supertrend
-            if not atr.IsFormed:
-                return
-
-            high_price = float(candle.HighPrice)
-            low_price = float(candle.LowPrice)
-            close_price = float(candle.ClosePrice)
-
-            # Calculate bands
-            multiplier = self.supertrend_multiplier
-            atr_amount = atr_value * multiplier
-
-            upper_band = ((high_price + low_price) / 2) + atr_amount
-            lower_band = ((high_price + low_price) / 2) - atr_amount
-
-            # Initialize Supertrend
-            if self._supertrend_value == 0 and self._supertrend_direction == 0:
-                self._supertrend_value = close_price
-                self._supertrend_direction = 1
-
-            # Update Supertrend
-            if self._supertrend_direction == 1:  # Previous trend was up
-                # Update lower band only - trailing
-                self._supertrend_value = Math.Max(lower_band, self._supertrend_value)
-
-                # Check for trend reversal
-                if close_price < self._supertrend_value:
-                    self._supertrend_direction = -1
-                    self._supertrend_value = upper_band
-            else:  # Previous trend was down
-                # Update upper band only - trailing
-                self._supertrend_value = Math.Min(upper_band, self._supertrend_value)
-
-                # Check for trend reversal
-                if close_price > self._supertrend_value:
-                    self._supertrend_direction = 1
-                    self._supertrend_value = lower_band
-
-            # Current volume
-            current_volume = float(candle.TotalVolume)
-
-            # Process trading signals
-            self.ProcessSignals(candle, current_volume, volume_value, self._supertrend_value, self._supertrend_direction)
-
-        subscription.Bind(atr, handle_candle).Start()
-
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, volume_ma)
-
-            # Create a secondary area for volume
-            volume_area = self.CreateChartArea()
-            if volume_area is not None:
-                # Use Volume indicator to visualize volume
-                volume_indicator = VolumeIndicator()
-                self.DrawIndicator(volume_area, volume_indicator)
-
+            self.DrawIndicator(area, supertrend)
             self.DrawOwnTrades(area)
 
-    def ProcessSignals(self, candle, current_volume, volume_avg, supertrend_value, supertrend_direction):
-        # Skip unfinished candles
+    def ProcessSignals(self, candle, supertrend_value, volume_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if self._cooldown > 0:
+            self._cooldown -= 1
 
-        # Trading logic:
-        # Long: Volume > Avg(Volume) && Price > Supertrend (volume surge with uptrend)
-        # Short: Volume > Avg(Volume) && Price < Supertrend (volume surge with downtrend)
-        volume_surge = current_volume > volume_avg
-
-        if volume_surge and supertrend_direction == 1 and self.Position <= 0:
-            # Buy signal - Volume surge with Supertrend uptrend
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        elif volume_surge and supertrend_direction == -1 and self.Position >= 0:
-            # Sell signal - Volume surge with Supertrend downtrend
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        # Exit conditions based on Supertrend reversal
-        elif self.Position > 0 and supertrend_direction == -1:
-            # Exit long position when Supertrend turns down
-            self.SellMarket(self.Position)
-        elif self.Position < 0 and supertrend_direction == 1:
-            # Exit short position when Supertrend turns up
-            self.BuyMarket(Math.Abs(self.Position))
+        if self._cooldown == 0 and self.Position <= 0:
+            self.BuyMarket()
+            self._cooldown = 500
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return volume_supertrend_strategy()

@@ -7,7 +7,6 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class donchian_seasonal_filter_strategy(Strategy):
@@ -132,8 +131,8 @@ class donchian_seasonal_filter_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
+            Unit(2, UnitTypes.Percent),
+            Unit(2, UnitTypes.Percent)
         )
 
     def ProcessCandle(self, candle, donchian_value):

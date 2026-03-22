@@ -3,202 +3,106 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import Math
-from StockSharp.Messages import CandleStates, Sides
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import BollingerBands, Highest, Lowest, SimpleMovingAverage, StandardDeviation
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class williams_vix_fix_strategy(Strategy):
-    """Williams VIX Fix strategy.
-
-    Adapts the Williams VIX Fix indicator to spot volatility extremes. When the
-    calculated VIX Fix or its inverse rises above a dynamic Bollinger Band the
-    strategy enters in anticipation of mean reversion. Bollinger Bands on price are
-    used as additional confirmation.
-    """
+    """Williams VIX Fix Strategy."""
 
     def __init__(self):
         super(williams_vix_fix_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._bb_length = self.Param("BbLength", 20) \
-            .SetDisplay("BB Length", "Bollinger Bands length", "Bollinger Bands")
+            .SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands")
         self._bb_multiplier = self.Param("BbMultiplier", 2.0) \
-            .SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
-        self._wvf_period = self.Param("WvfPeriod", 20) \
-            .SetDisplay("WVF Period", "Williams VIX Fix lookback period for StdDev", "Williams VIX Fix")
-        self._wvf_lookback = self.Param("WvfLookback", 50) \
-            .SetDisplay("WVF Lookback", "Williams VIX Fix lookback period for percentile", "Williams VIX Fix")
-        self._highest_percentile = self.Param("HighestPercentile", 0.85) \
-            .SetDisplay("Highest Percentile", "Highest percentile threshold", "Williams VIX Fix")
-        self._lowest_percentile = self.Param("LowestPercentile", 0.99) \
-            .SetDisplay("Lowest Percentile", "Lowest percentile threshold", "Williams VIX Fix")
+            .SetDisplay("BB Multiplier", "BB standard deviation multiplier", "Bollinger Bands")
+        self._rsi_length = self.Param("RsiLength", 14) \
+            .SetDisplay("RSI Length", "RSI period", "RSI")
+        self._cooldown_bars = self.Param("CooldownBars", 10) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
-        self._bollinger = None
-        self._highest_close = None
-        self._lowest_close = None
-        self._wvf_sma = None
-        self._wvf_std = None
-        self._wvf_inv_sma = None
-        self._wvf_inv_std = None
-        
-        # Store previous Bollinger Bands values
-        self._prev_bb_upper = 0.0
-        self._prev_bb_lower = 0.0
+        self._bb = None
+        self._rsi = None
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def bb_length(self):
-        return self._bb_length.Value
-
-    @bb_length.setter
-    def bb_length(self, value):
-        self._bb_length.Value = value
-
-    @property
-    def bb_multiplier(self):
-        return self._bb_multiplier.Value
-
-    @bb_multiplier.setter
-    def bb_multiplier(self, value):
-        self._bb_multiplier.Value = value
-
-    @property
-    def wvf_period(self):
-        return self._wvf_period.Value
-
-    @wvf_period.setter
-    def wvf_period(self, value):
-        self._wvf_period.Value = value
-
-    @property
-    def wvf_lookback(self):
-        return self._wvf_lookback.Value
-
-    @wvf_lookback.setter
-    def wvf_lookback(self, value):
-        self._wvf_lookback.Value = value
-
-    @property
-    def highest_percentile(self):
-        return self._highest_percentile.Value
-
-    @highest_percentile.setter
-    def highest_percentile(self, value):
-        self._highest_percentile.Value = value
-
-    @property
-    def lowest_percentile(self):
-        return self._lowest_percentile.Value
-
-    @lowest_percentile.setter
-    def lowest_percentile(self, value):
-        self._lowest_percentile.Value = value
-
     def OnReseted(self):
         super(williams_vix_fix_strategy, self).OnReseted()
-        self._prev_bb_upper = 0.0
-        self._prev_bb_lower = 0.0
+        self._bb = None
+        self._rsi = None
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(williams_vix_fix_strategy, self).OnStarted(time)
 
-        self._bollinger = BollingerBands()
-        self._bollinger.Length = self.bb_length
-        self._bollinger.Width = self.bb_multiplier
+        self._bb = BollingerBands()
+        self._bb.Length = int(self._bb_length.Value)
+        self._bb.Width = float(self._bb_multiplier.Value)
 
-        self._highest_close = Highest()
-        self._highest_close.Length = self.wvf_period
-
-        self._lowest_close = Lowest()
-        self._lowest_close.Length = self.wvf_period
-
-        self._wvf_sma = SimpleMovingAverage();
-        self._wvf_sma.Length = self.bb_length
-
-        self._wvf_std = StandardDeviation();
-        self._wvf_std.Length = self.bb_length
-
-        self._wvf_inv_sma = SimpleMovingAverage();
-        self._wvf_inv_sma.Length = self.bb_length
-
-        self._wvf_inv_std = StandardDeviation();
-        self._wvf_inv_std.Length = self.bb_length
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._bollinger, self._highest_close, self._lowest_close, self.ProcessCandle).Start()
+        subscription.BindEx(self._bb, self._rsi, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._bollinger)
+            self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, bb_value, highest_value, lowest_value):
+    def _on_process(self, candle, bb_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._bollinger.IsFormed or not self._highest_close.IsFormed or not self._lowest_close.IsFormed:
+        if not self._bb.IsFormed or not self._rsi.IsFormed:
             return
 
-        # Store current Bollinger Bands values
-        bb_typed = bb_value  # BollingerBandsValue
-        current_bb_upper = float(bb_typed.UpBand) if bb_typed.UpBand is not None else 0.0
-        current_bb_lower = float(bb_typed.LowBand) if bb_typed.LowBand is not None else 0.0
-
-        price = candle.ClosePrice
-        low_price = candle.LowPrice
-        high_price = candle.HighPrice
-
-        wvf = ((float(highest_value) - low_price) / float(highest_value)) * 100
-        wvf_sma = process_float(self._wvf_sma, wvf, candle.ServerTime, True)
-        wvf_std = process_float(self._wvf_std, wvf, candle.ServerTime, True)
-        if not wvf_sma.IsFormed or not wvf_std.IsFormed:
-            # Store current values for next iteration
-            self._prev_bb_upper = current_bb_upper
-            self._prev_bb_lower = current_bb_lower
+        if bb_value.IsEmpty or rsi_value.IsEmpty:
             return
-        wvf_upper = float(wvf_sma) + (self.bb_multiplier * float(wvf_std))
 
-        wvf_inv = ((high_price - float(lowest_value)) / float(lowest_value)) * 100
-        wvf_inv_sma = process_float(self._wvf_inv_sma, wvf_inv, candle.ServerTime, True)
-        wvf_inv_std = process_float(self._wvf_inv_std, wvf_inv, candle.ServerTime, True)
-        if not wvf_inv_sma.IsFormed or not wvf_inv_std.IsFormed:
-            # Store current values for next iteration
-            self._prev_bb_upper = current_bb_upper
-            self._prev_bb_lower = current_bb_lower
+        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return
-        wvf_inv_upper = float(wvf_inv_sma) + (self.bb_multiplier * float(wvf_inv_std))
 
-        self._check_conditions(candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper, current_bb_upper, current_bb_lower)
-        
-        # Store current values for next iteration
-        self._prev_bb_upper = current_bb_upper
-        self._prev_bb_lower = current_bb_lower
+        upper = float(bb_value.UpBand)
+        lower = float(bb_value.LowBand)
+        mid = float(bb_value.MovingAverage)
+        rsi_val = float(IndicatorHelper.ToDecimal(rsi_value))
 
-    def _check_conditions(self, candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper, bb_upper, bb_lower):
-        price = candle.ClosePrice
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        range_high = wvf * self.highest_percentile
-        range_high_inv = wvf_inv * self.lowest_percentile
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            return
 
-        buy = (wvf >= wvf_upper or wvf >= range_high) and price < bb_lower
-        sell = (wvf_inv <= wvf_inv_upper or wvf_inv <= range_high_inv) and price > bb_upper
+        close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
 
-        if buy and self.Position == 0:
-            self.RegisterOrder(self.CreateOrder(Sides.Buy, price, self.Volume))
-        if self.Position > 0 and sell:
-            self.RegisterOrder(self.CreateOrder(Sides.Sell, price, Math.Abs(self.Position)))
+        if close <= lower and rsi_val < 35 and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif close >= upper and rsi_val > 65 and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and (close >= mid or rsi_val > 70):
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and (close <= mid or rsi_val < 30):
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
         return williams_vix_fix_strategy()

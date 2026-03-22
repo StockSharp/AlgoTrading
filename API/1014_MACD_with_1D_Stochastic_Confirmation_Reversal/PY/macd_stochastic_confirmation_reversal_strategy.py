@@ -106,8 +106,8 @@ class macd_stochastic_confirmation_reversal_strategy(Strategy):
 
         macd_line = float(macd_line_val)
         signal_line = float(signal_line_val)
-        atr = float(atr_value.ToDecimal())
-        ema = float(ema_value.ToDecimal())
+        atr = float(atr_value)
+        ema = float(ema_value)
 
         if not self._macd_ind.IsFormed or self._daily_k is None or self._daily_d is None:
             self._prev_macd = macd_line

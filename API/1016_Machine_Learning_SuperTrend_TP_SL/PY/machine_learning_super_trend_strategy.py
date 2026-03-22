@@ -65,7 +65,7 @@ class machine_learning_super_trend_strategy(Strategy):
         st_result = self._super_trend.Process(CandleIndicatorValue(self._super_trend, candle))
         if not self._super_trend.IsFormed or st_result.IsEmpty:
             return
-        st_val = float(st_result.GetValue[float]())
+        st_val = float(st_result)
         close = float(candle.ClosePrice)
         direction = 1 if close > st_val else -1
         direction_changed = self._prev_direction != 0 and direction != self._prev_direction

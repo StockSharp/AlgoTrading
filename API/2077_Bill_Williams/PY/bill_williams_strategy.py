@@ -98,9 +98,9 @@ class bill_williams_strategy(Strategy):
         if not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed:
             return
 
-        jaw = float(jaw_val.ToDecimal())
-        teeth = float(teeth_val.ToDecimal())
-        lips = float(lips_val.ToDecimal())
+        jaw = float(jaw_val)
+        teeth = float(teeth_val)
+        lips = float(lips_val)
 
         price = float(candle.ClosePrice)
         filt = float(self.filter_pct) / 100.0 * price

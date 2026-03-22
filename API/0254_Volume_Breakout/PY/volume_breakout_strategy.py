@@ -112,7 +112,7 @@ class volume_breakout_strategy(Strategy):
 
         # Enable stop loss protection
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
+            takeProfit=Unit(3, UnitTypes.Percent),
             stopLoss=Unit(self.stop_loss, UnitTypes.Percent)
         )
         # Create chart area for visualization
@@ -143,31 +143,16 @@ class volume_breakout_strategy(Strategy):
             self._last_std_dev = std_dev
             return
 
-        # Check if trading is allowed
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._last_avg_volume = avg_volume
-            self._last_std_dev = std_dev
-            return
-
         # Volume breakout detection (volume increases significantly above its average)
-        if volume > avg_volume + self.multiplier * std_dev:
+        if volume > avg_volume + float(self.multiplier) * std_dev and self.Position == 0:
             # Determine direction based on price movement
             bullish = candle.ClosePrice > candle.OpenPrice
 
-            # Cancel active orders before placing new ones
-            self.CancelActiveOrders()
-
             # Trade in the direction of price movement
-            if bullish and self.Position <= 0:
-                # Bullish breakout - Buy
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            elif not bullish and self.Position >= 0:
-                # Bearish breakout - Sell
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        # Check for exit condition - volume returns to average
-        elif (self.Position > 0 and volume < avg_volume) or (self.Position < 0 and volume < avg_volume):
-            # Exit position
-            self.ClosePosition()
+            if bullish:
+                self.BuyMarket()
+            else:
+                self.SellMarket()
 
         # Update last values
         self._last_avg_volume = avg_volume

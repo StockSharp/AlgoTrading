@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, Momentum, ExponentialMovingAverage, AverageTrueRange
+from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, Momentum, ExponentialMovingAverage, AverageTrueRange, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -51,18 +51,6 @@ class adaptive_squeeze_momentum_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
-
     def OnReseted(self):
         super(adaptive_squeeze_momentum_strategy, self).OnReseted()
         self._squeeze_off_prev = False
@@ -73,85 +61,103 @@ class adaptive_squeeze_momentum_strategy(Strategy):
     def OnStarted(self, time):
         super(adaptive_squeeze_momentum_strategy, self).OnStarted(time)
         bb = BollingerBands()
-        bb.Length = self._bollinger_period.Value
+        bb.Length = int(self._bollinger_period.Value)
         bb.Width = self._bollinger_multiplier.Value
         kc = KeltnerChannels()
-        kc.Length = self._keltner_period.Value
+        kc.Length = int(self._keltner_period.Value)
         kc.Multiplier = self._keltner_multiplier.Value
         mom = Momentum()
-        mom.Length = self._momentum_length.Value
+        mom.Length = int(self._momentum_length.Value)
         trend_ema = ExponentialMovingAverage()
-        trend_ema.Length = self._trend_ma_length.Value
+        trend_ema.Length = int(self._trend_ma_length.Value)
         atr = AverageTrueRange()
-        atr.Length = self._atr_length.Value
+        atr.Length = int(self._atr_length.Value)
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bb, kc, mom, trend_ema, atr, self.OnProcess).Start()
+        subscription.BindEx(bb, kc, mom, trend_ema, atr, self._on_process).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bb)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, bb_value, kc_value, mom_value, ema_value, atr_value):
+    def _on_process(self, candle, bb_value, kc_value, mom_value, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if bb_value.IsEmpty or kc_value.IsEmpty or mom_value.IsEmpty or ema_value.IsEmpty or atr_value.IsEmpty:
             return
-        bb = bb_value
-        kc = kc_value
-        bb_upper = bb.UpBand
-        bb_lower = bb.LowBand
-        kc_upper = kc.Upper
-        kc_lower = kc.Lower
-        if bb_upper is None or bb_lower is None or kc_upper is None or kc_lower is None:
+
+        if bb_value.UpBand is None or bb_value.LowBand is None:
             return
-        mom_v = float(mom_value.GetValue[float]())
-        trend = float(ema_value.GetValue[float]())
-        atr_v = float(atr_value.GetValue[float]())
+        if kc_value.Upper is None or kc_value.Lower is None:
+            return
+
+        bb_upper = float(bb_value.UpBand)
+        bb_lower = float(bb_value.LowBand)
+        kc_upper = float(kc_value.Upper)
+        kc_lower = float(kc_value.Lower)
+
+        mom_v = float(IndicatorHelper.ToDecimal(mom_value))
+        trend = float(IndicatorHelper.ToDecimal(ema_value))
+        atr_v = float(IndicatorHelper.ToDecimal(atr_value))
         close = float(candle.ClosePrice)
-        squeeze_off = float(bb_lower) < float(kc_lower) and float(bb_upper) > float(kc_upper)
+
+        squeeze_off = bb_lower < kc_lower and bb_upper > kc_upper
+
+        cooldown = int(self._cooldown_bars.Value)
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
-            self._check_stops(candle, atr_v)
+            self._check_stops(candle, atr_v, cooldown)
             self._squeeze_off_prev = squeeze_off
             return
-        if self._check_stops(candle, atr_v):
+
+        if self._check_stops(candle, atr_v, cooldown):
             self._squeeze_off_prev = squeeze_off
             return
+
         bullish_trend = close > trend
         bearish_trend = close < trend
         buy_signal = self._squeeze_off_prev and mom_v > 0 and bullish_trend
         sell_signal = self._squeeze_off_prev and mom_v < 0 and bearish_trend
+
         self._squeeze_off_prev = squeeze_off
+
         sl_mult = float(self._atr_multiplier_sl.Value)
         tp_mult = float(self._atr_multiplier_tp.Value)
+
         if buy_signal and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
             self._stop_price = close - atr_v * sl_mult
             self._profit_target = close + atr_v * tp_mult
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
         elif sell_signal and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
             self._stop_price = close + atr_v * sl_mult
             self._profit_target = close - atr_v * tp_mult
-            self._cooldown_remaining = self.cooldown_bars
+            self._cooldown_remaining = cooldown
 
-    def _check_stops(self, candle, atr_v):
+    def _check_stops(self, candle, atr_v, cooldown):
         close = float(candle.ClosePrice)
         if self.Position > 0 and self._stop_price > 0:
             if close <= self._stop_price or close >= self._profit_target:
-                self.SellMarket()
-                self._cooldown_remaining = self.cooldown_bars
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown_remaining = cooldown
                 self._stop_price = 0.0
                 return True
         elif self.Position < 0 and self._stop_price > 0:
             if close >= self._stop_price or close <= self._profit_target:
-                self.BuyMarket()
-                self._cooldown_remaining = self.cooldown_bars
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown_remaining = cooldown
                 self._stop_price = 0.0
                 return True
         return False

@@ -82,9 +82,13 @@ class macd_aggressive_scalp_simple_strategy(Strategy):
         cross_up = self._prev_macd <= 0.0 and macd_line > 0.0
         cross_down = self._prev_macd >= 0.0 and macd_line < 0.0
         if cross_up and close >= ev and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._cooldown = 5
         elif cross_down and close <= ev and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._cooldown = 5
         self._prev_macd = macd_line

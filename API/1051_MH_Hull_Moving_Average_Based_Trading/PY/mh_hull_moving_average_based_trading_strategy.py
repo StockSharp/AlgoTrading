@@ -48,12 +48,10 @@ class mh_hull_moving_average_based_trading_strategy(Strategy):
         self._bars_from_signal = self._signal_cooldown_bars.Value
         self._hma = HullMovingAverage()
         self._hma.Length = self._hull_period.Value
-        dummy = ExponentialMovingAverage()
-        dummy.Length = 10
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._hma, dummy, self.OnProcess).Start()
+        subscription.Bind(self._hma, self.OnProcess).Start()
 
-    def OnProcess(self, candle, hma_value, dummy_value):
+    def OnProcess(self, candle, hma_value):
         if candle.State != CandleStates.Finished:
             return
         if not self._hma.IsFormed:

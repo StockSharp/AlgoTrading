@@ -7,7 +7,6 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class parabolic_sar_rsi_divergence_strategy(Strategy):
@@ -135,6 +134,9 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
 
     def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         rsi_val = float(rsi_value)

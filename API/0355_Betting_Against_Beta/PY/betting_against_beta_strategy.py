@@ -1,232 +1,211 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
-clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math, Array
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Math, Decimal, ValueTuple
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import Correlation, StandardDeviation, PairIndicatorValue, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+from StockSharp.BusinessEntities import Security
+
 
 class betting_against_beta_strategy(Strategy):
-    """Betting Against Beta strategy.
-
-    Longs the lowest beta decile and shorts the highest beta decile.
-    Betas are estimated against the benchmark over a rolling window and
-    the portfolio is rebalanced monthly on the first trading day.
-    """
+    """Betting-against-beta factor strategy using dual securities and rolling beta."""
 
     def __init__(self):
         super(betting_against_beta_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", Array.Empty[Security]()) \
-            .SetDisplay("Universe", "Securities universe", "General")
+        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
+            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
 
-        self._window = self.Param("WindowDays", 252) \
-            .SetDisplay("Window Days", "Lookback window length", "General") \
-            .SetGreaterThanZero()
+        self._beta_length = self.Param("BetaLength", 16) \
+            .SetRange(10, 150) \
+            .SetDisplay("Beta Length", "Rolling beta lookback length", "Indicators")
 
-        self._deciles = self.Param("Deciles", 10) \
-            .SetDisplay("Deciles", "Number of deciles", "General") \
-            .SetGreaterThanZero()
+        self._low_beta_threshold = self.Param("LowBetaThreshold", 0.95) \
+            .SetRange(0.2, 1.2) \
+            .SetDisplay("Low Beta Threshold", "Maximum beta required to open a long position", "Signals")
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
-            .SetDisplay("Candle Type", "Candle time frame", "General")
+        self._high_beta_threshold = self.Param("HighBetaThreshold", 1.05) \
+            .SetRange(0.8, 2.5) \
+            .SetDisplay("High Beta Threshold", "Minimum beta required to open a short position", "Signals")
 
-        self._min_usd = self.Param("MinTradeUsd", 100.0) \
-            .SetDisplay("Min Trade USD", "Minimum trade value in USD", "General") \
-            .SetGreaterThanZero()
+        self._exit_beta_threshold = self.Param("ExitBetaThreshold", 1.0) \
+            .SetRange(0.5, 1.5) \
+            .SetDisplay("Exit Beta Threshold", "Neutral beta threshold used to close positions", "Signals")
 
-        self._wins = {}
-        self._weights = {}
-        self._latest_prices = {}
-        self._last_day = DateTime.MinValue
+        self._cooldown_bars = self.Param("CooldownBars", 8) \
+            .SetRange(0, 100) \
+            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
 
-    # region Properties
-    @property
-    def Universe(self):
-        """Securities universe."""
-        return self._universe.Value
+        self._stop_loss = self.Param("StopLoss", 2.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-    @Universe.setter
-    def Universe(self, value):
-        self._universe.Value = value
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle series for both instruments", "General")
 
-    @property
-    def WindowDays(self):
-        """Lookback window in days."""
-        return self._window.Value
-
-    @WindowDays.setter
-    def WindowDays(self, value):
-        self._window.Value = value
-
-    @property
-    def Deciles(self):
-        """Number of decile buckets."""
-        return self._deciles.Value
-
-    @Deciles.setter
-    def Deciles(self, value):
-        self._deciles.Value = value
+        self._benchmark = None
+        self._correlation = None
+        self._primary_deviation = None
+        self._benchmark_deviation = None
+        self._latest_primary_price = 0.0
+        self._latest_benchmark_price = 0.0
+        self._previous_primary_price = 0.0
+        self._previous_benchmark_price = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
-        """Candle time frame used by the strategy."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def MinTradeUsd(self):
-        """Minimum trade size in USD."""
-        return self._min_usd.Value
-
-    @MinTradeUsd.setter
-    def MinTradeUsd(self, value):
-        self._min_usd.Value = value
-    # endregion
-
     def GetWorkingSecurities(self):
-        if self.Security is None:
-            raise Exception("Benchmark not set")
-        
-        universe_list = list(self.Universe) if self.Universe is not None else []
-        securities = universe_list + [self.Security]
-        
-        return [(s, self.CandleType) for s in securities]
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._security2_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(betting_against_beta_strategy, self).OnReseted()
-        self._wins.clear()
-        self._weights.clear()
-        self._latest_prices.clear()
-        self._last_day = DateTime.MinValue
+        self._benchmark = None
+        self._correlation = None
+        self._primary_deviation = None
+        self._benchmark_deviation = None
+        self._latest_primary_price = 0.0
+        self._latest_benchmark_price = 0.0
+        self._previous_primary_price = 0.0
+        self._previous_benchmark_price = 0.0
+        self._primary_updated = False
+        self._benchmark_updated = False
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
-        if self.Universe is None or len(self.Universe) == 0:
-            raise Exception("Universe is empty")
-        if self.Security is None:
-            raise Exception("Benchmark not set")
-
         super(betting_against_beta_strategy, self).OnStarted(time)
 
-        for sec, dt in self.GetWorkingSecurities():
-            self._wins[sec] = RollingWindow(self.WindowDays + 1)
-            self.SubscribeCandles(dt, True, sec) \
-                .Bind(lambda candle, security=sec: self.ProcessCandle(candle, security)) \
-                .Start()
+        sec2_id = str(self._security2_id.Value)
+        if not sec2_id:
+            raise Exception("Benchmark security identifier is not specified.")
 
-    def ProcessCandle(self, candle, security):
+        s = Security()
+        s.Id = sec2_id
+        self._benchmark = s
+
+        beta_len = int(self._beta_length.Value)
+        self._correlation = Correlation()
+        self._correlation.Length = beta_len
+        self._primary_deviation = StandardDeviation()
+        self._primary_deviation.Length = beta_len
+        self._benchmark_deviation = StandardDeviation()
+        self._benchmark_deviation.Length = beta_len
+        self._cooldown_remaining = 0
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
+
+        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
+        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, benchmark_subscription)
+            self.DrawOwnTrades(area)
+
+        self.StartProtection(
+            Unit(2, UnitTypes.Percent),
+            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
+        )
+
+    def ProcessPrimaryCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._latest_prices[security] = candle.ClosePrice
-        self._wins[security].Add(candle.ClosePrice)
+        self._latest_primary_price = float(candle.ClosePrice)
+        self._primary_updated = True
+        self.TryProcessBeta(candle.OpenTime)
 
-        d = candle.OpenTime.Date
-        if d == self._last_day:
-            return
-        self._last_day = d
-
-        if d.Day == 1:
-            self.TryRebalance()
-
-    def TryRebalance(self):
-        if any(not w.IsFull() for w in self._wins.values()):
+    def ProcessBenchmarkCandle(self, candle):
+        if candle.State != CandleStates.Finished:
             return
 
-        bench_ret = self.GetReturns(self._wins[self.Security])
-        betas = {}
-        for s in self.Universe:
-            r = self.GetReturns(self._wins[s])
-            betas[s] = self.Beta(r, bench_ret)
+        self._latest_benchmark_price = float(candle.ClosePrice)
+        self._benchmark_updated = True
+        self.TryProcessBeta(candle.OpenTime)
 
-        bucket = len(betas) // self.Deciles
-        if bucket == 0:
+    def TryProcessBeta(self, time):
+        if not self._primary_updated or not self._benchmark_updated:
             return
 
-        sorted_items = sorted(betas.items(), key=lambda kv: kv[1])
-        longs = [kv[0] for kv in sorted_items[:bucket]]
-        shorts = [kv[0] for kv in sorted_items[-bucket:]]
+        self._primary_updated = False
+        self._benchmark_updated = False
 
-        self._weights.clear()
-        wl = 1.0 / len(longs)
-        ws = -1.0 / len(shorts)
-        for s in longs:
-            self._weights[s] = wl
-        for s in shorts:
-            self._weights[s] = ws
-
-        for position in self.Positions:
-            if position.Security not in self._weights:
-                self.Move(position.Security, 0)
-
-        portfolio_value = self.Portfolio.CurrentValue or 0
-        for sec, weight in self._weights.items():
-            price = self.GetLatestPrice(sec)
-            if price > 0:
-                self.Move(sec, weight * portfolio_value / price)
-
-    def GetReturns(self, win):
-        arr = win.ToArray()
-        return [(arr[i] - arr[i - 1]) / arr[i - 1] for i in range(1, len(arr))]
-
-    def Beta(self, x, y):
-        n = min(len(x), len(y))
-        if n == 0:
-            return 0
-        mean_x = sum(x[:n]) / n
-        mean_y = sum(y[:n]) / n
-        cov = 0.0
-        var_m = 0.0
-        for i in range(n):
-            cov += (x[i] - mean_x) * (y[i] - mean_y)
-            var_m += (y[i] - mean_y) * (y[i] - mean_y)
-        return cov / var_m if var_m != 0 else 0
-
-    def GetLatestPrice(self, security):
-        return self._latest_prices.get(security, 0)
-
-    def Move(self, sec, tgt):
-        diff = tgt - self.PositionBy(sec)
-        price = self.GetLatestPrice(sec)
-        if price <= 0 or Math.Abs(diff) * price < self.MinTradeUsd:
+        if self._previous_primary_price <= 0.0 or self._previous_benchmark_price <= 0.0:
+            self._previous_primary_price = self._latest_primary_price
+            self._previous_benchmark_price = self._latest_benchmark_price
             return
 
-        order = Order()
-        order.Security = sec
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = Math.Abs(diff)
-        order.Type = OrderTypes.Market
-        order.Comment = "BAB"
-        self.RegisterOrder(order)
+        primary_return = (self._latest_primary_price - self._previous_primary_price) / max(self._previous_primary_price, 1.0)
+        benchmark_return = (self._latest_benchmark_price - self._previous_benchmark_price) / max(self._previous_benchmark_price, 1.0)
 
-    def PositionBy(self, sec):
-        val = self.GetPositionValue(sec, self.Portfolio)
-        return val if val is not None else 0
+        self._previous_primary_price = self._latest_primary_price
+        self._previous_benchmark_price = self._latest_benchmark_price
+
+        pair_val = ValueTuple[Decimal, Decimal](Decimal(primary_return), Decimal(benchmark_return))
+        pair_input = PairIndicatorValue[Decimal](self._correlation, pair_val, time)
+        pair_input.IsFinal = True
+        corr_result = self._correlation.Process(pair_input)
+        correlation = float(corr_result)
+
+        prim_dev_iv = DecimalIndicatorValue(self._primary_deviation, Decimal(primary_return), time)
+        prim_dev_iv.IsFinal = True
+        prim_dev_result = self._primary_deviation.Process(prim_dev_iv)
+        primary_dev = float(prim_dev_result)
+
+        bench_dev_iv = DecimalIndicatorValue(self._benchmark_deviation, Decimal(benchmark_return), time)
+        bench_dev_iv.IsFinal = True
+        bench_dev_result = self._benchmark_deviation.Process(bench_dev_iv)
+        benchmark_dev = float(bench_dev_result)
+
+        if not self._correlation.IsFormed or not self._primary_deviation.IsFormed or not self._benchmark_deviation.IsFormed or benchmark_dev <= 0:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        beta = correlation * (primary_dev / benchmark_dev)
+        low_thresh = float(self._low_beta_threshold.Value)
+        high_thresh = float(self._high_beta_threshold.Value)
+        exit_thresh = float(self._exit_beta_threshold.Value)
+        cooldown = int(self._cooldown_bars.Value)
+
+        bullish_entry = beta <= low_thresh
+        bearish_entry = beta >= high_thresh
+
+        if self._cooldown_remaining == 0 and self.Position == 0:
+            if bullish_entry:
+                self.BuyMarket()
+                self._cooldown_remaining = cooldown
+            elif bearish_entry:
+                self.SellMarket()
+                self._cooldown_remaining = cooldown
+        elif self.Position > 0 and beta >= exit_thresh:
+            self.SellMarket(self.Position)
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and beta <= exit_thresh:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
     def CreateClone(self):
-        """Creates a new copy of the strategy."""
         return betting_against_beta_strategy()
-
-class RollingWindow:
-    def __init__(self, n):
-        self._n = n
-        self._q = []
-
-    def Add(self, v):
-        if len(self._q) == self._n:
-            self._q.pop(0)
-        self._q.append(v)
-
-    def IsFull(self):
-        return len(self._q) == self._n
-
-    def ToArray(self):
-        return list(self._q)

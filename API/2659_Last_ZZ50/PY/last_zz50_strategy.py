@@ -59,7 +59,7 @@ class last_zz50_strategy(Strategy):
         if not self._zz.IsFormed:
             return
 
-        val = float(result.ToDecimal()) if result is not None else 0
+        val = float(result) if result is not None else 0
         if val > 0:
             sec = self.Security
             step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 0.01

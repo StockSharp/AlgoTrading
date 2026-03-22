@@ -4,128 +4,124 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math, Array
+from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
+
 
 class crypto_rebalancing_premium_strategy(Strategy):
-    """Equal-weight BTC and ETH basket rebalancing strategy."""
+    """Equal-weight crypto basket strategy that rebalances the primary and secondary instruments on a weekly schedule."""
 
     def __init__(self):
         super(crypto_rebalancing_premium_strategy, self).__init__()
 
-        self._eth = self.Param("ETH", None) \
-            .SetDisplay("ETH", "Ethereum security", "General")
+        self._secondary_security_id = self.Param("SecondarySecurityId", "TONUSDT@BNBFT") \
+            .SetDisplay("Second Security Id", "Identifier of the secondary crypto security", "General")
 
-        self._min_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetGreaterThanZero() \
+        self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
+            .SetRange(10.0, 10000.0) \
             .SetDisplay("Min Trade USD", "Minimum dollar amount per trade", "Trading")
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._latest_prices = {}
-        self._last = DateTime.MinValue
-
-    # region Properties
-    @property
-    def BTC(self):
-        return self.Security
-
-    @BTC.setter
-    def BTC(self, value):
-        self.Security = value
+        self._secondary_security = None
+        self._latest_primary_price = 0.0
+        self._latest_secondary_price = 0.0
+        self._last_rebalance_time = None
 
     @property
-    def ETH(self):
-        return self._eth.Value
-
-    @ETH.setter
-    def ETH(self, value):
-        self._eth.Value = value
-
-    @property
-    def MinTradeUsd(self):
-        return self._min_usd.Value
-
-    @MinTradeUsd.setter
-    def MinTradeUsd(self, value):
-        self._min_usd.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-    # endregion
-
     def GetWorkingSecurities(self):
-        return [(self.BTC, self.CandleType), (self.ETH, self.CandleType)]
+        result = []
+        if self.Security is not None:
+            result.append((self.Security, self.candle_type))
+        sec2_id = str(self._secondary_security_id.Value)
+        if sec2_id:
+            s = Security()
+            s.Id = sec2_id
+            result.append((s, self.candle_type))
+        return result
 
     def OnReseted(self):
         super(crypto_rebalancing_premium_strategy, self).OnReseted()
-        self._latest_prices.clear()
-        self._last = DateTime.MinValue
+        self._secondary_security = None
+        self._latest_primary_price = 0.0
+        self._latest_secondary_price = 0.0
+        self._last_rebalance_time = None
 
     def OnStarted(self, time):
         super(crypto_rebalancing_premium_strategy, self).OnStarted(time)
 
-        for sec, dt in self.GetWorkingSecurities():
-            if sec is None:
-                raise Exception("Working securities collection is empty or contains null.")
-            self.SubscribeCandles(dt, True, sec) \
-                .Bind(lambda candle, security=sec: self.ProcessCandle(candle, security)) \
-                .Start()
+        sec2_id = str(self._secondary_security_id.Value)
+        if not sec2_id:
+            raise Exception("Secondary crypto security identifier is not specified.")
 
-    def ProcessCandle(self, candle, security):
+        s = Security()
+        s.Id = sec2_id
+        self._secondary_security = s
+
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        secondary_subscription = self.SubscribeCandles(self.candle_type, True, self._secondary_security)
+
+        primary_subscription.Bind(lambda candle: self.ProcessCandle(candle, True)).Start()
+        secondary_subscription.Bind(lambda candle: self.ProcessCandle(candle, False)).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, secondary_subscription)
+            self.DrawOwnTrades(area)
+
+    def ProcessCandle(self, candle, is_primary):
         if candle.State != CandleStates.Finished:
             return
 
-        self._latest_prices[security] = candle.ClosePrice
-        self.OnTick(candle.OpenTime.UtcDateTime)
+        if is_primary:
+            self._latest_primary_price = float(candle.ClosePrice)
+        else:
+            self._latest_secondary_price = float(candle.ClosePrice)
 
-    def OnTick(self, utc):
-        if utc == self._last:
+        if self._latest_primary_price <= 0.0 or self._latest_secondary_price <= 0.0:
             return
-        self._last = utc
-        if utc.DayOfWeek != 0 or utc.Hour != 0:  # Monday 00:00
+
+        if self._last_rebalance_time is not None and candle.OpenTime == self._last_rebalance_time:
             return
+
+        if candle.OpenTime.DayOfWeek != DayOfWeek.Monday or candle.OpenTime.Hour != 0:
+            return
+
+        self._last_rebalance_time = candle.OpenTime
         self.Rebalance()
 
     def Rebalance(self):
-        portfolio_value = self.Portfolio.CurrentValue or 0
-        half = portfolio_value / 2
-        btc_price = self.GetLatestPrice(self.BTC)
-        eth_price = self.GetLatestPrice(self.ETH)
-        if btc_price > 0:
-            self.Move(self.BTC, half / btc_price)
-        if eth_price > 0:
-            self.Move(self.ETH, half / eth_price)
+        self.RebalanceSecurity(self.Security, 1.0, True)
+        self.RebalanceSecurity(self._secondary_security, 1.0, False)
 
-    def GetLatestPrice(self, security):
-        return self._latest_prices.get(security, 0)
-
-    def Move(self, security, target):
-        diff = target - self.PositionBy(security)
-        price = self.GetLatestPrice(security)
-        if price <= 0 or Math.Abs(diff) * price < self.MinTradeUsd:
+    def RebalanceSecurity(self, security, target_volume, is_primary):
+        price = self._latest_primary_price if is_primary else self._latest_secondary_price
+        if price <= 0.0:
             return
+
+        pos_val = self.GetPositionValue(security, self.Portfolio)
+        current_pos = float(pos_val) if pos_val is not None else 0.0
+        diff = target_volume - current_pos
+
+        min_trade = float(self._min_trade_usd.Value)
+        if abs(diff) * price < min_trade:
+            return
+
         order = Order()
         order.Security = security
         order.Portfolio = self.Portfolio
         order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = Math.Abs(diff)
+        order.Volume = abs(diff)
         order.Type = OrderTypes.Market
         order.Comment = "RebalPrem"
         self.RegisterOrder(order)
-
-    def PositionBy(self, security):
-        val = self.GetPositionValue(security, self.Portfolio)
-        return val if val is not None else 0
 
     def CreateClone(self):
         return crypto_rebalancing_premium_strategy()

@@ -3,236 +3,153 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
+import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, SimpleMovingAverage, StandardDeviation
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class keltner_width_mean_reversion_strategy(Strategy):
     """
-    Keltner Width Mean Reversion Strategy.
-    Strategy trades based on mean reversion of Keltner Channel width.
-
+    Keltner width mean reversion strategy.
+    Trades contractions and expansions of Keltner Channel width around its recent average.
     """
 
     def __init__(self):
         super(keltner_width_mean_reversion_strategy, self).__init__()
 
-        # Parameters
-        self._emaPeriod = self.Param("EmaPeriod", 20) \
+        self._ema_period = self.Param("EmaPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("EMA Period", "Period for EMA calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
 
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
+            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        self._keltnerMultiplier = self.Param("KeltnerMultiplier", 2.0) \
+        self._keltner_multiplier = self.Param("KeltnerMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators")
 
-        self._widthLookbackPeriod = self.Param("WidthLookbackPeriod", 20) \
+        self._width_dev_mult = self.Param("WidthDeviationMultiplier", 1.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Width Lookback", "Lookback period for width's mean and standard deviation", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
+            .SetDisplay("Width Dev Multiplier", "Multiplier for width deviation threshold", "Strategy Parameters")
 
-        self._widthDeviationMultiplier = self.Param("WidthDeviationMultiplier", 2.0) \
+        self._width_lookback = self.Param("WidthLookbackPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Width Deviation Multiplier", "Multiplier for width's standard deviation", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Width Lookback", "Lookback period for width statistics", "Strategy Parameters")
 
-        self._atrStopMultiplier = self.Param("AtrStopMultiplier", 2.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("ATR Stop Multiplier", "Multiplier for ATR to determine stop-loss distance", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use in the strategy", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 1200) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
 
-        # Internal state
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+
         self._ema = None
         self._atr = None
-        self._lastEma = 0.0
-        self._lastAtr = 0.0
-        self._lastChannelWidth = 0.0
-        self._widthAvg = None
-        self._widthStdDev = None
-        self._lastWidthAvg = 0.0
-        self._lastWidthStdDev = 0.0
+        self._width_history = None
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
 
     @property
-    def EmaPeriod(self):
-        """Period for EMA calculation."""
-        return self._emaPeriod.Value
-
-    @EmaPeriod.setter
-    def EmaPeriod(self, value):
-        self._emaPeriod.Value = value
-
-    @property
-    def AtrPeriod(self):
-        """Period for ATR calculation."""
-        return self._atrPeriod.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atrPeriod.Value = value
-
-    @property
-    def KeltnerMultiplier(self):
-        """Multiplier for Keltner Channel bands."""
-        return self._keltnerMultiplier.Value
-
-    @KeltnerMultiplier.setter
-    def KeltnerMultiplier(self, value):
-        self._keltnerMultiplier.Value = value
-
-    @property
-    def WidthLookbackPeriod(self):
-        """Lookback period for width's mean and standard deviation."""
-        return self._widthLookbackPeriod.Value
-
-    @WidthLookbackPeriod.setter
-    def WidthLookbackPeriod(self, value):
-        self._widthLookbackPeriod.Value = value
-
-    @property
-    def WidthDeviationMultiplier(self):
-        """Multiplier for width's standard deviation to determine entry threshold."""
-        return self._widthDeviationMultiplier.Value
-
-    @WidthDeviationMultiplier.setter
-    def WidthDeviationMultiplier(self, value):
-        self._widthDeviationMultiplier.Value = value
-
-    @property
-    def AtrStopMultiplier(self):
-        """Multiplier for ATR to determine stop-loss distance."""
-        return self._atrStopMultiplier.Value
-
-    @AtrStopMultiplier.setter
-    def AtrStopMultiplier(self, value):
-        self._atrStopMultiplier.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use in the strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        """Return the security and candle type this strategy works with."""
-        return [(self.Security, self.CandleType)]
-
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(keltner_width_mean_reversion_strategy, self).OnReseted()
-        self._lastEma = 0.0
-        self._lastAtr = 0.0
-        self._lastChannelWidth = 0.0
-        self._lastWidthAvg = 0.0
-        self._lastWidthStdDev = 0.0
+        self._ema = None
+        self._atr = None
+        lb = int(self._width_lookback.Value)
+        self._width_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(keltner_width_mean_reversion_strategy, self).OnStarted(time)
 
+        lb = int(self._width_lookback.Value)
+        self._width_history = [0.0] * lb
+        self._current_index = 0
+        self._filled_count = 0
+        self._cooldown = 0
 
-        # Initialize indicators
         self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.EmaPeriod
+        self._ema.Length = int(self._ema_period.Value)
         self._atr = AverageTrueRange()
-        self._atr.Length = self.AtrPeriod
-        self._widthAvg = SimpleMovingAverage()
-        self._widthAvg.Length = self.WidthLookbackPeriod
-        self._widthStdDev = StandardDeviation()
-        self._widthStdDev.Length = self.WidthLookbackPeriod
+        self._atr.Length = int(self._atr_period.Value)
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._ema, self._atr, self._process_candle).Start()
 
-        # Setup candle processing
-        subscription.Bind(self.ProcessCandle).Start()
-
-        # Create chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._ema)
+            self.DrawIndicator(area, self._atr)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
-        """Process candle and update indicators."""
-        # Skip unfinished candles
+        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+
+    def _process_candle(self, candle, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Process EMA
-        emaValue = process_candle(self._ema, candle)
-        if emaValue.IsFinal:
-            self._lastEma = float(emaValue)
+        if not self._ema.IsFormed or not self._atr.IsFormed:
+            return
 
-        # Process ATR
-        atrValue = process_candle(self._atr, candle)
-        if atrValue.IsFinal:
-            self._lastAtr = float(atrValue)
+        km = float(self._keltner_multiplier.Value)
+        width = 2.0 * km * float(atr_value)
 
-        # Calculate Keltner Channel
-        if self._lastEma > 0 and self._lastAtr > 0:
-            # Calculate upper and lower bands
-            upperBand = self._lastEma + self.KeltnerMultiplier * self._lastAtr
-            lowerBand = self._lastEma - self.KeltnerMultiplier * self._lastAtr
+        lb = int(self._width_lookback.Value)
+        self._width_history[self._current_index] = width
+        self._current_index = (self._current_index + 1) % lb
 
-            # Calculate channel width
-            channelWidth = upperBand - lowerBand
-            self._lastChannelWidth = channelWidth
+        if self._filled_count < lb:
+            self._filled_count += 1
 
-            # Process width's average and standard deviation
-            widthAvgValue = process_float(self._widthAvg, channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
-            widthStdDevValue = process_float(self._widthStdDev, channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
+        if self._filled_count < lb:
+            return
 
-            if widthAvgValue.IsFinal and widthStdDevValue.IsFinal:
-                self._lastWidthAvg = float(widthAvgValue)
-                self._lastWidthStdDev = float(widthStdDevValue)
+        avg_width = 0.0
+        for i in range(lb):
+            avg_width += self._width_history[i]
+        avg_width /= float(lb)
 
-                # Check if strategy is ready to trade
+        sum_sq = 0.0
+        for i in range(lb):
+            diff = self._width_history[i] - avg_width
+            sum_sq += diff * diff
+        std_width = math.sqrt(sum_sq / float(lb))
 
-                # Calculate thresholds
-                lowerThreshold = self._lastWidthAvg - self.WidthDeviationMultiplier * self._lastWidthStdDev
-                upperThreshold = self._lastWidthAvg + self.WidthDeviationMultiplier * self._lastWidthStdDev
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-                # Trading logic
-                if self._lastChannelWidth < lowerThreshold and self.Position <= 0:
-                    # Channel width is compressed - Long signal (expecting expansion)
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                elif self._lastChannelWidth > upperThreshold and self.Position >= 0:
-                    # Channel width is expanded - Short signal (expecting contraction)
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-                # Exit logic
-                elif self._lastChannelWidth > self._lastWidthAvg and self.Position > 0:
-                    # Width returned to average - Exit long position
-                    self.SellMarket(self.Position)
-                elif self._lastChannelWidth < self._lastWidthAvg and self.Position < 0:
-                    # Width returned to average - Exit short position
-                    self.BuyMarket(Math.Abs(self.Position))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
+
+        wdm = float(self._width_dev_mult.Value)
+        lower_threshold = avg_width - wdm * std_width
+        upper_threshold = avg_width + wdm * std_width
+
+        if self.Position == 0:
+            if width < lower_threshold:
+                self.BuyMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+            elif width > upper_threshold:
+                self.SellMarket()
+                self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position > 0 and width >= avg_width:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
+        elif self.Position < 0 and width <= avg_width:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return keltner_width_mean_reversion_strategy()

@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 import math
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -33,7 +33,7 @@ class ema_slope_breakout_strategy(Strategy):
         self._current_slope = 0.0
         self._avg_slope = 0.0
         self._std_dev_slope = 0.0
-        self._slopes = []
+        self._slopes = None
         self._current_index = 0
         self._is_initialized = False
 
@@ -47,7 +47,7 @@ class ema_slope_breakout_strategy(Strategy):
         self._current_slope = 0.0
         self._avg_slope = 0.0
         self._std_dev_slope = 0.0
-        lookback = self._lookback_period.Value
+        lookback = int(self._lookback_period.Value)
         self._slopes = [0.0] * lookback
         self._current_index = 0
         self._is_initialized = False
@@ -55,8 +55,9 @@ class ema_slope_breakout_strategy(Strategy):
     def OnStarted(self, time):
         super(ema_slope_breakout_strategy, self).OnStarted(time)
 
-        lookback = self._lookback_period.Value
+        lookback = int(self._lookback_period.Value)
         self._slopes = [0.0] * lookback
+        self._current_index = 0
 
         ema = ExponentialMovingAverage()
         ema.Length = self._ema_length.Value
@@ -70,11 +71,7 @@ class ema_slope_breakout_strategy(Strategy):
             self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-        sl = self._stop_loss_percent.Value
-        self.StartProtection(
-            Unit(0.0, UnitTypes.Absolute),
-            Unit(float(sl), UnitTypes.Percent)
-        )
+        self.StartProtection(None, Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
 
     def _process_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
@@ -89,7 +86,11 @@ class ema_slope_breakout_strategy(Strategy):
 
         self._current_slope = ema_val - self._prev_ema_value
 
-        lookback = self._lookback_period.Value
+        lookback = int(self._lookback_period.Value)
+        if self._slopes is None or len(self._slopes) != lookback:
+            self._slopes = [0.0] * lookback
+            self._current_index = 0
+
         self._slopes[self._current_index] = self._current_slope
         self._current_index = (self._current_index + 1) % lookback
 
@@ -100,30 +101,30 @@ class ema_slope_breakout_strategy(Strategy):
         self._calculate_statistics()
 
         if abs(self._avg_slope) > 0:
-            dev_mult = self._deviation_multiplier.Value
+            dev_mult = float(self._deviation_multiplier.Value)
 
             if (self._current_slope > 0 and
                     self._current_slope > self._avg_slope + dev_mult * self._std_dev_slope and
                     self.Position <= 0):
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
+                self.CancelActiveOrders()
+                vol = self.Volume + Math.Abs(self.Position)
+                self.BuyMarket(vol)
             elif (self._current_slope < 0 and
                     self._current_slope < self._avg_slope - dev_mult * self._std_dev_slope and
                     self.Position >= 0):
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+                self.CancelActiveOrders()
+                vol = self.Volume + Math.Abs(self.Position)
+                self.SellMarket(vol)
 
             if self.Position > 0 and self._current_slope < self._avg_slope:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(self.Position))
             elif self.Position < 0 and self._current_slope > self._avg_slope:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
 
         self._prev_ema_value = ema_val
 
     def _calculate_statistics(self):
-        lookback = self._lookback_period.Value
+        lookback = int(self._lookback_period.Value)
         self._avg_slope = 0.0
         sum_sq = 0.0
 

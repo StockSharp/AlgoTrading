@@ -87,34 +87,32 @@ class litecoin_trailing_stop_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         if bullish and can_enter and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._bars_since_last_trade = 0
             self._bars_since_entry = 0
             self._entry_price = close
             self._highest_price = self._entry_price
         elif bearish and can_enter and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._bars_since_last_trade = 0
             self._bars_since_entry = 0
             self._entry_price = close
             self._lowest_price = self._entry_price
         if self.Position > 0:
-            if high > self._highest_price:
-                self._highest_price = high
+            self._highest_price = max(self._highest_price, high)
             if self._bars_since_entry >= self._delay_bars.Value:
                 trail_pct = float(self._trailing_stop_percent.Value) / 100.0
                 stop_price = self._highest_price * (1.0 - trail_pct)
                 if low <= stop_price:
-                    self.SellMarket()
+                    self.SellMarket(abs(self.Position))
                     self._highest_price = 0.0
         elif self.Position < 0:
-            if self._lowest_price == 0.0 or low < self._lowest_price:
-                self._lowest_price = low
+            self._lowest_price = min(self._lowest_price, low)
             if self._bars_since_entry >= self._delay_bars.Value:
                 trail_pct = float(self._trailing_stop_percent.Value) / 100.0
                 stop_price = self._lowest_price * (1.0 + trail_pct)
                 if high >= stop_price:
-                    self.BuyMarket()
+                    self.BuyMarket(abs(self.Position))
                     self._lowest_price = 0.0
         self._prev_kama = kv
 

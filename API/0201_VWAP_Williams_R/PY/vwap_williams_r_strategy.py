@@ -4,130 +4,115 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, WilliamsR
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 
-
 class vwap_williams_r_strategy(Strategy):
     """
-    Strategy based on VWAP and Williams %R indicators
+    Strategy based on VWAP and Williams %R indicators.
+    Long when price below VWAP and Williams %R crosses into oversold.
+    Short when price above VWAP and Williams %R crosses into overbought.
     """
 
     def __init__(self):
         super(vwap_williams_r_strategy, self).__init__()
 
-        # Store previous values
-        self._previous_williams_r = 0.0
-
-        # Initialize strategy parameters
         self._williams_r_period = self.Param("WilliamsRPeriod", 14) \
             .SetRange(5, 50) \
-            .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators") \
-            .SetCanOptimize(True)
+            .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
+
+        self._cooldown_bars = self.Param("CooldownBars", 60) \
+            .SetRange(1, 200) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetRange(0.5, 5.0) \
-            .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True)
+            .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", tf(30)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def williams_r_period(self):
-        """Williams %R period"""
-        return self._williams_r_period.Value
-
-    @williams_r_period.setter
-    def williams_r_period(self, value):
-        self._williams_r_period.Value = value
+        self._previous_williams_r = 0.0
+        self._cooldown = 0
+        self._vwap_date = None
+        self._vwap_cum_pv = 0.0
+        self._vwap_cum_vol = 0.0
 
     @property
-    def stop_loss_percent(self):
-        """Stop-loss percentage"""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def candle_type(self):
-        """Candle type for strategy"""
+    def CandleType(self):
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Returns securities this strategy works with."""
-        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(vwap_williams_r_strategy, self).OnReseted()
         self._previous_williams_r = 0.0
+        self._cooldown = 0
+        self._vwap_date = None
+        self._vwap_cum_pv = 0.0
+        self._vwap_cum_vol = 0.0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(vwap_williams_r_strategy, self).OnStarted(time)
-        # Initialize indicators
-        vwap = VolumeWeightedMovingAverage()
+        self._previous_williams_r = 0.0
+        self._cooldown = 0
+        self._vwap_date = None
+        self._vwap_cum_pv = 0.0
+        self._vwap_cum_vol = 0.0
+
         williams_r = WilliamsR()
-        williams_r.Length = self.williams_r_period
+        williams_r.Length = self._williams_r_period.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(vwap, williams_r, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(williams_r, self.ProcessCandle).Start()
 
-        # Enable stop-loss protection
-        self.StartProtection(
-            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
-            stopLoss=None
-        )
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, vwap)
             self.DrawIndicator(area, williams_r)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, vwap_value, williams_r_value):
-        # Skip unfinished candles
+    def ProcessCandle(self, candle, williams_r_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Store previous value to detect changes
-        previous_williams_r = self._previous_williams_r
-        self._previous_williams_r = williams_r_value
+        date = candle.ServerTime.Date
+        if self._vwap_date is None or self._vwap_date != date:
+            self._vwap_date = date
+            self._vwap_cum_pv = 0.0
+            self._vwap_cum_vol = 0.0
 
-        # Trading logic:
-        # Long: Price < VWAP && Williams %R < -80 (oversold below VWAP)
-        # Short: Price > VWAP && Williams %R > -20 (overbought above VWAP)
+        self._vwap_cum_pv += float(candle.ClosePrice) * float(candle.TotalVolume)
+        self._vwap_cum_vol += float(candle.TotalVolume)
+        if self._vwap_cum_vol <= 0:
+            return
+
+        vwap_value = self._vwap_cum_pv / self._vwap_cum_vol
+
+        previous_wr = self._previous_williams_r
+        self._previous_williams_r = float(williams_r_value)
+        wr = float(williams_r_value)
 
         price = float(candle.ClosePrice)
+        crossed_into_oversold = previous_wr > -80 and wr <= -80
+        crossed_into_overbought = previous_wr < -20 and wr >= -20
 
-        if price < vwap_value and williams_r_value < -80 and self.Position <= 0:
-            # Buy signal - oversold condition below VWAP
-            volume = self.Volume + Math.Abs(self.Position)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+
+        cooldown_val = int(self._cooldown_bars.Value)
+
+        if self._cooldown == 0 and price < vwap_value * 0.999 and crossed_into_oversold and self.Position <= 0:
+            volume = self.Volume + abs(self.Position)
             self.BuyMarket(volume)
-        elif price > vwap_value and williams_r_value > -20 and self.Position >= 0:
-            # Sell signal - overbought condition above VWAP
-            volume = self.Volume + Math.Abs(self.Position)
+            self._cooldown = cooldown_val
+        elif self._cooldown == 0 and price > vwap_value * 1.001 and crossed_into_overbought and self.Position >= 0:
+            volume = self.Volume + abs(self.Position)
             self.SellMarket(volume)
-        # Exit conditions
-        elif self.Position > 0 and price > vwap_value:
-            # Exit long position when price breaks above VWAP
-            self.SellMarket(self.Position)
-        elif self.Position < 0 and price < vwap_value:
-            # Exit short position when price breaks below VWAP
-            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cooldown_val
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return vwap_williams_r_strategy()

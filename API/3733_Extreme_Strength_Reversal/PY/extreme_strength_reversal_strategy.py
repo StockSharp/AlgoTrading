@@ -115,7 +115,7 @@ class extreme_strength_reversal_strategy(Strategy):
 
         upper = float(upper_band)
         lower = float(lower_band)
-        rsi_value = float(rsi_ind.ToDecimal())
+        rsi_value = float(rsi_ind)
 
         self._manage_open_position(candle)
 

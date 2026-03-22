@@ -88,9 +88,9 @@ class bars_alligator_strategy(Strategy):
         if jaw_result.IsEmpty or teeth_result.IsEmpty or lips_result.IsEmpty:
             return
 
-        jaw = float(jaw_result.ToDecimal())
-        teeth = float(teeth_result.ToDecimal())
-        lips = float(lips_result.ToDecimal())
+        jaw = float(jaw_result)
+        teeth = float(teeth_result)
+        lips = float(lips_result)
 
         if self.Position != 0 and self._entry_price is None:
             self._entry_price = float(candle.ClosePrice)

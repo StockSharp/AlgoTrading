@@ -3,29 +3,46 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import HullMovingAverage
+from StockSharp.Algo.Indicators import HullMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
+
 
 class hull_ma_volume_spike_strategy(Strategy):
     """
-    Hull MA trend-following confirmed by volume spike detection.
+    Trend-following strategy that requires a Hull moving average slope change to be confirmed by a volume spike.
     """
 
     def __init__(self):
         super(hull_ma_volume_spike_strategy, self).__init__()
-        self._hma_period = self.Param("HmaPeriod", 9).SetDisplay("HMA Period", "Hull MA period", "Indicators")
-        self._vol_period = self.Param("VolumeAvgPeriod", 20).SetDisplay("Vol Period", "Volume stats period", "Indicators")
-        self._vol_factor = self.Param("VolumeThresholdFactor", 1.8).SetDisplay("Vol Factor", "Volume spike multiplier", "Signals")
-        self._cooldown_bars = self.Param("CooldownBars", 72).SetDisplay("Cooldown", "Bars between trades", "Risk")
-        self._sl_pct = self.Param("StopLossPercent", 2.0).SetDisplay("SL %", "Stop loss percent", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
+
+        self._hma_period = self.Param("HmaPeriod", 9) \
+            .SetRange(2, 100) \
+            .SetDisplay("HMA Period", "Period for the Hull moving average", "Indicators")
+
+        self._volume_avg_period = self.Param("VolumeAvgPeriod", 20) \
+            .SetRange(2, 100) \
+            .SetDisplay("Volume Avg Period", "Period for volume statistics", "Indicators")
+
+        self._volume_threshold_factor = self.Param("VolumeThresholdFactor", 1.8) \
+            .SetRange(0.1, 10.0) \
+            .SetDisplay("Volume Threshold Factor", "Multiplier for volume spike detection", "Signals")
+
+        self._cooldown_bars = self.Param("CooldownBars", 72) \
+            .SetRange(1, 500) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
+
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetRange(0.5, 10.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_hma = 0.0
-        self._is_init = False
+        self._is_initialized = False
         self._cooldown = 0
-        self._volumes = []
 
     @property
     def candle_type(self):
@@ -34,67 +51,94 @@ class hull_ma_volume_spike_strategy(Strategy):
     def OnReseted(self):
         super(hull_ma_volume_spike_strategy, self).OnReseted()
         self._prev_hma = 0.0
-        self._is_init = False
+        self._is_initialized = False
         self._cooldown = 0
-        self._volumes = []
 
     def OnStarted(self, time):
         super(hull_ma_volume_spike_strategy, self).OnStarted(time)
+
         hma = HullMovingAverage()
-        hma.Length = self._hma_period.Value
+        hma.Length = int(self._hma_period.Value)
+
+        vol_period = int(self._volume_avg_period.Value)
+        self._volume_sma = SimpleMovingAverage()
+        self._volume_sma.Length = vol_period
+        self._volume_std_dev = StandardDeviation()
+        self._volume_std_dev.Length = vol_period
+        self._is_initialized = False
+        self._cooldown = 0
+
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(hma, self._process_candle).Start()
-        self.StartProtection(None, Unit(self._sl_pct.Value, UnitTypes.Percent))
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, hma)
             self.DrawOwnTrades(area)
 
+        self.StartProtection(
+            Unit(0, UnitTypes.Absolute),
+            Unit(self._stop_loss_percent.Value, UnitTypes.Percent),
+            False
+        )
+
     def _process_candle(self, candle, hma_val):
         if candle.State != CandleStates.Finished:
             return
+
+        volume = candle.TotalVolume
+
+        avg_input = DecimalIndicatorValue(self._volume_sma, volume, candle.OpenTime)
+        avg_input.IsFinal = True
+        volume_avg_value = float(self._volume_sma.Process(avg_input))
+
+        std_input = DecimalIndicatorValue(self._volume_std_dev, volume, candle.OpenTime)
+        std_input.IsFinal = True
+        volume_std_dev_value = float(self._volume_std_dev.Process(std_input))
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if not self._volume_sma.IsFormed or not self._volume_std_dev.IsFormed:
+            return
+
         hma = float(hma_val)
-        vol = float(candle.TotalVolume)
-        vp = self._vol_period.Value
-        self._volumes.append(vol)
-        if len(self._volumes) > vp * 2:
-            self._volumes = self._volumes[-(vp * 2):]
-        if not self._is_init:
+
+        if not self._is_initialized:
             self._prev_hma = hma
-            self._is_init = True
+            self._is_initialized = True
             return
-        if len(self._volumes) < vp:
-            self._prev_hma = hma
-            return
+
         if self._cooldown > 0:
             self._cooldown -= 1
             self._prev_hma = hma
             return
-        recent = self._volumes[-vp:]
-        avg = sum(recent) / len(recent)
-        import math
-        var = sum((v - avg) ** 2 for v in recent) / len(recent)
-        std = math.sqrt(var)
-        threshold = avg + self._vol_factor.Value * std
-        spiking = vol >= threshold
-        rising = hma > self._prev_hma
-        falling = hma < self._prev_hma
+
+        vtf = float(self._volume_threshold_factor.Value)
+        volume_threshold = volume_avg_value + vtf * volume_std_dev_value
+        is_volume_spiking = float(volume) >= volume_threshold
+        is_hma_rising = hma > self._prev_hma
+        is_hma_falling = hma < self._prev_hma
+
+        cd = int(self._cooldown_bars.Value)
+
         if self.Position == 0:
-            if rising and spiking:
+            if is_hma_rising and is_volume_spiking:
                 self.BuyMarket()
-                self._cooldown = self._cooldown_bars.Value
-            elif falling and spiking:
+                self._cooldown = cd
+            elif is_hma_falling and is_volume_spiking:
                 self.SellMarket()
-                self._cooldown = self._cooldown_bars.Value
+                self._cooldown = cd
         elif self.Position > 0:
-            if falling:
-                self.SellMarket()
-                self._cooldown = self._cooldown_bars.Value
+            if is_hma_falling:
+                self.SellMarket(Math.Abs(self.Position))
+                self._cooldown = cd
         elif self.Position < 0:
-            if rising:
-                self.BuyMarket()
-                self._cooldown = self._cooldown_bars.Value
+            if is_hma_rising:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._cooldown = cd
+
         self._prev_hma = hma
 
     def CreateClone(self):

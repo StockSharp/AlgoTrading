@@ -38,6 +38,10 @@ class martingale_with_macd_kdj_opening_conditions_strategy(Strategy):
 
     def OnStarted(self, time):
         super(martingale_with_macd_kdj_opening_conditions_strategy, self).OnStarted(time)
+        self._prev_macd = 0.0
+        self._has_prev = False
+        self._entry_price = 0.0
+        self._bars_from_trade = self._cooldown_bars.Value
         macd = MovingAverageConvergenceDivergence()
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(macd, self._process_candle).Start()

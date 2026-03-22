@@ -3,187 +3,106 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Array, Math
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DirectionalIndex, MovingAverageConvergenceDivergenceSignal, AverageTrueRange
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergence, DirectionalIndex, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class macd_dmi_strategy(Strategy):
-    """MACD + DMI Strategy.
-
-    The strategy looks for bullish MACD crossovers when the positive
-    Directional Movement (+DI) is above the negative one (-DI).
-    A volatility stop based on Average True Range protects open positions.
-    """
+    """MACD + DMI Strategy. MACD zero crossover with DMI directional confirmation."""
 
     def __init__(self):
         super(macd_dmi_strategy, self).__init__()
 
-        # parameters
-        self._candle_type = self.Param("CandleType", tf(60)).SetDisplay(
-            "Candle type", "Candle type for strategy calculation.", "General"
-        )
-        self._dmi_length = self.Param("DmiLength", 14).SetDisplay(
-            "DMI Length", "DMI period", "DMI"
-        )
-        self._adx_smoothing = self.Param("AdxSmoothing", 14).SetDisplay(
-            "ADX Smoothing", "ADX smoothing period", "DMI"
-        )
-        self._vstop_length = self.Param("VstopLength", 20).SetDisplay(
-            "Vstop Length", "Volatility Stop period", "Vstop"
-        )
-        self._vstop_multiplier = self.Param("VstopMultiplier", 2.0).SetDisplay(
-            "Vstop Multiplier", "Volatility Stop multiplier", "Vstop"
-        )
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
+        self._dmi_length = self.Param("DmiLength", 14) \
+            .SetDisplay("DMI Length", "DMI period", "DMI")
+        self._cooldown_bars = self.Param("CooldownBars", 10) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
-        # indicator placeholders
-        self._dmi = None
         self._macd = None
-        self._atr = None
-
-        # volatility stop state
-        self._vstop = 0.0
-        self._uptrend = True
-        self._max = 0.0
-        self._min = 0.0
-        
-        # Store previous MACD values
-        self._prev_macd_line = 0.0
-        self._prev_signal_line = 0.0
+        self._dmi = None
+        self._prev_macd = 0.0
+        self._cooldown_remaining = 0
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def dmi_length(self):
-        return self._dmi_length.Value
-
-    @dmi_length.setter
-    def dmi_length(self, value):
-        self._dmi_length.Value = value
-
-    @property
-    def adx_smoothing(self):
-        return self._adx_smoothing.Value
-
-    @adx_smoothing.setter
-    def adx_smoothing(self, value):
-        self._adx_smoothing.Value = value
-
-    @property
-    def vstop_length(self):
-        return self._vstop_length.Value
-
-    @vstop_length.setter
-    def vstop_length(self, value):
-        self._vstop_length.Value = value
-
-    @property
-    def vstop_multiplier(self):
-        return self._vstop_multiplier.Value
-
-    @vstop_multiplier.setter
-    def vstop_multiplier(self, value):
-        self._vstop_multiplier.Value = value
-
     def OnReseted(self):
         super(macd_dmi_strategy, self).OnReseted()
-        self._max = 0.0
-        self._min = 0.0
-        self._vstop = 0.0
-        self._uptrend = True
-        self._prev_macd_line = 0.0
-        self._prev_signal_line = 0.0
+        self._macd = None
+        self._dmi = None
+        self._prev_macd = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(macd_dmi_strategy, self).OnStarted(time)
 
+        self._macd = MovingAverageConvergenceDivergence()
         self._dmi = DirectionalIndex()
-        self._dmi.Length = self.dmi_length
-
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = 12
-        self._macd.Macd.LongMa.Length = 26
-        self._macd.SignalMa.Length = 9
-
-        self._atr = AverageTrueRange()
-        self._atr.Length = self.vstop_length
+        self._dmi.Length = int(self._dmi_length.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._dmi, self._macd, self._atr, self.OnProcess).Start()
+        subscription.BindEx(self._macd, self._dmi, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, dmi_value, macd_value, atr_value):
+    def _on_process(self, candle, macd_value, dmi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self._dmi.IsFormed or not self._macd.IsFormed or not self._atr.IsFormed:
+
+        if not self._macd.IsFormed or not self._dmi.IsFormed:
             return
 
-        dmi_data = dmi_value
-        pos_dm = float(dmi_data.Plus)
-        neg_dm = float(dmi_data.Minus)
-
-        macd_data = macd_value
-        macd_line = float(macd_data.Macd)
-        signal_line = float(macd_data.Signal)
-
-        # Use stored previous values instead of GetValue()
-        prev_macd = self._prev_macd_line
-        prev_signal = self._prev_signal_line
-
-        self._calculate_vstop(candle, float(atr_value))
-
-        crossover = macd_line > signal_line and prev_macd <= prev_signal
-        crossunder = macd_line < signal_line and prev_macd >= prev_signal
-
-        entry_long = crossover and pos_dm > neg_dm
-        exit_long = crossunder or candle.ClosePrice < self._vstop
-
-        if entry_long and self.Position <= 0:
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif exit_long and self.Position > 0:
-            self.ClosePosition()
-
-        # Store current values for next iteration
-        self._prev_macd_line = macd_line
-        self._prev_signal_line = signal_line
-
-    def _calculate_vstop(self, candle, atr_value):
-        src = candle.ClosePrice
-        atr_m = atr_value * self.vstop_multiplier
-
-        if self._max == 0.0:
-            self._max = src
-            self._min = src
-            self._vstop = src
+        if macd_value.IsEmpty:
             return
 
-        self._max = max(self._max, src)
-        self._min = min(self._min, src)
+        macd_val = float(IndicatorHelper.ToDecimal(macd_value))
 
-        prev_uptrend = self._uptrend
-        if self._uptrend:
-            self._vstop = max(self._vstop, self._max - atr_m)
-        else:
-            self._vstop = min(self._vstop, self._min + atr_m)
+        if dmi_value.Plus is None or dmi_value.Minus is None:
+            return
 
-        self._uptrend = (src - self._vstop) >= 0
+        di_plus = float(dmi_value.Plus)
+        di_minus = float(dmi_value.Minus)
 
-        if self._uptrend != prev_uptrend:
-            self._max = src
-            self._min = src
-            self._vstop = self._max - atr_m if self._uptrend else self._min + atr_m
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_macd = macd_val
+            return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self._prev_macd = macd_val
+            return
+
+        cooldown = int(self._cooldown_bars.Value)
+
+        macd_cross_up = macd_val > 0 and self._prev_macd <= 0 and self._prev_macd != 0
+        macd_cross_down = macd_val < 0 and self._prev_macd >= 0 and self._prev_macd != 0
+
+        if macd_cross_up and di_plus > di_minus and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif macd_cross_down and di_minus > di_plus and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and di_minus > di_plus and macd_val < 0:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and di_plus > di_minus and macd_val > 0:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+
+        self._prev_macd = macd_val
 
     def CreateClone(self):
         return macd_dmi_strategy()

@@ -32,19 +32,20 @@ class market_trend_levels_non_repainting_strategy(Strategy):
 
     def OnStarted(self, time):
         super(market_trend_levels_non_repainting_strategy, self).OnStarted(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_length.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_length.Value
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        self._prev_diff = None
+        self._ema_fast = ExponentialMovingAverage()
+        self._ema_fast.Length = self._fast_length.Value
+        self._ema_slow = ExponentialMovingAverage()
+        self._ema_slow.Length = self._slow_length.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self._rsi_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, rsi, self._process_candle).Start()
+        subscription.Bind(self._ema_fast, self._ema_slow, self._rsi, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, self._ema_fast)
+            self.DrawIndicator(area, self._ema_slow)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, fast_val, slow_val, rsi_val):
@@ -54,6 +55,9 @@ class market_trend_levels_non_repainting_strategy(Strategy):
         slow = float(slow_val)
         rsi = float(rsi_val)
         diff = fast - slow
+        if not self._ema_fast.IsFormed or not self._ema_slow.IsFormed or not self._rsi.IsFormed:
+            self._prev_diff = diff
+            return
         if self._prev_diff is None:
             self._prev_diff = diff
             return

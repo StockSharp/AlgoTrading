@@ -78,7 +78,7 @@ class exp_tsi_cci_strategy(Strategy):
             return
         tsi_val = float(tsi_val)
         signal_val = float(signal_val)
-        cci = float(cci_value.ToDecimal())
+        cci = float(cci_value)
         if not self._initialized:
             self._prev_tsi = tsi_val
             self._prev_signal = signal_val

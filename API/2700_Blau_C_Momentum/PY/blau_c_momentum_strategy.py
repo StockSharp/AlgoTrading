@@ -259,17 +259,17 @@ class _BlauMomentumCalc:
         r1 = self._ma1.Process(DecimalIndicatorValue(self._ma1, momentum, t))
         if not self._ma1.IsFormed:
             return None
-        s1 = float(r1.ToDecimal())
+        s1 = float(r1)
 
         r2 = self._ma2.Process(DecimalIndicatorValue(self._ma2, s1, t))
         if not self._ma2.IsFormed:
             return None
-        s2 = float(r2.ToDecimal())
+        s2 = float(r2)
 
         r3 = self._ma3.Process(DecimalIndicatorValue(self._ma3, s2, t))
         if not self._ma3.IsFormed:
             return None
-        s3 = float(r3.ToDecimal())
+        s3 = float(r3)
 
         return s3 * 100.0 / point if point > 0 else s3
 

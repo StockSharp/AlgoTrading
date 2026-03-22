@@ -89,13 +89,13 @@ class trendless_ag_hist_strategy(Strategy):
 
         fast_result = self._fast_ema.Process(
             DecimalIndicatorValue(self._fast_ema, price, candle.OpenTime, True))
-        fast_val = price if fast_result.IsEmpty else float(fast_result.ToDecimal())
+        fast_val = price if fast_result.IsEmpty else float(fast_result)
 
         diff = price - fast_val
 
         slow_result = self._slow_ema.Process(
             DecimalIndicatorValue(self._slow_ema, diff, candle.OpenTime, True))
-        slow_val = diff if slow_result.IsEmpty else float(slow_result.ToDecimal())
+        slow_val = diff if slow_result.IsEmpty else float(slow_result)
 
         return slow_val
 

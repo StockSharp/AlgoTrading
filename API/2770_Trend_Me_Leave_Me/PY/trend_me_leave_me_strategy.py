@@ -118,7 +118,7 @@ class trend_me_leave_me_strategy(Strategy):
         except:
             return
 
-        sar = float(sar_value.ToDecimal())
+        sar = float(sar_value)
         close = float(candle.ClosePrice)
         quiet_market = adx_ma < float(self.AdxQuietLevel)
 

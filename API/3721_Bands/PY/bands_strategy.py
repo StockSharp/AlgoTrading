@@ -133,7 +133,7 @@ class bands_strategy(Strategy):
 
         upper_bb = bb_val.UpBand
         lower_bb = bb_val.LowBand
-        atr_v = float(atr_val.ToDecimal())
+        atr_v = float(atr_val)
         donch_upper = donch_val.UpperBand
         donch_lower = donch_val.LowerBand
 

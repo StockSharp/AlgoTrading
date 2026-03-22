@@ -104,8 +104,8 @@ class universal_ma_cross_strategy(Strategy):
         if fast_result.IsEmpty or slow_result.IsEmpty:
             return
 
-        fast_val = float(fast_result.ToDecimal())
-        slow_val = float(slow_result.ToDecimal())
+        fast_val = float(fast_result)
+        slow_val = float(slow_result)
 
         prev_fast = self._fast_prev
         prev_slow = self._slow_prev

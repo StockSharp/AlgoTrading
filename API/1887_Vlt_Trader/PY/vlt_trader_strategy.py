@@ -98,7 +98,7 @@ class vlt_trader_strategy(Strategy):
         if not self._lowest.IsFormed:
             return
 
-        min_range = float(lowest_result.ToDecimal())
+        min_range = float(lowest_result)
 
         # Check for pending breakout entry
         if self._pending_breakout and self.Position == 0:

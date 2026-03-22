@@ -72,9 +72,13 @@ class ma_macd_bb_back_tester_strategy(Strategy):
         cross_up = self._prev_close <= self._prev_ma and close > mv
         cross_down = self._prev_close >= self._prev_ma and close < mv
         if cross_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._cooldown = 10
         elif cross_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._cooldown = 10
         self._prev_close = close

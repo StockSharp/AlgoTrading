@@ -83,9 +83,9 @@ class mava_xonax_strategy(Strategy):
         low_result = self._ema_low.Process(DecimalIndicatorValue(self._ema_low, candle.LowPrice, candle.ServerTime))
         if open_result.IsEmpty or high_result.IsEmpty or low_result.IsEmpty:
             return
-        open_ema = float(open_result.ToDecimal())
-        high_ema = float(high_result.ToDecimal())
-        low_ema = float(low_result.ToDecimal())
+        open_ema = float(open_result)
+        high_ema = float(high_result)
+        low_ema = float(low_result)
         close = float(candle.ClosePrice)
         if self.Position > 0:
             if close <= self._long_stop or close >= self._long_take:

@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
@@ -24,6 +24,7 @@ class bollinger_kmeans_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._kmeans_history_length = self.Param("KMeansHistoryLength", 50) \
             .SetDisplay("K-Means History Length", "Length of history for K-Means clustering", "Clustering")
+
         self._atr_value = 0.0
         self._current_cluster_state = bollinger_kmeans_strategy.NEUTRAL
         self._rsi_values = []
@@ -31,17 +32,8 @@ class bollinger_kmeans_strategy(Strategy):
         self._volume_values = []
 
     @property
-    def bollinger_length(self):
-        return self._bollinger_length.Value
-    @property
-    def bollinger_deviation(self):
-        return self._bollinger_deviation.Value
-    @property
     def candle_type(self):
         return self._candle_type.Value
-    @property
-    def kmeans_history_length(self):
-        return self._kmeans_history_length.Value
 
     def OnReseted(self):
         super(bollinger_kmeans_strategy, self).OnReseted()
@@ -53,62 +45,84 @@ class bollinger_kmeans_strategy(Strategy):
 
     def OnStarted(self, time):
         super(bollinger_kmeans_strategy, self).OnStarted(time)
+
         bollinger = BollingerBands()
-        bollinger.Length = self.bollinger_length
-        bollinger.Width = self.bollinger_deviation
+        bollinger.Length = int(self._bollinger_length.Value)
+        bollinger.Width = Decimal(self._bollinger_deviation.Value)
+
         rsi = RelativeStrengthIndex()
         rsi.Length = 14
         atr = AverageTrueRange()
         atr.Length = 14
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bollinger, rsi, atr, self.OnProcess).Start()
+        subscription.BindEx(bollinger, rsi, atr, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
             self.DrawOwnTrades(area)
+
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
+            Unit(2, UnitTypes.Percent),
+            Unit(2, UnitTypes.Percent)
         )
 
-    def OnProcess(self, candle, bollinger_value, rsi_value, atr_value):
+    def _process_candle(self, candle, bollinger_value, rsi_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if bollinger_value.UpBand is None or bollinger_value.LowBand is None or bollinger_value.MovingAverage is None:
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        upper = float(bollinger_value.UpBand)
-        middle = float(bollinger_value.MovingAverage)
-        lower = float(bollinger_value.LowBand)
+
+        up_band = bollinger_value.UpBand
+        low_band = bollinger_value.LowBand
+        moving_avg = bollinger_value.MovingAverage
+
+        if up_band is None or low_band is None or moving_avg is None:
+            return
+
+        upper = float(up_band)
+        middle = float(moving_avg)
+        lower = float(low_band)
         rsi = float(rsi_value)
         self._atr_value = float(atr_value)
 
         self._update_cluster_data(candle, rsi)
         self._calculate_clusters()
 
-        band_buffer = max(self._atr_value * 0.1, float(self.Security.PriceStep) if self.Security.PriceStep is not None else 0.0)
+        price_step = 0.0
+        if self.Security is not None and self.Security.PriceStep is not None:
+            price_step = float(self.Security.PriceStep)
+        band_buffer = max(self._atr_value * 0.1, price_step)
 
-        if float(candle.ClosePrice) < lower - band_buffer and self._current_cluster_state == bollinger_kmeans_strategy.OVERSOLD and self.Position <= 0:
-            self.BuyMarket()
-        elif float(candle.ClosePrice) > upper + band_buffer and self._current_cluster_state == bollinger_kmeans_strategy.OVERBOUGHT and self.Position >= 0:
-            self.SellMarket()
-        elif self.Position > 0 and float(candle.ClosePrice) > middle:
-            self.SellMarket()
-        elif self.Position < 0 and float(candle.ClosePrice) < middle:
-            self.BuyMarket()
+        close_price = float(candle.ClosePrice)
+
+        if close_price < lower - band_buffer and self._current_cluster_state == bollinger_kmeans_strategy.OVERSOLD and self.Position <= 0:
+            self.BuyMarket(self.Volume)
+        elif close_price > upper + band_buffer and self._current_cluster_state == bollinger_kmeans_strategy.OVERBOUGHT and self.Position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
+        elif self.Position > 0 and close_price > middle:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and close_price < middle:
+            self.BuyMarket(Math.Abs(self.Position))
 
     def _update_cluster_data(self, candle, rsi):
+        kmeans_len = int(self._kmeans_history_length.Value)
         self._price_values.append(float(candle.ClosePrice))
         self._rsi_values.append(rsi)
         self._volume_values.append(float(candle.TotalVolume))
-        while len(self._price_values) > self.kmeans_history_length:
+        while len(self._price_values) > kmeans_len:
             self._price_values.pop(0)
             self._rsi_values.pop(0)
             self._volume_values.pop(0)
 
     def _calculate_clusters(self):
-        if len(self._price_values) < self.kmeans_history_length:
+        kmeans_len = int(self._kmeans_history_length.Value)
+        if len(self._price_values) < kmeans_len:
             return
+
         normalized_rsi = self._rsi_values[-1] / 100.0
         min_price = min(self._price_values)
         max_price = max(self._price_values)

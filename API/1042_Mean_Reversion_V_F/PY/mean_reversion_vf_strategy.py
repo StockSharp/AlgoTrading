@@ -39,6 +39,10 @@ class mean_reversion_vf_strategy(Strategy):
 
     def OnStarted(self, time):
         super(mean_reversion_vf_strategy, self).OnStarted(time)
+        self._entry_price = 0.0
+        self._prev_close = 0.0
+        self._has_prev = False
+        self._bars_from_signal = self._cooldown_bars.Value
         wma = WeightedMovingAverage()
         wma.Length = self._ma_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
@@ -65,7 +69,6 @@ class mean_reversion_vf_strategy(Strategy):
             if float(candle.HighPrice) >= tp_price:
                 self.SellMarket()
                 self._entry_price = 0.0
-                self._prev_close = close
                 return
         crossed_below = self._has_prev and self._prev_close >= l1 and close < l1
         if self._bars_from_signal >= self._cooldown_bars.Value and crossed_below and self.Position <= 0:

@@ -133,10 +133,10 @@ class color_xmuv_time_strategy(Strategy):
         ind_out = self._xma.Process(DecimalIndicatorValue(self._xma, price, candle.OpenTime))
 
         if not self._xma.IsFormed:
-            self._previous_xmuv = float(ind_out.ToDecimal())
+            self._previous_xmuv = float(ind_out)
             return
 
-        xmuv = float(ind_out.ToDecimal())
+        xmuv = float(ind_out)
         color = self._determine_color(xmuv)
         self._store_color(color)
         self._previous_xmuv = xmuv

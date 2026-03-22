@@ -22,8 +22,8 @@ class MovingAverageTypeEnum:
 class ma_williams_r_strategy(Strategy):
     """
     Implementation of strategy - MA + Williams %R.
-    Buy when price is above MA and Williams %R is below -80 (oversold).
-    Sell when price is below MA and Williams %R is above -20 (overbought).
+    Buy when price is above MA and Williams %R is below -70 (oversold).
+    Sell when price is below MA and Williams %R is above -30 (overbought).
     """
     def __init__(self):
         super(ma_williams_r_strategy, self).__init__()
@@ -40,13 +40,17 @@ class ma_williams_r_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R Parameters")
 
-        self._williamsROversold = self.Param("WilliamsROversold", -80) \
+        self._williamsROversold = self.Param("WilliamsROversold", -70.0) \
             .SetRange(-100, 0) \
             .SetDisplay("Williams %R Oversold", "Williams %R level to consider market oversold", "Williams %R Parameters")
 
-        self._williamsROverbought = self.Param("WilliamsROverbought", -20) \
+        self._williamsROverbought = self.Param("WilliamsROverbought", -30.0) \
             .SetRange(-100, 0) \
             .SetDisplay("Williams %R Overbought", "Williams %R level to consider market overbought", "Williams %R Parameters")
+
+        self._cooldownBars = self.Param("CooldownBars", 120) \
+            .SetRange(5, 500) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
 
         self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
             .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
@@ -54,9 +58,10 @@ class ma_williams_r_strategy(Strategy):
         self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
+        self._cooldown = 0
+
     @property
     def MaPeriod(self):
-        # Moving Average period.
         return self._maPeriod.Value
 
     @MaPeriod.setter
@@ -65,7 +70,6 @@ class ma_williams_r_strategy(Strategy):
 
     @property
     def MaType(self):
-        # Moving Average type.
         return self._maType.Value
 
     @MaType.setter
@@ -74,7 +78,6 @@ class ma_williams_r_strategy(Strategy):
 
     @property
     def WilliamsRPeriod(self):
-        # Williams %R period.
         return self._williamsRPeriod.Value
 
     @WilliamsRPeriod.setter
@@ -83,7 +86,6 @@ class ma_williams_r_strategy(Strategy):
 
     @property
     def WilliamsROversold(self):
-        # Williams %R oversold level (usually below -80).
         return self._williamsROversold.Value
 
     @WilliamsROversold.setter
@@ -92,7 +94,6 @@ class ma_williams_r_strategy(Strategy):
 
     @property
     def WilliamsROverbought(self):
-        # Williams %R overbought level (usually above -20).
         return self._williamsROverbought.Value
 
     @WilliamsROverbought.setter
@@ -100,8 +101,15 @@ class ma_williams_r_strategy(Strategy):
         self._williamsROverbought.Value = value
 
     @property
+    def CooldownBars(self):
+        return self._cooldownBars.Value
+
+    @CooldownBars.setter
+    def CooldownBars(self, value):
+        self._cooldownBars.Value = value
+
+    @property
     def StopLoss(self):
-        # Stop-loss value.
         return self._stopLoss.Value
 
     @StopLoss.setter
@@ -110,7 +118,6 @@ class ma_williams_r_strategy(Strategy):
 
     @property
     def CandleType(self):
-        # Candle type used for strategy.
         return self._candleType.Value
 
     @CandleType.setter
@@ -118,15 +125,11 @@ class ma_williams_r_strategy(Strategy):
         self._candleType.Value = value
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(ma_williams_r_strategy, self).OnReseted()
-        self.Indicators.Clear()
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(ma_williams_r_strategy, self).OnStarted(time)
-
-        # Create indicators
-        ma = None
 
         # Create MA based on selected type
         if self.MaType == MovingAverageTypeEnum.Exponential:
@@ -160,20 +163,17 @@ class ma_williams_r_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
 
-            # Create separate area for Williams %R
             oscillatorArea = self.CreateChartArea()
             if oscillatorArea is not None:
                 self.DrawIndicator(oscillatorArea, williamsR)
 
             self.DrawOwnTrades(area)
 
-        # Start protective orders
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss
-        )
     def ProcessCandle(self, candle, maValue, williamsRValue):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         # Current price
@@ -182,32 +182,31 @@ class ma_williams_r_strategy(Strategy):
         # Determine if price is above or below MA
         isPriceAboveMA = price > maValue
 
-        self.LogInfo("Candle: {0}, Close: {1}, MA: {2}, Price > MA: {3}, Williams %R: {4}".format(
-            candle.OpenTime, price, maValue, isPriceAboveMA, williamsRValue))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
         # Trading rules
-        if isPriceAboveMA and williamsRValue < self.WilliamsROversold and self.Position <= 0:
+        if isPriceAboveMA and williamsRValue <= self.WilliamsROversold and self.Position == 0:
             # Buy signal - price above MA and Williams %R oversold
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo("Buy signal: Price above MA and Williams %R oversold ({0} < {1}). Volume: {2}".format(
-                williamsRValue, self.WilliamsROversold, volume))
-        elif not isPriceAboveMA and williamsRValue > self.WilliamsROverbought and self.Position >= 0:
+            self.BuyMarket()
+            self._cooldown = self.CooldownBars
+
+        elif not isPriceAboveMA and williamsRValue >= self.WilliamsROverbought and self.Position == 0:
             # Sell signal - price below MA and Williams %R overbought
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-            self.LogInfo("Sell signal: Price below MA and Williams %R overbought ({0} > {1}). Volume: {2}".format(
-                williamsRValue, self.WilliamsROverbought, volume))
+            self.SellMarket()
+            self._cooldown = self.CooldownBars
+
         # Exit conditions
         elif not isPriceAboveMA and self.Position > 0:
             # Exit long position when price falls below MA
-            self.SellMarket(self.Position)
-            self.LogInfo("Exit long: Price fell below MA. Position: {0}".format(self.Position))
+            self.SellMarket()
+            self._cooldown = self.CooldownBars
+
         elif isPriceAboveMA and self.Position < 0:
             # Exit short position when price rises above MA
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: Price rose above MA. Position: {0}".format(self.Position))
+            self.BuyMarket()
+            self._cooldown = self.CooldownBars
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return ma_williams_r_strategy()

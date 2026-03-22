@@ -4,11 +4,15 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
+
+NEUTRAL = 0
+BULLISH = 1
+BEARISH = 2
+
 
 class hull_kmeans_cluster_strategy(Strategy):
     """Strategy that trades based on Hull Moving Average direction with K-Means clustering for market state detection."""
@@ -16,203 +20,136 @@ class hull_kmeans_cluster_strategy(Strategy):
     def __init__(self):
         super(hull_kmeans_cluster_strategy, self).__init__()
 
-        # Strategy parameter: Hull Moving Average period.
         self._hull_period = self.Param("HullPeriod", 9) \
             .SetGreaterThanZero() \
             .SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicator Settings")
 
-        # Strategy parameter: Length of data to use for clustering.
         self._cluster_data_length = self.Param("ClusterDataLength", 50) \
             .SetGreaterThanZero() \
             .SetDisplay("Cluster Data Length", "Number of periods to use for clustering", "Clustering Settings")
 
-        # Strategy parameter: RSI period for feature calculation.
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings")
 
-        # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Enum representing market state
-        class MarketState:
-            Neutral = 0
-            Bullish = 1
-            Bearish = 2
-        self._MarketState = MarketState
-
-        # Feature data for clustering
-        self._price_change_data = Queue[float]()
-        self._rsi_data = Queue[float]()
-        self._volume_ratio_data = Queue[float]()
+        self._price_change_data = []
+        self._rsi_data = []
+        self._volume_ratio_data = []
 
         self._prev_hull_value = 0.0
         self._last_price = 0.0
         self._avg_volume = 0.0
-        self._current_market_state = self._MarketState.Neutral
+        self._current_market_state = NEUTRAL
 
     @property
-    def HullPeriod(self):
-        return self._hull_period.Value
-
-    @HullPeriod.setter
-    def HullPeriod(self, value):
-        self._hull_period.Value = value
-
-    @property
-    def ClusterDataLength(self):
-        return self._cluster_data_length.Value
-
-    @ClusterDataLength.setter
-    def ClusterDataLength(self, value):
-        self._cluster_data_length.Value = value
-
-    @property
-    def RsiPeriod(self):
-        return self._rsi_period.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(hull_kmeans_cluster_strategy, self).OnReseted()
-        self._prev_hull_value = 0
-        self._current_market_state = self._MarketState.Neutral
-        self._last_price = 0
-        self._avg_volume = 0
-        self._price_change_data.Clear()
-        self._rsi_data.Clear()
-        self._volume_ratio_data.Clear()
+        self._prev_hull_value = 0.0
+        self._current_market_state = NEUTRAL
+        self._last_price = 0.0
+        self._avg_volume = 0.0
+        self._price_change_data = []
+        self._rsi_data = []
+        self._volume_ratio_data = []
 
     def OnStarted(self, time):
         super(hull_kmeans_cluster_strategy, self).OnStarted(time)
 
-
-
-        # Create Hull Moving Average indicator
         hull_ma = HullMovingAverage()
-        hull_ma.Length = self.HullPeriod
+        hull_ma.Length = int(self._hull_period.Value)
 
-        # Create RSI indicator for feature calculation
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
+        rsi.Length = int(self._rsi_period.Value)
 
-        # Create subscription for candles
-        subscription = self.SubscribeCandles(self.CandleType)
-
-        # Bind indicators to subscription and start
+        subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(hull_ma, rsi, self.ProcessCandle).Start()
 
-        # Add chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, hull_ma)
             self.DrawOwnTrades(area)
 
-        # Start position protection with ATR-based stop-loss
         self.StartProtection(
             takeProfit=Unit(0),
             stopLoss=Unit(2, UnitTypes.Absolute)
         )
+
     def ProcessCandle(self, candle, hull_value, rsi_value):
-        # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Update feature data for clustering
-        self.UpdateFeatureData(candle, rsi_value)
+        hull_val = float(hull_value)
+        rsi_val = float(rsi_value)
+        self._update_feature_data(candle, rsi_val)
 
-        # Perform K-Means clustering when enough data is collected
-        if (self._price_change_data.Count >= self.ClusterDataLength and
-                self._rsi_data.Count >= self.ClusterDataLength and
-                self._volume_ratio_data.Count >= self.ClusterDataLength):
-            # Perform K-Means clustering for market state detection
-            self._current_market_state = self.DetectMarketState()
-            self.LogInfo("Current market state: {0}".format(self._current_market_state))
+        data_len = int(self._cluster_data_length.Value)
+        if len(self._price_change_data) >= data_len and \
+           len(self._rsi_data) >= data_len and \
+           len(self._volume_ratio_data) >= data_len:
+            self._current_market_state = self._detect_market_state()
 
-        # Check for Hull MA direction change
-        is_hull_rising = hull_value > self._prev_hull_value
+        is_hull_rising = hull_val > self._prev_hull_value
 
-        # Trading logic based on Hull MA direction and market state
-        if is_hull_rising and self._current_market_state == self._MarketState.Bullish and self.Position <= 0:
-            # Hull MA rising in bullish market state - Buy signal
-            self.LogInfo("Buy signal: Hull MA rising ({0} > {1}) in bullish market state".format(hull_value, self._prev_hull_value))
+        if is_hull_rising and self._current_market_state == BULLISH and self.Position <= 0:
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif not is_hull_rising and self._current_market_state == self._MarketState.Bearish and self.Position >= 0:
-            # Hull MA falling in bearish market state - Sell signal
-            self.LogInfo("Sell signal: Hull MA falling ({0} < {1}) in bearish market state".format(hull_value, self._prev_hull_value))
+        elif not is_hull_rising and self._current_market_state == BEARISH and self.Position >= 0:
             self.SellMarket(self.Volume + Math.Abs(self.Position))
 
-        # Store Hull MA value for next comparison
-        self._prev_hull_value = hull_value
-
-        # Update last price
+        self._prev_hull_value = hull_val
         self._last_price = float(candle.ClosePrice)
 
-    def UpdateFeatureData(self, candle, rsi_value):
-        # Calculate price change percentage
-        if self._last_price != 0:
-            price_change = float((candle.ClosePrice - self._last_price) / self._last_price * 100)
+    def _update_feature_data(self, candle, rsi_value):
+        data_len = int(self._cluster_data_length.Value)
+        close_price = float(candle.ClosePrice)
 
-            # Maintain price change data queue
-            self._price_change_data.Enqueue(price_change)
-            if self._price_change_data.Count > self.ClusterDataLength:
-                self._price_change_data.Dequeue()
+        if self._last_price != 0.0:
+            price_change = (close_price - self._last_price) / self._last_price * 100.0
+            self._price_change_data.append(price_change)
+            while len(self._price_change_data) > data_len:
+                self._price_change_data.pop(0)
 
-        # Maintain RSI data queue
-        self._rsi_data.Enqueue(rsi_value)
-        if self._rsi_data.Count > self.ClusterDataLength:
-            self._rsi_data.Dequeue()
+        self._rsi_data.append(rsi_value)
+        while len(self._rsi_data) > data_len:
+            self._rsi_data.pop(0)
 
-        # Calculate volume ratio and maintain queue
-        if self._avg_volume == 0:
-            self._avg_volume = float(candle.TotalVolume)
+        total_volume = float(candle.TotalVolume)
+        if self._avg_volume == 0.0:
+            self._avg_volume = total_volume
         else:
-            # Exponential smoothing for average volume
-            self._avg_volume = float(0.9 * self._avg_volume + 0.1 * candle.TotalVolume)
+            self._avg_volume = 0.9 * self._avg_volume + 0.1 * total_volume
 
-        volume_ratio = candle.TotalVolume / (self._avg_volume if self._avg_volume != 0 else 1)
-        self._volume_ratio_data.Enqueue(volume_ratio)
-        if self._volume_ratio_data.Count > self.ClusterDataLength:
-            self._volume_ratio_data.Dequeue()
+        volume_ratio = total_volume / (self._avg_volume if self._avg_volume != 0.0 else 1.0)
+        self._volume_ratio_data.append(volume_ratio)
+        while len(self._volume_ratio_data) > data_len:
+            self._volume_ratio_data.pop(0)
 
-    def DetectMarketState(self):
-        # Simplified implementation of K-Means clustering for market state detection
-        # This is a basic approach - a full implementation would use proper K-Means algorithm
+    def _detect_market_state(self):
+        if len(self._price_change_data) == 0 or len(self._rsi_data) == 0 or len(self._volume_ratio_data) == 0:
+            return NEUTRAL
 
-        # Calculate feature averages to represent cluster centers
-        avg_price_change = 0 if self._price_change_data.Count == 0 else sum(self._price_change_data) / float(self._price_change_data.Count)
-        avg_rsi = 0 if self._rsi_data.Count == 0 else sum(self._rsi_data) / float(self._rsi_data.Count)
-        avg_volume_ratio = 0 if self._volume_ratio_data.Count == 0 else sum(self._volume_ratio_data) / float(self._volume_ratio_data.Count)
+        avg_price_change = sum(self._price_change_data) / len(self._price_change_data)
+        avg_rsi = sum(self._rsi_data) / len(self._rsi_data)
+        avg_volume_ratio = sum(self._volume_ratio_data) / len(self._volume_ratio_data)
 
-        # Detect market state based on features
-        # Higher RSI, positive price change and higher volume -> Bullish
-        # Lower RSI, negative price change and higher volume -> Bearish
-        # Otherwise -> Neutral
-
-        if avg_rsi > 60 and avg_price_change > 0.1 and avg_volume_ratio > 1.1:
-            return self._MarketState.Bullish
-        elif avg_rsi < 40 and avg_price_change < -0.1 and avg_volume_ratio > 1.1:
-            return self._MarketState.Bearish
+        if avg_rsi > 60.0 and avg_price_change > 0.1 and avg_volume_ratio > 1.1:
+            return BULLISH
+        elif avg_rsi < 40.0 and avg_price_change < -0.1 and avg_volume_ratio > 1.1:
+            return BEARISH
         else:
-            return self._MarketState.Neutral
+            return NEUTRAL
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return hull_kmeans_cluster_strategy()

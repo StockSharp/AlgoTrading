@@ -3,152 +3,136 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Messages import DataType, CandleStates, Sides, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SuperTrend, ExponentialMovingAverage
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SuperTrend, ExponentialMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 
 class supertrend_ema_rebound_strategy(Strategy):
-    """Trades SuperTrend direction changes and EMA rebounds."""
+    """Supertrend + EMA Rebound Strategy."""
 
     def __init__(self):
         super(supertrend_ema_rebound_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(1)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
         self._atr_period = self.Param("AtrPeriod", 10) \
-            .SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 15, 2)
-
+            .SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
         self._atr_factor = self.Param("AtrFactor", 3.0) \
-            .SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
-
+            .SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
         self._ema_length = self.Param("EmaLength", 20) \
-            .SetDisplay("EMA Length", "EMA period", "Moving Averages")
-
-        self._show_long = self.Param("ShowLong", True) \
-            .SetDisplay("Long Entries", "Enable long entries", "Strategy")
-
-        self._show_short = self.Param("ShowShort", False) \
-            .SetDisplay("Short Entries", "Enable short entries", "Strategy")
-
-        self._take_profit = self.Param("TakeProfit", Unit(1.5, UnitTypes.Percent)) \
-            .SetDisplay("TP", "Take profit", "Take Profit") \
-            .SetCanOptimize(True) \
-            .SetOptimize(Unit(0.5, UnitTypes.Percent), Unit(3.0, UnitTypes.Percent), Unit(0.3, UnitTypes.Percent))
+            .SetDisplay("EMA Length", "EMA period", "Moving Average")
+        self._cooldown_bars = self.Param("CooldownBars", 10) \
+            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
         self._supertrend = None
         self._ema = None
-        self._prev_dir = 0
-        self._prev_close = 0
-        self._last_entry = 0
+        self._prev_is_up_trend = False
+        self._prev_is_up_trend_set = False
+        self._prev_close = 0.0
+        self._prev_ema = 0.0
+        self._cooldown_remaining = 0
 
-    # region properties
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @property
-    def atr_period(self):
-        return self._atr_period.Value
-
-    @property
-    def atr_factor(self):
-        return self._atr_factor.Value
-
-    @property
-    def ema_length(self):
-        return self._ema_length.Value
-
-    @property
-    def show_long(self):
-        return self._show_long.Value
-
-    @property
-    def show_short(self):
-        return self._show_short.Value
-
-    @property
-    def take_profit(self):
-        return self._take_profit.Value
-
-    # endregion
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.candle_type)]
+    def OnReseted(self):
+        super(supertrend_ema_rebound_strategy, self).OnReseted()
+        self._supertrend = None
+        self._ema = None
+        self._prev_is_up_trend = False
+        self._prev_is_up_trend_set = False
+        self._prev_close = 0.0
+        self._prev_ema = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted(self, time):
-        super().OnStarted(time)
+        super(supertrend_ema_rebound_strategy, self).OnStarted(time)
 
-        self._supertrend = SuperTrend(Length=self.atr_period, Multiplier=self.atr_factor)
-        self._ema = ExponentialMovingAverage(Length=self.ema_length)
+        self._supertrend = SuperTrend()
+        self._supertrend.Length = int(self._atr_period.Value)
+        self._supertrend.Multiplier = float(self._atr_factor.Value)
 
-        sub = self.SubscribeCandles(self.candle_type)
-        sub.Bind(self._supertrend, self._ema, self.ProcessCandle).Start()
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = int(self._ema_length.Value)
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(self._supertrend, self._ema, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, sub)
+            self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._supertrend)
             self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(self.take_profit, Unit())
-
-    def ProcessCandle(self, candle, super_val, ema_val):
+    def _on_process(self, candle, st_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
         if not self._supertrend.IsFormed or not self._ema.IsFormed:
             return
 
-        price = candle.ClosePrice
-        open_price = candle.OpenPrice
+        if st_value.IsEmpty or ema_value.IsEmpty:
+            return
 
-        direction = -1 if price > super_val else 1
-        dir_changed = self._prev_dir != 0 and (direction * self._prev_dir < 0)
+        is_up_trend = st_value.IsUpTrend
+        ema_val = float(IndicatorHelper.ToDecimal(ema_value))
 
-        self.CheckEntry(candle, ema_val, direction, dir_changed)
-        self.CheckExit(direction, dir_changed)
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            self._prev_is_up_trend = is_up_trend
+            self._prev_is_up_trend_set = True
+            self._prev_close = float(candle.ClosePrice)
+            self._prev_ema = ema_val
+            return
 
-        self._prev_dir = direction
-        self._prev_close = price
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+            self._prev_is_up_trend = is_up_trend
+            self._prev_is_up_trend_set = True
+            self._prev_close = float(candle.ClosePrice)
+            self._prev_ema = ema_val
+            return
 
-        if self.Position != 0 and self._last_entry == 0:
-            self._last_entry = open_price
-        elif self.Position == 0:
-            self._last_entry = 0
+        if not self._prev_is_up_trend_set or self._prev_close == 0.0:
+            self._prev_is_up_trend = is_up_trend
+            self._prev_is_up_trend_set = True
+            self._prev_close = float(candle.ClosePrice)
+            self._prev_ema = ema_val
+            return
 
-    def CheckEntry(self, candle, ema_value, direction, dir_changed):
-        price = candle.ClosePrice
-        open_price = candle.OpenPrice
+        close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
 
-        if self.show_long and self.Position == 0:
-            entry1 = dir_changed and direction < 0
-            entry2 = direction < 0 and self._prev_close < ema_value and price > ema_value and price < self._last_entry
-            if entry1 or entry2:
-                self.RegisterOrder(self.CreateOrder(Sides.Buy, price, self.Volume))
+        trend_turned_up = is_up_trend and not self._prev_is_up_trend
+        trend_turned_down = not is_up_trend and self._prev_is_up_trend
 
-        if self.show_short and self.Position == 0:
-            entry1 = dir_changed and direction > 0
-            entry2 = direction > 0 and self._prev_close > ema_value and price < ema_value and price > self._last_entry
-            if entry1 or entry2:
-                self.RegisterOrder(self.CreateOrder(Sides.Sell, price, self.Volume))
+        ema_rebound_up = is_up_trend and self._prev_close < self._prev_ema and close > ema_val
+        ema_rebound_down = not is_up_trend and self._prev_close > self._prev_ema and close < ema_val
 
-    def CheckExit(self, direction, dir_changed):
-        if self.Position > 0 and dir_changed and direction > 0:
-            self.RegisterOrder(self.CreateOrder(Sides.Sell, self._prev_close, abs(self.Position)))
+        if (trend_turned_up or ema_rebound_up) and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif (trend_turned_down or ema_rebound_down) and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif self.Position > 0 and trend_turned_down:
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
+        elif self.Position < 0 and trend_turned_up:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
-        if self.Position < 0 and dir_changed and direction < 0:
-            self.RegisterOrder(self.CreateOrder(Sides.Buy, self._prev_close, abs(self.Position)))
+        self._prev_is_up_trend = is_up_trend
+        self._prev_is_up_trend_set = True
+        self._prev_close = close
+        self._prev_ema = ema_val
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return supertrend_ema_rebound_strategy()

@@ -69,9 +69,9 @@ class sniper_jaw_strategy(Strategy):
         if not self._jaw.IsFormed or not self._teeth.IsFormed or not self._lips.IsFormed:
             return
 
-        jaw_val = float(jaw_result.ToDecimal())
-        teeth_val = float(teeth_result.ToDecimal())
-        lips_val = float(lips_result.ToDecimal())
+        jaw_val = float(jaw_result)
+        teeth_val = float(teeth_result)
+        lips_val = float(lips_result)
 
         # Manage position
         if self.Position > 0:

@@ -85,8 +85,8 @@ class ha_ma_zi_strategy(Strategy):
         low_result = self._lowest.Process(candle)
         if not high_result.IsFormed or not low_result.IsFormed:
             return
-        highest = float(high_result.ToDecimal())
-        lowest = float(low_result.ToDecimal())
+        highest = float(high_result)
+        lowest = float(low_result)
         ema_val = float(ema_val)
 
         o = float(candle.OpenPrice)

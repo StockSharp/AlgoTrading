@@ -85,9 +85,9 @@ class long_term_profitable_swing_abbas_strategy(Strategy):
         self._prev_fast = fv
         self._prev_slow = sv
         if cross_up and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif cross_down and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return long_term_profitable_swing_abbas_strategy()

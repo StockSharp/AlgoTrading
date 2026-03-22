@@ -61,7 +61,7 @@ class anubis_cci_macd_strategy(Strategy):
         if not cci_value.IsFinal or not macd_value.IsFinal:
             return
 
-        cci = float(cci_value.ToDecimal())
+        cci = float(cci_value)
 
         macd_raw = macd_value.Macd if hasattr(macd_value, 'Macd') else None
         signal_raw = macd_value.Signal if hasattr(macd_value, 'Signal') else None

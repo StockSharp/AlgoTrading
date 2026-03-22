@@ -10,11 +10,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class omar_mmr_strategy(Strategy):
-    """Omar MMR Strategy.
-    Uses RSI, triple EMA alignment, and EMA A/B crossover for entries.
-    Buys when price > EMA C, EMA A > EMA B, EMA A crosses above EMA B, RSI in range.
-    Sells when EMA alignment reverses or EMA A crosses below EMA B.
-    """
+    """Omar MMR Strategy."""
 
     def __init__(self):
         super(omar_mmr_strategy, self).__init__()
@@ -32,16 +28,24 @@ class omar_mmr_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 15) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
 
+        self._rsi = None
+        self._ema_a = None
+        self._ema_b = None
+        self._ema_c = None
         self._prev_ema_a = 0.0
         self._prev_ema_b = 0.0
         self._cooldown_remaining = 0
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(omar_mmr_strategy, self).OnReseted()
+        self._rsi = None
+        self._ema_a = None
+        self._ema_b = None
+        self._ema_c = None
         self._prev_ema_a = 0.0
         self._prev_ema_b = 0.0
         self._cooldown_remaining = 0
@@ -49,29 +53,36 @@ class omar_mmr_strategy(Strategy):
     def OnStarted(self, time):
         super(omar_mmr_strategy, self).OnStarted(time)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_length.Value)
 
-        ema_a = ExponentialMovingAverage()
-        ema_a.Length = self._ema_a_length.Value
-        ema_b = ExponentialMovingAverage()
-        ema_b.Length = self._ema_b_length.Value
-        ema_c = ExponentialMovingAverage()
-        ema_c.Length = self._ema_c_length.Value
+        self._ema_a = ExponentialMovingAverage()
+        self._ema_a.Length = int(self._ema_a_length.Value)
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, ema_a, ema_b, ema_c, self.OnProcess).Start()
+        self._ema_b = ExponentialMovingAverage()
+        self._ema_b.Length = int(self._ema_b_length.Value)
+
+        self._ema_c = ExponentialMovingAverage()
+        self._ema_c.Length = int(self._ema_c_length.Value)
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._rsi, self._ema_a, self._ema_b, self._ema_c, self._on_process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema_a)
-            self.DrawIndicator(area, ema_b)
-            self.DrawIndicator(area, ema_c)
+            self.DrawIndicator(area, self._ema_a)
+            self.DrawIndicator(area, self._ema_b)
+            self.DrawIndicator(area, self._ema_c)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, rsi_val, ema_a_val, ema_b_val, ema_c_val):
+    def _on_process(self, candle, rsi_val, ema_a_val, ema_b_val, ema_c_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._rsi.IsFormed or not self._ema_a.IsFormed or not self._ema_b.IsFormed or not self._ema_c.IsFormed:
+            self._prev_ema_a = float(ema_a_val)
+            self._prev_ema_b = float(ema_b_val)
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
@@ -96,38 +107,33 @@ class omar_mmr_strategy(Strategy):
             return
 
         close = float(candle.ClosePrice)
+        cooldown = int(self._cooldown_bars.Value)
 
-        # EMA alignment
         bullish_alignment = ema_a > ema_b and close > ema_c
         bearish_alignment = ema_a < ema_b and close < ema_c
 
-        # EMA A/B crossover
         ema_cross_up = ema_a > ema_b and self._prev_ema_a <= self._prev_ema_b
         ema_cross_down = ema_a < ema_b and self._prev_ema_a >= self._prev_ema_b
 
-        # RSI filter
-        rsi_in_range = rsi > 30 and rsi < 70
+        rsi_in_buy_range = rsi > 30 and rsi < 70
+        rsi_in_sell_range = rsi > 30 and rsi < 70
 
-        # Buy: bullish EMA alignment + EMA cross up + RSI in range
-        if bullish_alignment and ema_cross_up and rsi_in_range and self.Position <= 0:
+        if bullish_alignment and ema_cross_up and rsi_in_buy_range and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Sell: bearish EMA alignment + EMA cross down + RSI in range
-        elif bearish_alignment and ema_cross_down and rsi_in_range and self.Position >= 0:
+                self.BuyMarket(Math.Abs(self.Position))
+            self.BuyMarket(self.Volume)
+            self._cooldown_remaining = cooldown
+        elif bearish_alignment and ema_cross_down and rsi_in_sell_range and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Exit long: EMA A crosses below EMA B
+                self.SellMarket(Math.Abs(self.Position))
+            self.SellMarket(self.Volume)
+            self._cooldown_remaining = cooldown
         elif self.Position > 0 and ema_cross_down:
-            self.SellMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
-        # Exit short: EMA A crosses above EMA B
+            self.SellMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
         elif self.Position < 0 and ema_cross_up:
-            self.BuyMarket()
-            self._cooldown_remaining = self._cooldown_bars.Value
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown_remaining = cooldown
 
         self._prev_ema_a = ema_a
         self._prev_ema_b = ema_b

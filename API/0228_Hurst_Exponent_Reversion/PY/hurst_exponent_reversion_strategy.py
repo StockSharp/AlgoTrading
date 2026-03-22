@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Random, Math, Int32
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -44,12 +44,27 @@ class hurst_exponent_reversion_strategy(Strategy):
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         close = float(candle.ClosePrice)
         sma = float(sma_val)
-        if close < sma and self.Position <= 0:
-            self.BuyMarket()
-        elif close > sma and self.Position >= 0:
-            self.SellMarket()
+
+        # Replicate CS CalculateSimplifiedHurst
+        # C# (int)long truncates to low 32 bits with sign
+        ticks = int(candle.OpenTime.Ticks)
+        ticks_masked = ticks & 0xFFFFFFFF
+        if ticks_masked >= 0x80000000:
+            ticks_masked -= 0x100000000
+        rand = Random(Int32(ticks_masked))
+        hurst_value = 0.3 + rand.NextDouble() * 0.4
+
+        if hurst_value < 0.5:
+            if close < sma and self.Position <= 0:
+                self.BuyMarket(self.Volume)
+            elif close > sma and self.Position >= 0:
+                self.SellMarket(self.Volume + Math.Abs(self.Position))
 
     def CreateClone(self):
         return hurst_exponent_reversion_strategy()

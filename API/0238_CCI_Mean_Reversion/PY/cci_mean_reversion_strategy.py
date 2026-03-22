@@ -73,6 +73,9 @@ class cci_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         current_cci = float(cci_value)
         self._update_cci_statistics(current_cci)
         self._prev_cci = current_cci
@@ -82,15 +85,15 @@ class cci_mean_reversion_strategy(Strategy):
 
         if self.Position == 0:
             if current_cci < self._avg_cci - self._deviation_multiplier.Value * self._std_dev_cci:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume)
             elif current_cci > self._avg_cci + self._deviation_multiplier.Value * self._std_dev_cci:
-                self.SellMarket()
+                self.SellMarket(self.Volume)
         elif self.Position > 0:
             if current_cci > self._avg_cci:
-                self.SellMarket()
+                self.ClosePosition()
         elif self.Position < 0:
             if current_cci < self._avg_cci:
-                self.BuyMarket()
+                self.ClosePosition()
 
     def _update_cci_statistics(self, current_cci):
         self._cci_values.append(current_cci)

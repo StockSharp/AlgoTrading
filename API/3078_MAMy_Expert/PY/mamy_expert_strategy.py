@@ -67,9 +67,9 @@ class mamy_expert_strategy(Strategy):
         weighted_result = self._weighted_ma.Process(DecimalIndicatorValue(self._weighted_ma, Decimal(weighted_price), candle.OpenTime))
         if close_result.IsEmpty or open_result.IsEmpty or weighted_result.IsEmpty:
             return
-        close_ma_val = float(close_result.ToDecimal())
-        open_ma_val = float(open_result.ToDecimal())
-        weighted_ma_val = float(weighted_result.ToDecimal())
+        close_ma_val = float(close_result)
+        open_ma_val = float(open_result)
+        weighted_ma_val = float(weighted_result)
         prev_close_ma = self._prev_close_ma
         prev_open_ma = self._prev_open_ma
         prev_weighted_ma = self._prev_weighted_ma
