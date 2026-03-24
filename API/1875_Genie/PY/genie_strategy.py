@@ -75,7 +75,8 @@ class genie_strategy(Strategy):
         self.StartProtection(
             Unit(float(self.take_profit), UnitTypes.Absolute),
             Unit(float(self.trailing_stop), UnitTypes.Absolute),
-            True, True)
+            isStopTrailing=True,
+            useMarketOrders=True)
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)

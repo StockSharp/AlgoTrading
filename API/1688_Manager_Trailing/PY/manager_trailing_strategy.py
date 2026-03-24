@@ -18,7 +18,7 @@ class manager_trailing_strategy(Strategy):
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period for trailing", "Indicators")
-        self._trail_mult = self.Param("TrailMult", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._trail_mult = self.Param("TrailMult", 2.0) \
             .SetDisplay("Trail Mult", "ATR multiplier for trailing stop", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -27,7 +27,7 @@ class manager_trailing_strategy(Strategy):
         self._has_prev = False
         self._trail_stop = 0.0
         self._high_since_long = 0.0
-        self._low_since_short = 0.0
+        self._low_since_short = 1e18
 
     @property
     def fast_period(self):
@@ -56,7 +56,7 @@ class manager_trailing_strategy(Strategy):
         self._has_prev = False
         self._trail_stop = 0.0
         self._high_since_long = 0.0
-        self._low_since_short = 0.0
+        self._low_since_short = 1e18
 
     def OnStarted(self, time):
         super(manager_trailing_strategy, self).OnStarted(time)
@@ -77,40 +77,51 @@ class manager_trailing_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if not self._has_prev:
-            close = candle.ClosePrice
+            self._prev_fast = fast
+            self._prev_slow = slow
+            self._has_prev = True
+            return
+        close = candle.ClosePrice
         # Trail stop management
         if self.Position > 0 and atr > 0:
-            self._high_since_long = max(self._high_since_long, candle.HighPrice)
+            self._high_since_long = max(self._high_since_long, float(candle.HighPrice))
             new_trail = self._high_since_long - atr * self.trail_mult
             if new_trail > self._trail_stop:
-                if close <= self._trail_stop:
+                self._trail_stop = new_trail
+            if close <= self._trail_stop:
                 self.SellMarket()
                 self._trail_stop = 0
-                self._prev_fast = fast; self._prev_slow = slow
+                self._prev_fast = fast
+                self._prev_slow = slow
                 return
         elif self.Position < 0 and atr > 0:
-            self._low_since_short = min(self._low_since_short, candle.LowPrice)
+            self._low_since_short = min(self._low_since_short, float(candle.LowPrice))
             new_trail = self._low_since_short + atr * self.trail_mult
             if new_trail < self._trail_stop or self._trail_stop == 0:
-                if close >= self._trail_stop:
+                self._trail_stop = new_trail
+            if close >= self._trail_stop:
                 self.BuyMarket()
                 self._trail_stop = 0
-                self._prev_fast = fast; self._prev_slow = slow
+                self._prev_fast = fast
+                self._prev_slow = slow
                 return
         # Entry signals: EMA crossover
         if self._prev_fast <= self._prev_slow and fast > slow:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0:
+            if self.Position < 0:
                 self.BuyMarket()
-                self._high_since_long = candle.HighPrice
+            if self.Position <= 0:
+                self.BuyMarket()
+                self._high_since_long = float(candle.HighPrice)
                 self._trail_stop = close - atr * self.trail_mult
         elif self._prev_fast >= self._prev_slow and fast < slow:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0:
+            if self.Position > 0:
                 self.SellMarket()
-                self._low_since_short = candle.LowPrice
+            if self.Position >= 0:
+                self.SellMarket()
+                self._low_since_short = float(candle.LowPrice)
                 self._trail_stop = close + atr * self.trail_mult
-        self._prev_fast = fast; self._prev_slow = slow
+        self._prev_fast = fast
+        self._prev_slow = slow
 
     def CreateClone(self):
         return manager_trailing_strategy()

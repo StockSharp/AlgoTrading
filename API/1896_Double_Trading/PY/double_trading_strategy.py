@@ -4,75 +4,118 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
 
-class double_trading_strategy(Strategy):
-    """
-    Simple pair trading strategy (single-security simplified version).
-    Uses EMA crossover for entry/exit signals.
-    """
 
+class double_trading_strategy(Strategy):
     def __init__(self):
         super(double_trading_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._volume1 = self.Param("Volume1", 1.0) \
+            .SetDisplay("Volume1", "First volume", "Parameters")
+        self._volume2 = self.Param("Volume2", 1.3) \
+            .SetDisplay("Volume2", "Second volume", "Parameters")
+        self._profit_target = self.Param("ProfitTarget", 20.0) \
+            .SetDisplay("Profit Target", "Exit profit", "Risk")
+        self._direction1 = self.Param("Direction1", 0) \
+            .SetDisplay("Direction1", "First side", "Parameters")
+        self._direction2 = self.Param("Direction2", 0) \
+            .SetDisplay("Direction2", "Second side", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
+            .SetDisplay("Candle Type", "Candles", "Data")
 
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._second_security = None
+        self._side1 = Sides.Buy
+        self._side2 = Sides.Sell
+        self._entry1 = None
+        self._entry2 = None
+        self._last1 = 0.0
+        self._last2 = 0.0
+
+    def get_SecondSecurity(self):
+        return self._second_security
+
+    def set_SecondSecurity(self, value):
+        self._second_security = value
+
+    SecondSecurity = property(get_SecondSecurity, set_SecondSecurity)
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def OnReseted(self):
+        super(double_trading_strategy, self).OnReseted()
+        dir1 = self._direction1.Value
+        dir2 = self._direction2.Value
+        self._side1 = Sides.Sell if dir1 == 2 else Sides.Buy
+        self._side2 = Sides.Buy if dir2 == 1 else Sides.Sell
+        self._entry1 = None
+        self._entry2 = None
+        self._last1 = 0.0
+        self._last2 = 0.0
+
     def OnStarted(self, time):
         super(double_trading_strategy, self).OnStarted(time)
+        self.StartProtection(None, None)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
+        sub1 = self.SubscribeCandles(self.candle_type)
+        sub1.Bind(self.process_first).Start()
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
+        if self._second_security is not None:
+            sub2 = self.SubscribeCandles(self.candle_type, security=self._second_security)
+            sub2.Bind(self.process_second).Start()
 
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
-            self.DrawOwnTrades(area)
+        dir1 = self._direction1.Value
+        dir2 = self._direction2.Value
+        self._side1 = Sides.Sell if dir1 == 2 else Sides.Buy
+        self._side2 = Sides.Buy if dir2 == 1 else Sides.Sell
 
-    def on_process(self, candle, fast_val, slow_val):
+        if self._side1 == Sides.Buy:
+            self.BuyMarket(float(self._volume1.Value))
+        else:
+            self.SellMarket(float(self._volume1.Value))
+
+    def process_first(self, candle):
         if candle.State != CandleStates.Finished:
             return
+        self._last1 = float(candle.ClosePrice)
+        if self._entry1 is None:
+            self._entry1 = float(candle.ClosePrice)
+        self._check_exit()
 
-        fast_val = float(fast_val)
-        slow_val = float(slow_val)
-
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_val
-            self._prev_slow_ema = slow_val
+    def process_second(self, candle):
+        if candle.State != CandleStates.Finished:
             return
+        self._last2 = float(candle.ClosePrice)
+        if self._entry2 is None:
+            self._entry2 = float(candle.ClosePrice)
+        self._check_exit()
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_val > slow_val and self.Position <= 0:
+    def _check_exit(self):
+        if self._entry1 is None or self._entry2 is None:
+            return
+        v1 = float(self._volume1.Value)
+        v2 = float(self._volume2.Value)
+        if self._side1 == Sides.Buy:
+            pnl1 = (self._last1 - self._entry1) * v1
+        else:
+            pnl1 = (self._entry1 - self._last1) * v1
+        if self._side2 == Sides.Buy:
+            pnl2 = (self._last2 - self._entry2) * v2
+        else:
+            pnl2 = (self._entry2 - self._last2) * v2
+        if pnl1 + pnl2 >= float(self._profit_target.Value):
+            self._exit_positions()
 
-
-            self.BuyMarket()
-
-
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_val < slow_val and self.Position >= 0:
-
-
-            self.SellMarket()
-
-        self._prev_fast_ema = fast_val
-        self._prev_slow_ema = slow_val
+    def _exit_positions(self):
+        v1 = float(self._volume1.Value)
+        if self._side1 == Sides.Buy:
+            self.SellMarket(v1)
+        else:
+            self.BuyMarket(v1)
+        self._entry1 = None
+        self._entry2 = None
 
     def CreateClone(self):
         return double_trading_strategy()

@@ -14,7 +14,7 @@ class turn_around_tuesday_on_steroids_strategy(Strategy):
         super(turn_around_tuesday_on_steroids_strategy, self).__init__()
         self._use_ma_filter = self.Param("UseMaFilter", False) \
             .SetDisplay("Use MA Filter", "Enable moving average filter", "Strategy")
-        self._ma_period = self.Param("MaPeriod", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._ma_period = self.Param("MaPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period", "Strategy")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "Strategy")

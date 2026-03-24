@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -55,12 +56,14 @@ class ml_trend_e_strategy(Strategy):
             return
         # Cross above WMA
         if self._prev_close <= self._prev_wma and close > wma_value and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Cross below WMA
         elif self._prev_close >= self._prev_wma and close < wma_value and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_close = close
         self._prev_wma = wma_value
 

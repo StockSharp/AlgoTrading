@@ -14,7 +14,7 @@ class macd_ema_sar_bollinger_bull_bear_strategy(Strategy):
         super(macd_ema_sar_bollinger_bull_bear_strategy, self).__init__()
         self._fast_ma_period = self.Param("FastMaPeriod", 8) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ma_period = self.Param("SlowMaPeriod", TimeSpan.FromHours(4)) \
+        self._slow_ma_period = self.Param("SlowMaPeriod", 21) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -65,11 +65,11 @@ class macd_ema_sar_bollinger_bull_bear_strategy(Strategy):
             return
         close = candle.ClosePrice
         # Buy: EMA crossover up + SAR below
-        buy_signal = self._prev_fast <= self._prev_slow and fast > slow and
-        sar_val < close
+        buy_signal = (self._prev_fast <= self._prev_slow and fast > slow and
+            sar_val < close)
         # Sell: EMA crossover down + SAR above
-        sell_signal = self._prev_fast >= self._prev_slow and fast < slow and
-        sar_val > close
+        sell_signal = (self._prev_fast >= self._prev_slow and fast < slow and
+            sar_val > close)
         if buy_signal:
             if self.Position < 0:
                 self.BuyMarket()

@@ -41,9 +41,9 @@ class reflex_trendflex_strategy(Strategy):
     def OnStarted(self, time):
         super(reflex_trendflex_strategy, self).OnStarted(time)
         reflex = ExponentialMovingAverage()
-        reflex.Length = self.reflex_length
+        reflex.Length = self.reflex_len
         trend = ExponentialMovingAverage()
-        trend.Length = self.trendflex_length
+        trend.Length = self.trendflex_len
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(reflex, trend, self.on_process).Start()
         area = self.CreateChartArea()

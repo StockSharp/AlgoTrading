@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class xbug_free_strategy(Strategy):
     def __init__(self):
         super(xbug_free_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._ma_period = self.Param("MaPeriod", 20) \
             .SetDisplay("MA Period", "SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -42,15 +42,18 @@ class xbug_free_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if atr <= 0:
-            close = candle.ClosePrice
+            return
+        close = candle.ClosePrice
         # Counter-trend: buy when price drops below SMA by 1 ATR
         if close < sma - atr and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Counter-trend: sell when price rises above SMA by 1 ATR
         elif close > sma + atr and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         # Exit long at SMA
         elif self.Position > 0 and close >= sma:
             self.SellMarket()

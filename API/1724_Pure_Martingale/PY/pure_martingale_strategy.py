@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class pure_martingale_strategy(Strategy):
     def __init__(self):
         super(pure_martingale_strategy, self).__init__()
-        self._ema_period = self.Param("EmaPeriod", TimeSpan.FromHours(4)) \
+        self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA trend period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candles for trade timing", "General")
@@ -53,12 +53,14 @@ class pure_martingale_strategy(Strategy):
         if self._bar_count >= 3:
             # Two consecutive rising closes above EMA => buy
             if close > self._prev_close and self._prev_close > self._prev_prev_close and close > ema_value and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             # Two consecutive falling closes below EMA => sell
             elif close < self._prev_close and self._prev_close < self._prev_prev_close and close < ema_value and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         self._prev_prev_close = self._prev_close
         self._prev_close = close
 

@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -96,8 +96,11 @@ class exp_oracle_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        rsi_result = self._rsi.Process(candle.ClosePrice, candle.OpenTime, True)
-        cci_result = self._cci.Process(candle)
+        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
+        rsi_inp.IsFinal = True
+        rsi_result = self._rsi.Process(rsi_inp)
+        cci_inp = CandleIndicatorValue(self._cci, candle)
+        cci_result = self._cci.Process(cci_inp)
 
         if not rsi_result.IsFormed or not cci_result.IsFormed:
             return
@@ -130,7 +133,9 @@ class exp_oracle_strategy(Strategy):
         oracle = max_val + min_val
 
         # smooth to get signal
-        signal_result = self._sma.Process(oracle, candle.OpenTime, True)
+        sma_inp = DecimalIndicatorValue(self._sma, Decimal(oracle), candle.OpenTime)
+        sma_inp.IsFinal = True
+        signal_result = self._sma.Process(sma_inp)
         if not signal_result.IsFormed:
             return
 

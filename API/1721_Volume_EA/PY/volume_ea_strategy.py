@@ -14,7 +14,7 @@ class volume_ea_strategy(Strategy):
         super(volume_ea_strategy, self).__init__()
         self._factor = self.Param("Factor", 1.55) \
             .SetDisplay("Factor", "Volume multiplier", "Trading")
-        self._trailing_stop = self.Param("TrailingStop", 350) \
+        self._trailing_stop = self.Param("TrailingStop", 350.0) \
             .SetDisplay("Trailing Stop", "Trailing distance in steps", "Risk")
         self._cci_level1 = self.Param("CciLevel1", 50) \
             .SetDisplay("CCI Level1", "Lower CCI for buys", "Trading")
@@ -22,7 +22,7 @@ class volume_ea_strategy(Strategy):
             .SetDisplay("CCI Level2", "Upper CCI for buys", "Trading")
         self._cci_level3 = self.Param("CciLevel3", -50) \
             .SetDisplay("CCI Level3", "Upper CCI for sells", "Trading")
-        self._cci_level4 = self.Param("CciLevel4", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._cci_level4 = self.Param("CciLevel4", -190.0) \
             .SetDisplay("CCI Level4", "Lower CCI for sells", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
@@ -86,33 +86,35 @@ class volume_ea_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         current_volume = candle.TotalVolume
-            trail_dist = self.trailing_stop
-            volume_ok = self._prev_volume > self._prev_prev_volume * self.factor
-            if volume_ok:
-                if self._prev_close > self._prev_open and cci_value > self.cci_level1 and cci_value < self.cci_level2 and self.Position <= 0:
-                    if self.Position < 0) BuyMarket(:
-                        self.BuyMarket()
-                    self._long_stop = candle.ClosePrice - trail_dist
-                    self._short_stop = 0
-                elif self._prev_close < self._prev_open and cci_value < self.cci_level3 and cci_value > self.cci_level4 and self.Position >= 0:
-                    if self.Position > 0) SellMarket(:
-                        self.SellMarket()
-                    self._short_stop = candle.ClosePrice + trail_dist
-                    self._long_stop = 0
-            if self.Position > 0:
-                candidate = candle.ClosePrice - trail_dist
-                if candidate > self._long_stop:
-                    self._long_stop = candidate
-                if candle.ClosePrice <= self._long_stop:
-                    self.SellMarket()
-                    self._long_stop = 0
-            elif self.Position < 0:
-                candidate = candle.ClosePrice + trail_dist
-                if self._short_stop == 0 or candidate < self._short_stop:
-                    self._short_stop = candidate
-                if candle.ClosePrice >= self._short_stop:
+        trail_dist = self.trailing_stop
+        volume_ok = self._prev_volume > self._prev_prev_volume * self.factor
+        if volume_ok:
+            if self._prev_close > self._prev_open and cci_value > self.cci_level1 and cci_value < self.cci_level2 and self.Position <= 0:
+                if self.Position < 0:
                     self.BuyMarket()
-                    self._short_stop = 0
+                self.BuyMarket()
+                self._long_stop = candle.ClosePrice - trail_dist
+                self._short_stop = 0
+            elif self._prev_close < self._prev_open and cci_value < self.cci_level3 and cci_value > self.cci_level4 and self.Position >= 0:
+                if self.Position > 0:
+                    self.SellMarket()
+                self.SellMarket()
+                self._short_stop = candle.ClosePrice + trail_dist
+                self._long_stop = 0
+        if self.Position > 0:
+            candidate = candle.ClosePrice - trail_dist
+            if candidate > self._long_stop:
+                self._long_stop = candidate
+            if candle.ClosePrice <= self._long_stop:
+                self.SellMarket()
+                self._long_stop = 0
+        elif self.Position < 0:
+            candidate = candle.ClosePrice + trail_dist
+            if self._short_stop == 0 or candidate < self._short_stop:
+                self._short_stop = candidate
+            if candle.ClosePrice >= self._short_stop:
+                self.BuyMarket()
+                self._short_stop = 0
         self._prev_prev_volume = self._prev_volume
         self._prev_volume = current_volume
         self._prev_open = candle.OpenPrice

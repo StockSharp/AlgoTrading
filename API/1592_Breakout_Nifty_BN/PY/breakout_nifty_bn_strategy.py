@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import AverageTrueRange
+from StockSharp.Algo.Indicators import AverageTrueRange, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -54,6 +54,10 @@ class breakout_nifty_bn_strategy(Strategy):
         atr.Length = self.atr_length
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(highest, lowest, atr, self.on_process).Start()
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)

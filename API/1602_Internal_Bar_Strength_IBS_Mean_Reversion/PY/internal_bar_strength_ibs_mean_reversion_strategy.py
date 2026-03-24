@@ -14,7 +14,7 @@ class internal_bar_strength_ibs_mean_reversion_strategy(Strategy):
         super(internal_bar_strength_ibs_mean_reversion_strategy, self).__init__()
         self._upper_threshold = self.Param("UpperThreshold", 0.9) \
             .SetDisplay("Upper Threshold", "IBS value to trigger entry", "Parameters")
-        self._lower_threshold = self.Param("LowerThreshold", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._lower_threshold = self.Param("LowerThreshold", 0.3) \
             .SetDisplay("Lower Threshold", "IBS value to exit", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -52,8 +52,8 @@ class internal_bar_strength_ibs_mean_reversion_strategy(Strategy):
     def on_process(self, candle, _dummy):
         if candle.State != CandleStates.Finished:
             return
-        range = candle.HighPrice - candle.LowPrice
-        if range == 0:
+        rng = candle.HighPrice - candle.LowPrice
+        if rng == 0:
             self._prev_high = candle.HighPrice
             self._is_ready = True
             return
@@ -61,7 +61,7 @@ class internal_bar_strength_ibs_mean_reversion_strategy(Strategy):
             self._prev_high = candle.HighPrice
             self._is_ready = True
             return
-        ibs = (candle.ClosePrice - candle.LowPrice) / range
+        ibs = (candle.ClosePrice - candle.LowPrice) / rng
         # Short when close above previous high and IBS is high (near candle top)
         if candle.ClosePrice > self._prev_high and ibs >= self.upper_threshold and self.Position >= 0:
             self.SellMarket()

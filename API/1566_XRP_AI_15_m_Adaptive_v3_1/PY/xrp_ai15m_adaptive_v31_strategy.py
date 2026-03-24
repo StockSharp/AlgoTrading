@@ -20,7 +20,7 @@ class xrp_ai15m_adaptive_v31_strategy(Strategy):
             .SetDisplay("Large TP %", "Take profit for large setups", "Risk")
         self._trail_pct = self.Param("TrailPct", 1) \
             .SetDisplay("Trail %", "Trailing stop percent", "Risk")
-        self._max_bars = self.Param("MaxBars", TimeSpan.FromMinutes(5)) \
+        self._max_bars = self.Param("MaxBars", 48) \
             .SetDisplay("Max Bars", "Maximum bars to hold", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Main candle type", "Parameters")
@@ -124,10 +124,10 @@ class xrp_ai15m_adaptive_v31_strategy(Strategy):
             # Large setup: extreme oversold + trend up
             large_ok = rsi < 25 and candle.ClosePrice > ema34 and self._trend_up
             # Small setup: pullback to EMA in uptrend
-            small_ok = candle.ClosePrice <= ema13 * 0.998 and
-            rsi < 45 and
-            candle.ClosePrice > candle.OpenPrice and
-            self._trend_up
+            small_ok = (candle.ClosePrice <= ema13 * 0.998 and
+                rsi < 45 and
+                candle.ClosePrice > candle.OpenPrice and
+                self._trend_up)
             if large_ok:
                 self.BuyMarket()
                 self._entry_price = candle.ClosePrice

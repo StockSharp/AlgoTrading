@@ -5,13 +5,21 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import AverageTrueRange, ExponentialMovingAverage, ZeroLagExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class zero_lag_ma_trend_following_strategy(Strategy):
     def __init__(self):
         super(zero_lag_ma_trend_following_strategy, self).__init__()
+        self._length_param = self.Param("Length", 34) \
+            .SetDisplay("Length", "MA length", "Indicators")
+        self._atr_period_param = self.Param("AtrPeriod", 14) \
+            .SetDisplay("ATR Period", "ATR length", "Indicators")
+        self._risk_reward_param = self.Param("RiskReward", 2.0) \
+            .SetDisplay("Risk/Reward", "Take profit ratio", "Risk")
+        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_zlma = 0.0
         self._prev_ema = 0.0
         self._long_setup = False
@@ -21,6 +29,22 @@ class zero_lag_ma_trend_following_strategy(Strategy):
         self._stop_price = 0.0
         self._take_profit_price = 0.0
         self._entry_placed = False
+
+    @property
+    def length(self):
+        return self._length_param.Value
+
+    @property
+    def atr_period(self):
+        return self._atr_period_param.Value
+
+    @property
+    def risk_reward(self):
+        return self._risk_reward_param.Value
+
+    @property
+    def candle_type(self):
+        return self._candle_type_param.Value
 
     def OnReseted(self):
         super(zero_lag_ma_trend_following_strategy, self).OnReseted()

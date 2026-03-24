@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -15,7 +16,7 @@ class three_commas_turtle_strategy(Strategy):
             .SetDisplay("Period Fast", "Fast channel period", "Channels")
         self._period_slow = self.Param("PeriodSlow", 15) \
             .SetDisplay("Period Slow", "Slow channel period", "Channels")
-        self._period_exit = self.Param("PeriodExit", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._period_exit = self.Param("PeriodExit", 5) \
             .SetDisplay("Period Exit", "Exit channel period", "Channels")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

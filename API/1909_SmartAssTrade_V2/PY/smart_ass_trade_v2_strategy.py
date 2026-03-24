@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergence, SimpleMovingAverage, WilliamsR, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergence, SimpleMovingAverage, WilliamsR, RelativeStrengthIndex, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -56,8 +56,8 @@ class smart_ass_trade_v2_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.process_candle).Start()
         self.StartProtection(
-            Unit(float(self.stop_loss_pct), UnitTypes.Percent),
-            Unit(float(self.take_profit_pct), UnitTypes.Percent))
+            Unit(float(self.take_profit_pct), UnitTypes.Percent),
+            Unit(float(self.stop_loss_pct), UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -66,10 +66,17 @@ class smart_ass_trade_v2_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        macd_result = self._macd.Process(candle.ClosePrice, candle.OpenTime, True)
-        ma_result = self._ma.Process(candle.ClosePrice, candle.OpenTime, True)
-        wpr_result = self._wpr.Process(candle)
-        rsi_result = self._rsi.Process(candle.ClosePrice, candle.OpenTime, True)
+        macd_inp = DecimalIndicatorValue(self._macd, candle.ClosePrice, candle.OpenTime)
+        macd_inp.IsFinal = True
+        macd_result = self._macd.Process(macd_inp)
+        ma_inp = DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.OpenTime)
+        ma_inp.IsFinal = True
+        ma_result = self._ma.Process(ma_inp)
+        wpr_inp = CandleIndicatorValue(self._wpr, candle)
+        wpr_result = self._wpr.Process(wpr_inp)
+        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
+        rsi_inp.IsFinal = True
+        rsi_result = self._rsi.Process(rsi_inp)
         if not macd_result.IsFormed or not ma_result.IsFormed or not wpr_result.IsFormed or not rsi_result.IsFormed:
             return
         curr_macd = float(macd_result)

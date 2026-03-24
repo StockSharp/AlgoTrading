@@ -24,7 +24,7 @@ class xauusd10_minute_strategy(Strategy):
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._stop_mult = self.Param("StopMult", 3) \
             .SetDisplay("Stop Mult", "StdDev mult for stop", "Risk")
-        self._tp_mult = self.Param("TpMult", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._tp_mult = self.Param("TpMult", 5.0) \
             .SetDisplay("TP Mult", "StdDev mult for TP", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

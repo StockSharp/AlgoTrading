@@ -14,10 +14,13 @@ class sophia11_strategy(Strategy):
         super(sophia11_strategy, self).__init__()
         self._sma_period = self.Param("SmaPeriod", 20) \
             .SetDisplay("SMA Period", "SMA for exit target", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", TimeSpan.FromHours(4)) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR for stops", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle type", "General")
+        self._prev1 = 0.0
+        self._prev2 = 0.0
+        self._prev3 = 0.0
 
     @property
     def sma_period(self):
@@ -33,6 +36,9 @@ class sophia11_strategy(Strategy):
 
     def OnReseted(self):
         super(sophia11_strategy, self).OnReseted()
+        self._prev1 = 0.0
+        self._prev2 = 0.0
+        self._prev3 = 0.0
 
     def OnStarted(self, time):
         super(sophia11_strategy, self).OnStarted(time)
@@ -54,12 +60,14 @@ class sophia11_strategy(Strategy):
         if self._prev3 > 0:
             # 3-bar declining => counter-trend buy
             if self._prev1 < self._prev2 and self._prev2 < self._prev3 and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             # 3-bar rising => counter-trend sell
             elif self._prev1 > self._prev2 and self._prev2 > self._prev3 and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
             # Exit long at SMA or ATR stop
             elif self.Position > 0 and (close >= sma or (atr > 0 and close < sma - atr * 3)):
                 self.SellMarket()

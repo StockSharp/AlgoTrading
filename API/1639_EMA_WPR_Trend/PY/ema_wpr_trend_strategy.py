@@ -16,12 +16,12 @@ class ema_wpr_trend_strategy(Strategy):
             .SetDisplay("EMA Period", "Period for EMA", "Indicators")
         self._wpr_period = self.Param("WprPeriod", 14) \
             .SetDisplay("WPR Period", "%R length", "Indicators")
-        self._wpr_retracement = self.Param("WprRetracement", 30) \
+        self._wpr_retracement = self.Param("WprRetracement", 30.0) \
             .SetDisplay("WPR Retracement", "Retracement for next trade", "Signals")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._buy_allowed = False
-        self._sell_allowed = False
+        self._buy_allowed = True
+        self._sell_allowed = True
         self._entry_price = 0.0
         self._prev_ema = 0.0
         self._has_prev_ema = False
@@ -45,8 +45,8 @@ class ema_wpr_trend_strategy(Strategy):
 
     def OnReseted(self):
         super(ema_wpr_trend_strategy, self).OnReseted()
-        self._buy_allowed = False
-        self._sell_allowed = False
+        self._buy_allowed = True
+        self._sell_allowed = True
         self._entry_price = 0.0
         self._prev_ema = 0.0
         self._has_prev_ema = False

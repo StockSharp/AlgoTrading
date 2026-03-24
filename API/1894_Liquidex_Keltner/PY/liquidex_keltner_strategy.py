@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, KeltnerChannels, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import SimpleMovingAverage, KeltnerChannels, RelativeStrengthIndex, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -99,8 +99,8 @@ class liquidex_keltner_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(keltner, self.process_candle).Start()
         self.StartProtection(
-            Unit(float(self.stop_loss), UnitTypes.Percent),
-            Unit(float(self.take_profit), UnitTypes.Percent))
+            Unit(float(self.take_profit), UnitTypes.Percent),
+            Unit(float(self.stop_loss), UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -111,6 +111,11 @@ class liquidex_keltner_strategy(Strategy):
                 self.DrawIndicator(area, self._rsi)
             self.DrawOwnTrades(area)
 
+    def _process_indicator(self, indicator, price, open_time):
+        inp = DecimalIndicatorValue(indicator, price, open_time)
+        inp.IsFinal = True
+        return indicator.Process(inp)
+
     def process_candle(self, candle, keltner_value):
         if candle.State != CandleStates.Finished:
             return
@@ -119,8 +124,8 @@ class liquidex_keltner_strategy(Strategy):
         t = candle.CloseTime
 
         # process MA and RSI manually
-        ma_result = self._ma.Process(candle.ClosePrice, candle.OpenTime, True)
-        rsi_result = self._rsi.Process(candle.ClosePrice, candle.OpenTime, True)
+        ma_result = self._process_indicator(self._ma, candle.ClosePrice, candle.OpenTime)
+        rsi_result = self._process_indicator(self._rsi, candle.ClosePrice, candle.OpenTime)
 
         if not self._is_trading_time(t):
             self._prev_price = price

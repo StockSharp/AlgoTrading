@@ -76,8 +76,8 @@ class consecutive_bars_above_ma_strategy(Strategy):
         else:
             self._bull_count = 0
         # Short: consecutive bars above MA, below EMA trend filter (mean reversion)
-        short_condition = self._bull_count >= self.threshold and
-        candle.ClosePrice < ema_value
+        short_condition = (self._bull_count >= self.threshold and
+            candle.ClosePrice < ema_value)
         if short_condition and self.Position >= 0:
             self.SellMarket()
         elif self.Position < 0 and candle.ClosePrice < self._prev_low:

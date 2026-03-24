@@ -14,7 +14,7 @@ class scheduled_time_trader_strategy(Strategy):
         super(scheduled_time_trader_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA period", "Indicators")
-        self._rsi_period = self.Param("RsiPeriod", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -58,14 +58,20 @@ class scheduled_time_trader_strategy(Strategy):
             return
         close = candle.ClosePrice
         if not self._has_prev:
-            # Buy: close crosses above EMA and RSI confirms
+            self._prev_ema = ema_value
+            self._prev_close = close
+            self._has_prev = True
+            return
+        # Buy: close crosses above EMA and RSI confirms
         if self._prev_close <= self._prev_ema and close > ema_value and rsi_value < 65 and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Sell: close crosses below EMA and RSI confirms
         elif self._prev_close >= self._prev_ema and close < ema_value and rsi_value > 35 and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_ema = ema_value
         self._prev_close = close
 

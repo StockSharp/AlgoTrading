@@ -12,12 +12,30 @@ from StockSharp.Algo.Strategies import Strategy
 class atr_exit_strategy(Strategy):
     def __init__(self):
         super(atr_exit_strategy, self).__init__()
+        self._fast_len = self.Param("FastLength", 10) \
+            .SetDisplay("Fast EMA", "Fast EMA length", "General")
+        self._slow_len = self.Param("SlowLength", 30) \
+            .SetDisplay("Slow EMA", "Slow EMA length", "General")
+        self._atr_len = self.Param("AtrLength", 14) \
+            .SetDisplay("ATR Length", "ATR period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to process", "General")
         self._entry_price = 0.0
         self._stop_price = 0.0
         self._prev_fast = 0.0
         self._prev_slow = 0.0
+
+    @property
+    def fast_length(self):
+        return self._fast_len.Value
+
+    @property
+    def slow_length(self):
+        return self._slow_len.Value
+
+    @property
+    def atr_length(self):
+        return self._atr_len.Value
 
     @property
     def candle_type(self):
@@ -62,7 +80,6 @@ class atr_exit_strategy(Strategy):
                 self._stop_price = self._entry_price + 1.5 * atr
                 self.SellMarket()
         elif self.Position > 0:
-            # Trailing stop using ATR
             new_stop = candle.ClosePrice - 1.5 * atr
             if new_stop > self._stop_price:
                 self._stop_price = new_stop

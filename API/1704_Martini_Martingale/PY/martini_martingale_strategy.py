@@ -50,12 +50,14 @@ class martini_martingale_strategy(Strategy):
         close = candle.ClosePrice
         # RSI oversold => buy
         if rsi < 30 and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # RSI overbought => sell
         elif rsi > 70 and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         # Exit long at SMA
         elif self.Position > 0 and close >= sma and rsi > 50:
             self.SellMarket()

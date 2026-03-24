@@ -14,7 +14,7 @@ class weighted_harrell_davis_quantile_estimator_with_absolute_deviation_strategy
         super(weighted_harrell_davis_quantile_estimator_with_absolute_deviation_strategy, self).__init__()
         self._length = self.Param("Length", 39) \
             .SetDisplay("Length", "Lookback period", "General")
-        self._dev_mult = self.Param("DevMult", TimeSpan.FromMinutes(5)) \
+        self._dev_mult = self.Param("DevMult", 1.5) \
             .SetDisplay("Deviation Mult", "Band multiplier", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

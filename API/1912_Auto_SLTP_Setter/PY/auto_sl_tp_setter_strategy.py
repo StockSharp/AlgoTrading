@@ -4,22 +4,16 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class auto_sl_tp_setter_strategy(Strategy):
-    """
-    Strategy that trades MA crossovers and automatically protects positions
-    with ATR-based stop loss and take profit.
-    """
-
     def __init__(self):
         super(auto_sl_tp_setter_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._fast_ma_period = self.Param("FastMaPeriod", 10) \
             .SetGreaterThanZero() \
@@ -42,29 +36,8 @@ class auto_sl_tp_setter_strategy(Strategy):
         self._is_first = True
 
     @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, v): self._candle_type.Value = v
-    @property
-    def FastMaPeriod(self): return self._fast_ma_period.Value
-    @FastMaPeriod.setter
-    def FastMaPeriod(self, v): self._fast_ma_period.Value = v
-    @property
-    def SlowMaPeriod(self): return self._slow_ma_period.Value
-    @SlowMaPeriod.setter
-    def SlowMaPeriod(self, v): self._slow_ma_period.Value = v
-    @property
-    def StopLossAtr(self): return self._stop_loss_atr.Value
-    @StopLossAtr.setter
-    def StopLossAtr(self, v): self._stop_loss_atr.Value = v
-    @property
-    def TakeProfitAtr(self): return self._take_profit_atr.Value
-    @TakeProfitAtr.setter
-    def TakeProfitAtr(self, v): self._take_profit_atr.Value = v
-    @property
-    def AtrPeriod(self): return self._atr_period.Value
-    @AtrPeriod.setter
-    def AtrPeriod(self, v): self._atr_period.Value = v
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(auto_sl_tp_setter_strategy, self).OnReseted()
@@ -76,19 +49,18 @@ class auto_sl_tp_setter_strategy(Strategy):
         super(auto_sl_tp_setter_strategy, self).OnStarted(time)
 
         fast_ma = SimpleMovingAverage()
-        fast_ma.Length = self.FastMaPeriod
+        fast_ma.Length = self._fast_ma_period.Value
         self._slow_ma = SimpleMovingAverage()
-        self._slow_ma.Length = self.SlowMaPeriod
+        self._slow_ma.Length = self._slow_ma_period.Value
         self._atr = AverageTrueRange()
-        self._atr.Length = self.AtrPeriod
+        self._atr.Length = self._atr_period.Value
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(fast_ma, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(fast_ma, self.process_candle).Start()
 
         self.StartProtection(
-            stopLoss=Unit(2, UnitTypes.Percent),
-            takeProfit=Unit(3, UnitTypes.Percent)
-        )
+            Unit(3.0, UnitTypes.Percent),
+            Unit(2.0, UnitTypes.Percent))
 
         area = self.CreateChartArea()
         if area is not None:
@@ -97,38 +69,39 @@ class auto_sl_tp_setter_strategy(Strategy):
             self.DrawIndicator(area, self._slow_ma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, fast):
+    def process_candle(self, candle, fast):
         if candle.State != CandleStates.Finished:
             return
 
-        slow_result = self._slow_ma.Process(candle.ClosePrice, candle.OpenTime, True)
-        self._atr.Process(candle)
+        slow_inp = DecimalIndicatorValue(self._slow_ma, candle.ClosePrice, candle.OpenTime)
+        slow_inp.IsFinal = True
+        slow_result = self._slow_ma.Process(slow_inp)
+        atr_inp = CandleIndicatorValue(self._atr, candle)
+        self._atr.Process(atr_inp)
 
         if not slow_result.IsFormed:
             return
 
         slow = float(slow_result)
+        fast_val = float(fast)
 
         if self._is_first:
-            self._prev_fast = fast
+            self._prev_fast = fast_val
             self._prev_slow = slow
             self._is_first = False
             return
 
-        if self._prev_fast <= self._prev_slow and fast > slow and self.Position <= 0:
-
-
+        if self._prev_fast <= self._prev_slow and fast_val > slow and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
-
-
-        elif self._prev_fast >= self._prev_slow and fast < slow and self.Position >= 0:
-
-
+        elif self._prev_fast >= self._prev_slow and fast_val < slow and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
 
-        self._prev_fast = fast
+        self._prev_fast = fast_val
         self._prev_slow = slow
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return auto_sl_tp_setter_strategy()

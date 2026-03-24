@@ -40,6 +40,8 @@ class parabolic_sar_multi_timeframe_strategy(Strategy):
     def OnStarted(self, time):
         super(parabolic_sar_multi_timeframe_strategy, self).OnStarted(time)
         sar = ParabolicSar()
+        sar.Acceleration = self.sar_acceleration
+        sar.AccelerationMax = self.sar_max_acceleration
         ema = ExponentialMovingAverage()
         ema.Length = self.ema_length
         subscription = self.SubscribeCandles(self.candle_type)

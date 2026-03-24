@@ -58,7 +58,7 @@ class majors_volume_sum_strategy(Strategy):
         direction = (1 if candle.ClosePrice > self._prev_close else -1)
         signed_vol = direction * candle.TotalVolume
         # Simple EMA of signed volume
-        k = 2 / (self.ema_length + 1)
+        k = 2.0 / (float(self.ema_length) + 1.0)
         self._volume_ema = self._volume_ema * (1 - k) + signed_vol * k
         abs_ema = abs(self._volume_ema)
         if abs_ema > self._max_abs:

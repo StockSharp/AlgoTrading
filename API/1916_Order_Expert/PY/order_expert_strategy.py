@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -68,8 +68,8 @@ class order_expert_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(fast_ema, self.process_candle).Start()
         self.StartProtection(
-            Unit(float(self.stop_loss_pct), UnitTypes.Percent),
-            Unit(float(self.take_profit_pct), UnitTypes.Percent))
+            Unit(float(self.take_profit_pct), UnitTypes.Percent),
+            Unit(float(self.stop_loss_pct), UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -81,7 +81,9 @@ class order_expert_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         self._bars_since_trade += 1
-        slow_result = self._slow_ema.Process(candle.ClosePrice, candle.OpenTime, True)
+        slow_inp = DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, candle.OpenTime)
+        slow_inp.IsFinal = True
+        slow_result = self._slow_ema.Process(slow_inp)
         if not slow_result.IsFormed:
             return
         slow = float(slow_result)

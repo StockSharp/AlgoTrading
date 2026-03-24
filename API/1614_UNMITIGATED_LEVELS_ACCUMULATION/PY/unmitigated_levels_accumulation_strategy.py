@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import Lowest, Highest
 from StockSharp.Algo.Strategies import Strategy
 
 

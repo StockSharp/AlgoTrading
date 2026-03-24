@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -44,7 +45,7 @@ class fibo_avg001a_strategy(Strategy):
         fast_ma = SmoothedMovingAverage()
         fast_ma.Length = self.ma_period
         slow_ma = SmoothedMovingAverage()
-        slow_ma.Length = self.ma_period
+        slow_ma.Length = self.ma_period + self.fibo_num_period
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(fast_ma, slow_ma, self.on_process).Start()
         area = self.CreateChartArea()

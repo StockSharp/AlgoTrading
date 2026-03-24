@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class lot_scalp_strategy(Strategy):
     def __init__(self):
         super(lot_scalp_strategy, self).__init__()
-        self._ema_period = self.Param("EmaPeriod", TimeSpan.FromHours(4)) \
+        self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA period for trend", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle source", "General")
@@ -55,12 +55,14 @@ class lot_scalp_strategy(Strategy):
             diff = self._prev_prev_open - self._prev_open
             # Open prices diverging downward + close above EMA => buy
             if diff > 0 and close > ema_value and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             # Open prices diverging upward + close below EMA => sell
             elif diff < 0 and close < ema_value and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         self._prev_prev_open = self._prev_open
         self._prev_open = open
 

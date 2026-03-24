@@ -16,7 +16,7 @@ class williams_r_strategy(Strategy):
             .SetDisplay("RSI Length", "RSI period", "General")
         self._oversold = self.Param("Oversold", 20) \
             .SetDisplay("Oversold", "Oversold level", "General")
-        self._overbought = self.Param("Overbought", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._overbought = self.Param("Overbought", 80.0) \
             .SetDisplay("Overbought", "Overbought/exit level", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

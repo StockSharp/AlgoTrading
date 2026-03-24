@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, CommodityChannelIndex, WilliamsR
+from StockSharp.Algo.Indicators import SimpleMovingAverage, CommodityChannelIndex, WilliamsR, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class knux_strategy(Strategy):
@@ -71,9 +71,13 @@ class knux_strategy(Strategy):
 
         fast = float(fast_val)
 
-        slow_result = self._slow_ma.Process(candle.ClosePrice, candle.OpenTime, True)
-        self._cci.Process(candle)
-        self._wpr.Process(candle)
+        slow_inp = DecimalIndicatorValue(self._slow_ma, candle.ClosePrice, candle.OpenTime)
+        slow_inp.IsFinal = True
+        slow_result = self._slow_ma.Process(slow_inp)
+        cci_inp = CandleIndicatorValue(self._cci, candle)
+        self._cci.Process(cci_inp)
+        wpr_inp = CandleIndicatorValue(self._wpr, candle)
+        self._wpr.Process(wpr_inp)
 
         if not slow_result.IsFormed:
             self._prev_fast = fast

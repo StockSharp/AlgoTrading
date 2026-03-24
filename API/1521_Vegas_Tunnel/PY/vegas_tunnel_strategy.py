@@ -55,8 +55,10 @@ class vegas_tunnel_strategy(Strategy):
         std_dev = StandardDeviation()
         std_dev.Length = 20
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(std_dev, (candle, val) => _std_val = val)
-			._bind(ema_slow, ema_tunnel, self.on_process).Start()
+        subscription \
+            .Bind(std_dev, self._on_std) \
+            .Bind(ema_slow, ema_tunnel, self.on_process) \
+            .Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -64,9 +66,14 @@ class vegas_tunnel_strategy(Strategy):
             self.DrawIndicator(area, ema_tunnel)
             self.DrawOwnTrades(area)
 
+    def _on_std(self, candle, val):
+        self._std_val = float(val)
+
     def on_process(self, candle, slow, tunnel):
         if candle.State != CandleStates.Finished:
             return
+        slow = float(slow)
+        tunnel = float(tunnel)
         if self._cooldown > 0:
             self._cooldown -= 1
         if self._std_val <= 0:
@@ -75,13 +82,13 @@ class vegas_tunnel_strategy(Strategy):
             return
         # Exit management
         if self.Position > 0 and self._stop_price > 0:
-            if candle.LowPrice <= self._stop_price or candle.HighPrice >= self._take_price:
+            if float(candle.LowPrice) <= self._stop_price or float(candle.HighPrice) >= self._take_price:
                 self.SellMarket()
                 self._stop_price = 0
                 self._take_price = 0
                 self._cooldown = 80
         elif self.Position < 0 and self._stop_price > 0:
-            if candle.HighPrice >= self._stop_price or candle.LowPrice <= self._take_price:
+            if float(candle.HighPrice) >= self._stop_price or float(candle.LowPrice) <= self._take_price:
                 self.BuyMarket()
                 self._stop_price = 0
                 self._take_price = 0
@@ -93,17 +100,17 @@ class vegas_tunnel_strategy(Strategy):
         # Entry: slow EMA (144) crosses tunnel EMA (169)
         slow_cross_above_tunnel = self._prev_slow <= self._prev_tunnel and slow > tunnel
         slow_cross_below_tunnel = self._prev_slow >= self._prev_tunnel and slow < tunnel
-        if slow_cross_above_tunnel and candle.ClosePrice > tunnel and self.Position <= 0:
+        if slow_cross_above_tunnel and float(candle.ClosePrice) > tunnel and self.Position <= 0:
             self.BuyMarket()
-            entry = candle.ClosePrice
-            self._stop_price = entry - self.stop_mult * self._std_val
-            self._take_price = entry + (entry - self._stop_price) * self.risk_reward_ratio
+            entry = float(candle.ClosePrice)
+            self._stop_price = entry - float(self.stop_mult) * self._std_val
+            self._take_price = entry + (entry - self._stop_price) * float(self.risk_reward_ratio)
             self._cooldown = 80
-        elif slow_cross_below_tunnel and candle.ClosePrice < tunnel and self.Position >= 0:
+        elif slow_cross_below_tunnel and float(candle.ClosePrice) < tunnel and self.Position >= 0:
             self.SellMarket()
-            entry = candle.ClosePrice
-            self._stop_price = entry + self.stop_mult * self._std_val
-            self._take_price = entry - (self._stop_price - entry) * self.risk_reward_ratio
+            entry = float(candle.ClosePrice)
+            self._stop_price = entry + float(self.stop_mult) * self._std_val
+            self._take_price = entry - (self._stop_price - entry) * float(self.risk_reward_ratio)
             self._cooldown = 80
         self._prev_slow = slow
         self._prev_tunnel = tunnel

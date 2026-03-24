@@ -24,6 +24,8 @@ class volume_and_volatility_ratio_indicator_wodi_strategy(Strategy):
             .SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._volumes = []
+        self._vol_indices = []
         self._entry_price = 0.0
         self._stop_dist = 0.0
         self._prev_candle = None
@@ -56,6 +58,8 @@ class volume_and_volatility_ratio_indicator_wodi_strategy(Strategy):
 
     def OnReseted(self):
         super(volume_and_volatility_ratio_indicator_wodi_strategy, self).OnReseted()
+        self._volumes = []
+        self._vol_indices = []
         self._entry_price = 0.0
         self._stop_dist = 0.0
         self._prev_candle = None
@@ -78,53 +82,56 @@ class volume_and_volatility_ratio_indicator_wodi_strategy(Strategy):
             return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
-        vol = candle.TotalVolume
-        volatility = ((candle.HighPrice - candle.LowPrice) / candle.ClosePrice * 100 if candle.ClosePrice > 0 else 0)
+        close = float(candle.ClosePrice)
+        vol = float(candle.TotalVolume)
+        volatility = (float(candle.HighPrice) - float(candle.LowPrice)) / close * 100.0 if close > 0 else 0.0
         vol_index = vol * volatility
         self._volumes.append(vol)
         self._vol_indices.append(vol_index)
-        while (len(self._volumes) > self.vol_length + 1)
-        self._volumes.pop(0)
-        while (len(self._vol_indices) > self.index_length + 1)
-        self._vol_indices.pop(0)
+        while len(self._volumes) > self.vol_length + 1:
+            self._volumes.pop(0)
+        while len(self._vol_indices) > self.index_length + 1:
+            self._vol_indices.pop(0)
         # TP/SL management
+        stop_pct = float(self.stop_pct)
+        tp_pct = float(self.tp_pct)
         if self.Position > 0 and self._entry_price > 0 and self._stop_dist > 0:
-            if candle.ClosePrice <= self._entry_price - self._stop_dist or candle.ClosePrice >= self._entry_price + self._stop_dist * (self.tp_pct / self.stop_pct):
+            if close <= self._entry_price - self._stop_dist or close >= self._entry_price + self._stop_dist * (tp_pct / stop_pct):
                 self.SellMarket()
                 self._entry_price = 0
                 self._stop_dist = 0
                 self._cooldown_remaining = self.signal_cooldown_bars
         elif self.Position < 0 and self._entry_price > 0 and self._stop_dist > 0:
-            if candle.ClosePrice >= self._entry_price + self._stop_dist or candle.ClosePrice <= self._entry_price - self._stop_dist * (self.tp_pct / self.stop_pct):
+            if close >= self._entry_price + self._stop_dist or close <= self._entry_price - self._stop_dist * (tp_pct / stop_pct):
                 self.BuyMarket()
                 self._entry_price = 0
                 self._stop_dist = 0
                 self._cooldown_remaining = self.signal_cooldown_bars
-        if len(self._volumes) < self.vol_length or len(self._vol_indices) < self.index_length or self._prev_candle == None or self._prev_prev_candle == None:
+        if len(self._volumes) < self.vol_length or len(self._vol_indices) < self.index_length or self._prev_candle is None or self._prev_prev_candle is None:
             self._prev_prev_candle = self._prev_candle
             self._prev_candle = candle
             return
         # Calculate averages
-        vol_avg = self._volumes.Take(self.vol_length).Sum() / self.vol_length
-        index_avg = self._vol_indices.Take(self.index_length).Sum() / self.index_length
+        vol_avg = sum(self._volumes[:self.vol_length]) / self.vol_length
+        index_avg = sum(self._vol_indices[:self.index_length]) / self.index_length
         # Entry conditions
         high_vol = vol > vol_avg
         high_vol_index = vol_index > index_avg * 2.5
-        is_long_pattern = high_vol and high_vol_index
-        and self._prev_candle.ClosePrice < self._prev_prev_candle.ClosePrice
-        and candle.ClosePrice > self._prev_candle.ClosePrice
-        is_short_pattern = high_vol and high_vol_index
-        and self._prev_candle.ClosePrice > self._prev_prev_candle.ClosePrice
-        and candle.ClosePrice < self._prev_candle.ClosePrice
+        is_long_pattern = high_vol and high_vol_index \
+            and float(self._prev_candle.ClosePrice) < float(self._prev_prev_candle.ClosePrice) \
+            and close > float(self._prev_candle.ClosePrice)
+        is_short_pattern = high_vol and high_vol_index \
+            and float(self._prev_candle.ClosePrice) > float(self._prev_prev_candle.ClosePrice) \
+            and close < float(self._prev_candle.ClosePrice)
         if self._cooldown_remaining == 0 and is_long_pattern and self.Position == 0:
             self.BuyMarket()
-            self._entry_price = candle.ClosePrice
-            self._stop_dist = candle.ClosePrice * self.stop_pct / 100
+            self._entry_price = close
+            self._stop_dist = close * stop_pct / 100.0
             self._cooldown_remaining = self.signal_cooldown_bars
         elif self._cooldown_remaining == 0 and is_short_pattern and self.Position == 0:
             self.SellMarket()
-            self._entry_price = candle.ClosePrice
-            self._stop_dist = candle.ClosePrice * self.stop_pct / 100
+            self._entry_price = close
+            self._stop_dist = close * stop_pct / 100.0
             self._cooldown_remaining = self.signal_cooldown_bars
         self._prev_prev_candle = self._prev_candle
         self._prev_candle = candle

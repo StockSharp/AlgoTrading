@@ -14,7 +14,7 @@ class tpsl_insert_strategy(Strategy):
         super(tpsl_insert_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 8) \
             .SetDisplay("Fast EMA", "Fast EMA period", "General")
-        self._slow_length = self.Param("SlowLength", TimeSpan.FromHours(4)) \
+        self._slow_length = self.Param("SlowLength", 21) \
             .SetDisplay("Slow EMA", "Slow EMA period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

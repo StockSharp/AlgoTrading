@@ -60,11 +60,11 @@ class vqzl_z_score_strategy(Strategy):
             return
         if dev_value == 0:
             return
-        z = (candle.ClosePrice - ma_value) / dev_value
-        if z > self.threshold and self.Position <= 0:
-            self.BuyMarket()
-        elif z < -self.threshold and self.Position >= 0:
-            self.SellMarket()
+        z = float(candle.ClosePrice - ma_value) / float(dev_value)
+        if z > float(self.threshold) and self.Position <= 0:
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+        elif z < -float(self.threshold) and self.Position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
 
     def CreateClone(self):
         return vqzl_z_score_strategy()

@@ -14,10 +14,11 @@ class geedo_strategy(Strategy):
         super(geedo_strategy, self).__init__()
         self._lookback = self.Param("Lookback", 6) \
             .SetDisplay("Lookback", "Open price lookback bars", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", TimeSpan.FromHours(4)) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period for stops", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._open_history = []
         self._entry_price = 0.0
 
     @property
@@ -34,6 +35,7 @@ class geedo_strategy(Strategy):
 
     def OnReseted(self):
         super(geedo_strategy, self).OnReseted()
+        self._open_history = []
         self._entry_price = 0.0
 
     def OnStarted(self, time):
@@ -54,8 +56,10 @@ class geedo_strategy(Strategy):
         if len(self._open_history) > self.lookback + 1:
             self._open_history.pop(0)
         if len(self._open_history) <= self.lookback:
-            if atr_val <= 0:
-            close = candle.ClosePrice
+            return
+        if atr_val <= 0:
+            return
+        close = candle.ClosePrice
         # Exit check
         if self.Position > 0 and self._entry_price > 0:
             if close <= self._entry_price - atr_val * 2 or close >= self._entry_price + atr_val * 1.5:
@@ -68,17 +72,19 @@ class geedo_strategy(Strategy):
                 self._entry_price = 0
                 return
         past_open = self._open_history[0]
-        current_open = self._open_history[^1]
+        current_open = self._open_history[-1]
         diff = current_open - past_open
         # Price rising => long
         if diff > atr_val * 0.5 and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._entry_price = close
         # Price falling => short
         elif diff < -atr_val * 0.5 and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._entry_price = close
 
     def CreateClone(self):

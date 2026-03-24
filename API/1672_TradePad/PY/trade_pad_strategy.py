@@ -14,7 +14,7 @@ class trade_pad_strategy(Strategy):
         super(trade_pad_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 10) \
             .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
-        self._slow_length = self.Param("SlowLength", TimeSpan.FromHours(4)) \
+        self._slow_length = self.Param("SlowLength", 20) \
             .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

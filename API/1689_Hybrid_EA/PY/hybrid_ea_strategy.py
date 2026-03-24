@@ -18,7 +18,7 @@ class hybrid_ea_strategy(Strategy):
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", TimeSpan.FromHours(4)) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period for stops", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -75,17 +75,23 @@ class hybrid_ea_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if not self._has_prev:
-            close = candle.ClosePrice
+            self._prev_fast = fast
+            self._prev_slow = slow
+            self._has_prev = True
+            return
+        close = candle.ClosePrice
         # EMA cross up + RSI above 50 => long
         if self._prev_fast <= self._prev_slow and fast > slow and rsi > 50:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            if self.Position <= 0:
                 self.BuyMarket()
                 self._entry_price = close
         # EMA cross down + RSI below 50 => short
         elif self._prev_fast >= self._prev_slow and fast < slow and rsi < 50:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            if self.Position >= 0:
                 self.SellMarket()
                 self._entry_price = close
         # Exit long
@@ -98,7 +104,8 @@ class hybrid_ea_strategy(Strategy):
             if fast > slow or (atr > 0 and self._entry_price > 0 and close >= self._entry_price + atr * 2):
                 self.BuyMarket()
                 self._entry_price = 0
-        self._prev_fast = fast; self._prev_slow = slow
+        self._prev_fast = fast
+        self._prev_slow = slow
 
     def CreateClone(self):
         return hybrid_ea_strategy()

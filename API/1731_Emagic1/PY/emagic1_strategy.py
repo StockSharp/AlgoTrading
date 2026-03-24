@@ -63,12 +63,14 @@ class emagic1_strategy(Strategy):
             return
         # Fast crosses above slow => buy
         if self._prev_fast <= self._prev_slow and fast_value > slow_value and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Fast crosses below slow => sell
         elif self._prev_fast >= self._prev_slow and fast_value < slow_value and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_fast = fast_value
         self._prev_slow = slow_value
 

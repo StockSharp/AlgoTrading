@@ -44,7 +44,7 @@ class macd_sample_strategy(Strategy):
         ema = ExponentialMovingAverage()
         ema.Length = self.ma_trend_period
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ema, self.on_ema).Start()
+        subscription.Bind(ema, self.on_ema)
         subscription.BindEx(macd_signal, self.on_macd).Start()
         area = self.CreateChartArea()
         if area is not None:
@@ -63,10 +63,10 @@ class macd_sample_strategy(Strategy):
             return
         if not self._has_ema:
             return
+        if macd_value.Macd is None or macd_value.Signal is None:
+            return
         macd_line = float(macd_value.Macd)
         signal_line = float(macd_value.Signal)
-        if macd_line == 0 and signal_line == 0:
-            return
         if not self._has_prev:
             self._prev_macd = macd_line
             self._prev_signal = signal_line

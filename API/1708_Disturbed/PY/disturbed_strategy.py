@@ -14,7 +14,7 @@ class disturbed_strategy(Strategy):
         super(disturbed_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 12) \
             .SetDisplay("EMA Period", "EMA period", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -55,15 +55,20 @@ class disturbed_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if not self._has_prev:
-            close = candle.ClosePrice
+            self._prev_ema = ema
+            self._has_prev = True
+            return
+        close = candle.ClosePrice
         # Price crosses above EMA + ATR => buy
         if close > ema + atr and self._prev_ema > 0 and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Price crosses below EMA - ATR => sell
         elif close < ema - atr and self._prev_ema > 0 and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         # Exit long when price returns to EMA
         elif self.Position > 0 and close <= ema:
             self.SellMarket()

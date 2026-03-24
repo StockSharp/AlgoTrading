@@ -5,18 +5,48 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, TripleExponentialMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
 class zero_lag_tema_crosses_pakun_strategy(Strategy):
     def __init__(self):
         super(zero_lag_tema_crosses_pakun_strategy, self).__init__()
+        self._lookback = self.Param("Lookback", 20) \
+            .SetDisplay("Lookback", "Lookback period", "Indicators")
+        self._fast_period = self.Param("FastPeriod", 20) \
+            .SetDisplay("Fast Period", "Fast TEMA length", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 50) \
+            .SetDisplay("Slow Period", "Slow TEMA length", "Indicators")
+        self._risk_reward = self.Param("RiskReward", 1.5) \
+            .SetDisplay("Risk/Reward", "Take profit ratio", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._stop_price = 0.0
         self._take_profit_price = 0.0
         self._entry_placed = False
+
+    @property
+    def lookback(self):
+        return self._lookback.Value
+
+    @property
+    def fast_period(self):
+        return self._fast_period.Value
+
+    @property
+    def slow_period(self):
+        return self._slow_period.Value
+
+    @property
+    def risk_reward(self):
+        return self._risk_reward.Value
+
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(zero_lag_tema_crosses_pakun_strategy, self).OnReseted()
@@ -54,25 +84,25 @@ class zero_lag_tema_crosses_pakun_strategy(Strategy):
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
         self._prev_fast = fast
         self._prev_slow = slow
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
         if not self._entry_placed:
             if cross_up and self.Position <= 0:
                 self.BuyMarket()
                 self._entry_placed = True
-                self._stop_price = lowest_val
-                self._take_profit_price = price + (price - self._stop_price) * self.risk_reward
+                self._stop_price = float(lowest_val)
+                self._take_profit_price = price + (price - self._stop_price) * float(self.risk_reward)
             elif cross_down and self.Position >= 0:
                 self.SellMarket()
                 self._entry_placed = True
-                self._stop_price = highest_val
-                self._take_profit_price = price - (self._stop_price - price) * self.risk_reward
+                self._stop_price = float(highest_val)
+                self._take_profit_price = price - (self._stop_price - price) * float(self.risk_reward)
         else:
             if self.Position > 0:
-                if candle.LowPrice <= self._stop_price or candle.HighPrice >= self._take_profit_price:
+                if float(candle.LowPrice) <= self._stop_price or float(candle.HighPrice) >= self._take_profit_price:
                     self.SellMarket()
                     self._entry_placed = False
             elif self.Position < 0:
-                if candle.HighPrice >= self._stop_price or candle.LowPrice <= self._take_profit_price:
+                if float(candle.HighPrice) >= self._stop_price or float(candle.LowPrice) <= self._take_profit_price:
                     self.BuyMarket()
                     self._entry_placed = False
 

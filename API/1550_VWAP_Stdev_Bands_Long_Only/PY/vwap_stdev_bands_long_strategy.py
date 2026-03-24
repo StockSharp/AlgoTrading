@@ -16,7 +16,7 @@ class vwap_stdev_bands_long_strategy(Strategy):
             .SetDisplay("Stdev Down", "Std dev below VWAP", "Parameters")
         self._profit_pct = self.Param("ProfitPct", 0.3) \
             .SetDisplay("Profit %", "Profit target percent", "Parameters")
-        self._gap_minutes = self.Param("GapMinutes", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._gap_minutes = self.Param("GapMinutes", 15) \
             .SetDisplay("Gap Minutes", "Gap before new order", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -73,8 +73,8 @@ class vwap_stdev_bands_long_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         date = candle.OpenTime.Date
-        volume = candle.TotalVolume
-        price = (candle.HighPrice + candle.LowPrice) / 2
+        volume = float(candle.TotalVolume)
+        price = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
         if date != self._session_date:
             self._session_date = date
             self._vwap_sum = price * volume
@@ -89,22 +89,22 @@ class vwap_stdev_bands_long_strategy(Strategy):
             return
         vwap = self._vwap_sum / self._vol_sum
         variance = self._v2_sum / self._vol_sum - vwap * vwap
-        dev = float(Math.Sqrt((double)max(variance, 0)))
-        lower = vwap - self.dev_down * dev
-        can_enter = not self._last_entry_time is not None or candle.OpenTime - self._last_entry_time >= TimeSpan.FromMinutes(self.gap_minutes)
-        crossed_lower = self._has_prev and self._prev_close >= self._prev_lower and candle.ClosePrice < lower
+        dev = Math.Sqrt(float(max(variance, 0)))
+        lower = vwap - float(self.dev_down) * dev
+        close = float(candle.ClosePrice)
+        can_enter = self._last_entry_time is None or candle.OpenTime - self._last_entry_time >= TimeSpan.FromMinutes(int(self.gap_minutes))
+        crossed_lower = self._has_prev and self._prev_close >= self._prev_lower and close < lower
         if crossed_lower and can_enter and self.Position <= 0:
             self.BuyMarket()
-            self._last_entry_price = candle.ClosePrice
+            self._last_entry_price = close
             self._last_entry_time = candle.OpenTime
-        # Profit target exit
         if self.Position > 0 and self._last_entry_price > 0:
-            target = self._last_entry_price * (1 + self.profit_pct / 100)
-            if candle.ClosePrice >= target:
+            target = self._last_entry_price * (1.0 + float(self.profit_pct) / 100.0)
+            if close >= target:
                 self.SellMarket()
                 self._last_entry_time = None
-                self._last_entry_price = 0
-        self._prev_close = candle.ClosePrice
+                self._last_entry_price = 0.0
+        self._prev_close = close
         self._prev_lower = lower
         self._has_prev = True
 

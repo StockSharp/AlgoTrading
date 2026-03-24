@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class xbug_free_v4_strategy(Strategy):
     def __init__(self):
         super(xbug_free_v4_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", TimeSpan.FromHours(4)) \
+        self._ma_period = self.Param("MaPeriod", 10) \
             .SetDisplay("MA Period", "Moving average length", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -60,11 +60,13 @@ class xbug_free_v4_strategy(Strategy):
             buy_signal = sma_value > median and self._prev_sma > self._prev_price and self._prev2_sma < self._prev2_price
             sell_signal = sma_value < median and self._prev_sma < self._prev_price and self._prev2_sma > self._prev2_price
             if buy_signal and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             elif sell_signal and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         self._prev2_sma = self._prev_sma
         self._prev2_price = self._prev_price
         self._prev_sma = sma_value

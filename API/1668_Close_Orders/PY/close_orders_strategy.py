@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class close_orders_strategy(Strategy):
     def __init__(self):
         super(close_orders_strategy, self).__init__()
-        self._ema_length = self.Param("EmaLength", TimeSpan.FromHours(4)) \
+        self._ema_length = self.Param("EmaLength", 40) \
             .SetDisplay("EMA Length", "EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

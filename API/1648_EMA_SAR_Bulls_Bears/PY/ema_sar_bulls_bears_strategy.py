@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, ParabolicSar
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, ParabolicSar, BearPower, BullPower
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -74,10 +74,10 @@ class ema_sar_bulls_bears_strategy(Strategy):
             self._prev_bulls = bulls_power
             self._has_prev = True
             return
-        short_signal = short_ema < long_ema and sar_value > candle.HighPrice and bears_power < 0 and
-        bears_power > self._prev_bears
-        long_signal = short_ema > long_ema and sar_value < candle.LowPrice and bulls_power > 0 and
-        bulls_power < self._prev_bulls
+        short_signal = (short_ema < long_ema and sar_value > candle.HighPrice and bears_power < 0 and
+            bears_power > self._prev_bears)
+        long_signal = (short_ema > long_ema and sar_value < candle.LowPrice and bulls_power > 0 and
+            bulls_power < self._prev_bulls)
         if short_signal and self.Position >= 0:
             self.SellMarket()
         elif long_signal and self.Position <= 0:

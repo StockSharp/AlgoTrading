@@ -14,7 +14,7 @@ class vawsi_trend_persistance_reversal_strategy(Strategy):
         super(vawsi_trend_persistance_reversal_strategy, self).__init__()
         self._sl_tp = self.Param("SlTp", 2) \
             .SetDisplay("SL/TP", "Stop loss / take profit ratio", "Risk")
-        self._rsi_length = self.Param("RsiLength", TimeSpan.FromMinutes(5)) \
+        self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

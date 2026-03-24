@@ -18,7 +18,7 @@ class vwap_breakout_atr_strategy(Strategy):
             .SetDisplay("StdDev Length", "Volatility period", "Parameters")
         self._stop_mult = self.Param("StopMult", 1.5) \
             .SetDisplay("Stop Mult", "StdDev multiplier for stop", "Parameters")
-        self._take_mult = self.Param("TakeMult", TimeSpan.FromHours(4)) \
+        self._take_mult = self.Param("TakeMult", 2.0) \
             .SetDisplay("Take Mult", "StdDev multiplier for TP", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

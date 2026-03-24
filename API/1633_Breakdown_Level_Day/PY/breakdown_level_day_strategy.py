@@ -11,12 +11,12 @@ from StockSharp.Algo.Strategies import Strategy
 class breakdown_level_day_strategy(Strategy):
     def __init__(self):
         super(breakdown_level_day_strategy, self).__init__()
-        self._lookback = self.Param("Lookback", TimeSpan.FromHours(4)) \
+        self._lookback = self.Param("Lookback", 20) \
             .SetDisplay("Lookback", "Bars to establish range", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._range_high = 0.0
-        self._range_low = 0.0
+        self._range_low = 1e18
         self._bar_count = 0
         self._range_established = False
 
@@ -31,7 +31,7 @@ class breakdown_level_day_strategy(Strategy):
     def OnReseted(self):
         super(breakdown_level_day_strategy, self).OnReseted()
         self._range_high = 0.0
-        self._range_low = 0.0
+        self._range_low = 1e18
         self._bar_count = 0
         self._range_established = False
 

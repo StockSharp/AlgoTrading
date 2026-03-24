@@ -16,11 +16,11 @@ class backtest_ut_bot_rsi_strategy(Strategy):
             .SetDisplay("EMA Length", "EMA period for trend filter", "Parameters")
         self._std_length = self.Param("StdLength", 10) \
             .SetDisplay("StdDev Length", "StdDev period", "Parameters")
-        self._factor = self.Param("Factor", TimeSpan.FromHours(4)) \
+        self._factor = self.Param("Factor", 1.0) \
             .SetDisplay("UT Bot Factor", "Volatility multiplier", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._trail = 0.0
+        self._trail = None
         self._dir = 0
         self._prev_dir = 0
 
@@ -42,7 +42,7 @@ class backtest_ut_bot_rsi_strategy(Strategy):
 
     def OnReseted(self):
         super(backtest_ut_bot_rsi_strategy, self).OnReseted()
-        self._trail = 0.0
+        self._trail = None
         self._dir = 0
         self._prev_dir = 0
 

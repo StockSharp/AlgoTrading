@@ -18,7 +18,7 @@ class vwap_mean_magnet_v2_vol_filter_strategy(Strategy):
             .SetDisplay("RSI Length", "RSI Length", "General")
         self._rsi_overbought = self.Param("RsiOverbought", 65) \
             .SetDisplay("RSI Overbought", "RSI Overbought", "General")
-        self._rsi_oversold = self.Param("RsiOversold", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._rsi_oversold = self.Param("RsiOversold", 35) \
             .SetDisplay("RSI Oversold", "RSI Oversold", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

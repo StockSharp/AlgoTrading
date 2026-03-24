@@ -62,12 +62,16 @@ class x_alert3_strategy(Strategy):
             self._has_prev = True
             return
         if self._prev_fast <= self._prev_slow and fast > slow:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0) BuyMarket(:
-            elif self._prev_fast >= self._prev_slow and fast < slow:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0) SellMarket(:
-            self._prev_fast = fast
+            if self.Position < 0:
+                self.BuyMarket()
+            if self.Position <= 0:
+                self.BuyMarket()
+        elif self._prev_fast >= self._prev_slow and fast < slow:
+            if self.Position > 0:
+                self.SellMarket()
+            if self.Position >= 0:
+                self.SellMarket()
+        self._prev_fast = fast
         self._prev_slow = slow
 
     def CreateClone(self):

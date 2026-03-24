@@ -20,7 +20,7 @@ class vidya_pro_trend_multi_tier_profit_strategy(Strategy):
             .SetDisplay("TP1 %", "First take profit percent", "Risk")
         self._tp2_pct = self.Param("Tp2Pct", 5.0) \
             .SetDisplay("TP2 %", "Second take profit percent", "Risk")
-        self._sl_pct = self.Param("SlPct", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._sl_pct = self.Param("SlPct", 3.0) \
             .SetDisplay("SL %", "Stop loss percent", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -78,6 +78,9 @@ class vidya_pro_trend_multi_tier_profit_strategy(Strategy):
     def on_process(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
             return
+        fast = float(fast)
+        slow = float(slow)
+        close = float(candle.ClosePrice)
         if self._cooldown > 0:
             self._cooldown -= 1
         if self._prev_fast == 0:
@@ -86,8 +89,8 @@ class vidya_pro_trend_multi_tier_profit_strategy(Strategy):
             return
         # TP/SL management
         if self.Position > 0 and self._entry_price > 0:
-            if candle.ClosePrice >= self._entry_price * (1 + self.tp2_pct / 100:
-                candle.ClosePrice <= self._entry_price * (1 - self.sl_pct / 100))
+            if close >= self._entry_price * (1 + float(self.tp2_pct) / 100) or \
+               close <= self._entry_price * (1 - float(self.sl_pct) / 100):
                 self.SellMarket()
                 self._entry_price = 0
                 self._cooldown = 60
@@ -95,8 +98,8 @@ class vidya_pro_trend_multi_tier_profit_strategy(Strategy):
                 self._prev_slow = slow
                 return
         elif self.Position < 0 and self._entry_price > 0:
-            if candle.ClosePrice <= self._entry_price * (1 - self.tp2_pct / 100:
-                candle.ClosePrice >= self._entry_price * (1 + self.sl_pct / 100))
+            if close <= self._entry_price * (1 - float(self.tp2_pct) / 100) or \
+               close >= self._entry_price * (1 + float(self.sl_pct) / 100):
                 self.BuyMarket()
                 self._entry_price = 0
                 self._cooldown = 60
@@ -112,11 +115,11 @@ class vidya_pro_trend_multi_tier_profit_strategy(Strategy):
         short_cross = self._prev_fast >= self._prev_slow and fast < slow
         if long_cross and self.Position <= 0:
             self.BuyMarket()
-            self._entry_price = candle.ClosePrice
+            self._entry_price = close
             self._cooldown = 60
         elif short_cross and self.Position >= 0:
             self.SellMarket()
-            self._entry_price = candle.ClosePrice
+            self._entry_price = close
             self._cooldown = 60
         self._prev_fast = fast
         self._prev_slow = slow

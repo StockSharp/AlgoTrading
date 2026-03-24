@@ -18,12 +18,12 @@ class zap_team_pro_v6_ema_strategy(Strategy):
             .SetDisplay("EMA 50", "Slow EMA length", "Indicators")
         self._ema200_length = self.Param("Ema200Length", 200) \
             .SetDisplay("EMA 200", "Trend EMA length", "Indicators")
-        self._enable_shorts = self.Param("EnableShorts", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._enable_shorts = self.Param("EnableShorts", False) \
             .SetDisplay("Enable Shorts", "Allow short trades", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._prev21 = 0.0
-        self._prev50 = 0.0
+        self._prev21 = None
+        self._prev50 = None
 
     @property
     def ema21_length(self):
@@ -47,8 +47,8 @@ class zap_team_pro_v6_ema_strategy(Strategy):
 
     def OnReseted(self):
         super(zap_team_pro_v6_ema_strategy, self).OnReseted()
-        self._prev21 = 0.0
-        self._prev50 = 0.0
+        self._prev21 = None
+        self._prev50 = None
 
     def OnStarted(self, time):
         super(zap_team_pro_v6_ema_strategy, self).OnStarted(time)
@@ -67,6 +67,8 @@ class zap_team_pro_v6_ema_strategy(Strategy):
 
     def on_process(self, candle, ema21, ema50, ema200):
         if candle.State != CandleStates.Finished:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
         if self._prev21 is None:
             self._prev21 = ema21

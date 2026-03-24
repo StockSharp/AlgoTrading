@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -15,9 +16,9 @@ class yuri_garcia_smart_money_strategy(Strategy):
             .SetDisplay("Zone Lookback", "Lookback for high/low zone", "General")
         self._zone_buffer = self.Param("ZoneBuffer", 0.002) \
             .SetDisplay("Zone Buffer", "Buffer percent", "General")
-        self._stop_percent = self.Param("StopPercent", 3) \
+        self._stop_percent = self.Param("StopPercent", 3.0) \
             .SetDisplay("Stop %", "Stop loss percentage", "Risk")
-        self._risk_reward = self.Param("RiskReward", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._risk_reward = self.Param("RiskReward", 2.0) \
             .SetDisplay("RRR", "Risk reward ratio", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

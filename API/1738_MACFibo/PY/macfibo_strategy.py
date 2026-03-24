@@ -14,7 +14,7 @@ class macfibo_strategy(Strategy):
         super(macfibo_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 10) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_length = self.Param("SlowLength", TimeSpan.FromHours(4)) \
+        self._slow_length = self.Param("SlowLength", 20) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -64,11 +64,13 @@ class macfibo_strategy(Strategy):
         cross_up = self._prev_fast <= self._prev_slow and fast_value > slow_value
         cross_down = self._prev_fast >= self._prev_slow and fast_value < slow_value
         if cross_up and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         elif cross_down and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_fast = fast_value
         self._prev_slow = slow_value
 

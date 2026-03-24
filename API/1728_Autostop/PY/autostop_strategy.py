@@ -18,7 +18,7 @@ class autostop_strategy(Strategy):
             .SetDisplay("Slow EMA", "Slow EMA period", "General")
         self._atr_length = self.Param("AtrLength", 14) \
             .SetDisplay("ATR Length", "ATR period for TP/SL", "Risk")
-        self._tp_multiplier = self.Param("TpMultiplier", 2) \
+        self._tp_multiplier = self.Param("TpMultiplier", 2.0) \
             .SetDisplay("TP Multiplier", "ATR multiplier for take profit", "Risk")
         self._sl_multiplier = self.Param("SlMultiplier", 1.5) \
             .SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk")
@@ -89,14 +89,16 @@ class autostop_strategy(Strategy):
                 return
         # Entry signals
         if fast > slow and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._entry_price = candle.ClosePrice
             self._take_price = self._entry_price + atr_value * self.tp_multiplier
             self._stop_price = self._entry_price - atr_value * self.sl_multiplier
         elif fast < slow and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._entry_price = candle.ClosePrice
             self._take_price = self._entry_price - atr_value * self.tp_multiplier
             self._stop_price = self._entry_price + atr_value * self.sl_multiplier

@@ -66,7 +66,7 @@ class yin_yang_rsi_volume_trend_strategy(Strategy):
         if std_val <= 0:
             return
         # Dynamic zones based on SMA +/- RSI-weighted StdDev
-        rsi_weight = rsi_val / 100; // 0..1
+        rsi_weight = rsi_val / 100  # 0..1
         zone_width = std_val * (0.5 + rsi_weight)
         zone_basis = sma_val
         zone_high = zone_basis + zone_width

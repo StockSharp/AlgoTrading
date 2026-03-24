@@ -14,7 +14,7 @@ class renko_trend_reversal_strategy(Strategy):
         super(renko_trend_reversal_strategy, self).__init__()
         self._std_length = self.Param("StdLength", 14) \
             .SetDisplay("StdDev Length", "StdDev period for brick size", "General")
-        self._brick_multiplier = self.Param("BrickMultiplier", TimeSpan.FromHours(4)) \
+        self._brick_multiplier = self.Param("BrickMultiplier", 0.5) \
             .SetDisplay("Brick Multiplier", "Multiplier for brick size", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

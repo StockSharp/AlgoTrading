@@ -65,32 +65,38 @@ class intraday_beta_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if self._prev_ma10 == 0:
-            ma10_slope = ma10_value - self._prev_ma10
+            self._prev_ma10 = ma10_value
+            return
+        ma10_slope = ma10_value - self._prev_ma10
         candle_diff = candle.ClosePrice - candle.OpenPrice
-        trail_dist = (atr_value * 2 if atr_value > 0 else 100)
+        trail_dist = atr_value * 2 if atr_value > 0 else 100
         sell_signal = ma10_slope < 0 and self._prev_slope > 0 and rsi_value >= 30 and self._prev_candle_diff < 0
         buy_signal = ma10_slope > 0 and self._prev_slope < 0 and rsi_value <= 70 and self._prev_candle_diff > 0
         if sell_signal and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._entry_price = candle.ClosePrice
             self._short_stop = self._entry_price + trail_dist
         elif buy_signal and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._entry_price = candle.ClosePrice
             self._long_stop = self._entry_price - trail_dist
         if self.Position > 0:
             new_stop = candle.ClosePrice - trail_dist
             if new_stop > self._long_stop and candle.ClosePrice > self._entry_price:
                 self._long_stop = new_stop
-            if candle.LowPrice <= self._long_stop) SellMarket(:
-            elif self.Position < 0:
+            if candle.LowPrice <= self._long_stop:
+                self.SellMarket()
+        elif self.Position < 0:
             new_stop = candle.ClosePrice + trail_dist
             if new_stop < self._short_stop and candle.ClosePrice < self._entry_price:
                 self._short_stop = new_stop
-            if candle.HighPrice >= self._short_stop) BuyMarket(:
-            self._prev_ma10 = ma10_value
+            if candle.HighPrice >= self._short_stop:
+                self.BuyMarket()
+        self._prev_ma10 = ma10_value
         self._prev_slope = ma10_slope
         self._prev_candle_diff = candle_diff
 

@@ -16,7 +16,7 @@ class ema_wpr_retracement_strategy(Strategy):
             .SetDisplay("EMA Period", "EMA period for trend", "Trend")
         self._wpr_period = self.Param("WprPeriod", 14) \
             .SetDisplay("WPR Period", "Williams %R period", "Signals")
-        self._wpr_retracement = self.Param("WprRetracement", TimeSpan.FromHours(4)) \
+        self._wpr_retracement = self.Param("WprRetracement", 30.0) \
             .SetDisplay("WPR Retracement", "Retracement needed for next trade", "Signals")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

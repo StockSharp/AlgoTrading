@@ -18,9 +18,12 @@ class vortex_mtf_strategy(Strategy):
             .SetDisplay("Candle Type", "Timeframe for Vortex calculation", "General")
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 4) \
             .SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new Vortex crossover entry", "General")
-        self._prev_high = 0.0
-        self._prev_low = 0.0
-        self._prev_close = 0.0
+        self._vm_plus = []
+        self._vm_minus = []
+        self._true_ranges = []
+        self._prev_high = None
+        self._prev_low = None
+        self._prev_close = None
         self._prev_vip = 0.0
         self._prev_vim = 0.0
         self._cooldown_remaining = 0
@@ -39,9 +42,12 @@ class vortex_mtf_strategy(Strategy):
 
     def OnReseted(self):
         super(vortex_mtf_strategy, self).OnReseted()
-        self._prev_high = 0.0
-        self._prev_low = 0.0
-        self._prev_close = 0.0
+        self._vm_plus = []
+        self._vm_minus = []
+        self._true_ranges = []
+        self._prev_high = None
+        self._prev_low = None
+        self._prev_close = None
         self._prev_vip = 0.0
         self._prev_vim = 0.0
         self._cooldown_remaining = 0
@@ -60,35 +66,38 @@ class vortex_mtf_strategy(Strategy):
     def on_process(self, candle, _dummy):
         if candle.State != CandleStates.Finished:
             return
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        close = float(candle.ClosePrice)
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
-        if self._prev_high == None:
-            self._prev_high = candle.HighPrice
-            self._prev_low = candle.LowPrice
-            self._prev_close = candle.ClosePrice
+        if self._prev_high is None:
+            self._prev_high = high
+            self._prev_low = low
+            self._prev_close = close
             return
-        vmp = abs(candle.HighPrice - self._prev_low)
-        vmm = abs(candle.LowPrice - self._prev_high)
-        tr = max(candle.HighPrice - candle.LowPrice,
-        max(abs(candle.HighPrice - self._prev_close),
-        abs(candle.LowPrice - self._prev_close)))
+        vmp = abs(high - self._prev_low)
+        vmm = abs(low - self._prev_high)
+        tr = max(high - low,
+            max(abs(high - self._prev_close),
+                abs(low - self._prev_close)))
         self._vm_plus.append(vmp)
         self._vm_minus.append(vmm)
         self._true_ranges.append(tr)
-        while (len(self._vm_plus) > self.length)
+        while len(self._vm_plus) > self.length:
             self._vm_plus.pop(0)
             self._vm_minus.pop(0)
             self._true_ranges.pop(0)
-        self._prev_high = candle.HighPrice
-        self._prev_low = candle.LowPrice
-        self._prev_close = candle.ClosePrice
+        self._prev_high = high
+        self._prev_low = low
+        self._prev_close = close
         if len(self._vm_plus) < self.length:
             return
-        sum_tr = self.sum(self._true_ranges)
+        sum_tr = sum(self._true_ranges)
         if sum_tr == 0:
             return
-        vip = self.sum(self._vm_plus) / sum_tr
-        vim = self.sum(self._vm_minus) / sum_tr
+        vip = sum(self._vm_plus) / sum_tr
+        vim = sum(self._vm_minus) / sum_tr
         if self._prev_vip == 0 and self._prev_vim == 0:
             self._prev_vip = vip
             self._prev_vim = vim

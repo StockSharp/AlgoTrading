@@ -14,9 +14,9 @@ class mtf_rsi_sar_strategy(Strategy):
         super(mtf_rsi_sar_strategy, self).__init__()
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 35) \
+        self._rsi_oversold = self.Param("RsiOversold", 35.0) \
             .SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._rsi_overbought = self.Param("RsiOverbought", 65.0) \
             .SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

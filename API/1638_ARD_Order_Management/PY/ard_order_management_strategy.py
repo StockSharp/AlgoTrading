@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import DeMarker
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -13,7 +14,7 @@ class ard_order_management_strategy(Strategy):
         super(ard_order_management_strategy, self).__init__()
         self._de_marker_period = self.Param("DeMarkerPeriod", 14) \
             .SetDisplay("DeMarker Period", "DeMarker indicator period", "Parameters")
-        self._threshold = self.Param("Threshold", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._threshold = self.Param("Threshold", 0.5) \
             .SetDisplay("Threshold", "DeMarker crossing level", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

@@ -14,9 +14,9 @@ class line_order_strategy(Strategy):
         super(line_order_strategy, self).__init__()
         self._ma_length = self.Param("MaLength", 20) \
             .SetDisplay("MA Length", "Moving average period for line", "Indicators")
-        self._stop_loss_pct = self.Param("StopLossPct", 2) \
+        self._stop_loss_pct = self.Param("StopLossPct", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-        self._take_profit_pct = self.Param("TakeProfitPct", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._take_profit_pct = self.Param("TakeProfitPct", 3.0) \
             .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -70,16 +70,16 @@ class line_order_strategy(Strategy):
             return
         # Check stop-loss / take-profit for existing positions
         if self.Position > 0 and self._entry_price > 0:
-            if close <= self._entry_price * (1 - self.stop_loss_pct / 100:
-                close >= self._entry_price * (1 + self.take_profit_pct / 100))
+            if (close <= self._entry_price * (1 - self.stop_loss_pct / 100.0) or
+                    close >= self._entry_price * (1 + self.take_profit_pct / 100.0)):
                 self.SellMarket()
                 self._entry_price = 0
                 self._prev_close = close
                 self._prev_ma = ma_val
                 return
         elif self.Position < 0 and self._entry_price > 0:
-            if close >= self._entry_price * (1 + self.stop_loss_pct / 100:
-                close <= self._entry_price * (1 - self.take_profit_pct / 100))
+            if (close >= self._entry_price * (1 + self.stop_loss_pct / 100.0) or
+                    close <= self._entry_price * (1 - self.take_profit_pct / 100.0)):
                 self.BuyMarket()
                 self._entry_price = 0
                 self._prev_close = close

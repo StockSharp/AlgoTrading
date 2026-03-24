@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class ai_grid_strategy(Strategy):
     def __init__(self):
         super(ai_grid_strategy, self).__init__()
-        self._ma_length = self.Param("MaLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._ma_length = self.Param("MaLength", 20) \
             .SetDisplay("MA Length", "SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

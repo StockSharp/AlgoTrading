@@ -16,7 +16,7 @@ class news_pending_orders_strategy(Strategy):
             .SetDisplay("EMA Period", "EMA trend period", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period", "Indicators")
-        self._atr_mult = self.Param("AtrMult", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._atr_mult = self.Param("AtrMult", 1.5) \
             .SetDisplay("ATR Mult", "ATR expansion multiplier", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -61,17 +61,21 @@ class news_pending_orders_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if self._prev_atr <= 0:
-            close = candle.ClosePrice
-        body_size = abs(candle.ClosePrice - candle.OpenPrice)
+            self._prev_atr = atr
+            return
+        close = candle.ClosePrice
+        body_size = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
         # Volatility expansion: big body candle relative to stddev
         expansion = body_size > atr * 0.5
         if expansion and close > ema and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._entry_price = close
         elif expansion and close < ema and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._entry_price = close
         # Exit long
         elif self.Position > 0:

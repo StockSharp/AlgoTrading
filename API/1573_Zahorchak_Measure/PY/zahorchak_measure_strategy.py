@@ -61,13 +61,18 @@ class zahorchak_measure_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         # Compute breadth score
-        score = 0
-        (self.points if score += candle.ClosePrice > short_val else -self.points)
-        (self.points if score += candle.ClosePrice > medium_val else -self.points)
-        (self.points if score += candle.ClosePrice > long_val else -self.points)
-        (self.points if score += short_val > medium_val else -self.points)
-        (self.points if score += medium_val > long_val else -self.points)
-        (self.points if score += short_val > long_val else -self.points)
+        close = float(candle.ClosePrice)
+        sv = float(short_val)
+        mv = float(medium_val)
+        lv = float(long_val)
+        pts = float(self.points)
+        score = 0.0
+        score += pts if close > sv else -pts
+        score += pts if close > mv else -pts
+        score += pts if close > lv else -pts
+        score += pts if sv > mv else -pts
+        score += pts if mv > lv else -pts
+        score += pts if sv > lv else -pts
         max_score = self.points * 6
         normalized = (10 * score / max_score if max_score != 0 else 0)
         # EMA smoothing

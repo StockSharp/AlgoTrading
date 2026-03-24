@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Sides
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -24,6 +24,10 @@ class volume_per_point_strategy(Strategy):
             .SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._cooldown_remaining = 0
+        self._prev_range = 0.0
+        self._prev_volume = 0.0
+        self._prev_close = 0.0
 
     @property
     def rsi_length(self):
@@ -51,6 +55,10 @@ class volume_per_point_strategy(Strategy):
 
     def OnReseted(self):
         super(volume_per_point_strategy, self).OnReseted()
+        self._cooldown_remaining = 0
+        self._prev_range = 0.0
+        self._prev_volume = 0.0
+        self._prev_close = 0.0
 
     def OnStarted(self, time):
         super(volume_per_point_strategy, self).OnStarted(time)
@@ -58,6 +66,7 @@ class volume_per_point_strategy(Strategy):
         rsi.Length = self.rsi_length
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(rsi, self.on_process).Start()
+        self.StartProtection(Unit(2, UnitTypes.Percent), Unit(1, UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -69,30 +78,36 @@ class volume_per_point_strategy(Strategy):
             return
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
+        rsi_value = float(rsi_value)
+        close = float(candle.ClosePrice)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        open_p = float(candle.OpenPrice)
         if self._prev_range == 0:
-            self._prev_range = candle.HighPrice - candle.LowPrice
-            self._prev_volume = candle.TotalVolume
-            self._prev_close = candle.ClosePrice
+            self._prev_range = high - low
+            self._prev_volume = float(candle.TotalVolume)
+            self._prev_close = close
             return
-        step = ((Security.PriceStep if Security is not None else None) if (Security.PriceStep if Security is not None else None) is not None else 0.0001)
-        range = max(candle.HighPrice - candle.LowPrice, step)
+        ps = self.Security.PriceStep if self.Security is not None else None
+        step = float(ps) if ps is not None else 0.0001
+        candle_range = max(high - low, step)
         previous_range = max(self._prev_range, step)
-        volume = candle.TotalVolume
-        volume_per_point = volume / range
+        volume = float(candle.TotalVolume)
+        volume_per_point = volume / candle_range
         previous_volume_per_point = self._prev_volume / previous_range
-        bullish_impulse = candle.ClosePrice > candle.OpenPrice and candle.ClosePrice > self._prev_close
-        bearish_impulse = candle.ClosePrice < candle.OpenPrice and candle.ClosePrice < self._prev_close
-        buy_signal = volume_per_point >= previous_volume_per_point * 1.5 and bullish_impulse and (not self.use_rsi_filter or rsi_value <= self.rsi_low)
-        sell_signal = volume_per_point >= previous_volume_per_point * 1.5 and bearish_impulse and (not self.use_rsi_filter or rsi_value >= self.rsi_high)
+        bullish_impulse = close > open_p and close > self._prev_close
+        bearish_impulse = close < open_p and close < self._prev_close
+        buy_signal = volume_per_point >= previous_volume_per_point * 1.5 and bullish_impulse and (not self.use_rsi_filter or rsi_value <= float(self.rsi_low))
+        sell_signal = volume_per_point >= previous_volume_per_point * 1.5 and bearish_impulse and (not self.use_rsi_filter or rsi_value >= float(self.rsi_high))
         if self._cooldown_remaining == 0 and buy_signal and self.Position <= 0:
             self.BuyMarket()
             self._cooldown_remaining = self.signal_cooldown_bars
         elif self._cooldown_remaining == 0 and sell_signal and self.Position >= 0:
             self.SellMarket()
             self._cooldown_remaining = self.signal_cooldown_bars
-        self._prev_range = range
+        self._prev_range = candle_range
         self._prev_volume = volume
-        self._prev_close = candle.ClosePrice
+        self._prev_close = close
 
     def CreateClone(self):
         return volume_per_point_strategy()

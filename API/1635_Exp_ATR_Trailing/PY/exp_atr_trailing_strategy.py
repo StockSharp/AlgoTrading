@@ -14,11 +14,11 @@ class exp_atr_trailing_strategy(Strategy):
         super(exp_atr_trailing_strategy, self).__init__()
         self._std_period = self.Param("StdPeriod", 14) \
             .SetDisplay("StdDev Period", "StdDev period", "Indicators")
-        self._std_factor = self.Param("StdFactor", 2) \
+        self._std_factor = self.Param("StdFactor", 2.0) \
             .SetDisplay("StdDev Factor", "StdDev multiplier for trailing stop", "Indicators")
         self._fast_ema = self.Param("FastEma", 10) \
             .SetDisplay("Fast EMA", "Fast EMA for entry", "Indicators")
-        self._slow_ema = self.Param("SlowEma", TimeSpan.FromHours(4)) \
+        self._slow_ema = self.Param("SlowEma", 30) \
             .SetDisplay("Slow EMA", "Slow EMA for entry", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

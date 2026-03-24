@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -18,7 +18,7 @@ class live_alligator_strategy(Strategy):
             .SetDisplay("Teeth", "Alligator Teeth length", "Indicators")
         self._lips_length = self.Param("LipsLength", 8) \
             .SetDisplay("Lips", "Alligator Lips length", "Indicators")
-        self._trail_length = self.Param("TrailLength", TimeSpan.FromHours(4)) \
+        self._trail_length = self.Param("TrailLength", 50) \
             .SetDisplay("Trail", "Trailing SMA length", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

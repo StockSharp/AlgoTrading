@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange
+from StockSharp.Algo.Indicators import AverageTrueRange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class kolier_super_trend_strategy(Strategy):
@@ -57,7 +57,8 @@ class kolier_super_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        atr_result = self._atr.Process(candle)
+        atr_inp = CandleIndicatorValue(self._atr, candle)
+        atr_result = self._atr.Process(atr_inp)
         if not atr_result.IsFormed:
             return
 

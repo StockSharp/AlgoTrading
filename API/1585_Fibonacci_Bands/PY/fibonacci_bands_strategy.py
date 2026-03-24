@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import AverageTrueRange, RelativeStrengthIndex, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -20,7 +20,7 @@ class fibonacci_bands_strategy(Strategy):
             .SetDisplay("KC Multiplier", "Keltner multiplier", "Keltner")
         self._kc_length = self.Param("KcLength", 14) \
             .SetDisplay("KC Length", "ATR length", "Keltner")
-        self._rsi_length = self.Param("RsiLength", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI length", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")

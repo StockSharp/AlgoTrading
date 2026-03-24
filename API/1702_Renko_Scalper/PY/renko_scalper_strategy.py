@@ -46,13 +46,17 @@ class renko_scalper_strategy(Strategy):
             self._has_prev = True
             return
         if stdev_val <= 0:
-            diff = close - self._previous_close
+            self._previous_close = close
+            return
+        diff = close - self._previous_close
         if diff > stdev_val and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         elif diff < -stdev_val and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._previous_close = close
 
     def CreateClone(self):

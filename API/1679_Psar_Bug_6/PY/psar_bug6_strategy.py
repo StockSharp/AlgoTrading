@@ -14,7 +14,7 @@ class psar_bug6_strategy(Strategy):
         super(psar_bug6_strategy, self).__init__()
         self._sar_step = self.Param("SarStep", 0.02) \
             .SetDisplay("SAR Step", "Acceleration factor step", "Indicator")
-        self._sar_max = self.Param("SarMax", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._sar_max = self.Param("SarMax", 0.2) \
             .SetDisplay("SAR Max", "Maximum acceleration factor", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -43,6 +43,8 @@ class psar_bug6_strategy(Strategy):
     def OnStarted(self, time):
         super(psar_bug6_strategy, self).OnStarted(time)
         psar = ParabolicSar()
+        psar.AccelerationStep = self.sar_step
+        psar.AccelerationMax = self.sar_max
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(psar, self.on_process).Start()
         area = self.CreateChartArea()
@@ -62,11 +64,13 @@ class psar_bug6_strategy(Strategy):
         cross_up = close > sar and self._prev_close <= self._prev_sar
         cross_down = close < sar and self._prev_close >= self._prev_sar
         if cross_up and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         elif cross_down and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_sar = sar
         self._prev_close = close
 

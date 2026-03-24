@@ -66,10 +66,16 @@ class weighted_ichimoku_strategy(Strategy):
     def on_process(self, candle, value):
         if candle.State != CandleStates.Finished:
             return
-        tenkan = float(value.Tenkan)
-        kijun = float(value.Kijun)
-        senkou_a = float(value.SenkouA)
-        senkou_b = float(value.SenkouB)
+        t = value.Tenkan
+        k = value.Kijun
+        sa = value.SenkouA
+        sb = value.SenkouB
+        if t is None or k is None or sa is None or sb is None:
+            return
+        tenkan = float(t)
+        kijun = float(k)
+        senkou_a = float(sa)
+        senkou_b = float(sb)
         if tenkan == 0 or kijun == 0 or senkou_a == 0 or senkou_b == 0:
             return
         cloud_top = max(senkou_a, senkou_b)

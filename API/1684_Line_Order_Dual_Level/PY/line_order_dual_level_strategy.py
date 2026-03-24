@@ -16,7 +16,7 @@ class line_order_dual_level_strategy(Strategy):
             .SetDisplay("SMA Period", "SMA period", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period", "Indicators")
-        self._atr_mult = self.Param("AtrMult", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._atr_mult = self.Param("AtrMult", 1.0) \
             .SetDisplay("ATR Mult", "ATR multiplier for levels", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -59,18 +59,21 @@ class line_order_dual_level_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if atr_val <= 0:
-            close = candle.ClosePrice
+            return
+        close = candle.ClosePrice
         upper_level = sma_val + atr_val * self.atr_mult
         lower_level = sma_val - atr_val * self.atr_mult
         # Breakout above upper level => long
         if close > upper_level and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._entry_price = close
         # Breakout below lower level => short
         elif close < lower_level and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._entry_price = close
         # Exit long at SMA or if loss > 2*ATR
         elif self.Position > 0:

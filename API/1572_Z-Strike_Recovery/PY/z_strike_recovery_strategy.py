@@ -22,6 +22,7 @@ class z_strike_recovery_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_close = 0.0
         self._bars_in_position = 0
+        self._changes = []
 
     @property
     def z_length(self):
@@ -43,6 +44,7 @@ class z_strike_recovery_strategy(Strategy):
         super(z_strike_recovery_strategy, self).OnReseted()
         self._prev_close = 0.0
         self._bars_in_position = 0
+        self._changes = []
 
     def OnStarted(self, time):
         super(z_strike_recovery_strategy, self).OnStarted(time)
@@ -58,39 +60,37 @@ class z_strike_recovery_strategy(Strategy):
     def on_process(self, candle, _dummy):
         if candle.State != CandleStates.Finished:
             return
+        close = float(candle.ClosePrice)
         if self._prev_close == 0:
-            self._prev_close = candle.ClosePrice
+            self._prev_close = close
             return
-        change = candle.ClosePrice - self._prev_close
-        self._prev_close = candle.ClosePrice
+        change = close - self._prev_close
+        self._prev_close = close
         self._changes.append(change)
-        if len(self._changes) > self.z_length * 2:
+        zl = int(self.z_length)
+        while len(self._changes) > zl * 2:
             self._changes.pop(0)
-        # Position management: exit after N bars
         if self.Position != 0:
             self._bars_in_position += 1
-            if self._bars_in_position >= self.exit_periods:
+            if self._bars_in_position >= int(self.exit_periods):
                 if self.Position > 0:
                     self.SellMarket()
                 else:
                     self.BuyMarket()
                 self._bars_in_position = 0
-        if len(self._changes) < self.z_length:
+        if len(self._changes) < zl:
             return
-        # Compute Z-score
-        recent = self._changes.Skip(len(self._changes) - self.z_length).ToList()
-        mean = recent.Average()
-        sum_sq = recent.Sum(v => (v - mean) * (v - mean))
-        std = float(Math.Sqrt((double)(sum_sq / self.z_length)))
+        recent = self._changes[-zl:]
+        mean = sum(recent) / zl
+        sum_sq = sum((v - mean) * (v - mean) for v in recent)
+        std = Math.Sqrt(float(sum_sq / zl))
         if std == 0:
             return
         z = (change - mean) / std
-        # Entry: Z-score spike above threshold (strong upward move)
-        if z > self.z_threshold and self.Position == 0:
+        if z > float(self.z_threshold) and self.Position == 0:
             self.BuyMarket()
             self._bars_in_position = 0
-        # Also allow short on extreme negative Z-score
-        elif z < -self.z_threshold and self.Position == 0:
+        elif z < -float(self.z_threshold) and self.Position == 0:
             self.SellMarket()
             self._bars_in_position = 0
 

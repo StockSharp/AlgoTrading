@@ -16,7 +16,7 @@ class lego4_beta_strategy(Strategy):
             .SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
         self._slow_ma_length = self.Param("SlowMaLength", 20) \
             .SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-        self._rsi_period = self.Param("RsiPeriod", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -65,21 +65,30 @@ class lego4_beta_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if not self._has_prev:
-            # EMA cross up + RSI not overbought => long
+            self._prev_fast = fast
+            self._prev_slow = slow
+            self._has_prev = True
+            return
+        # EMA cross up + RSI not overbought => long
         if self._prev_fast <= self._prev_slow and fast > slow and rsi < 70:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0) BuyMarket(:
-            # EMA cross down + RSI not oversold => short
+            if self.Position < 0:
+                self.BuyMarket()
+            if self.Position <= 0:
+                self.BuyMarket()
+        # EMA cross down + RSI not oversold => short
         elif self._prev_fast >= self._prev_slow and fast < slow and rsi > 30:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0) SellMarket(:
-            # RSI exit: overbought close long
+            if self.Position > 0:
+                self.SellMarket()
+            if self.Position >= 0:
+                self.SellMarket()
+        # RSI exit: overbought close long
         elif self.Position > 0 and rsi > 75:
             self.SellMarket()
         # RSI exit: oversold close short
         elif self.Position < 0 and rsi < 25:
             self.BuyMarket()
-        self._prev_fast = fast; self._prev_slow = slow
+        self._prev_fast = fast
+        self._prev_slow = slow
 
     def CreateClone(self):
         return lego4_beta_strategy()

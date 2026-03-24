@@ -14,7 +14,7 @@ class ema_plus_wpr_v2_strategy(Strategy):
         super(ema_plus_wpr_v2_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 20) \
             .SetDisplay("EMA Length", "EMA period", "Indicators")
-        self._wpr_length = self.Param("WprLength", TimeSpan.FromHours(4)) \
+        self._wpr_length = self.Param("WprLength", 14) \
             .SetDisplay("WPR Length", "Williams %R period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

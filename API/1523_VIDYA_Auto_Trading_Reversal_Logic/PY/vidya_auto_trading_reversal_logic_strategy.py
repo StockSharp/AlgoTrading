@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange
+from StockSharp.Algo.Indicators import AverageTrueRange, ChandeMomentumOscillator
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -16,7 +16,7 @@ class vidya_auto_trading_reversal_logic_strategy(Strategy):
             .SetDisplay("VIDYA Length", "Length of VIDYA", "General")
         self._vidya_momentum = self.Param("VidyaMomentum", 20) \
             .SetDisplay("Momentum Length", "Length for momentum", "General")
-        self._band_distance = self.Param("BandDistance", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._band_distance = self.Param("BandDistance", 3.0) \
             .SetDisplay("Band Distance", "ATR multiplier for bands", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -66,17 +66,20 @@ class vidya_auto_trading_reversal_logic_strategy(Strategy):
     def on_process(self, candle, cmo_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
+        cmo_value = float(cmo_value)
+        atr_value = float(atr_value)
+        close = float(candle.ClosePrice)
         if self._cooldown > 0:
             self._cooldown -= 1
-        alpha = 2 / (self.vidya_length + 1)
+        alpha = 2.0 / (self.vidya_length + 1)
         abs_cmo = abs(cmo_value)
-        prev = (self._vidya if self._vidya is not None else candle.ClosePrice)
-        self._vidya = alpha * abs_cmo / 100 * candle.ClosePrice + (1 - alpha * abs_cmo / 100) * prev
-        upper = self._vidya + atr_value * self.band_distance
-        lower = self._vidya - atr_value * self.band_distance
+        prev = (self._vidya if self._vidya != 0.0 else close)
+        self._vidya = alpha * abs_cmo / 100.0 * close + (1 - alpha * abs_cmo / 100.0) * prev
+        upper = self._vidya + atr_value * float(self.band_distance)
+        lower = self._vidya - atr_value * float(self.band_distance)
         if self._prev_close != 0 and self._cooldown <= 0:
-            trend_cross_up = self._prev_close <= self._prev_upper and candle.ClosePrice > upper
-            trend_cross_down = self._prev_close >= self._prev_lower and candle.ClosePrice < lower
+            trend_cross_up = self._prev_close <= self._prev_upper and close > upper
+            trend_cross_down = self._prev_close >= self._prev_lower and close < lower
             if trend_cross_up and self.Position <= 0:
                 self.BuyMarket()
                 self._cooldown = 25
@@ -85,7 +88,7 @@ class vidya_auto_trading_reversal_logic_strategy(Strategy):
                 self._cooldown = 25
         self._prev_upper = upper
         self._prev_lower = lower
-        self._prev_close = candle.ClosePrice
+        self._prev_close = close
 
     def CreateClone(self):
         return vidya_auto_trading_reversal_logic_strategy()

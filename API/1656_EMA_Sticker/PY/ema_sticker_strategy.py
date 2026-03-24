@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class ema_sticker_strategy(Strategy):
     def __init__(self):
         super(ema_sticker_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", TimeSpan.FromHours(4)) \
+        self._ma_period = self.Param("MaPeriod", 10) \
             .SetDisplay("EMA Period", "Length of the EMA", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

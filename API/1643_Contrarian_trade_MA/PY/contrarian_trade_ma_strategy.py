@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -14,7 +14,7 @@ class contrarian_trade_ma_strategy(Strategy):
         super(contrarian_trade_ma_strategy, self).__init__()
         self._calc_period = self.Param("CalcPeriod", 10) \
             .SetDisplay("Calc Period", "Lookback period for extremes", "General")
-        self._ma_period = self.Param("MaPeriod", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._ma_period = self.Param("MaPeriod", 20) \
             .SetDisplay("MA Period", "Moving average period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")

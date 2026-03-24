@@ -14,7 +14,7 @@ class ema_sar_power_strategy(Strategy):
         super(ema_sar_power_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 3) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_length = self.Param("SlowLength", TimeSpan.FromHours(4)) \
+        self._slow_length = self.Param("SlowLength", 34) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

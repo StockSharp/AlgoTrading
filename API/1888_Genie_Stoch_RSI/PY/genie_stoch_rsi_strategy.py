@@ -30,7 +30,6 @@ class genie_stoch_rsi_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
-        self._rsi = None
         self._prev_k = 0.0
         self._prev_d = 0.0
         self._initialized = False
@@ -75,35 +74,32 @@ class genie_stoch_rsi_strategy(Strategy):
 
     def OnStarted(self, time):
         super(genie_stoch_rsi_strategy, self).OnStarted(time)
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.rsi_period
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self.rsi_period
         stochastic = StochasticOscillator()
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(stochastic, self.process_candle).Start()
+        subscription.BindEx(stochastic, rsi, self.process_candle).Start()
 
         self.StartProtection(
             Unit(float(self.take_profit), UnitTypes.Absolute),
             Unit(float(self.trailing_stop), UnitTypes.Absolute),
-            True)
+            isStopTrailing=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._rsi)
+            self.DrawIndicator(area, rsi)
             self.DrawOwnTrades(area)
 
-    def process_candle(self, candle, stoch_value):
+    def process_candle(self, candle, stoch_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Process RSI manually
-        rsi_result = self._rsi.Process(candle.ClosePrice, candle.OpenTime, True)
-
-        if not self._rsi.IsFormed:
+        if not stoch_value.IsFinal or not rsi_value.IsFinal:
             return
 
-        rsi_val = float(rsi_result)
+        rsi_val = float(rsi_value)
 
         k_val = stoch_value.K
         d_val = stoch_value.D

@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class third_generation_xma_reversal_strategy(Strategy):
     def __init__(self):
         super(third_generation_xma_reversal_strategy, self).__init__()
-        self._ma_length = self.Param("MaLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._ma_length = self.Param("MaLength", 50) \
             .SetDisplay("MA Length", "Base length for the moving average", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
@@ -39,7 +39,8 @@ class third_generation_xma_reversal_strategy(Strategy):
         ema1 = ExponentialMovingAverage()
         ema1.Length = self.ma_length
         ema2 = ExponentialMovingAverage()
-        ema2.Length = self.ma_length
+        half = int(self.ma_length / 2)
+        ema2.Length = half if half > 0 else 10
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(ema1, ema2, self.on_process).Start()
         area = self.CreateChartArea()
@@ -56,12 +57,14 @@ class third_generation_xma_reversal_strategy(Strategy):
         if self._bar_count >= 3:
             # Local minimum => buy
             if self._prev1 < self._prev2 and xma > self._prev1 and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             # Local maximum => sell
             elif self._prev1 > self._prev2 and xma < self._prev1 and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         self._prev2 = self._prev1
         self._prev1 = xma
 

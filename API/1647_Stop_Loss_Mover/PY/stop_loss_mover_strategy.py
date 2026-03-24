@@ -16,7 +16,7 @@ class stop_loss_mover_strategy(Strategy):
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_length = self.Param("SlowLength", 30) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._stop_mult = self.Param("StopMult", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._stop_mult = self.Param("StopMult", 1.5) \
             .SetDisplay("Stop Mult", "StdDev multiplier for initial stop", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

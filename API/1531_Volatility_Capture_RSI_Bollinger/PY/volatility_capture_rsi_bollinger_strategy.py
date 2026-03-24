@@ -20,7 +20,7 @@ class volatility_capture_rsi_bollinger_strategy(Strategy):
             .SetDisplay("RSI Length", "RSI period", "Indicators")
         self._rsi_buy = self.Param("RsiBuy", 55) \
             .SetDisplay("RSI Buy", "RSI above for buy signal", "Levels")
-        self._rsi_sell = self.Param("RsiSell", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._rsi_sell = self.Param("RsiSell", 50.0) \
             .SetDisplay("RSI Sell", "RSI below for sell signal", "Levels")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

@@ -14,7 +14,7 @@ class three_parabolic_sar_strategy(Strategy):
         super(three_parabolic_sar_strategy, self).__init__()
         self._fast_acceleration = self.Param("FastAcceleration", 0.04) \
             .SetDisplay("Fast Acceleration", "Fast SAR acceleration", "SAR")
-        self._slow_acceleration = self.Param("SlowAcceleration", TimeSpan.FromHours(4)) \
+        self._slow_acceleration = self.Param("SlowAcceleration", 0.01) \
             .SetDisplay("Slow Acceleration", "Slow SAR acceleration", "SAR")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -43,7 +43,11 @@ class three_parabolic_sar_strategy(Strategy):
     def OnStarted(self, time):
         super(three_parabolic_sar_strategy, self).OnStarted(time)
         fast_sar = ParabolicSar()
+        fast_sar.Acceleration = self.fast_acceleration
+        fast_sar.AccelerationMax = 0.2
         slow_sar = ParabolicSar()
+        slow_sar.Acceleration = self.slow_acceleration
+        slow_sar.AccelerationMax = 0.1
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(fast_sar, slow_sar, self.on_process).Start()
         area = self.CreateChartArea()
@@ -63,12 +67,14 @@ class three_parabolic_sar_strategy(Strategy):
             return
         # Buy when both SAR levels flip bullish
         if fast_above and slow_above and (not self._prev_fast_above or not self._prev_slow_above) and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Sell when both SAR levels flip bearish
         elif not fast_above and not slow_above and (self._prev_fast_above or self._prev_slow_above) and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         # Exit long if slow SAR turns bearish
         elif self.Position > 0 and not slow_above:
             self.SellMarket()

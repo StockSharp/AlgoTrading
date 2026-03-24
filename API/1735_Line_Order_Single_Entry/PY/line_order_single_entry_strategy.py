@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class line_order_single_entry_strategy(Strategy):
     def __init__(self):
         super(line_order_single_entry_strategy, self).__init__()
-        self._sma_length = self.Param("SmaLength", TimeSpan.FromHours(4)) \
+        self._sma_length = self.Param("SmaLength", 20) \
             .SetDisplay("SMA Length", "Moving average period", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

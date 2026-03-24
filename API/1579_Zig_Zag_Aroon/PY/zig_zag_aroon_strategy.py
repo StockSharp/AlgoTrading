@@ -18,6 +18,8 @@ class zig_zag_aroon_strategy(Strategy):
             .SetDisplay("Aroon Period", "Aroon indicator period", "Aroon")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._highs = []
+        self._lows = []
         self._last_zigzag_high = 0.0
         self._last_zigzag_low = 0.0
         self._direction = 0
@@ -38,6 +40,8 @@ class zig_zag_aroon_strategy(Strategy):
 
     def OnReseted(self):
         super(zig_zag_aroon_strategy, self).OnReseted()
+        self._highs = []
+        self._lows = []
         self._last_zigzag_high = 0.0
         self._last_zigzag_low = 0.0
         self._direction = 0
@@ -60,17 +64,18 @@ class zig_zag_aroon_strategy(Strategy):
             return
         self._highs.append(candle.HighPrice)
         self._lows.append(candle.LowPrice)
-        max_len = max(self.zig_zag_depth, self.aroon_length) + 2
+        max_len = max(int(self.zig_zag_depth), int(self.aroon_length)) + 2
         if len(self._highs) > max_len * 2:
             self._highs.pop(0)
             self._lows.pop(0)
-        if len(self._highs) < self.zig_zag_depth:
+        if len(self._highs) < int(self.zig_zag_depth):
             return
         # Manual highest/lowest over ZigZagDepth
-        recent_highs = self._highs.Skip(len(self._highs) - self.zig_zag_depth)
-        recent_lows = self._lows.Skip(len(self._lows) - self.zig_zag_depth)
-        highest = recent_highs.Max()
-        lowest = recent_lows.Min()
+        depth = int(self.zig_zag_depth)
+        recent_highs = self._highs[-depth:]
+        recent_lows = self._lows[-depth:]
+        highest = max(recent_highs)
+        lowest = min(recent_lows)
         # ZigZag direction
         if candle.HighPrice >= highest and self._direction != 1:
             self._last_zigzag_high = candle.HighPrice
@@ -78,21 +83,24 @@ class zig_zag_aroon_strategy(Strategy):
         elif candle.LowPrice <= lowest and self._direction != -1:
             self._last_zigzag_low = candle.LowPrice
             self._direction = -1
-        if len(self._highs) < self.aroon_length + 1:
+        al = int(self.aroon_length)
+        if len(self._highs) < al + 1:
             return
         # Manual Aroon calculation
-        count = self.aroon_length + 1
+        count = al + 1
         if len(self._highs) < count or len(self._lows) < count:
             return
-        aroon_highs = self._highs.GetRange(len(self._highs) - count, count)
-        aroon_lows = self._lows.GetRange(len(self._lows) - count, count)
+        aroon_highs = self._highs[-count:]
+        aroon_lows = self._lows[-count:]
         highest_idx = 0
         lowest_idx = 0
-        # for (int i = 1; i < count; i++)
+        for i in range(1, count):
             if aroon_highs[i] >= aroon_highs[highest_idx]:
-                if aroon_lows[i] <= aroon_lows[lowest_idx]:
-            aroon_up = 100 * highest_idx / self.aroon_length
-        aroon_down = 100 * lowest_idx / self.aroon_length
+                highest_idx = i
+            if aroon_lows[i] <= aroon_lows[lowest_idx]:
+                lowest_idx = i
+        aroon_up = 100.0 * highest_idx / al
+        aroon_down = 100.0 * lowest_idx / al
         # Aroon crossover
         cross_up = self._prev_aroon_up <= self._prev_aroon_down and aroon_up > aroon_down
         cross_down = self._prev_aroon_down <= self._prev_aroon_up and aroon_down > aroon_up

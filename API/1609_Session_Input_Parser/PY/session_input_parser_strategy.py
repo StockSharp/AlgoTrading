@@ -14,7 +14,7 @@ class session_input_parser_strategy(Strategy):
         super(session_input_parser_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 10) \
             .SetDisplay("Fast EMA", "Fast EMA length", "General")
-        self._slow_length = self.Param("SlowLength", TimeSpan.FromHours(4)) \
+        self._slow_length = self.Param("SlowLength", 30) \
             .SetDisplay("Slow EMA", "Slow EMA length", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

@@ -14,7 +14,7 @@ class three_commas_ha_ma_strategy(Strategy):
         super(three_commas_ha_ma_strategy, self).__init__()
         self._ma_fast = self.Param("MaFast", 9) \
             .SetDisplay("MA Fast", "Fast moving average period", "MA")
-        self._ma_slow = self.Param("MaSlow", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._ma_slow = self.Param("MaSlow", 18) \
             .SetDisplay("MA Slow", "Slow moving average period", "MA")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

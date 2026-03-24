@@ -14,9 +14,9 @@ class ft_cci_strategy(Strategy):
         super(ft_cci_strategy, self).__init__()
         self._cci_period = self.Param("CciPeriod", 14) \
             .SetDisplay("CCI Period", "Averaging period for CCI", "Indicator")
-        self._upper_threshold = self.Param("UpperThreshold", 210) \
+        self._upper_threshold = self.Param("UpperThreshold", 210.0) \
             .SetDisplay("CCI Upper", "CCI level for short entries", "Indicator")
-        self._lower_threshold = self.Param("LowerThreshold", TimeSpan.FromHours(4)) \
+        self._lower_threshold = self.Param("LowerThreshold", -210.0) \
             .SetDisplay("CCI Lower", "CCI level for long entries", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

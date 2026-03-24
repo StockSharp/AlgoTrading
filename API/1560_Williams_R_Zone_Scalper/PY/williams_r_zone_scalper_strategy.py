@@ -16,10 +16,11 @@ class williams_r_zone_scalper_strategy(Strategy):
             .SetDisplay("%R Length", "Williams %R period", "General")
         self._overbought = self.Param("Overbought", -20) \
             .SetDisplay("Overbought", "Overbought level", "General")
-        self._oversold = self.Param("Oversold", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._oversold = self.Param("Oversold", -80.0) \
             .SetDisplay("Oversold", "Oversold level", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._prev_wr = 0.0
 
     @property
     def length(self):
@@ -39,6 +40,7 @@ class williams_r_zone_scalper_strategy(Strategy):
 
     def OnReseted(self):
         super(williams_r_zone_scalper_strategy, self).OnReseted()
+        self._prev_wr = 0.0
 
     def OnStarted(self, time):
         super(williams_r_zone_scalper_strategy, self).OnStarted(time)

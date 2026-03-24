@@ -12,6 +12,42 @@ from StockSharp.Algo.Strategies import Strategy
 class vwap_mean_magnet_v9_simple_alert_strategy(Strategy):
     def __init__(self):
         super(vwap_mean_magnet_v9_simple_alert_strategy, self).__init__()
+        self._vwap_length = self.Param("VwapLength", 20) \
+            .SetDisplay("VWAP Length", "VWAP Length", "General")
+        self._rsi_length = self.Param("RsiLength", 14) \
+            .SetDisplay("RSI Length", "RSI Length", "General")
+        self._rsi_overbought = self.Param("RsiOverbought", 65) \
+            .SetDisplay("RSI Overbought", "RSI Overbought", "General")
+        self._rsi_oversold = self.Param("RsiOversold", 35) \
+            .SetDisplay("RSI Oversold", "RSI Oversold", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 0.5) \
+            .SetDisplay("Stop Loss %", "Stop Loss %", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle Type", "General")
+
+    @property
+    def vwap_length(self):
+        return self._vwap_length.Value
+
+    @property
+    def rsi_length(self):
+        return self._rsi_length.Value
+
+    @property
+    def rsi_overbought(self):
+        return self._rsi_overbought.Value
+
+    @property
+    def rsi_oversold(self):
+        return self._rsi_oversold.Value
+
+    @property
+    def stop_loss_percent(self):
+        return self._stop_loss_percent.Value
+
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnStarted(self, time):
         super(vwap_mean_magnet_v9_simple_alert_strategy, self).OnStarted(time)

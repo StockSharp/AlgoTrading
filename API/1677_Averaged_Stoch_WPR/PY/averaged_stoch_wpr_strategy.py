@@ -14,7 +14,7 @@ class averaged_stoch_wpr_strategy(Strategy):
         super(averaged_stoch_wpr_strategy, self).__init__()
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
-        self._wpr_period = self.Param("WprPeriod", TimeSpan.FromHours(4)) \
+        self._wpr_period = self.Param("WprPeriod", 14) \
             .SetDisplay("WPR Period", "Williams %R period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -49,12 +49,14 @@ class averaged_stoch_wpr_strategy(Strategy):
             return
         # Buy: RSI oversold + WPR oversold
         if rsi < 30 and wpr < -80 and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Sell: RSI overbought + WPR overbought
         elif rsi > 70 and wpr > -20 and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         # Exit
         elif self.Position > 0 and rsi > 65:
             self.SellMarket()

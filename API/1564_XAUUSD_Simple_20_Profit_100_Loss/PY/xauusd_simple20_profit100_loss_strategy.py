@@ -16,7 +16,7 @@ class xauusd_simple20_profit100_loss_strategy(Strategy):
             .SetDisplay("TP %", "Take profit percent", "Risk")
         self._sl_pct = self.Param("SlPct", 1.5) \
             .SetDisplay("SL %", "Stop loss percent", "Risk")
-        self._cooldown_bars = self.Param("CooldownBars", TimeSpan.FromHours(1)) \
+        self._cooldown_bars = self.Param("CooldownBars", 100) \
             .SetDisplay("Cooldown", "Bars between trades", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

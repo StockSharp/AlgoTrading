@@ -18,7 +18,7 @@ class dnse_vn301_sma_ema_cross_strategy(Strategy):
             .SetDisplay("Close Minute", "Session close minute", "General")
         self._minutes_before_close = self.Param("MinutesBeforeClose", 5) \
             .SetDisplay("Minutes Before Close", "Exit minutes before close", "General")
-        self._max_loss_percent = self.Param("MaxLossPercent", 2) \
+        self._max_loss_percent = self.Param("MaxLossPercent", 2.0) \
             .SetDisplay("Max Loss %", "Stop loss percentage", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

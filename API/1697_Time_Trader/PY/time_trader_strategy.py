@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class time_trader_strategy(Strategy):
     def __init__(self):
         super(time_trader_strategy, self).__init__()
-        self._ema_period = self.Param("EmaPeriod", TimeSpan.FromHours(4)) \
+        self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -53,12 +53,14 @@ class time_trader_strategy(Strategy):
         close = candle.ClosePrice
         # EMA rising and price above EMA -> buy
         if ema_val > self._prev_ema and close > ema_val and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # EMA falling and price below EMA -> sell
         elif ema_val < self._prev_ema and close < ema_val and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_ema = ema_val
 
     def CreateClone(self):

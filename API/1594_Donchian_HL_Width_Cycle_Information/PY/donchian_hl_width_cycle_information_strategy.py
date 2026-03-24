@@ -5,13 +5,14 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
 class donchian_hl_width_cycle_information_strategy(Strategy):
     def __init__(self):
         super(donchian_hl_width_cycle_information_strategy, self).__init__()
-        self._length = self.Param("Length", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._length = self.Param("Length", 20) \
             .SetDisplay("Donchian Length", "Lookback for Donchian channel", "Donchian")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
@@ -37,6 +38,10 @@ class donchian_hl_width_cycle_information_strategy(Strategy):
         lowest.Length = self.length
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(highest, lowest, self.on_process).Start()
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
+        )
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)

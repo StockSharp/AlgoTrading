@@ -48,9 +48,9 @@ class tape_strategy(Strategy):
             self._last_volume = candle.TotalVolume
             return
         delta_volume = (candle.TotalVolume - self._last_volume) * Math.Sign(candle.ClosePrice - self._last_price)
-        if delta_volume > self.volume_delta_threshold and self.Position <= 0:
+        if delta_volume > self.threshold and self.Position <= 0:
             self.BuyMarket()
-        elif delta_volume < -self.volume_delta_threshold and self.Position >= 0:
+        elif delta_volume < -self.threshold and self.Position >= 0:
             self.SellMarket()
         self._last_price = candle.ClosePrice
         self._last_volume = candle.TotalVolume

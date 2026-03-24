@@ -20,10 +20,15 @@ class volume_value_when_velocity_strategy(Strategy):
             .SetDisplay("ATR Small", "Short ATR period", "Indicators")
         self._atr_big = self.Param("AtrBig", 14) \
             .SetDisplay("ATR Big", "Long ATR period", "Indicators")
-        self._distance = self.Param("Distance", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._distance = self.Param("Distance", 170) \
             .SetDisplay("Distance", "Minimum distance between breakouts", "Strategy")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._prev_volume1 = 0.0
+        self._prev_volume2 = 0.0
+        self._last_cross = 0.0
+        self._prev_cross = 0.0
+        self._bars_since_cross = 2147483647
 
     @property
     def rsi_length(self):
@@ -51,6 +56,11 @@ class volume_value_when_velocity_strategy(Strategy):
 
     def OnReseted(self):
         super(volume_value_when_velocity_strategy, self).OnReseted()
+        self._prev_volume1 = 0.0
+        self._prev_volume2 = 0.0
+        self._last_cross = 0.0
+        self._prev_cross = 0.0
+        self._bars_since_cross = 2147483647
 
     def OnStarted(self, time):
         super(volume_value_when_velocity_strategy, self).OnStarted(time)
@@ -64,6 +74,7 @@ class volume_value_when_velocity_strategy(Strategy):
         sma.Length = 13
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(rsi, atr_short, atr_long, sma, self.on_process).Start()
+        self.StartProtection(Unit(2, UnitTypes.Percent), Unit(3, UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -73,24 +84,30 @@ class volume_value_when_velocity_strategy(Strategy):
     def on_process(self, candle, rsi_value, atr_short_value, atr_long_value, sma_value):
         if candle.State != CandleStates.Finished:
             return
+        rsi_value = float(rsi_value)
+        atr_short_value = float(atr_short_value)
+        atr_long_value = float(atr_long_value)
+        sma_value = float(sma_value)
+        close = float(candle.ClosePrice)
+        vol = float(candle.TotalVolume)
         # track volumes for simple comparison
         if self._prev_volume1 == 0:
-            self._prev_volume1 = candle.TotalVolume
+            self._prev_volume1 = vol
             return
         # update bars since last SMA breakout
-        if candle.ClosePrice > sma_value:
+        if close > sma_value:
             self._bars_since_cross = 0
             self._prev_cross = self._last_cross
-            self._last_cross = candle.ClosePrice
+            self._last_cross = close
         else:
             self._bars_since_cross += 1
         prev_close_change = self._prev_cross - self._last_cross
-        was_oversold = rsi_value <= self.rsi_oversold
+        was_oversold = rsi_value <= float(self.rsi_oversold)
         atr_condition = atr_short_value < atr_long_value
-        volume_condition = candle.TotalVolume > self._prev_volume1 and self._prev_volume1 > self._prev_volume2
+        volume_condition = vol > self._prev_volume1 and self._prev_volume1 > self._prev_volume2
         self._prev_volume2 = self._prev_volume1
-        self._prev_volume1 = candle.TotalVolume
-        if volume_condition and atr_condition and was_oversold and prev_close_change > self.distance and self._bars_since_cross < 5 and self.Position <= 0:
+        self._prev_volume1 = vol
+        if volume_condition and atr_condition and was_oversold and prev_close_change > float(self.distance) and self._bars_since_cross < 5 and self.Position <= 0:
             self.BuyMarket()
 
     def CreateClone(self):

@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import StandardDeviation
+from StockSharp.Algo.Indicators import Highest, Lowest, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -72,27 +72,31 @@ class trade_channel_strategy(Strategy):
         close = candle.ClosePrice
         # Breakout above channel => long
         if close >= self._prev_upper and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._stop_price = lower - atr_val
         # Breakout below channel => short
         elif close <= self._prev_lower and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._stop_price = upper + atr_val
         # Manage long
         elif self.Position > 0:
             # Trailing stop
             new_stop = close - atr_val * 2
             if new_stop > self._stop_price:
-                if candle.LowPrice <= self._stop_price:
+                self._stop_price = new_stop
+            if candle.LowPrice <= self._stop_price:
                 self.SellMarket()
                 self._stop_price = 0
         # Manage short
         elif self.Position < 0:
             new_stop = close + atr_val * 2
             if new_stop < self._stop_price:
-                if candle.HighPrice >= self._stop_price:
+                self._stop_price = new_stop
+            if candle.HighPrice >= self._stop_price:
                 self.BuyMarket()
                 self._stop_price = 0
         self._prev_upper = upper

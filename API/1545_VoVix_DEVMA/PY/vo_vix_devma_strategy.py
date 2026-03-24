@@ -110,14 +110,14 @@ class vo_vix_devma_strategy(Strategy):
         ema_val = float(ema_value)
         close = float(candle.ClosePrice)
         if self.Position > 0 and self._entry_price > 0 and self._stop_dist > 0:
-            if close <= self._entry_price - self._stop_dist or close >= self._entry_price + self._stop_dist * self.tp_mult:
-                self.SellMarket()
+            if close <= self._entry_price - self._stop_dist or close >= self._entry_price + self._stop_dist * float(self.tp_mult):
+                self.SellMarket(self.Position)
                 self._entry_price = 0.0
                 self._stop_dist = 0.0
                 self._cooldown_remaining = self.signal_cooldown_bars
         elif self.Position < 0 and self._entry_price > 0 and self._stop_dist > 0:
-            if close >= self._entry_price + self._stop_dist or close <= self._entry_price - self._stop_dist * self.tp_mult:
-                self.BuyMarket()
+            if close >= self._entry_price + self._stop_dist or close <= self._entry_price - self._stop_dist * float(self.tp_mult):
+                self.BuyMarket(-self.Position)
                 self._entry_price = 0.0
                 self._stop_dist = 0.0
                 self._cooldown_remaining = self.signal_cooldown_bars
@@ -130,14 +130,14 @@ class vo_vix_devma_strategy(Strategy):
         bull_cross = self._cooldown_remaining == 0 and was_contracting and vol_expanding and close > ema_val
         bear_cross = self._cooldown_remaining == 0 and was_contracting and vol_expanding and close < ema_val
         if bull_cross and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
             self._entry_price = close
-            self._stop_dist = close * self.stop_pct / 100.0
+            self._stop_dist = close * float(self.stop_pct) / 100.0
             self._cooldown_remaining = self.signal_cooldown_bars
         elif bear_cross and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
             self._entry_price = close
-            self._stop_dist = close * self.stop_pct / 100.0
+            self._stop_dist = close * float(self.stop_pct) / 100.0
             self._cooldown_remaining = self.signal_cooldown_bars
         self._prev_fast_std = fast_std_val
         self._prev_slow_std = slow_std_val

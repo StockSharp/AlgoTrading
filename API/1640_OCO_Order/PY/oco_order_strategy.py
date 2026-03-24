@@ -14,12 +14,12 @@ class oco_order_strategy(Strategy):
         super(oco_order_strategy, self).__init__()
         self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetDisplay("Lookback", "Bars for high/low calculation", "General")
-        self._std_multiplier = self.Param("StdMultiplier", TimeSpan.FromHours(4)) \
+        self._std_multiplier = self.Param("StdMultiplier", 1.5) \
             .SetDisplay("StdDev Multiplier", "Multiplier for SL/TP distance", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._recent_high = 0.0
-        self._recent_low = 0.0
+        self._recent_low = 1e18
         self._entry_price = 0.0
         self._bar_count = 0
 
@@ -38,7 +38,7 @@ class oco_order_strategy(Strategy):
     def OnReseted(self):
         super(oco_order_strategy, self).OnReseted()
         self._recent_high = 0.0
-        self._recent_low = 0.0
+        self._recent_low = 1e18
         self._entry_price = 0.0
         self._bar_count = 0
 

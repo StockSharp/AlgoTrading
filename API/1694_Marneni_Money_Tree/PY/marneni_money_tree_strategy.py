@@ -14,10 +14,11 @@ class marneni_money_tree_strategy(Strategy):
         super(marneni_money_tree_strategy, self).__init__()
         self._sma_period = self.Param("SmaPeriod", 20) \
             .SetDisplay("SMA Period", "SMA length", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", TimeSpan.FromHours(4)) \
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR for stops", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._sma_buffer = [0.0] * 31
         self._buffer_index = 0
         self._values_count = 0
 
@@ -35,6 +36,7 @@ class marneni_money_tree_strategy(Strategy):
 
     def OnReseted(self):
         super(marneni_money_tree_strategy, self).OnReseted()
+        self._sma_buffer = [0.0] * 31
         self._buffer_index = 0
         self._values_count = 0
 
@@ -54,14 +56,18 @@ class marneni_money_tree_strategy(Strategy):
     def on_process(self, candle, sma_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
+        buf_len = len(self._sma_buffer)
         self._sma_buffer[self._buffer_index] = sma_value
-        self._buffer_index = (self._buffer_index + 1) % self._sma_buffer.Length
-        if self._values_count < self._sma_buffer.Length:
-            if self._values_count < self._sma_buffer.Length:
-            if atr_value <= 0:
-            idx_current = (self._buffer_index - 1 + self._sma_buffer.Length) % self._sma_buffer.Length
-        idx_shift4 = (self._buffer_index - 5 + self._sma_buffer.Length) % self._sma_buffer.Length
-        idx_shift30 = self._buffer_index % self._sma_buffer.Length
+        self._buffer_index = (self._buffer_index + 1) % buf_len
+        if self._values_count < buf_len:
+            self._values_count += 1
+        if self._values_count < buf_len:
+            return
+        if atr_value <= 0:
+            return
+        idx_current = (self._buffer_index - 1 + buf_len) % buf_len
+        idx_shift4 = (self._buffer_index - 5 + buf_len) % buf_len
+        idx_shift30 = self._buffer_index % buf_len
         ma = self._sma_buffer[idx_shift4]
         ma1 = self._sma_buffer[idx_current]
         ma2 = self._sma_buffer[idx_shift30]

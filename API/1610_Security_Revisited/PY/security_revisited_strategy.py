@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class security_revisited_strategy(Strategy):
     def __init__(self):
         super(security_revisited_strategy, self).__init__()
-        self._ema_length = self.Param("EmaLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._ema_length = self.Param("EmaLength", 20) \
             .SetDisplay("EMA Length", "EMA period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

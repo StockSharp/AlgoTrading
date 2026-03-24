@@ -68,6 +68,8 @@ class zero_lag_macd_strategy(Strategy):
             return
         if not macd_value.IsFinal:
             return
+        if macd_value.Macd is None or macd_value.Signal is None:
+            return
         macd_line = float(macd_value.Macd)
         signal_line = float(macd_value.Signal)
         if self._has_prev:

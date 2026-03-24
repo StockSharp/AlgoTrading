@@ -20,7 +20,7 @@ class ultimate_trading_bot_strategy(Strategy):
             .SetDisplay("RSI Oversold", "Oversold level", "General")
         self._fast_ema_length = self.Param("FastEmaLength", 8) \
             .SetDisplay("Fast EMA", "Fast EMA period", "General")
-        self._slow_ema_length = self.Param("SlowEmaLength", TimeSpan.FromMinutes(5)) \
+        self._slow_ema_length = self.Param("SlowEmaLength", 21) \
             .SetDisplay("Slow EMA", "Slow EMA period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")
@@ -67,7 +67,7 @@ class ultimate_trading_bot_strategy(Strategy):
         ema_fast = ExponentialMovingAverage()
         ema_fast.Length = self.fast_ema_length
         ema_slow = ExponentialMovingAverage()
-        ema_slow.Length = int(self.slow_ema_length)
+        ema_slow.Length = self.slow_ema_length
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(rsi, ema_fast, ema_slow, self.on_process).Start()
         area = self.CreateChartArea()

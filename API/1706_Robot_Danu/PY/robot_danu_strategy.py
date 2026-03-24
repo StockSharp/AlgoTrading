@@ -5,6 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -89,9 +90,13 @@ class robot_danu_strategy(Strategy):
             self._slow_direction = -1
         # Trading logic: compare fast and slow pivots
         if self._last_fast > self._last_slow and self.Position >= 0:
-            { if (self.Position > 0) SellMarket(); SellMarket(); }
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
         elif self._last_fast < self._last_slow and self.Position <= 0:
-            { if (self.Position < 0) BuyMarket(); BuyMarket(); }
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
 
     def CreateClone(self):
         return robot_danu_strategy()

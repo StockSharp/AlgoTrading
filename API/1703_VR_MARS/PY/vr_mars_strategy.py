@@ -14,7 +14,7 @@ class vr_mars_strategy(Strategy):
         super(vr_mars_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 5) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", TimeSpan.FromHours(4)) \
+        self._slow_period = self.Param("SlowPeriod", 20) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -57,13 +57,22 @@ class vr_mars_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if not self._has_prev:
-            if self._prev_fast <= self._prev_slow and fast > slow:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0) BuyMarket(:
-            elif self._prev_fast >= self._prev_slow and fast < slow:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0) SellMarket(:
-            self._prev_fast = fast; self._prev_slow = slow
+            self._prev_fast = fast
+            self._prev_slow = slow
+            self._has_prev = True
+            return
+        if self._prev_fast <= self._prev_slow and fast > slow:
+            if self.Position < 0:
+                self.BuyMarket()
+            if self.Position <= 0:
+                self.BuyMarket()
+        elif self._prev_fast >= self._prev_slow and fast < slow:
+            if self.Position > 0:
+                self.SellMarket()
+            if self.Position >= 0:
+                self.SellMarket()
+        self._prev_fast = fast
+        self._prev_slow = slow
 
     def CreateClone(self):
         return vr_mars_strategy()

@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -68,12 +68,12 @@ class short_only10_bar_low_pullback_strategy(Strategy):
             self._prev_low = candle.LowPrice
             self._is_ready = True
             return
-        range = candle.HighPrice - candle.LowPrice
-        if range == 0:
+        rng = candle.HighPrice - candle.LowPrice
+        if rng == 0:
             self._prev_lowest = lowest_val
             self._prev_low = candle.LowPrice
             return
-        ibs = (candle.ClosePrice - candle.LowPrice) / range
+        ibs = (candle.ClosePrice - candle.LowPrice) / rng
         # Short: new low breakout with high IBS and below EMA
         short_condition = candle.LowPrice < self._prev_lowest and ibs > self.ibs_threshold and candle.ClosePrice < ema_val
         if short_condition and self.Position >= 0:

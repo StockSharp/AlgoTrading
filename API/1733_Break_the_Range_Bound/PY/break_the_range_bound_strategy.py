@@ -14,7 +14,7 @@ class break_the_range_bound_strategy(Strategy):
         super(break_the_range_bound_strategy, self).__init__()
         self._fast_sma = self.Param("FastSma", 10) \
             .SetDisplay("Fast SMA", "Fast moving average period", "Parameters")
-        self._slow_sma = self.Param("SlowSma", TimeSpan.FromHours(4)) \
+        self._slow_sma = self.Param("SlowSma", 50) \
             .SetDisplay("Slow SMA", "Slow moving average period", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -67,12 +67,14 @@ class break_the_range_bound_strategy(Strategy):
             return
         # Cross above slow SMA => buy breakout
         if self._prev_close <= self._prev_slow and close > slow_value and fast_value > slow_value and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Cross below slow SMA => sell breakout
         elif self._prev_close >= self._prev_slow and close < slow_value and fast_value < slow_value and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_fast = fast_value
         self._prev_slow = slow_value
         self._prev_close = close

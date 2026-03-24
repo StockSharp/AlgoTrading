@@ -67,12 +67,14 @@ class high_low_ma_breakout_strategy(Strategy):
             return
         # Cross above high MA => buy
         if self._prev_close <= self._prev_ma_high and close > ma_high and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Cross below low MA => sell
         elif self._prev_close >= self._prev_ma_low and close < ma_low and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_close = close
         self._prev_ma_high = ma_high
         self._prev_ma_low = ma_low

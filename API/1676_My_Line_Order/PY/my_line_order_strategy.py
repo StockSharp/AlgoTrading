@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class my_line_order_strategy(Strategy):
     def __init__(self):
         super(my_line_order_strategy, self).__init__()
-        self._sma_length = self.Param("SmaLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._sma_length = self.Param("SmaLength", 14) \
             .SetDisplay("SMA", "SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -56,13 +56,17 @@ class my_line_order_strategy(Strategy):
             return
         # Cross above SMA
         if self._prev_close <= self._prev_sma and close > sma:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0) BuyMarket(:
-            # Cross below SMA
+            if self.Position < 0:
+                self.BuyMarket()
+            if self.Position <= 0:
+                self.BuyMarket()
+        # Cross below SMA
         elif self._prev_close >= self._prev_sma and close < sma:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0) SellMarket(:
-            self._prev_close = close
+            if self.Position > 0:
+                self.SellMarket()
+            if self.Position >= 0:
+                self.SellMarket()
+        self._prev_close = close
         self._prev_sma = sma
 
     def CreateClone(self):

@@ -61,11 +61,13 @@ class exp_x2_ma_strategy(Strategy):
             is_local_min = self._prev_value < self._prev_prev_value and ema2_value > self._prev_value
             is_local_max = self._prev_value > self._prev_prev_value and ema2_value < self._prev_value
             if is_local_min and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             elif is_local_max and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         self._prev_prev_value = self._prev_value
         self._prev_value = ema2_value
 

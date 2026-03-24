@@ -18,6 +18,8 @@ class tcp_pivot_limit_strategy(Strategy):
         self._day_low = 0.0
         self._day_close = 0.0
         self._pivot = 0.0
+        self._r1 = 0.0
+        self._s1 = 0.0
         self._entry_price = 0.0
 
     @property
@@ -31,6 +33,8 @@ class tcp_pivot_limit_strategy(Strategy):
         self._day_low = 0.0
         self._day_close = 0.0
         self._pivot = 0.0
+        self._r1 = 0.0
+        self._s1 = 0.0
         self._entry_price = 0.0
 
     def OnStarted(self, time):
@@ -47,20 +51,21 @@ class tcp_pivot_limit_strategy(Strategy):
             return
         day = candle.OpenTime.Date
         if self._current_day != day:
-            if self._current_day != 0:
-                self._pivot = (self._day_high + self._day_low + self._day_close) / 3
-                self._r1 = 2 * self._pivot - self._day_low
-                self._s1 = 2 * self._pivot - self._day_high
+            if self._current_day is not None:
+                self._pivot = (self._day_high + self._day_low + self._day_close) / 3.0
+                self._r1 = 2.0 * self._pivot - self._day_low
+                self._s1 = 2.0 * self._pivot - self._day_high
             self._current_day = day
             self._day_high = candle.HighPrice
             self._day_low = candle.LowPrice
             self._day_close = candle.ClosePrice
             return
-        self._day_high = max(self._day_high, candle.HighPrice)
-        self._day_low = min(self._day_low, candle.LowPrice)
+        self._day_high = max(float(self._day_high), float(candle.HighPrice))
+        self._day_low = min(float(self._day_low), float(candle.LowPrice))
         self._day_close = candle.ClosePrice
         if self._pivot == 0:
-            close = candle.ClosePrice
+            return
+        close = candle.ClosePrice
         if self.Position == 0:
             # Buy at support
             if close <= self._s1:

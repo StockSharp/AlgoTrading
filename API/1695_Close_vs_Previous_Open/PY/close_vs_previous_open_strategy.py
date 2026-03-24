@@ -45,19 +45,21 @@ class close_vs_previous_open_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         close = candle.ClosePrice
-        open = candle.OpenPrice
+        open_price = candle.OpenPrice
         self._bar_count += 1
         if self._bar_count >= 3 and stdev_val > 0:
             diff = self._prev_close - self._prev_prev_open
             # Only trade on significant moves (> 1 stdev)
             if diff > stdev_val and self.Position <= 0:
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
             elif diff < -stdev_val and self.Position >= 0:
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         self._prev_prev_open = self._prev_open
-        self._prev_open = open
+        self._prev_open = open_price
         self._prev_close = close
 
     def CreateClone(self):

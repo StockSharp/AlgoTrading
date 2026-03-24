@@ -16,7 +16,7 @@ class wodisma_triple_ma_crossover_strategy(Strategy):
             .SetDisplay("Fast MA", "Fast MA period", "MA")
         self._mid_length = self.Param("MidLength", 20) \
             .SetDisplay("Mid MA", "Middle MA period", "MA")
-        self._slow_length = self.Param("SlowLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._slow_length = self.Param("SlowLength", 50) \
             .SetDisplay("Slow MA", "Slow MA period", "MA")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

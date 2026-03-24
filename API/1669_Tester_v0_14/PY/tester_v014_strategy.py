@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class tester_v014_strategy(Strategy):
     def __init__(self):
         super(tester_v014_strategy, self).__init__()
-        self._bars_number = self.Param("BarsNumber", TimeSpan.FromHours(4)) \
+        self._bars_number = self.Param("BarsNumber", 3) \
             .SetDisplay("Bars Number", "Holding period in bars", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

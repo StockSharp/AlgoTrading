@@ -25,7 +25,11 @@ class scalp_rsi_strategy(Strategy):
         self._sell_tp = self.Param("SellTakeProfit", 3).SetDisplay("Sell Take Profit", "Ticks for take profit", "Sell")
         self._buy_ma_length = self.Param("BuyMaLength", 14).SetDisplay("Buy RSI Length", "RSI period for buy", "Buy")
         self._sell_ma_length = self.Param("SellMaLength", 14).SetDisplay("Sell RSI Length", "RSI period for sell", "Sell")
+        self._enable_buy = self.Param("EnableBuy", True).SetDisplay("Enable Buy", "Allow buy trades", "General")
+        self._enable_sell = self.Param("EnableSell", True).SetDisplay("Enable Sell", "Allow sell trades", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle", "Candle type", "General")
+        self._trade_delay_seconds = self.Param("TradeDelaySeconds", 360).SetDisplay("Trade Delay", "Seconds between trades", "General")
+        self._max_open_trades = self.Param("MaxOpenTrades", 3).SetDisplay("Max Trades", "Maximum open trades", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -36,13 +40,17 @@ class scalp_rsi_strategy(Strategy):
         super(scalp_rsi_strategy, self).OnReseted()
         self._buy_rsi_history = []
         self._sell_rsi_history = []
-        self._entry_price = 0
+        self._open_trades = 0
+        self._entry_price = 0.0
+        self._last_trade_time = None
 
     def OnStarted(self, time):
         super(scalp_rsi_strategy, self).OnStarted(time)
         self._buy_rsi_history = []
         self._sell_rsi_history = []
-        self._entry_price = 0
+        self._open_trades = 0
+        self._entry_price = 0.0
+        self._last_trade_time = None
         self._step = 1.0
         if self.Security is not None and self.Security.PriceStep is not None and self.Security.PriceStep > 0:
             self._step = float(self.Security.PriceStep)
@@ -61,7 +69,6 @@ class scalp_rsi_strategy(Strategy):
 
         close = float(candle.ClosePrice)
 
-        # Update RSI history
         buy_max = max(self._buy_period.Value, 1) + 1
         self._buy_rsi_history.append(buy_rsi_val)
         if len(self._buy_rsi_history) > buy_max:
@@ -77,44 +84,51 @@ class scalp_rsi_strategy(Strategy):
         sh = self._sell_rsi_history
         bp = self._buy_period.Value
         sp = self._sell_period.Value
+        now = candle.CloseTime
 
-        # Buy signal
-        buy_signal = (len(bh) > bp
+        buy_signal = (self._enable_buy.Value
+            and len(bh) > bp
             and len(bh) >= 2
             and bh[len(bh) - 1 - bp] - bh[-1] >= self._buy_movement.Value
             and bh[-2] - bh[-1] > self._buy_breakdown.Value
             and bh[-1] < self._buy_rsi_value.Value)
 
-        # Sell signal
-        sell_signal = (len(sh) > sp
+        sell_signal = (self._enable_sell.Value
+            and len(sh) > sp
             and len(sh) >= 2
             and sh[-1] - sh[len(sh) - 1 - sp] >= self._sell_movement.Value
             and sh[-1] - sh[-2] > self._sell_breakdown.Value
             and sh[-1] > self._sell_rsi_value.Value)
 
-        if buy_signal and self.Position <= 0:
+        can_trade = (self._open_trades < self._max_open_trades.Value
+            and (self._last_trade_time is None or (now - self._last_trade_time).TotalSeconds > self._trade_delay_seconds.Value))
+
+        if buy_signal and can_trade:
             self.BuyMarket()
             self._entry_price = close
-        elif sell_signal and self.Position >= 0:
+            self._last_trade_time = now
+            self._open_trades += 1
+        elif sell_signal and can_trade:
             self.SellMarket()
             self._entry_price = close
+            self._last_trade_time = now
+            self._open_trades += 1
 
-        # Manage position exits
-        if self.Position > 0 and self._entry_price > 0:
+        if self.Position > 0:
             sl = self._entry_price - self._buy_sl.Value * step
             tp = self._entry_price + self._buy_tp.Value * step
             if close <= sl or close >= tp:
                 self.SellMarket()
-                self._entry_price = 0
-        elif self.Position < 0 and self._entry_price > 0:
+                self._open_trades = max(0, self._open_trades - 1)
+        elif self.Position < 0:
             sl = self._entry_price + self._sell_sl.Value * step
             tp = self._entry_price - self._sell_tp.Value * step
             if close >= sl or close <= tp:
                 self.BuyMarket()
-                self._entry_price = 0
+                self._open_trades = max(0, self._open_trades - 1)
 
         if self.Position == 0:
-            self._entry_price = 0
+            self._open_trades = 0
 
     def CreateClone(self):
         return scalp_rsi_strategy()

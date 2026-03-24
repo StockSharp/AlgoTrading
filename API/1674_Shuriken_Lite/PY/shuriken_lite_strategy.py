@@ -14,7 +14,7 @@ class shuriken_lite_strategy(Strategy):
         super(shuriken_lite_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 14) \
             .SetDisplay("EMA", "EMA period", "Indicators")
-        self._rsi_length = self.Param("RsiLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._rsi_length = self.Param("RsiLength", 7) \
             .SetDisplay("RSI", "RSI period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -50,12 +50,14 @@ class shuriken_lite_strategy(Strategy):
         close = candle.ClosePrice
         # Buy when RSI oversold
         if rsi < 30 and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Sell when RSI overbought
         elif rsi > 70 and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
 
     def CreateClone(self):
         return shuriken_lite_strategy()

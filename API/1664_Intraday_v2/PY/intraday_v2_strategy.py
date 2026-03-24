@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class intraday_v2_strategy(Strategy):
     def __init__(self):
         super(intraday_v2_strategy, self).__init__()
-        self._band_length = self.Param("BandLength", TimeSpan.FromHours(4)) \
+        self._band_length = self.Param("BandLength", 20) \
             .SetDisplay("Band Length", "Band period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

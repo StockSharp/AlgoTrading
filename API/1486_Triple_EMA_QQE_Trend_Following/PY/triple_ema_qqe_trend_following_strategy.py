@@ -18,7 +18,7 @@ class triple_ema_qqe_trend_following_strategy(Strategy):
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_ema_length = self.Param("SlowEmaLength", 30) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._trail_pct = self.Param("TrailPct", TimeSpan.FromMinutes(5)) \
+        self._trail_pct = self.Param("TrailPct", 4.0) \
             .SetDisplay("Trail %", "Trailing stop percent", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

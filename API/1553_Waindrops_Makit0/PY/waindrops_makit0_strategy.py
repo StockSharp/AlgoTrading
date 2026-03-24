@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
+from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -40,6 +40,8 @@ class waindrops_makit0_strategy(Strategy):
 
     def OnStarted(self, time):
         super(waindrops_makit0_strategy, self).OnStarted(time)
+        self._left_vwap = VolumeWeightedMovingAverage()
+        self._right_vwap = VolumeWeightedMovingAverage()
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.on_process).Start()
         area = self.CreateChartArea()
@@ -52,15 +54,15 @@ class waindrops_makit0_strategy(Strategy):
             return
         half = self.period_minutes / 2
         if self._counter < half:
-            res = self._left_vwap.Process(candle)
+            res = self._left_vwap.Process(CandleIndicatorValue(self._left_vwap, candle))
             if res.IsEmpty:
                 return
-            self._left_value = res.ToDecimal()
+            self._left_value = float(res)
         else:
-            res = self._right_vwap.Process(candle)
+            res = self._right_vwap.Process(CandleIndicatorValue(self._right_vwap, candle))
             if res.IsEmpty:
                 return
-            self._right_value = res.ToDecimal()
+            self._right_value = float(res)
         self._counter += 1
         if self._counter == half:
             self._right_vwap.Reset()

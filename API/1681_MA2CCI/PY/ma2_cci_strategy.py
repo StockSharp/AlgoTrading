@@ -96,15 +96,17 @@ class ma2_cci_strategy(Strategy):
         was_fast_above = self._prev_fast > self._prev_slow
         # MA crossover up => long (CCI as optional filter)
         if is_fast_above and not was_fast_above:
-            if self.Position < 0) BuyMarket(:
-                if self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            if self.Position <= 0:
                 self.BuyMarket()
                 if atr_value > 0:
                     self._stop_loss = candle.ClosePrice - atr_value * 2
         # MA crossover down => short
         elif not is_fast_above and was_fast_above:
-            if self.Position > 0) SellMarket(:
-                if self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            if self.Position >= 0:
                 self.SellMarket()
                 if atr_value > 0:
                     self._stop_loss = candle.ClosePrice + atr_value * 2

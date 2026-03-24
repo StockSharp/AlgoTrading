@@ -52,7 +52,7 @@ class godbot_strategy(Strategy):
         ema = ExponentialMovingAverage()
         ema.Length = self.ma_period
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ema, self.on_ema).Start()
+        subscription.Bind(ema, self.on_ema)
         subscription.BindEx(bb, self.on_bb).Start()
         area = self.CreateChartArea()
         if area is not None:
@@ -71,10 +71,10 @@ class godbot_strategy(Strategy):
             return
         if not self._has_prev_ema:
             return
+        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
+            return
         upper = float(bb_value.UpBand)
         lower = float(bb_value.LowBand)
-        if upper == 0 or lower == 0:
-            return
         close = float(candle.ClosePrice)
         if close < lower and self.Position <= 0:
             self.BuyMarket()

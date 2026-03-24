@@ -5,7 +5,8 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex
+from System import Array
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, IIndicator, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -29,8 +30,6 @@ class rgt_rsi_bollinger_strategy(Strategy):
         self._entry_price = 0.0
         self._stop_price = 0.0
         self._is_long = False
-        self._rsi_value = 0.0
-        self._has_rsi = False
 
     @property
     def rsi_period(self):
@@ -65,8 +64,6 @@ class rgt_rsi_bollinger_strategy(Strategy):
         self._entry_price = 0.0
         self._stop_price = 0.0
         self._is_long = False
-        self._rsi_value = 0.0
-        self._has_rsi = False
 
     def OnStarted(self, time):
         super(rgt_rsi_bollinger_strategy, self).OnStarted(time)
@@ -75,39 +72,34 @@ class rgt_rsi_bollinger_strategy(Strategy):
         bb = BollingerBands()
         bb.Length = 20
         bb.Width = 2.0
+        indicators = Array[IIndicator]([rsi, bb])
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self.on_rsi).Start()
-        subscription.BindEx(bb, self.on_bb).Start()
+        subscription.BindEx(indicators, self.on_process).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bb)
             self.DrawOwnTrades(area)
 
-    def on_rsi(self, candle, rsi_val):
+    def on_process(self, candle, values):
         if candle.State != CandleStates.Finished:
             return
-        self._rsi_value = float(rsi_val)
-        self._has_rsi = True
-
-    def on_bb(self, candle, bb_value):
-        if candle.State != CandleStates.Finished:
+        if values[0].IsEmpty or values[1].IsEmpty:
             return
-        if not self._has_rsi:
+        rsi_val = IndicatorHelper.ToDecimal(values[0])
+        bb_val = values[1]
+        up = bb_val.UpBand
+        lo = bb_val.LowBand
+        if up is None or lo is None:
             return
-        upper = float(bb_value.UpBand)
-        lower = float(bb_value.LowBand)
-        if upper == 0 or lower == 0:
-            return
-        close = float(candle.ClosePrice)
-        rsi_val = self._rsi_value
+        close = candle.ClosePrice
         if self.Position == 0:
-            if rsi_val < self.rsi_low and close < lower:
+            if rsi_val < self.rsi_low and close < lo:
                 self.BuyMarket()
                 self._entry_price = close
                 self._stop_price = self._entry_price - self.stop_loss
                 self._is_long = True
-            elif rsi_val > self.rsi_high and close > upper:
+            elif rsi_val > self.rsi_high and close > up:
                 self.SellMarket()
                 self._entry_price = close
                 self._stop_price = self._entry_price + self.stop_loss

@@ -16,7 +16,7 @@ class zmfx_stolid5a_ea_strategy(Strategy):
             .SetDisplay("RSI Length", "RSI period", "Indicators")
         self._fast_ema_length = self.Param("FastEmaLength", 20) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_length = self.Param("SlowEmaLength", TimeSpan.FromHours(4)) \
+        self._slow_ema_length = self.Param("SlowEmaLength", 50) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

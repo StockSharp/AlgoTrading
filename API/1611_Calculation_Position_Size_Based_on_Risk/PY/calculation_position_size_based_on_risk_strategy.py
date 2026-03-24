@@ -14,7 +14,7 @@ class calculation_position_size_based_on_risk_strategy(Strategy):
         super(calculation_position_size_based_on_risk_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 10) \
             .SetDisplay("Fast EMA", "Fast EMA period", "General")
-        self._slow_length = self.Param("SlowLength", TimeSpan.FromHours(4)) \
+        self._slow_length = self.Param("SlowLength", 30) \
             .SetDisplay("Slow EMA", "Slow EMA period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

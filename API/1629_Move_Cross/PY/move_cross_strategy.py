@@ -16,7 +16,7 @@ class move_cross_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 24) \
             .SetDisplay("Slow Period", "Slow SMA period", "Indicators")
-        self._threshold = self.Param("Threshold", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._threshold = self.Param("Threshold", 0.5) \
             .SetDisplay("Threshold", "RAVI threshold", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

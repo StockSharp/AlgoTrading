@@ -14,7 +14,7 @@ class ttp_intelligent_accumulator_strategy(Strategy):
         super(ttp_intelligent_accumulator_strategy, self).__init__()
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI calculation length", "Indicators")
-        self._lookback = self.Param("Lookback", TimeSpan.FromMinutes(5)) \
+        self._lookback = self.Param("Lookback", 21) \
             .SetDisplay("Lookback", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -49,7 +49,7 @@ class ttp_intelligent_accumulator_strategy(Strategy):
         ema_fast = ExponentialMovingAverage()
         ema_fast.Length = 8
         ema_slow = ExponentialMovingAverage()
-        ema_slow.Length = int(self.lookback)
+        ema_slow.Length = self.lookback
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(rsi, ema_fast, ema_slow, self.on_process).Start()
         area = self.CreateChartArea()

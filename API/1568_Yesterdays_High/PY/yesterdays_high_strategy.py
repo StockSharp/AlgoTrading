@@ -79,7 +79,7 @@ class yesterdays_high_strategy(Strategy):
             return
         # Track daily highs
         date = candle.OpenTime.Date
-        if self._session_date == 0:
+        if self._session_date is None:
             self._session_date = date
             self._current_high = candle.HighPrice
         elif date > self._session_date:

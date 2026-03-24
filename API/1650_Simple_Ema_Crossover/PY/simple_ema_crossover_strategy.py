@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class simple_ema_crossover_strategy(Strategy):
     def __init__(self):
         super(simple_ema_crossover_strategy, self).__init__()
-        self._periods = self.Param("Periods", TimeSpan.FromHours(4)) \
+        self._periods = self.Param("Periods", 17) \
             .SetDisplay("EMA Period", "Period for the fast EMA", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles for analysis", "General")
@@ -39,7 +39,7 @@ class simple_ema_crossover_strategy(Strategy):
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = self.periods
         slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.periods
+        slow_ema.Length = self.periods + 10
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
         area = self.CreateChartArea()

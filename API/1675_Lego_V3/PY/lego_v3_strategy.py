@@ -14,7 +14,7 @@ class lego_v3_strategy(Strategy):
         super(lego_v3_strategy, self).__init__()
         self._fast_ma = self.Param("FastMa", 8) \
             .SetDisplay("Fast MA", "Fast EMA period", "Indicators")
-        self._slow_ma = self.Param("SlowMa", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._slow_ma = self.Param("SlowMa", 21) \
             .SetDisplay("Slow MA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -61,7 +61,8 @@ class lego_v3_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         if atr <= 0:
-            if not self._has_prev:
+            return
+        if not self._has_prev:
             self._prev_fast = fast
             self._prev_slow = slow
             self._has_prev = True
@@ -76,12 +77,14 @@ class lego_v3_strategy(Strategy):
             self._entry_price = 0
         # MA crossover
         if self._prev_fast <= self._prev_slow and fast > slow and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
             self._entry_price = close
         elif self._prev_fast >= self._prev_slow and fast < slow and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
             self._entry_price = close
         self._prev_fast = fast
         self._prev_slow = slow

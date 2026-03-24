@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -14,7 +14,7 @@ class zig_dan_zag_ultimate_investment_long_term_strategy(Strategy):
         super(zig_dan_zag_ultimate_investment_long_term_strategy, self).__init__()
         self._zigzag_depth = self.Param("ZigzagDepth", 12) \
             .SetDisplay("ZigZag Depth", "Pivot search depth", "ZigZag")
-        self._sma_length = self.Param("SmaLength", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._sma_length = self.Param("SmaLength", 50) \
             .SetDisplay("SMA Length", "Long-term trend filter", "Trend")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

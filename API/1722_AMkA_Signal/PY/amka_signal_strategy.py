@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import StandardDeviation
+from StockSharp.Algo.Indicators import StandardDeviation, KaufmanAdaptiveMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -61,13 +61,16 @@ class amka_signal_strategy(Strategy):
         delta = kama_value - self._prev_kama
         self._prev_kama = kama_value
         if stdev_value <= 0:
-            threshold = stdev_value * self.deviation_multiplier
+            return
+        threshold = stdev_value * self.deviation_multiplier
         if delta > threshold and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         elif delta < -threshold and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
 
     def CreateClone(self):
         return amka_signal_strategy()

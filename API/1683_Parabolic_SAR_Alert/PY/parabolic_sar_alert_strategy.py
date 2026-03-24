@@ -43,6 +43,8 @@ class parabolic_sar_alert_strategy(Strategy):
     def OnStarted(self, time):
         super(parabolic_sar_alert_strategy, self).OnStarted(time)
         parabolic_sar = ParabolicSar()
+        parabolic_sar.Acceleration = self.initial_acceleration
+        parabolic_sar.AccelerationMax = self.max_acceleration
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(parabolic_sar, self.on_process).Start()
         area = self.CreateChartArea()
@@ -61,11 +63,13 @@ class parabolic_sar_alert_strategy(Strategy):
         cross_up = self._prev_sar > self._prev_close and sar_value < candle.ClosePrice
         cross_down = self._prev_sar < self._prev_close and sar_value > candle.ClosePrice
         if cross_up and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         elif cross_down and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_sar = sar_value
         self._prev_close = candle.ClosePrice
 

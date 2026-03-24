@@ -43,10 +43,12 @@ class macd_cross_audusd_d1_strategy(Strategy):
     def on_process(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        macd_line = float(macd_value.Macd)
-        signal_line = float(macd_value.Signal)
-        if macd_line == 0 and signal_line == 0:
+        m = macd_value.Macd
+        s = macd_value.Signal
+        if m is None or s is None:
             return
+        macd_line = float(m)
+        signal_line = float(s)
         is_macd_above_signal = macd_line > signal_line
         if not self._has_prev:
             self._prev_is_macd_above_signal = is_macd_above_signal

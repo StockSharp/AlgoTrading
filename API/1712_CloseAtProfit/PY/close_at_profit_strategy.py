@@ -14,7 +14,7 @@ class close_at_profit_strategy(Strategy):
         super(close_at_profit_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 12) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", TimeSpan.FromHours(4)) \
+        self._slow_period = self.Param("SlowPeriod", 26) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -63,12 +63,14 @@ class close_at_profit_strategy(Strategy):
             return
         # Fast crosses above slow => buy
         if self._prev_fast <= self._prev_slow and fast > slow and self.Position <= 0:
-            if self.Position < 0) BuyMarket(:
+            if self.Position < 0:
                 self.BuyMarket()
+            self.BuyMarket()
         # Fast crosses below slow => sell
         elif self._prev_fast >= self._prev_slow and fast < slow and self.Position >= 0:
-            if self.Position > 0) SellMarket(:
+            if self.Position > 0:
                 self.SellMarket()
+            self.SellMarket()
         self._prev_fast = fast
         self._prev_slow = slow
 

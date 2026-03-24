@@ -39,7 +39,10 @@ class vinicius_setup_atr_strategy(Strategy):
         rsi.Length = self._rsi_period.Value
 
         sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(rsi, ema, self.OnProcess).Start()
+        sub \
+            .Bind(rsi, self._on_rsi) \
+            .Bind(ema, self.OnProcess) \
+            .Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -47,14 +50,13 @@ class vinicius_setup_atr_strategy(Strategy):
             self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, rsi_val, ema_val):
+    def _on_rsi(self, candle, r):
+        self._prev_rsi = self._rsi_val
+        self._rsi_val = float(r)
+
+    def OnProcess(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
-
-        rv = float(rsi_val)
-        ev = float(ema_val)
-        self._prev_rsi = self._rsi_val
-        self._rsi_val = rv
 
         if self._cooldown > 0:
             self._cooldown -= 1
@@ -63,12 +65,13 @@ class vinicius_setup_atr_strategy(Strategy):
         if self._rsi_val == 0 or self._prev_rsi == 0:
             return
 
+        ev = float(ema_val)
         close = float(candle.ClosePrice)
         is_up = close > ev
         is_down = close < ev
 
-        buy_signal = is_up and self._prev_rsi <= 50 and rv > 50
-        sell_signal = is_down and self._prev_rsi >= 50 and rv < 50
+        buy_signal = is_up and self._prev_rsi <= 50 and self._rsi_val > 50
+        sell_signal = is_down and self._prev_rsi >= 50 and self._rsi_val < 50
 
         if buy_signal and self.Position <= 0:
             self.BuyMarket()

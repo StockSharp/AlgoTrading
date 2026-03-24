@@ -18,9 +18,9 @@ class m_trainer_strategy(Strategy):
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._std_period = self.Param("StdPeriod", 14) \
             .SetDisplay("StdDev Period", "StdDev period for SL/TP", "Indicators")
-        self._sl_multiplier = self.Param("SlMultiplier", 2) \
+        self._sl_multiplier = self.Param("SlMultiplier", 2.0) \
             .SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk")
-        self._tp_multiplier = self.Param("TpMultiplier", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._tp_multiplier = self.Param("TpMultiplier", 3.0) \
             .SetDisplay("TP Multiplier", "ATR multiplier for take profit", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class live_rsi_strategy(Strategy):
     def __init__(self):
         super(live_rsi_strategy, self).__init__()
-        self._rsi_period = self.Param("RsiPeriod", TimeSpan.FromHours(4)) \
+        self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "Period for RSI", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

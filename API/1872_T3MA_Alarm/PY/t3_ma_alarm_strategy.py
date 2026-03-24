@@ -7,44 +7,49 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class t3_ma_alarm_strategy(Strategy):
-    """EMA direction change with SL/TP and cooldown."""
     def __init__(self):
         super(t3_ma_alarm_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 19).SetGreaterThanZero().SetDisplay("MA Period", "EMA length", "Indicator")
-        self._ma_shift = self.Param("MaShift", 1).SetDisplay("MA Shift", "Bars shift for direction check", "Indicator")
-        self._stop_loss = self.Param("StopLoss", 200.0).SetDisplay("Stop Loss", "Stop-loss distance in price", "Risk")
-        self._take_profit = self.Param("TakeProfit", 400.0).SetDisplay("Take Profit", "Take-profit distance in price", "Risk")
-        self._cooldown_bars = self.Param("CooldownBars", 4).SetDisplay("Cooldown Bars", "Completed candles to wait after position change", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles for calculation", "General")
+        self._ma_period = self.Param("MaPeriod", 19) \
+            .SetDisplay("MA Period", "EMA length", "Indicator")
+        self._ma_shift = self.Param("MaShift", 1) \
+            .SetDisplay("MA Shift", "Bars shift for direction check", "Indicator")
+        self._stop_loss = self.Param("StopLoss", 200.0) \
+            .SetDisplay("Stop Loss", "Stop-loss distance in price", "Risk")
+        self._take_profit = self.Param("TakeProfit", 400.0) \
+            .SetDisplay("Take Profit", "Take-profit distance in price", "Risk")
+        self._reverse_on_signal = self.Param("ReverseOnSignal", True) \
+            .SetDisplay("Reverse On Signal", "Close opposite position when new signal appears", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Type of candles for calculation", "General")
+        self._cooldown_bars = self.Param("CooldownBars", 4) \
+            .SetDisplay("Cooldown Bars", "Completed candles to wait after position change", "Trading")
+        self._ema_values = []
+        self._prev_direction = 0
+        self._entry_price = 0.0
+        self._cooldown_remaining = 0
 
     @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, value): self._candle_type.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(t3_ma_alarm_strategy, self).OnReseted()
         self._ema_values = []
         self._prev_direction = 0
-        self._entry_price = 0
+        self._entry_price = 0.0
         self._cooldown_remaining = 0
 
     def OnStarted(self, time):
         super(t3_ma_alarm_strategy, self).OnStarted(time)
-        self._ema_values = []
-        self._prev_direction = 0
-        self._entry_price = 0
-        self._cooldown_remaining = 0
 
         ema = ExponentialMovingAverage()
         ema.Length = self._ma_period.Value
 
-        sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(ema, self.OnProcess).Start()
+        sub = self.SubscribeCandles(self.candle_type)
+        sub.Bind(ema, self.process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -52,7 +57,7 @@ class t3_ma_alarm_strategy(Strategy):
             self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, ema_val):
+    def process_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
 
@@ -81,14 +86,14 @@ class t3_ma_alarm_strategy(Strategy):
 
         if self._cooldown_remaining == 0:
             if self._prev_direction == -1 and direction == 1:
-                if self.Position < 0:
+                if self.Position < 0 and self._reverse_on_signal.Value:
                     self.BuyMarket()
                 if self.Position <= 0:
                     self._entry_price = close
                     self.BuyMarket()
                     self._cooldown_remaining = self._cooldown_bars.Value
             elif self._prev_direction == 1 and direction == -1:
-                if self.Position > 0:
+                if self.Position > 0 and self._reverse_on_signal.Value:
                     self.SellMarket()
                 if self.Position >= 0:
                     self._entry_price = close
@@ -101,8 +106,8 @@ class t3_ma_alarm_strategy(Strategy):
         self._prev_direction = direction
 
     def _check_exit(self, price):
-        sl = self._stop_loss.Value
-        tp = self._take_profit.Value
+        sl = float(self._stop_loss.Value)
+        tp = float(self._take_profit.Value)
         if self.Position > 0:
             if sl > 0 and price <= self._entry_price - sl:
                 self.SellMarket()

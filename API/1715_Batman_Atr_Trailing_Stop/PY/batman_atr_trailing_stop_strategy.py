@@ -14,13 +14,13 @@ class batman_atr_trailing_stop_strategy(Strategy):
         super(batman_atr_trailing_stop_strategy, self).__init__()
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR indicator period", "General")
-        self._factor = self.Param("Factor", TimeSpan.FromHours(4)) \
+        self._factor = self.Param("Factor", 1.5) \
             .SetDisplay("ATR Factor", "Multiplier for ATR distance", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._level_up = 0.0
         self._level_down = 0.0
-        self._direction = 0
+        self._direction = 1
         self._is_initialized = False
 
     @property
@@ -39,7 +39,7 @@ class batman_atr_trailing_stop_strategy(Strategy):
         super(batman_atr_trailing_stop_strategy, self).OnReseted()
         self._level_up = 0.0
         self._level_down = 0.0
-        self._direction = 0
+        self._direction = 1
         self._is_initialized = False
 
     def OnStarted(self, time):
@@ -70,16 +70,18 @@ class batman_atr_trailing_stop_strategy(Strategy):
             if candle.LowPrice < self._level_up:
                 self._direction = -1
                 self._level_down = curr_down
-                if self.Position > 0) SellMarket(:
+                if self.Position > 0:
                     self.SellMarket()
+                self.SellMarket()
         else:
             if curr_down < self._level_down:
                 self._level_down = curr_down
             if candle.HighPrice > self._level_down:
                 self._direction = 1
                 self._level_up = curr_up
-                if self.Position < 0) BuyMarket(:
+                if self.Position < 0:
                     self.BuyMarket()
+                self.BuyMarket()
 
     def CreateClone(self):
         return batman_atr_trailing_stop_strategy()

@@ -5,13 +5,14 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
 class zigzag_candles_strategy(Strategy):
     def __init__(self):
         super(zigzag_candles_strategy, self).__init__()
-        self._zigzag_length = self.Param("ZigzagLength", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._zigzag_length = self.Param("ZigzagLength", 5) \
             .SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

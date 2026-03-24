@@ -121,25 +121,19 @@ class hybrid_scalping_bot_strategy(Strategy):
         strong_uptrend = ema9 > ema21 and ema21 > ema50
         strong_downtrend = ema9 < ema21 and ema21 < ema50
         volume_ok = not self.use_volume_filter or candle.TotalVolume > avg_volume * 1.2
-        bool buy_signal
-        bool sell_signal
-        switch (self.signal_sensitivity)
-            case "self.very_easy":
+        sensitivity = self.signal_sensitivity
+        if sensitivity == "VeryEasy":
             buy_signal = rsi < 60 and bullish
             sell_signal = rsi > 40 and bearish
-            # break
-            case "self.medium":
+        elif sensitivity == "Medium":
             buy_signal = rsi < 30 and bullish and (not self.use_trend_filter or uptrend)
             sell_signal = rsi > 70 and bearish and (not self.use_trend_filter or downtrend)
-            # break
-            case "self.strong":
+        elif sensitivity == "Strong":
             buy_signal = rsi < 30 and strong_bullish and (not self.use_trend_filter or strong_uptrend) and volume_ok and candle.ClosePrice > ema21
             sell_signal = rsi > 70 and strong_bearish and (not self.use_trend_filter or strong_downtrend) and volume_ok and candle.ClosePrice < ema21
-            # break
-            # default:
+        else:
             buy_signal = rsi < 30 and bullish
             sell_signal = rsi > 70 and bearish
-            # break
         can_trade = self._trades_today < self.daily_trade_limit and self.Position == 0
         if buy_signal and can_trade:
             self.BuyMarket()

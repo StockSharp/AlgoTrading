@@ -15,6 +15,9 @@ class vrs_vegas_reversal_strategy(Strategy):
             .SetDisplay("Spike %", "Spike percentage threshold", "Reversal")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._entry_price = 0.0
+        self._spike_size = 0.0
+        self._is_long = False
 
     @property
     def spike_percent(self):
@@ -26,6 +29,9 @@ class vrs_vegas_reversal_strategy(Strategy):
 
     def OnReseted(self):
         super(vrs_vegas_reversal_strategy, self).OnReseted()
+        self._entry_price = 0.0
+        self._spike_size = 0.0
+        self._is_long = False
 
     def OnStarted(self, time):
         super(vrs_vegas_reversal_strategy, self).OnStarted(time)
@@ -39,41 +45,33 @@ class vrs_vegas_reversal_strategy(Strategy):
     def on_process(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        upper_spike = candle.HighPrice - max(candle.ClosePrice, candle.OpenPrice)
-        lower_spike = min(candle.ClosePrice, candle.OpenPrice) - candle.LowPrice
-        valid_upper = upper_spike >= candle.ClosePrice * self.spike_percent
-        valid_lower = lower_spike >= candle.ClosePrice * self.spike_percent
+        upper_spike = float(candle.HighPrice) - max(float(candle.ClosePrice), float(candle.OpenPrice))
+        lower_spike = min(float(candle.ClosePrice), float(candle.OpenPrice)) - float(candle.LowPrice)
+        close = float(candle.ClosePrice)
+        sp = float(self.spike_percent)
+        valid_upper = upper_spike >= close * sp
+        valid_lower = lower_spike >= close * sp
         valid = (valid_upper and not valid_lower) or (valid_lower and not valid_upper)
         enter_long = valid and valid_lower
         enter_short = valid and valid_upper
         if enter_long and self.Position <= 0:
-            self._entry_price = candle.ClosePrice
+            self._entry_price = close
             self._spike_size = lower_spike
             self._is_long = True
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
         elif enter_short and self.Position >= 0:
-            self._entry_price = candle.ClosePrice
+            self._entry_price = close
             self._spike_size = upper_spike
             self._is_long = False
-            self.SellMarket()
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
         if self.Position > 0 and self._is_long:
-            target = self._entry_price + self._spike_size * 2
-            if candle.ClosePrice >= target:
-                self.SellMarket()
+            target = self._entry_price + self._spike_size * 2.0
+            if close >= target:
+                self.SellMarket(self.Position)
         elif self.Position < 0 and not self._is_long:
-            target = self._entry_price - self._spike_size * 2
-            if candle.ClosePrice <= target:
-                self.BuyMarket()
-
-    def normalize_volume(self, volume):
-        step = ((Security.VolumeStep if Security is not None else None) if (Security.VolumeStep if Security is not None else None) is not None else 1)
-        if step <= 0:
-            step = 1
-        minimum = ((Security.MinVolume if Security is not None else None) if (Security.MinVolume if Security is not None else None) is not None else step)
-        if volume < minimum:
-            # volume = minimum
-        rounded = Math.Ceiling(volume / step) * step
-        (minimum if return rounded < minimum else rounded)
+            target = self._entry_price - self._spike_size * 2.0
+            if close <= target:
+                self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return vrs_vegas_reversal_strategy()

@@ -20,9 +20,9 @@ class ultimate_t3_fibonacci_btc_scalping_strategy(Strategy):
             .SetDisplay("Use Opposite", "Close on opposite signal", "General")
         self._use_trade_management = self.Param("UseTradeManagement", True) \
             .SetDisplay("Use Trade Management", "Enable TP/SL", "General")
-        self._take_profit = self.Param("TakeProfit", 15) \
+        self._take_profit = self.Param("TakeProfit", 15.0) \
             .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-        self._stop_loss = self.Param("StopLoss", 2) \
+        self._stop_loss = self.Param("StopLoss", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
@@ -97,8 +97,10 @@ class ultimate_t3_fibonacci_btc_scalping_strategy(Strategy):
                 elif self.Position < 0 and cross_up:
                     self.BuyMarket()
         if self.use_trade_management and self.Position != 0:
-            tp = (self.take_profit if self._entry_price * (1 + (self.Position > 0 else -self.take_profit) / 100))
-            sl = (self.stop_loss if self._entry_price * (1 - (self.Position > 0 else -self.stop_loss) / 100))
+            tp_sign = self.take_profit if self.Position > 0 else -self.take_profit
+            sl_sign = self.stop_loss if self.Position > 0 else -self.stop_loss
+            tp = self._entry_price * (1 + tp_sign / 100.0)
+            sl = self._entry_price * (1 - sl_sign / 100.0)
             if self.Position > 0:
                 if candle.ClosePrice >= tp or candle.ClosePrice <= sl:
                     self.SellMarket()
