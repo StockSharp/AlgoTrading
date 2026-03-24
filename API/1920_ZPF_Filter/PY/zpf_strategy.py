@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -63,7 +63,9 @@ class zpf_strategy(Strategy):
 
         self._bars_since_trade += 1
 
-        vol_result = self._volume_ma.Process(candle.TotalVolume, candle.OpenTime, True)
+        vol_input = DecimalIndicatorValue(self._volume_ma, candle.TotalVolume, candle.OpenTime)
+        vol_input.IsFinal = True
+        vol_result = self._volume_ma.Process(vol_input)
         if not vol_result.IsFormed:
             return
 

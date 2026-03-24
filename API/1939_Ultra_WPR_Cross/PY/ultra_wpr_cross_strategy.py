@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, DecimalIndicatorValue
-from StockSharp.Algo.Indicators import SimpleMovingAverage, WilliamsR
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage, WilliamsR, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -121,10 +121,12 @@ class ultra_wpr_cross_strategy(Strategy):
 
         wpr_val = float(wpr_value)
 
-        fast = float(self._fast_ma.Process(
-            DecimalIndicatorValue(self._fast_ma, wpr_val, candle.OpenTime, True)))
-        slow = float(self._slow_ma.Process(
-            DecimalIndicatorValue(self._slow_ma, wpr_val, candle.OpenTime, True)))
+        fi = DecimalIndicatorValue(self._fast_ma, wpr_val, candle.OpenTime)
+        fi.IsFinal = True
+        fast = float(self._fast_ma.Process(fi))
+        si = DecimalIndicatorValue(self._slow_ma, wpr_val, candle.OpenTime)
+        si.IsFinal = True
+        slow = float(self._slow_ma.Process(si))
 
         if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             return

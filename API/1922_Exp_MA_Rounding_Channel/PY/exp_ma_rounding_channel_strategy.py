@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -105,7 +105,7 @@ class exp_ma_rounding_channel_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        atr_result = self._atr.Process(candle)
+        atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
         if not atr_result.IsFormed:
             return
 

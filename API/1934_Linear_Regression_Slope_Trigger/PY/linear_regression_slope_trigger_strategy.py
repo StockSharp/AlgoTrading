@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, DecimalIndicatorValue
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -125,8 +125,9 @@ class linear_regression_slope_trigger_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        trend_value = float(self._trend_line.Process(
-            DecimalIndicatorValue(self._trend_line, candle.ClosePrice, candle.ServerTime, True)))
+        ti = DecimalIndicatorValue(self._trend_line, candle.ClosePrice, candle.ServerTime)
+        ti.IsFinal = True
+        trend_value = float(self._trend_line.Process(ti))
 
         if not self._trend_line.IsFormed:
             return
@@ -137,8 +138,9 @@ class linear_regression_slope_trigger_strategy(Strategy):
             return
 
         slope = trend_value - self._previous_trend_value
-        trigger = float(self._trigger_line.Process(
-            DecimalIndicatorValue(self._trigger_line, slope, candle.ServerTime, True)))
+        tri = DecimalIndicatorValue(self._trigger_line, slope, candle.ServerTime)
+        tri.IsFinal = True
+        trigger = float(self._trigger_line.Process(tri))
 
         if not self._trigger_line.IsFormed:
             self._previous_trend_value = trend_value

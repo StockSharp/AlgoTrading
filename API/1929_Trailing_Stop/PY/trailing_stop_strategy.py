@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, DecimalIndicatorValue
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -117,10 +117,12 @@ class trailing_stop_strategy(Strategy):
             return
 
         price = candle.ClosePrice
-        fast_value = float(self._fast_ma.Process(
-            DecimalIndicatorValue(self._fast_ma, price, candle.OpenTime, True)))
-        slow_value = float(self._slow_ma.Process(
-            DecimalIndicatorValue(self._slow_ma, price, candle.OpenTime, True)))
+        fi = DecimalIndicatorValue(self._fast_ma, price, candle.OpenTime)
+        fi.IsFinal = True
+        fast_value = float(self._fast_ma.Process(fi))
+        si = DecimalIndicatorValue(self._slow_ma, price, candle.OpenTime)
+        si.IsFinal = True
+        slow_value = float(self._slow_ma.Process(si))
 
         if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             return

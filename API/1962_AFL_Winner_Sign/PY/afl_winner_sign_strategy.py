@@ -90,12 +90,14 @@ class afl_winner_sign_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        k_result = self._fast.Process(
-            DecimalIndicatorValue(self._fast, float(momentum), candle.OpenTime, True))
+        ki = DecimalIndicatorValue(self._fast, float(momentum), candle.OpenTime)
+        ki.IsFinal = True
+        k_result = self._fast.Process(ki)
         k = float(k_result)
 
-        d_result = self._slow.Process(
-            DecimalIndicatorValue(self._slow, k, candle.OpenTime, True))
+        di = DecimalIndicatorValue(self._slow, k, candle.OpenTime)
+        di.IsFinal = True
+        d_result = self._slow.Process(di)
         d = float(d_result)
 
         if not self._fast.IsFormed or not self._slow.IsFormed:

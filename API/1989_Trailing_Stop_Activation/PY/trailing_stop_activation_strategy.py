@@ -16,7 +16,7 @@ class trailing_stop_activation_strategy(Strategy):
         super(trailing_stop_activation_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 14).SetGreaterThanZero().SetDisplay("EMA Period", "EMA period for entries", "Indicator")
         self._trailing_stop = self.Param("TrailingStop", 500.0).SetGreaterThanZero().SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

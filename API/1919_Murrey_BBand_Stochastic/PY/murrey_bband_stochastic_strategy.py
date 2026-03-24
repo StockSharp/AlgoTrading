@@ -56,6 +56,8 @@ class murrey_bband_stochastic_strategy(Strategy):
     def _process_candle(self, candle, high_value, low_value, bb_value, stoch_value):
         if candle.State != CandleStates.Finished:
             return
+        if not high_value.IsFormed or not low_value.IsFormed or not bb_value.IsFormed or not stoch_value.IsFormed:
+            return
         n_high = float(high_value)
         n_low = float(low_value)
         rng = n_high - n_low
@@ -113,8 +115,12 @@ class murrey_bband_stochastic_strategy(Strategy):
         os_level = float(self._stoch_os.Value)
         ob_level = float(self._stoch_ob.Value)
         if self.Position <= 0 and k_val < os_level and close <= level1 + margin and close < upper:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
         elif self.Position >= 0 and k_val > ob_level and close >= level7 - margin and close > lower:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
         elif self.Position > 0 and (close >= level8 or close >= level4):
             self.SellMarket()

@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, DecimalIndicatorValue
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -183,12 +183,15 @@ class syndicate_trader_strategy(Strategy):
             if time_of_day < start or time_of_day > end:
                 return
 
-        fast = float(self._fast_ema.Process(
-            DecimalIndicatorValue(self._fast_ema, candle.ClosePrice, candle.OpenTime, True)))
-        slow = float(self._slow_ema.Process(
-            DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, candle.OpenTime, True)))
-        volume_avg = float(self._volume_ma.Process(
-            DecimalIndicatorValue(self._volume_ma, candle.TotalVolume, candle.OpenTime, True)))
+        fi = DecimalIndicatorValue(self._fast_ema, candle.ClosePrice, candle.OpenTime)
+        fi.IsFinal = True
+        fast = float(self._fast_ema.Process(fi))
+        si = DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, candle.OpenTime)
+        si.IsFinal = True
+        slow = float(self._slow_ema.Process(si))
+        vi = DecimalIndicatorValue(self._volume_ma, candle.TotalVolume, candle.OpenTime)
+        vi.IsFinal = True
+        volume_avg = float(self._volume_ma.Process(vi))
 
         if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed or not self._volume_ma.IsFormed:
             return

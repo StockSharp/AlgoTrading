@@ -4,8 +4,8 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, DecimalIndicatorValue
-from StockSharp.Algo.Indicators import WeightedMovingAverage, SimpleMovingAverage
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from StockSharp.Algo.Indicators import WeightedMovingAverage, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -161,17 +161,20 @@ class exp_trend_value_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        high_ma = float(self._wma_high.Process(
-            DecimalIndicatorValue(self._wma_high, candle.HighPrice, candle.OpenTime, True)))
-        low_ma = float(self._wma_low.Process(
-            DecimalIndicatorValue(self._wma_low, candle.LowPrice, candle.OpenTime, True)))
+        hi_inp = DecimalIndicatorValue(self._wma_high, candle.HighPrice, candle.OpenTime)
+        hi_inp.IsFinal = True
+        high_ma = float(self._wma_high.Process(hi_inp))
+        lo_inp = DecimalIndicatorValue(self._wma_low, candle.LowPrice, candle.OpenTime)
+        lo_inp.IsFinal = True
+        low_ma = float(self._wma_low.Process(lo_inp))
 
         if not self._wma_high.IsFormed or not self._wma_low.IsFormed:
             return
 
-        range_val = float(candle.HighPrice) - float(candle.LowPrice)
-        range_avg = float(self._range_average.Process(
-            DecimalIndicatorValue(self._range_average, range_val, candle.OpenTime, True)))
+        range_val = candle.HighPrice - candle.LowPrice
+        rng_inp = DecimalIndicatorValue(self._range_average, range_val, candle.OpenTime)
+        rng_inp.IsFinal = True
+        range_avg = float(self._range_average.Process(rng_inp))
 
         if not self._range_average.IsFormed:
             return

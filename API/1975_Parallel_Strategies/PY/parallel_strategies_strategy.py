@@ -81,12 +81,14 @@ class parallel_strategies_strategy(Strategy):
         donchian = DonchianChannels()
         donchian.Length = self.DonchianPeriod
 
-        macd_core = MovingAverageConvergenceDivergence(
-            ExponentialMovingAverage(self.MacdSlow),
-            ExponentialMovingAverage(self.MacdFast))
-        macd = MovingAverageConvergenceDivergenceSignal(
-            macd_core,
-            ExponentialMovingAverage(self.MacdSignal))
+        slow_ema = ExponentialMovingAverage()
+        slow_ema.Length = self.MacdSlow
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self.MacdFast
+        macd_core = MovingAverageConvergenceDivergence(slow_ema, fast_ema)
+        sig_ema = ExponentialMovingAverage()
+        sig_ema.Length = self.MacdSignal
+        macd = MovingAverageConvergenceDivergenceSignal(macd_core, sig_ema)
 
         self.SubscribeCandles(self.CandleType) \
             .BindEx(donchian, macd, self.ProcessCandle) \

@@ -229,7 +229,9 @@ class simple_trading_system_strategy(Strategy):
             return
 
         price = self._get_price(candle)
-        ma_result = self._ma.Process(DecimalIndicatorValue(self._ma, price, candle.OpenTime, True))
+        mi = DecimalIndicatorValue(self._ma, price, candle.OpenTime)
+        mi.IsFinal = True
+        ma_result = self._ma.Process(mi)
         ma_value = float(ma_result)
 
         if self._bars_since_trade < self.CooldownBars:

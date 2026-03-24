@@ -117,8 +117,9 @@ class xma_ichimoku_channel_strategy(Strategy):
         lowest = min(self._lows)
         mid_value = (highest + lowest) / 2.0
 
-        result = self._sma.Process(
-            DecimalIndicatorValue(self._sma, mid_value, candle.OpenTime, True))
+        mi = DecimalIndicatorValue(self._sma, mid_value, candle.OpenTime)
+        mi.IsFinal = True
+        result = self._sma.Process(mi)
         middle = float(result)
 
         if not self._sma.IsFormed:

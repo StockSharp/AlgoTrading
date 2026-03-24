@@ -183,8 +183,9 @@ class n_ratio_sign_strategy(Strategy):
                 nrtr0 = min(h_price, self._nrtr)
 
         oscil = (100.0 * abs(price - nrtr0) / price) / kf
-        x_oscil_value = self._ema.Process(
-            DecimalIndicatorValue(self._ema, oscil, candle.OpenTime, True))
+        ei = DecimalIndicatorValue(self._ema, oscil, candle.OpenTime)
+        ei.IsFinal = True
+        x_oscil_value = self._ema.Process(ei)
         x_oscil = oscil if x_oscil_value.IsEmpty else float(x_oscil_value)
 
         if not self._ema.IsFormed:

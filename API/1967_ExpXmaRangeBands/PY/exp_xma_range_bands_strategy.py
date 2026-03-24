@@ -90,11 +90,15 @@ class exp_xma_range_bands_strategy(Strategy):
     def OnStarted(self, time):
         super(exp_xma_range_bands_strategy, self).OnStarted(time)
 
-        keltner = KeltnerChannels(
-            KeltnerChannelMiddle(self.MaLength),
-            AverageTrueRange(self.RangeLength),
-            KeltnerChannelBand(self.MaLength),
-            KeltnerChannelBand(self.MaLength))
+        mid = KeltnerChannelMiddle()
+        mid.Length = self.MaLength
+        atr = AverageTrueRange()
+        atr.Length = self.RangeLength
+        upper_band = KeltnerChannelBand()
+        upper_band.Length = self.MaLength
+        lower_band = KeltnerChannelBand()
+        lower_band.Length = self.MaLength
+        keltner = KeltnerChannels(mid, atr, upper_band, lower_band)
         keltner.Multiplier = self.Deviation
 
         subscription = self.SubscribeCandles(self.CandleType)

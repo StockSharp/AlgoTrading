@@ -5,8 +5,8 @@ clr.AddReference("StockSharp.Algo")
 
 import math
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, DecimalIndicatorValue
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import Highest, Lowest, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -100,6 +100,9 @@ class fisher_cyber_cycle_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._bars_since_trade < self.CooldownBars:
             self._bars_since_trade += 1
 
@@ -131,10 +134,12 @@ class fisher_cyber_cycle_strategy(Strategy):
 
         self._count += 1
 
-        hh_result = self._highest.Process(
-            DecimalIndicatorValue(self._highest, self._cycle[0], t, True))
-        ll_result = self._lowest.Process(
-            DecimalIndicatorValue(self._lowest, self._cycle[0], t, True))
+        hi = DecimalIndicatorValue(self._highest, self._cycle[0], t)
+        hi.IsFinal = True
+        hh_result = self._highest.Process(hi)
+        li = DecimalIndicatorValue(self._lowest, self._cycle[0], t)
+        li.IsFinal = True
+        ll_result = self._lowest.Process(li)
 
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return
