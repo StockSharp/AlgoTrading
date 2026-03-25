@@ -28,6 +28,7 @@ class ibs_rsi_cci_v4_strategy(Strategy):
         self._enable_short_open = self.Param("EnableShortOpen", True)
         self._enable_long_close = self.Param("EnableLongClose", True)
         self._enable_short_close = self.Param("EnableShortClose", True)
+        self._order_volume = self.Param("OrderVolume", 1.0)
 
         self._has_signal = False
         self._last_signal = 0.0
@@ -154,9 +155,18 @@ class ibs_rsi_cci_v4_strategy(Strategy):
     def EnableShortClose(self, value):
         self._enable_short_close.Value = value
 
+    @property
+    def OrderVolume(self):
+        return self._order_volume.Value
+
+    @OrderVolume.setter
+    def OrderVolume(self, value):
+        self._order_volume.Value = value
+
     def OnStarted(self, time):
         super(ibs_rsi_cci_v4_strategy, self).OnStarted(time)
 
+        self.Volume = float(self.OrderVolume)
         self._has_signal = False
         self._last_signal = 0.0
         self._signal_history = []
@@ -188,7 +198,12 @@ class ibs_rsi_cci_v4_strategy(Strategy):
 
         candle_range = high - low
         if candle_range == 0.0:
-            candle_range = 0.0001
+            step = 0.0001
+            if self.Security is not None and self.Security.PriceStep is not None:
+                step = float(self.Security.PriceStep)
+            if step == 0.0:
+                step = 0.0001
+            candle_range = step
 
         ibs_raw = (close - low) / candle_range
         ibs_input = DecimalIndicatorValue(self._ibs_avg, Decimal(ibs_raw), candle.OpenTime)
