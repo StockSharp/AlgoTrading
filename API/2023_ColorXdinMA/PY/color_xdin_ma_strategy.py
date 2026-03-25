@@ -92,14 +92,12 @@ class color_xdin_ma_strategy(Strategy):
             return
 
         if self._cooldown_remaining == 0 and self._prev < self._prev_prev and xdin > self._prev and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            volume = self.Volume + (-self.Position if self.Position < 0 else 0)
+            self.BuyMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
         elif self._cooldown_remaining == 0 and self._prev > self._prev_prev and xdin < self._prev and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            volume = self.Volume + (self.Position if self.Position > 0 else 0)
+            self.SellMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
 
         self._prev_prev = self._prev

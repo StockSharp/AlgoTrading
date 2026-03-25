@@ -119,7 +119,9 @@ class bands_price_strategy(Strategy):
         res = 100.0 * (close - lower_f) / width - 50.0
 
         t = candle.OpenTime
-        smooth_result = self._smoother.Process(DecimalIndicatorValue(self._smoother, res, t, True))
+        smooth_input = DecimalIndicatorValue(self._smoother, res, t)
+        smooth_input.IsFinal = True
+        smooth_result = self._smoother.Process(smooth_input)
         if not smooth_result.IsFormed:
             return
 

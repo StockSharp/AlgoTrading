@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class stochastic_three_periods_strategy(Strategy):
     """Fast/slow RSI alignment with StartProtection."""
@@ -16,7 +14,7 @@ class stochastic_three_periods_strategy(Strategy):
         super(stochastic_three_periods_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 5).SetGreaterThanZero().SetDisplay("Fast K", "Fast RSI period", "Parameters")
         self._slow_period = self.Param("SlowPeriod", 14).SetGreaterThanZero().SetDisplay("Slow K", "Slow RSI period", "Parameters")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Working timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Working timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -47,7 +45,9 @@ class stochastic_three_periods_strategy(Strategy):
             self.DrawIndicator(area, self._fast_rsi)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(self.CreateProtection(2000, 1000))
+        self.StartProtection(
+            Unit(2000, UnitTypes.Absolute),
+            Unit(1000, UnitTypes.Absolute))
 
     def OnProcess(self, candle, fast_value):
         if candle.State != CandleStates.Finished:

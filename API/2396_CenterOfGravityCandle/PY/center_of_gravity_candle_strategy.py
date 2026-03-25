@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, WeightedMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class center_of_gravity_candle_strategy(Strategy):
@@ -110,14 +110,19 @@ class center_of_gravity_candle_strategy(Strategy):
 
         t = candle.OpenTime
 
-        o_sma = self._open_sma.Process(candle.OpenPrice, t, True)
-        o_lwma = self._open_lwma.Process(candle.OpenPrice, t, True)
-        h_sma = self._high_sma.Process(candle.HighPrice, t, True)
-        h_lwma = self._high_lwma.Process(candle.HighPrice, t, True)
-        l_sma = self._low_sma.Process(candle.LowPrice, t, True)
-        l_lwma = self._low_lwma.Process(candle.LowPrice, t, True)
-        c_sma = self._close_sma.Process(candle.ClosePrice, t, True)
-        c_lwma = self._close_lwma.Process(candle.ClosePrice, t, True)
+        def _proc(ind, val):
+            inp = DecimalIndicatorValue(ind, val, t)
+            inp.IsFinal = True
+            return ind.Process(inp)
+
+        o_sma = _proc(self._open_sma, candle.OpenPrice)
+        o_lwma = _proc(self._open_lwma, candle.OpenPrice)
+        h_sma = _proc(self._high_sma, candle.HighPrice)
+        h_lwma = _proc(self._high_lwma, candle.HighPrice)
+        l_sma = _proc(self._low_sma, candle.LowPrice)
+        l_lwma = _proc(self._low_lwma, candle.LowPrice)
+        c_sma = _proc(self._close_sma, candle.ClosePrice)
+        c_lwma = _proc(self._close_lwma, candle.ClosePrice)
 
         if (not self._open_sma.IsFormed or not self._open_lwma.IsFormed or
             not self._high_sma.IsFormed or not self._high_lwma.IsFormed or
@@ -130,10 +135,10 @@ class center_of_gravity_candle_strategy(Strategy):
         low_prod = (float(l_sma) + float(l_lwma)) / 2.0
         close_prod = (float(c_sma) + float(c_lwma)) / 2.0
 
-        o_smooth = self._open_smooth.Process(open_prod, t, True)
-        h_smooth = self._high_smooth.Process(high_prod, t, True)
-        l_smooth = self._low_smooth.Process(low_prod, t, True)
-        c_smooth = self._close_smooth.Process(close_prod, t, True)
+        o_smooth = _proc(self._open_smooth, open_prod)
+        h_smooth = _proc(self._high_smooth, high_prod)
+        l_smooth = _proc(self._low_smooth, low_prod)
+        c_smooth = _proc(self._close_smooth, close_prod)
 
         if (not self._open_smooth.IsFormed or not self._high_smooth.IsFormed or
             not self._low_smooth.IsFormed or not self._close_smooth.IsFormed):

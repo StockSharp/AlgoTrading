@@ -50,7 +50,9 @@ class candles_smoothed_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         diff = float(candle.ClosePrice) - float(candle.OpenPrice)
-        ma_result = self._ma.Process(DecimalIndicatorValue(self._ma, diff, candle.OpenTime))
+        div = DecimalIndicatorValue(self._ma, diff, candle.OpenTime)
+        div.IsFinal = True
+        ma_result = self._ma.Process(div)
         if not ma_result.IsFormed:
             return
         smoothed = float(ma_result)

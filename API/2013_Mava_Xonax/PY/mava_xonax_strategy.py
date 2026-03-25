@@ -15,8 +15,8 @@ class mava_xonax_strategy(Strategy):
 
     def __init__(self):
         super(mava_xonax_strategy, self).__init__()
-        self._ema_period = self.Param("EmaPeriod", 6).SetDisplay("EMA Period", "EMA period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 1).SetDisplay("Cooldown", "Bars between signals", "Risk")
+        self._ema_period = self.Param("EmaPeriod", 6).SetDisplay("EMA Period", "EMA period", "General")
+        self._cooldown_bars = self.Param("SignalCooldownBars", 1).SetDisplay("Signal Cooldown", "Bars to wait after an entry or exit", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(240))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_open1 = 0.0
@@ -65,12 +65,14 @@ class mava_xonax_strategy(Strategy):
         self._ema_high.Length = self._ema_period.Value
         self._ema_low = ExponentialMovingAverage()
         self._ema_low.Length = self._ema_period.Value
+        self._cooldown_remaining = 0
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._ema_close, self._process_candle).Start()
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawOwnTrades(area)
+
+    def _make_input(self, indicator, value, time):
+        div = DecimalIndicatorValue(indicator, value, time)
+        div.IsFinal = True
+        return div
 
     def _process_candle(self, candle, close_ema_val):
         if candle.State != CandleStates.Finished:
@@ -78,15 +80,19 @@ class mava_xonax_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
         close_ema = float(close_ema_val)
-        open_result = self._ema_open.Process(DecimalIndicatorValue(self._ema_open, candle.OpenPrice, candle.ServerTime))
-        high_result = self._ema_high.Process(DecimalIndicatorValue(self._ema_high, candle.HighPrice, candle.ServerTime))
-        low_result = self._ema_low.Process(DecimalIndicatorValue(self._ema_low, candle.LowPrice, candle.ServerTime))
-        if open_result.IsEmpty or high_result.IsEmpty or low_result.IsEmpty:
+
+        open_result = self._ema_open.Process(self._make_input(self._ema_open, candle.OpenPrice, candle.ServerTime))
+        high_result = self._ema_high.Process(self._make_input(self._ema_high, candle.HighPrice, candle.ServerTime))
+        low_result = self._ema_low.Process(self._make_input(self._ema_low, candle.LowPrice, candle.ServerTime))
+
+        if not open_result.IsFinal or not high_result.IsFinal or not low_result.IsFinal:
             return
+
         open_ema = float(open_result)
         high_ema = float(high_result)
         low_ema = float(low_result)
         close = float(candle.ClosePrice)
+
         if self.Position > 0:
             if close <= self._long_stop or close >= self._long_take:
                 self.SellMarket()
@@ -95,7 +101,8 @@ class mava_xonax_strategy(Strategy):
             if close >= self._short_stop or close <= self._short_take:
                 self.BuyMarket()
                 self._cooldown_remaining = self._cooldown_bars.Value
-        if self._history >= 2 and self._cooldown_remaining == 0:
+
+        if self._history >= 2 and self._cooldown_remaining == 0 and self.IsFormedAndOnlineAndAllowTrading():
             step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
             buy_signal = self._prev_open2 > self._prev_close2 and self._prev_open1 < self._prev_close1
             sell_signal = self._prev_open2 < self._prev_close2 and self._prev_open1 > self._prev_close1
@@ -121,6 +128,7 @@ class mava_xonax_strategy(Strategy):
                 self._short_take = close - take_pr
                 self.SellMarket()
                 self._cooldown_remaining = self._cooldown_bars.Value
+
         self._prev_open2 = self._prev_open1
         self._prev_open1 = open_ema
         self._prev_close2 = self._prev_close1

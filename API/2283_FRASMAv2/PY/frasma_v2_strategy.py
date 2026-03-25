@@ -54,7 +54,7 @@ class frasma_v2_strategy(Strategy):
             return
         if not fdi_value.IsFinal:
             return
-        fdi = float(fdi_value.GetValue[float]())
+        fdi = float(fdi_value)
         alpha = math.exp(-4.6 * (fdi - 1.0))
         alpha = max(0.01, min(1.0, alpha))
         price = float(candle.ClosePrice)

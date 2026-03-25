@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import EhlersFisherTransform
+from StockSharp.Algo.Indicators import EhlersFisherTransform, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class fisher_transform_x2_strategy(Strategy):
@@ -76,7 +76,9 @@ class fisher_transform_x2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        trend_result = self._trend_fisher.Process(candle)
+        trend_input = CandleIndicatorValue(self._trend_fisher, candle)
+        trend_input.IsFinal = True
+        trend_result = self._trend_fisher.Process(trend_input)
         if not self._trend_fisher.IsFormed:
             return
 

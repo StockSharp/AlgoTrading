@@ -9,6 +9,7 @@ from StockSharp.Algo.Indicators import (
     RelativeStrengthIndex,
     MovingAverageConvergenceDivergence,
     ExponentialMovingAverage,
+    DecimalIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
 
@@ -111,9 +112,11 @@ class macd_stochastic2_strategy(Strategy):
         self._macd_prev2 = 0.0
         self._macd_count = 0
 
-        self._macd_ind = MovingAverageConvergenceDivergence(
-            ExponentialMovingAverage.Create(self.MacdSlowPeriod),
-            ExponentialMovingAverage.Create(self.MacdFastPeriod))
+        slow_ema = ExponentialMovingAverage()
+        slow_ema.Length = self.MacdSlowPeriod
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self.MacdFastPeriod
+        self._macd_ind = MovingAverageConvergenceDivergence(slow_ema, fast_ema)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.StochasticKPeriod
@@ -129,7 +132,9 @@ class macd_stochastic2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        macd_result = self._macd_ind.Process(candle.ClosePrice, candle.CloseTime, True)
+        macd_input = DecimalIndicatorValue(self._macd_ind, candle.ClosePrice, candle.OpenTime)
+        macd_input.IsFinal = True
+        macd_result = self._macd_ind.Process(macd_input)
         if not self._macd_ind.IsFormed:
             return
 

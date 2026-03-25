@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage, StochasticOscillator
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage, StochasticOscillator, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -88,7 +88,8 @@ class rsi_stochastic_ma_strategy(Strategy):
     def on_candle(self, candle, ma_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        stoch_result = self._stochastic.Process(candle)
+        cv = CandleIndicatorValue(self._stochastic, candle)
+        stoch_result = self._stochastic.Process(cv)
         if not self._stochastic.IsFormed:
             return
         k = stoch_result.K

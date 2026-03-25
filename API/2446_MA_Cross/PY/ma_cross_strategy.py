@@ -60,12 +60,11 @@ class ma_cross_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(fast_ema, slow_ema, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         fast = float(fast_val)

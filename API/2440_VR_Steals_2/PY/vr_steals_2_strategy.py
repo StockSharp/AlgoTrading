@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class vr_steals_2_strategy(Strategy):
     """SMA crossover (8/34) with breakeven/SL/TP management and StartProtection."""
@@ -18,7 +16,7 @@ class vr_steals_2_strategy(Strategy):
         self._sl = self.Param("StopLoss", 50).SetDisplay("Stop Loss", "SL in steps", "General")
         self._breakeven = self.Param("Breakeven", 20).SetDisplay("Breakeven", "Distance to activate breakeven", "General")
         self._breakeven_offset = self.Param("BreakevenOffset", 9).SetDisplay("Breakeven Offset", "Offset when breakeven triggered", "General")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -51,7 +49,9 @@ class vr_steals_2_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(fast_sma, slow_sma, self.OnProcess).Start()
 
-        self.StartProtection(self.CreateProtection(1000, 2000))
+        self.StartProtection(
+            Unit(2000, UnitTypes.Absolute),
+            Unit(1000, UnitTypes.Absolute))
 
         area = self.CreateChartArea()
         if area is not None:

@@ -95,10 +95,10 @@ class rd_trend_trigger_strategy(Strategy):
         if len(self._highs) < max_count:
             return
 
-        highest_recent = max(self._highs[reg:])
-        highest_older = max(self._highs[:reg])
-        lowest_recent = min(self._lows[reg:])
-        lowest_older = min(self._lows[:reg])
+        highest_recent = max(self._highs[:reg])
+        highest_older = max(self._highs[reg:])
+        lowest_recent = min(self._lows[:reg])
+        lowest_older = min(self._lows[reg:])
 
         buy_power = highest_recent - lowest_older
         sell_power = highest_older - lowest_recent

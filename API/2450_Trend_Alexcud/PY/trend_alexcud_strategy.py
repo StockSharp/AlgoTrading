@@ -7,7 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 from indicator_extensions import *
 
 class trend_alexcud_strategy(Strategy):
@@ -19,7 +18,7 @@ class trend_alexcud_strategy(Strategy):
         self._ma3 = self.Param("MaPeriod3", 13).SetGreaterThanZero().SetDisplay("MA 3", "Third MA period", "Indicators")
         self._ma4 = self.Param("MaPeriod4", 21).SetGreaterThanZero().SetDisplay("MA 4", "Fourth MA period", "Indicators")
         self._ma5 = self.Param("MaPeriod5", 34).SetGreaterThanZero().SetDisplay("MA 5", "Longest MA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Primary timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Primary timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

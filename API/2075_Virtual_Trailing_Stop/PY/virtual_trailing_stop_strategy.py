@@ -40,6 +40,7 @@ class virtual_trailing_stop_strategy(Strategy):
     def OnStarted(self, time):
         super(virtual_trailing_stop_strategy, self).OnStarted(time)
         self.StartProtection(
+            takeProfit=None,
             stopLoss=Unit(self.trailing_pct, UnitTypes.Percent),
             isStopTrailing=True,
             useMarketOrders=True)

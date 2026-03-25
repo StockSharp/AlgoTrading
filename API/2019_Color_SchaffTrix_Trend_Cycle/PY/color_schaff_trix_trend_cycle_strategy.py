@@ -224,6 +224,11 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
             takeProfit=Unit(self.TakeProfit, UnitTypes.Percent)
         )
 
+    def _make_input(self, indicator, value, time):
+        div = DecimalIndicatorValue(indicator, value, time)
+        div.IsFinal = True
+        return div
+
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
@@ -236,7 +241,7 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         factor = float(self.Factor)
 
         # Calculate fast TRIX
-        inp = DecimalIndicatorValue(self._fast_ema1, close, t, True)
+        inp = self._make_input(self._fast_ema1, close, t)
         e1 = self._fast_ema1.Process(inp)
         e2 = self._fast_ema2.Process(e1)
         e3 = self._fast_ema3.Process(e2)
@@ -247,7 +252,7 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         self._fast_prev = fast_val
 
         # Calculate slow TRIX
-        inp2 = DecimalIndicatorValue(self._slow_ema1, close, t, True)
+        inp2 = self._make_input(self._slow_ema1, close, t)
         s1 = self._slow_ema1.Process(inp2)
         s2 = self._slow_ema2.Process(s1)
         s3 = self._slow_ema3.Process(s2)
@@ -260,8 +265,8 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         macd = fast_trix - slow_trix
 
         # STC calculation
-        mh_result = self._macd_high.Process(DecimalIndicatorValue(self._macd_high, macd, t, True))
-        ml_result = self._macd_low.Process(DecimalIndicatorValue(self._macd_low, macd, t, True))
+        mh_result = self._macd_high.Process(self._make_input(self._macd_high, macd, t))
+        ml_result = self._macd_low.Process(self._make_input(self._macd_low, macd, t))
         macd_high = float(mh_result)
         macd_low = float(ml_result)
 
@@ -275,8 +280,8 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         self._st_prev = st
         self._st_pass = True
 
-        sh_result = self._st_high.Process(DecimalIndicatorValue(self._st_high, st, t, True))
-        sl_result = self._st_low.Process(DecimalIndicatorValue(self._st_low, st, t, True))
+        sh_result = self._st_high.Process(self._make_input(self._st_high, st, t))
+        sl_result = self._st_low.Process(self._make_input(self._st_low, st, t))
         st_high = float(sh_result)
         st_low = float(sl_result)
 

@@ -95,17 +95,17 @@ class exp_martin_v2_strategy(Strategy):
 
         if self.Position > 0:
             if high >= self._long_take:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._prepare_next(True)
             elif low <= self._long_stop:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._prepare_next(False)
         elif self.Position < 0:
             if low <= self._short_take:
-                self.BuyMarket()
+                self.BuyMarket(-self.Position)
                 self._prepare_next(True)
             elif high >= self._short_stop:
-                self.BuyMarket()
+                self.BuyMarket(-self.Position)
                 self._prepare_next(False)
 
         if self._need_open and self.Position == 0 and self._cooldown_remaining == 0:
@@ -113,11 +113,11 @@ class exp_martin_v2_strategy(Strategy):
             tp = self._take_profit.Value
             sl = self._stop_loss.Value
             if self._direction == 1:
-                self.BuyMarket()
+                self.BuyMarket(self._current_volume)
                 self._long_take = self._entry_price + tp * step
                 self._long_stop = self._entry_price - sl * step
             else:
-                self.SellMarket()
+                self.SellMarket(self._current_volume)
                 self._short_take = self._entry_price - tp * step
                 self._short_stop = self._entry_price + sl * step
             self._need_open = False

@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AwesomeOscillator, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import AwesomeOscillator, ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -60,13 +60,15 @@ class zonal_trading_strategy(Strategy):
             return
 
         ao_val = float(ao_value)
-        sma_result = self._ao_ema.Process(ao_value, candle.OpenTime, True)
+        d = DecimalIndicatorValue(self._ao_ema, ao_val, candle.OpenTime)
+        d.IsFinal = True
+        sma_result = self._ao_ema.Process(d)
         if not self._ao_ema.IsFormed:
             self._ao_prev2 = self._ao_prev1
             self._ao_prev1 = ao_val
             return
 
-        sma_value = float(sma_result.GetValue[float]())
+        sma_value = float(sma_result)
         ac_value = ao_val - sma_value
 
         if self._history_count < 2:

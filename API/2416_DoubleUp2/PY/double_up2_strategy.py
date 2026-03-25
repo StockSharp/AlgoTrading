@@ -75,9 +75,11 @@ class double_up2_strategy(Strategy):
         rsi = RelativeStrengthIndex()
         rsi.Length = self.CciPeriod
 
-        macd = MovingAverageConvergenceDivergence(
-            ExponentialMovingAverage.Create(self.MacdSlowPeriod),
-            ExponentialMovingAverage.Create(self.MacdFastPeriod))
+        slow_ema = ExponentialMovingAverage()
+        slow_ema.Length = self.MacdSlowPeriod
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self.MacdFastPeriod
+        macd = MovingAverageConvergenceDivergence(slow_ema, fast_ema)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(rsi, macd, self.ProcessCandle).Start()

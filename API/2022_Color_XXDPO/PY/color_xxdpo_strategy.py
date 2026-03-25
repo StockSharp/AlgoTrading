@@ -86,14 +86,18 @@ class color_xxdpo_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        ma1_result = self._ma1.Process(DecimalIndicatorValue(self._ma1, close, t, True))
+        ma1_input = DecimalIndicatorValue(self._ma1, close, t)
+        ma1_input.IsFinal = True
+        ma1_result = self._ma1.Process(ma1_input)
         if not self._ma1.IsFormed or ma1_result.IsEmpty:
             return
 
         ma1_val = float(ma1_result)
         dpo = close - ma1_val
 
-        xxdpo_result = self._ma2.Process(DecimalIndicatorValue(self._ma2, dpo, t, True))
+        ma2_input = DecimalIndicatorValue(self._ma2, dpo, t)
+        ma2_input.IsFinal = True
+        xxdpo_result = self._ma2.Process(ma2_input)
         if not self._ma2.IsFormed or xxdpo_result.IsEmpty:
             return
 
@@ -109,14 +113,12 @@ class color_xxdpo_strategy(Strategy):
         turned_down = self._prev2 <= self._prev1 and xxdpo < self._prev1
 
         if self._cooldown_remaining == 0 and turned_up and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            volume = self.Volume + (-self.Position if self.Position < 0 else 0)
+            self.BuyMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
         elif self._cooldown_remaining == 0 and turned_down and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            volume = self.Volume + (self.Position if self.Position > 0 else 0)
+            self.SellMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
 
         self._prev2 = self._prev1

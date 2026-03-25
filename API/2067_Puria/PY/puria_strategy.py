@@ -99,26 +99,34 @@ class puria_strategy(Strategy):
         self._macd.ShortMa.Length = 15
         self._macd.LongMa.Length = 26
 
+        self.Indicators.Add(self._macd)
+
         self.SubscribeCandles(self.CandleType) \
             .Bind(ma75, ma85, ma5, self.ProcessCandle) \
             .Start()
 
         self.StartProtection(
             takeProfit=Unit(float(self.TakeProfitPct), UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLossPct), UnitTypes.Percent)
+            stopLoss=Unit(float(self.StopLossPct), UnitTypes.Percent),
+            useMarketOrders=True
         )
 
     def ProcessCandle(self, candle, ma75_val, ma85_val, ma5_val):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        macd_result = self._macd.Process(DecimalIndicatorValue(self._macd, close, t, True))
+        macd_input = DecimalIndicatorValue(self._macd, candle.ClosePrice, t)
+        macd_input.IsFinal = True
+        macd_result = self._macd.Process(macd_input)
         if not macd_result.IsFormed:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        close = float(candle.ClosePrice)
         ma75_f = float(ma75_val)
         ma85_f = float(ma85_val)
         ma5_f = float(ma5_val)

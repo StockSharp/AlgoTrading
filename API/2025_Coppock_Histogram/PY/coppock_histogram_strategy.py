@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage
+from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class coppock_histogram_strategy(Strategy):
@@ -68,7 +68,9 @@ class coppock_histogram_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        smooth_val = self._sma.Process(roc1_val + roc2_val, candle.OpenTime, True)
+        sma_input = DecimalIndicatorValue(self._sma, roc1_val + roc2_val, candle.OpenTime)
+        sma_input.IsFinal = True
+        smooth_val = self._sma.Process(sma_input)
         if not smooth_val.IsFinal or smooth_val.IsEmpty or not self._sma.IsFormed:
             return
 

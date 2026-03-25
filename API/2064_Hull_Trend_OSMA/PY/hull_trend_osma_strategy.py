@@ -85,7 +85,8 @@ class hull_trend_osma_strategy(Strategy):
 
         self.StartProtection(
             takeProfit=Unit(float(self.TakeProfitPct), UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLossPct), UnitTypes.Percent)
+            stopLoss=Unit(float(self.StopLossPct), UnitTypes.Percent),
+            useMarketOrders=True
         )
 
     def ProcessCandle(self, candle, hma_val, signal_val):

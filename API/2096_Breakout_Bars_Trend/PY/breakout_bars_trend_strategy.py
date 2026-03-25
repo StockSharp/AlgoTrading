@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ParabolicSar
+from StockSharp.Algo.Indicators import ParabolicSar, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -61,8 +61,11 @@ class breakout_bars_trend_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        sar_result = self._parabolic.Process(candle)
+        cv = CandleIndicatorValue(self._parabolic, candle)
+        sar_result = self._parabolic.Process(cv)
         if not sar_result.IsFormed:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
         sar_value = float(sar_result)
         trend = 1 if sar_value < float(candle.ClosePrice) else -1

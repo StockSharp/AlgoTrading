@@ -112,7 +112,9 @@ class forecast_oscillator_strategy(Strategy):
         price = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        lr_result = self._lin_reg.Process(DecimalIndicatorValue(self._lin_reg, price, t, True))
+        lr_input = DecimalIndicatorValue(self._lin_reg, price, t)
+        lr_input.IsFinal = True
+        lr_result = self._lin_reg.Process(lr_input)
         if not lr_result.IsFormed:
             return
 

@@ -100,6 +100,8 @@ class ichimoku_oscillator_strategy(Strategy):
         self._ema = ExponentialMovingAverage()
         self._ema.Length = self.SmoothingPeriod
 
+        self.Indicators.Add(self._ema)
+
         self._prev_value = None
         self._prev_prev_value = None
 
@@ -109,7 +111,8 @@ class ichimoku_oscillator_strategy(Strategy):
 
         self.StartProtection(
             takeProfit=Unit(float(self.TakeProfitPercent), UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLossPercent), UnitTypes.Percent)
+            stopLoss=Unit(float(self.StopLossPercent), UnitTypes.Percent),
+            useMarketOrders=True
         )
 
     def ProcessCandle(self, candle, ichimoku_value):
@@ -127,15 +130,12 @@ class ichimoku_oscillator_strategy(Strategy):
         if chikou is None or span_b is None or tenkan is None or kijun is None:
             return
 
-        chikou_f = float(chikou)
-        span_b_f = float(span_b)
-        tenkan_f = float(tenkan)
-        kijun_f = float(kijun)
-
-        osc = (chikou_f - span_b_f) - (tenkan_f - kijun_f)
+        osc = (chikou - span_b) - (tenkan - kijun)
 
         t = candle.OpenTime
-        ema_result = self._ema.Process(DecimalIndicatorValue(self._ema, osc, t, True))
+        ema_input = DecimalIndicatorValue(self._ema, osc, t)
+        ema_input.IsFinal = True
+        ema_result = self._ema.Process(ema_input)
         if not ema_result.IsFormed:
             return
 

@@ -118,8 +118,12 @@ class color_schaff_rsi_trend_cycle_strategy(Strategy):
             self._cooldown_remaining -= 1
 
         close = float(candle.ClosePrice)
-        fast_result = self._fast_indicator.Process(DecimalIndicatorValue(self._fast_indicator, close, candle.OpenTime, True))
-        slow_result = self._slow_indicator.Process(DecimalIndicatorValue(self._slow_indicator, close, candle.OpenTime, True))
+        fast_input = DecimalIndicatorValue(self._fast_indicator, candle.ClosePrice, candle.OpenTime)
+        fast_input.IsFinal = True
+        fast_result = self._fast_indicator.Process(fast_input)
+        slow_input = DecimalIndicatorValue(self._slow_indicator, candle.ClosePrice, candle.OpenTime)
+        slow_input.IsFinal = True
+        slow_result = self._slow_indicator.Process(slow_input)
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
 
@@ -148,20 +152,18 @@ class color_schaff_rsi_trend_cycle_strategy(Strategy):
 
         if self._prev_color is not None and self._cooldown_remaining == 0:
             if self._prev_color == 6 and color == 7 and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
+                volume = self.Volume + abs(self.Position)
+                self.BuyMarket(volume)
                 self._cooldown_remaining = self.SignalCooldownBars
             elif self._prev_color == 1 and color == 0 and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+                volume = self.Volume + abs(self.Position)
+                self.SellMarket(volume)
                 self._cooldown_remaining = self.SignalCooldownBars
             elif self.Position > 0 and color <= 1:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._cooldown_remaining = self.SignalCooldownBars
             elif self.Position < 0 and color >= 6:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._cooldown_remaining = self.SignalCooldownBars
 
         self._prev_color = color

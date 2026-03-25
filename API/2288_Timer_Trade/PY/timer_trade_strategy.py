@@ -6,8 +6,6 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class timer_trade_strategy(Strategy):
     """Alternating buy/sell on each candle with SL/TP management."""
@@ -15,7 +13,7 @@ class timer_trade_strategy(Strategy):
         super(timer_trade_strategy, self).__init__()
         self._stop_loss = self.Param("StopLoss", 300.0).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
         self._take_profit = self.Param("TakeProfit", 200.0).SetGreaterThanZero().SetDisplay("Take Profit", "Take profit in price units", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe for strategy", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe for strategy", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

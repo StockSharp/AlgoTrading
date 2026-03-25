@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StochasticOscillator, WilliamsR
+from StockSharp.Algo.Indicators import StochasticOscillator, WilliamsR, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -60,7 +60,9 @@ class the_master_mind_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        wpr_result = self._wpr.Process(candle)
+        wpr_input = CandleIndicatorValue(self._wpr, candle)
+        wpr_input.IsFinal = True
+        wpr_result = self._wpr.Process(wpr_input)
         if not self._wpr.IsFormed:
             return
 

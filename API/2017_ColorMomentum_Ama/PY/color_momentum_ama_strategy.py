@@ -114,7 +114,9 @@ class color_momentum_ama_strategy(Strategy):
             self._cooldown_remaining -= 1
 
         mom_val = float(momentum_value)
-        ama_result = self._ama.Process(DecimalIndicatorValue(self._ama, mom_val, candle.OpenTime, True))
+        ama_input = DecimalIndicatorValue(self._ama, momentum_value, candle.OpenTime)
+        ama_input.IsFinal = True
+        ama_result = self._ama.Process(ama_input)
         if not self._ama.IsFormed or ama_result.IsEmpty:
             return
         ama_value = float(ama_result)
@@ -135,14 +137,12 @@ class color_momentum_ama_strategy(Strategy):
         falling = v2 > v1 and v1 > v0
 
         if self._cooldown_remaining == 0 and rising and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
         elif self._cooldown_remaining == 0 and falling and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
 
     def OnReseted(self):

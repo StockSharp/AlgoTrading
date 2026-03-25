@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class vinin_i_trend_strategy(Strategy):
     """CCI crossing upper/lower levels for trend entry."""
@@ -17,7 +15,7 @@ class vinin_i_trend_strategy(Strategy):
         self._period = self.Param("Period", 20).SetGreaterThanZero().SetDisplay("CCI Period", "CCI indicator period", "Parameters")
         self._up_level = self.Param("UpLevel", 10).SetDisplay("Upper Level", "Upper threshold for buy", "Parameters")
         self._down_level = self.Param("DownLevel", -10).SetDisplay("Lower Level", "Lower threshold for sell", "Parameters")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeVigorIndex, SimpleMovingAverage
+from StockSharp.Algo.Indicators import RelativeVigorIndex, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -69,8 +69,12 @@ class spectral_rvi_crossover_strategy(Strategy):
         avg = float(avg)
         sig = float(sig)
         t = candle.CloseTime
-        sm_rvi_result = self._smooth_rvi.Process(avg, t, True)
-        sm_sig_result = self._smooth_sig.Process(sig, t, True)
+        d1 = DecimalIndicatorValue(self._smooth_rvi, avg, t)
+        d1.IsFinal = True
+        sm_rvi_result = self._smooth_rvi.Process(d1)
+        d2 = DecimalIndicatorValue(self._smooth_sig, sig, t)
+        d2.IsFinal = True
+        sm_sig_result = self._smooth_sig.Process(d2)
         if not self._smooth_rvi.IsFormed or not self._smooth_sig.IsFormed:
             return
         sm_rvi = float(sm_rvi_result)

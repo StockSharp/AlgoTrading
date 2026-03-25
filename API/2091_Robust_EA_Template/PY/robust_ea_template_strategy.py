@@ -62,6 +62,8 @@ class robust_ea_template_strategy(Strategy):
             return
         if not cci_val.IsFormed or not rsi_val.IsFormed:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         cci_value = float(cci_val)
         rsi_value = float(rsi_val)
         long_signal = cci_value < -50.0 and rsi_value < 40.0

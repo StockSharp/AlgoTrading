@@ -29,6 +29,8 @@ class color_stoch_nr_strategy(Strategy):
 
         self._prev_k = 0.0
         self._prev_d = 0.0
+        self._prev_k_delta = 0.0
+        self._prev_d_delta = 0.0
 
     @property
     def candle_type(self):
@@ -38,6 +40,8 @@ class color_stoch_nr_strategy(Strategy):
         super(color_stoch_nr_strategy, self).OnReseted()
         self._prev_k = 0.0
         self._prev_d = 0.0
+        self._prev_k_delta = 0.0
+        self._prev_d_delta = 0.0
 
     def OnStarted(self, time):
         super(color_stoch_nr_strategy, self).OnStarted(time)
@@ -64,21 +68,38 @@ class color_stoch_nr_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        k = float(stoch_value.K) if stoch_value.K is not None else 0.0
-        d = float(stoch_value.D) if stoch_value.D is not None else 0.0
+        k_val = stoch_value.K
+        d_val = stoch_value.D
 
-        if k == 0.0 and d == 0.0:
+        if k_val is None or d_val is None:
             return
 
-        # OscDisposition mode: K crosses D
-        if self._prev_k <= self._prev_d and k > d and self.Position <= 0:
+        k = float(k_val)
+        d = float(d_val)
 
+        delta_k = k - self._prev_k
+        delta_d = d - self._prev_d
+
+        buy = False
+        sell = False
+
+        # OscDisposition mode
+        if self._prev_k <= self._prev_d and k > d:
+            buy = True
+        elif self._prev_k >= self._prev_d and k < d:
+            sell = True
+
+        if buy and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
-
-        elif self._prev_k >= self._prev_d and k < d and self.Position >= 0:
-
+        elif sell and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
 
+        self._prev_k_delta = delta_k
+        self._prev_d_delta = delta_d
         self._prev_k = k
         self._prev_d = d
 

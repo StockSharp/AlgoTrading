@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StochasticOscillator
+from StockSharp.Algo.Indicators import StochasticOscillator, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class kprm_st_cross_strategy(Strategy):
@@ -45,7 +45,8 @@ class kprm_st_cross_strategy(Strategy):
 
         self.StartProtection(
             Unit(self._take_profit_pct.Value, UnitTypes.Percent),
-            Unit(self._stop_loss_pct.Value, UnitTypes.Percent))
+            Unit(self._stop_loss_pct.Value, UnitTypes.Percent),
+            useMarketOrders=True)
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._process_candle).Start()
@@ -59,8 +60,12 @@ class kprm_st_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        stoch_result = self._stochastic.Process(candle)
+        cv = CandleIndicatorValue(self._stochastic, candle)
+        stoch_result = self._stochastic.Process(cv)
         if not stoch_result.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         k = stoch_result.K

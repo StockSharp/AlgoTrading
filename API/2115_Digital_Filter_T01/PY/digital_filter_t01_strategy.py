@@ -68,6 +68,8 @@ class digital_filter_t01_strategy(Strategy):
             self._prices.pop(0)
         if len(self._prices) < num_coeffs:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         digital = 0.0
         for i in range(num_coeffs):
             digital += self._coeffs[i] * self._prices[num_coeffs - 1 - i]

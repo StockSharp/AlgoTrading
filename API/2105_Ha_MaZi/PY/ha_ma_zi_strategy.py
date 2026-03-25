@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -81,8 +81,10 @@ class ha_ma_zi_strategy(Strategy):
     def on_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
-        high_result = self._highest.Process(candle)
-        low_result = self._lowest.Process(candle)
+        cv_h = CandleIndicatorValue(self._highest, candle)
+        high_result = self._highest.Process(cv_h)
+        cv_l = CandleIndicatorValue(self._lowest, candle)
+        low_result = self._lowest.Process(cv_l)
         if not high_result.IsFormed or not low_result.IsFormed:
             return
         highest = float(high_result)

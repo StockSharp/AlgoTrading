@@ -80,12 +80,11 @@ class master_mind3_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(rsi1, rsi2, rsi3, rsi4, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, rsi1_val, rsi2_val, rsi3_val, rsi4_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         r1 = float(rsi1_val)

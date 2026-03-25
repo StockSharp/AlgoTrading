@@ -6,8 +6,6 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class re_open_positions_strategy(Strategy):
     def __init__(self):
@@ -16,7 +14,7 @@ class re_open_positions_strategy(Strategy):
         self._max_positions = self.Param("MaxPositions", 1).SetDisplay("Max Positions", "Maximum positions", "Parameters")
         self._sl_points = self.Param("StopLossPoints", 1000.0).SetDisplay("Stop Loss (pts)", "SL distance", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 2000.0).SetDisplay("Take Profit (pts)", "TP distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

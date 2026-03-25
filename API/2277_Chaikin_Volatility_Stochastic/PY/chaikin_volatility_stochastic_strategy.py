@@ -85,7 +85,7 @@ class chaikin_volatility_stochastic_strategy(Strategy):
         ema_result = self._range_ema.Process(input_ema)
         if not self._range_ema.IsFormed:
             return
-        ema_val = float(ema_result.GetValue[float]())
+        ema_val = float(ema_result)
         input_high = DecimalIndicatorValue(self._highest, ema_val, t)
         input_high.IsFinal = True
         high_result = self._highest.Process(input_high)
@@ -94,8 +94,8 @@ class chaikin_volatility_stochastic_strategy(Strategy):
         low_result = self._lowest.Process(input_low)
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return
-        hh = float(high_result.GetValue[float]())
-        ll = float(low_result.GetValue[float]())
+        hh = float(high_result)
+        ll = float(low_result)
         if hh == ll:
             return
         percent = (ema_val - ll) / (hh - ll) * 100.0
@@ -104,7 +104,7 @@ class chaikin_volatility_stochastic_strategy(Strategy):
         smooth_result = self._wma.Process(input_wma)
         if not self._wma.IsFormed:
             return
-        current = float(smooth_result.GetValue[float]())
+        current = float(smooth_result)
         if self._prev is not None and self._prev_prev is not None:
             was_rising = self._prev > self._prev_prev
             is_falling = current < self._prev

@@ -91,7 +91,8 @@ class rsi_expert_strategy(Strategy):
 
         self.StartProtection(
             takeProfit=Unit(float(self.TakeProfitPercent), UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLossPercent), UnitTypes.Percent)
+            stopLoss=Unit(float(self.StopLossPercent), UnitTypes.Percent),
+            useMarketOrders=True
         )
 
     def ProcessCandle(self, candle, rsi_val):

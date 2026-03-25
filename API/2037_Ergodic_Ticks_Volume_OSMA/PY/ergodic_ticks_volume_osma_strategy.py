@@ -79,6 +79,9 @@ class ergodic_ticks_volume_osma_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         macd_val = value.Macd
         signal_val = value.Signal
 

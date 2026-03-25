@@ -107,7 +107,9 @@ class trend_catcher_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        slow_result = self._slow_ma.Process(DecimalIndicatorValue(self._slow_ma, close, t, True))
+        slow_input = DecimalIndicatorValue(self._slow_ma, close, t)
+        slow_input.IsFinal = True
+        slow_result = self._slow_ma.Process(slow_input)
         if not slow_result.IsFormed:
             return
 

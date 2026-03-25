@@ -80,7 +80,7 @@ class color_j2_jma_std_dev_strategy(Strategy):
         std_result = self._std_dev.Process(input_val)
         if not self._std_dev.IsFormed:
             return
-        st_dev = float(std_result.GetValue[float]())
+        st_dev = float(std_result)
         if st_dev == 0:
             return
         k1_val = float(self.k1)

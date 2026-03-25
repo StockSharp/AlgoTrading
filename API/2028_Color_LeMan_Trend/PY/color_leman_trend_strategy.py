@@ -171,8 +171,12 @@ class color_leman_trend_strategy(Strategy):
 
         t = candle.OpenTime
 
-        bulls_result = self._bulls_ema.Process(DecimalIndicatorValue(self._bulls_ema, hh, t, True))
-        bears_result = self._bears_ema.Process(DecimalIndicatorValue(self._bears_ema, ll, t, True))
+        bulls_input = DecimalIndicatorValue(self._bulls_ema, hh, t)
+        bulls_input.IsFinal = True
+        bulls_result = self._bulls_ema.Process(bulls_input)
+        bears_input = DecimalIndicatorValue(self._bears_ema, ll, t)
+        bears_input.IsFinal = True
+        bears_result = self._bears_ema.Process(bears_input)
 
         if bulls_result.IsEmpty or bears_result.IsEmpty:
             return

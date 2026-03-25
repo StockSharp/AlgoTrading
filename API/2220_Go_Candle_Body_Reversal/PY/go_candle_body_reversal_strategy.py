@@ -50,7 +50,9 @@ class go_candle_body_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         body = float(candle.ClosePrice) - float(candle.OpenPrice)
-        ma_result = self._body_sma.Process(DecimalIndicatorValue(self._body_sma, body, candle.OpenTime))
+        div = DecimalIndicatorValue(self._body_sma, body, candle.OpenTime)
+        div.IsFinal = True
+        ma_result = self._body_sma.Process(div)
         if not ma_result.IsFormed:
             return
         value = float(ma_result)

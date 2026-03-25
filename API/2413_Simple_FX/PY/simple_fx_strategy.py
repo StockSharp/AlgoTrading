@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class simple_fx_strategy(Strategy):
     def __init__(self):
@@ -17,7 +15,7 @@ class simple_fx_strategy(Strategy):
         self._short_ma = self.Param("ShortMaPeriod", 50).SetGreaterThanZero().SetDisplay("Short MA Period", "Period of short EMA", "Parameters")
         self._sl = self.Param("StopLoss", 30).SetDisplay("Stop Loss", "SL in price steps", "Risk")
         self._tp = self.Param("TakeProfit", 50).SetDisplay("Take Profit", "TP in price steps", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class ro_boost_strategy(Strategy):
     def __init__(self):
@@ -21,7 +19,7 @@ class ro_boost_strategy(Strategy):
         self._use_trailing = self.Param("UseTrailing", False).SetDisplay("Use Trailing", "Enable trailing stop", "Risk")
         self._trail_start = self.Param("TrailStart", 5.0).SetGreaterThanZero().SetDisplay("Trail Start", "Profit to activate trailing", "Risk")
         self._trail_step = self.Param("TrailStep", 2.0).SetGreaterThanZero().SetDisplay("Trail Step", "Trailing distance from price", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

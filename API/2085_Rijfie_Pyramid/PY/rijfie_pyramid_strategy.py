@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StochasticOscillator, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import StochasticOscillator, ExponentialMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -73,8 +73,12 @@ class rijfie_pyramid_strategy(Strategy):
     def on_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        stoch_result = self._stochastic.Process(candle)
+        cv = CandleIndicatorValue(self._stochastic, candle)
+        stoch_result = self._stochastic.Process(cv)
         if not stoch_result.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         k = stoch_result.K

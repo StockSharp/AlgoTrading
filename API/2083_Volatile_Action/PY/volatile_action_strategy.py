@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import AverageTrueRange, SmoothedMovingAverage
+from StockSharp.Algo.Indicators import AverageTrueRange, SmoothedMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -88,16 +88,31 @@ class volatile_action_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        atr1_val = self._atr1.Process(candle)
-        atr_base_val = self._atr_base.Process(candle)
+        cv1 = CandleIndicatorValue(self._atr1, candle)
+        atr1_val = self._atr1.Process(cv1)
+        cv2 = CandleIndicatorValue(self._atr_base, candle)
+        atr_base_val = self._atr_base.Process(cv2)
 
-        median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
-        jaw_val = self._jaw.Process(median, candle.OpenTime, True)
-        teeth_val = self._teeth.Process(median, candle.OpenTime, True)
-        lips_val = self._lips.Process(median, candle.OpenTime, True)
+        median = (candle.HighPrice + candle.LowPrice) / 2
+        t = candle.OpenTime
+
+        jaw_input = DecimalIndicatorValue(self._jaw, median, t)
+        jaw_input.IsFinal = True
+        jaw_val = self._jaw.Process(jaw_input)
+
+        teeth_input = DecimalIndicatorValue(self._teeth, median, t)
+        teeth_input.IsFinal = True
+        teeth_val = self._teeth.Process(teeth_input)
+
+        lips_input = DecimalIndicatorValue(self._lips, median, t)
+        lips_input.IsFinal = True
+        lips_val = self._lips.Process(lips_input)
 
         if (not atr1_val.IsFormed or not atr_base_val.IsFormed or
                 not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed):
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         atr1 = float(atr1_val)

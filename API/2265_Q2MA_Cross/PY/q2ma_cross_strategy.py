@@ -65,8 +65,8 @@ class q2ma_cross_strategy(Strategy):
         dn_result = self._open_ma.Process(input_open)
         if not self._close_ma.IsFormed or not self._open_ma.IsFormed:
             return
-        up = float(up_result.GetValue[float]())
-        dn = float(dn_result.GetValue[float]())
+        up = float(up_result)
+        dn = float(dn_result)
         if self._prev_up is None or self._prev_dn is None:
             self._prev_up = up
             self._prev_dn = dn

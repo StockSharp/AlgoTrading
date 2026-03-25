@@ -78,8 +78,8 @@ class exp_adx_cross_hull_style_strategy(Strategy):
         if not fast_hull_value.IsFormed or not slow_hull_value.IsFormed:
             return
 
-        fast_hull = float(fast_hull_value.GetValue[float]())
-        slow_hull = float(slow_hull_value.GetValue[float]())
+        fast_hull = float(fast_hull_value)
+        slow_hull = float(slow_hull_value)
 
         if self._prev_plus_di is not None and self._prev_minus_di is not None:
             # Entry: +DI crosses above -DI

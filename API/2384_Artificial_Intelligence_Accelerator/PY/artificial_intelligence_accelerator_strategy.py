@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -100,16 +100,22 @@ class artificial_intelligence_accelerator_strategy(Strategy):
         self._bars_since_trade += 1
 
         hl2 = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
-        t = candle.ServerTime
+        t = candle.OpenTime
 
-        ao_fast_result = self._ao_fast.Process(hl2, t, True)
-        ao_slow_result = self._ao_slow.Process(hl2, t, True)
+        fast_input = DecimalIndicatorValue(self._ao_fast, hl2, t)
+        fast_input.IsFinal = True
+        ao_fast_result = self._ao_fast.Process(fast_input)
+        slow_input = DecimalIndicatorValue(self._ao_slow, hl2, t)
+        slow_input.IsFinal = True
+        ao_slow_result = self._ao_slow.Process(slow_input)
         if not self._ao_fast.IsFormed or not self._ao_slow.IsFormed:
             return
 
         ao = float(ao_fast_result) - float(ao_slow_result)
 
-        ac_ma_result = self._ac_ma.Process(ao, t, True)
+        ac_input = DecimalIndicatorValue(self._ac_ma, ao, t)
+        ac_input.IsFinal = True
+        ac_ma_result = self._ac_ma.Process(ac_input)
         if not self._ac_ma.IsFormed:
             return
 

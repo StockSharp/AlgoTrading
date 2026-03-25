@@ -18,7 +18,7 @@ class negative_spread_strategy(Strategy):
             .SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
         self._bb_width = self.Param("BbWidth", 1.5) \
             .SetDisplay("BB Width", "Bollinger Bands deviation", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
     @property

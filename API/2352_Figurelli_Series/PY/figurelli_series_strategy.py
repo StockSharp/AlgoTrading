@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 import math
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class figurelli_series_strategy(Strategy):
@@ -72,7 +72,9 @@ class figurelli_series_strategy(Strategy):
         all_formed = True
 
         for ema in self._emas:
-            result = ema.Process(candle)
+            d = DecimalIndicatorValue(ema, candle.ClosePrice, candle.OpenTime)
+            d.IsFinal = True
+            result = ema.Process(d)
             if not ema.IsFormed:
                 all_formed = False
                 continue

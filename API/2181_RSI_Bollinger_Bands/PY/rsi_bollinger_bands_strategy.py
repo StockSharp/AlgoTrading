@@ -76,7 +76,7 @@ class rsi_bollinger_bands_strategy(Strategy):
 
         if not rsi_value.IsFormed:
             return
-        rsi = float(rsi_value.GetValue[float]())
+        rsi = float(rsi_value)
 
         upper = bb_value.UpBand
         lower = bb_value.LowBand

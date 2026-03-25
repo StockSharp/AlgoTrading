@@ -129,6 +129,9 @@ class dig_variation_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         val = float(ema_value)
 
         if not self._initialized:

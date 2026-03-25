@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Algo.Indicators import Highest, Lowest, CandleIndicatorValue, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class color_zerolag_hlr_strategy(Strategy):
@@ -68,6 +68,13 @@ class color_zerolag_hlr_strategy(Strategy):
         self._low3 = Lowest()
         self._low3.Length = self._hlr_period3.Value
 
+        self.Indicators.Add(self._high1)
+        self.Indicators.Add(self._low1)
+        self.Indicators.Add(self._high2)
+        self.Indicators.Add(self._low2)
+        self.Indicators.Add(self._high3)
+        self.Indicators.Add(self._low3)
+
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.on_process).Start()
 
@@ -75,15 +82,24 @@ class color_zerolag_hlr_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        h1 = self._high1.Process(candle)
-        l1 = self._low1.Process(candle)
-        h2 = self._high2.Process(candle)
-        l2 = self._low2.Process(candle)
-        h3 = self._high3.Process(candle)
-        l3 = self._low3.Process(candle)
+        cv1 = CandleIndicatorValue(self._high1, candle)
+        h1 = self._high1.Process(cv1)
+        cv2 = CandleIndicatorValue(self._low1, candle)
+        l1 = self._low1.Process(cv2)
+        cv3 = CandleIndicatorValue(self._high2, candle)
+        h2 = self._high2.Process(cv3)
+        cv4 = CandleIndicatorValue(self._low2, candle)
+        l2 = self._low2.Process(cv4)
+        cv5 = CandleIndicatorValue(self._high3, candle)
+        h3 = self._high3.Process(cv5)
+        cv6 = CandleIndicatorValue(self._low3, candle)
+        l3 = self._low3.Process(cv6)
 
         if (not h1.IsFormed or not l1.IsFormed or not h2.IsFormed or
             not l2.IsFormed or not h3.IsFormed or not l3.IsFormed):
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         high1 = float(h1)

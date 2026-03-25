@@ -78,7 +78,7 @@ class directed_movement_strategy(Strategy):
         fast_result = self._fast_ma.Process(input_fast)
         if not self._fast_ma.IsFormed:
             return
-        fast = float(fast_result.GetValue[float]())
+        fast = float(fast_result)
         input_slow = DecimalIndicatorValue(self._slow_ma, fast, t)
         input_slow.IsFinal = True
         slow_result = self._slow_ma.Process(input_slow)
@@ -86,7 +86,7 @@ class directed_movement_strategy(Strategy):
             self._prev_fast = fast
             self._prev_slow = fast
             return
-        slow = float(slow_result.GetValue[float]())
+        slow = float(slow_result)
         if self._prev_fast > self._prev_slow and fast <= slow and self.Position <= 0:
             self.BuyMarket()
         elif self._prev_fast < self._prev_slow and fast >= slow and self.Position >= 0:

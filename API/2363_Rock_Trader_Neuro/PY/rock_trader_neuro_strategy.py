@@ -8,15 +8,13 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class rock_trader_neuro_strategy(Strategy):
     def __init__(self):
         super(rock_trader_neuro_strategy, self).__init__()
         self._sl = self.Param("StopLoss", 30.0).SetDisplay("Stop Loss", "SL in price units", "Risk")
         self._tp = self.Param("TakeProfit", 100.0).SetDisplay("Take Profit", "TP in price units", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

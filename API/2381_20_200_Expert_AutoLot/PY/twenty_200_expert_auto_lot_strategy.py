@@ -6,8 +6,6 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class twenty_200_expert_auto_lot_strategy(Strategy):
     """Open price difference between two bar offsets with SL/TP management."""
@@ -21,7 +19,7 @@ class twenty_200_expert_auto_lot_strategy(Strategy):
         self._t2 = self.Param("T2", 2).SetDisplay("T2", "Second bar shift", "Logic")
         self._delta_long = self.Param("DeltaLong", 1).SetDisplay("Delta Long", "Min rise", "Logic")
         self._delta_short = self.Param("DeltaShort", 1).SetDisplay("Delta Short", "Min fall", "Logic")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

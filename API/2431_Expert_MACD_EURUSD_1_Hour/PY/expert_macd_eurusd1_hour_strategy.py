@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -95,8 +95,13 @@ class expert_macd_eurusd1_hour_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_result = self._fast_ema.Process(candle.ClosePrice, candle.CloseTime, True)
-        slow_result = self._slow_ema.Process(candle.ClosePrice, candle.CloseTime, True)
+        t = candle.OpenTime
+        fast_input = DecimalIndicatorValue(self._fast_ema, candle.ClosePrice, t)
+        fast_input.IsFinal = True
+        fast_result = self._fast_ema.Process(fast_input)
+        slow_input = DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, t)
+        slow_input.IsFinal = True
+        slow_result = self._slow_ema.Process(slow_input)
         if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
             return
 
@@ -104,7 +109,9 @@ class expert_macd_eurusd1_hour_strategy(Strategy):
         slow_val = float(slow_result)
         main = fast_val - slow_val
 
-        signal_result = self._signal_ema.Process(main, candle.CloseTime, True)
+        sig_input = DecimalIndicatorValue(self._signal_ema, main, t)
+        sig_input.IsFinal = True
+        signal_result = self._signal_ema.Process(sig_input)
         if not self._signal_ema.IsFormed:
             return
 

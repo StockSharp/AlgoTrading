@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Algo.Indicators import Highest, Lowest, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -75,10 +75,15 @@ class exp_multitrend_signal_kvn_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        max_result = self._max_high.Process(candle)
-        min_result = self._min_low.Process(candle)
+        cv1 = CandleIndicatorValue(self._max_high, candle)
+        max_result = self._max_high.Process(cv1)
+        cv2 = CandleIndicatorValue(self._min_low, candle)
+        min_result = self._min_low.Process(cv2)
 
         if not max_result.IsFormed or not min_result.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         ss_max = float(max_result)

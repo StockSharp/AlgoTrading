@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SmoothedMovingAverage
+from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -90,12 +90,25 @@ class bill_williams_strategy(Strategy):
             if ls[2] < ls[0] and ls[2] < ls[1] and ls[2] < ls[3] and ls[2] < ls[4]:
                 self._fractal_down = ls[2]
 
-        median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
-        jaw_val = self._jaw.Process(median, candle.OpenTime, True)
-        teeth_val = self._teeth.Process(median, candle.OpenTime, True)
-        lips_val = self._lips.Process(median, candle.OpenTime, True)
+        median = (candle.HighPrice + candle.LowPrice) / 2
+        t = candle.OpenTime
+
+        jaw_input = DecimalIndicatorValue(self._jaw, median, t)
+        jaw_input.IsFinal = True
+        jaw_val = self._jaw.Process(jaw_input)
+
+        teeth_input = DecimalIndicatorValue(self._teeth, median, t)
+        teeth_input.IsFinal = True
+        teeth_val = self._teeth.Process(teeth_input)
+
+        lips_input = DecimalIndicatorValue(self._lips, median, t)
+        lips_input.IsFinal = True
+        lips_val = self._lips.Process(lips_input)
 
         if not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         jaw = float(jaw_val)

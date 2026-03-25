@@ -88,7 +88,9 @@ class dec_ema_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        ema_result = self._base_ema.Process(DecimalIndicatorValue(self._base_ema, close, t, True))
+        ema_input = DecimalIndicatorValue(self._base_ema, close, t)
+        ema_input.IsFinal = True
+        ema_result = self._base_ema.Process(ema_input)
         if not self._base_ema.IsFormed:
             return
 

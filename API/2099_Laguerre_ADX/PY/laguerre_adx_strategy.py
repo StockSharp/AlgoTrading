@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import AverageDirectionalIndex
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -110,8 +110,11 @@ class laguerre_adx_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        adx_result = self._adx.Process(candle)
+        cv = CandleIndicatorValue(self._adx, candle)
+        adx_result = self._adx.Process(cv)
         if not adx_result.IsFormed:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         plus = adx_result.Dx.Plus
@@ -134,14 +137,12 @@ class laguerre_adx_strategy(Strategy):
             return
 
         if self._prev_up <= self._prev_down and up > down and self.Position <= 0:
-
-
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
-
-
         elif self._prev_up >= self._prev_down and up < down and self.Position >= 0:
-
-
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
 
         self._prev_up = up

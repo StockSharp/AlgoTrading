@@ -69,10 +69,18 @@ class heiken_ashi_smoothed_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.OpenTime
-        o_result = self._open_ema.Process(DecimalIndicatorValue(self._open_ema, float(candle.OpenPrice), t))
-        c_result = self._close_ema.Process(DecimalIndicatorValue(self._close_ema, float(candle.ClosePrice), t))
-        h_result = self._high_ema.Process(DecimalIndicatorValue(self._high_ema, float(candle.HighPrice), t))
-        l_result = self._low_ema.Process(DecimalIndicatorValue(self._low_ema, float(candle.LowPrice), t))
+        d1 = DecimalIndicatorValue(self._open_ema, float(candle.OpenPrice), t)
+        d1.IsFinal = True
+        o_result = self._open_ema.Process(d1)
+        d2 = DecimalIndicatorValue(self._close_ema, float(candle.ClosePrice), t)
+        d2.IsFinal = True
+        c_result = self._close_ema.Process(d2)
+        d3 = DecimalIndicatorValue(self._high_ema, float(candle.HighPrice), t)
+        d3.IsFinal = True
+        h_result = self._high_ema.Process(d3)
+        d4 = DecimalIndicatorValue(self._low_ema, float(candle.LowPrice), t)
+        d4.IsFinal = True
+        l_result = self._low_ema.Process(d4)
         if not o_result.IsFormed or not c_result.IsFormed or not h_result.IsFormed or not l_result.IsFormed:
             return
         open_ema = float(o_result)

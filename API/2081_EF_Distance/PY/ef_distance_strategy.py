@@ -88,6 +88,9 @@ class ef_distance_strategy(Strategy):
             self._prev = sma_value
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         atr_enough = atr_value >= float(self.atr_multiplier) / 100.0 * float(candle.ClosePrice)
 
         if atr_enough:

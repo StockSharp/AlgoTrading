@@ -158,8 +158,12 @@ class color_schaff_momentum_trend_cycle_strategy(Strategy):
             self._cooldown_remaining -= 1
 
         close = float(candle.ClosePrice)
-        fast_result = self._fast_momentum.Process(DecimalIndicatorValue(self._fast_momentum, close, candle.OpenTime, True))
-        slow_result = self._slow_momentum.Process(DecimalIndicatorValue(self._slow_momentum, close, candle.OpenTime, True))
+        fast_input = DecimalIndicatorValue(self._fast_momentum, candle.ClosePrice, candle.OpenTime)
+        fast_input.IsFinal = True
+        fast_result = self._fast_momentum.Process(fast_input)
+        slow_input = DecimalIndicatorValue(self._slow_momentum, candle.ClosePrice, candle.OpenTime)
+        slow_input.IsFinal = True
+        slow_result = self._slow_momentum.Process(slow_input)
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
 

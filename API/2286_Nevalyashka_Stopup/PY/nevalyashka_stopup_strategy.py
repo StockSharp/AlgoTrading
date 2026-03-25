@@ -6,7 +6,6 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class nevalyashka_stopup_strategy(Strategy):
     def __init__(self):
@@ -14,7 +13,7 @@ class nevalyashka_stopup_strategy(Strategy):
         self._stop_loss = self.Param("StopLoss", 500.0).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop loss in price units", "General")
         self._take_profit = self.Param("TakeProfit", 200.0).SetGreaterThanZero().SetDisplay("Take Profit", "Take profit in price units", "General")
         self._martingale_coeff = self.Param("MartingaleCoeff", 1.5).SetGreaterThanZero().SetDisplay("Martingale Coeff", "Multiplier applied after loss", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

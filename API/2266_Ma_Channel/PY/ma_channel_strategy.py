@@ -69,8 +69,8 @@ class ma_channel_strategy(Strategy):
         if not self._ma_high.IsFormed or not self._ma_low.IsFormed:
             return
         offset_val = float(self.offset)
-        upper = float(high_result.GetValue[float]()) + offset_val
-        lower = float(low_result.GetValue[float]()) - offset_val
+        upper = float(high_result) + offset_val
+        lower = float(low_result) - offset_val
         prev_trend = self._trend
         high_price = float(candle.HighPrice)
         low_price = float(candle.LowPrice)

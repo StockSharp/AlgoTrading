@@ -61,6 +61,8 @@ class basic_trailing_stop_strategy(Strategy):
             return
         if not cci_val.IsFormed or not rsi_val.IsFormed:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         self.process_candle(candle, float(cci_val), float(rsi_val))
 
     def process_candle(self, candle, cci_value, rsi_value):

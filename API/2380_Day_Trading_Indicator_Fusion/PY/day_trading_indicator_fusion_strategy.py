@@ -75,28 +75,37 @@ class day_trading_indicator_fusion_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(macd, stochastic, parabolic_sar, self.ProcessCandle).Start()
 
-        pip = float(self.Security.PriceStep) if self.Security is not None else 1.0
-        tp = Unit(float(self.TakeProfit) * pip, UnitTypes.Absolute) if self.TakeProfit > 0 else None
-        sl = Unit(float(self.TrailingStop) * pip, UnitTypes.Absolute) if self.TrailingStop > 0 else None
-        self.StartProtection(tp, sl, self.TrailingStop > 0)
+        pip = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        tp = Unit(float(self.TakeProfit) * pip, UnitTypes.Absolute) if self.TakeProfit > 0 else Unit()
+        sl = Unit(float(self.TrailingStop) * pip, UnitTypes.Absolute) if self.TrailingStop > 0 else Unit()
+        self.StartProtection(
+            takeProfit=tp,
+            stopLoss=sl,
+            isStopTrailing=self.TrailingStop > 0)
 
     def ProcessCandle(self, candle, macd_value, stoch_value, sar_value):
         if candle.State != CandleStates.Finished:
             return
 
-        macd_typed = macd_value
-        macd_v = float(macd_typed.Macd) if macd_typed.Macd is not None else None
-        macd_signal = float(macd_typed.Signal) if macd_typed.Signal is not None else None
-        if macd_v is None or macd_signal is None:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stoch_typed = stoch_value
-        stoch_k = float(stoch_typed.K) if stoch_typed.K is not None else None
-        stoch_d = float(stoch_typed.D) if stoch_typed.D is not None else None
-        if stoch_k is None or stoch_d is None:
+        try:
+            macd_v = float(macd_value.Macd)
+            macd_signal = float(macd_value.Signal)
+        except:
             return
 
-        sar = float(sar_value)
+        try:
+            stoch_k = float(stoch_value.K)
+            stoch_d = float(stoch_value.D)
+        except:
+            return
+
+        try:
+            sar = float(sar_value)
+        except:
+            return
 
         is_buying = sar <= float(candle.ClosePrice) and self._prev_sar > sar and macd_v < macd_signal and stoch_k < 35.0
         is_selling = sar >= float(candle.ClosePrice) and self._prev_sar < sar and macd_v > macd_signal and stoch_k > 60.0

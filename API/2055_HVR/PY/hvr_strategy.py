@@ -88,8 +88,12 @@ class hvr_strategy(Strategy):
 
         t = candle.OpenTime
 
-        short_result = self._short_sd.Process(DecimalIndicatorValue(self._short_sd, log_return, t, True))
-        long_result = self._long_sd.Process(DecimalIndicatorValue(self._long_sd, log_return, t, True))
+        short_input = DecimalIndicatorValue(self._short_sd, log_return, t)
+        short_input.IsFinal = True
+        short_result = self._short_sd.Process(short_input)
+        long_input = DecimalIndicatorValue(self._long_sd, log_return, t)
+        long_input.IsFinal = True
+        long_result = self._long_sd.Process(long_input)
 
         if not short_result.IsFormed or not long_result.IsFormed:
             return

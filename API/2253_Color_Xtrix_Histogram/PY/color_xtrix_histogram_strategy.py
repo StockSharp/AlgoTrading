@@ -86,19 +86,19 @@ class color_xtrix_histogram_strategy(Strategy):
         ema_result = self._triple_ema.Process(input_val)
         if not self._triple_ema.IsFormed:
             return
-        ema_val = float(ema_result.GetValue[float]())
+        ema_val = float(ema_result)
         input_roc = DecimalIndicatorValue(self._roc, ema_val, t)
         input_roc.IsFinal = True
         roc_result = self._roc.Process(input_roc)
         if not self._roc.IsFormed:
             return
-        roc_val = float(roc_result.GetValue[float]())
+        roc_val = float(roc_result)
         input_smooth = DecimalIndicatorValue(self._smoother, roc_val, t)
         input_smooth.IsFinal = True
         smooth_result = self._smoother.Process(input_smooth)
         if not self._smoother.IsFormed:
             return
-        trix = float(smooth_result.GetValue[float]())
+        trix = float(smooth_result)
         if self._prev1 is None or self._prev2 is None:
             self._prev2 = self._prev1
             self._prev1 = trix

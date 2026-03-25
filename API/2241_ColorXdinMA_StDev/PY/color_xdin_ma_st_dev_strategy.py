@@ -85,7 +85,7 @@ class color_xdin_ma_st_dev_strategy(Strategy):
         std_result = self._std_dev.Process(input_val)
         if not self._std_dev.IsFormed:
             return
-        st_dev = float(std_result.GetValue[float]())
+        st_dev = float(std_result)
         if st_dev == 0:
             return
         filter_val = float(self.k1) * st_dev

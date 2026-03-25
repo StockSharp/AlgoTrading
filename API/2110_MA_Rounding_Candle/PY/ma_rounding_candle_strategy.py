@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -52,10 +52,18 @@ class ma_rounding_candle_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        open_val = float(self._open_ma.Process(float(candle.OpenPrice), candle.OpenTime, True).ToDecimal())
-        close_val = float(self._close_ma.Process(float(candle.ClosePrice), candle.OpenTime, True).ToDecimal())
+        div_o = DecimalIndicatorValue(self._open_ma, candle.OpenPrice, candle.OpenTime)
+        div_o.IsFinal = True
+        open_result = self._open_ma.Process(div_o)
+        div_c = DecimalIndicatorValue(self._close_ma, candle.ClosePrice, candle.OpenTime)
+        div_c.IsFinal = True
+        close_result = self._close_ma.Process(div_c)
         if not self._open_ma.IsFormed or not self._close_ma.IsFormed:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        open_val = float(open_result)
+        close_val = float(close_result)
         if open_val < close_val:
             color = 2
         elif open_val > close_val:

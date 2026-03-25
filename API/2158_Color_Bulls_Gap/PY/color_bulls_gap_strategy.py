@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -80,12 +80,20 @@ class color_bulls_gap_strategy(Strategy):
             return
 
         t = candle.OpenTime
-        sma_close_val = float(self._sma_close.Process(candle.ClosePrice, t, True).GetValue[float]())
-        sma_open_val = float(self._sma_open.Process(candle.OpenPrice, t, True).GetValue[float]())
+        d1 = DecimalIndicatorValue(self._sma_close, candle.ClosePrice, t)
+        d1.IsFinal = True
+        sma_close_val = float(self._sma_close.Process(d1))
+        d2 = DecimalIndicatorValue(self._sma_open, candle.OpenPrice, t)
+        d2.IsFinal = True
+        sma_open_val = float(self._sma_open.Process(d2))
         bulls_c = float(candle.HighPrice) - sma_close_val
         bulls_o = float(candle.HighPrice) - sma_open_val
-        xbulls_c = float(self._sma_bulls_c.Process(bulls_c, t, True).GetValue[float]())
-        xbulls_o = float(self._sma_bulls_o.Process(bulls_o, t, True).GetValue[float]())
+        d3 = DecimalIndicatorValue(self._sma_bulls_c, bulls_c, t)
+        d3.IsFinal = True
+        xbulls_c = float(self._sma_bulls_c.Process(d3))
+        d4 = DecimalIndicatorValue(self._sma_bulls_o, bulls_o, t)
+        d4.IsFinal = True
+        xbulls_o = float(self._sma_bulls_o.Process(d4))
 
         if self._is_first:
             self._prev_xbulls_c = xbulls_c

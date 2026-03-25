@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, DateTimeOffset, DateTime
+from System import TimeSpan, DateTimeOffset, DateTime, TimeSpan as SysTimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
@@ -18,6 +18,10 @@ class divergence_expert_strategy(Strategy):
             .SetDisplay("Stop Loss (%)", "Max risk per trade in percent", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._start_date = self.Param("StartDate", DateTimeOffset(DateTime(2017, 1, 1), SysTimeSpan.Zero)) \
+            .SetDisplay("Start Date", "Backtest start date", "General")
+        self._end_date = self.Param("EndDate", DateTimeOffset(DateTime(2024, 7, 1), SysTimeSpan.Zero)) \
+            .SetDisplay("End Date", "Backtest end date", "General")
         self._entry_price = 0.0
         self._stop_price = 0.0
         self._last_price_high = 0.0
@@ -36,6 +40,14 @@ class divergence_expert_strategy(Strategy):
     @property
     def candle_type(self):
         return self._candle_type.Value
+
+    @property
+    def start_date(self):
+        return self._start_date.Value
+
+    @property
+    def end_date(self):
+        return self._end_date.Value
 
     def OnReseted(self):
         super(divergence_expert_strategy, self).OnReseted()
@@ -59,6 +71,14 @@ class divergence_expert_strategy(Strategy):
 
     def process_candle(self, candle, rsi):
         if candle.State != CandleStates.Finished:
+            return
+        t = DateTimeOffset(candle.OpenTime) if not isinstance(candle.OpenTime, DateTimeOffset) else candle.OpenTime
+        in_range = t >= self.start_date and t <= self.end_date
+        if not in_range:
+            if self.Position > 0:
+                self.SellMarket()
+            elif self.Position < 0:
+                self.BuyMarket()
             return
         rsi = float(rsi)
         close = float(candle.ClosePrice)

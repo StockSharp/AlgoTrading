@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import JurikMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -12,16 +12,22 @@ from StockSharp.Algo.Strategies import Strategy
 class jfatl_digit_system_strategy(Strategy):
     def __init__(self):
         super(jfatl_digit_system_strategy, self).__init__()
-
         self._jma_length = self.Param("JmaLength", 5) \
             .SetDisplay("JMA Length", "JMA period", "Parameters")
         self._jma_phase = self.Param("JmaPhase", -100) \
-            .SetDisplay("JMA Length", "JMA period", "Parameters")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("JMA Length", "JMA period", "Parameters")
-
+            .SetDisplay("JMA Phase", "JMA phase", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Timeframe", "Parameters")
         self._prev_jma = None
         self._prev_slope = None
+
+    @property
+    def jma_length(self):
+        return self._jma_length.Value
+
+    @property
+    def jma_phase(self):
+        return self._jma_phase.Value
 
     @property
     def candle_type(self):
@@ -34,19 +40,36 @@ class jfatl_digit_system_strategy(Strategy):
 
     def OnStarted(self, time):
         super(jfatl_digit_system_strategy, self).OnStarted(time)
-
-        self._jma = JurikMovingAverage()
-        self._jma.Length = self.jma_length
-        self._jma.Phase = self.jma_phase
-
+        self._prev_jma = None
+        self._prev_slope = None
+        jma = JurikMovingAverage()
+        jma.Length = self.jma_length
+        jma.Phase = self.jma_phase
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._jma, self._process_candle).Start()
+        subscription.Bind(jma, self.process_candle).Start()
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, jma)
+            self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, *args):
+    def process_candle(self, candle, jma_value):
         if candle.State != CandleStates.Finished:
             return
-        # Trading logic placeholder
-        pass
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        jma_val = float(jma_value)
+        if self._prev_jma is not None:
+            slope = jma_val - self._prev_jma
+            if self._prev_slope is not None:
+                turned_up = self._prev_slope <= 0 and slope > 0
+                turned_down = self._prev_slope >= 0 and slope < 0
+                if turned_up and self.Position <= 0:
+                    self.BuyMarket()
+                elif turned_down and self.Position >= 0:
+                    self.SellMarket()
+            self._prev_slope = slope
+        self._prev_jma = jma_val
 
     def CreateClone(self):
         return jfatl_digit_system_strategy()

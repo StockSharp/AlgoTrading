@@ -50,7 +50,7 @@ class pivot_heiken_strategy(Strategy):
 
     def OnStarted(self, time):
         super(pivot_heiken_strategy, self).OnStarted(time)
-        self._step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        self._step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         self._trailing_distance = float(self.TrailingStopPips) * self._step
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

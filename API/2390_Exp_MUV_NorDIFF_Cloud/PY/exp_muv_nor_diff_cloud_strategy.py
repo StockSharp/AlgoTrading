@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal as NetDecimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA, ExponentialMovingAverage as EMA, Highest, Lowest
+from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA, ExponentialMovingAverage as EMA, Highest, Lowest, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -66,29 +66,58 @@ class exp_muv_nor_diff_cloud_strategy(Strategy):
             return
         sma_mom = sv - self._prev_sma
         ema_mom = ev - self._prev_ema
-        sma_max_val = self._sma_high.Process(sma_mom, t, True)
-        sma_min_val = self._sma_low.Process(sma_mom, t, True)
-        ema_max_val = self._ema_high.Process(ema_mom, t, True)
-        ema_min_val = self._ema_low.Process(ema_mom, t, True)
+
+        sh_input = DecimalIndicatorValue(self._sma_high, sma_mom, t)
+        sh_input.IsFinal = True
+        sma_max_r = self._sma_high.Process(sh_input)
+        sl_input = DecimalIndicatorValue(self._sma_low, sma_mom, t)
+        sl_input.IsFinal = True
+        sma_min_r = self._sma_low.Process(sl_input)
+        eh_input = DecimalIndicatorValue(self._ema_high, ema_mom, t)
+        eh_input.IsFinal = True
+        ema_max_r = self._ema_high.Process(eh_input)
+        el_input = DecimalIndicatorValue(self._ema_low, ema_mom, t)
+        el_input.IsFinal = True
+        ema_min_r = self._ema_low.Process(el_input)
+
         if not self._sma_high.IsFormed or not self._sma_low.IsFormed:
+            self._prev_sma = sv
+            self._prev_ema = ev
             return
         if not self._ema_high.IsFormed or not self._ema_low.IsFormed:
+            self._prev_sma = sv
+            self._prev_ema = ev
             return
-        sma_norm = self._normalize(sma_mom, float(sma_max_val), float(sma_min_val))
-        ema_norm = self._normalize(ema_mom, float(ema_max_val), float(ema_min_val))
-        if sma_norm == 100.0 or ema_norm == 100.0:
+
+        sma_max = float(sma_max_r)
+        sma_min = float(sma_min_r)
+        ema_max = float(ema_max_r)
+        ema_min = float(ema_min_r)
+
+        sma_range = sma_max - sma_min
+        ema_range = ema_max - ema_min
+
+        # Normalize: value==max => 100, value==min => -100
+        if sma_range > 0:
+            sma_norm = 100.0 - 200.0 * (sma_max - sma_mom) / sma_range
+        else:
+            sma_norm = 100.0
+        if ema_range > 0:
+            ema_norm = 100.0 - 200.0 * (ema_max - ema_mom) / ema_range
+        else:
+            ema_norm = 100.0
+
+        # Use tolerance for float comparison (CS uses exact decimal)
+        eps = 1e-6
+        if sma_norm >= 100.0 - eps or ema_norm >= 100.0 - eps:
             if self.Position <= 0:
                 self.BuyMarket()
-        elif sma_norm == -100.0 or ema_norm == -100.0:
+        elif sma_norm <= -100.0 + eps or ema_norm <= -100.0 + eps:
             if self.Position >= 0:
                 self.SellMarket()
+
         self._prev_sma = sv
         self._prev_ema = ev
-
-    @staticmethod
-    def _normalize(value, max_val, min_val):
-        r = max_val - min_val
-        return 100.0 - 200.0 * (max_val - value) / r if r > 0.0 else 100.0
 
     def OnReseted(self):
         super(exp_muv_nor_diff_cloud_strategy, self).OnReseted()
