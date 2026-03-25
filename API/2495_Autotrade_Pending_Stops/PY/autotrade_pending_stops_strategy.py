@@ -90,6 +90,8 @@ class autotrade_pending_stops_strategy(Strategy):
         self._has_prev_candle = False
         self._entry_price = 0.0
 
+        self.Volume = self._order_volume.Value
+
         self._tick_size = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         if self._tick_size <= 0.0:
             self._tick_size = 1.0
@@ -122,23 +124,28 @@ class autotrade_pending_stops_strategy(Strategy):
         self._prev_close = close
 
     def _ensure_pending_orders(self, candle):
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
+        order_vol = float(self._order_volume.Value)
 
-        indent = int(self.IndentTicks) * self._tick_size
+        indent = int(self._indent_ticks.Value) * self._tick_size
         buy_price = close + indent
         sell_price = close - indent
 
-        if high >= buy_price and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+        pos = float(self.Position)
+        if high >= buy_price and pos <= 0:
+            if pos < 0:
+                self.BuyMarket(abs(pos))
+            self.BuyMarket(order_vol)
             self._entry_price = buy_price
-        elif low <= sell_price and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        elif low <= sell_price and pos >= 0:
+            if pos > 0:
+                self.SellMarket(abs(pos))
+            self.SellMarket(order_vol)
             self._entry_price = sell_price
 
     def _manage_open_position(self, candle):
@@ -160,10 +167,8 @@ class autotrade_pending_stops_strategy(Strategy):
 
         if self.Position > 0 and (exit_by_profit or exit_by_loss):
             self.SellMarket()
-            self._entry_price = 0.0
         elif self.Position < 0 and (exit_by_profit or exit_by_loss):
             self.BuyMarket()
-            self._entry_price = 0.0
 
     def OnReseted(self):
         super(autotrade_pending_stops_strategy, self).OnReseted()

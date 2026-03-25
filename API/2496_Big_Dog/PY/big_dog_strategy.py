@@ -87,8 +87,9 @@ class big_dog_strategy(Strategy):
 
     def OnStarted(self, time):
         super(big_dog_strategy, self).OnStarted(time)
+        self.Volume = self._order_volume.Value
         self._adjusted_point_size = self._calc_adjusted_point_size()
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self._candle_type.Value)
         subscription.Bind(self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
@@ -167,6 +168,11 @@ class big_dog_strategy(Strategy):
                 self.BuyMarket()
                 self._short_stop_price = None
                 self._short_tp_price = None
+        else:
+            self._long_stop_price = None
+            self._long_tp_price = None
+            self._short_stop_price = None
+            self._short_tp_price = None
 
     def OnProcess(self, candle):
         if candle.State != CandleStates.Finished:

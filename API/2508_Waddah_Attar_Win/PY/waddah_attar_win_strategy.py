@@ -73,13 +73,13 @@ class waddah_attar_win_strategy(Strategy):
             .Start()
 
     def process_order_book(self, depth):
-        best_bid = depth.GetBestBid()
-        if best_bid is not None:
-            self._best_bid = float(best_bid.Value.Price)
+        bids = depth.Bids
+        if bids is not None and len(bids) > 0:
+            self._best_bid = float(bids[0].Price)
 
-        best_ask = depth.GetBestAsk()
-        if best_ask is not None:
-            self._best_ask = float(best_ask.Value.Price)
+        asks = depth.Asks
+        if asks is not None and len(asks) > 0:
+            self._best_ask = float(asks[0].Price)
 
         self._process_trading()
 

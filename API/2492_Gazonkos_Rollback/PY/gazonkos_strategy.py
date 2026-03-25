@@ -3,45 +3,41 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
 
-class gazonkos_strategy(Strategy):
-    """
-    Gazonkos Rollback: momentum breakout with rollback confirmation.
-    Waits for spread between two historical closes, then joins
-    the trend after a pullback. Uses StartProtection for SL/TP.
-    """
 
+class gazonkos_strategy(Strategy):
     def __init__(self):
         super(gazonkos_strategy, self).__init__()
-        self._take_profit = self.Param("TakeProfit", 700.0) \
-            .SetDisplay("Take Profit", "Take profit distance in price units", "Risk Management")
-        self._rollback = self.Param("Rollback", 300.0) \
-            .SetDisplay("Rollback", "Required pullback before entering", "Signals")
-        self._stop_loss = self.Param("StopLoss", 1000.0) \
-            .SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk Management")
-        self._delta = self.Param("Delta", 200.0) \
-            .SetDisplay("Delta", "Minimum difference between closes", "Signals")
-        self._first_shift = self.Param("FirstShift", 3) \
-            .SetDisplay("First Shift", "Older close shift for comparison", "Signals")
-        self._second_shift = self.Param("SecondShift", 2) \
-            .SetDisplay("Second Shift", "Recent close shift for comparison", "Signals")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle Type", "Candle series used for signals", "General")
+        self._take_profit = self.Param("TakeProfit", 700.0)
+        self._rollback = self.Param("Rollback", 300.0)
+        self._stop_loss = self.Param("StopLoss", 1000.0)
+        self._delta = self.Param("Delta", 200.0)
+        self._trade_volume = self.Param("TradeVolume", 0.1)
+        self._first_shift = self.Param("FirstShift", 3)
+        self._second_shift = self.Param("SecondShift", 2)
+        self._active_trades = self.Param("ActiveTrades", 1)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 
         self._close_history = []
         self._state = 0
         self._trade_direction = 0
         self._max_price = 0.0
-        self._min_price = float('inf')
+        self._min_price = 999999999.0
+        self._can_trade = True
         self._last_trade_hour = -1
         self._last_signal_hour = -1
+        self._max_history = 1
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
 
     def OnReseted(self):
         super(gazonkos_strategy, self).OnReseted()
@@ -49,59 +45,88 @@ class gazonkos_strategy(Strategy):
         self._state = 0
         self._trade_direction = 0
         self._max_price = 0.0
-        self._min_price = float('inf')
+        self._min_price = 999999999.0
+        self._can_trade = True
         self._last_trade_hour = -1
         self._last_signal_hour = -1
+        self._update_history_size()
 
     def OnStarted(self, time):
         super(gazonkos_strategy, self).OnStarted(time)
 
-        tp = self._take_profit.Value
-        sl = self._stop_loss.Value
-        self.StartProtection(
-            Unit(tp, UnitTypes.Absolute),
-            Unit(sl, UnitTypes.Absolute))
+        self._close_history = []
+        self._state = 0
+        self._trade_direction = 0
+        self._max_price = 0.0
+        self._min_price = 999999999.0
+        self._can_trade = True
+        self._last_trade_hour = -1
+        self._last_signal_hour = -1
 
-        subscription = self.SubscribeCandles(self.candle_type)
+        self.Volume = self._trade_volume.Value
+        self._update_history_size()
+
+        self.StartProtection(
+            takeProfit=Unit(float(self._take_profit.Value), UnitTypes.Absolute),
+            stopLoss=Unit(float(self._stop_loss.Value), UnitTypes.Absolute),
+            isStopTrailing=False,
+            useMarketOrders=True)
+
+        subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()
 
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawOwnTrades(area)
+    def _update_history_size(self):
+        required = max(max(int(self._first_shift.Value), int(self._second_shift.Value)) + 1, 1)
+        if self._max_history == required:
+            return
+        self._max_history = required
+        if len(self._close_history) > self._max_history:
+            self._close_history = self._close_history[:self._max_history]
+
+    def _add_close(self, close):
+        self._close_history.insert(0, close)
+        if len(self._close_history) > self._max_history:
+            self._close_history.pop()
+
+    def _try_get_close(self, shift):
+        if shift < 0:
+            return None
+        if len(self._close_history) <= shift:
+            return None
+        return self._close_history[shift]
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-
-        max_history = max(self._first_shift.Value, self._second_shift.Value) + 1
-        self._close_history.insert(0, close)
-        while len(self._close_history) > max_history:
-            self._close_history.pop()
+        self._update_history_size()
+        self._add_close(float(candle.ClosePrice))
 
         hour = candle.CloseTime.Hour
 
         if self._state == 0:
-            can_trade = True
+            self._can_trade = True
             if self._last_trade_hour == hour:
-                can_trade = False
-            if can_trade:
+                self._can_trade = False
+
+            vol = float(self.Volume)
+            active = int(self._active_trades.Value)
+            if active > 0 and vol > 0 and abs(float(self.Position)) >= active * vol:
+                self._can_trade = False
+
+            if self._can_trade:
                 self._state = 1
 
         if self._state == 1:
-            fs = self._first_shift.Value
-            ss = self._second_shift.Value
-            if len(self._close_history) <= fs or len(self._close_history) <= ss:
+            fs = int(self._first_shift.Value)
+            ss = int(self._second_shift.Value)
+            close_first = self._try_get_close(fs)
+            close_second = self._try_get_close(ss)
+            if close_first is None or close_second is None:
                 return
 
-            close_first = self._close_history[fs]
-            close_second = self._close_history[ss]
-            delta = self._delta.Value
-
+            delta = float(self._delta.Value)
+            close = float(candle.ClosePrice)
             if close_second - close_first > delta:
                 self._trade_direction = 1
                 self._max_price = close
@@ -118,7 +143,10 @@ class gazonkos_strategy(Strategy):
                 self._reset_to_idle()
                 return
 
-            rollback = self._rollback.Value
+            rollback = float(self._rollback.Value)
+            high = float(candle.HighPrice)
+            low = float(candle.LowPrice)
+
             if self._trade_direction == 1:
                 if high > self._max_price:
                     self._max_price = high
@@ -131,11 +159,12 @@ class gazonkos_strategy(Strategy):
                     self._state = 3
 
         if self._state == 3:
-            if self._trade_direction == 1 and self.Position <= 0:
+            pos = float(self.Position)
+            if self._trade_direction == 1 and pos <= 0:
                 self.BuyMarket()
                 self._last_trade_hour = hour
                 self._reset_to_idle()
-            elif self._trade_direction == -1 and self.Position >= 0:
+            elif self._trade_direction == -1 and pos >= 0:
                 self.SellMarket()
                 self._last_trade_hour = hour
                 self._reset_to_idle()
@@ -144,7 +173,8 @@ class gazonkos_strategy(Strategy):
         self._state = 0
         self._trade_direction = 0
         self._max_price = 0.0
-        self._min_price = float('inf')
+        self._min_price = 999999999.0
+        self._can_trade = True
         self._last_signal_hour = -1
 
     def CreateClone(self):

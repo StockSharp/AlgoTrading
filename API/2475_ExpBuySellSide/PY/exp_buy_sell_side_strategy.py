@@ -91,12 +91,13 @@ class exp_buy_sell_side_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(fast, slow, atr, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        self.StartProtection(None, None)
 
     def ProcessCandle(self, candle, fast_value, slow_value, atr_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         fast = float(fast_value)
@@ -136,12 +137,19 @@ class exp_buy_sell_side_strategy(Strategy):
         elif atr_signal == -1 and step_signal == -1:
             trade_signal = -1
 
+        pos = float(self.Position)
+        vol = float(self.Volume)
+
         if trade_signal == 1:
-            if self.Position <= 0:
-                self.BuyMarket()
+            if self.CloseByOppositeSignal and pos < 0:
+                self.BuyMarket(vol + abs(pos))
+            elif pos <= 0:
+                self.BuyMarket(vol + abs(pos))
         elif trade_signal == -1:
-            if self.Position >= 0:
-                self.SellMarket()
+            if self.CloseByOppositeSignal and pos > 0:
+                self.SellMarket(vol + abs(pos))
+            elif pos >= 0:
+                self.SellMarket(vol + abs(pos))
 
     def OnReseted(self):
         super(exp_buy_sell_side_strategy, self).OnReseted()

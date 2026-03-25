@@ -4,8 +4,8 @@ import math
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -26,10 +26,20 @@ class hercules_atc2006_strategy(Strategy):
         self._rsi_length_param = self.Param("RsiLength", 10)
         self._rsi_upper = self.Param("RsiUpper", 55.0)
         self._rsi_lower = self.Param("RsiLower", 45.0)
+        self._daily_envelope_period = self.Param("DailyEnvelopePeriod", 24)
+        self._daily_envelope_deviation = self.Param("DailyEnvelopeDeviation", 0.99)
+        self._h4_envelope_period = self.Param("H4EnvelopePeriod", 96)
+        self._h4_envelope_deviation = self.Param("H4EnvelopeDeviation", 0.1)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._rsi_time_frame = self.Param("RsiTimeFrame", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._daily_envelope_tf = self.Param("DailyEnvelopeTimeFrame", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._h4_envelope_tf = self.Param("H4EnvelopeTimeFrame", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+
+        self.Volume = 2.0
 
         self._fast_history = [0.0, 0.0, 0.0, 0.0]
         self._slow_history = [0.0, 0.0, 0.0, 0.0]
+        self._time_history = [None, None, None, None]
         self._high_stop_history = [0.0, 0.0, 0.0, 0.0, 0.0]
         self._low_stop_history = [0.0, 0.0, 0.0, 0.0, 0.0]
         self._history_count = 0
@@ -40,18 +50,28 @@ class hercules_atc2006_strategy(Strategy):
         self._rolling_high = 0.0
         self._rolling_low = 0.0
 
+        self._price_step = 1.0
         self._pip_size = 1.0
+        self._primary_tf = TimeSpan.FromMinutes(5)
         self._high_low_length = 1
 
         self._pending_direction = 0
         self._trigger_price = 0.0
-        self._window_bars = 0
+        self._window_end_time = None
         self._cross_price = 0.0
 
         self._last_rsi = 0.0
         self._rsi_ready = False
 
-        self._blackout_count = 0
+        self._daily_upper = 0.0
+        self._daily_lower = 0.0
+        self._daily_ready = False
+
+        self._h4_upper = 0.0
+        self._h4_lower = 0.0
+        self._h4_ready = False
+
+        self._blackout_until = None
 
         self._entry_price = None
         self._stop_loss = None
@@ -59,102 +79,6 @@ class hercules_atc2006_strategy(Strategy):
         self._tp2 = None
         self._trailing_stop = None
         self._tp1_hit = False
-
-    @property
-    def TriggerPips(self):
-        return self._trigger_pips.Value
-
-    @TriggerPips.setter
-    def TriggerPips(self, value):
-        self._trigger_pips.Value = value
-
-    @property
-    def TrailingStopPips(self):
-        return self._trailing_stop_pips.Value
-
-    @TrailingStopPips.setter
-    def TrailingStopPips(self, value):
-        self._trailing_stop_pips.Value = value
-
-    @property
-    def TakeProfit1Pips(self):
-        return self._take_profit1_pips.Value
-
-    @TakeProfit1Pips.setter
-    def TakeProfit1Pips(self, value):
-        self._take_profit1_pips.Value = value
-
-    @property
-    def TakeProfit2Pips(self):
-        return self._take_profit2_pips.Value
-
-    @TakeProfit2Pips.setter
-    def TakeProfit2Pips(self, value):
-        self._take_profit2_pips.Value = value
-
-    @property
-    def FastMaPeriod(self):
-        return self._fast_ma_period.Value
-
-    @FastMaPeriod.setter
-    def FastMaPeriod(self, value):
-        self._fast_ma_period.Value = value
-
-    @property
-    def SlowMaPeriod(self):
-        return self._slow_ma_period.Value
-
-    @SlowMaPeriod.setter
-    def SlowMaPeriod(self, value):
-        self._slow_ma_period.Value = value
-
-    @property
-    def StopLossLookback(self):
-        return self._stop_loss_lookback.Value
-
-    @StopLossLookback.setter
-    def StopLossLookback(self, value):
-        self._stop_loss_lookback.Value = value
-
-    @property
-    def HighLowHours(self):
-        return self._high_low_hours.Value
-
-    @HighLowHours.setter
-    def HighLowHours(self, value):
-        self._high_low_hours.Value = value
-
-    @property
-    def BlackoutHours(self):
-        return self._blackout_hours.Value
-
-    @BlackoutHours.setter
-    def BlackoutHours(self, value):
-        self._blackout_hours.Value = value
-
-    @property
-    def RsiLength(self):
-        return self._rsi_length_param.Value
-
-    @RsiLength.setter
-    def RsiLength(self, value):
-        self._rsi_length_param.Value = value
-
-    @property
-    def RsiUpper(self):
-        return self._rsi_upper.Value
-
-    @RsiUpper.setter
-    def RsiUpper(self, value):
-        self._rsi_upper.Value = value
-
-    @property
-    def RsiLower(self):
-        return self._rsi_lower.Value
-
-    @RsiLower.setter
-    def RsiLower(self, value):
-        self._rsi_lower.Value = value
 
     @property
     def CandleType(self):
@@ -169,6 +93,7 @@ class hercules_atc2006_strategy(Strategy):
 
         self._fast_history = [0.0, 0.0, 0.0, 0.0]
         self._slow_history = [0.0, 0.0, 0.0, 0.0]
+        self._time_history = [None, None, None, None]
         self._high_stop_history = [0.0, 0.0, 0.0, 0.0, 0.0]
         self._low_stop_history = [0.0, 0.0, 0.0, 0.0, 0.0]
         self._history_count = 0
@@ -179,11 +104,17 @@ class hercules_atc2006_strategy(Strategy):
         self._rolling_low = 0.0
         self._pending_direction = 0
         self._trigger_price = 0.0
-        self._window_bars = 0
+        self._window_end_time = None
         self._cross_price = 0.0
         self._last_rsi = 0.0
         self._rsi_ready = False
-        self._blackout_count = 0
+        self._daily_upper = 0.0
+        self._daily_lower = 0.0
+        self._daily_ready = False
+        self._h4_upper = 0.0
+        self._h4_lower = 0.0
+        self._h4_ready = False
+        self._blackout_until = None
         self._entry_price = None
         self._stop_loss = None
         self._tp1 = None
@@ -191,47 +122,87 @@ class hercules_atc2006_strategy(Strategy):
         self._trailing_stop = None
         self._tp1_hit = False
 
-        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
-        self._pip_size = step
-        self._high_low_length = max(1, int(self.HighLowHours) * 12)
+        self.StartProtection(None, None)
+
+        self._price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        decimals = int(self.Security.Decimals) if self.Security is not None and self.Security.Decimals is not None else 0
+        pip_factor = 10.0 if decimals in (3, 5) else 1.0
+        self._pip_size = self._price_step * pip_factor
+
+        ct = self.CandleType
+        arg = ct.Arg
+        if arg is not None and hasattr(arg, 'TotalMinutes') and arg.TotalMinutes > 0:
+            self._primary_tf = arg
+        else:
+            self._primary_tf = TimeSpan.FromMinutes(1)
+
+        tf_minutes = self._primary_tf.TotalMinutes
+        if tf_minutes > 0:
+            self._high_low_length = max(1, int(round(float(self._high_low_hours.Value) * 60.0 / tf_minutes)))
+        else:
+            self._high_low_length = 1
 
         fast_ma = ExponentialMovingAverage()
-        fast_ma.Length = self.FastMaPeriod
+        fast_ma.Length = int(self._fast_ma_period.Value)
         slow_ma = SimpleMovingAverage()
-        slow_ma.Length = self.SlowMaPeriod
+        slow_ma.Length = int(self._slow_ma_period.Value)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiLength
-        self._rsi_ind = rsi
+        main_sub = self.SubscribeCandles(self.CandleType)
+        main_sub.Bind(fast_ma, slow_ma, self._process_primary).Start()
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(fast_ma, slow_ma, rsi, self.ProcessCandle).Start()
+        self._rsi_ind = RelativeStrengthIndex()
+        self._rsi_ind.Length = int(self._rsi_length_param.Value)
+        rsi_sub = self.SubscribeCandles(self._rsi_time_frame.Value)
+        rsi_sub.Bind(self._rsi_ind, self._process_rsi).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        self._daily_ma = SimpleMovingAverage()
+        self._daily_ma.Length = int(self._daily_envelope_period.Value)
+        daily_sub = self.SubscribeCandles(self._daily_envelope_tf.Value)
+        daily_sub.Bind(self._daily_ma, self._process_daily_envelope).Start()
 
-    def ProcessCandle(self, candle, fast_value, slow_value, rsi_value):
+        self._h4_ma = SimpleMovingAverage()
+        self._h4_ma.Length = int(self._h4_envelope_period.Value)
+        h4_sub = self.SubscribeCandles(self._h4_envelope_tf.Value)
+        h4_sub.Bind(self._h4_ma, self._process_h4_envelope).Start()
+
+    def _process_rsi(self, candle, rsi_value):
+        if candle.State != CandleStates.Finished:
+            return
+        self._last_rsi = float(rsi_value)
+        self._rsi_ready = True
+
+    def _process_daily_envelope(self, candle, basis):
+        if candle.State != CandleStates.Finished:
+            return
+        dev = float(self._daily_envelope_deviation.Value) / 100.0
+        b = float(basis)
+        self._daily_upper = b * (1.0 + dev)
+        self._daily_lower = b * (1.0 - dev)
+        self._daily_ready = self._daily_ma.IsFormed
+
+    def _process_h4_envelope(self, candle, basis):
+        if candle.State != CandleStates.Finished:
+            return
+        dev = float(self._h4_envelope_deviation.Value) / 100.0
+        b = float(basis)
+        self._h4_upper = b * (1.0 + dev)
+        self._h4_lower = b * (1.0 - dev)
+        self._h4_ready = self._h4_ma.IsFormed
+
+    def _process_primary(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
 
         fast = float(fast_value)
         slow = float(slow_value)
-        rsi_val = float(rsi_value)
-        close = float(candle.ClosePrice)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
 
-        self._last_rsi = rsi_val
-        if self._rsi_ind.IsFormed:
-            self._rsi_ready = True
+        self._update_high_low(candle)
+        self._update_stop_history(candle)
+        self._update_history(candle, fast, slow)
+        self._update_blackout(candle.OpenTime)
 
-        self._update_high_low(high, low)
-        self._update_stop_history(high, low)
-        self._update_history(fast, slow)
-
-        if self._blackout_count > 0:
-            self._blackout_count -= 1
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         self._evaluate_entry(candle)
         self._manage_position(candle)
@@ -241,9 +212,10 @@ class hercules_atc2006_strategy(Strategy):
             arr[i] = arr[i - 1]
         arr[0] = value
 
-    def _update_history(self, fast, slow):
+    def _update_history(self, candle, fast, slow):
         self._shift_history(self._fast_history, fast)
         self._shift_history(self._slow_history, slow)
+        self._shift_history(self._time_history, candle.OpenTime)
 
         if self._history_count < len(self._fast_history):
             self._history_count += 1
@@ -258,73 +230,79 @@ class hercules_atc2006_strategy(Strategy):
 
         if cross_up1:
             cp = (self._fast_history[1] + self._fast_history[2] + self._slow_history[1] + self._slow_history[2]) / 4.0
-            self._prepare_trigger(1, cp)
+            self._prepare_trigger(1, cp, self._time_history[1])
         elif cross_up2:
             cp = (self._fast_history[2] + self._fast_history[3] + self._slow_history[2] + self._slow_history[3]) / 4.0
-            self._prepare_trigger(1, cp)
+            self._prepare_trigger(1, cp, self._time_history[2])
         elif cross_down1:
             cp = (self._fast_history[1] + self._fast_history[2] + self._slow_history[1] + self._slow_history[2]) / 4.0
-            self._prepare_trigger(-1, cp)
+            self._prepare_trigger(-1, cp, self._time_history[1])
         elif cross_down2:
             cp = (self._fast_history[2] + self._fast_history[3] + self._slow_history[2] + self._slow_history[3]) / 4.0
-            self._prepare_trigger(-1, cp)
+            self._prepare_trigger(-1, cp, self._time_history[2])
 
-    def _prepare_trigger(self, direction, cross_price):
+    def _prepare_trigger(self, direction, cross_price, cross_time):
         self._pending_direction = direction
         self._cross_price = cross_price
         pip = self._pip_size
-        trigger_pips = float(self.TriggerPips)
+        trigger_pips = float(self._trigger_pips.Value)
         if direction > 0:
             self._trigger_price = cross_price + trigger_pips * pip
         else:
             self._trigger_price = cross_price - trigger_pips * pip
-        self._window_bars = 2
+        self._window_end_time = cross_time + self._primary_tf + self._primary_tf
 
-    def _update_stop_history(self, high, low):
-        self._shift_history(self._high_stop_history, high)
-        self._shift_history(self._low_stop_history, low)
+    def _update_stop_history(self, candle):
+        self._shift_history(self._high_stop_history, float(candle.HighPrice))
+        self._shift_history(self._low_stop_history, float(candle.LowPrice))
         if self._stop_history_count < len(self._high_stop_history):
             self._stop_history_count += 1
 
-    def _update_high_low(self, high, low):
+    def _update_high_low(self, candle):
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
         self._recent_highs.append(high)
-        self._recent_lows.append(low)
         while len(self._recent_highs) > self._high_low_length:
             self._recent_highs.pop(0)
-        while len(self._recent_lows) > self._high_low_length:
-            self._recent_lows.pop(0)
         if len(self._recent_highs) >= self._high_low_length:
             self._rolling_high = max(self._recent_highs)
+
+        self._recent_lows.append(low)
+        while len(self._recent_lows) > self._high_low_length:
+            self._recent_lows.pop(0)
         if len(self._recent_lows) >= self._high_low_length:
             self._rolling_low = min(self._recent_lows)
+
+    def _update_blackout(self, current_time):
+        if self._blackout_until is not None and current_time >= self._blackout_until:
+            self._blackout_until = None
 
     def _evaluate_entry(self, candle):
         if self._pending_direction == 0:
             return
 
-        if self._window_bars <= 0:
+        if self._window_end_time is not None and candle.OpenTime > self._window_end_time:
             self._pending_direction = 0
             return
-        self._window_bars -= 1
 
-        if self._blackout_count > 0:
+        if self._blackout_until is not None and candle.OpenTime < self._blackout_until:
             return
 
-        if self.Position != 0 or self._entry_price is not None:
+        pos = float(self.Position)
+        if pos != 0 or self._entry_price is not None:
             return
 
         if not self._rsi_ready:
             return
 
-        close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
-        pip = self._pip_size
+        close = float(candle.ClosePrice)
 
         if self._pending_direction > 0:
             if high < self._trigger_price:
                 return
-            if self._last_rsi <= float(self.RsiUpper):
+            if self._last_rsi <= float(self._rsi_upper.Value):
                 return
             stop_price = self._get_stop_price(False)
             if stop_price is None:
@@ -334,7 +312,7 @@ class hercules_atc2006_strategy(Strategy):
         else:
             if low > self._trigger_price:
                 return
-            if self._last_rsi >= float(self.RsiLower):
+            if self._last_rsi >= float(self._rsi_lower.Value):
                 return
             stop_price = self._get_stop_price(True)
             if stop_price is None:
@@ -342,11 +320,11 @@ class hercules_atc2006_strategy(Strategy):
             self.SellMarket()
             self._init_position_state(close, stop_price, False)
 
-        self._blackout_count = int(self.BlackoutHours) * 12
+        self._blackout_until = candle.OpenTime + TimeSpan.FromHours(float(self._blackout_hours.Value))
         self._pending_direction = 0
 
     def _get_stop_price(self, is_short):
-        lookback = int(self.StopLossLookback)
+        lookback = int(self._stop_loss_lookback.Value)
         if self._stop_history_count <= lookback:
             return None
         if is_short:
@@ -360,8 +338,8 @@ class hercules_atc2006_strategy(Strategy):
         self._tp1_hit = False
         self._trailing_stop = None
         pip = self._pip_size
-        tp1_pips = float(self.TakeProfit1Pips)
-        tp2_pips = float(self.TakeProfit2Pips)
+        tp1_pips = float(self._take_profit1_pips.Value)
+        tp2_pips = float(self._take_profit2_pips.Value)
         if tp1_pips > 0:
             self._tp1 = entry_price + tp1_pips * pip if is_long else entry_price - tp1_pips * pip
         else:
@@ -379,55 +357,81 @@ class hercules_atc2006_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         pip = self._pip_size
-        trail_pips = float(self.TrailingStopPips)
+        trail_pips = float(self._trailing_stop_pips.Value)
 
-        if self.Position > 0:
-            if trail_pips > 0:
-                candidate = close - trail_pips * pip
-                if self._trailing_stop is None or candidate > self._trailing_stop:
-                    self._trailing_stop = candidate
+        pos = float(self.Position)
+        if pos > 0:
+            self._update_trailing_stop(close, True)
 
             if self._stop_loss is not None and low <= self._stop_loss:
-                self.SellMarket()
+                self.SellMarket(pos)
                 self._reset_position_state()
                 return
 
             if self._trailing_stop is not None and low <= self._trailing_stop:
-                self.SellMarket()
+                pos = float(self.Position)
+                self.SellMarket(pos)
                 self._reset_position_state()
                 return
 
             if not self._tp1_hit and self._tp1 is not None and high >= self._tp1:
+                pos = float(self.Position)
+                half = pos / 2.0
+                if half > 0:
+                    self.SellMarket(half)
                 self._tp1_hit = True
 
+            pos = float(self.Position)
             if self._tp2 is not None and high >= self._tp2:
-                self.SellMarket()
+                if pos > 0:
+                    self.SellMarket(pos)
                 self._reset_position_state()
 
-        elif self.Position < 0:
-            if trail_pips > 0:
-                candidate = close + trail_pips * pip
-                if self._trailing_stop is None or candidate < self._trailing_stop:
-                    self._trailing_stop = candidate
+        elif pos < 0:
+            self._update_trailing_stop(close, False)
 
             if self._stop_loss is not None and high >= self._stop_loss:
-                self.BuyMarket()
+                self.BuyMarket(abs(pos))
                 self._reset_position_state()
                 return
 
             if self._trailing_stop is not None and high >= self._trailing_stop:
-                self.BuyMarket()
+                pos = float(self.Position)
+                self.BuyMarket(abs(pos))
                 self._reset_position_state()
                 return
 
             if not self._tp1_hit and self._tp1 is not None and low <= self._tp1:
+                pos = float(self.Position)
+                half = abs(pos) / 2.0
+                if half > 0:
+                    self.BuyMarket(half)
                 self._tp1_hit = True
 
+            pos = float(self.Position)
             if self._tp2 is not None and low <= self._tp2:
-                self.BuyMarket()
+                if pos < 0:
+                    self.BuyMarket(abs(pos))
                 self._reset_position_state()
         else:
             self._reset_position_state()
+
+    def _update_trailing_stop(self, close_price, is_long):
+        if float(self._trailing_stop_pips.Value) <= 0:
+            return
+        pip = self._pip_size
+        trail_pips = float(self._trailing_stop_pips.Value)
+        if is_long:
+            candidate = close_price - trail_pips * pip
+        else:
+            candidate = close_price + trail_pips * pip
+
+        if self._trailing_stop is None:
+            self._trailing_stop = candidate
+        elif is_long and candidate > self._trailing_stop:
+            self._trailing_stop = candidate
+        elif not is_long and candidate < self._trailing_stop:
+            self._trailing_stop = candidate
 
     def _reset_position_state(self):
         self._entry_price = None
@@ -441,6 +445,7 @@ class hercules_atc2006_strategy(Strategy):
         super(hercules_atc2006_strategy, self).OnReseted()
         self._fast_history = [0.0, 0.0, 0.0, 0.0]
         self._slow_history = [0.0, 0.0, 0.0, 0.0]
+        self._time_history = [None, None, None, None]
         self._high_stop_history = [0.0, 0.0, 0.0, 0.0, 0.0]
         self._low_stop_history = [0.0, 0.0, 0.0, 0.0, 0.0]
         self._history_count = 0
@@ -449,15 +454,22 @@ class hercules_atc2006_strategy(Strategy):
         self._recent_lows = []
         self._rolling_high = 0.0
         self._rolling_low = 0.0
+        self._price_step = 1.0
         self._pip_size = 1.0
         self._high_low_length = 1
         self._pending_direction = 0
         self._trigger_price = 0.0
-        self._window_bars = 0
+        self._window_end_time = None
         self._cross_price = 0.0
         self._last_rsi = 0.0
         self._rsi_ready = False
-        self._blackout_count = 0
+        self._daily_upper = 0.0
+        self._daily_lower = 0.0
+        self._daily_ready = False
+        self._h4_upper = 0.0
+        self._h4_lower = 0.0
+        self._h4_ready = False
+        self._blackout_until = None
         self._entry_price = None
         self._stop_loss = None
         self._tp1 = None

@@ -104,11 +104,20 @@ class boll_trade_strategy(Strategy):
     def OnStarted(self, time):
         super(boll_trade_strategy, self).OnStarted(time)
 
+        self.Volume = self._lots.Value
+
         self._pip_size = self._calculate_pip_size()
+        self._lot_baseline = 0.0
         self._long_stop = None
         self._long_target = None
         self._short_stop = None
         self._short_target = None
+
+        if self.LotIncrease and float(self.Lots) > 0.0:
+            portfolio = self.Portfolio
+            balance = float(portfolio.CurrentValue) if portfolio is not None and portfolio.CurrentValue is not None else 0.0
+            if balance > 0.0:
+                self._lot_baseline = balance / float(self.Lots)
 
         bollinger = BollingerBands()
         bollinger.Length = self.BollingerPeriod
@@ -116,10 +125,6 @@ class boll_trade_strategy(Strategy):
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(bollinger, self.ProcessCandle).Start()
-
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
 
     def _calculate_pip_size(self):
         step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
@@ -131,9 +136,6 @@ class boll_trade_strategy(Strategy):
 
     def ProcessCandle(self, candle, value):
         if candle.State != CandleStates.Finished:
-            return
-
-        if not value.IsFinal:
             return
 
         upper_band = value.UpBand
@@ -173,8 +175,23 @@ class boll_trade_strategy(Strategy):
                 self.BuyMarket()
                 self._reset_stops()
 
+    def _calculate_volume(self):
+        base_volume = float(self.Lots)
+        if not self.LotIncrease or self._lot_baseline <= 0.0:
+            return base_volume
+        portfolio = self.Portfolio
+        balance = float(portfolio.CurrentValue) if portfolio is not None and portfolio.CurrentValue is not None else 0.0
+        if balance <= 0.0:
+            return base_volume
+        scaled = base_volume * (balance / self._lot_baseline)
+        return min(scaled, float(self.MaxVolume))
+
     def _enter_long(self, close):
-        self.BuyMarket()
+        volume = self._calculate_volume()
+        if volume <= 0.0:
+            return
+
+        self.BuyMarket(volume)
 
         sl = float(self.StopLoss)
         tp = float(self.TakeProfit)
@@ -185,7 +202,11 @@ class boll_trade_strategy(Strategy):
         self._short_target = None
 
     def _enter_short(self, close):
-        self.SellMarket()
+        volume = self._calculate_volume()
+        if volume <= 0.0:
+            return
+
+        self.SellMarket(volume)
 
         sl = float(self.StopLoss)
         tp = float(self.TakeProfit)

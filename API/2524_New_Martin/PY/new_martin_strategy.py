@@ -19,7 +19,7 @@ class new_martin_strategy(Strategy):
         self._fast_period = self.Param("FastPeriod", 5).SetGreaterThanZero().SetDisplay("Fast MA", "Fast smoothed MA period", "Indicators")
         self._loss_percent = self.Param("LossPercent", 12.0).SetGreaterThanZero().SetDisplay("Equity DD %", "Maximum drawdown before reset", "Risk")
         self._multiplier = self.Param("Multiplier", 1.6).SetGreaterThanZero().SetDisplay("Multiplier", "Martingale growth factor", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Time frame", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Time frame", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

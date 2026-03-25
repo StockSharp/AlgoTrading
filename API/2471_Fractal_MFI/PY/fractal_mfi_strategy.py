@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MoneyFlowIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -109,18 +109,18 @@ class fractal_mfi_strategy(Strategy):
 
         mfi = MoneyFlowIndex()
         mfi.Length = self.MfiPeriod
-
         self._mfi = mfi
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(mfi, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        self.StartProtection(None, None)
 
     def ProcessCandle(self, candle, current_mfi):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         mfi_val = float(current_mfi)
@@ -140,31 +140,40 @@ class fractal_mfi_strategy(Strategy):
     def _process_signal(self, price, prev, current):
         high = float(self.HighLevel)
         low = float(self.LowLevel)
+        vol = float(self.Volume)
 
         if int(self.Trend) == DIRECT:
             if prev > low and current <= low:
-                if self.SellPosClose and self.Position < 0:
-                    self.BuyMarket()
-                if self.BuyPosOpen and self.Position <= 0:
-                    self.BuyMarket()
+                pos = float(self.Position)
+                if self.SellPosClose and pos < 0:
+                    self.BuyMarket(abs(pos))
+                pos = float(self.Position)
+                if self.BuyPosOpen and pos <= 0:
+                    self.BuyMarket(vol + abs(pos))
 
             if prev < high and current >= high:
-                if self.BuyPosClose and self.Position > 0:
-                    self.SellMarket()
-                if self.SellPosOpen and self.Position >= 0:
-                    self.SellMarket()
+                pos = float(self.Position)
+                if self.BuyPosClose and pos > 0:
+                    self.SellMarket(abs(pos))
+                pos = float(self.Position)
+                if self.SellPosOpen and pos >= 0:
+                    self.SellMarket(vol + abs(pos))
         else:
             if prev > low and current <= low:
-                if self.BuyPosClose and self.Position > 0:
-                    self.SellMarket()
-                if self.SellPosOpen and self.Position >= 0:
-                    self.SellMarket()
+                pos = float(self.Position)
+                if self.BuyPosClose and pos > 0:
+                    self.SellMarket(abs(pos))
+                pos = float(self.Position)
+                if self.SellPosOpen and pos >= 0:
+                    self.SellMarket(vol + abs(pos))
 
             if prev < high and current >= high:
-                if self.SellPosClose and self.Position < 0:
-                    self.BuyMarket()
-                if self.BuyPosOpen and self.Position <= 0:
-                    self.BuyMarket()
+                pos = float(self.Position)
+                if self.SellPosClose and pos < 0:
+                    self.BuyMarket(abs(pos))
+                pos = float(self.Position)
+                if self.BuyPosOpen and pos <= 0:
+                    self.BuyMarket(vol + abs(pos))
 
     def OnReseted(self):
         super(fractal_mfi_strategy, self).OnReseted()

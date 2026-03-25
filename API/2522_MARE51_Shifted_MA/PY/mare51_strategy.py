@@ -13,6 +13,9 @@ class mare51_strategy(Strategy):
     def __init__(self):
         super(mare51_strategy, self).__init__()
 
+        self._trade_volume = self.Param("TradeVolume", 0.01)
+        self._take_profit_pips = self.Param("TakeProfitPips", 35.0)
+        self._stop_loss_pips = self.Param("StopLossPips", 55.0)
         self._fast_period = self.Param("FastPeriod", 14)
         self._slow_period = self.Param("SlowPeriod", 20)
         self._ma_shift = self.Param("MovingAverageShift", 1)
@@ -94,9 +97,17 @@ class mare51_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(fast_sma, slow_sma, self.ProcessCandle).Start()
 
+        self.Volume = self._trade_volume.Value
+
+        pip_size = self._calculate_pip_size()
+        tp = float(self._take_profit_pips.Value)
+        sl = float(self._stop_loss_pips.Value)
+        take_unit = Unit(tp * pip_size, UnitTypes.Absolute) if tp > 0 else Unit(0)
+        stop_unit = Unit(sl * pip_size, UnitTypes.Absolute) if sl > 0 else Unit(0)
+
         self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+            stopLoss=stop_unit,
+            takeProfit=take_unit)
 
     def ProcessCandle(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
@@ -157,6 +168,24 @@ class mare51_strategy(Strategy):
         if target < 0 or target >= self._buffer_size:
             return None
         return buffer[target]
+
+    def _calculate_pip_size(self):
+        sec = self.Security
+        if sec is None:
+            return 1.0
+        ps = sec.PriceStep
+        if ps is None:
+            return 1.0
+        step = float(ps)
+        if step <= 0:
+            return 1.0
+        # count decimal places
+        import System
+        bits = System.Decimal.GetBits(ps)
+        scale = (bits[3] >> 16) & 0xFF
+        if scale == 3 or scale == 5:
+            return step * 10.0
+        return step
 
     def OnReseted(self):
         super(mare51_strategy, self).OnReseted()

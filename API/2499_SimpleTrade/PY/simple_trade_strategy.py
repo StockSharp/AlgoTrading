@@ -6,15 +6,11 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 class simple_trade_strategy(Strategy):
-    """Compares current open with open 3 bars ago. Holds 1 bar with fixed SL."""
     def __init__(self):
         super(simple_trade_strategy, self).__init__()
-        self._sl_pips = self.Param("StopLossPips", 120).SetGreaterThanZero().SetDisplay("Stop Loss (pips)", "Fixed SL distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Primary candle source", "General")
+        self._sl_pips = self.Param("StopLossPips", 120)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 
     @property
     def CandleType(self): return self._candle_type.Value

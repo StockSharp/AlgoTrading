@@ -34,11 +34,22 @@ class trend_catcher_breakout_strategy(Strategy):
         self._trailing_trigger = self.Param("TrailingTrigger", 0.005)
         self._trailing_step = self.Param("TrailingStep", 0.001)
 
+        self._trade_monday = self.Param("TradeMonday", True)
+        self._trade_tuesday = self.Param("TradeTuesday", True)
+        self._trade_wednesday = self.Param("TradeWednesday", True)
+        self._trade_thursday = self.Param("TradeThursday", True)
+        self._trade_friday = self.Param("TradeFriday", True)
+        self._risk_percent = self.Param("RiskPercent", 2.0)
+        self._use_martingale = self.Param("UseMartingale", True)
+        self._martingale_multiplier = self.Param("MartingaleMultiplier", 2.0)
+
         self._previous_close = 0.0
         self._previous_sar = None
         self._entry_price = None
         self._stop_loss_price = 0.0
         self._take_profit_price = 0.0
+        self._last_trade_was_loss = False
+        self._last_exit_time = None
 
     @property
     def CandleType(self):
@@ -208,6 +219,8 @@ class trend_catcher_breakout_strategy(Strategy):
         self._entry_price = None
         self._stop_loss_price = 0.0
         self._take_profit_price = 0.0
+        self._last_trade_was_loss = False
+        self._last_exit_time = None
 
         slow_ma = ExponentialMovingAverage()
         slow_ma.Length = self.SlowMaPeriod
@@ -223,12 +236,25 @@ class trend_catcher_breakout_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(slow_ma, fast_ma, fast_filter_ma, sar, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+    def _is_trading_day(self, day_of_week):
+        from System import DayOfWeek
+        if day_of_week == DayOfWeek.Monday:
+            return bool(self._trade_monday.Value)
+        if day_of_week == DayOfWeek.Tuesday:
+            return bool(self._trade_tuesday.Value)
+        if day_of_week == DayOfWeek.Wednesday:
+            return bool(self._trade_wednesday.Value)
+        if day_of_week == DayOfWeek.Thursday:
+            return bool(self._trade_thursday.Value)
+        if day_of_week == DayOfWeek.Friday:
+            return bool(self._trade_friday.Value)
+        return False
 
     def ProcessCandle(self, candle, slow_value, fast_value, fast_filter_value, sar_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         slow_val = float(slow_value)
@@ -241,6 +267,11 @@ class trend_catcher_breakout_strategy(Strategy):
 
         exit_triggered = self._manage_active_position(candle)
         if exit_triggered:
+            self._previous_close = close
+            self._previous_sar = sar_val
+            return
+
+        if not self._is_trading_day(candle.OpenTime.DayOfWeek):
             self._previous_close = close
             self._previous_sar = sar_val
             return
@@ -265,12 +296,13 @@ class trend_catcher_breakout_strategy(Strategy):
         if self.CloseOnOppositeSignal:
             if long_signal and self.Position < 0:
                 self.BuyMarket()
-                self._finalize_trade(close, True)
+                self._finalize_trade(close, candle.OpenTime, True)
             elif short_signal and self.Position > 0:
                 self.SellMarket()
-                self._finalize_trade(close, False)
+                self._finalize_trade(close, candle.OpenTime, False)
 
-        can_open = self.Position == 0
+        can_open = (self.Position == 0 and
+                    (self._last_exit_time is None or self._last_exit_time < candle.OpenTime))
 
         if can_open and long_signal:
             self._try_open_long(candle, sar_val, close)
@@ -291,13 +323,15 @@ class trend_catcher_breakout_strategy(Strategy):
         trail_step = float(self.TrailingStep)
 
         if self.Position > 0 and self._entry_price is not None:
+            exit_price = 0.0
             if self._stop_loss_price > 0.0 and low <= self._stop_loss_price:
+                exit_price = self._stop_loss_price
+            elif self._take_profit_price > 0.0 and high >= self._take_profit_price:
+                exit_price = self._take_profit_price
+
+            if exit_price > 0.0:
                 self.SellMarket()
-                self._finalize_trade(self._stop_loss_price, False)
-                return True
-            if self._take_profit_price > 0.0 and high >= self._take_profit_price:
-                self.SellMarket()
-                self._finalize_trade(self._take_profit_price, False)
+                self._finalize_trade(exit_price, candle.OpenTime, False)
                 return True
 
             profit = close - self._entry_price
@@ -311,13 +345,15 @@ class trend_catcher_breakout_strategy(Strategy):
                     self._stop_loss_price = new_stop
 
         elif self.Position < 0 and self._entry_price is not None:
+            exit_price = 0.0
             if self._stop_loss_price > 0.0 and high >= self._stop_loss_price:
+                exit_price = self._stop_loss_price
+            elif self._take_profit_price > 0.0 and low <= self._take_profit_price:
+                exit_price = self._take_profit_price
+
+            if exit_price > 0.0:
                 self.BuyMarket()
-                self._finalize_trade(self._stop_loss_price, True)
-                return True
-            if self._take_profit_price > 0.0 and low <= self._take_profit_price:
-                self.BuyMarket()
-                self._finalize_trade(self._take_profit_price, True)
+                self._finalize_trade(exit_price, candle.OpenTime, True)
                 return True
 
             profit = self._entry_price - close
@@ -398,10 +434,19 @@ class trend_catcher_breakout_strategy(Strategy):
 
         return (stop_price, take_price)
 
-    def _finalize_trade(self, exit_price, was_short):
+    def _finalize_trade(self, exit_price, time, was_short):
+        if self._entry_price is not None:
+            if not was_short:
+                self._last_trade_was_loss = exit_price <= self._entry_price
+            else:
+                self._last_trade_was_loss = exit_price >= self._entry_price
+        else:
+            self._last_trade_was_loss = False
+
         self._entry_price = None
         self._stop_loss_price = 0.0
         self._take_profit_price = 0.0
+        self._last_exit_time = time
 
     def OnReseted(self):
         super(trend_catcher_breakout_strategy, self).OnReseted()
@@ -410,6 +455,8 @@ class trend_catcher_breakout_strategy(Strategy):
         self._entry_price = None
         self._stop_loss_price = 0.0
         self._take_profit_price = 0.0
+        self._last_trade_was_loss = False
+        self._last_exit_time = None
 
     def CreateClone(self):
         return trend_catcher_breakout_strategy()

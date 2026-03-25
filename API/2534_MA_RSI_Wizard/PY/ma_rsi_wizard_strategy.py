@@ -5,7 +5,8 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, RelativeStrengthIndex
+from System import Decimal
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, RelativeStrengthIndex, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -191,9 +192,10 @@ class ma_rsi_wizard_strategy(Strategy):
 
         sl = int(self.StopLevelPoints)
         tp = int(self.TakeLevelPoints)
-        sl_unit = Unit(sl * step, UnitTypes.Absolute) if sl > 0 else Unit(0.0, UnitTypes.Absolute)
-        tp_unit = Unit(tp * step, UnitTypes.Absolute) if tp > 0 else Unit(0.0, UnitTypes.Absolute)
-        self.StartProtection(sl_unit, tp_unit)
+        sl_unit = Unit(sl * step, UnitTypes.Absolute) if sl > 0 else Unit(0)
+        tp_unit = Unit(tp * step, UnitTypes.Absolute) if tp > 0 else Unit(0)
+        if sl > 0 or tp > 0:
+            self.StartProtection(stopLoss=sl_unit, takeProfit=tp_unit)
 
     def _create_ma(self, method, period):
         if method == MA_EXPONENTIAL:
@@ -235,14 +237,18 @@ class ma_rsi_wizard_strategy(Strategy):
         self._bar_index += 1
 
         close = float(candle.ClosePrice)
-        ma_input = self._select_price(candle, int(self.MaAppliedPrice))
-        ma_result = self._ma_ind.Process(self._ma_ind.CreateValue(candle.OpenTime, ma_input))
+        ma_price = self._select_price(candle, int(self.MaAppliedPrice))
+        ma_iv = DecimalIndicatorValue(self._ma_ind, Decimal(ma_price), candle.OpenTime)
+        ma_iv.IsFinal = True
+        ma_result = self._ma_ind.Process(ma_iv)
         if not ma_result.IsFinal:
             return
         ma_val = float(ma_result)
 
-        rsi_input = self._select_price(candle, int(self.RsiAppliedPrice))
-        rsi_result = self._rsi_ind.Process(self._rsi_ind.CreateValue(candle.OpenTime, rsi_input))
+        rsi_price = self._select_price(candle, int(self.RsiAppliedPrice))
+        rsi_iv = DecimalIndicatorValue(self._rsi_ind, Decimal(rsi_price), candle.OpenTime)
+        rsi_iv.IsFinal = True
+        rsi_result = self._rsi_ind.Process(rsi_iv)
         if not rsi_result.IsFinal:
             return
         rsi_val = float(rsi_result)
@@ -279,21 +285,25 @@ class ma_rsi_wizard_strategy(Strategy):
         expiration = int(self.ExpirationBars)
 
         if self.Position > 0 and short_score >= threshold_close:
-            self.SellMarket()
+            self.SellMarket(abs(float(self.Position)))
         elif self.Position < 0 and long_score >= threshold_close:
-            self.BuyMarket()
+            self.BuyMarket(abs(float(self.Position)))
 
         allow_long = expiration <= 0 or self._last_long_entry_bar is None or self._bar_index - self._last_long_entry_bar >= expiration
         allow_short = expiration <= 0 or self._last_short_entry_bar is None or self._bar_index - self._last_short_entry_bar >= expiration
 
         if self.Position <= 0 and long_score >= threshold_open and allow_long:
-            self.BuyMarket()
-            self._last_long_entry_bar = self._bar_index
+            volume = float(self.Volume) + abs(float(self.Position))
+            if volume > 0:
+                self.BuyMarket(volume)
+                self._last_long_entry_bar = self._bar_index
             return
 
         if self.Position >= 0 and short_score >= threshold_open and allow_short:
-            self.SellMarket()
-            self._last_short_entry_bar = self._bar_index
+            volume = float(self.Volume) + abs(float(self.Position))
+            if volume > 0:
+                self.SellMarket(volume)
+                self._last_short_entry_bar = self._bar_index
 
     def _update_shifted_ma(self, ma_val):
         shift = max(0, int(self.MaShift))

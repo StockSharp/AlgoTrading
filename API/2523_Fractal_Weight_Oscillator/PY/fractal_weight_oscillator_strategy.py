@@ -3,9 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage
+from System import Decimal
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -21,6 +22,8 @@ class fractal_weight_oscillator_strategy(Strategy):
         self._trend_mode = self.Param("TrendMode", TREND_DIRECT)
         self._signal_bar = self.Param("SignalBar", 1)
         self._period = self.Param("Period", 30)
+        self._smoothing_length = self.Param("SmoothingLength", 30)
+        self._smoothing_method = self.Param("SmoothingMethod", 3)  # 0=None,1=SMA,2=EMA,3=SMMA,4=LWMA
         self._rsi_weight = self.Param("RsiWeight", 1.0)
         self._mfi_weight = self.Param("MfiWeight", 1.0)
         self._wpr_weight = self.Param("WprWeight", 1.0)
@@ -203,12 +206,10 @@ class fractal_weight_oscillator_strategy(Strategy):
         self._de_min_sma = SimpleMovingAverage()
         self._de_min_sma.Length = self.Period
 
+        self._smoother = self._create_smoother(int(self._smoothing_method.Value), int(self._smoothing_length.Value))
+
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
-
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -221,8 +222,12 @@ class fractal_weight_oscillator_strategy(Strategy):
         typical = (high + low + close) / 3.0
         volume = float(candle.TotalVolume)
 
-        rsi_result = self._rsi.Process(self._rsi.CreateValue(candle.OpenTime, close))
-        wpr_result = self._williams_rsi.Process(self._williams_rsi.CreateValue(candle.OpenTime, close))
+        rsi_input = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
+        rsi_input.IsFinal = True
+        rsi_result = self._rsi.Process(rsi_input)
+        wpr_input = DecimalIndicatorValue(self._williams_rsi, candle.ClosePrice, candle.OpenTime)
+        wpr_input.IsFinal = True
+        wpr_result = self._williams_rsi.Process(wpr_input)
 
         if not rsi_result.IsFinal or not wpr_result.IsFinal:
             return
@@ -245,7 +250,11 @@ class fractal_weight_oscillator_strategy(Strategy):
                     float(self.WprWeight) * wpr_val +
                     float(self.DeMarkerWeight) * (demarker * 100.0)) / total_weight
 
-        self._oscillator_history.append(weighted)
+        smoothed = self._apply_smoothing(weighted, candle.OpenTime)
+        if smoothed is None:
+            return
+
+        self._oscillator_history.append(smoothed)
         self._trim_history()
 
         signal_bar = int(self.SignalBar)
@@ -352,8 +361,12 @@ class fractal_weight_oscillator_strategy(Strategy):
         self._previous_high = high
         self._previous_low = low
 
-        de_max_result = self._de_max_sma.Process(self._de_max_sma.CreateValue(candle.OpenTime, de_max))
-        de_min_result = self._de_min_sma.Process(self._de_min_sma.CreateValue(candle.OpenTime, de_min))
+        de_max_input = DecimalIndicatorValue(self._de_max_sma, Decimal(de_max), candle.OpenTime)
+        de_max_input.IsFinal = True
+        de_max_result = self._de_max_sma.Process(de_max_input)
+        de_min_input = DecimalIndicatorValue(self._de_min_sma, Decimal(de_min), candle.OpenTime)
+        de_min_input.IsFinal = True
+        de_min_result = self._de_min_sma.Process(de_min_input)
 
         if not de_max_result.IsFinal or not de_min_result.IsFinal:
             return None
@@ -369,8 +382,9 @@ class fractal_weight_oscillator_strategy(Strategy):
 
     def _trim_history(self):
         period = int(self.Period)
+        smoothing_len = int(self._smoothing_length.Value)
         signal_bar = int(self.SignalBar)
-        max_size = signal_bar + max(period, 30) + 5
+        max_size = signal_bar + max(period, smoothing_len) + 5
         if len(self._oscillator_history) > max_size:
             remove = len(self._oscillator_history) - max_size
             self._oscillator_history = self._oscillator_history[remove:]
@@ -422,6 +436,40 @@ class fractal_weight_oscillator_strategy(Strategy):
                 self._take_price = close - step * tp_pts
         else:
             self._take_price = None
+
+    def _create_smoother(self, method, length):
+        if method == 0:
+            return None
+        elif method == 1:
+            ind = SimpleMovingAverage()
+            ind.Length = length
+            return ind
+        elif method == 2:
+            ind = ExponentialMovingAverage()
+            ind.Length = length
+            return ind
+        elif method == 3:
+            ind = SmoothedMovingAverage()
+            ind.Length = length
+            return ind
+        elif method == 4:
+            ind = WeightedMovingAverage()
+            ind.Length = length
+            return ind
+        else:
+            ind = SmoothedMovingAverage()
+            ind.Length = length
+            return ind
+
+    def _apply_smoothing(self, value, time):
+        if self._smoother is None:
+            return value
+        sm_input = DecimalIndicatorValue(self._smoother, Decimal(value), time)
+        sm_input.IsFinal = True
+        result = self._smoother.Process(sm_input)
+        if result.IsFinal:
+            return float(result)
+        return None
 
     def _reset_risk(self):
         self._entry_price = 0.0

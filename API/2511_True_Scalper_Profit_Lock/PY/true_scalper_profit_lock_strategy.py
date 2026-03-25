@@ -7,23 +7,19 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 class true_scalper_profit_lock_strategy(Strategy):
-    """Fast/slow EMA crossover with RSI filter, SL/TP, break-even, and abandon logic."""
     def __init__(self):
         super(true_scalper_profit_lock_strategy, self).__init__()
-        self._tp_points = self.Param("TakeProfitPoints", 44.0).SetGreaterThanZero().SetDisplay("Take Profit", "TP distance in steps", "Risk")
-        self._sl_points = self.Param("StopLossPoints", 90.0).SetGreaterThanZero().SetDisplay("Stop Loss", "SL distance in steps", "Risk")
-        self._fast_period = self.Param("FastPeriod", 3).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA length", "Signals")
-        self._slow_period = self.Param("SlowPeriod", 7).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA length", "Signals")
-        self._rsi_length = self.Param("RsiLength", 2).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "Signals")
-        self._rsi_threshold = self.Param("RsiThreshold", 50.0).SetDisplay("RSI Threshold", "RSI boundary", "Signals")
-        self._abandon_bars = self.Param("AbandonBars", 101).SetGreaterThanZero().SetDisplay("Abandon Bars", "Bars before abandon", "Management")
-        self._be_trigger = self.Param("BreakEvenTrigger", 25.0).SetGreaterThanZero().SetDisplay("BE Trigger", "Profit before break-even", "Risk")
-        self._be_offset = self.Param("BreakEvenOffset", 3.0).SetGreaterThanZero().SetDisplay("BE Offset", "Offset at break-even", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._tp_points = self.Param("TakeProfitPoints", 44.0)
+        self._sl_points = self.Param("StopLossPoints", 90.0)
+        self._fast_period = self.Param("FastPeriod", 3)
+        self._slow_period = self.Param("SlowPeriod", 7)
+        self._rsi_length = self.Param("RsiLength", 2)
+        self._rsi_threshold = self.Param("RsiThreshold", 50.0)
+        self._abandon_bars = self.Param("AbandonBars", 101)
+        self._be_trigger = self.Param("BreakEvenTrigger", 25.0)
+        self._be_offset = self.Param("BreakEvenOffset", 3.0)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
 
     @property
     def CandleType(self): return self._candle_type.Value

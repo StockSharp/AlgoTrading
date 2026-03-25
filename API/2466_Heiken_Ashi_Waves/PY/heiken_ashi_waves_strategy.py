@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -16,6 +16,8 @@ class heiken_ashi_waves_strategy(Strategy):
         self._fast_length = self.Param("FastLength", 2)
         self._slow_length = self.Param("SlowLength", 30)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
+        self._stop_loss = self.Param("StopLoss", Unit(20.0, UnitTypes.Absolute))
+        self._use_trailing = self.Param("UseTrailing", True)
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0
@@ -47,6 +49,22 @@ class heiken_ashi_waves_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    @property
+    def StopLoss(self):
+        return self._stop_loss.Value
+
+    @StopLoss.setter
+    def StopLoss(self, value):
+        self._stop_loss.Value = value
+
+    @property
+    def UseTrailing(self):
+        return self._use_trailing.Value
+
+    @UseTrailing.setter
+    def UseTrailing(self, value):
+        self._use_trailing.Value = value
+
     def OnStarted(self, time):
         super(heiken_ashi_waves_strategy, self).OnStarted(time)
 
@@ -56,6 +74,8 @@ class heiken_ashi_waves_strategy(Strategy):
         self._prev_ha_close = 0.0
         self._is_initialized = False
 
+        self.StartProtection(None, self.StopLoss, self.UseTrailing)
+
         fast_sma = SimpleMovingAverage()
         fast_sma.Length = self.FastLength
         slow_sma = SimpleMovingAverage()
@@ -64,12 +84,11 @@ class heiken_ashi_waves_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(fast_sma, slow_sma, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         fast = float(fast_value)
@@ -96,10 +115,13 @@ class heiken_ashi_waves_strategy(Strategy):
         cross_up = self._prev_fast <= self._prev_slow and fast > slow
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
 
-        if is_bullish and cross_up and self.Position <= 0:
-            self.BuyMarket()
-        elif not is_bullish and cross_down and self.Position >= 0:
-            self.SellMarket()
+        pos = float(self.Position)
+        vol = float(self.Volume)
+
+        if is_bullish and cross_up and pos <= 0:
+            self.BuyMarket(vol + abs(pos))
+        elif not is_bullish and cross_down and pos >= 0:
+            self.SellMarket(vol + abs(pos))
 
         self._prev_fast = fast
         self._prev_slow = slow

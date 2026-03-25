@@ -6,15 +6,13 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class tdi_2_re_open_strategy(Strategy):
     """TDI momentum/index crossover: custom EMA-smoothed momentum lines."""
     def __init__(self):
         super(tdi_2_re_open_strategy, self).__init__()
         self._tdi_period = self.Param("TdiPeriod", 10).SetGreaterThanZero().SetDisplay("TDI Period", "Momentum lookback period", "Indicator")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Data series", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
 
     @property
     def CandleType(self): return self._candle_type.Value

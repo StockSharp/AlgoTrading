@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergence, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -81,12 +81,11 @@ class macd_cci_lotfy_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(macd, rsi, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, macd_value, rsi_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         macd_val = float(macd_value)
@@ -96,12 +95,15 @@ class macd_cci_lotfy_strategy(Strategy):
         thresh = float(self.Threshold)
         scaled_macd = macd_val * coeff
 
+        pos = float(self.Position)
+        vol = float(self.Volume)
+
         if rsi_val < 50.0 - thresh and scaled_macd < -thresh:
-            if self.Position <= 0:
-                self.BuyMarket()
+            if pos <= 0:
+                self.BuyMarket(vol + abs(pos))
         elif rsi_val > 50.0 + thresh and scaled_macd > thresh:
-            if self.Position >= 0:
-                self.SellMarket()
+            if pos >= 0:
+                self.SellMarket(vol + abs(pos))
 
     def OnReseted(self):
         super(macd_cci_lotfy_strategy, self).OnReseted()

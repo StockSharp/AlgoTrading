@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SmoothedMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -76,23 +76,29 @@ class bill_williams_trader_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle):
-        median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
+        h = float(candle.HighPrice)
+        l = float(candle.LowPrice)
+        median = (h + l) / 2.0
         is_final = candle.State == CandleStates.Finished
 
-        jaw_result = self._jaw.Process(median, candle.CloseTime, is_final)
-        teeth_result = self._teeth.Process(median, candle.CloseTime, is_final)
-        lips_result = self._lips.Process(median, candle.CloseTime, is_final)
+        jaw_input = DecimalIndicatorValue(self._jaw, Decimal(median), candle.ServerTime)
+        jaw_input.IsFinal = is_final
+        jaw_result = self._jaw.Process(jaw_input)
+
+        teeth_input = DecimalIndicatorValue(self._teeth, Decimal(median), candle.ServerTime)
+        teeth_input.IsFinal = is_final
+        teeth_result = self._teeth.Process(teeth_input)
+
+        lips_input = DecimalIndicatorValue(self._lips, Decimal(median), candle.ServerTime)
+        lips_input.IsFinal = is_final
+        lips_result = self._lips.Process(lips_input)
 
         for i in range(4):
             self._high_buffer[i] = self._high_buffer[i + 1]
             self._low_buffer[i] = self._low_buffer[i + 1]
-        self._high_buffer[4] = float(candle.HighPrice)
-        self._low_buffer[4] = float(candle.LowPrice)
+        self._high_buffer[4] = h
+        self._low_buffer[4] = l
 
         if not is_final:
             return
@@ -112,17 +118,21 @@ class bill_williams_trader_strategy(Strategy):
         lips_val = float(lips_result)
         close = float(candle.ClosePrice)
 
-        if self._up_fractal is not None and close > self._up_fractal and lips_val > teeth_val and teeth_val > jaw_val and self.Position <= 0:
-            self.BuyMarket()
+        pos = float(self.Position)
+        vol = float(self.Volume)
+
+        if self._up_fractal is not None and close > self._up_fractal and lips_val > teeth_val and teeth_val > jaw_val and pos <= 0:
+            self.BuyMarket(vol + abs(pos))
             self._up_fractal = None
-        elif self._down_fractal is not None and close < self._down_fractal and lips_val < teeth_val and teeth_val < jaw_val and self.Position >= 0:
-            self.SellMarket()
+        elif self._down_fractal is not None and close < self._down_fractal and lips_val < teeth_val and teeth_val < jaw_val and pos >= 0:
+            self.SellMarket(vol + abs(pos))
             self._down_fractal = None
 
-        if self.Position > 0 and close < lips_val:
-            self.SellMarket()
-        elif self.Position < 0 and close > lips_val:
-            self.BuyMarket()
+        pos = float(self.Position)
+        if pos > 0 and close < lips_val:
+            self.SellMarket(pos)
+        elif pos < 0 and close > lips_val:
+            self.BuyMarket(-pos)
 
     def OnReseted(self):
         super(bill_williams_trader_strategy, self).OnReseted()

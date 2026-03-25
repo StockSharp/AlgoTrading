@@ -4,8 +4,8 @@ import math
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, Highest, Lowest, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -35,78 +35,6 @@ class angry_bird_scalping_strategy(Strategy):
         self._prev_close = None
 
     @property
-    def StopLoss(self):
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    @property
-    def TakeProfit(self):
-        return self._take_profit.Value
-
-    @TakeProfit.setter
-    def TakeProfit(self, value):
-        self._take_profit.Value = value
-
-    @property
-    def DefaultPips(self):
-        return self._default_pips.Value
-
-    @DefaultPips.setter
-    def DefaultPips(self, value):
-        self._default_pips.Value = value
-
-    @property
-    def Depth(self):
-        return self._depth.Value
-
-    @Depth.setter
-    def Depth(self, value):
-        self._depth.Value = value
-
-    @property
-    def LotExponent(self):
-        return self._lot_exponent.Value
-
-    @LotExponent.setter
-    def LotExponent(self, value):
-        self._lot_exponent.Value = value
-
-    @property
-    def MaxTrades(self):
-        return self._max_trades.Value
-
-    @MaxTrades.setter
-    def MaxTrades(self, value):
-        self._max_trades.Value = value
-
-    @property
-    def RsiMin(self):
-        return self._rsi_min.Value
-
-    @RsiMin.setter
-    def RsiMin(self, value):
-        self._rsi_min.Value = value
-
-    @property
-    def RsiMax(self):
-        return self._rsi_max.Value
-
-    @RsiMax.setter
-    def RsiMax(self, value):
-        self._rsi_max.Value = value
-
-    @property
-    def CciDrop(self):
-        return self._cci_drop.Value
-
-    @CciDrop.setter
-    def CciDrop(self, value):
-        self._cci_drop.Value = value
-
-    @property
     def CandleType(self):
         return self._candle_type.Value
 
@@ -121,25 +49,28 @@ class angry_bird_scalping_strategy(Strategy):
         self._long_trade = False
         self._short_trade = False
         self._entry_price = 0.0
+        self._last_open_buy_price = 0.0
+        self._last_open_sell_price = 0.0
+        self._rsi_value = 0.0
+        self._prev_close = None
 
         cci = CommodityChannelIndex()
         cci.Length = 55
         rsi = RelativeStrengthIndex()
         rsi.Length = 14
         highest = Highest()
-        highest.Length = self.Depth
+        highest.Length = int(self._depth.Value)
         lowest = Lowest()
-        lowest.Length = self.Depth
+        lowest.Length = int(self._depth.Value)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(cci, rsi, highest, lowest, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, cci_value, rsi_value, highest_value, lowest_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         close = float(candle.ClosePrice)
@@ -149,56 +80,60 @@ class angry_bird_scalping_strategy(Strategy):
         low_val = float(lowest_value)
 
         step_price = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
-        pip_distance = max((high_val - low_val) / max(step_price, 1.0), float(self.DefaultPips)) * step_price
+        pip_distance = max((high_val - low_val) / max(step_price, 1.0), float(self._default_pips.Value)) * step_price
 
         self._rsi_value = rsi_val
 
-        cci_drop = float(self.CciDrop)
+        cci_drop = float(self._cci_drop.Value)
         if (cci_val > cci_drop and self._short_trade) or (cci_val < -cci_drop and self._long_trade):
             self._close_all()
             return
 
         trade_now = False
+        pos = float(self.Position)
 
-        if self.Position == 0:
+        if pos == 0:
             self._trade_count = 0
             self._long_trade = False
             self._short_trade = False
             trade_now = True
-        elif self._trade_count < int(self.MaxTrades):
+        elif self._trade_count < int(self._max_trades.Value):
             if self._long_trade and self._last_open_buy_price - close >= pip_distance:
                 trade_now = True
             if self._short_trade and close - self._last_open_sell_price >= pip_distance:
                 trade_now = True
 
         if trade_now:
+            vol = float(self.Volume) * math.pow(float(self._lot_exponent.Value), self._trade_count)
+
             if self._long_trade:
-                self.BuyMarket()
+                self.BuyMarket(vol)
                 self._last_open_buy_price = close
                 self._trade_count += 1
             elif self._short_trade:
-                self.SellMarket()
+                self.SellMarket(vol)
                 self._last_open_sell_price = close
                 self._trade_count += 1
             elif self._prev_close is not None and self._prev_close > close:
-                rsi_min = float(self.RsiMin)
-                rsi_max = float(self.RsiMax)
+                rsi_min = float(self._rsi_min.Value)
+                rsi_max = float(self._rsi_max.Value)
                 if self._rsi_value > rsi_min:
-                    self.SellMarket()
+                    self.SellMarket(vol)
                     self._short_trade = True
                     self._last_open_sell_price = close
                     self._entry_price = close
                     self._trade_count = 1
                 elif self._rsi_value < rsi_max:
-                    self.BuyMarket()
+                    self.BuyMarket(vol)
                     self._long_trade = True
                     self._last_open_buy_price = close
                     self._entry_price = close
                     self._trade_count = 1
 
-        if self.Position != 0:
-            sl = float(self.StopLoss)
-            tp = float(self.TakeProfit)
+        pos = float(self.Position)
+        if pos != 0:
+            sl = float(self._stop_loss.Value)
+            tp = float(self._take_profit.Value)
             if self._long_trade:
                 tp_price = self._entry_price + tp * step_price
                 sl_price = self._entry_price - sl * step_price
@@ -213,10 +148,11 @@ class angry_bird_scalping_strategy(Strategy):
         self._prev_close = close
 
     def _close_all(self):
-        if self.Position > 0:
-            self.SellMarket()
-        elif self.Position < 0:
-            self.BuyMarket()
+        pos = float(self.Position)
+        if pos > 0:
+            self.SellMarket(abs(pos))
+        elif pos < 0:
+            self.BuyMarket(abs(pos))
         self._trade_count = 0
         self._long_trade = False
         self._short_trade = False

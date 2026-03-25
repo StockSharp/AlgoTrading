@@ -57,11 +57,15 @@ class money_fixed_margin_strategy(Strategy):
 
         self._bar_count = 0
 
-        price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        sec = self.Security
+        price_step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
         if price_step <= 0.0:
             price_step = 1.0
-
-        self._pip_size = price_step
+        decimals = int(sec.Decimals) if sec is not None and sec.Decimals is not None else 0
+        adjust = 10.0 if decimals == 3 or decimals == 5 else 1.0
+        self._pip_size = price_step * adjust
+        if self._pip_size <= 0.0:
+            self._pip_size = price_step if price_step > 0.0 else 1.0
 
         sl_distance = float(self.StopLossPips) * self._pip_size
 

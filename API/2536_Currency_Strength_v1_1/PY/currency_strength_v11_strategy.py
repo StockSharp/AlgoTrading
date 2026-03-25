@@ -17,6 +17,8 @@ class currency_strength_v11_strategy(Strategy):
 
         self._prev_change = None
         self._prev_momentum = None
+        self._entry_price = 0.0
+        self._last_trade_time = None
 
     @property
     def CandleType(self):
@@ -39,13 +41,11 @@ class currency_strength_v11_strategy(Strategy):
 
         self._prev_change = None
         self._prev_momentum = None
+        self._entry_price = 0.0
+        self._last_trade_time = None
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
-
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -71,10 +71,23 @@ class currency_strength_v11_strategy(Strategy):
                         self._prev_momentum >= -threshold and
                         momentum < -threshold)
 
-        if long_signal and self.Position <= 0:
-            self.BuyMarket()
-        elif short_signal and self.Position >= 0:
-            self.SellMarket()
+        cooldown_passed = (self._last_trade_time is None or
+                          candle.CloseTime - self._last_trade_time >= TimeSpan.FromHours(24))
+
+        if cooldown_passed and long_signal and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(abs(self.Position))
+            vol = float(self.Volume) if float(self.Volume) > 0 else 1.0
+            self.BuyMarket(vol)
+            self._entry_price = float(candle.ClosePrice)
+            self._last_trade_time = candle.CloseTime
+        elif cooldown_passed and short_signal and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(self.Position)
+            vol = float(self.Volume) if float(self.Volume) > 0 else 1.0
+            self.SellMarket(vol)
+            self._entry_price = float(candle.ClosePrice)
+            self._last_trade_time = candle.CloseTime
 
         self._prev_change = change
         self._prev_momentum = momentum
@@ -83,6 +96,8 @@ class currency_strength_v11_strategy(Strategy):
         super(currency_strength_v11_strategy, self).OnReseted()
         self._prev_change = None
         self._prev_momentum = None
+        self._entry_price = 0.0
+        self._last_trade_time = None
 
     def CreateClone(self):
         return currency_strength_v11_strategy()

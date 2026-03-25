@@ -59,8 +59,12 @@ class e_skoch_open_strategy(Strategy):
         self._prev_pattern_signal = 0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
 
     def OnReseted(self):
         super(e_skoch_open_strategy, self).OnReseted()
@@ -83,6 +87,7 @@ class e_skoch_open_strategy(Strategy):
     def OnStarted(self, time):
         super(e_skoch_open_strategy, self).OnStarted(time)
 
+        self.Volume = self._initial_volume.Value
         self._point_value = self._calculate_point_value()
         self._current_volume = self._initial_volume.Value
         equity = 0.0
@@ -92,7 +97,7 @@ class e_skoch_open_strategy(Strategy):
         self._entry_equity = equity
         self._position_tracked = self.Position != 0
 
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
@@ -135,7 +140,7 @@ class e_skoch_open_strategy(Strategy):
         if not self._enable_buy.Value:
             return
         if self._close_on_opposite.Value and self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(abs(float(self.Position)))
             return
         if self.Position > 0:
             return
@@ -143,7 +148,11 @@ class e_skoch_open_strategy(Strategy):
         if max_buy != -1 and self._active_long_entries >= max_buy:
             return
 
-        self.BuyMarket()
+        volume = self._current_volume
+        if volume <= 0:
+            return
+
+        self.BuyMarket(volume)
         self._active_long_entries += 1
         self._position_tracked = True
         if self.Portfolio is not None and self.Portfolio.CurrentValue is not None:
@@ -154,7 +163,7 @@ class e_skoch_open_strategy(Strategy):
         if not self._enable_sell.Value:
             return
         if self._close_on_opposite.Value and self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(abs(float(self.Position)))
             return
         if self.Position < 0:
             return
@@ -162,7 +171,11 @@ class e_skoch_open_strategy(Strategy):
         if max_sell != -1 and self._active_short_entries >= max_sell:
             return
 
-        self.SellMarket()
+        volume = self._current_volume
+        if volume <= 0:
+            return
+
+        self.SellMarket(volume)
         self._active_short_entries += 1
         self._position_tracked = True
         if self.Portfolio is not None and self.Portfolio.CurrentValue is not None:
@@ -172,20 +185,20 @@ class e_skoch_open_strategy(Strategy):
     def _check_protection(self, candle):
         if self.Position > 0:
             if self._long_stop is not None and float(candle.LowPrice) <= self._long_stop:
-                self.SellMarket()
+                self.SellMarket(abs(float(self.Position)))
                 self._reset_protection()
                 return True
             if self._long_take is not None and float(candle.HighPrice) >= self._long_take:
-                self.SellMarket()
+                self.SellMarket(abs(float(self.Position)))
                 self._reset_protection()
                 return True
         elif self.Position < 0:
             if self._short_stop is not None and float(candle.HighPrice) >= self._short_stop:
-                self.BuyMarket()
+                self.BuyMarket(abs(float(self.Position)))
                 self._reset_protection()
                 return True
             if self._short_take is not None and float(candle.LowPrice) <= self._short_take:
-                self.BuyMarket()
+                self.BuyMarket(abs(float(self.Position)))
                 self._reset_protection()
                 return True
         return False
@@ -234,9 +247,9 @@ class e_skoch_open_strategy(Strategy):
         growth = (equity - self._baseline_equity) / self._baseline_equity * 100.0
         if growth >= self._target_profit_pct.Value:
             if self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(abs(float(self.Position)))
             elif self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(abs(float(self.Position)))
 
     def OnPositionReceived(self, position):
         super(e_skoch_open_strategy, self).OnPositionReceived(position)

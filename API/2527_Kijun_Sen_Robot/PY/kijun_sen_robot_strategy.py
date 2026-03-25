@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Ichimoku, WeightedMovingAverage
+from StockSharp.Algo.Indicators import Ichimoku, WeightedMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -164,24 +164,24 @@ class kijun_sen_robot_strategy(Strategy):
         self._lwma = lwma
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(lwma, self.ProcessCandle).Start()
+        subscription.BindEx(ichimoku, lwma, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        # protection handled manually via SL/TP/trailing
 
-    def ProcessCandle(self, candle, ma_value):
+    def ProcessCandle(self, candle, ichi_value, ma_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not ma_value.IsFinal:
             return
 
         ma_current = float(ma_value)
 
-        ichi_result = self._ichimoku.Process(candle)
-        if not ichi_result.IsFinal:
+        if not ichi_value.IsFinal:
             self._update_history(candle, None, ma_current)
             return
 
-        kijun = ichi_result.Kijun
+        kijun = ichi_value.Kijun
         if kijun is None:
             self._update_history(candle, None, ma_current)
             return
@@ -190,9 +190,10 @@ class kijun_sen_robot_strategy(Strategy):
 
         self._manage_open_position(candle, ma_current)
 
-        hour = candle.OpenTime.Hour
-        if hour >= int(self.TradingStartHour) and hour < int(self.TradingEndHour):
-            self._evaluate_entry_signals(candle, kijun_val, ma_current)
+        if self.IsFormedAndOnlineAndAllowTrading():
+            hour = candle.OpenTime.Hour
+            if hour >= int(self.TradingStartHour) and hour < int(self.TradingEndHour):
+                self._evaluate_entry_signals(candle, kijun_val, ma_current)
 
         self._update_history(candle, kijun_val, ma_current)
 
@@ -207,10 +208,21 @@ class kijun_sen_robot_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
-        if self._is_long is None or self._entry_price is None:
-            self._setup_position_state(is_long, close)
+        actual_entry = self._entry_price if self._entry_price is not None else close
+        if self._is_long is None or self._is_long != is_long or self._entry_price is None:
+            entry_val = actual_entry if actual_entry != 0.0 else close
+            self._setup_position_state(is_long, entry_val)
+        elif actual_entry != 0.0 and self._entry_price != actual_entry:
+            self._entry_price = actual_entry
+            if self._is_long:
+                self._stop_loss_price = self._entry_price - self._sl_distance if self._sl_distance > 0.0 else None
+                self._take_profit_price = self._entry_price + self._tp_distance if self._tp_distance > 0.0 else None
+            else:
+                self._stop_loss_price = self._entry_price + self._sl_distance if self._sl_distance > 0.0 else None
+                self._take_profit_price = self._entry_price - self._tp_distance if self._tp_distance > 0.0 else None
 
         entry = self._entry_price if self._entry_price is not None else close
+        self._is_long = is_long
 
         if self._previous_ma is not None and self._previous_prev_ma is not None and self._stop_loss_price is not None:
             if is_long and self._stop_loss_price < entry and self._previous_ma < self._previous_prev_ma:
@@ -304,15 +316,19 @@ class kijun_sen_robot_strategy(Strategy):
         ma_trend_up = ma_current > prev_ma
         ma_trend_down = ma_current < prev_ma
 
+        volume = float(self.Volume) + abs(float(self.Position))
+        if volume <= 0:
+            return
+
         if self._pending_long_level is not None and ma_trend_up and self.Position <= 0:
-            self.BuyMarket()
+            self.BuyMarket(volume)
             self._setup_position_state(True, close)
             self._pending_long_level = None
             self._pending_short_level = None
             return
 
         if self._pending_short_level is not None and ma_trend_down and self.Position >= 0:
-            self.SellMarket()
+            self.SellMarket(volume)
             self._setup_position_state(False, close)
             self._pending_long_level = None
             self._pending_short_level = None
@@ -347,9 +363,9 @@ class kijun_sen_robot_strategy(Strategy):
 
     def _close_position_and_reset(self):
         if self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(abs(float(self.Position)))
         elif self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(abs(float(self.Position)))
         self._reset_position_state()
 
     def _reset_position_state(self):
@@ -370,10 +386,23 @@ class kijun_sen_robot_strategy(Strategy):
         return value * self._get_pip_step()
 
     def _get_pip_step(self):
-        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        if self.Security is None or self.Security.PriceStep is None:
+            return 1.0
+        step = float(self.Security.PriceStep)
         if step <= 0.0:
             return 1.0
+        decimals = self._get_decimal_places(step)
+        if decimals == 3 or decimals == 5:
+            return step * 10.0
         return step
+
+    def _get_decimal_places(self, value):
+        value = abs(value)
+        decimals = 0
+        while value != int(value) and decimals < 10:
+            value *= 10.0
+            decimals += 1
+        return decimals
 
     def OnReseted(self):
         super(kijun_sen_robot_strategy, self).OnReseted()

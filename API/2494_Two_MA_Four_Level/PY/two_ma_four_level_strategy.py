@@ -4,30 +4,34 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class two_ma_four_level_strategy(Strategy):
-    """Two smoothed MA crossover with four level offsets and StartProtection SL/TP."""
     def __init__(self):
         super(two_ma_four_level_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 10).SetGreaterThanZero().SetDisplay("Fast Period", "Fast smoothed MA period", "Moving Averages")
-        self._slow_period = self.Param("SlowPeriod", 30).SetGreaterThanZero().SetDisplay("Slow Period", "Slow smoothed MA period", "Moving Averages")
-        self._most_top = self.Param("MostTopLevel", 2).SetGreaterThanZero().SetDisplay("Extreme Upper Level", "Highest positive offset", "Levels")
-        self._top = self.Param("TopLevel", 1).SetGreaterThanZero().SetDisplay("Upper Level", "Second positive offset", "Levels")
-        self._lower = self.Param("LowerLevel", 1).SetGreaterThanZero().SetDisplay("Lower Level", "Second negative offset", "Levels")
-        self._lowermost = self.Param("LowermostLevel", 2).SetGreaterThanZero().SetDisplay("Extreme Lower Level", "Largest negative offset", "Levels")
-        self._tp = self.Param("TakeProfitPips", 500).SetGreaterThanZero().SetDisplay("Take Profit", "TP distance", "Risk")
-        self._sl = self.Param("StopLossPips", 1000).SetGreaterThanZero().SetDisplay("Stop Loss", "SL distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._fast_period = self.Param("FastPeriod", 10)
+        self._slow_period = self.Param("SlowPeriod", 30)
+        self._most_top = self.Param("MostTopLevel", 2)
+        self._top = self.Param("TopLevel", 1)
+        self._lower = self.Param("LowerLevel", 1)
+        self._lowermost = self.Param("LowermostLevel", 2)
+        self._tp = self.Param("TakeProfitPips", 500)
+        self._sl = self.Param("StopLossPips", 1000)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+
+        self._prev_fast = None
+        self._prev_slow = None
 
     @property
-    def CandleType(self): return self._candle_type.Value
+    def CandleType(self):
+        return self._candle_type.Value
+
     @CandleType.setter
-    def CandleType(self, value): self._candle_type.Value = value
+    def CandleType(self, value):
+        self._candle_type.Value = value
 
     def OnReseted(self):
         super(two_ma_four_level_strategy, self).OnReseted()
@@ -40,30 +44,21 @@ class two_ma_four_level_strategy(Strategy):
         self._prev_slow = None
 
         fast_ma = SmoothedMovingAverage()
-        fast_ma.Length = self._fast_period.Value
+        fast_ma.Length = int(self._fast_period.Value)
         slow_ma = SmoothedMovingAverage()
-        slow_ma.Length = self._slow_period.Value
+        slow_ma.Length = int(self._slow_period.Value)
 
-        sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(fast_ma, slow_ma, self.OnProcess).Start()
+        sec = self.Security
+        pip = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
 
-        sl = self._sl.Value
-        tp = self._tp.Value
-        if sl > 0 or tp > 0:
-            self.StartProtection(self.CreateProtection(sl if sl > 0 else 0, tp if tp > 0 else 0))
+        tp_pips = int(self._tp.Value)
+        sl_pips = int(self._sl.Value)
+        self.StartProtection(
+            Unit(tp_pips * pip, UnitTypes.Absolute),
+            Unit(sl_pips * pip, UnitTypes.Absolute))
 
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, sub)
-            self.DrawIndicator(area, fast_ma)
-            self.DrawIndicator(area, slow_ma)
-            self.DrawOwnTrades(area)
-
-    def _is_cross_up(self, prev_fast, fast, prev_slow, slow, offset):
-        return prev_fast <= prev_slow + offset and fast > slow + offset
-
-    def _is_cross_down(self, prev_fast, fast, prev_slow, slow, offset):
-        return prev_fast >= prev_slow + offset and fast < slow + offset
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast_ma, slow_ma, self.OnProcess).Start()
 
     def OnProcess(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
@@ -77,15 +72,16 @@ class two_ma_four_level_strategy(Strategy):
             self._prev_slow = sv
             return
 
-        pip = 1.0
+        sec = self.Security
+        pip = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 0.05
+
         pf = self._prev_fast
         ps = self._prev_slow
-        most_top = self._most_top.Value * pip
-        top = self._top.Value * pip
-        lower = self._lower.Value * pip
-        lowermost = self._lowermost.Value * pip
+        most_top = int(self._most_top.Value) * pip
+        top = int(self._top.Value) * pip
+        lower = int(self._lower.Value) * pip
+        lowermost = int(self._lowermost.Value) * pip
 
-        # Check for cross up at any level
         buy_signal = (self._is_cross_up(pf, fv, ps, sv, 0) or
                       self._is_cross_up(pf, fv, ps, sv, most_top) or
                       self._is_cross_up(pf, fv, ps, sv, top) or
@@ -111,6 +107,12 @@ class two_ma_four_level_strategy(Strategy):
 
         self._prev_fast = fv
         self._prev_slow = sv
+
+    def _is_cross_up(self, prev_fast, fast, prev_slow, slow, offset):
+        return prev_fast <= prev_slow + offset and fast > slow + offset
+
+    def _is_cross_down(self, prev_fast, fast, prev_slow, slow, offset):
+        return prev_fast >= prev_slow + offset and fast < slow + offset
 
     def CreateClone(self):
         return two_ma_four_level_strategy()

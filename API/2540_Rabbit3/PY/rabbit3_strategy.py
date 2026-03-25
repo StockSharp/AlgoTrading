@@ -22,11 +22,17 @@ class rabbit3_strategy(Strategy):
         self._williams_overbought = self.Param("WilliamsOverbought", -20.0)
         self._fast_ema_period = self.Param("FastEmaPeriod", 17)
         self._slow_ema_period = self.Param("SlowEmaPeriod", 30)
+        self._max_positions = self.Param("MaxPositions", 2)
+        self._profit_threshold = self.Param("ProfitThreshold", 4.0)
+        self._base_volume = self.Param("BaseVolume", 0.01)
+        self._volume_multiplier = self.Param("VolumeMultiplier", 1.6)
         self._stop_loss_pips = self.Param("StopLossPips", 45)
         self._take_profit_pips = self.Param("TakeProfitPips", 110)
 
         self._previous_williams = 0.0
         self._has_prev_williams = False
+        self._use_boost = False
+        self._last_realized_pnl = 0.0
 
     @property
     def CandleType(self):
@@ -101,6 +107,38 @@ class rabbit3_strategy(Strategy):
         self._slow_ema_period.Value = value
 
     @property
+    def MaxPositions(self):
+        return self._max_positions.Value
+
+    @MaxPositions.setter
+    def MaxPositions(self, value):
+        self._max_positions.Value = value
+
+    @property
+    def ProfitThreshold(self):
+        return self._profit_threshold.Value
+
+    @ProfitThreshold.setter
+    def ProfitThreshold(self, value):
+        self._profit_threshold.Value = value
+
+    @property
+    def BaseVolume(self):
+        return self._base_volume.Value
+
+    @BaseVolume.setter
+    def BaseVolume(self, value):
+        self._base_volume.Value = value
+
+    @property
+    def VolumeMultiplier(self):
+        return self._volume_multiplier.Value
+
+    @VolumeMultiplier.setter
+    def VolumeMultiplier(self, value):
+        self._volume_multiplier.Value = value
+
+    @property
     def StopLossPips(self):
         return self._stop_loss_pips.Value
 
@@ -121,6 +159,9 @@ class rabbit3_strategy(Strategy):
 
         self._previous_williams = 0.0
         self._has_prev_williams = False
+        self._use_boost = False
+        self.Volume = float(self.BaseVolume)
+        self._last_realized_pnl = float(self.PnL)
 
         williams = WilliamsR()
         williams.Length = self.WilliamsPeriod
@@ -137,12 +178,9 @@ class rabbit3_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(williams, cci, fast_ema, slow_ema, self.ProcessCandle).Start()
 
-        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
-        if step <= 0.0:
-            step = 1.0
-
-        tp_dist = int(self.TakeProfitPips) * step
-        sl_dist = int(self.StopLossPips) * step
+        point = self._get_adjusted_point()
+        tp_dist = int(self.TakeProfitPips) * point
+        sl_dist = int(self.StopLossPips) * point
 
         self.StartProtection(
             Unit(sl_dist, UnitTypes.Absolute),
@@ -151,6 +189,8 @@ class rabbit3_strategy(Strategy):
     def ProcessCandle(self, candle, williams_value, cci_value, fast_ema_value, slow_ema_value):
         if candle.State != CandleStates.Finished:
             return
+
+        self._update_volume_if_needed()
 
         w_val = float(williams_value)
         cci_val = float(cci_value)
@@ -166,27 +206,81 @@ class rabbit3_strategy(Strategy):
             self._has_prev_williams = True
             return
 
+        if w_val == 0.0:
+            w_val = -1.0
+
+        if self._previous_williams == 0.0:
+            self._previous_williams = -1.0
+
         long_signal = (w_val < float(self.WilliamsOversold) and
                        cci_val < float(self.CciBuyLevel) and
                        fast_val > slow_val and
-                       self.Position >= 0)
+                       self._can_enter_long())
 
         short_signal = (w_val > float(self.WilliamsOverbought) and
                         cci_val > float(self.CciSellLevel) and
                         fast_val < slow_val and
-                        self.Position <= 0)
+                        self._can_enter_short())
 
         if long_signal:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume)
         elif short_signal:
-            self.SellMarket()
+            self.SellMarket(self.Volume)
 
         self._previous_williams = w_val
+
+    def _update_volume_if_needed(self):
+        realized_pnl = float(self.PnL)
+        if realized_pnl != self._last_realized_pnl:
+            delta = realized_pnl - self._last_realized_pnl
+            self._use_boost = delta > float(self.ProfitThreshold)
+            self._last_realized_pnl = realized_pnl
+        self.Volume = self._get_trade_volume()
+
+    def _can_enter_long(self):
+        if float(self.Position) < 0.0:
+            return False
+        trade_volume = self._get_trade_volume()
+        target_volume = float(self.Position) + trade_volume
+        max_volume = int(self.MaxPositions) * trade_volume
+        return target_volume <= max_volume + self._get_volume_tolerance()
+
+    def _can_enter_short(self):
+        if float(self.Position) > 0.0:
+            return False
+        trade_volume = self._get_trade_volume()
+        target_volume = abs(float(self.Position) - trade_volume)
+        max_volume = int(self.MaxPositions) * trade_volume
+        return target_volume <= max_volume + self._get_volume_tolerance()
+
+    def _get_trade_volume(self):
+        multiplier = float(self.VolumeMultiplier) if self._use_boost else 1.0
+        return float(self.BaseVolume) * multiplier
+
+    def _get_adjusted_point(self):
+        step = 1.0
+        if self.Security is not None and self.Security.PriceStep is not None:
+            step = float(self.Security.PriceStep)
+        decimals = 0
+        if self.Security is not None and self.Security.Decimals is not None:
+            decimals = int(self.Security.Decimals)
+        adjust = 10.0 if decimals == 3 or decimals == 5 else 1.0
+        return step * adjust
+
+    def _get_volume_tolerance(self):
+        vol_step = None
+        if self.Security is not None and self.Security.VolumeStep is not None:
+            vol_step = float(self.Security.VolumeStep)
+        if vol_step is None or vol_step == 0.0:
+            return 0.00000001
+        return vol_step / 2.0
 
     def OnReseted(self):
         super(rabbit3_strategy, self).OnReseted()
         self._previous_williams = 0.0
         self._has_prev_williams = False
+        self._use_boost = False
+        self._last_realized_pnl = 0.0
 
     def CreateClone(self):
         return rabbit3_strategy()

@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -95,12 +95,13 @@ class ilan14_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        self.StartProtection(None, None)
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
@@ -112,8 +113,8 @@ class ilan14_strategy(Strategy):
         init_vol = float(self.InitialVolume)
 
         if self._buy_count == 0 and self._sell_count == 0:
-            self.BuyMarket()
-            self.SellMarket()
+            self.BuyMarket(init_vol)
+            self.SellMarket(init_vol)
             self._last_buy_price = price
             self._last_sell_price = price
             self._last_buy_volume = init_vol
@@ -129,7 +130,7 @@ class ilan14_strategy(Strategy):
         if self._buy_count > 0:
             if self._buy_count < max_trades and price <= self._last_buy_price - pip_step * step:
                 vol = self._last_buy_volume * lot_exp
-                self.BuyMarket()
+                self.BuyMarket(vol)
                 self._last_buy_volume = vol
                 self._last_buy_price = price
                 self._avg_buy_price = (self._avg_buy_price * self._buy_volume + price * vol) / (self._buy_volume + vol)
@@ -137,7 +138,7 @@ class ilan14_strategy(Strategy):
                 self._buy_count += 1
 
             if self._buy_volume > 0.0 and price >= self._avg_buy_price + tp * step:
-                self.SellMarket()
+                self.SellMarket(self._buy_volume)
                 self._buy_volume = 0.0
                 self._last_buy_price = 0.0
                 self._last_buy_volume = 0.0
@@ -147,7 +148,7 @@ class ilan14_strategy(Strategy):
         if self._sell_count > 0:
             if self._sell_count < max_trades and price >= self._last_sell_price + pip_step * step:
                 vol = self._last_sell_volume * lot_exp
-                self.SellMarket()
+                self.SellMarket(vol)
                 self._last_sell_volume = vol
                 self._last_sell_price = price
                 self._avg_sell_price = (self._avg_sell_price * self._sell_volume + price * vol) / (self._sell_volume + vol)
@@ -155,7 +156,7 @@ class ilan14_strategy(Strategy):
                 self._sell_count += 1
 
             if self._sell_volume > 0.0 and price <= self._avg_sell_price - tp * step:
-                self.BuyMarket()
+                self.BuyMarket(self._sell_volume)
                 self._sell_volume = 0.0
                 self._last_sell_price = 0.0
                 self._last_sell_volume = 0.0

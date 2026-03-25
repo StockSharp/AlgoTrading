@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -42,78 +42,6 @@ class master_mm_droid_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    @property
-    def RsiPeriod(self):
-        return self._rsi_period.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def RsiLowerLevel(self):
-        return self._rsi_lower_level.Value
-
-    @RsiLowerLevel.setter
-    def RsiLowerLevel(self, value):
-        self._rsi_lower_level.Value = value
-
-    @property
-    def RsiUpperLevel(self):
-        return self._rsi_upper_level.Value
-
-    @RsiUpperLevel.setter
-    def RsiUpperLevel(self, value):
-        self._rsi_upper_level.Value = value
-
-    @property
-    def RsiMaxEntries(self):
-        return self._rsi_max_entries.Value
-
-    @RsiMaxEntries.setter
-    def RsiMaxEntries(self, value):
-        self._rsi_max_entries.Value = value
-
-    @property
-    def RsiPyramidSteps(self):
-        return self._rsi_pyramid_steps.Value
-
-    @RsiPyramidSteps.setter
-    def RsiPyramidSteps(self, value):
-        self._rsi_pyramid_steps.Value = value
-
-    @property
-    def StopLossSteps(self):
-        return self._stop_loss_steps.Value
-
-    @StopLossSteps.setter
-    def StopLossSteps(self, value):
-        self._stop_loss_steps.Value = value
-
-    @property
-    def TrailingSteps(self):
-        return self._trailing_steps.Value
-
-    @TrailingSteps.setter
-    def TrailingSteps(self, value):
-        self._trailing_steps.Value = value
-
-    @property
-    def BoxLookback(self):
-        return self._box_lookback.Value
-
-    @BoxLookback.setter
-    def BoxLookback(self, value):
-        self._box_lookback.Value = value
-
-    @property
-    def BoxEntrySteps(self):
-        return self._box_entry_steps.Value
-
-    @BoxEntrySteps.setter
-    def BoxEntrySteps(self, value):
-        self._box_entry_steps.Value = value
-
     def OnStarted(self, time):
         super(master_mm_droid_strategy, self).OnStarted(time)
 
@@ -127,16 +55,11 @@ class master_mm_droid_strategy(Strategy):
         self._box_low = 999999999.0
         self._box_bars_count = 0
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
-        self._rsi = rsi
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = int(self._rsi_period.Value)
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, self.ProcessCandle).Start()
-
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        subscription.Bind(self._rsi, self.ProcessCandle).Start()
 
     def ProcessCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
@@ -153,58 +76,65 @@ class master_mm_droid_strategy(Strategy):
         self._update_box(candle)
         self._manage_trailing(candle, step)
 
-        if not self._rsi.IsFormed:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             self._previous_rsi = rsi_val
             self._has_previous_rsi = True
             return
 
-        box_lookback = int(self.BoxLookback)
-        if self.Position == 0 and self._box_bars_count >= box_lookback:
-            box_offset = float(self.BoxEntrySteps) * step
+        vol = float(self.Volume)
+        box_lookback = int(self._box_lookback.Value)
+
+        pos = float(self.Position)
+        if pos == 0 and self._box_bars_count >= box_lookback:
+            box_offset = float(self._box_entry_steps.Value) * step
             if close > self._box_high + box_offset:
-                self.BuyMarket()
+                self.BuyMarket(vol)
                 self._last_entry_price = close
                 self._entry_count = 1
-                self._active_stop_price = close - float(self.StopLossSteps) * step
+                self._active_stop_price = close - float(self._stop_loss_steps.Value) * step
                 self._best_price = close
                 entered_this_candle = True
             elif close < self._box_low - box_offset:
-                self.SellMarket()
+                self.SellMarket(vol)
                 self._last_entry_price = close
                 self._entry_count = 1
-                self._active_stop_price = close + float(self.StopLossSteps) * step
+                self._active_stop_price = close + float(self._stop_loss_steps.Value) * step
                 self._best_price = close
                 entered_this_candle = True
 
         if not entered_this_candle and self._has_previous_rsi and self._rsi.IsFormed:
-            rsi_lower = float(self.RsiLowerLevel)
-            rsi_upper = float(self.RsiUpperLevel)
+            rsi_lower = float(self._rsi_lower_level.Value)
+            rsi_upper = float(self._rsi_upper_level.Value)
             rsi_cross_up = self._previous_rsi <= rsi_lower and rsi_val > rsi_lower
             rsi_cross_down = self._previous_rsi >= rsi_upper and rsi_val < rsi_upper
 
-            if rsi_cross_up and self.Position <= 0:
-                self.BuyMarket()
+            pos = float(self.Position)
+            if rsi_cross_up and pos <= 0:
+                entry_vol = vol + (abs(pos) if pos < 0 else 0.0)
+                self.BuyMarket(entry_vol)
                 self._last_entry_price = close
                 self._entry_count = 1
-                self._active_stop_price = close - float(self.StopLossSteps) * step
+                self._active_stop_price = close - float(self._stop_loss_steps.Value) * step
                 self._best_price = close
-            elif rsi_cross_down and self.Position >= 0:
-                self.SellMarket()
+            elif rsi_cross_down and pos >= 0:
+                entry_vol = vol + (pos if pos > 0 else 0.0)
+                self.SellMarket(entry_vol)
                 self._last_entry_price = close
                 self._entry_count = 1
-                self._active_stop_price = close + float(self.StopLossSteps) * step
+                self._active_stop_price = close + float(self._stop_loss_steps.Value) * step
                 self._best_price = close
 
-            pyramid_dist = float(self.RsiPyramidSteps) * step
-            max_entries = int(self.RsiMaxEntries)
-            if self.Position > 0 and self._entry_count < max_entries and self._last_entry_price is not None:
+            pyramid_dist = float(self._rsi_pyramid_steps.Value) * step
+            max_entries = int(self._rsi_max_entries.Value)
+            pos = float(self.Position)
+            if pos > 0 and self._entry_count < max_entries and self._last_entry_price is not None:
                 if close >= self._last_entry_price + pyramid_dist:
-                    self.BuyMarket()
+                    self.BuyMarket(vol)
                     self._last_entry_price = close
                     self._entry_count += 1
-            elif self.Position < 0 and self._entry_count < max_entries and self._last_entry_price is not None:
+            elif pos < 0 and self._entry_count < max_entries and self._last_entry_price is not None:
                 if close <= self._last_entry_price - pyramid_dist:
-                    self.SellMarket()
+                    self.SellMarket(vol)
                     self._last_entry_price = close
                     self._entry_count += 1
 
@@ -221,7 +151,8 @@ class master_mm_droid_strategy(Strategy):
             self._box_low = low
 
     def _manage_trailing(self, candle, step):
-        if self.Position == 0:
+        pos = float(self.Position)
+        if pos == 0:
             self._active_stop_price = None
             return
 
@@ -231,16 +162,16 @@ class master_mm_droid_strategy(Strategy):
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
-        trail_dist = float(self.TrailingSteps) * step
+        trail_dist = float(self._trailing_steps.Value) * step
 
-        if self.Position > 0:
+        if pos > 0:
             if close > self._best_price:
                 self._best_price = close
             trail_stop = self._best_price - trail_dist
             if trail_stop > self._active_stop_price:
                 self._active_stop_price = trail_stop
             if low <= self._active_stop_price:
-                self.SellMarket()
+                self.SellMarket(pos)
                 self._active_stop_price = None
                 self._last_entry_price = None
                 self._entry_count = 0
@@ -251,7 +182,7 @@ class master_mm_droid_strategy(Strategy):
             if trail_stop < self._active_stop_price:
                 self._active_stop_price = trail_stop
             if high >= self._active_stop_price:
-                self.BuyMarket()
+                self.BuyMarket(abs(pos))
                 self._active_stop_price = None
                 self._last_entry_price = None
                 self._entry_count = 0

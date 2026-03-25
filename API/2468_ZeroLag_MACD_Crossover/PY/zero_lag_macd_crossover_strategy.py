@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -107,9 +107,7 @@ class zero_lag_macd_crossover_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(fast_ema, slow_ema, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        self.StartProtection(None, None)
 
     def ProcessCandle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
@@ -125,11 +123,15 @@ class zero_lag_macd_crossover_strategy(Strategy):
         kill_h = int(self.KillHour)
 
         if t.Hour < start_h or t.Hour >= end_h or (int(t.DayOfWeek) == kill_d and t.Hour == kill_h):
-            if self.Position != 0:
-                if self.Position > 0:
-                    self.SellMarket()
+            pos = float(self.Position)
+            if pos != 0:
+                if pos > 0:
+                    self.SellMarket(pos)
                 else:
-                    self.BuyMarket()
+                    self.BuyMarket(-pos)
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         macd = 10.0 * (fast - slow)
@@ -155,22 +157,25 @@ class zero_lag_macd_crossover_strategy(Strategy):
             self._prev_macd = macd
             return
 
+        pos = float(self.Position)
+        vol = float(self.Volume)
+
         if macd > self._prev_macd:
-            if self.Position > 0:
-                self.SellMarket()
+            if pos > 0:
+                self.SellMarket(pos)
                 self._prev_prev_macd = self._prev_macd
                 self._prev_macd = macd
                 return
-            if self.Position == 0:
-                self.SellMarket()
+            if float(self.Position) == 0:
+                self.SellMarket(vol)
         elif macd < self._prev_macd:
-            if self.Position < 0:
-                self.BuyMarket()
+            if pos < 0:
+                self.BuyMarket(-pos)
                 self._prev_prev_macd = self._prev_macd
                 self._prev_macd = macd
                 return
-            if self.Position == 0:
-                self.BuyMarket()
+            if float(self.Position) == 0:
+                self.BuyMarket(vol)
 
         self._prev_prev_macd = self._prev_macd
         self._prev_macd = macd

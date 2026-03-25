@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
 
@@ -47,149 +47,13 @@ class altarius_rsi_stochastic_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    @property
-    def BaseVolume(self):
-        return self._base_volume.Value
-
-    @BaseVolume.setter
-    def BaseVolume(self, value):
-        self._base_volume.Value = value
-
-    @property
-    def MinimumVolume(self):
-        return self._minimum_volume.Value
-
-    @MinimumVolume.setter
-    def MinimumVolume(self, value):
-        self._minimum_volume.Value = value
-
-    @property
-    def MaximumRisk(self):
-        return self._maximum_risk.Value
-
-    @MaximumRisk.setter
-    def MaximumRisk(self, value):
-        self._maximum_risk.Value = value
-
-    @property
-    def DecreaseFactor(self):
-        return self._decrease_factor.Value
-
-    @DecreaseFactor.setter
-    def DecreaseFactor(self, value):
-        self._decrease_factor.Value = value
-
-    @property
-    def PrimaryStochasticLength(self):
-        return self._primary_stochastic_length.Value
-
-    @PrimaryStochasticLength.setter
-    def PrimaryStochasticLength(self, value):
-        self._primary_stochastic_length.Value = value
-
-    @property
-    def PrimaryStochasticKPeriod(self):
-        return self._primary_stochastic_k_period.Value
-
-    @PrimaryStochasticKPeriod.setter
-    def PrimaryStochasticKPeriod(self, value):
-        self._primary_stochastic_k_period.Value = value
-
-    @property
-    def PrimaryStochasticDPeriod(self):
-        return self._primary_stochastic_d_period.Value
-
-    @PrimaryStochasticDPeriod.setter
-    def PrimaryStochasticDPeriod(self, value):
-        self._primary_stochastic_d_period.Value = value
-
-    @property
-    def SecondaryStochasticLength(self):
-        return self._secondary_stochastic_length.Value
-
-    @SecondaryStochasticLength.setter
-    def SecondaryStochasticLength(self, value):
-        self._secondary_stochastic_length.Value = value
-
-    @property
-    def SecondaryStochasticKPeriod(self):
-        return self._secondary_stochastic_k_period.Value
-
-    @SecondaryStochasticKPeriod.setter
-    def SecondaryStochasticKPeriod(self, value):
-        self._secondary_stochastic_k_period.Value = value
-
-    @property
-    def SecondaryStochasticDPeriod(self):
-        return self._secondary_stochastic_d_period.Value
-
-    @SecondaryStochasticDPeriod.setter
-    def SecondaryStochasticDPeriod(self, value):
-        self._secondary_stochastic_d_period.Value = value
-
-    @property
-    def DifferenceThreshold(self):
-        return self._difference_threshold.Value
-
-    @DifferenceThreshold.setter
-    def DifferenceThreshold(self, value):
-        self._difference_threshold.Value = value
-
-    @property
-    def PrimaryBuyLimit(self):
-        return self._primary_buy_limit.Value
-
-    @PrimaryBuyLimit.setter
-    def PrimaryBuyLimit(self, value):
-        self._primary_buy_limit.Value = value
-
-    @property
-    def PrimarySellLimit(self):
-        return self._primary_sell_limit.Value
-
-    @PrimarySellLimit.setter
-    def PrimarySellLimit(self, value):
-        self._primary_sell_limit.Value = value
-
-    @property
-    def PrimaryExitUpper(self):
-        return self._primary_exit_upper.Value
-
-    @PrimaryExitUpper.setter
-    def PrimaryExitUpper(self, value):
-        self._primary_exit_upper.Value = value
-
-    @property
-    def PrimaryExitLower(self):
-        return self._primary_exit_lower.Value
-
-    @PrimaryExitLower.setter
-    def PrimaryExitLower(self, value):
-        self._primary_exit_lower.Value = value
-
-    @property
-    def RsiPeriod(self):
-        return self._rsi_period.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsi_period.Value = value
-
-    @property
-    def LongExitRsi(self):
-        return self._long_exit_rsi.Value
-
-    @LongExitRsi.setter
-    def LongExitRsi(self, value):
-        self._long_exit_rsi.Value = value
-
-    @property
-    def ShortExitRsi(self):
-        return self._short_exit_rsi.Value
-
-    @ShortExitRsi.setter
-    def ShortExitRsi(self, value):
-        self._short_exit_rsi.Value = value
+    def OnReseted(self):
+        super(altarius_rsi_stochastic_strategy, self).OnReseted()
+        self._prev_primary_signal = 0.0
+        self._has_prev_signal = False
+        self._entry_price = 0.0
+        self._position_direction = 0
+        self._loss_streak = 0
 
     def OnStarted(self, time):
         super(altarius_rsi_stochastic_strategy, self).OnStarted(time)
@@ -201,15 +65,15 @@ class altarius_rsi_stochastic_strategy(Strategy):
         self._loss_streak = 0
 
         primary_stochastic = StochasticOscillator()
-        primary_stochastic.K.Length = self.PrimaryStochasticLength
-        primary_stochastic.D.Length = self.PrimaryStochasticDPeriod
+        primary_stochastic.K.Length = int(self._primary_stochastic_length.Value)
+        primary_stochastic.D.Length = int(self._primary_stochastic_d_period.Value)
 
         secondary_stochastic = StochasticOscillator()
-        secondary_stochastic.K.Length = self.SecondaryStochasticLength
-        secondary_stochastic.D.Length = self.SecondaryStochasticDPeriod
+        secondary_stochastic.K.Length = int(self._secondary_stochastic_length.Value)
+        secondary_stochastic.D.Length = int(self._secondary_stochastic_d_period.Value)
 
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
+        rsi.Length = int(self._rsi_period.Value)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(primary_stochastic, secondary_stochastic, rsi, self.ProcessCandle).Start()
@@ -240,42 +104,85 @@ class altarius_rsi_stochastic_strategy(Strategy):
         rsi_val = float(rsi_value)
         difference = abs(secondary_main_val - secondary_signal_val)
 
+        if self.Position != 0:
+            portfolio = self.Portfolio
+            account_value = float(portfolio.CurrentValue) if portfolio is not None and portfolio.CurrentValue is not None else 0.0
+            risk_limit = account_value * float(self._maximum_risk.Value)
+            pnl = float(self.PnL)
+            if pnl < 0.0 and risk_limit > 0.0 and abs(pnl) >= risk_limit:
+                self._close_position(float(candle.ClosePrice))
+                self._update_primary_signal(primary_signal_val)
+                return
+
+        can_trade = self.IsFormedAndOnlineAndAllowTrading()
+
         if self.Position == 0:
+            if not can_trade:
+                self._update_primary_signal(primary_signal_val)
+                return
+
             bullish_setup = (primary_main_val > primary_signal_val and
-                             primary_main_val < float(self.PrimaryBuyLimit) and
-                             difference > float(self.DifferenceThreshold))
+                             primary_main_val < float(self._primary_buy_limit.Value) and
+                             difference > float(self._difference_threshold.Value))
             bearish_setup = (primary_main_val < primary_signal_val and
-                             primary_main_val > float(self.PrimarySellLimit) and
-                             difference > float(self.DifferenceThreshold))
+                             primary_main_val > float(self._primary_sell_limit.Value) and
+                             difference > float(self._difference_threshold.Value))
 
             if bullish_setup:
-                self.BuyMarket()
-                self._entry_price = float(candle.ClosePrice)
-                self._position_direction = 1
+                volume = self._calculate_trade_volume()
+                if volume > 0.0:
+                    self.BuyMarket(volume)
+                    self._entry_price = float(candle.ClosePrice)
+                    self._position_direction = 1
             elif bearish_setup:
-                self.SellMarket()
-                self._entry_price = float(candle.ClosePrice)
-                self._position_direction = -1
-        else:
+                volume = self._calculate_trade_volume()
+                if volume > 0.0:
+                    self.SellMarket(volume)
+                    self._entry_price = float(candle.ClosePrice)
+                    self._position_direction = -1
+        elif can_trade:
             if self.Position > 0:
-                exit_signal = (rsi_val > float(self.LongExitRsi) and
+                exit_signal = (rsi_val > float(self._long_exit_rsi.Value) and
                                self._has_prev_signal and
                                primary_signal_val < self._prev_primary_signal and
-                               primary_signal_val > float(self.PrimaryExitUpper))
+                               primary_signal_val > float(self._primary_exit_upper.Value))
                 if exit_signal:
                     self._close_position(float(candle.ClosePrice))
             elif self.Position < 0:
-                exit_signal = (rsi_val < float(self.ShortExitRsi) and
+                exit_signal = (rsi_val < float(self._short_exit_rsi.Value) and
                                self._has_prev_signal and
                                primary_signal_val > self._prev_primary_signal and
-                               primary_signal_val < float(self.PrimaryExitLower))
+                               primary_signal_val < float(self._primary_exit_lower.Value))
                 if exit_signal:
                     self._close_position(float(candle.ClosePrice))
 
         self._update_primary_signal(primary_signal_val)
 
+    def _calculate_trade_volume(self):
+        volume = float(self._base_volume.Value)
+        min_vol = float(self._minimum_volume.Value)
+
+        portfolio = self.Portfolio
+        if portfolio is not None and portfolio.CurrentValue is not None:
+            value = float(portfolio.CurrentValue)
+            if value > 0.0:
+                risk_volume = round(value * float(self._maximum_risk.Value) / 1000.0, 2)
+                if risk_volume > 0.0:
+                    volume = risk_volume
+
+        dec_factor = float(self._decrease_factor.Value)
+        if dec_factor > 0.0 and self._loss_streak > 1:
+            reduction = volume * self._loss_streak / dec_factor
+            volume = max(volume - reduction, min_vol)
+
+        if volume < min_vol:
+            volume = min_vol
+
+        return volume
+
     def _close_position(self, exit_price):
-        if self.Position == 0:
+        vol = abs(float(self.Position))
+        if vol <= 0.0:
             self._position_direction = 0
             self._entry_price = 0.0
             return
@@ -284,9 +191,9 @@ class altarius_rsi_stochastic_strategy(Strategy):
         entry_price = self._entry_price
 
         if self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(vol)
         else:
-            self.BuyMarket()
+            self.BuyMarket(vol)
 
         if entry_price > 0.0:
             if direction > 0:
@@ -309,14 +216,6 @@ class altarius_rsi_stochastic_strategy(Strategy):
         if signal is not None:
             self._prev_primary_signal = float(signal) if not isinstance(signal, float) else signal
         self._has_prev_signal = True
-
-    def OnReseted(self):
-        super(altarius_rsi_stochastic_strategy, self).OnReseted()
-        self._prev_primary_signal = 0.0
-        self._has_prev_signal = False
-        self._entry_price = 0.0
-        self._position_direction = 0
-        self._loss_streak = 0
 
     def CreateClone(self):
         return altarius_rsi_stochastic_strategy()

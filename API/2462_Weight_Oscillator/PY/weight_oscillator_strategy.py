@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 
@@ -76,12 +76,12 @@ class weight_oscillator_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(rsi, wpr, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
 
     def ProcessCandle(self, candle, rsi_value, wpr_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         rsi_val = float(rsi_value)
@@ -95,9 +95,11 @@ class weight_oscillator_strategy(Strategy):
 
         if self._has_prev:
             if self._prev_osc > low_lvl and osc <= low_lvl and self.Position <= 0:
-                self.BuyMarket()
+                volume = float(self.Volume) + abs(float(self.Position))
+                self.BuyMarket(volume)
             elif self._prev_osc < high_lvl and osc >= high_lvl and self.Position >= 0:
-                self.SellMarket()
+                volume = float(self.Volume) + abs(float(self.Position))
+                self.SellMarket(volume)
 
         self._prev_osc = osc
         self._has_prev = True

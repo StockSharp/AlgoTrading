@@ -86,6 +86,8 @@ class macd_zero_filter_take_profit_strategy(Strategy):
         self._previous_macd = None
         self._previous_signal = None
 
+        self.Volume = self._volume_per_trade.Value
+
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self.MacdFast
         macd.Macd.LongMa.Length = self.MacdSlow
@@ -102,14 +104,15 @@ class macd_zero_filter_take_profit_strategy(Strategy):
         tp_distance = int(self.TakeProfitPoints) * step
 
         self.StartProtection(
-            Unit(tp_distance * 2.0, UnitTypes.Absolute),
-            Unit(tp_distance, UnitTypes.Absolute))
+            takeProfit=Unit(tp_distance, UnitTypes.Absolute),
+            stopLoss=Unit(0),
+            useMarketOrders=True)
 
     def ProcessCandle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not macd_value.IsFinal:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         macd_val = macd_value.Macd
@@ -138,10 +141,16 @@ class macd_zero_filter_take_profit_strategy(Strategy):
             self.BuyMarket()
 
         if self.Position == 0:
-            if crossed_up and macd_f < 0.0 and signal_f < 0.0:
-                self.BuyMarket()
-            elif crossed_down and macd_f > 0.0 and signal_f > 0.0:
-                self.SellMarket()
+            required_capital = float(self.MinimumCapitalPerVolume) * float(self.VolumePerTrade)
+            portfolio = self.Portfolio
+            current_value = float(portfolio.CurrentValue) if portfolio is not None and portfolio.CurrentValue is not None else 0.0
+            has_capital = current_value >= required_capital or portfolio is None or portfolio.CurrentValue is None
+
+            if has_capital:
+                if crossed_up and macd_f < 0.0 and signal_f < 0.0:
+                    self.BuyMarket()
+                elif crossed_down and macd_f > 0.0 and signal_f > 0.0:
+                    self.SellMarket()
 
         self._previous_macd = macd_f
         self._previous_signal = signal_f

@@ -5,7 +5,8 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from System import Decimal
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -93,18 +94,21 @@ class five_eight_ma_cross_strategy(Strategy):
         self._slow_ma = ExponentialMovingAverage()
         self._slow_ma.Length = self.SlowLength
 
+        self.Volume = 0.1
+
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def _calculate_point_value(self):
-        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        if self.Security is None or self.Security.PriceStep is None:
+            return 1.0
+        step = float(self.Security.PriceStep)
         if step <= 0.0:
             return 1.0
-        return step
+        import math
+        digits = int(round(math.log10(1.0 / step)))
+        multiplier = 10.0 if (digits == 3 or digits == 5) else 1.0
+        return step * multiplier
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -115,11 +119,15 @@ class five_eight_ma_cross_strategy(Strategy):
         low = float(candle.LowPrice)
         open_price = float(candle.OpenPrice)
 
-        fast_result = self._fast_ma.Process(self._fast_ma.CreateValue(candle.OpenTime, close))
-        slow_result = self._slow_ma.Process(self._slow_ma.CreateValue(candle.OpenTime, open_price))
+        fast_input = DecimalIndicatorValue(self._fast_ma, candle.ClosePrice, candle.OpenTime)
+        fast_input.IsFinal = True
+        fast_result = self._fast_ma.Process(fast_input)
+        slow_input = DecimalIndicatorValue(self._slow_ma, candle.OpenPrice, candle.OpenTime)
+        slow_input.IsFinal = True
+        slow_result = self._slow_ma.Process(slow_input)
 
-        fast_val = float(fast_result)
-        slow_val = float(slow_result)
+        fast_val = fast_result.Value
+        slow_val = slow_result.Value
 
         if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             self._prev_fast = fast_val
@@ -146,8 +154,12 @@ class five_eight_ma_cross_strategy(Strategy):
         self._prev_slow = slow_val
 
     def _enter_long(self, candle):
+        pos_vol = abs(float(self.Position)) if self.Position < 0 else 0.0
+        volume = float(self.Volume) + pos_vol
+        if volume <= 0:
+            return
         self._reset_position_state()
-        self.BuyMarket()
+        self.BuyMarket(volume)
 
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
@@ -169,8 +181,12 @@ class five_eight_ma_cross_strategy(Strategy):
                 self._stop_price = trail_start
 
     def _enter_short(self, candle):
+        pos_vol = float(self.Position) if self.Position > 0 else 0.0
+        volume = float(self.Volume) + pos_vol
+        if volume <= 0:
+            return
         self._reset_position_state()
-        self.SellMarket()
+        self.SellMarket(volume)
 
         close = float(candle.ClosePrice)
         high = float(candle.HighPrice)
@@ -205,12 +221,12 @@ class five_eight_ma_cross_strategy(Strategy):
                     self._stop_price = trail_candidate
 
             if self._take_price is not None and close >= self._take_price:
-                self.SellMarket()
+                self.SellMarket(abs(float(self.Position)))
                 self._reset_position_state()
                 return
 
             if self._stop_price is not None and close <= self._stop_price:
-                self.SellMarket()
+                self.SellMarket(abs(float(self.Position)))
                 self._reset_position_state()
                 return
 
@@ -223,12 +239,12 @@ class five_eight_ma_cross_strategy(Strategy):
                     self._stop_price = trail_candidate
 
             if self._take_price is not None and close <= self._take_price:
-                self.BuyMarket()
+                self.BuyMarket(abs(float(self.Position)))
                 self._reset_position_state()
                 return
 
             if self._stop_price is not None and close >= self._stop_price:
-                self.BuyMarket()
+                self.BuyMarket(abs(float(self.Position)))
                 self._reset_position_state()
 
     def _reset_position_state(self):

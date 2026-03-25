@@ -90,9 +90,7 @@ class backbone_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
+        # protection handled manually via SL/TP/trailing
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:

@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import DeMarker, RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
@@ -27,54 +27,6 @@ class cash_machine5min_strategy(Strategy):
         self._stop_price = None
 
     @property
-    def TpAtrMult(self):
-        return self._tp_atr_mult.Value
-
-    @TpAtrMult.setter
-    def TpAtrMult(self, value):
-        self._tp_atr_mult.Value = value
-
-    @property
-    def SlAtrMult(self):
-        return self._sl_atr_mult.Value
-
-    @SlAtrMult.setter
-    def SlAtrMult(self, value):
-        self._sl_atr_mult.Value = value
-
-    @property
-    def TrailAtrMult(self):
-        return self._trail_atr_mult.Value
-
-    @TrailAtrMult.setter
-    def TrailAtrMult(self, value):
-        self._trail_atr_mult.Value = value
-
-    @property
-    def DeMarkerLength(self):
-        return self._de_marker_length.Value
-
-    @DeMarkerLength.setter
-    def DeMarkerLength(self, value):
-        self._de_marker_length.Value = value
-
-    @property
-    def RsiLength(self):
-        return self._rsi_length.Value
-
-    @RsiLength.setter
-    def RsiLength(self, value):
-        self._rsi_length.Value = value
-
-    @property
-    def AtrLength(self):
-        return self._atr_length.Value
-
-    @AtrLength.setter
-    def AtrLength(self, value):
-        self._atr_length.Value = value
-
-    @property
     def CandleType(self):
         return self._candle_type.Value
 
@@ -91,47 +43,47 @@ class cash_machine5min_strategy(Strategy):
         self._stop_price = None
 
         de_marker = DeMarker()
-        de_marker.Length = self.DeMarkerLength
+        de_marker.Length = self._de_marker_length.Value
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiLength
+        rsi.Length = self._rsi_length.Value
         atr = AverageTrueRange()
-        atr.Length = self.AtrLength
+        atr.Length = self._atr_length.Value
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(de_marker, rsi, atr, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, de_marker_value, rsi_value, atr_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         de_marker = float(de_marker_value)
         rsi = float(rsi_value)
         atr = float(atr_value)
         close = float(candle.ClosePrice)
-        tp_mult = float(self.TpAtrMult)
-        sl_mult = float(self.SlAtrMult)
-        trail_mult = float(self.TrailAtrMult)
+        tp_mult = float(self._tp_atr_mult.Value)
+        sl_mult = float(self._sl_atr_mult.Value)
+        trail_mult = float(self._trail_atr_mult.Value)
 
-        if self.Position > 0:
+        pos = float(self.Position)
+        if pos > 0:
             trail = close - trail_mult * atr
             if self._stop_price is None or trail > self._stop_price:
                 self._stop_price = trail
             tp = self._entry_price + tp_mult * atr
             if close <= self._stop_price or close >= tp:
-                self.SellMarket()
+                self.SellMarket(abs(pos))
                 self._stop_price = None
                 self._entry_price = 0.0
-        elif self.Position < 0:
+        elif pos < 0:
             trail = close + trail_mult * atr
             if self._stop_price is None or trail < self._stop_price:
                 self._stop_price = trail
             tp = self._entry_price - tp_mult * atr
             if close >= self._stop_price or close <= tp:
-                self.BuyMarket()
+                self.BuyMarket(abs(pos))
                 self._stop_price = None
                 self._entry_price = 0.0
 

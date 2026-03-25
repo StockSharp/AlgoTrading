@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -172,10 +172,6 @@ class ibs_rsi_cci_v4_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._rsi, self._cci, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, rsi_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
@@ -195,7 +191,9 @@ class ibs_rsi_cci_v4_strategy(Strategy):
             candle_range = 0.0001
 
         ibs_raw = (close - low) / candle_range
-        ibs_result = self._ibs_avg.Process(self._ibs_avg.CreateValue(candle.OpenTime, ibs_raw))
+        ibs_input = DecimalIndicatorValue(self._ibs_avg, Decimal(ibs_raw), candle.OpenTime)
+        ibs_input.IsFinal = True
+        ibs_result = self._ibs_avg.Process(ibs_input)
         if not ibs_result.IsFinal:
             return
 
