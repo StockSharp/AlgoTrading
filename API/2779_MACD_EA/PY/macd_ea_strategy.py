@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -100,7 +100,9 @@ class macd_ea_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        result = self._macd.Process(candle)
+        civ = CandleIndicatorValue(self._macd, candle)
+        civ.IsFinal = True
+        result = self._macd.Process(civ)
         if not self._macd.IsFormed:
             return
 

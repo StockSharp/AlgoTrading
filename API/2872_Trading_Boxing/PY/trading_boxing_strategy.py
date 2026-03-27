@@ -15,7 +15,7 @@ class trading_boxing_strategy(Strategy):
     def __init__(self):
         super(trading_boxing_strategy, self).__init__()
         self._cci_length = self.Param("CciLength", 20).SetGreaterThanZero().SetDisplay("CCI Length", "CCI period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -152,10 +152,6 @@ class cg_oscillator_x2_strategy(Strategy):
         self.SubscribeCandles(self.TrendCandleType).BindEx(self._trend_indicator, self._process_trend).Start()
         self.SubscribeCandles(self.SignalCandleType).BindEx(self._signal_indicator, self._process_signal).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def _process_trend(self, candle, value):
         if candle.State != CandleStates.Finished:
             return

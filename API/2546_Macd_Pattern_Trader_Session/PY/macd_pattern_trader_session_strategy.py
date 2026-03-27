@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (MovingAverageConvergenceDivergence, MovingAverageConvergenceDivergenceSignal,
-    ExponentialMovingAverage, SimpleMovingAverage)
+    ExponentialMovingAverage, SimpleMovingAverage, CandleIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -204,13 +204,23 @@ class macd_pattern_trader_session_strategy(Strategy):
 
         macd_values = []
         for m in self._macds:
-            val = m.Process(candle)
+            cv = CandleIndicatorValue(m, candle)
+            cv.IsFinal = True
+            val = m.Process(cv)
             macd_values.append(val)
 
-        ema1_val = self._ema1.Process(candle)
-        ema2_val = self._ema2.Process(candle)
-        sma1_val = self._sma1.Process(candle)
-        ema3_val = self._ema3.Process(candle)
+        cv1 = CandleIndicatorValue(self._ema1, candle)
+        cv1.IsFinal = True
+        ema1_val = self._ema1.Process(cv1)
+        cv2 = CandleIndicatorValue(self._ema2, candle)
+        cv2.IsFinal = True
+        ema2_val = self._ema2.Process(cv2)
+        cv3 = CandleIndicatorValue(self._sma1, candle)
+        cv3.IsFinal = True
+        sma1_val = self._sma1.Process(cv3)
+        cv4 = CandleIndicatorValue(self._ema3, candle)
+        cv4.IsFinal = True
+        ema3_val = self._ema3.Process(cv4)
 
         self._process_candle(candle, macd_values, ema1_val, ema2_val, sma1_val, ema3_val)
 

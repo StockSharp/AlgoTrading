@@ -3,8 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, BollingerBands
 from StockSharp.Algo.Strategies import Strategy
 
@@ -78,49 +78,31 @@ class breakthrough_bb_strategy(Strategy):
         self._ma_lag3 = None
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessCandle).Start()
+        subscription.BindEx(self._sma, self._bollinger, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
-    def ProcessCandle(self, candle):
+    def ProcessCandle(self, candle, sma_ind_value, bb_value):
         if candle.State != CandleStates.Finished:
             return
 
+        sma_val = float(sma_ind_value) if sma_ind_value.IsFormed else 0.0
+
+        mid_band = float(bb_value.MovingAverage) if bb_value.MovingAverage is not None else 0.0
+        upper = float(bb_value.UpBand) if bb_value.UpBand is not None else 0.0
+        lower = float(bb_value.LowBand) if bb_value.LowBand is not None else 0.0
+
         close = float(candle.ClosePrice)
-
-        sma_result = self._sma.Process(self._sma.CreateValue(candle.OpenTime, close))
-        bb_result = self._bollinger.Process(self._bollinger.CreateValue(candle.OpenTime, close))
-
-        if not sma_result.IsFinal or not bb_result.IsFinal:
-            return
-
-        sma_val = float(sma_result)
-
-        up_band = bb_result.UpBand
-        low_band = bb_result.LowBand
-        mid_band = bb_result.MovingAverage
-
-        if up_band is None or low_band is None or mid_band is None:
-            self._update_history(close, sma_val)
-            return
-
-        upper = float(up_band)
-        lower = float(low_band)
-        middle = float(mid_band)
 
         if not self._sma.IsFormed or not self._bollinger.IsFormed:
             self._update_history(close, sma_val)
             return
 
         # Exit on middle band cross
-        if self.Position > 0 and close < middle:
+        if self.Position > 0 and close < mid_band:
             self.SellMarket()
             self._update_history(close, sma_val)
             return
 
-        if self.Position < 0 and close > middle:
+        if self.Position < 0 and close > mid_band:
             self.BuyMarket()
             self._update_history(close, sma_val)
             return

@@ -16,7 +16,7 @@ class rrs_randomness_strategy(Strategy):
         self._sl_points = self.Param("StopLossPoints", 3000.0).SetNotNegative().SetDisplay("Stop Loss", "SL in price steps", "Protection")
         self._trailing_start = self.Param("TrailingStartPoints", 1500.0).SetNotNegative().SetDisplay("Trailing Start", "Profit to enable trailing", "Protection")
         self._trailing_gap = self.Param("TrailingGapPoints", 1000.0).SetNotNegative().SetDisplay("Trailing Gap", "Trailing offset", "Protection")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -102,10 +102,6 @@ class rsi_expert_trend_filter_strategy(Strategy):
         elif rsi_signal == -1 and ma_signal == -1:
             final_signal = -1
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._previous_rsi = rv
-            return
-
         if final_signal > 0:
             self.BuyMarket()
         elif final_signal < 0:

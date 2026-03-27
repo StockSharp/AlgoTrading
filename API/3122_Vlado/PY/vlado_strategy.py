@@ -18,7 +18,7 @@ class vlado_strategy(Strategy):
         self._slow_period = self.Param("SlowPeriod", 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator")
         self._sl = self.Param("StopLossPoints", 200).SetNotNegative().SetDisplay("Stop Loss", "SL in price steps", "Risk")
         self._tp = self.Param("TakeProfitPoints", 400).SetNotNegative().SetDisplay("Take Profit", "TP in price steps", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

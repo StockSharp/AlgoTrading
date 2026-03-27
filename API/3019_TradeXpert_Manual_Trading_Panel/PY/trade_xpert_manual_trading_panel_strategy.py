@@ -15,7 +15,7 @@ class trade_xpert_manual_trading_panel_strategy(Strategy):
     def __init__(self):
         super(trade_xpert_manual_trading_panel_strategy, self).__init__()
         self._cci_period = self.Param("CciPeriod", 20).SetGreaterThanZero().SetDisplay("CCI Period", "CCI lookback", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

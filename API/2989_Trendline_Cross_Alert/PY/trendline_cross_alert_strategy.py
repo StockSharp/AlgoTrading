@@ -15,7 +15,7 @@ class trendline_cross_alert_strategy(Strategy):
     def __init__(self):
         super(trendline_cross_alert_strategy, self).__init__()
         self._ma_period = self.Param("MaPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "SMA period as trendline", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -60,14 +60,13 @@ class trendline_cross_alert_strategy(Strategy):
             return
 
         if self._prev_close <= self._prev_ma and close > ma and self.Position <= 0:
-
-
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
 
-
         elif self._prev_close >= self._prev_ma and close < ma and self.Position >= 0:
-
-
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
 
         self._prev_close = close

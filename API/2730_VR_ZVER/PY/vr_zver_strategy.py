@@ -160,9 +160,9 @@ class vr_zver_strategy(Strategy):
         if not fast_v.IsFinal or not slow_v.IsFinal or not vs_v.IsFinal or not stoch_v.IsFinal or not rsi_v.IsFinal:
             return
 
-        fast = float(fast_v.GetValue[float]())
-        slow = float(slow_v.GetValue[float]())
-        very_slow = float(vs_v.GetValue[float]())
+        fast = float(fast_v.Value)
+        slow = float(slow_v.Value)
+        very_slow = float(vs_v.Value)
 
         stoch_k = stoch_v.K
         stoch_d = stoch_v.D
@@ -170,7 +170,7 @@ class vr_zver_strategy(Strategy):
             return
         stoch_k = float(stoch_k)
         stoch_d = float(stoch_d)
-        rsi = float(rsi_v.GetValue[float]())
+        rsi = float(rsi_v.Value)
 
         long_closed = self._handle_long(candle)
         if not long_closed and self.Position > 0:

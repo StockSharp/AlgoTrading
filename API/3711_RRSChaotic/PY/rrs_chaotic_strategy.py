@@ -14,7 +14,7 @@ class rrs_chaotic_strategy(Strategy):
         super(rrs_chaotic_strategy, self).__init__()
         self._tp_points = self.Param("TakeProfitPoints", 50000).SetDisplay("Take Profit", "TP distance in price steps", "Risk")
         self._sl_points = self.Param("StopLossPoints", 50000).SetDisplay("Stop Loss", "SL distance in price steps", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

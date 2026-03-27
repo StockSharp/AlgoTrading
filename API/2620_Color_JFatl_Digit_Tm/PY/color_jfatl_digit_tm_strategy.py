@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 import math
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
@@ -141,7 +141,10 @@ class color_jfatl_digit_tm_strategy(Strategy):
         if self.StopLossPoints > 0 and step > 0:
             sl_unit = Unit(self.StopLossPoints * step, UnitTypes.Absolute)
 
-        self.StartProtection(takeProfit=tp_unit, stopLoss=sl_unit)
+        if tp_unit is not None or sl_unit is not None:
+            self.StartProtection(
+                tp_unit if tp_unit is not None else Unit(0, UnitTypes.Absolute),
+                sl_unit if sl_unit is not None else Unit(0, UnitTypes.Absolute))
 
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -160,7 +163,7 @@ class color_jfatl_digit_tm_strategy(Strategy):
         for i in range(coeffs_len):
             fatl += self.FATL_COEFFICIENTS[i] * self._price_buffer[len(self._price_buffer) - 1 - i]
 
-        jma_out = self._jma.Process(DecimalIndicatorValue(self._jma, fatl, candle.OpenTime))
+        jma_out = self._jma.Process(DecimalIndicatorValue(self._jma, Decimal(fatl), candle.OpenTime))
         if not self._jma.IsFormed:
             return
 

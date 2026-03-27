@@ -3,12 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import CandleStates, Sides
-from StockSharp.Algo.Indicators import SmoothedMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Sides
+from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class alligator_trend_strategy(Strategy):
     """
@@ -20,7 +18,7 @@ class alligator_trend_strategy(Strategy):
     def __init__(self):
         super(alligator_trend_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", tf(240)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles used for calculations", "General")
 
         self._jaw_length = self.Param("JawLength", 13) \
@@ -175,18 +173,33 @@ class alligator_trend_strategy(Strategy):
 
         median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
 
-        jaw_val = float(process_float(self._jaw_ind, median, candle.CloseTime, True))
-        teeth_val = float(process_float(self._teeth_ind, median, candle.CloseTime, True))
-        lips_val = float(process_float(self._lips_ind, median, candle.CloseTime, True))
+        jaw_iv = DecimalIndicatorValue(self._jaw_ind, Decimal(median), candle.CloseTime)
+        jaw_iv.IsFinal = True
+        jaw_res = self._jaw_ind.Process(jaw_iv)
 
-        if not self._jaw_ind.IsFormed or not self._teeth_ind.IsFormed or not self._lips_ind.IsFormed:
+        teeth_iv = DecimalIndicatorValue(self._teeth_ind, Decimal(median), candle.CloseTime)
+        teeth_iv.IsFinal = True
+        teeth_res = self._teeth_ind.Process(teeth_iv)
+
+        lips_iv = DecimalIndicatorValue(self._lips_ind, Decimal(median), candle.CloseTime)
+        lips_iv.IsFinal = True
+        lips_res = self._lips_ind.Process(lips_iv)
+
+        if not jaw_res.IsFormed or not teeth_res.IsFormed or not lips_res.IsFormed:
             return
+
+        jaw_val = float(jaw_res.Value)
+        teeth_val = float(teeth_res.Value)
+        lips_val = float(lips_res.Value)
 
         jaw_shifted = self._get_shifted(self._jaw_buffer, jaw_val, self.JawShift)
         teeth_shifted = self._get_shifted(self._teeth_buffer, teeth_val, self.TeethShift)
         lips_shifted = self._get_shifted(self._lips_buffer, lips_val, self.LipsShift)
 
         if jaw_shifted is None or teeth_shifted is None or lips_shifted is None:
+            return
+
+        if not self._jaw_ind.IsFormed:
             return
 
         if self._manage_position(candle):
@@ -198,8 +211,24 @@ class alligator_trend_strategy(Strategy):
         if self.Position == 0:
             if bullish and self.EnableLong:
                 self.BuyMarket()
+                price = float(candle.ClosePrice)
+                self._entry_price = price
+                dist_stop = self._get_price_by_pips(self.StopLossPips) if float(self.StopLossPips) > 0 else None
+                dist_take = self._get_price_by_pips(self.TakeProfitPips) if float(self.TakeProfitPips) > 0 else None
+                self._long_stop = price - dist_stop if dist_stop else None
+                self._long_take = price + dist_take if dist_take else None
+                self._long_breakeven = False
+                self._long_best = price
             elif bearish and self.EnableShort:
                 self.SellMarket()
+                price = float(candle.ClosePrice)
+                self._entry_price = price
+                dist_stop = self._get_price_by_pips(self.StopLossPips) if float(self.StopLossPips) > 0 else None
+                dist_take = self._get_price_by_pips(self.TakeProfitPips) if float(self.TakeProfitPips) > 0 else None
+                self._short_stop = price + dist_stop if dist_stop else None
+                self._short_take = price - dist_take if dist_take else None
+                self._short_breakeven = False
+                self._short_best = price
 
     def _manage_position(self, candle):
         if self.Position > 0:
@@ -214,7 +243,7 @@ class alligator_trend_strategy(Strategy):
                 self.SellMarket()
                 self._reset_long()
                 return True
-            if self.ZeroLevelPips > 0 and not self._long_breakeven and self._long_stop is not None:
+            if self.ZeroLevelPips > 0 and not self._long_breakeven and self._long_stop is not None and self._entry_price > self._long_stop:
                 zero_dist = self._get_price_by_pips(self.ZeroLevelPips)
                 if self._long_best - self._entry_price >= zero_dist:
                     self._long_stop = self._entry_price
@@ -237,7 +266,7 @@ class alligator_trend_strategy(Strategy):
                 self.BuyMarket()
                 self._reset_short()
                 return True
-            if self.ZeroLevelPips > 0 and not self._short_breakeven and self._short_stop is not None:
+            if self.ZeroLevelPips > 0 and not self._short_breakeven and self._short_stop is not None and self._entry_price < self._short_stop:
                 zero_dist = self._get_price_by_pips(self.ZeroLevelPips)
                 if self._entry_price - float(candle.LowPrice) >= zero_dist:
                     self._short_stop = self._entry_price
@@ -253,36 +282,6 @@ class alligator_trend_strategy(Strategy):
             self._reset_short()
         return False
 
-    def OnOwnTradeReceived(self, trade):
-        super(alligator_trend_strategy, self).OnOwnTradeReceived(trade)
-        price = float(trade.Trade.Price)
-        direction = trade.Order.Side
-        dist_stop = self._get_price_by_pips(self.StopLossPips) if self.StopLossPips > 0 else None
-        dist_take = self._get_price_by_pips(self.TakeProfitPips) if self.TakeProfitPips > 0 else None
-
-        if direction == Sides.Buy:
-            if self.Position > 0:
-                self._entry_price = price
-                self._long_stop = price - dist_stop if dist_stop else None
-                self._long_take = price + dist_take if dist_take else None
-                self._long_breakeven = False
-                self._long_best = price
-            elif self.Position == 0:
-                self._reset_short()
-        elif direction == Sides.Sell:
-            if self.Position < 0:
-                self._entry_price = price
-                self._short_stop = price + dist_stop if dist_stop else None
-                self._short_take = price - dist_take if dist_take else None
-                self._short_breakeven = False
-                self._short_best = price
-            elif self.Position == 0:
-                self._reset_long()
-
-        if self.Position == 0:
-            self._reset_long()
-            self._reset_short()
-
     def _get_shifted(self, buffer, value, shift):
         if shift <= 0:
             return value
@@ -296,7 +295,9 @@ class alligator_trend_strategy(Strategy):
     def _get_price_by_pips(self, pips):
         if pips <= 0:
             return 0.0
-        return pips * 1.0
+        sec = self.Security
+        step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0 else 1.0
+        return float(pips) * step
 
     def _reset_long(self):
         self._long_stop = None

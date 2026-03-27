@@ -125,10 +125,20 @@ class hans123_trader_strategy(Strategy):
             self._lowest_since_entry = float(candle.LowPrice)
 
         if float(self.Position) == 0:
+            self._entry_price = 0.0
+            self._highest_since_entry = 0.0
+            self._lowest_since_entry = 0.0
+            close = float(candle.ClosePrice)
             if float(candle.HighPrice) >= highest_val:
                 self.BuyMarket(float(self.OrderVolume))
+                self._entry_price = close
+                self._highest_since_entry = close
+                self._lowest_since_entry = close
             elif float(candle.LowPrice) <= lowest_val:
                 self.SellMarket(float(self.OrderVolume))
+                self._entry_price = close
+                self._highest_since_entry = close
+                self._lowest_since_entry = close
 
     def _check_protection(self, candle):
         pos = float(self.Position)

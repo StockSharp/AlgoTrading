@@ -21,7 +21,7 @@ class sar_rsi_mts_strategy(Strategy):
         self._sar_max = self.Param("SarMax", 0.5).SetGreaterThanZero().SetDisplay("SAR Maximum", "Parabolic SAR maximum acceleration", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "Lookback period for RSI", "Indicators")
         self._rsi_neutral = self.Param("RsiNeutralLevel", 50.0).SetDisplay("RSI Neutral", "Neutral RSI threshold", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

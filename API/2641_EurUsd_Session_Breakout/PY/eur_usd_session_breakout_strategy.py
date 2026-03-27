@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Algo.Indicators import Highest, Lowest, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class eur_usd_session_breakout_strategy(Strategy):
@@ -75,8 +75,8 @@ class eur_usd_session_breakout_strategy(Strategy):
         prev_highest = self._current_highest
         prev_lowest = self._current_lowest
 
-        h_result = self._highest.Process(candle)
-        l_result = self._lowest.Process(candle)
+        h_result = self._highest.Process(CandleIndicatorValue(self._highest, candle))
+        l_result = self._lowest.Process(CandleIndicatorValue(self._lowest, candle))
         self._current_highest = float(h_result) if not h_result.IsEmpty else self._current_highest
         self._current_lowest = float(l_result) if not l_result.IsEmpty else self._current_lowest
 

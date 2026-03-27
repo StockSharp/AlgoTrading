@@ -11,7 +11,7 @@ from datatype_extensions import *
 class patterns_ea_strategy(Strategy):
     def __init__(self):
         super(patterns_ea_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles for pattern search", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles for pattern search", "General")
         self._equality_pips = self.Param("EqualityPips", 1.0).SetNotNegative().SetDisplay("Equality Pips", "Max pip distance to treat prices as equal", "Detection")
         self.Volume = 1
 

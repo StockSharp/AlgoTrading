@@ -106,8 +106,8 @@ class ema_cross_contest_hedged_strategy(Strategy):
         if short_value.IsEmpty or long_value.IsEmpty:
             return
 
-        ema_short = float(short_value.GetValue[float]())
-        ema_long = float(long_value.GetValue[float]())
+        ema_short = float(short_value.Value)
+        ema_long = float(long_value.Value)
 
         macd_current = None
         if not macd_value.IsEmpty:

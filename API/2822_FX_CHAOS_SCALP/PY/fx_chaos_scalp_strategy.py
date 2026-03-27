@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Algo.Indicators import AwesomeOscillator
+from StockSharp.Algo.Indicators import AwesomeOscillator, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math
@@ -49,7 +49,9 @@ class fx_chaos_scalp_strategy(Strategy):
 
         self._update_zigzag(candle)
 
-        ao_result = self._ao.Process(candle)
+        civ = CandleIndicatorValue(self._ao, candle)
+        civ.IsFinal = True
+        ao_result = self._ao.Process(civ)
 
         if not self._has_previous:
             self._update_previous_levels(candle)
@@ -59,7 +61,7 @@ class fx_chaos_scalp_strategy(Strategy):
             self._update_previous_levels(candle)
             return
 
-        ao = float(ao_result)
+        ao = float(ao_result.Value)
         open_price = float(candle.OpenPrice)
         close_price = float(candle.ClosePrice)
 

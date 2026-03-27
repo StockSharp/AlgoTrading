@@ -191,7 +191,9 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
-        ema_result = self._ema.Process(DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime))
+        ema_iv = DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime)
+        ema_iv.IsFinal = True
+        ema_result = self._ema.Process(ema_iv)
         if not self._ema.IsFormed:
             return
         ema_val = float(ema_result)
@@ -234,8 +236,13 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         volume = float(candle.TotalVolume) if candle.TotalVolume > 0 else 1.0
         scaled = base_value * volume
 
-        sv_result = self._value_smoother.Process(DecimalIndicatorValue(self._value_smoother, scaled, candle.OpenTime))
-        vv_result = self._volume_smoother.Process(DecimalIndicatorValue(self._volume_smoother, volume, candle.OpenTime))
+        from System import Decimal
+        sv_iv = DecimalIndicatorValue(self._value_smoother, Decimal(scaled), candle.OpenTime)
+        sv_iv.IsFinal = True
+        sv_result = self._value_smoother.Process(sv_iv)
+        vv_iv = DecimalIndicatorValue(self._volume_smoother, Decimal(volume), candle.OpenTime)
+        vv_iv.IsFinal = True
+        vv_result = self._volume_smoother.Process(vv_iv)
 
         if not self._value_smoother.IsFormed or not self._volume_smoother.IsFormed:
             return

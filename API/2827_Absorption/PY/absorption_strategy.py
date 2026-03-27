@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Algo.Indicators import Highest, Lowest, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math
@@ -66,16 +66,20 @@ class absorption_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        high_result = self._highest.Process(candle)
-        low_result = self._lowest.Process(candle)
+        civ_h = CandleIndicatorValue(self._highest, candle)
+        civ_h.IsFinal = True
+        high_result = self._highest.Process(civ_h)
+        civ_l = CandleIndicatorValue(self._lowest, candle)
+        civ_l.IsFinal = True
+        low_result = self._lowest.Process(civ_l)
 
         if high_result.IsEmpty or low_result.IsEmpty or not self._highest.IsFormed or not self._lowest.IsFormed:
             self._update_previous_candles(candle)
             self._prev_position = self.Position
             return
 
-        highest_value = float(high_result)
-        lowest_value = float(low_result)
+        highest_value = float(high_result.Value)
+        lowest_value = float(low_result.Value)
 
         self._manage_active_position(candle)
 

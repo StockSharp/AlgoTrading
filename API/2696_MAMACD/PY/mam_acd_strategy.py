@@ -4,7 +4,7 @@ import math
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -129,25 +129,36 @@ class mam_acd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        t = candle.OpenTime
+        t = candle.ServerTime
         lo = candle.LowPrice
         close = candle.ClosePrice
 
-        first_low_val = self._first_low_ma.Process(DecimalIndicatorValue(self._first_low_ma, lo, t))
-        second_low_val = self._second_low_ma.Process(DecimalIndicatorValue(self._second_low_ma, lo, t))
-        trigger_val = self._trigger_ema.Process(DecimalIndicatorValue(self._trigger_ema, close, t))
-        macd_val = self._macd_ind.Process(DecimalIndicatorValue(self._macd_ind, close, t))
+        iv1 = DecimalIndicatorValue(self._first_low_ma, lo, t)
+        iv1.IsFinal = True
+        first_low_val = self._first_low_ma.Process(iv1)
+
+        iv2 = DecimalIndicatorValue(self._second_low_ma, lo, t)
+        iv2.IsFinal = True
+        second_low_val = self._second_low_ma.Process(iv2)
+
+        iv3 = DecimalIndicatorValue(self._trigger_ema, close, t)
+        iv3.IsFinal = True
+        trigger_val = self._trigger_ema.Process(iv3)
+
+        iv4 = DecimalIndicatorValue(self._macd_ind, close, t)
+        iv4.IsFinal = True
+        macd_val = self._macd_ind.Process(iv4)
 
         if (not self._first_low_ma.IsFormed or not self._second_low_ma.IsFormed
                 or not self._trigger_ema.IsFormed or not self._macd_ind.IsFormed):
             if self._macd_ind.IsFormed:
-                self._previous_macd = float(macd_val.GetValue[float]())
+                self._previous_macd = float(macd_val.Value)
             return
 
-        ma1 = float(first_low_val.GetValue[float]())
-        ma2 = float(second_low_val.GetValue[float]())
-        ma3 = float(trigger_val.GetValue[float]())
-        macd = float(macd_val.GetValue[float]())
+        ma1 = float(first_low_val.Value)
+        ma2 = float(second_low_val.Value)
+        ma3 = float(trigger_val.Value)
+        macd = float(macd_val.Value)
 
         if self._previous_macd is None:
             self._previous_macd = macd

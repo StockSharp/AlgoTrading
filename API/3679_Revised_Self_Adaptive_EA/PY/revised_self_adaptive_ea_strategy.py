@@ -3,42 +3,56 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, AverageTrueRange
+from System import Math, TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Sides, Level1Fields
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, AverageTrueRange, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 class revised_self_adaptive_ea_strategy(Strategy):
     def __init__(self):
         super(revised_self_adaptive_ea_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2)))
+        self._average_body_period = self.Param("AverageBodyPeriod", 3)
         self._moving_average_period = self.Param("MovingAveragePeriod", 2)
         self._rsi_period = self.Param("RsiPeriod", 6)
         self._atr_period = self.Param("AtrPeriod", 14)
+        self._volume_param = self.Param("TradeVolume", 1.0)
+        self._max_spread_points = self.Param("MaxSpreadPoints", 20.0)
+        self._max_risk_percent = self.Param("MaxRiskPercent", 10.0)
+        self._use_trailing_stop = self.Param("UseTrailingStop", True)
         self._stop_loss_atr_multiplier = self.Param("StopLossAtrMultiplier", 2.0)
         self._take_profit_atr_multiplier = self.Param("TakeProfitAtrMultiplier", 4.0)
         self._trailing_stop_atr_multiplier = self.Param("TrailingStopAtrMultiplier", 1.5)
         self._oversold_level = self.Param("OversoldLevel", 40.0)
         self._overbought_level = self.Param("OverboughtLevel", 60.0)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2)))
 
-        self._prev_candle_close = None
-        self._prev_candle_open = None
+        self._rsi = None
+        self._ma = None
+        self._atr = None
+        self._body_average = None
+
+        self._previous_candle = None
         self._last_atr_value = 0.0
-        self._entry_price = 0.0
-        self._direction = 0
-        self._stop_price = None
-        self._take_price = None
-        self._trailing_stop = None
-        self._body_values = []
+        self._average_body_value = 0.0
+
+        self._long_entry_price = None
+        self._long_stop_price = None
+        self._long_take_profit_price = None
+        self._long_trailing_stop_price = None
+
+        self._short_entry_price = None
+        self._short_stop_price = None
+        self._short_take_profit_price = None
+        self._short_trailing_stop_price = None
 
     @property
-    def CandleType(self):
-        return self._candle_type.Value
+    def AverageBodyPeriod(self):
+        return self._average_body_period.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+    @AverageBodyPeriod.setter
+    def AverageBodyPeriod(self, value):
+        self._average_body_period.Value = value
 
     @property
     def MovingAveragePeriod(self):
@@ -63,6 +77,38 @@ class revised_self_adaptive_ea_strategy(Strategy):
     @AtrPeriod.setter
     def AtrPeriod(self, value):
         self._atr_period.Value = value
+
+    @property
+    def TradeVolume(self):
+        return self._volume_param.Value
+
+    @TradeVolume.setter
+    def TradeVolume(self, value):
+        self._volume_param.Value = value
+
+    @property
+    def MaxSpreadPoints(self):
+        return self._max_spread_points.Value
+
+    @MaxSpreadPoints.setter
+    def MaxSpreadPoints(self, value):
+        self._max_spread_points.Value = value
+
+    @property
+    def MaxRiskPercent(self):
+        return self._max_risk_percent.Value
+
+    @MaxRiskPercent.setter
+    def MaxRiskPercent(self, value):
+        self._max_risk_percent.Value = value
+
+    @property
+    def UseTrailingStop(self):
+        return self._use_trailing_stop.Value
+
+    @UseTrailingStop.setter
+    def UseTrailingStop(self, value):
+        self._use_trailing_stop.Value = value
 
     @property
     def StopLossAtrMultiplier(self):
@@ -104,39 +150,59 @@ class revised_self_adaptive_ea_strategy(Strategy):
     def OverboughtLevel(self, value):
         self._overbought_level.Value = value
 
+    @property
+    def CandleType(self):
+        return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
     def OnReseted(self):
         super(revised_self_adaptive_ea_strategy, self).OnReseted()
-        self._prev_candle_close = None
-        self._prev_candle_open = None
+        self._previous_candle = None
         self._last_atr_value = 0.0
-        self._entry_price = 0.0
-        self._direction = 0
-        self._stop_price = None
-        self._take_price = None
-        self._trailing_stop = None
-        self._body_values = []
+        self._average_body_value = 0.0
+        self._reset_long_risk_levels()
+        self._reset_short_risk_levels()
+
+    def _reset_long_risk_levels(self):
+        self._long_entry_price = None
+        self._long_stop_price = None
+        self._long_take_profit_price = None
+        self._long_trailing_stop_price = None
+
+    def _reset_short_risk_levels(self):
+        self._short_entry_price = None
+        self._short_stop_price = None
+        self._short_take_profit_price = None
+        self._short_trailing_stop_price = None
 
     def OnStarted(self, time):
         super(revised_self_adaptive_ea_strategy, self).OnStarted(time)
-        self._prev_candle_close = None
-        self._prev_candle_open = None
-        self._last_atr_value = 0.0
-        self._entry_price = 0.0
-        self._direction = 0
-        self._stop_price = None
-        self._take_price = None
-        self._trailing_stop = None
-        self._body_values = []
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
-        ma = SimpleMovingAverage()
-        ma.Length = self.MovingAveragePeriod
-        atr = AverageTrueRange()
-        atr.Length = self.AtrPeriod
+        self.Volume = float(self.TradeVolume)
+
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.RsiPeriod
+
+        self._ma = SimpleMovingAverage()
+        self._ma.Length = self.MovingAveragePeriod
+
+        self._atr = AverageTrueRange()
+        self._atr.Length = self.AtrPeriod
+
+        self._body_average = SimpleMovingAverage()
+        self._body_average.Length = self.AverageBodyPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, ma, atr, self._process_candle).Start()
+        subscription.Bind(self._rsi, self._ma, self._atr, self._process_candle).Start()
+
+    def _update_average_body(self, candle):
+        body = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
+        value = self._body_average.Process(DecimalIndicatorValue(self._body_average, body, candle.OpenTime))
+        if value.IsFinal:
+            self._average_body_value = float(value.GetValue[float]())
 
     def _process_candle(self, candle, rsi_value, ma_value, atr_value):
         if candle.State != CandleStates.Finished:
@@ -145,111 +211,140 @@ class revised_self_adaptive_ea_strategy(Strategy):
         rsi_val = float(rsi_value)
         ma_val = float(ma_value)
         atr_val = float(atr_value)
-        close = float(candle.ClosePrice)
-        open_p = float(candle.OpenPrice)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
 
         self._last_atr_value = atr_val
+        self._update_average_body(candle)
+        self._manage_open_positions(candle)
 
-        # Track average body size
-        body = abs(close - open_p)
-        self._body_values.append(body)
-        while len(self._body_values) > 3:
-            self._body_values.pop(0)
-        avg_body = sum(self._body_values) / len(self._body_values) if self._body_values else 0.0
+        if not self._rsi.IsFormed or not self._ma.IsFormed or not self._atr.IsFormed:
+            self._previous_candle = candle
+            return
 
-        # Manage open positions
-        if self._direction > 0 and self.Position > 0:
-            if self._stop_price is not None and low <= self._stop_price:
-                self.SellMarket()
-                self._direction = 0
-                self._prev_candle_close = close
-                self._prev_candle_open = open_p
+        if self._previous_candle is None:
+            self._previous_candle = candle
+            return
+
+        close = float(candle.ClosePrice)
+        open_p = float(candle.OpenPrice)
+        prev_close = float(self._previous_candle.ClosePrice)
+        prev_open = float(self._previous_candle.OpenPrice)
+
+        body_size = abs(close - open_p)
+        minimum_body = self._average_body_value if self._average_body_value > 0 else 0.0
+
+        bullish_engulfing = (close > open_p and
+                             prev_close < prev_open and
+                             open_p <= prev_close and
+                             body_size >= minimum_body)
+
+        bearish_engulfing = (close < open_p and
+                             prev_close > prev_open and
+                             open_p >= prev_close and
+                             body_size >= minimum_body)
+
+        if bullish_engulfing and rsi_val <= float(self.OversoldLevel) and close >= ma_val:
+            self._try_open_long(close)
+        elif bearish_engulfing and rsi_val >= float(self.OverboughtLevel) and close <= ma_val:
+            self._try_open_short(close)
+
+        self._previous_candle = candle
+
+    def _try_open_long(self, price):
+        if self.Position > 0:
+            return
+
+        if self.Position < 0:
+            self.BuyMarket(abs(float(self.Position)))
+            return
+
+        volume = float(self.TradeVolume)
+        if volume <= 0:
+            return
+
+        self.BuyMarket(volume)
+        self._initialize_long_risk_levels(price)
+
+    def _try_open_short(self, price):
+        if self.Position < 0:
+            return
+
+        if self.Position > 0:
+            self.SellMarket(abs(float(self.Position)))
+            return
+
+        volume = float(self.TradeVolume)
+        if volume <= 0:
+            return
+
+        self.SellMarket(volume)
+        self._initialize_short_risk_levels(price)
+
+    def _manage_open_positions(self, candle):
+        if self.Position > 0:
+            exit_volume = float(self.Position)
+
+            if self._long_stop_price is not None and float(candle.LowPrice) <= self._long_stop_price:
+                self.SellMarket(exit_volume)
                 return
-            if self._take_price is not None and high >= self._take_price:
-                self.SellMarket()
-                self._direction = 0
-                self._prev_candle_close = close
-                self._prev_candle_open = open_p
+
+            if self._long_take_profit_price is not None and float(candle.HighPrice) >= self._long_take_profit_price:
+                self.SellMarket(exit_volume)
                 return
-            # Trailing stop
-            if self._trailing_stop is not None and atr_val > 0:
-                candidate = close - atr_val * float(self.TrailingStopAtrMultiplier)
-                if candidate > self._trailing_stop:
-                    self._trailing_stop = candidate
-                if low <= self._trailing_stop:
-                    self.SellMarket()
-                    self._direction = 0
-                    self._prev_candle_close = close
-                    self._prev_candle_open = open_p
+
+            if self.UseTrailingStop and self._long_trailing_stop_price is not None and self._last_atr_value > 0:
+                candidate = float(candle.ClosePrice) - self._last_atr_value * float(self.TrailingStopAtrMultiplier)
+                if candidate > self._long_trailing_stop_price:
+                    self._long_trailing_stop_price = candidate
+
+                if float(candle.LowPrice) <= self._long_trailing_stop_price:
+                    self.SellMarket(exit_volume)
                     return
-        elif self._direction < 0 and self.Position < 0:
-            if self._stop_price is not None and high >= self._stop_price:
-                self.BuyMarket()
-                self._direction = 0
-                self._prev_candle_close = close
-                self._prev_candle_open = open_p
+
+        elif self.Position < 0:
+            exit_volume = abs(float(self.Position))
+
+            if self._short_stop_price is not None and float(candle.HighPrice) >= self._short_stop_price:
+                self.BuyMarket(exit_volume)
                 return
-            if self._take_price is not None and low <= self._take_price:
-                self.BuyMarket()
-                self._direction = 0
-                self._prev_candle_close = close
-                self._prev_candle_open = open_p
+
+            if self._short_take_profit_price is not None and float(candle.LowPrice) <= self._short_take_profit_price:
+                self.BuyMarket(exit_volume)
                 return
-            if self._trailing_stop is not None and atr_val > 0:
-                candidate = close + atr_val * float(self.TrailingStopAtrMultiplier)
-                if candidate < self._trailing_stop:
-                    self._trailing_stop = candidate
-                if high >= self._trailing_stop:
-                    self.BuyMarket()
-                    self._direction = 0
-                    self._prev_candle_close = close
-                    self._prev_candle_open = open_p
+
+            if self.UseTrailingStop and self._short_trailing_stop_price is not None and self._last_atr_value > 0:
+                candidate = float(candle.ClosePrice) + self._last_atr_value * float(self.TrailingStopAtrMultiplier)
+                if candidate < self._short_trailing_stop_price:
+                    self._short_trailing_stop_price = candidate
+
+                if float(candle.HighPrice) >= self._short_trailing_stop_price:
+                    self.BuyMarket(exit_volume)
                     return
 
-        # Check for engulfing patterns
-        if self._prev_candle_close is not None and self._prev_candle_open is not None and atr_val > 0:
-            # Bullish engulfing
-            bullish = (close > open_p and
-                       self._prev_candle_close < self._prev_candle_open and
-                       open_p <= self._prev_candle_close and
-                       body >= avg_body)
-            # Bearish engulfing
-            bearish = (close < open_p and
-                       self._prev_candle_close > self._prev_candle_open and
-                       open_p >= self._prev_candle_close and
-                       body >= avg_body)
+    def _initialize_long_risk_levels(self, entry_price):
+        if self._last_atr_value <= 0:
+            self._reset_long_risk_levels()
+            return
 
-            if bullish and rsi_val <= float(self.OversoldLevel) and close >= ma_val:
-                if self.Position < 0:
-                    self.BuyMarket()
-                if self.Position <= 0:
-                    self.BuyMarket()
-                    self._entry_price = close
-                    self._direction = 1
-                    sl_mult = float(self.StopLossAtrMultiplier)
-                    tp_mult = float(self.TakeProfitAtrMultiplier)
-                    trail_mult = float(self.TrailingStopAtrMultiplier)
-                    self._stop_price = close - atr_val * sl_mult if sl_mult > 0 else None
-                    self._take_price = close + atr_val * tp_mult if tp_mult > 0 else None
-                    self._trailing_stop = close - atr_val * trail_mult if trail_mult > 0 else None
-            elif bearish and rsi_val >= float(self.OverboughtLevel) and close <= ma_val:
-                if self.Position > 0:
-                    self.SellMarket()
-                if self.Position >= 0:
-                    self.SellMarket()
-                    self._entry_price = close
-                    self._direction = -1
-                    sl_mult = float(self.StopLossAtrMultiplier)
-                    tp_mult = float(self.TakeProfitAtrMultiplier)
-                    trail_mult = float(self.TrailingStopAtrMultiplier)
-                    self._stop_price = close + atr_val * sl_mult if sl_mult > 0 else None
-                    self._take_price = close - atr_val * tp_mult if tp_mult > 0 else None
-                    self._trailing_stop = close + atr_val * trail_mult if trail_mult > 0 else None
+        sl_mult = float(self.StopLossAtrMultiplier)
+        tp_mult = float(self.TakeProfitAtrMultiplier)
+        trail_mult = float(self.TrailingStopAtrMultiplier)
 
-        self._prev_candle_close = close
-        self._prev_candle_open = open_p
+        self._long_stop_price = entry_price - self._last_atr_value * sl_mult if sl_mult > 0 else None
+        self._long_take_profit_price = entry_price + self._last_atr_value * tp_mult if tp_mult > 0 else None
+        self._long_trailing_stop_price = entry_price - self._last_atr_value * trail_mult if self.UseTrailingStop and trail_mult > 0 else None
+
+    def _initialize_short_risk_levels(self, entry_price):
+        if self._last_atr_value <= 0:
+            self._reset_short_risk_levels()
+            return
+
+        sl_mult = float(self.StopLossAtrMultiplier)
+        tp_mult = float(self.TakeProfitAtrMultiplier)
+        trail_mult = float(self.TrailingStopAtrMultiplier)
+
+        self._short_stop_price = entry_price + self._last_atr_value * sl_mult if sl_mult > 0 else None
+        self._short_take_profit_price = entry_price - self._last_atr_value * tp_mult if tp_mult > 0 else None
+        self._short_trailing_stop_price = entry_price + self._last_atr_value * trail_mult if self.UseTrailingStop and trail_mult > 0 else None
 
     def CreateClone(self):
         return revised_self_adaptive_ea_strategy()

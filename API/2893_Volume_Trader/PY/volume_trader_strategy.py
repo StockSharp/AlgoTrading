@@ -15,7 +15,7 @@ class volume_trader_strategy(Strategy):
         super(volume_trader_strategy, self).__init__()
         self._start_hour = self.Param("StartHour", 9).SetDisplay("Start Hour", "Trading session start", "Session")
         self._end_hour = self.Param("EndHour", 18).SetDisplay("End Hour", "Trading session end", "Session")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -54,13 +54,13 @@ class volume_trader_strategy(Strategy):
 
             if in_session:
                 if self._prev_vol > self._prev_prev_vol * 1.1 and self.Position <= 0:
-                    if self.Position < 0:
-                        self.BuyMarket()
-                    self.BuyMarket()
+                    vol_to_trade = self.Volume + (abs(self.Position) if self.Position < 0 else 0)
+                    if vol_to_trade > 0:
+                        self.BuyMarket(vol_to_trade)
                 elif self._prev_vol < self._prev_prev_vol * 0.9 and self.Position >= 0:
-                    if self.Position > 0:
-                        self.SellMarket()
-                    self.SellMarket()
+                    vol_to_trade = self.Volume + (abs(self.Position) if self.Position > 0 else 0)
+                    if vol_to_trade > 0:
+                        self.SellMarket(vol_to_trade)
 
         self._prev_prev_vol = self._prev_vol
         self._prev_vol = vol

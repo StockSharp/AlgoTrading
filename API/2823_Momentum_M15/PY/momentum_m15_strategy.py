@@ -7,7 +7,7 @@ from StockSharp.Algo.Indicators import (SmoothedMovingAverage, Momentum,
     DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class momentum_m15_strategy(Strategy):
@@ -85,12 +85,14 @@ class momentum_m15_strategy(Strategy):
 
     def _process_ma(self, candle):
         price = float(candle.LowPrice)
-        value = self._ma.Process(DecimalIndicatorValue(self._ma, price, candle.OpenTime))
+        div = DecimalIndicatorValue(self._ma, Decimal(float(price)), candle.OpenTime)
+        div.IsFinal = True
+        value = self._ma.Process(div)
 
         if value.IsEmpty or not self._ma.IsFormed:
             return None
 
-        ma = float(value)
+        ma = float(value.Value)
         self._ma_history.append(ma)
 
         max_count = self._ma_shift.Value + 1
@@ -105,12 +107,14 @@ class momentum_m15_strategy(Strategy):
 
     def _process_momentum(self, candle):
         price = float(candle.OpenPrice)
-        value = self._momentum.Process(DecimalIndicatorValue(self._momentum, price, candle.OpenTime))
+        div2 = DecimalIndicatorValue(self._momentum, Decimal(float(price)), candle.OpenTime)
+        div2.IsFinal = True
+        value = self._momentum.Process(div2)
 
         if value.IsEmpty or not self._momentum.IsFormed:
             return None
 
-        mom = float(value)
+        mom = float(value.Value)
         self._momentum_history.append(mom)
 
         max_len = max(max(self._momentum_open_length.Value, self._momentum_close_length.Value), 1)

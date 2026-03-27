@@ -25,7 +25,7 @@ class rabbit_m2_strategy(Strategy):
         self._slow_ema_period = self.Param("SlowEmaPeriod", 80).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA for trend", "Trend Filter")
         self._tp_pips = self.Param("TakeProfitPips", 50).SetGreaterThanZero().SetDisplay("Take Profit (pips)", "TP distance", "Risk")
         self._sl_pips = self.Param("StopLossPips", 50).SetGreaterThanZero().SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Primary timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Primary timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -71,7 +71,7 @@ class rabbit_m2_strategy(Strategy):
         ema_slow = ExponentialMovingAverage()
         ema_slow.Length = self._slow_ema_period.Value
 
-        trend_sub = self.SubscribeCandles(TimeSpan.FromHours(4).TimeFrame())
+        trend_sub = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromHours(4)))
         trend_sub.Bind(ema_fast, ema_slow, self._on_trend).Start()
 
         sub = self.SubscribeCandles(self.CandleType)

@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import StandardDeviation, DonchianChannels, DecimalIndicatorValue
@@ -95,9 +95,9 @@ class flat_channel_strategy(Strategy):
         lo = float(candle.LowPrice)
         median_price = (h + lo) / 2.0
 
-        std_dev_value = float(self._std_dev.Process(
-            DecimalIndicatorValue(self._std_dev, median_price, candle.OpenTime)
-        ).GetValue[float]())
+        sd_iv = DecimalIndicatorValue(self._std_dev, Decimal(median_price), candle.ServerTime)
+        sd_iv.IsFinal = True
+        std_dev_value = float(self._std_dev.Process(sd_iv).Value)
 
         if not self._std_dev.IsFormed:
             self._previous_std_dev = std_dev_value

@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Algo.Indicators import Highest, Lowest, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -84,10 +84,9 @@ class e_rp250_strategy(Strategy):
         stop_distance = step * float(self.StopLossPoints) if float(self.StopLossPoints) > 0.0 else 0.0
         self._trailing_distance = step * float(self.TrailingStopPoints) if float(self.TrailingStopPoints) > 0.0 else 0.0
 
-        tp_unit = Unit(take_distance, UnitTypes.Absolute) if take_distance > 0.0 else None
-        sl_unit = Unit(stop_distance, UnitTypes.Absolute) if stop_distance > 0.0 else None
-        if tp_unit is not None or sl_unit is not None:
-            self.StartProtection(tp_unit, sl_unit)
+        tp_unit = Unit(take_distance, UnitTypes.Absolute) if take_distance > 0.0 else Unit()
+        sl_unit = Unit(stop_distance, UnitTypes.Absolute) if stop_distance > 0.0 else Unit()
+        self.StartProtection(tp_unit, sl_unit)
 
         self._latest_high_signal = 0.0
         self._latest_low_signal = 0.0
@@ -108,19 +107,24 @@ class e_rp250_strategy(Strategy):
         low = float(candle.LowPrice)
         close = float(candle.ClosePrice)
 
-        high_result = self._highest.Process(self._highest.CreateValue(candle.OpenTime, high))
-        low_result = self._lowest.Process(self._lowest.CreateValue(candle.OpenTime, low))
+        high_input = DecimalIndicatorValue(self._highest, candle.HighPrice, candle.OpenTime)
+        high_input.IsFinal = True
+        high_result = self._highest.Process(high_input)
 
-        if not high_result.IsFinal or not low_result.IsFinal:
+        low_input = DecimalIndicatorValue(self._lowest, candle.LowPrice, candle.OpenTime)
+        low_input.IsFinal = True
+        low_result = self._lowest.Process(low_input)
+
+        if high_result.IsEmpty or low_result.IsEmpty:
             return
 
         high_value = float(high_result)
         low_value = float(low_result)
 
-        if high_value == high:
+        if abs(high_value - high) < 1e-10:
             self._latest_high_signal = high
 
-        if low_value == low:
+        if abs(low_value - low) < 1e-10:
             self._latest_low_signal = low
 
         # Manage existing long position

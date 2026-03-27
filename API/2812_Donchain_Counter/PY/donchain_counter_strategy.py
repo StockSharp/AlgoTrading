@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Algo.Indicators import DonchianChannels
+from StockSharp.Algo.Indicators import DonchianChannels, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math
@@ -53,7 +53,9 @@ class donchain_counter_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        result = self._donchian.Process(candle)
+        civ = CandleIndicatorValue(self._donchian, candle)
+        civ.IsFinal = True
+        result = self._donchian.Process(civ)
         if result.IsEmpty or not self._donchian.IsFormed:
             return
 

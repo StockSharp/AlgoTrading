@@ -17,7 +17,7 @@ class rsi_eraser_strategy(Strategy):
         self._rsi_neutral = self.Param("RsiNeutralLevel", 50.0).SetDisplay("RSI Neutral", "Neutral level", "Indicators")
         self._sl_pips = self.Param("StopLossPips", 500.0).SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
         self._tp_multiplier = self.Param("TakeProfitMultiplier", 3.0).SetGreaterThanZero().SetDisplay("TP Multiplier", "TP as multiple of SL", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Primary timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Primary timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -59,15 +59,20 @@ class rsi_eraser_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        try:
+            rsi = float(rsi_val.Value) if hasattr(rsi_val, 'Value') else float(rsi_val)
+        except:
+            rsi = float(rsi_val)
         close = float(candle.ClosePrice)
+        neutral = float(self._rsi_neutral.Value)
 
         # Manage existing position
         if self.Position > 0:
-            if self._stop_price is not None and candle.LowPrice <= self._stop_price:
+            if self._stop_price is not None and float(candle.LowPrice) <= self._stop_price:
                 self.SellMarket()
                 self._reset()
                 return
-            if self._take_price is not None and candle.HighPrice >= self._take_price:
+            if self._take_price is not None and float(candle.HighPrice) >= self._take_price:
                 self.SellMarket()
                 self._reset()
                 return
@@ -76,11 +81,11 @@ class rsi_eraser_strategy(Strategy):
                     self._stop_price = self._entry_price
                     self._break_even = True
         elif self.Position < 0:
-            if self._stop_price is not None and candle.HighPrice >= self._stop_price:
+            if self._stop_price is not None and float(candle.HighPrice) >= self._stop_price:
                 self.BuyMarket()
                 self._reset()
                 return
-            if self._take_price is not None and candle.LowPrice <= self._take_price:
+            if self._take_price is not None and float(candle.LowPrice) <= self._take_price:
                 self.BuyMarket()
                 self._reset()
                 return
@@ -94,22 +99,22 @@ class rsi_eraser_strategy(Strategy):
 
         # Entry signals
         if self.Position == 0:
-            sd = self._sl_pips.Value * self._pip_size
+            sd = float(self._sl_pips.Value) * self._pip_size
             if sd <= 0:
                 return
 
-            if rsi_val > self._rsi_neutral.Value:
+            if rsi > neutral:
                 self.BuyMarket()
                 self._entry_price = close
                 self._stop_price = close - sd
-                self._take_price = close + sd * self._tp_multiplier.Value
+                self._take_price = close + sd * float(self._tp_multiplier.Value)
                 self._stop_distance = sd
                 self._break_even = False
-            elif rsi_val < self._rsi_neutral.Value:
+            elif rsi < neutral:
                 self.SellMarket()
                 self._entry_price = close
                 self._stop_price = close + sd
-                self._take_price = close - sd * self._tp_multiplier.Value
+                self._take_price = close - sd * float(self._tp_multiplier.Value)
                 self._stop_distance = sd
                 self._break_even = False
 

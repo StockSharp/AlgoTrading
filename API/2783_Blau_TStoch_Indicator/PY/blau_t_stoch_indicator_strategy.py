@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     DecimalIndicatorValue, ExponentialMovingAverage,
@@ -260,6 +260,7 @@ class blau_t_stoch_indicator_strategy(Strategy):
                 return
 
     def _compute_indicator(self, candle):
+        self._candle_time = candle.ServerTime
         price = self._get_price(candle)
         high_val = self._process_stage_ind(self._highest, float(candle.HighPrice))
         low_val = self._process_stage_ind(self._lowest, float(candle.LowPrice))
@@ -293,18 +294,16 @@ class blau_t_stoch_indicator_strategy(Strategy):
         return 100.0 * s3 / r3 - 50.0
 
     def _process_stage_ind(self, indicator, value):
-        result = indicator.Process(DecimalIndicatorValue(indicator, value))
-        try:
-            return float(result.GetValue[float]())
-        except:
-            return 0.0
+        iv = DecimalIndicatorValue(indicator, Decimal(float(value)), self._candle_time)
+        iv.IsFinal = True
+        result = indicator.Process(iv)
+        return float(result.Value)
 
     def _process_stage(self, indicator, value):
-        result = indicator.Process(DecimalIndicatorValue(indicator, value))
-        try:
-            return float(result.GetValue[float]())
-        except:
-            return 0.0
+        iv = DecimalIndicatorValue(indicator, Decimal(float(value)), self._candle_time)
+        iv.IsFinal = True
+        result = indicator.Process(iv)
+        return float(result.Value)
 
     def _trim_history(self):
         max_length = max(self.SignalBar + 5, 10)

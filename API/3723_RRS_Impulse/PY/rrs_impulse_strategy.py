@@ -49,55 +49,19 @@ class rrs_impulse_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    @property
-    def RsiPeriod(self):
-        return self._rsi_period.Value
-
-    @property
-    def RsiUpperLevel(self):
-        return self._rsi_upper_level.Value
-
-    @property
-    def RsiLowerLevel(self):
-        return self._rsi_lower_level.Value
-
-    @property
-    def StochasticKPeriod(self):
-        return self._stochastic_k_period.Value
-
-    @property
-    def StochasticDPeriod(self):
-        return self._stochastic_d_period.Value
-
-    @property
-    def StochasticUpperLevel(self):
-        return self._stochastic_upper_level.Value
-
-    @property
-    def StochasticLowerLevel(self):
-        return self._stochastic_lower_level.Value
-
-    @property
-    def BollingerPeriod(self):
-        return self._bollinger_period.Value
-
-    @property
-    def BollingerDeviation(self):
-        return self._bollinger_deviation.Value
-
     def OnStarted(self, time):
         super(rrs_impulse_strategy, self).OnStarted(time)
 
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
+        rsi.Length = self._rsi_period.Value
 
         stochastic = StochasticOscillator()
-        stochastic.K.Length = self.StochasticKPeriod
-        stochastic.D.Length = self.StochasticDPeriod
+        stochastic.K.Length = self._stochastic_k_period.Value
+        stochastic.D.Length = self._stochastic_d_period.Value
 
         bollinger = BollingerBands()
-        bollinger.Length = self.BollingerPeriod
-        bollinger.Width = self.BollingerDeviation
+        bollinger.Length = self._bollinger_period.Value
+        bollinger.Width = self._bollinger_deviation.Value
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(rsi, stochastic, bollinger, self._process_candle).Start()
@@ -112,9 +76,9 @@ class rrs_impulse_strategy(Strategy):
         if not rsi_val.IsFormed or not stoch_val.IsFormed or not bb_val.IsFormed:
             return
 
-        rsi = float(rsi_val.GetValue[float]())
-        stoch_k = stoch_val.K if stoch_val.K is not None else 50.0
-        stoch_k = float(stoch_k)
+        rsi = float(rsi_val)
+
+        stoch_k = float(stoch_val.K) if stoch_val.K is not None else 50.0
 
         bb_upper = bb_val.UpBand
         bb_lower = bb_val.LowBand
@@ -126,14 +90,14 @@ class rrs_impulse_strategy(Strategy):
         ob_signals = 0
         os_signals = 0
 
-        if rsi >= float(self.RsiUpperLevel):
+        if rsi >= float(self._rsi_upper_level.Value):
             ob_signals += 1
-        if rsi <= float(self.RsiLowerLevel):
+        if rsi <= float(self._rsi_lower_level.Value):
             os_signals += 1
 
-        if stoch_k >= float(self.StochasticUpperLevel):
+        if stoch_k >= float(self._stochastic_upper_level.Value):
             ob_signals += 1
-        if stoch_k <= float(self.StochasticLowerLevel):
+        if stoch_k <= float(self._stochastic_lower_level.Value):
             os_signals += 1
 
         if close >= upper:

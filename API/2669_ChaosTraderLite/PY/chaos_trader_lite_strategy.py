@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -124,17 +124,21 @@ class chaos_trader_lite_strategy(Strategy):
         median = (h + lo) / 2.0
 
         # Lips
-        lips_val = self._lips_sma.Process(DecimalIndicatorValue(self._lips_sma, median, candle.OpenTime))
+        lips_iv = DecimalIndicatorValue(self._lips_sma, Decimal(median), candle.ServerTime)
+        lips_iv.IsFinal = True
+        lips_val = self._lips_sma.Process(lips_iv)
         if lips_val.IsFinal:
-            lv = float(lips_val.GetValue[float]())
+            lv = float(lips_val.Value)
             self._lips_queue.append(lv)
             if len(self._lips_queue) > self.LipsShift:
                 self._lips0 = self._lips_queue.pop(0)
 
         # Teeth
-        teeth_val = self._teeth_sma.Process(DecimalIndicatorValue(self._teeth_sma, median, candle.OpenTime))
+        teeth_iv = DecimalIndicatorValue(self._teeth_sma, Decimal(median), candle.ServerTime)
+        teeth_iv.IsFinal = True
+        teeth_val = self._teeth_sma.Process(teeth_iv)
         if teeth_val.IsFinal:
-            tv = float(teeth_val.GetValue[float]())
+            tv = float(teeth_val.Value)
             self._teeth_queue.append(tv)
             if len(self._teeth_queue) > self.TeethShift:
                 self._teeth1 = self._teeth0
@@ -143,7 +147,7 @@ class chaos_trader_lite_strategy(Strategy):
         # AO
         ao_val = self._ao.Process(CandleIndicatorValue(self._ao, candle))
         if ao_val.IsFinal:
-            av = float(ao_val.GetValue[float]())
+            av = float(ao_val.Value)
             self._ao_hist[5] = self._ao_hist[4]
             self._ao_hist[4] = self._ao_hist[3]
             self._ao_hist[3] = self._ao_hist[2]

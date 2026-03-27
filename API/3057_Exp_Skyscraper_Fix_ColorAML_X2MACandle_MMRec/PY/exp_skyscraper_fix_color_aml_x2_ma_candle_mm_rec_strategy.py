@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
@@ -15,14 +15,19 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
         self._channel_length = self.Param("ChannelLength", 10) \
+            .SetGreaterThanZero() \
             .SetDisplay("Channel Length", "ATR channel length", "Skyscraper")
-        self._channel_factor = self.Param("ChannelFactor", 0.9) \
+        self._channel_factor = self.Param("ChannelFactor", Decimal(0.9)) \
+            .SetGreaterThanZero() \
             .SetDisplay("Channel Factor", "ATR multiplier", "Skyscraper")
         self._aml_length = self.Param("AmlLength", 7) \
+            .SetGreaterThanZero() \
             .SetDisplay("AML Length", "Adaptive smoothing length", "ColorAML")
         self._x2_fast_length = self.Param("X2FastLength", 12) \
+            .SetGreaterThanZero() \
             .SetDisplay("X2 Fast", "Fast smoothing length", "X2MA")
         self._x2_slow_length = self.Param("X2SlowLength", 5) \
+            .SetGreaterThanZero() \
             .SetDisplay("X2 Slow", "Slow smoothing length", "X2MA")
         self._cooldown_bars = self.Param("CooldownBars", 2) \
             .SetDisplay("Cooldown Bars", "Bars between flips", "Trading")
@@ -102,9 +107,9 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
         subscription.Bind(self._on_process).Start()
 
     def _calc_ema(self, source, length, target):
-        multiplier = 2.0 / (length + 1.0)
+        multiplier = Decimal(2) / (Decimal(length) + Decimal(1))
         if len(target) > 0:
-            value = source[-1] * multiplier + target[-1] * (1.0 - multiplier)
+            value = source[-1] * multiplier + target[-1] * (Decimal(1) - multiplier)
         else:
             value = source[-1]
         target.append(value)
@@ -117,16 +122,16 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
         if self._cooldown_left > 0:
             self._cooldown_left -= 1
 
-        h = float(candle.HighPrice)
-        l = float(candle.LowPrice)
-        c = float(candle.ClosePrice)
-        o = float(candle.OpenPrice)
+        h = candle.HighPrice
+        l = candle.LowPrice
+        c = candle.ClosePrice
+        o = candle.OpenPrice
 
         self._highs.append(h)
         self._lows.append(l)
         self._closes.append(c)
 
-        weighted_price = (o + h + l + 2.0 * c) / 5.0
+        weighted_price = (o + h + l + Decimal(2) * c) / Decimal(5)
         self._weighted_prices.append(weighted_price)
 
         fast = self._calc_ema(self._closes, self.X2FastLength, self._fast_series)
@@ -182,7 +187,7 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
 
         if consensus > 0 and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._entry_price = None
             else:
                 self.BuyMarket()
@@ -190,7 +195,7 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
             self._cooldown_left = self.CooldownBars
         elif consensus < 0 and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._entry_price = None
             else:
                 self.SellMarket()
@@ -205,18 +210,18 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
             return 0
 
         start = len(self._closes) - length
-        atr_sum = 0.0
+        atr_sum = Decimal(0)
         for i in range(start, len(self._closes)):
             h = self._highs[i]
             l = self._lows[i]
             prev_c = self._closes[i - 1] if i > 0 else self._closes[i]
-            tr = max(h - l, max(abs(h - prev_c), abs(l - prev_c)))
+            tr = max(h - l, max(Math.Abs(h - prev_c), Math.Abs(l - prev_c)))
             atr_sum += tr
 
-        atr = atr_sum / length
-        middle = (self._highs[-1] + self._lows[-1]) / 2.0
-        upper = middle + atr * float(self.ChannelFactor)
-        lower = middle - atr * float(self.ChannelFactor)
+        atr = atr_sum / Decimal(length)
+        middle = (self._highs[-1] + self._lows[-1]) / Decimal(2)
+        upper = middle + atr * self.ChannelFactor
+        lower = middle - atr * self.ChannelFactor
         close = self._closes[-1]
 
         if close > upper:
@@ -230,24 +235,25 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
             return False
 
         sec = self.Security
-        step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
-        if step <= 0:
-            step = 1.0
+        step = sec.PriceStep if sec is not None and sec.PriceStep is not None else Decimal(1)
+        if step <= Decimal(0):
+            step = Decimal(1)
 
-        stop_distance = self.StopLossPips * step
-        take_distance = self.TakeProfitPips * step
+        stop_distance = Decimal(self.StopLossPips) * step
+        take_distance = Decimal(self.TakeProfitPips) * step
 
         if self.Position > 0:
-            if (stop_distance > 0 and float(candle.LowPrice) <= self._entry_price - stop_distance) or \
-               (take_distance > 0 and float(candle.HighPrice) >= self._entry_price + take_distance):
-                self.SellMarket()
+            if (stop_distance > Decimal(0) and candle.LowPrice <= self._entry_price - stop_distance) or \
+               (take_distance > Decimal(0) and candle.HighPrice >= self._entry_price + take_distance):
+                self.SellMarket(self.Position)
                 self._entry_price = None
                 self._cooldown_left = self.CooldownBars
                 return True
         elif self.Position < 0:
-            if (stop_distance > 0 and float(candle.HighPrice) >= self._entry_price + stop_distance) or \
-               (take_distance > 0 and float(candle.LowPrice) <= self._entry_price - take_distance):
-                self.BuyMarket()
+            volume = Math.Abs(self.Position)
+            if (stop_distance > Decimal(0) and candle.HighPrice >= self._entry_price + stop_distance) or \
+               (take_distance > Decimal(0) and candle.LowPrice <= self._entry_price - take_distance):
+                self.BuyMarket(volume)
                 self._entry_price = None
                 self._cooldown_left = self.CooldownBars
                 return True

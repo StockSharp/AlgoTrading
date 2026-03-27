@@ -15,7 +15,7 @@ class open_two_pending_orders_strategy(Strategy):
         self._tp_points = self.Param("TakeProfitPoints", 8000.0).SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk")
         self._trail_points = self.Param("TrailingStopPoints", 3000.0).SetDisplay("Trailing Stop (steps)", "Trailing stop distance in price steps", "Risk")
         self._entry_offset = self.Param("EntryOffsetPoints", 1000.0).SetDisplay("Entry Offset (steps)", "Offset from close for pending entries", "Execution")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -32,8 +32,8 @@ class open_two_pending_orders_strategy(Strategy):
         self._entry_price = None
         self._stop_level = None
         self._take_level = None
-        self._highest = 0
-        self._lowest = 0
+        self._highest = 0.0
+        self._lowest = 0.0
         self._cooldown = 0
 
     def OnStarted(self, time):
@@ -64,43 +64,35 @@ class open_two_pending_orders_strategy(Strategy):
 
         # Manage existing position
         if self.Position != 0 and self._entry_price is not None:
+            h = float(candle.HighPrice)
+            lo = float(candle.LowPrice)
             if self.Position > 0:
-                self._highest = max(self._highest, candle.HighPrice)
-                if self._stop_level is not None and candle.LowPrice <= self._stop_level:
+                self._highest = max(self._highest, h)
+                if self._stop_level is not None and lo <= self._stop_level:
                     self.SellMarket()
-                    self._reset_state()
-                    self._cooldown = 20
-                    return
-                if self._take_level is not None and candle.HighPrice >= self._take_level:
+                elif self._take_level is not None and h >= self._take_level:
                     self.SellMarket()
-                    self._reset_state()
-                    self._cooldown = 20
-                    return
-                # trailing
-                if self._trail_points.Value > 0:
-                    trail_dist = self._trail_points.Value * step
-                    if self._highest - self._entry_price >= trail_dist:
-                        desired = self._highest - trail_dist
-                        if self._stop_level is None or desired > self._stop_level:
-                            self._stop_level = desired
+                else:
+                    # trailing
+                    if float(self._trail_points.Value) > 0:
+                        trail_dist = float(self._trail_points.Value) * step
+                        if self._highest - self._entry_price >= trail_dist:
+                            desired = self._highest - trail_dist
+                            if self._stop_level is None or desired > self._stop_level:
+                                self._stop_level = desired
             elif self.Position < 0:
-                self._lowest = min(self._lowest, candle.LowPrice)
-                if self._stop_level is not None and candle.HighPrice >= self._stop_level:
+                self._lowest = min(self._lowest, lo)
+                if self._stop_level is not None and h >= self._stop_level:
                     self.BuyMarket()
-                    self._reset_state()
-                    self._cooldown = 20
-                    return
-                if self._take_level is not None and candle.LowPrice <= self._take_level:
+                elif self._take_level is not None and lo <= self._take_level:
                     self.BuyMarket()
-                    self._reset_state()
-                    self._cooldown = 20
-                    return
-                if self._trail_points.Value > 0:
-                    trail_dist = self._trail_points.Value * step
-                    if self._entry_price - self._lowest >= trail_dist:
-                        desired = self._lowest + trail_dist
-                        if self._stop_level is None or desired < self._stop_level:
-                            self._stop_level = desired
+                else:
+                    if float(self._trail_points.Value) > 0:
+                        trail_dist = float(self._trail_points.Value) * step
+                        if self._entry_price - self._lowest >= trail_dist:
+                            desired = self._lowest + trail_dist
+                            if self._stop_level is None or desired < self._stop_level:
+                                self._stop_level = desired
 
             if self.Position == 0:
                 self._reset_state()
@@ -109,7 +101,9 @@ class open_two_pending_orders_strategy(Strategy):
 
         # Check pending entries
         if self._pending_buy is not None and self._pending_sell is not None:
-            if candle.HighPrice >= self._pending_buy:
+            h = float(candle.HighPrice)
+            lo = float(candle.LowPrice)
+            if h >= self._pending_buy:
                 entry = self._pending_buy
                 self._pending_buy = None
                 self._pending_sell = None
@@ -117,10 +111,12 @@ class open_two_pending_orders_strategy(Strategy):
                 self._entry_price = entry
                 self._highest = entry
                 self._lowest = entry
-                self._stop_level = entry - self._sl_points.Value * step if self._sl_points.Value > 0 else None
-                self._take_level = entry + self._tp_points.Value * step if self._tp_points.Value > 0 else None
+                sl = float(self._sl_points.Value)
+                tp = float(self._tp_points.Value)
+                self._stop_level = entry - sl * step if sl > 0 else None
+                self._take_level = entry + tp * step if tp > 0 else None
                 return
-            if candle.LowPrice <= self._pending_sell:
+            if lo <= self._pending_sell:
                 entry = self._pending_sell
                 self._pending_buy = None
                 self._pending_sell = None
@@ -128,13 +124,15 @@ class open_two_pending_orders_strategy(Strategy):
                 self._entry_price = entry
                 self._highest = entry
                 self._lowest = entry
-                self._stop_level = entry + self._sl_points.Value * step if self._sl_points.Value > 0 else None
-                self._take_level = entry - self._tp_points.Value * step if self._tp_points.Value > 0 else None
+                sl = float(self._sl_points.Value)
+                tp = float(self._tp_points.Value)
+                self._stop_level = entry + sl * step if sl > 0 else None
+                self._take_level = entry - tp * step if tp > 0 else None
                 return
         else:
-            offset = self._entry_offset.Value * step
-            self._pending_buy = candle.ClosePrice + offset
-            self._pending_sell = candle.ClosePrice - offset
+            offset = float(self._entry_offset.Value) * step
+            self._pending_buy = float(candle.ClosePrice) + offset
+            self._pending_sell = float(candle.ClosePrice) - offset
 
     def CreateClone(self):
         return open_two_pending_orders_strategy()

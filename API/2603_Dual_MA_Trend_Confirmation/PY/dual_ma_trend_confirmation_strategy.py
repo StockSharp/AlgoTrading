@@ -88,7 +88,8 @@ class dual_ma_trend_confirmation_strategy(Strategy):
 
         self.StartProtection(
             Unit(float(self.TakeProfitPoints) * step, UnitTypes.Absolute),
-            Unit(float(self.StopLossPoints) * step, UnitTypes.Absolute))
+            Unit(float(self.StopLossPoints) * step, UnitTypes.Absolute),
+            False, None, None, True)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._slow_ema, self._fast_lwma, self.ProcessCandle).Start()

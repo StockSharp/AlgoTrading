@@ -20,7 +20,7 @@ class renko_line_break_vs_rsi_strategy(Strategy):
         self._rsi_shift = self.Param("RsiShift", 10.0).SetGreaterThanZero().SetDisplay("RSI Shift", "Distance from 50 for pullbacks", "Indicators")
         self._take_profit = self.Param("TakeProfit", 1000.0).SetGreaterThanZero().SetDisplay("Take Profit", "TP distance in price", "Risk")
         self._indent = self.Param("Indent", 50.0).SetGreaterThanZero().SetDisplay("Indent", "Indent for breakout levels", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(2).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

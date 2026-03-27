@@ -15,7 +15,7 @@ class trend_rds_strategy(Strategy):
         super(trend_rds_strategy, self).__init__()
         self._sl_points = self.Param("StopLossPoints", 30).SetDisplay("Stop Loss", "Stop loss distance", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 65).SetDisplay("Take Profit", "Take profit distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

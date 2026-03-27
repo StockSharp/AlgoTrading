@@ -17,7 +17,7 @@ class tunnel_gen4_strategy(Strategy):
         self._bb_length = self.Param("BbLength", 20).SetGreaterThanZero().SetDisplay("BB Length", "BB period", "Indicator")
         self._bb_width = self.Param("BbWidth", 2.0).SetGreaterThanZero().SetDisplay("BB Width", "BB std devs", "Indicator")
         self._step_pips = self.Param("StepPips", 50.0).SetGreaterThanZero().SetDisplay("Step Pips", "Profit target distance", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

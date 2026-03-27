@@ -138,6 +138,8 @@ class macd_ao_pattern_strategy(Strategy):
     def OnStarted(self, time):
         super(macd_ao_pattern_strategy, self).OnStarted(time)
 
+        self.Volume = self.OrderVolume
+
         self._macd = MACD()
         self._macd.ShortMa.Length = self.MacdFastPeriod
         self._macd.LongMa.Length = self.MacdSlowPeriod

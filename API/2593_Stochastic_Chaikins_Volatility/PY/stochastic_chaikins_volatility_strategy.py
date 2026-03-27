@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal, Array
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (SimpleMovingAverage, ExponentialMovingAverage,
     SmoothedMovingAverage, WeightedMovingAverage, JurikMovingAverage)
@@ -185,18 +185,14 @@ class stochastic_chaikins_volatility_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
         diff = float(candle.HighPrice) - float(candle.LowPrice)
 
-        smoothed_result = self._primary_smoother.Process(self._primary_smoother.CreateValue(candle.OpenTime, diff))
-        if not smoothed_result.IsFinal:
+        smoothed_result = self._primary_smoother.Process(self._primary_smoother.CreateValue(candle.OpenTime, Array[object]([Decimal(diff)])))
+        if not smoothed_result.IsFormed:
             return
 
         smoothed_diff = float(smoothed_result)
@@ -230,8 +226,8 @@ class stochastic_chaikins_volatility_strategy(Strategy):
 
         scaled = normalized * 100.0
 
-        stoch_result = self._secondary_smoother.Process(self._secondary_smoother.CreateValue(candle.OpenTime, scaled))
-        if not stoch_result.IsFinal:
+        stoch_result = self._secondary_smoother.Process(self._secondary_smoother.CreateValue(candle.OpenTime, Array[object]([Decimal(scaled)])))
+        if not stoch_result.IsFormed:
             return
 
         main = float(stoch_result)

@@ -110,8 +110,13 @@ class candle_strategy(Strategy):
             return
 
         close_time = candle.CloseTime
-        if close_time < self._next_allowed_time:
-            return
+        if self._next_allowed_time != DateTimeOffset.MinValue:
+            try:
+                if close_time < self._next_allowed_time:
+                    return
+            except:
+                if DateTimeOffset(close_time) < self._next_allowed_time:
+                    return
 
         is_bullish = candle.ClosePrice > candle.OpenPrice
         is_bearish = candle.ClosePrice < candle.OpenPrice

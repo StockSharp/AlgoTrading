@@ -18,7 +18,7 @@ class rsi_bollinger_fractal_breakout_strategy(Strategy):
         self._rsi_lower = self.Param("RsiLower", 25.0).SetDisplay("RSI Lower", "Oversold threshold", "RSI")
         self._sl_pips = self.Param("StopLossPips", 135.0).SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
         self._tp_pips = self.Param("TakeProfitPips", 50.0).SetDisplay("Take Profit (pips)", "TP distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

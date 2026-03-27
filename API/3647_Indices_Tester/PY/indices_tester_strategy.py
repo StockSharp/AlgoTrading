@@ -17,6 +17,7 @@ class indices_tester_strategy(Strategy):
         self._close_time = self.Param("CloseTime", TimeSpan(23, 30, 0))
         self._daily_trade_limit = self.Param("DailyTradeLimit", 1)
         self._max_open_positions = self.Param("MaxOpenPositions", 1)
+        self._trade_volume = self.Param("TradeVolume", 0.1)
 
         self._current_day = None
         self._trades_opened_today = 0
@@ -69,6 +70,14 @@ class indices_tester_strategy(Strategy):
     def MaxOpenPositions(self, value):
         self._max_open_positions.Value = value
 
+    @property
+    def TradeVolume(self):
+        return self._trade_volume.Value
+
+    @TradeVolume.setter
+    def TradeVolume(self, value):
+        self._trade_volume.Value = value
+
     def OnReseted(self):
         super(indices_tester_strategy, self).OnReseted()
         self._current_day = None
@@ -97,7 +106,7 @@ class indices_tester_strategy(Strategy):
 
         # Liquidate open positions once the configured close time is reached
         if self.Position > 0 and time_of_day >= self.CloseTime:
-            self.SellMarket()
+            self.SellMarket(self.Position)
             return
 
         # Only evaluate entries strictly inside the trading window
@@ -109,12 +118,25 @@ class indices_tester_strategy(Strategy):
             return
 
         # Skip if already have max positions
-        if self.Position > 0:
+        if self._get_open_position_count() >= self.MaxOpenPositions:
+            return
+
+        volume = self.TradeVolume
+        if volume <= 0:
             return
 
         # Long-only: buy
-        self.BuyMarket()
+        self.BuyMarket(volume)
         self._trades_opened_today += 1
+
+    def _get_open_position_count(self):
+        if self.Position == 0:
+            return 0
+        volume = self.TradeVolume
+        if volume <= 0:
+            return 1
+        import math
+        return int(math.ceil(abs(float(self.Position)) / float(volume)))
 
     def CreateClone(self):
         return indices_tester_strategy()

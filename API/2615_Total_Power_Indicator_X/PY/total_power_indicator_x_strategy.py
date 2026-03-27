@@ -148,7 +148,7 @@ class total_power_indicator_x_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
-        ema_out = self._ema.Process(DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.CloseTime))
+        ema_out = self._ema.Process(DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime))
         if not self._ema.IsFormed:
             return
 

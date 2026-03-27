@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, ParabolicSar
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, ParabolicSar, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -85,8 +85,12 @@ class trend_me_leave_me_strategy(Strategy):
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        adx_value = self._adx.Process(candle)
-        sar_value = self._sar.Process(candle)
+        civ_adx = CandleIndicatorValue(self._adx, candle)
+        civ_adx.IsFinal = True
+        adx_value = self._adx.Process(civ_adx)
+        civ_sar = CandleIndicatorValue(self._sar, candle)
+        civ_sar.IsFinal = True
+        sar_value = self._sar.Process(civ_sar)
         if not self._adx.IsFormed or not self._sar.IsFormed:
             return
         if not adx_value.IsFinal or not sar_value.IsFinal:
@@ -114,11 +118,17 @@ class trend_me_leave_me_strategy(Strategy):
             self._breakeven_activated = False
 
         try:
-            adx_ma = float(adx_value.MovingAverage)
+            ma = adx_value.MovingAverage
+            if ma is None:
+                return
+            adx_ma = float(ma)
         except:
-            return
+            try:
+                adx_ma = float(adx_value.Value)
+            except:
+                return
 
-        sar = float(sar_value)
+        sar = float(sar_value.Value)
         close = float(candle.ClosePrice)
         quiet_market = adx_ma < float(self.AdxQuietLevel)
 
@@ -126,10 +136,12 @@ class trend_me_leave_me_strategy(Strategy):
             self._breakeven_activated = False
             self.BuyMarket(float(self.Volume) + abs(float(self.Position)))
             self._position_direction = 1
+            self._entry_price = close
         elif self._next_direction == self.DIR_SELL and quiet_market and close < sar:
             self._breakeven_activated = False
             self.SellMarket(float(self.Volume) + abs(float(self.Position)))
             self._position_direction = -1
+            self._entry_price = close
 
     def _manage_open_position(self, candle):
         entry = self._entry_price

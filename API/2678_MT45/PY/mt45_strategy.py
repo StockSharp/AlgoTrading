@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal, Math as CMath
 
 from StockSharp.Messages import DataType, CandleStates, Sides, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
@@ -13,22 +13,22 @@ class mt45_strategy(Strategy):
     def __init__(self):
         super(mt45_strategy, self).__init__()
 
-        self._stop_points = self.Param("StopPoints", 600.0)
-        self._take_points = self.Param("TakePoints", 700.0)
-        self._base_volume = self.Param("BaseVolume", 1.0)
-        self._multiplier = self.Param("MartingaleMultiplier", 2.0)
-        self._max_volume = self.Param("MaxVolume", 10.0)
+        self._stop_points = self.Param("StopPoints", Decimal(600))
+        self._take_points = self.Param("TakePoints", Decimal(700))
+        self._base_volume = self.Param("BaseVolume", Decimal(1))
+        self._multiplier = self.Param("MartingaleMultiplier", Decimal(2))
+        self._max_volume = self.Param("MaxVolume", Decimal(10))
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 
         self._next_side = Sides.Buy
         self._pending_side = None
         self._entry_pending = False
-        self._entry_price = 0.0
-        self._last_trade_volume = 1.0
-        self._next_volume = 1.0
-        self._prev_position = 0.0
-        self._point_value = 0.0
-        self.Volume = 1.0
+        self._entry_price = Decimal(0)
+        self._last_trade_volume = Decimal(1)
+        self._next_volume = Decimal(1)
+        self._prev_position = Decimal(0)
+        self._point_value = Decimal(0)
+        self.Volume = Decimal(1)
 
     @property
     def StopPoints(self):
@@ -62,7 +62,7 @@ class mt45_strategy(Strategy):
         super(mt45_strategy, self).OnStarted(time)
 
         sec = self.Security
-        self._point_value = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
+        self._point_value = sec.PriceStep if sec is not None and sec.PriceStep is not None else Decimal(1)
         self.Volume = self.BaseVolume
 
         subscription = self.SubscribeCandles(self.CandleType)
@@ -75,17 +75,18 @@ class mt45_strategy(Strategy):
 
         tp = self._create_price_unit(self.TakePoints)
         sl = self._create_price_unit(self.StopPoints)
-        self.StartProtection(tp, sl)
+        if tp is not None and sl is not None:
+            self.StartProtection(tp, sl)
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._entry_pending or self.Position != 0:
+        if self._entry_pending or self.Position != Decimal(0):
             return
 
         volume = self._next_volume
-        if volume <= 0:
+        if volume <= Decimal(0):
             return
 
         side = self._next_side
@@ -104,27 +105,27 @@ class mt45_strategy(Strategy):
         if trade.Order is None or trade.Trade is None:
             return
 
-        new_position = float(self.Position)
+        new_position = self.Position
         previous_position = self._prev_position
         self._prev_position = new_position
 
-        if previous_position == 0 and new_position != 0:
-            self._entry_price = float(trade.Trade.Price)
-            self._last_trade_volume = abs(new_position)
+        if previous_position == Decimal(0) and new_position != Decimal(0):
+            self._entry_price = trade.Trade.Price
+            self._last_trade_volume = CMath.Abs(new_position)
             self._entry_pending = False
 
             if self._pending_side is not None:
                 self._next_side = Sides.Sell if self._pending_side == Sides.Buy else Sides.Buy
                 self._pending_side = None
 
-        elif previous_position != 0 and new_position == 0:
-            direction = Sides.Buy if previous_position > 0 else Sides.Sell
-            self._update_next_volume(direction, float(trade.Trade.Price), abs(previous_position))
-            self._entry_price = 0.0
+        elif previous_position != Decimal(0) and new_position == Decimal(0):
+            direction = Sides.Buy if previous_position > Decimal(0) else Sides.Sell
+            self._update_next_volume(direction, trade.Trade.Price, CMath.Abs(previous_position))
+            self._entry_price = Decimal(0)
             self._entry_pending = False
 
     def _update_next_volume(self, direction, exit_price, volume):
-        if volume <= 0:
+        if volume <= Decimal(0):
             return
 
         if direction == Sides.Buy:
@@ -132,7 +133,7 @@ class mt45_strategy(Strategy):
         else:
             profit = (self._entry_price - exit_price) * volume
 
-        if profit < 0:
+        if profit < Decimal(0):
             scaled = self._last_trade_volume * self.MartingaleMultiplier
             self._next_volume = self.BaseVolume if scaled > self.MaxVolume else scaled
         else:
@@ -141,7 +142,7 @@ class mt45_strategy(Strategy):
         self.Volume = self._next_volume
 
     def _create_price_unit(self, points):
-        if points <= 0 or self._point_value <= 0:
+        if points <= Decimal(0) or self._point_value <= Decimal(0):
             return None
         return Unit(points * self._point_value, UnitTypes.Absolute)
 
@@ -150,11 +151,11 @@ class mt45_strategy(Strategy):
         self._next_side = Sides.Buy
         self._pending_side = None
         self._entry_pending = False
-        self._entry_price = 0.0
+        self._entry_price = Decimal(0)
         self._last_trade_volume = self.BaseVolume
         self._next_volume = self.BaseVolume
-        self._prev_position = 0.0
-        self._point_value = 0.0
+        self._prev_position = Decimal(0)
+        self._point_value = Decimal(0)
         self.Volume = self.BaseVolume
 
     def CreateClone(self):

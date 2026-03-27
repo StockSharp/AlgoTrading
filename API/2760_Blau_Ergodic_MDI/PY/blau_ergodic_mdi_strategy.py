@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage,
@@ -152,23 +152,35 @@ class blau_ergodic_mdi_strategy(Strategy):
             return
         self._apply_risk_management(candle)
         price = self._select_price(candle)
-        t = candle.CloseTime
-        base_val = self._price_average.Process(DecimalIndicatorValue(self._price_average, price, t))
-        if not base_val.IsFormed:
+        t = candle.ServerTime
+
+        iv1 = DecimalIndicatorValue(self._price_average, Decimal(float(price)), t)
+        iv1.IsFinal = True
+        base_val = self._price_average.Process(iv1)
+        if not self._price_average.IsFormed:
             return
-        base_price = float(base_val)
+        base_price = float(base_val.Value)
         momentum = (float(price) - base_price) / self._point_value if self._point_value != 0 else 0.0
-        first_val = self._first_smoothing.Process(DecimalIndicatorValue(self._first_smoothing, momentum, t))
-        if not first_val.IsFormed:
+
+        iv2 = DecimalIndicatorValue(self._first_smoothing, Decimal(momentum), t)
+        iv2.IsFinal = True
+        first_val = self._first_smoothing.Process(iv2)
+        if not self._first_smoothing.IsFormed:
             return
-        second_val = self._second_smoothing.Process(DecimalIndicatorValue(self._second_smoothing, float(first_val), t))
-        if not second_val.IsFormed:
+
+        iv3 = DecimalIndicatorValue(self._second_smoothing, Decimal(float(first_val.Value)), t)
+        iv3.IsFinal = True
+        second_val = self._second_smoothing.Process(iv3)
+        if not self._second_smoothing.IsFormed:
             return
-        histogram = float(second_val)
-        signal_val = self._signal_smoothing.Process(DecimalIndicatorValue(self._signal_smoothing, histogram, t))
-        if not signal_val.IsFormed:
+        histogram = float(second_val.Value)
+
+        iv4 = DecimalIndicatorValue(self._signal_smoothing, Decimal(histogram), t)
+        iv4.IsFinal = True
+        signal_val = self._signal_smoothing.Process(iv4)
+        if not self._signal_smoothing.IsFormed:
             return
-        signal = float(signal_val)
+        signal = float(signal_val.Value)
         self._add_to_buffer(histogram, signal)
         shift = self.SignalBarShift
         latest_hist = self._try_get_hist(shift)

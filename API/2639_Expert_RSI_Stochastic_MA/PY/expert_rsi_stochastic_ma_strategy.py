@@ -98,8 +98,8 @@ class expert_rsi_stochastic_ma_strategy(Strategy):
         if sma_value.IsEmpty or rsi_value.IsEmpty:
             return
 
-        sma_val = float(sma_value.GetValue[float]())
-        rsi_val = float(rsi_value.GetValue[float]())
+        sma_val = float(sma_value)
+        rsi_val = float(rsi_value)
 
         stoch_k = stoch_value.K
         stoch_d = stoch_value.D

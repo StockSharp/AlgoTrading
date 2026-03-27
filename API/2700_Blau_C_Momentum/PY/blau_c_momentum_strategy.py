@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (
@@ -254,22 +254,28 @@ class _BlauMomentumCalc:
             return None
 
         momentum = v1 - self._buf[0]
-        t = candle.OpenTime
+        t = candle.ServerTime
 
-        r1 = self._ma1.Process(DecimalIndicatorValue(self._ma1, momentum, t))
+        iv1 = DecimalIndicatorValue(self._ma1, Decimal(momentum), t)
+        iv1.IsFinal = True
+        r1 = self._ma1.Process(iv1)
         if not self._ma1.IsFormed:
             return None
-        s1 = float(r1)
+        s1 = float(r1.Value)
 
-        r2 = self._ma2.Process(DecimalIndicatorValue(self._ma2, s1, t))
+        iv2 = DecimalIndicatorValue(self._ma2, Decimal(s1), t)
+        iv2.IsFinal = True
+        r2 = self._ma2.Process(iv2)
         if not self._ma2.IsFormed:
             return None
-        s2 = float(r2)
+        s2 = float(r2.Value)
 
-        r3 = self._ma3.Process(DecimalIndicatorValue(self._ma3, s2, t))
+        iv3 = DecimalIndicatorValue(self._ma3, Decimal(s2), t)
+        iv3.IsFinal = True
+        r3 = self._ma3.Process(iv3)
         if not self._ma3.IsFormed:
             return None
-        s3 = float(r3)
+        s3 = float(r3.Value)
 
         return s3 * 100.0 / point if point > 0 else s3
 

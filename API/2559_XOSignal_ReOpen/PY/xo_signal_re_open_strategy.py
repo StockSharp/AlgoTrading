@@ -192,10 +192,6 @@ class xo_signal_re_open_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(atr, self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle, atr_value):
         if candle.State != CandleStates.Finished:
             return
@@ -237,9 +233,9 @@ class xo_signal_re_open_strategy(Strategy):
         sell_signal = self._trend > 0 and trend < 0
         self._trend = trend
 
-        open_time = candle.OpenTime
-        buy_time = open_time if buy_signal else (self._last_buy_signal_time if self._last_buy_signal_time is not None else open_time)
-        sell_time = open_time if sell_signal else (self._last_sell_signal_time if self._last_sell_signal_time is not None else open_time)
+        close_time = candle.OpenTime + self.CandleType.Arg
+        buy_time = close_time if buy_signal else (self._last_buy_signal_time if self._last_buy_signal_time is not None else close_time)
+        sell_time = close_time if sell_signal else (self._last_sell_signal_time if self._last_sell_signal_time is not None else close_time)
         buy_level = low - atr * 3.0 / 8.0
         sell_level = high + atr * 3.0 / 8.0
 

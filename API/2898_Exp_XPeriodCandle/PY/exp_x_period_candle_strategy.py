@@ -124,19 +124,17 @@ class exp_x_period_candle_strategy(Strategy):
         close_short = base_long
 
         if close_long and self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(self.Position)
 
         if close_short and self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(abs(self.Position))
 
         if open_long and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            vol = self.Volume + (abs(self.Position) if self.Position < 0 else 0)
+            self.BuyMarket(vol)
         elif open_short and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            vol = self.Volume + (self.Position if self.Position > 0 else 0)
+            self.SellMarket(vol)
 
     def CreateClone(self):
         return exp_x_period_candle_strategy()

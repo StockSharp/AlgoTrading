@@ -3,11 +3,12 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (RelativeStrengthIndex, MoneyFlowIndex, WilliamsR, DeMarker,
     SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage,
-    WeightedMovingAverage, JurikMovingAverage, KaufmanAdaptiveMovingAverage)
+    WeightedMovingAverage, JurikMovingAverage, KaufmanAdaptiveMovingAverage,
+    DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 
 TREND_DIRECT = 0
@@ -245,14 +246,14 @@ class weight_oscillator_direct_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._rsi, self._mfi, self._wpr, self._demarker, self.ProcessCandle).Start()
 
-        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
-        if step <= 0.0:
-            step = 1.0
+        step = self.Security.PriceStep if self.Security is not None and self.Security.PriceStep is not None else Decimal(1)
+        if step <= Decimal(0):
+            step = Decimal(1)
 
         tp = int(self.TakeProfitPoints)
         sl = int(self.StopLossPoints)
-        tp_unit = Unit(tp * step, UnitTypes.Absolute) if tp > 0 else None
-        sl_unit = Unit(sl * step, UnitTypes.Absolute) if sl > 0 else None
+        tp_unit = Unit(Decimal(tp) * step, UnitTypes.Absolute) if tp > 0 else None
+        sl_unit = Unit(Decimal(sl) * step, UnitTypes.Absolute) if sl > 0 else None
         self.StartProtection(sl_unit, tp_unit)
 
     def ProcessCandle(self, candle, rsi_value, mfi_value, wpr_value, demarker_value):
@@ -277,7 +278,9 @@ class weight_oscillator_direct_strategy(Strategy):
 
         blended = (rsi_w * rsi_val + mfi_w * mfi_val + wpr_w * normalized_wpr + dm_w * normalized_dm) / total_weight
 
-        smoothed_result = self._smoothing.Process(self._smoothing.CreateValue(candle.OpenTime, blended))
+        input_val = DecimalIndicatorValue(self._smoothing, Decimal(blended), candle.OpenTime)
+        input_val.IsFinal = True
+        smoothed_result = self._smoothing.Process(input_val)
         if not smoothed_result.IsFinal:
             return
 

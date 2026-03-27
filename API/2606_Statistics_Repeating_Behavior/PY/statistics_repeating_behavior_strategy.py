@@ -18,7 +18,7 @@ class statistics_repeating_behavior_strategy(Strategy):
         self._minimum_body_points = self.Param("MinimumBodyPoints", 0).SetDisplay("Minimum Body (points)", "Ignore candles with smaller body", "Parameters")
         self._stop_loss_pips = self.Param("StopLossPips", 15).SetGreaterThanZero().SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
         self._martingale_factor = self.Param("MartingaleFactor", 1.618).SetGreaterThanZero().SetDisplay("Martingale Factor", "Multiplier after losing trade", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candles for analysis", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candles for analysis", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

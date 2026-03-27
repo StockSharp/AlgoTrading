@@ -3,12 +3,14 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal, Array, Object
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (RelativeStrengthIndex, SimpleMovingAverage,
     ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage,
     Highest, Lowest)
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
+from indicator_extensions import *
 
 IBS_MA_SIMPLE = 0
 IBS_MA_EXPONENTIAL = 1
@@ -108,16 +110,16 @@ class IbsRsiCciCalculator(object):
             return None
 
         ibs_raw = (c - l) / bar_range
-        ibs_result = self._ibs_ma.Process(self._ibs_ma.CreateValue(open_time, ibs_raw))
+        ibs_result = self._ibs_ma.Process(self._ibs_ma.CreateValue(open_time, Array[object]([Decimal(ibs_raw)])))
         if not ibs_result.IsFinal:
             return None
 
         rsi_input = self._get_price(candle, self._rsi_price)
-        rsi_result = self._rsi.Process(self._rsi.CreateValue(open_time, rsi_input))
+        rsi_result = self._rsi.Process(self._rsi.CreateValue(open_time, Array[object]([Decimal(rsi_input)])))
         if not rsi_result.IsFinal:
             return None
 
-        cci_input = self._get_price(candle, self._cci_price)
+        cci_input = Decimal(self._get_price(candle, self._cci_price))
         cci_value = self._process_cci(cci_input, open_time)
         if cci_value is None:
             return None
@@ -146,16 +148,16 @@ class IbsRsiCciCalculator(object):
 
         self._previous_up = up
 
-        highest_result = self._highest.Process(self._highest.CreateValue(open_time, up))
-        lowest_result = self._lowest.Process(self._lowest.CreateValue(open_time, up))
+        highest_result = self._highest.Process(self._highest.CreateValue(open_time, Array[object]([Decimal(up)])))
+        lowest_result = self._lowest.Process(self._lowest.CreateValue(open_time, Array[object]([Decimal(up)])))
         if not highest_result.IsFinal or not lowest_result.IsFinal:
             return None
 
         highest_val = float(highest_result)
         lowest_val = float(lowest_result)
 
-        high_smooth = self._range_high_ma.Process(self._range_high_ma.CreateValue(open_time, highest_val))
-        low_smooth = self._range_low_ma.Process(self._range_low_ma.CreateValue(open_time, lowest_val))
+        high_smooth = self._range_high_ma.Process(self._range_high_ma.CreateValue(open_time, Array[object]([Decimal(highest_val)])))
+        low_smooth = self._range_low_ma.Process(self._range_low_ma.CreateValue(open_time, Array[object]([Decimal(lowest_val)])))
         if not high_smooth.IsFinal or not low_smooth.IsFinal:
             return None
 
@@ -166,7 +168,7 @@ class IbsRsiCciCalculator(object):
         return (up, signal)
 
     def _process_cci(self, price, open_time):
-        ma_result = self._cci_sma.Process(self._cci_sma.CreateValue(open_time, price))
+        ma_result = self._cci_sma.Process(self._cci_sma.CreateValue(open_time, Array[object]([Decimal(float(price))])))
         self._cci_buffer.append(price)
         if len(self._cci_buffer) > self._cci_period:
             self._cci_buffer.pop(0)
@@ -601,8 +603,8 @@ class ibs_rsi_cci_v4_x2_strategy(Strategy):
         tp = int(self.TakeProfitPoints)
         sl = int(self.StopLossPoints)
         if tp > 0 or sl > 0:
-            take_unit = Unit(tp * price_step, UnitTypes.Absolute)
-            stop_unit = Unit(sl * price_step, UnitTypes.Absolute)
+            take_unit = Unit(float(tp) * price_step, UnitTypes.Absolute)
+            stop_unit = Unit(float(sl) * price_step, UnitTypes.Absolute)
             self.StartProtection(stop_unit, take_unit)
 
     def _process_trend(self, candle):

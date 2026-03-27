@@ -103,8 +103,8 @@ class x_didi_index_cloud_duplex_strategy(Strategy):
 
         sec = self.Security
         ps = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 0.0
-        sl_unit = None
-        tp_unit = None
+        sl_unit = Unit()
+        tp_unit = Unit()
         if ps > 0:
             if self.StopLossPoints > 0:
                 sl_unit = Unit(self.StopLossPoints * ps, UnitTypes.Absolute)

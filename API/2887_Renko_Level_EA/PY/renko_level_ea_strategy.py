@@ -133,13 +133,17 @@ class renko_level_ea_strategy(Strategy):
         return False
 
     def _calculate_bounds(self, price, price_step, step_count):
+        import math
         normalized_step = float(step_count)
         ratio = price / price_step / normalized_step
-        rounded = round(ratio)
+        # Use away-from-zero rounding to match C# Math.Round(MidpointRounding.AwayFromZero)
+        if ratio >= 0:
+            rounded = math.floor(ratio + 0.5)
+        else:
+            rounded = math.ceil(ratio - 0.5)
         price_round = rounded * normalized_step * price_step
 
         ceil_ratio = (price_round + normalized_step / 2.0 * price_step) / price_step / normalized_step
-        import math
         ceil_count = math.ceil(ceil_ratio)
         price_ceil = ceil_count * normalized_step * price_step
 

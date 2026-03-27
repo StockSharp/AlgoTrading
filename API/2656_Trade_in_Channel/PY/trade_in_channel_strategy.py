@@ -95,7 +95,7 @@ class trade_in_channel_strategy(Strategy):
         if not atr_val.IsFinal:
             return
 
-        atr = float(atr_val.GetValue[float]())
+        atr = float(atr_val)
 
         if self._prev_upper is None or self._prev_lower is None or self._prev_close is None:
             self._prev_upper = upper

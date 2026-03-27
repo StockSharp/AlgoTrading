@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -155,8 +155,13 @@ class green_trade_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        ma_result = self._smma.Process(DecimalIndicatorValue(self._smma, median, t))
-        rsi_result = self._rsi.Process(DecimalIndicatorValue(self._rsi, close, t))
+        ma_iv = DecimalIndicatorValue(self._smma, Decimal(median), candle.ServerTime)
+        ma_iv.IsFinal = True
+        ma_result = self._smma.Process(ma_iv)
+
+        rsi_iv = DecimalIndicatorValue(self._rsi, Decimal(close), candle.ServerTime)
+        rsi_iv.IsFinal = True
+        rsi_result = self._rsi.Process(rsi_iv)
 
         if not self._smma.IsFormed or not self._rsi.IsFormed:
             self._ma_history.append(0.0)
@@ -164,8 +169,8 @@ class green_trade_strategy(Strategy):
             self._trim_history()
             return
 
-        ma_val = float(ma_result.GetValue[float]())
-        rsi_val = float(rsi_result.GetValue[float]())
+        ma_val = float(ma_result.Value)
+        rsi_val = float(rsi_result.Value)
 
         self._ma_history.append(ma_val)
         self._rsi_history.append(rsi_val)

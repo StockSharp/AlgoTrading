@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import BollingerBands
+from StockSharp.Algo.Indicators import BollingerBands, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 PRICE_CLOSE = 0
@@ -63,27 +63,22 @@ class bollinger_breakout_dc2008_strategy(Strategy):
 
     def _get_applied_price(self, candle):
         ap = int(self.AppliedPrice)
-        o = float(candle.OpenPrice)
-        h = float(candle.HighPrice)
-        l = float(candle.LowPrice)
-        c = float(candle.ClosePrice)
-
         if ap == PRICE_OPEN:
-            return o
+            return candle.OpenPrice
         elif ap == PRICE_HIGH:
-            return h
+            return candle.HighPrice
         elif ap == PRICE_LOW:
-            return l
+            return candle.LowPrice
         elif ap == PRICE_MEDIAN:
-            return (h + l) / 2.0
+            return (candle.HighPrice + candle.LowPrice) / 2
         elif ap == PRICE_TYPICAL:
-            return (h + l + c) / 3.0
+            return (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3
         elif ap == PRICE_WEIGHTED:
-            return (h + l + 2.0 * c) / 4.0
+            return (candle.HighPrice + candle.LowPrice + 2 * candle.ClosePrice) / 4
         elif ap == PRICE_AVERAGE:
-            return (o + h + l + c) / 4.0
+            return (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4
         else:
-            return c
+            return candle.ClosePrice
 
     def OnStarted(self, time):
         super(bollinger_breakout_dc2008_strategy, self).OnStarted(time)
@@ -97,16 +92,14 @@ class bollinger_breakout_dc2008_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
         price_value = self._get_applied_price(candle)
-        indicator_value = self._bollinger.Process(self._bollinger.CreateValue(candle.OpenTime, price_value))
+        inp = DecimalIndicatorValue(self._bollinger, price_value, candle.OpenTime)
+        inp.IsFinal = True
+        indicator_value = self._bollinger.Process(inp)
 
         if not indicator_value.IsFinal:
             return

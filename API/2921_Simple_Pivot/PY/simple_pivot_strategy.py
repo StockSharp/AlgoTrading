@@ -12,7 +12,7 @@ from indicator_extensions import *
 class simple_pivot_strategy(Strategy):
     def __init__(self):
         super(simple_pivot_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles", "Data")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -11,7 +11,7 @@ from datatype_extensions import *
 class open_time_two_strategy(Strategy):
     def __init__(self):
         super(open_time_two_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(2).TimeFrame()).SetDisplay("Candle Type", "Base candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))).SetDisplay("Candle Type", "Base candle type", "General")
         self._trade_volume = self.Param("TradeVolume", 0.1).SetDisplay("Trade Volume", "Volume for each interval", "Risk")
         self._interval_one_buy = self.Param("IntervalOneBuy", True).SetDisplay("Direction #1", "Buy for interval #1", "Opening")
         self._interval_two_buy = self.Param("IntervalTwoBuy", True).SetDisplay("Direction #2", "Buy for interval #2", "Opening")

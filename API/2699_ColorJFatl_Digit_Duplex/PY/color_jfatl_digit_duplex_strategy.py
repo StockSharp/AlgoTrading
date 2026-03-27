@@ -4,7 +4,7 @@ import math
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import JurikMovingAverage, DecimalIndicatorValue
@@ -57,8 +57,10 @@ class _ColorJfatlDigitState(object):
             pi = len(self._price_buffer) - 1 - i
             fatl += _FATL_WEIGHTS[i] * self._price_buffer[pi]
 
-        jma_val = self._jma.Process(DecimalIndicatorValue(self._jma, fatl, candle.CloseTime))
-        base_value = float(jma_val.GetValue[float]())
+        jma_iv = DecimalIndicatorValue(self._jma, Decimal(fatl), candle.ServerTime)
+        jma_iv.IsFinal = True
+        jma_val = self._jma.Process(jma_iv)
+        base_value = float(jma_val.Value)
         adjusted = self._apply_phase(base_value)
         rounded = round(adjusted, max(0, self._digit))
         color = self._calc_color(rounded)

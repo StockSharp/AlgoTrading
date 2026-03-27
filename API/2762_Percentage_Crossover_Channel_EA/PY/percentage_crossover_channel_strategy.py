@@ -11,7 +11,7 @@ from datatype_extensions import *
 class percentage_crossover_channel_strategy(Strategy):
     def __init__(self):
         super(percentage_crossover_channel_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
         self._percent = self.Param("Percent", 1.0).SetGreaterThanZero().SetDisplay("Percent", "Channel width percent", "Channel")
         self._sl_points = self.Param("StopLossPoints", 0).SetNotNegative().SetDisplay("Stop Loss (points)", "Protective stop distance", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 0).SetNotNegative().SetDisplay("Take Profit (points)", "Target profit distance", "Risk")

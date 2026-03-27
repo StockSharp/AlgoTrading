@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class blau_ergodic_strategy(Strategy):
@@ -91,28 +91,42 @@ class blau_ergodic_strategy(Strategy):
 
         t = candle.ServerTime
 
-        mom1 = self._mom_ema1.Process(DecimalIndicatorValue(self._mom_ema1, momentum, t))
-        abs1 = self._abs_mom_ema1.Process(DecimalIndicatorValue(self._abs_mom_ema1, abs_momentum, t))
+        d1 = DecimalIndicatorValue(self._mom_ema1, Decimal(float(momentum)), t)
+        d1.IsFinal = True
+        mom1 = self._mom_ema1.Process(d1)
+        d2 = DecimalIndicatorValue(self._abs_mom_ema1, Decimal(float(abs_momentum)), t)
+        d2.IsFinal = True
+        abs1 = self._abs_mom_ema1.Process(d2)
         if mom1.IsEmpty or abs1.IsEmpty:
             return
 
-        mom2 = self._mom_ema2.Process(DecimalIndicatorValue(self._mom_ema2, float(mom1), t))
-        abs2 = self._abs_mom_ema2.Process(DecimalIndicatorValue(self._abs_mom_ema2, float(abs1), t))
+        d3 = DecimalIndicatorValue(self._mom_ema2, Decimal(float(mom1.Value)), t)
+        d3.IsFinal = True
+        mom2 = self._mom_ema2.Process(d3)
+        d4 = DecimalIndicatorValue(self._abs_mom_ema2, Decimal(float(abs1.Value)), t)
+        d4.IsFinal = True
+        abs2 = self._abs_mom_ema2.Process(d4)
         if mom2.IsEmpty or abs2.IsEmpty:
             return
 
-        mom3 = self._mom_ema3.Process(DecimalIndicatorValue(self._mom_ema3, float(mom2), t))
-        abs3 = self._abs_mom_ema3.Process(DecimalIndicatorValue(self._abs_mom_ema3, float(abs2), t))
+        d5 = DecimalIndicatorValue(self._mom_ema3, Decimal(float(mom2.Value)), t)
+        d5.IsFinal = True
+        mom3 = self._mom_ema3.Process(d5)
+        d6 = DecimalIndicatorValue(self._abs_mom_ema3, Decimal(float(abs2.Value)), t)
+        d6.IsFinal = True
+        abs3 = self._abs_mom_ema3.Process(d6)
         if mom3.IsEmpty or abs3.IsEmpty:
             return
 
-        smoothed_mom = float(mom3)
-        smoothed_abs = float(abs3)
+        smoothed_mom = float(mom3.Value)
+        smoothed_abs = float(abs3.Value)
 
         main = 0.0 if smoothed_abs == 0.0 else 100.0 * smoothed_mom / smoothed_abs
 
-        signal_result = self._signal_ema.Process(DecimalIndicatorValue(self._signal_ema, main, t))
-        signal = float(signal_result) if not signal_result.IsEmpty else None
+        d7 = DecimalIndicatorValue(self._signal_ema, Decimal(float(main)), t)
+        d7.IsFinal = True
+        signal_result = self._signal_ema.Process(d7)
+        signal = float(signal_result.Value) if not signal_result.IsEmpty else None
 
         self._main_history.append(main)
         self._signal_history.append(signal)

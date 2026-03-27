@@ -154,14 +154,9 @@ class billy_expert_strategy(Strategy):
 
         self._pip_size = self._calc_pip_size()
 
-        tp = Unit(self.TakeProfitPips * self._pip_size, UnitTypes.Absolute) if self.TakeProfitPips > 0 else None
-        sl = Unit(self.StopLossPips * self._pip_size, UnitTypes.Absolute) if self.StopLossPips > 0 else None
-        if tp is not None and sl is not None:
-            self.StartProtection(takeProfit=tp, stopLoss=sl)
-        elif tp is not None:
-            self.StartProtection(takeProfit=tp)
-        elif sl is not None:
-            self.StartProtection(stopLoss=sl)
+        tp = Unit(self.TakeProfitPips * self._pip_size, UnitTypes.Absolute) if self.TakeProfitPips > 0 else Unit()
+        sl = Unit(self.StopLossPips * self._pip_size, UnitTypes.Absolute) if self.StopLossPips > 0 else Unit()
+        self.StartProtection(tp, sl)
 
     def process_fast_stochastic(self, candle, value):
         if candle.State != CandleStates.Finished:

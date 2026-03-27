@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -202,25 +202,35 @@ class exp_blau_cmi_strategy(Strategy):
         delayed_price = self._price_buffer[0]
         momentum = front_price - delayed_price
         abs_momentum = abs(momentum)
-        t = candle.OpenTime
+        t = candle.ServerTime
 
-        s1 = float(self._m_stage1.Process(DecimalIndicatorValue(self._m_stage1, momentum, t)).GetValue[float]())
-        a1 = float(self._a_stage1.Process(DecimalIndicatorValue(self._a_stage1, abs_momentum, t)).GetValue[float]())
+        def _proc(ind, val):
+            iv = DecimalIndicatorValue(ind, Decimal(val), t)
+            iv.IsFinal = True
+            return float(ind.Process(iv).Value)
 
-        s2 = float(self._m_stage2.Process(DecimalIndicatorValue(self._m_stage2, s1, t)).GetValue[float]())
-        a2 = float(self._a_stage2.Process(DecimalIndicatorValue(self._a_stage2, a1, t)).GetValue[float]())
+        s1 = _proc(self._m_stage1, momentum)
+        a1 = _proc(self._a_stage1, abs_momentum)
 
-        s3_val = self._m_stage3.Process(DecimalIndicatorValue(self._m_stage3, s2, t))
-        a3_val = self._a_stage3.Process(DecimalIndicatorValue(self._a_stage3, a2, t))
+        s2 = _proc(self._m_stage2, s1)
+        a2 = _proc(self._a_stage2, a1)
+
+        s3_iv = DecimalIndicatorValue(self._m_stage3, Decimal(s2), t)
+        s3_iv.IsFinal = True
+        s3_val = self._m_stage3.Process(s3_iv)
+
+        a3_iv = DecimalIndicatorValue(self._a_stage3, Decimal(a2), t)
+        a3_iv.IsFinal = True
+        a3_val = self._a_stage3.Process(a3_iv)
 
         if not s3_val.IsFormed or not a3_val.IsFormed:
             return
 
-        denominator = float(a3_val.GetValue[float]())
+        denominator = float(a3_val.Value)
         if denominator == 0:
             return
 
-        cmi = 100.0 * float(s3_val.GetValue[float]()) / denominator
+        cmi = 100.0 * float(s3_val.Value) / denominator
 
         self._indicator_history.append(cmi)
         required = self.SignalBar + 3

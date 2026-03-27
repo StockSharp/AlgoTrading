@@ -11,7 +11,7 @@ from datatype_extensions import *
 class open_time_strategy(Strategy):
     def __init__(self):
         super(open_time_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle subscription type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle subscription type", "General")
         self._trade_hour = self.Param("TradeHour", 10).SetDisplay("Trade Hour", "Hour to open positions", "Trading")
         self._trade_minute = self.Param("TradeMinute", 0).SetDisplay("Trade Minute", "Minute to open positions", "Trading")
         self._duration_seconds = self.Param("DurationSeconds", 18000).SetDisplay("Duration", "Window length in seconds", "Trading")

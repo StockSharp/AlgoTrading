@@ -60,11 +60,17 @@ class mamy_expert_strategy(Strategy):
         if self._close_ma is None:
             return
         from StockSharp.Algo.Indicators import DecimalIndicatorValue
-        close_result = self._close_ma.Process(DecimalIndicatorValue(self._close_ma, candle.ClosePrice, candle.OpenTime))
-        open_result = self._open_ma.Process(DecimalIndicatorValue(self._open_ma, candle.OpenPrice, candle.OpenTime))
-        weighted_price = (float(candle.HighPrice) + float(candle.LowPrice) + float(candle.ClosePrice) * 2.0) / 4.0
         from System import Decimal
-        weighted_result = self._weighted_ma.Process(DecimalIndicatorValue(self._weighted_ma, Decimal(weighted_price), candle.OpenTime))
+        close_iv = DecimalIndicatorValue(self._close_ma, candle.ClosePrice, candle.OpenTime)
+        close_iv.IsFinal = True
+        close_result = self._close_ma.Process(close_iv)
+        open_iv = DecimalIndicatorValue(self._open_ma, candle.OpenPrice, candle.OpenTime)
+        open_iv.IsFinal = True
+        open_result = self._open_ma.Process(open_iv)
+        weighted_price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice * Decimal(2)) / Decimal(4)
+        weighted_iv = DecimalIndicatorValue(self._weighted_ma, weighted_price, candle.OpenTime)
+        weighted_iv.IsFinal = True
+        weighted_result = self._weighted_ma.Process(weighted_iv)
         if close_result.IsEmpty or open_result.IsEmpty or weighted_result.IsEmpty:
             return
         close_ma_val = float(close_result)

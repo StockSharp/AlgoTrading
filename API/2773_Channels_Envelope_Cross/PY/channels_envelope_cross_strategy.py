@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
@@ -124,13 +124,20 @@ class channels_envelope_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        fc_val = self._ema_fast_close.Process(DecimalIndicatorValue(self._ema_fast_close, candle.ClosePrice, candle.OpenTime))
-        fo_val = self._ema_fast_open.Process(DecimalIndicatorValue(self._ema_fast_open, candle.OpenPrice, candle.OpenTime))
-        sl_val = self._ema_slow.Process(DecimalIndicatorValue(self._ema_slow, candle.ClosePrice, candle.OpenTime))
+        t = candle.ServerTime
+        iv1 = DecimalIndicatorValue(self._ema_fast_close, Decimal(float(candle.ClosePrice)), t)
+        iv1.IsFinal = True
+        fc_val = self._ema_fast_close.Process(iv1)
+        iv2 = DecimalIndicatorValue(self._ema_fast_open, Decimal(float(candle.OpenPrice)), t)
+        iv2.IsFinal = True
+        fo_val = self._ema_fast_open.Process(iv2)
+        iv3 = DecimalIndicatorValue(self._ema_slow, Decimal(float(candle.ClosePrice)), t)
+        iv3.IsFinal = True
+        sl_val = self._ema_slow.Process(iv3)
 
-        fast_close = float(fc_val.GetValue[float]())
-        fast_open = float(fo_val.GetValue[float]())
-        slow = float(sl_val.GetValue[float]())
+        fast_close = float(fc_val.Value)
+        fast_open = float(fo_val.Value)
+        slow = float(sl_val.Value)
 
         env003 = float(self.Envelope003)
         env007 = float(self.Envelope007)

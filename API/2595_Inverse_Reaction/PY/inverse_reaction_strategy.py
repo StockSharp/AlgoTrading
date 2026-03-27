@@ -46,12 +46,12 @@ class inverse_reaction_strategy(Strategy):
         if step <= 0:
             step = 1.0
 
-        sl = self._stop_loss_points.Value
-        tp = self._take_profit_points.Value
-        sl_unit = Unit(sl * step, UnitTypes.Absolute) if sl > 0 else None
-        tp_unit = Unit(tp * step, UnitTypes.Absolute) if tp > 0 else None
-        if sl_unit is not None or tp_unit is not None:
-            self.StartProtection(tp_unit, sl_unit)
+        sl = float(self._stop_loss_points.Value)
+        tp = float(self._take_profit_points.Value)
+        self.StartProtection(
+            Unit(tp * step, UnitTypes.Absolute),
+            Unit(sl * step, UnitTypes.Absolute),
+            False, None, None, True)
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._process_candle).Start()

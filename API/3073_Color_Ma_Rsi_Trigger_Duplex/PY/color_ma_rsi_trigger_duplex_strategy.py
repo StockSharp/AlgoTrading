@@ -86,6 +86,9 @@ class color_ma_rsi_trigger_duplex_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
@@ -127,20 +130,16 @@ class color_ma_rsi_trigger_duplex_strategy(Strategy):
         short_exit = self.Position < 0 and recent > 0.0
 
         if long_exit:
-            self.SellMarket()
+            self.SellMarket(self.Position)
             self._cooldown_remaining = self.SignalCooldownBars
         elif short_exit:
-            self.BuyMarket()
+            self.BuyMarket(abs(self.Position))
             self._cooldown_remaining = self.SignalCooldownBars
         elif self._cooldown_remaining == 0 and long_open and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown_remaining = self.SignalCooldownBars
         elif self._cooldown_remaining == 0 and short_open and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown_remaining = self.SignalCooldownBars
 
     def CreateClone(self):

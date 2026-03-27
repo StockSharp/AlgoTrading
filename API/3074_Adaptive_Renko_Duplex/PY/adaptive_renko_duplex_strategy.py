@@ -251,22 +251,27 @@ class adaptive_renko_duplex_strategy(Strategy):
         self._short_vol_indicator.Length = self.ShortVolatilityPeriod
 
         long_subscription = self.SubscribeCandles(self.LongCandleType)
-        long_subscription.Bind(self._on_long_candle).Start()
+        long_subscription.BindEx(self._long_vol_indicator, self._on_long_candle)
 
-        short_subscription = self.SubscribeCandles(self.ShortCandleType)
-        short_subscription.Bind(self._on_short_candle).Start()
+        if self.ShortCandleType == self.LongCandleType:
+            long_subscription.BindEx(self._short_vol_indicator, self._on_short_candle)
+            long_subscription.Start()
+        else:
+            long_subscription.Start()
+            short_subscription = self.SubscribeCandles(self.ShortCandleType)
+            short_subscription.BindEx(self._short_vol_indicator, self._on_short_candle)
+            short_subscription.Start()
 
-    def _on_long_candle(self, candle):
+    def _on_long_candle(self, candle, vol_value):
         if candle.State != CandleStates.Finished:
             return
 
         self._manage_long_risk(candle)
 
-        vol_result = self._long_vol_indicator.Process(candle)
-        if not vol_result.IsFinal:
+        if not vol_value.IsFinal:
             return
 
-        volatility = float(vol_result)
+        volatility = float(vol_value)
         step = self._get_price_step()
         self._long_processor.process(
             candle, volatility,
@@ -284,27 +289,26 @@ class adaptive_renko_duplex_strategy(Strategy):
         trend, support, resistance = signal
 
         if self.Position > 0 and trend == _AdaptiveRenkoProcessor.TREND_DOWN:
-            self.SellMarket()
+            self.SellMarket(abs(self.Position))
             self._long_entry_price = None
 
         if trend == _AdaptiveRenkoProcessor.TREND_UP and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._long_entry_price = float(candle.ClosePrice)
-            self._short_entry_price = None
+            vol = self.Volume + abs(self.Position)
+            if vol > 0:
+                self.BuyMarket(vol)
+                self._long_entry_price = float(candle.ClosePrice)
+                self._short_entry_price = None
 
-    def _on_short_candle(self, candle):
+    def _on_short_candle(self, candle, vol_value):
         if candle.State != CandleStates.Finished:
             return
 
         self._manage_short_risk(candle)
 
-        vol_result = self._short_vol_indicator.Process(candle)
-        if not vol_result.IsFinal:
+        if not vol_value.IsFinal:
             return
 
-        volatility = float(vol_result)
+        volatility = float(vol_value)
         step = self._get_price_step()
         self._short_processor.process(
             candle, volatility,
@@ -322,15 +326,15 @@ class adaptive_renko_duplex_strategy(Strategy):
         trend, support, resistance = signal
 
         if self.Position < 0 and trend == _AdaptiveRenkoProcessor.TREND_UP:
-            self.BuyMarket()
+            self.BuyMarket(abs(self.Position))
             self._short_entry_price = None
 
         if trend == _AdaptiveRenkoProcessor.TREND_DOWN and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._short_entry_price = float(candle.ClosePrice)
-            self._long_entry_price = None
+            vol = self.Volume + abs(self.Position)
+            if vol > 0:
+                self.SellMarket(vol)
+                self._short_entry_price = float(candle.ClosePrice)
+                self._long_entry_price = None
 
     def _manage_long_risk(self, candle):
         if self.Position <= 0:
@@ -346,7 +350,7 @@ class adaptive_renko_duplex_strategy(Strategy):
         if sl > 0.0:
             stop_dist = sl * step
             if stop_dist > 0.0 and float(candle.LowPrice) <= self._long_entry_price - stop_dist:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._long_entry_price = None
                 return
 
@@ -354,7 +358,7 @@ class adaptive_renko_duplex_strategy(Strategy):
         if tp > 0.0:
             target_dist = tp * step
             if target_dist > 0.0 and float(candle.HighPrice) >= self._long_entry_price + target_dist:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._long_entry_price = None
 
     def _manage_short_risk(self, candle):
@@ -371,7 +375,7 @@ class adaptive_renko_duplex_strategy(Strategy):
         if sl > 0.0:
             stop_dist = sl * step
             if stop_dist > 0.0 and float(candle.HighPrice) >= self._short_entry_price + stop_dist:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._short_entry_price = None
                 return
 
@@ -379,7 +383,7 @@ class adaptive_renko_duplex_strategy(Strategy):
         if tp > 0.0:
             target_dist = tp * step
             if target_dist > 0.0 and float(candle.LowPrice) <= self._short_entry_price - target_dist:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._short_entry_price = None
 
     def _get_price_step(self):

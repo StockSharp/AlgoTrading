@@ -106,20 +106,20 @@ class invest_system45_strategy(Strategy):
         if pos > 0 and self._entry_price > 0:
             if self._stop_price > 0 and float(candle.LowPrice) <= self._stop_price:
                 self.SellMarket(pos)
-                self._reset_targets()
+                self._on_position_closed()
                 return
             if self._take_price > 0 and float(candle.HighPrice) >= self._take_price:
                 self.SellMarket(pos)
-                self._reset_targets()
+                self._on_position_closed()
                 return
         elif pos < 0 and self._entry_price > 0:
             if self._stop_price > 0 and float(candle.HighPrice) >= self._stop_price:
                 self.BuyMarket(abs(pos))
-                self._reset_targets()
+                self._on_position_closed()
                 return
             if self._take_price > 0 and float(candle.LowPrice) <= self._take_price:
                 self.BuyMarket(abs(pos))
-                self._reset_targets()
+                self._on_position_closed()
                 return
 
         self._update_balance_state()
@@ -143,11 +143,25 @@ class invest_system45_strategy(Strategy):
         if self._current_volume <= 0:
             return
 
+        close = float(candle.ClosePrice)
         if self._trend_direction > 0:
             self.BuyMarket(self._current_volume)
+            self._entry_price = close
+            sl_dist = self.StopLossPips * self._pip_size
+            tp_dist = self.TakeProfitPips * self._pip_size
+            self._stop_price = close - sl_dist if sl_dist > 0 else 0.0
+            self._take_price = close + tp_dist if tp_dist > 0 else 0.0
         else:
             self.SellMarket(self._current_volume)
+            self._entry_price = close
+            sl_dist = self.StopLossPips * self._pip_size
+            tp_dist = self.TakeProfitPips * self._pip_size
+            self._stop_price = close + sl_dist if sl_dist > 0 else 0.0
+            self._take_price = close - tp_dist if tp_dist > 0 else 0.0
 
+        self._has_open_position = True
+        self._needs_post_trade_adjustment = True
+        self._pnl_at_entry = float(self.PnL)
         self._entry_window_active = False
 
     def _update_balance_state(self):
@@ -255,6 +269,13 @@ class invest_system45_strategy(Strategy):
         self._has_open_position = False
         self._last_trade_pnl = float(self.PnL) - self._pnl_at_entry
         self._handle_post_trade_adjustment()
+
+    def _on_position_closed(self):
+        self._reset_targets()
+        if self._has_open_position:
+            self._has_open_position = False
+            self._last_trade_pnl = float(self.PnL) - self._pnl_at_entry
+            self._handle_post_trade_adjustment()
 
     def _reset_targets(self):
         self._entry_price = 0.0

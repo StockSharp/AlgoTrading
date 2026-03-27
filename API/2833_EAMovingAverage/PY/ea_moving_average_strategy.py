@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class ea_moving_average_strategy(Strategy):
@@ -126,12 +126,14 @@ class ea_moving_average_strategy(Strategy):
         if indicator is None:
             return None
 
-        result = indicator.Process(DecimalIndicatorValue(indicator, price, time))
+        div = DecimalIndicatorValue(indicator, Decimal(float(price)), time)
+        div.IsFinal = True
+        result = indicator.Process(div)
 
         if not indicator.IsFormed:
             return None
 
-        ma_value = float(result)
+        ma_value = float(result.Value)
 
         buffer.append(ma_value)
         max_size = shift + 1

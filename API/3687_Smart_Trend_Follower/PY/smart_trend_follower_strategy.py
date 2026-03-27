@@ -186,7 +186,7 @@ class smart_trend_follower_strategy(Strategy):
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription \
-            .BindEx(self._fast_sma, self._slow_sma, self._stochastic, self._process_candle) \
+            .Bind(self._fast_sma, self._slow_sma, self._process_candle) \
             .Start()
 
         self._pip_size = self._calculate_pip_size()
@@ -214,7 +214,7 @@ class smart_trend_follower_strategy(Strategy):
             self._short_entries.clear()
             self._short_exit_requested = False
 
-    def _process_candle(self, candle, fast_value, slow_value, stochastic_value):
+    def _process_candle(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
 
@@ -235,14 +235,12 @@ class smart_trend_follower_strategy(Strategy):
                 elif cross_sell:
                     signal = 2
         else:
-            if self._stochastic is not None and self._stochastic.IsFormed:
-                k_value = float(stochastic_value)
-                bullish = float(candle.ClosePrice) > float(candle.OpenPrice)
-                bearish = float(candle.ClosePrice) < float(candle.OpenPrice)
-                if fast > slow and bullish and k_value <= 30:
-                    signal = 1
-                elif fast < slow and bearish and k_value >= 70:
-                    signal = 2
+            bullish = float(candle.ClosePrice) > float(candle.OpenPrice)
+            bearish = float(candle.ClosePrice) < float(candle.OpenPrice)
+            if fast > slow and bullish:
+                signal = 1
+            elif fast < slow and bearish:
+                signal = 2
 
         if signal != 0:
             self._process_signal(signal, float(candle.ClosePrice))
@@ -258,7 +256,7 @@ class smart_trend_follower_strategy(Strategy):
             if short_volume > 0:
                 if not self._short_exit_requested:
                     self._short_exit_requested = True
-                    self.BuyMarket(short_volume)
+                    self.BuyMarket(float(short_volume))
                 return
 
             long_count = len(self._long_entries)
@@ -268,20 +266,20 @@ class smart_trend_follower_strategy(Strategy):
                 return
 
             if long_count == 0:
-                self.BuyMarket(volume)
+                self.BuyMarket(float(volume))
                 return
 
             lowest = self._get_extreme_price(self._long_entries, True)
-            threshold = lowest - self.LayerDistancePips * pip
+            threshold = lowest - float(self.LayerDistancePips) * pip
             if reference_price <= threshold:
-                self.BuyMarket(volume)
+                self.BuyMarket(float(volume))
 
         elif signal == 2:  # Sell
             long_volume = self._get_total_volume(self._long_entries)
             if long_volume > 0:
                 if not self._long_exit_requested:
                     self._long_exit_requested = True
-                    self.SellMarket(long_volume)
+                    self.SellMarket(float(long_volume))
                 return
 
             short_count = len(self._short_entries)
@@ -291,13 +289,13 @@ class smart_trend_follower_strategy(Strategy):
                 return
 
             if short_count == 0:
-                self.SellMarket(volume)
+                self.SellMarket(float(volume))
                 return
 
             highest = self._get_extreme_price(self._short_entries, False)
-            threshold = highest + self.LayerDistancePips * pip
+            threshold = highest + float(self.LayerDistancePips) * pip
             if reference_price >= threshold:
-                self.SellMarket(volume)
+                self.SellMarket(float(volume))
 
     def _manage_exits(self, candle):
         pip = self._pip_size if self._pip_size > 0 else 1.0
@@ -305,33 +303,33 @@ class smart_trend_follower_strategy(Strategy):
         long_volume = self._get_total_volume(self._long_entries)
         if long_volume > 0 and not self._long_exit_requested:
             average = self._get_average_price(self._long_entries)
-            take_profit = average + self.TakeProfitPips * pip if self.TakeProfitPips > 0 else None
-            stop_loss = average - self.StopLossPips * pip if self.StopLossPips > 0 else None
+            take_profit = average + float(self.TakeProfitPips) * pip if float(self.TakeProfitPips) > 0 else None
+            stop_loss = average - float(self.StopLossPips) * pip if float(self.StopLossPips) > 0 else None
 
             if take_profit is not None and float(candle.HighPrice) >= take_profit:
                 self._long_exit_requested = True
-                self.SellMarket(long_volume)
+                self.SellMarket(float(long_volume))
                 return
 
             if stop_loss is not None and float(candle.LowPrice) <= stop_loss:
                 self._long_exit_requested = True
-                self.SellMarket(long_volume)
+                self.SellMarket(float(long_volume))
                 return
 
         short_volume = self._get_total_volume(self._short_entries)
         if short_volume > 0 and not self._short_exit_requested:
             average = self._get_average_price(self._short_entries)
-            take_profit = average - self.TakeProfitPips * pip if self.TakeProfitPips > 0 else None
-            stop_loss = average + self.StopLossPips * pip if self.StopLossPips > 0 else None
+            take_profit = average - float(self.TakeProfitPips) * pip if float(self.TakeProfitPips) > 0 else None
+            stop_loss = average + float(self.StopLossPips) * pip if float(self.StopLossPips) > 0 else None
 
             if take_profit is not None and float(candle.LowPrice) <= take_profit:
                 self._short_exit_requested = True
-                self.BuyMarket(short_volume)
+                self.BuyMarket(float(short_volume))
                 return
 
             if stop_loss is not None and float(candle.HighPrice) >= stop_loss:
                 self._short_exit_requested = True
-                self.BuyMarket(short_volume)
+                self.BuyMarket(float(short_volume))
 
     def _calculate_requested_volume(self, existing_count):
         if self.InitialVolume <= 0:

@@ -22,7 +22,7 @@ class universal_ma_cross_strategy(Strategy):
         self._trailing_step = self.Param("TrailingStep", 0).SetDisplay("Trailing Step", "Additional move before trailing", "Risk")
         self._min_cross_dist = self.Param("MinCrossDistance", 0).SetDisplay("Min Cross Distance", "Min distance between averages", "Filters")
         self._stop_and_reverse = self.Param("StopAndReverse", True).SetDisplay("Stop And Reverse", "Reverse on opposite signal", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

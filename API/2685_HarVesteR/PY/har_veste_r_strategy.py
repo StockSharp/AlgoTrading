@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -157,17 +157,17 @@ class har_veste_r_strategy(Strategy):
             return
 
         # Update lowest/highest for stop calculation
-        low_val = self._lowest_ind.Process(
-            DecimalIndicatorValue(self._lowest_ind, candle.LowPrice, candle.OpenTime)
-        )
+        low_iv = DecimalIndicatorValue(self._lowest_ind, candle.LowPrice, candle.ServerTime)
+        low_iv.IsFinal = True
+        low_val = self._lowest_ind.Process(low_iv)
         if low_val.IsFormed:
-            self._last_lowest = float(low_val.GetValue[float]())
+            self._last_lowest = float(low_val.Value)
 
-        high_val = self._highest_ind.Process(
-            DecimalIndicatorValue(self._highest_ind, candle.HighPrice, candle.OpenTime)
-        )
+        high_iv = DecimalIndicatorValue(self._highest_ind, candle.HighPrice, candle.ServerTime)
+        high_iv.IsFinal = True
+        high_val = self._highest_ind.Process(high_iv)
         if high_val.IsFormed:
-            self._last_highest = float(high_val.GetValue[float]())
+            self._last_highest = float(high_val.Value)
 
         if not macd_value.IsFinal or not sma_fast_value.IsFinal or not sma_slow_value.IsFinal:
             return
@@ -177,8 +177,8 @@ class har_veste_r_strategy(Strategy):
             return
 
         macd_main = float(macd_main_n)
-        sma_fast = float(sma_fast_value.GetValue[float]())
-        sma_slow = float(sma_slow_value.GetValue[float]())
+        sma_fast = float(sma_fast_value.Value)
+        sma_slow = float(sma_slow_value.Value)
 
         adx_strength = None
         if self.UseAdxFilter:

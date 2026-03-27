@@ -17,7 +17,7 @@ class rnd_trade_strategy(Strategy):
     def OnStarted(self, time):
         super(rnd_trade_strategy, self).OnStarted(time)
 
-        tf = TimeSpan.FromMinutes(self._interval_minutes.Value).TimeFrame()
+        tf = DataType.TimeFrame(TimeSpan.FromMinutes(self._interval_minutes.Value))
         sub = self.SubscribeCandles(tf)
         sub.Bind(self.OnProcess).Start()
 

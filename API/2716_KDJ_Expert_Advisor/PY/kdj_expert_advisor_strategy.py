@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
@@ -58,10 +58,11 @@ class kdj_expert_advisor_strategy(Strategy):
         sl_pips = self._stop_loss_pips.Value
         tp_pips = self._take_profit_pips.Value
 
-        sl_unit = Unit(sl_pips * pip_size, UnitTypes.Absolute) if sl_pips > 0 else None
-        tp_unit = Unit(tp_pips * pip_size, UnitTypes.Absolute) if tp_pips > 0 else None
-        if sl_unit is not None or tp_unit is not None:
-            self.StartProtection(tp_unit, sl_unit)
+        tp_val = Decimal(float(tp_pips) * pip_size) if tp_pips > 0 else Decimal(0)
+        sl_val = Decimal(float(sl_pips) * pip_size) if sl_pips > 0 else Decimal(0)
+        tp_unit = Unit(tp_val, UnitTypes.Absolute) if tp_pips > 0 else Unit()
+        sl_unit = Unit(sl_val, UnitTypes.Absolute) if sl_pips > 0 else Unit()
+        self.StartProtection(tp_unit, sl_unit)
 
         kdj = StochasticOscillator()
         kdj.K.Length = self._kdj_period.Value
@@ -104,7 +105,8 @@ class kdj_expert_advisor_strategy(Strategy):
             if kdc < 0 and self._prev_k > k:
                 sell_signal = True
 
-        if self.Position == 0:
+        pos = float(self.Position)
+        if abs(pos) < 0.0001:
             if buy_signal:
                 self.BuyMarket()
             elif sell_signal:

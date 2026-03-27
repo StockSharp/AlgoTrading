@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Algo.Indicators import AverageDirectionalIndex
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan
@@ -44,7 +44,9 @@ class adx_expert_strategy(Strategy):
             return
 
         try:
-            adx_result = self._adx.Process(candle)
+            civ = CandleIndicatorValue(self._adx, candle)
+            civ.IsFinal = True
+            adx_result = self._adx.Process(civ)
         except Exception:
             return
 

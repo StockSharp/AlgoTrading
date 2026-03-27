@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class ema_wma_contrarian_strategy(Strategy):
@@ -55,14 +55,18 @@ class ema_wma_contrarian_strategy(Strategy):
         self._manage_active_position(candle)
 
         open_price = float(candle.OpenPrice)
-        ema_result = self._ema.Process(DecimalIndicatorValue(self._ema, open_price, candle.OpenTime))
-        wma_result = self._wma.Process(DecimalIndicatorValue(self._wma, open_price, candle.OpenTime))
+        d_ema = DecimalIndicatorValue(self._ema, Decimal(float(open_price)), candle.OpenTime)
+        d_ema.IsFinal = True
+        ema_result = self._ema.Process(d_ema)
+        d_wma = DecimalIndicatorValue(self._wma, Decimal(float(open_price)), candle.OpenTime)
+        d_wma.IsFinal = True
+        wma_result = self._wma.Process(d_wma)
 
         if ema_result.IsEmpty or wma_result.IsEmpty or not self._ema.IsFormed or not self._wma.IsFormed:
             return
 
-        ema = float(ema_result)
-        wma = float(wma_result)
+        ema = float(ema_result.Value)
+        wma = float(wma_result.Value)
 
         if not self._has_previous:
             self._previous_ema = ema

@@ -58,12 +58,8 @@ class doji_trader_strategy(Strategy):
 
         self._pip_size = self._calculate_pip_size()
 
-        tp_unit = None
-        sl_unit = None
-        if self.TakeProfitPips > 0 and self._pip_size > 0:
-            tp_unit = Unit(self.TakeProfitPips * self._pip_size, UnitTypes.Absolute)
-        if self.StopLossPips > 0 and self._pip_size > 0:
-            sl_unit = Unit(self.StopLossPips * self._pip_size, UnitTypes.Absolute)
+        tp_unit = Unit(self.TakeProfitPips * self._pip_size, UnitTypes.Absolute) if self.TakeProfitPips > 0 and self._pip_size > 0 else Unit()
+        sl_unit = Unit(self.StopLossPips * self._pip_size, UnitTypes.Absolute) if self.StopLossPips > 0 and self._pip_size > 0 else Unit()
 
         self.StartProtection(tp_unit, sl_unit)
 

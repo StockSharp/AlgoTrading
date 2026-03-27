@@ -64,8 +64,6 @@ class hans123_trader_v2_strategy(Strategy):
 
         if self.Position != 0:
             self._manage_position(candle)
-            self._prev_high = breakout_high
-            self._prev_low = breakout_low
             return
 
         hour = candle.OpenTime.TimeOfDay.Hours

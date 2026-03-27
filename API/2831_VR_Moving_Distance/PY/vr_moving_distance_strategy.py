@@ -18,7 +18,7 @@ class vr_moving_distance_strategy(Strategy):
         self._distance = self.Param("DistancePips", 50).SetGreaterThanZero().SetDisplay("Distance", "Offset from MA in pips", "Trading")
         self._tp = self.Param("TakeProfitPips", 50).SetNotNegative().SetDisplay("Take Profit", "TP in pips", "Trading")
         self._vol_mult = self.Param("VolumeMultiplier", 1).SetGreaterThanZero().SetDisplay("Volume Multiplier", "Multiplier for additional entries", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

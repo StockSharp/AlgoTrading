@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AccumulationDistributionLine, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
@@ -20,7 +20,7 @@ class pipsover_chaikin_hedge_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "Price MA length", "Trend")
         self._chaikin_fast = self.Param("ChaikinFastPeriod", 3).SetGreaterThanZero().SetDisplay("Chaikin Fast", "Fast Chaikin length", "Chaikin")
         self._chaikin_slow = self.Param("ChaikinSlowPeriod", 10).SetGreaterThanZero().SetDisplay("Chaikin Slow", "Slow Chaikin length", "Chaikin")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Timeframe", "Data")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -76,9 +76,14 @@ class pipsover_chaikin_hedge_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_res = self._ema_fast.Process(DecimalIndicatorValue(self._ema_fast, ad_val, candle.OpenTime))
-        slow_res = self._ema_slow.Process(DecimalIndicatorValue(self._ema_slow, ad_val, candle.OpenTime))
-        chaikin = fast_res.ToDecimal() - slow_res.ToDecimal()
+        t = candle.ServerTime
+        iv1 = DecimalIndicatorValue(self._ema_fast, Decimal(float(ad_val)), t)
+        iv1.IsFinal = True
+        fast_res = self._ema_fast.Process(iv1)
+        iv2 = DecimalIndicatorValue(self._ema_slow, Decimal(float(ad_val)), t)
+        iv2.IsFinal = True
+        slow_res = self._ema_slow.Process(iv2)
+        chaikin = float(fast_res.Value) - float(slow_res.Value)
 
         if not self._ema_fast.IsFormed or not self._ema_slow.IsFormed:
             self._prev_chaikin = chaikin

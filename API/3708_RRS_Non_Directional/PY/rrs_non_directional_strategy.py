@@ -16,7 +16,7 @@ class rrs_non_directional_strategy(Strategy):
         self._tp_points = self.Param("TakeProfitPoints", 100).SetDisplay("Take Profit (pts)", "TP distance", "Risk")
         self._trailing_start = self.Param("TrailingStartPoints", 30).SetDisplay("Trailing Start", "Trailing activation", "Risk")
         self._trailing_gap = self.Param("TrailingGapPoints", 30).SetDisplay("Trailing Gap", "Trailing gap", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import WilliamsR
+from StockSharp.Algo.Indicators import WilliamsR, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -58,7 +58,7 @@ class exp_xwpr_histogram_vol_direct_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        williams_value = self._williams.Process(candle)
+        williams_value = self._williams.Process(CandleIndicatorValue(self._williams, candle))
         if not self._williams.IsFormed:
             return
 

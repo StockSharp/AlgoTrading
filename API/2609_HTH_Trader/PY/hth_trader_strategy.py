@@ -86,10 +86,6 @@ class hth_trader_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
@@ -114,8 +110,6 @@ class hth_trader_strategy(Strategy):
                 else:
                     self.BuyMarket()
                 self._entry_price = 0.0
-                self._prev_close2 = self._prev_close1
-                self._prev_close1 = close
                 return
 
             if self.UseLossLimit and pips_diff <= -int(self.LossLimitPips):
@@ -124,8 +118,6 @@ class hth_trader_strategy(Strategy):
                 else:
                     self.BuyMarket()
                 self._entry_price = 0.0
-                self._prev_close2 = self._prev_close1
-                self._prev_close1 = close
                 return
 
         # Entry logic

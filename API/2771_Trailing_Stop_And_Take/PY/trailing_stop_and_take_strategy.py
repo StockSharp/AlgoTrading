@@ -115,6 +115,7 @@ class trailing_stop_and_take_strategy(Strategy):
                 self._manage_short_exits(candle)
         else:
             self._reset_levels()
+            self._entry_price = 0.0
         self._try_enter(candle)
         self._previous_position = float(self.Position)
 
@@ -123,17 +124,22 @@ class trailing_stop_and_take_strategy(Strategy):
         vol = float(self.Volume)
         if pos != 0 or vol <= 0:
             return
+        close = float(candle.ClosePrice)
         if self.PositionType == self.POS_LONG:
-            if float(candle.ClosePrice) > float(candle.OpenPrice):
+            if close > float(candle.OpenPrice):
                 self.BuyMarket(vol)
+                self._entry_price = close
         elif self.PositionType == self.POS_SHORT:
-            if float(candle.ClosePrice) < float(candle.OpenPrice):
+            if close < float(candle.OpenPrice):
                 self.SellMarket(vol)
+                self._entry_price = close
         else:
-            if float(candle.ClosePrice) > float(candle.OpenPrice):
+            if close > float(candle.OpenPrice):
                 self.BuyMarket(vol)
-            elif float(candle.ClosePrice) < float(candle.OpenPrice):
+                self._entry_price = close
+            elif close < float(candle.OpenPrice):
                 self.SellMarket(vol)
+                self._entry_price = close
 
     def _ensure_long_initialized(self):
         if float(self.Position) <= 0:

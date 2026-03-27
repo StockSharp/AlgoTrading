@@ -3,11 +3,12 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
-    AwesomeOscillator, SimpleMovingAverage, StochasticOscillator, DecimalIndicatorValue
+    AwesomeOscillator, SimpleMovingAverage, StochasticOscillator, DecimalIndicatorValue,
+    CandleIndicatorValue
 )
 
 
@@ -108,7 +109,7 @@ class oz_fx_accelerator_stochastic_strategy(Strategy):
         self._stoch.D.Length = self.DPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._ao, self._stoch, self.process_candle).Start()
+        subscription.Bind(self.process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -116,25 +117,44 @@ class oz_fx_accelerator_stochastic_strategy(Strategy):
             self.DrawIndicator(area, self._ao)
             self.DrawOwnTrades(area)
 
-    def process_candle(self, candle, ao_value, stoch_value):
+    def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if not ao_value.IsFinal or not stoch_value.IsFinal:
+        civ = CandleIndicatorValue(self._ao, candle)
+
+        # Process AO manually
+        ao_result = self._ao.Process(civ)
+        if ao_result.IsEmpty:
+            return
+        ao = float(ao_result)
+
+        # Process stochastic manually
+        stoch_result = self._stoch.Process(CandleIndicatorValue(self._stoch, candle))
+        if stoch_result.IsEmpty:
             return
 
-        stoch_k = stoch_value.K
-        if stoch_k is None:
-            return
+        # Access K value
+        try:
+            sk_nullable = stoch_result.K
+            if sk_nullable is None:
+                return
+            sk = float(sk_nullable)
+        except:
+            # Fallback: try KValue
+            try:
+                k_val = stoch_result.KValue
+                if k_val is None or k_val.IsEmpty:
+                    return
+                sk = float(k_val)
+            except:
+                return
 
-        sk = float(stoch_k)
-        ao = float(ao_value.GetValue[float]())
-
-        ao_sma_result = self._ao_sma.Process(DecimalIndicatorValue(self._ao_sma, ao, candle.OpenTime))
+        ao_sma_result = self._ao_sma.Process(DecimalIndicatorValue(self._ao_sma, Decimal(ao), candle.ServerTime))
         if not self._ao_sma.IsFormed:
             return
 
-        ac = ao - float(ao_sma_result.GetValue[float]())
+        ac = ao - float(ao_sma_result)
         prev_ac = self._last_ac
         if prev_ac is None:
             self._last_ac = ac

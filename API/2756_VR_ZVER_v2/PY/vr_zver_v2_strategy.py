@@ -25,7 +25,7 @@ class vr_zver_v2_strategy(Strategy):
         self._trailing = self.Param("TrailingStopPips", 15).SetDisplay("Trailing Stop", "Trailing distance", "Risk")
         self._trailing_step = self.Param("TrailingStepPips", 5).SetDisplay("Trailing Step", "Step before trailing updates", "Risk")
         self._breakeven = self.Param("BreakevenPips", 20).SetDisplay("Breakeven", "Profit for breakeven", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

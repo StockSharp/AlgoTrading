@@ -4,10 +4,10 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from StockSharp.Algo.Indicators import (SimpleMovingAverage, ExponentialMovingAverage,
-    SmoothedMovingAverage, WeightedMovingAverage, Highest, Lowest, DecimalIndicatorValue)
+    SmoothedMovingAverage, WeightedMovingAverage, Highest, Lowest, DecimalIndicatorValue, CandleIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class blau_ts_stochastic_strategy(Strategy):
@@ -68,8 +68,12 @@ class blau_ts_stochastic_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        high_result = self._highest.Process(candle)
-        low_result = self._lowest.Process(candle)
+        civ_h = CandleIndicatorValue(self._highest, candle)
+        civ_h.IsFinal = True
+        high_result = self._highest.Process(civ_h)
+        civ_l = CandleIndicatorValue(self._lowest, candle)
+        civ_l.IsFinal = True
+        low_result = self._lowest.Process(civ_l)
 
         if high_result.IsEmpty or low_result.IsEmpty or not self._highest.IsFormed or not self._lowest.IsFormed:
             return
@@ -94,41 +98,55 @@ class blau_ts_stochastic_strategy(Strategy):
                     return
 
         t = candle.OpenTime
-        high = float(high_result)
-        low = float(low_result)
+        high = float(high_result.Value)
+        low = float(low_result.Value)
         price = float(candle.ClosePrice)
         stoch_raw = price - low
         range_raw = high - low
 
-        s1 = self._stoch_s1.Process(DecimalIndicatorValue(self._stoch_s1, stoch_raw, t))
+        div1 = DecimalIndicatorValue(self._stoch_s1, Decimal(float(stoch_raw)), t)
+        div1.IsFinal = True
+        s1 = self._stoch_s1.Process(div1)
         if s1.IsEmpty:
             return
-        s2 = self._stoch_s2.Process(DecimalIndicatorValue(self._stoch_s2, float(s1), t))
+        div2 = DecimalIndicatorValue(self._stoch_s2, Decimal(float(s1.Value)), t)
+        div2.IsFinal = True
+        s2 = self._stoch_s2.Process(div2)
         if s2.IsEmpty:
             return
-        s3 = self._stoch_s3.Process(DecimalIndicatorValue(self._stoch_s3, float(s2), t))
+        div3 = DecimalIndicatorValue(self._stoch_s3, Decimal(float(s2.Value)), t)
+        div3.IsFinal = True
+        s3 = self._stoch_s3.Process(div3)
         if s3.IsEmpty:
             return
 
-        r1 = self._range_s1.Process(DecimalIndicatorValue(self._range_s1, range_raw, t))
+        dir1 = DecimalIndicatorValue(self._range_s1, Decimal(float(range_raw)), t)
+        dir1.IsFinal = True
+        r1 = self._range_s1.Process(dir1)
         if r1.IsEmpty:
             return
-        r2 = self._range_s2.Process(DecimalIndicatorValue(self._range_s2, float(r1), t))
+        dir2 = DecimalIndicatorValue(self._range_s2, Decimal(float(r1.Value)), t)
+        dir2.IsFinal = True
+        r2 = self._range_s2.Process(dir2)
         if r2.IsEmpty:
             return
-        r3 = self._range_s3.Process(DecimalIndicatorValue(self._range_s3, float(r2), t))
+        dir3 = DecimalIndicatorValue(self._range_s3, Decimal(float(r2.Value)), t)
+        dir3.IsFinal = True
+        r3 = self._range_s3.Process(dir3)
         if r3.IsEmpty:
             return
 
-        denom = float(r3)
+        denom = float(r3.Value)
         if denom == 0:
             return
 
-        hist = 200.0 * float(s3) / denom - 100.0
-        sig_result = self._signal_smooth.Process(DecimalIndicatorValue(self._signal_smooth, hist, t))
+        hist = 200.0 * float(s3.Value) / denom - 100.0
+        dsig = DecimalIndicatorValue(self._signal_smooth, Decimal(float(hist)), t)
+        dsig.IsFinal = True
+        sig_result = self._signal_smooth.Process(dsig)
         if sig_result.IsEmpty:
             return
-        signal = float(sig_result)
+        signal = float(sig_result.Value)
 
         self._hist_history.insert(0, hist)
         self._signal_history.insert(0, signal)

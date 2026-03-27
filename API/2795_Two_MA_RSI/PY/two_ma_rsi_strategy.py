@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -104,25 +104,31 @@ class two_ma_rsi_strategy(Strategy):
             self._stop_price = 0.0
             self._take_profit_price = 0.0
 
-        fast_result = self._fast_ema.Process(candle)
-        slow_result = self._slow_ema.Process(candle)
-        rsi_result = self._rsi.Process(candle)
+        civ1 = CandleIndicatorValue(self._fast_ema, candle)
+        civ1.IsFinal = True
+        fast_result = self._fast_ema.Process(civ1)
+        civ2 = CandleIndicatorValue(self._slow_ema, candle)
+        civ2.IsFinal = True
+        slow_result = self._slow_ema.Process(civ2)
+        civ3 = CandleIndicatorValue(self._rsi, candle)
+        civ3.IsFinal = True
+        rsi_result = self._rsi.Process(civ3)
 
         if fast_result.IsEmpty or slow_result.IsEmpty or rsi_result.IsEmpty:
             return
 
         if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed or not self._rsi.IsFormed:
             try:
-                self._previous_fast = float(fast_result.GetValue[float]())
-                self._previous_slow = float(slow_result.GetValue[float]())
+                self._previous_fast = float(fast_result.Value)
+                self._previous_slow = float(slow_result.Value)
             except:
                 pass
             return
 
         try:
-            fast = float(fast_result.GetValue[float]())
-            slow = float(slow_result.GetValue[float]())
-            rsi = float(rsi_result.GetValue[float]())
+            fast = float(fast_result.Value)
+            slow = float(slow_result.Value)
+            rsi = float(rsi_result.Value)
         except:
             return
 

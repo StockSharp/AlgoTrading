@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
@@ -109,15 +109,15 @@ class super_simple_rsi_engulfing_strategy(Strategy):
             return
 
         price = self._get_price(candle)
-        rsi_result = self._rsi.Process(
-            DecimalIndicatorValue(self._rsi, price, candle.OpenTime)
-        )
+        rsi_iv = DecimalIndicatorValue(self._rsi, Decimal(price), candle.ServerTime)
+        rsi_iv.IsFinal = True
+        rsi_result = self._rsi.Process(rsi_iv)
 
         if not self._rsi.IsFormed:
             self._update_history(candle)
             return
 
-        rsi_value = float(rsi_result.GetValue[float]())
+        rsi_value = float(rsi_result.Value)
 
         if (self._prev_open is not None and self._prev_close is not None
                 and self._prev_prev_open is not None and self._prev_prev_close is not None):

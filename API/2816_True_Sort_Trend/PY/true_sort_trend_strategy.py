@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageDirectionalIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageDirectionalIndex, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
@@ -25,7 +25,7 @@ class true_sort_trend_strategy(Strategy):
         self._tp_dist = self.Param("TakeProfitDistance", 1500.0).SetDisplay("Take Profit", "TP distance", "Risk")
         self._trail_dist = self.Param("TrailingStopDistance", 300.0).SetDisplay("Trailing Stop", "Trail distance", "Risk")
         self._trail_step = self.Param("TrailingStepDistance", 100.0).SetDisplay("Trailing Step", "Trail step", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -76,12 +76,12 @@ class true_sort_trend_strategy(Strategy):
             return
 
         # Process ADX manually
-        inp = DecimalIndicatorValue(self._adx, candle.ClosePrice)
-        inp.IsFinal = True
-        adx_result = self._adx.Process(inp)
+        civ = CandleIndicatorValue(self._adx, candle)
+        civ.IsFinal = True
+        adx_result = self._adx.Process(civ)
         if not self._adx.IsFormed:
             return
-        adx_val = float(adx_result) if not adx_result.IsEmpty else 0
+        adx_val = float(adx_result.MovingAverage) if not adx_result.IsEmpty and adx_result.MovingAverage is not None else 0
 
         vals = [float(v1), float(v2), float(v3), float(v4), float(v5)]
         close = float(candle.ClosePrice)

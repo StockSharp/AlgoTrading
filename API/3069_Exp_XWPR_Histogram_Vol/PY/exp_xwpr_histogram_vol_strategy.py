@@ -3,9 +3,9 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, SimpleMovingAverage, WilliamsR
+from StockSharp.Algo.Indicators import DecimalIndicatorValue, CandleIndicatorValue, SimpleMovingAverage, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -19,9 +19,9 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
             .SetDisplay("WPR Period", "Williams %R lookback", "Indicator")
         self._smoothing_length = self.Param("SmoothingLength", 5) \
             .SetDisplay("Smoothing", "Smoothing length", "Indicator")
-        self._high_level2 = self.Param("HighLevel2", 17.0) \
+        self._high_level2 = self.Param("HighLevel2", Decimal(17)) \
             .SetDisplay("High Level 2", "Strong bullish zone", "Indicator")
-        self._low_level2 = self.Param("LowLevel2", -17.0) \
+        self._low_level2 = self.Param("LowLevel2", Decimal(-17)) \
             .SetDisplay("Low Level 2", "Strong bearish zone", "Indicator")
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 48) \
             .SetDisplay("Signal Cooldown", "Bars to wait after a new entry", "Trading")
@@ -86,13 +86,13 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        wpr_result = self._wpr.Process(candle)
+        wpr_result = self._wpr.Process(CandleIndicatorValue(self._wpr, candle))
         if not wpr_result.IsFormed:
             return
 
-        wpr = float(wpr_result)
-        volume = float(candle.TotalVolume) if float(candle.TotalVolume) > 0.0 else 1.0
-        hist_raw = (wpr + 50.0) * volume
+        wpr = wpr_result.Value
+        volume = candle.TotalVolume if candle.TotalVolume > Decimal(0) else Decimal(1)
+        hist_raw = (wpr + Decimal(50)) * volume
 
         hist_input = DecimalIndicatorValue(self._hist_sma, hist_raw, candle.OpenTime)
         hist_input.IsFinal = True
@@ -105,13 +105,13 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         if not hist_smoothed.IsFormed or not vol_smoothed.IsFormed:
             return
 
-        baseline = float(vol_smoothed)
-        if baseline == 0.0:
+        baseline = vol_smoothed.Value
+        if baseline == Decimal(0):
             return
 
-        hist = float(hist_smoothed)
-        strong_bull_level = float(self.HighLevel2) * baseline
-        strong_bear_level = float(self.LowLevel2) * baseline
+        hist = hist_smoothed.Value
+        strong_bull_level = self.HighLevel2 * baseline
+        strong_bear_level = self.LowLevel2 * baseline
 
         if hist >= strong_bull_level:
             color = 0

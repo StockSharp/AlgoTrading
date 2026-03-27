@@ -88,10 +88,6 @@ class rsi_trader_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
@@ -112,6 +108,9 @@ class rsi_trader_strategy(Strategy):
             self._rsi_values.pop(0)
 
         if len(self._rsi_values) < int(self.LongRsiMaPeriod) or len(self._closes) < int(self.LongPriceMaPeriod):
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         short_rsi = self._average_last(self._rsi_values, int(self.ShortRsiMaPeriod))

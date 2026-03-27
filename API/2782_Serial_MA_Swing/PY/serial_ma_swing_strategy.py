@@ -15,7 +15,7 @@ class serial_ma_swing_strategy(Strategy):
         super(serial_ma_swing_strategy, self).__init__()
         self._sl_points = self.Param("StopLossPoints", 0.0).SetNotNegative().SetDisplay("Stop Loss (points)", "SL distance in price steps", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 0.0).SetNotNegative().SetDisplay("Take Profit (points)", "TP distance in price steps", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Data series", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Data series", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

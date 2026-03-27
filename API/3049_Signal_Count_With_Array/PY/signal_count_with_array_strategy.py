@@ -14,7 +14,7 @@ class signal_count_with_array_strategy(Strategy):
     def __init__(self):
         super(signal_count_with_array_strategy, self).__init__()
         self._cci_period = self.Param("CciPeriod", 14).SetGreaterThanZero().SetDisplay("CCI Period", "CCI lookback", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

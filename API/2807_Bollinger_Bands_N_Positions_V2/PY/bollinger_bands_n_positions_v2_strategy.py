@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands
+from StockSharp.Algo.Indicators import BollingerBands, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -95,7 +95,9 @@ class bollinger_bands_n_positions_v2_strategy(Strategy):
     def OnProcess(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        indicator_value = self._bollinger.Process(candle)
+        civ = CandleIndicatorValue(self._bollinger, candle)
+        civ.IsFinal = True
+        indicator_value = self._bollinger.Process(civ)
         if indicator_value.IsEmpty or not self._bollinger.IsFormed:
             return
         self._update_risk_distances()

@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import AverageTrueRange, WeightedMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -90,6 +90,9 @@ class exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy(Strate
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         av = float(atr_value)
         lv = float(lwma_value)
         fv = float(fast_ema_value)
@@ -107,11 +110,13 @@ class exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy(Strate
             self._allow_short_signal = True
 
         if bullish_filter and self.Position <= 0 and self._allow_long_signal:
-            self.BuyMarket()
+            vol = self.Volume + Math.Abs(self.Position)
+            self.BuyMarket(vol)
             self._allow_long_signal = False
             self._allow_short_signal = False
         elif bearish_filter and self.Position >= 0 and self._allow_short_signal:
-            self.SellMarket()
+            vol = self.Volume + Math.Abs(self.Position)
+            self.SellMarket(vol)
             self._allow_short_signal = False
             self._allow_long_signal = False
 
@@ -122,19 +127,19 @@ class exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy(Strate
             stop_price = self._long_entry_price - av * sl_mult
             target_price = self._long_entry_price + av * tp_mult
             if low <= stop_price:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._long_entry_price = None
             elif high >= target_price:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._long_entry_price = None
         elif self.Position < 0 and self._short_entry_price is not None:
             stop_price = self._short_entry_price + av * sl_mult
             target_price = self._short_entry_price - av * tp_mult
             if high >= stop_price:
-                self.BuyMarket()
+                self.BuyMarket(-self.Position)
                 self._short_entry_price = None
             elif low <= target_price:
-                self.BuyMarket()
+                self.BuyMarket(-self.Position)
                 self._short_entry_price = None
 
     def OnOwnTradeReceived(self, trade):

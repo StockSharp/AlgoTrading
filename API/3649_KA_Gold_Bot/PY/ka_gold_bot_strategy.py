@@ -131,7 +131,8 @@ class ka_gold_bot_strategy(Strategy):
         candle_range = high - low
 
         # Manually process Keltner EMA and range average
-        mid_result = self._keltner_ema.Process(candle)
+        mid_input = DecimalIndicatorValue(self._keltner_ema, close, candle.OpenTime)
+        mid_result = self._keltner_ema.Process(mid_input)
         range_input = DecimalIndicatorValue(self._range_average, candle_range, candle.OpenTime)
         range_result = self._range_average.Process(range_input)
 

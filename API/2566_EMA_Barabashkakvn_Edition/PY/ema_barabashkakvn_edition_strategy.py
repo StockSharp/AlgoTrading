@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -115,10 +115,6 @@ class ema_barabashkakvn_edition_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        self.StartProtection(
-            Unit(2000.0, UnitTypes.Absolute),
-            Unit(1000.0, UnitTypes.Absolute))
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
@@ -128,8 +124,12 @@ class ema_barabashkakvn_edition_strategy(Strategy):
         close = float(candle.ClosePrice)
         median_price = (high + low) / 2.0
 
-        fast_result = self._fast_ema.Process(self._fast_ema.CreateValue(candle.OpenTime, median_price))
-        slow_result = self._slow_ema.Process(self._slow_ema.CreateValue(candle.OpenTime, median_price))
+        fast_val = DecimalIndicatorValue(self._fast_ema, median_price, candle.OpenTime)
+        fast_val.IsFinal = True
+        fast_result = self._fast_ema.Process(fast_val)
+        slow_val = DecimalIndicatorValue(self._slow_ema, median_price, candle.OpenTime)
+        slow_val.IsFinal = True
+        slow_result = self._slow_ema.Process(slow_val)
 
         if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
             self._prev_high = high

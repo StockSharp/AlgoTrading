@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
@@ -65,20 +65,34 @@ class slime_mold_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
+        median_price = (candle.HighPrice + candle.LowPrice) / 2
 
-        self._rsi12.Process(DecimalIndicatorValue(self._rsi12, median, candle.OpenTime))
-        self._rsi36.Process(DecimalIndicatorValue(self._rsi36, median, candle.OpenTime))
-        self._rsi108.Process(DecimalIndicatorValue(self._rsi108, median, candle.OpenTime))
-        self._rsi324.Process(DecimalIndicatorValue(self._rsi324, median, candle.OpenTime))
+        mp = Decimal(float(median_price))
+        t = candle.ServerTime
+
+        iv1 = DecimalIndicatorValue(self._rsi12, mp, t)
+        iv1.IsFinal = True
+        r12_val = self._rsi12.Process(iv1)
+
+        iv2 = DecimalIndicatorValue(self._rsi36, mp, t)
+        iv2.IsFinal = True
+        r36_val = self._rsi36.Process(iv2)
+
+        iv3 = DecimalIndicatorValue(self._rsi108, mp, t)
+        iv3.IsFinal = True
+        r108_val = self._rsi108.Process(iv3)
+
+        iv4 = DecimalIndicatorValue(self._rsi324, mp, t)
+        iv4.IsFinal = True
+        r324_val = self._rsi324.Process(iv4)
 
         if not self._rsi12.IsFormed or not self._rsi36.IsFormed or not self._rsi108.IsFormed or not self._rsi324.IsFormed:
             return
 
-        r12 = float(self._rsi12.GetCurrentValue())
-        r36 = float(self._rsi36.GetCurrentValue())
-        r108 = float(self._rsi108.GetCurrentValue())
-        r324 = float(self._rsi324.GetCurrentValue())
+        r12 = float(r12_val.Value)
+        r36 = float(r36_val.Value)
+        r108 = float(r108_val.Value)
+        r324 = float(r324_val.Value)
 
         current = (self.Weight1 * self._norm(r12) +
                    self.Weight2 * self._norm(r36) +

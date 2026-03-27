@@ -115,8 +115,9 @@ class morse_code_strategy(Strategy):
         sl_distance = float(self.StopLossPips) * self._pip_size
 
         self.StartProtection(
-            Unit(tp_distance, UnitTypes.Absolute) if tp_distance > 0.0 else Unit(2000.0, UnitTypes.Absolute),
-            Unit(sl_distance, UnitTypes.Absolute) if sl_distance > 0.0 else Unit(1000.0, UnitTypes.Absolute))
+            Unit(tp_distance, UnitTypes.Absolute),
+            Unit(sl_distance, UnitTypes.Absolute),
+            False, None, None, True)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

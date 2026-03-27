@@ -16,7 +16,7 @@ class two_per_bar_strategy(Strategy):
         self._tp_points = self.Param("TakeProfitPoints", 50).SetNotNegative().SetDisplay("Take Profit", "TP in points", "Risk")
         self._vol_mult = self.Param("VolumeMultiplier", 2).SetGreaterThanZero().SetDisplay("Volume Multiplier", "Multiplier after cycle", "Trading")
         self._max_vol = self.Param("MaxVolume", 10).SetGreaterThanZero().SetDisplay("Max Volume", "Upper limit for lot size", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

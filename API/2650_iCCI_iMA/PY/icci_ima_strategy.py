@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -96,9 +96,9 @@ class icci_ima_strategy(Strategy):
         cci_close_val = float(cci_close_value)
 
         ma_result = self._cci_ma.Process(
-            DecimalIndicatorValue(self._cci_ma, cci_val, candle.OpenTime)
+            DecimalIndicatorValue(self._cci_ma, Decimal(cci_val), candle.OpenTime)
         )
-        ma_val = float(ma_result.GetValue[float]())
+        ma_val = float(ma_result)
 
         if not self._cci.IsFormed or not self._cci_close.IsFormed or not self._cci_ma.IsFormed:
             self._update_history(cci_val, cci_close_val, ma_val)

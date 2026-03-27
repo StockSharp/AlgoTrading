@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class t3_ma_direction_change_strategy(Strategy):
     """Double-smoothed EMA slope direction change with signal delay and StartProtection."""
@@ -20,7 +18,7 @@ class t3_ma_direction_change_strategy(Strategy):
         self._sl_points = self.Param("StopLossPoints", 20.0).SetNotNegative().SetDisplay("Stop Loss (steps)", "SL distance in price steps", "Risk management")
         self._tp_points = self.Param("TakeProfitPoints", 125.0).SetNotNegative().SetDisplay("Take Profit (steps)", "TP distance in price steps", "Risk management")
         self._cooldown = self.Param("SignalCooldownBars", 12).SetGreaterThanZero().SetDisplay("Signal Cooldown", "Bars to wait after entries/exits", "Trading rules")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -54,7 +52,11 @@ class t3_ma_direction_change_strategy(Strategy):
             self.DrawCandles(area, sub)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(self.CreateProtection(self._sl_points.Value, self._tp_points.Value))
+        sl_val = float(self._sl_points.Value)
+        tp_val = float(self._tp_points.Value)
+        sl_unit = Unit(sl_val, UnitTypes.Absolute) if sl_val > 0 else None
+        tp_unit = Unit(tp_val, UnitTypes.Absolute) if tp_val > 0 else None
+        self.StartProtection(sl_unit, tp_unit)
 
     def OnProcess(self, candle):
         if candle.State != CandleStates.Finished:
@@ -63,7 +65,7 @@ class t3_ma_direction_change_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        inp = DecimalIndicatorValue(self._ema_price, candle.ClosePrice)
+        inp = DecimalIndicatorValue(self._ema_price, candle.ClosePrice, candle.OpenTime)
         inp.IsFinal = True
         ema_price_result = self._ema_price.Process(inp)
         ema_smooth_result = self._ema_smooth.Process(ema_price_result)

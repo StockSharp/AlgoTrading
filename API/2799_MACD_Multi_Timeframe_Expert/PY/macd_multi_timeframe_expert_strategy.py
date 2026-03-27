@@ -5,7 +5,8 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
+from System import Decimal
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, CandleIndicatorValue, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -108,10 +109,9 @@ class macd_multi_timeframe_expert_strategy(Strategy):
         return macd
 
     def _try_update_relation(self, macd_indicator, candle):
-        macd_value = macd_indicator.Process(candle)
-
-        if macd_value.IsEmpty:
-            return (False, 0)
+        civ = CandleIndicatorValue(macd_indicator, candle)
+        civ.IsFinal = True
+        macd_value = macd_indicator.Process(civ)
 
         if not macd_indicator.IsFormed:
             return (False, 0)
@@ -119,8 +119,13 @@ class macd_multi_timeframe_expert_strategy(Strategy):
         try:
             macd_val = float(macd_value.Macd)
             signal_val = float(macd_value.Signal)
-        except:
-            return (False, 0)
+        except Exception:
+            # Fallback: use .Value for main line
+            try:
+                macd_val = float(macd_value.Value)
+                signal_val = 0.0
+            except:
+                return (False, 0)
 
         if signal_val > macd_val:
             return (True, 1)

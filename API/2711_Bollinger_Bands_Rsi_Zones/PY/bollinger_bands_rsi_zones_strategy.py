@@ -193,11 +193,19 @@ class bollinger_bands_rsi_zones_strategy(Strategy):
             return
 
         close = float(candle.ClosePrice)
-        t = candle.OpenTime
+        t = candle.ServerTime
 
-        teeth_result = self._teeth.Process(DecimalIndicatorValue(self._teeth, candle.ClosePrice, t))
-        jaws_result = self._jaws.Process(DecimalIndicatorValue(self._jaws, candle.ClosePrice, t))
-        lips_result = self._lips.Process(DecimalIndicatorValue(self._lips, candle.ClosePrice, t))
+        teeth_iv = DecimalIndicatorValue(self._teeth, candle.ClosePrice, t)
+        teeth_iv.IsFinal = True
+        teeth_result = self._teeth.Process(teeth_iv)
+
+        jaws_iv = DecimalIndicatorValue(self._jaws, candle.ClosePrice, t)
+        jaws_iv.IsFinal = True
+        jaws_result = self._jaws.Process(jaws_iv)
+
+        lips_iv = DecimalIndicatorValue(self._lips, candle.ClosePrice, t)
+        lips_iv.IsFinal = True
+        lips_result = self._lips.Process(lips_iv)
         stoch_result = self._stochastic.Process(CandleIndicatorValue(self._stochastic, candle))
 
         if not self._teeth.IsFormed or not self._jaws.IsFormed or not self._lips.IsFormed:

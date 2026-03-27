@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Algo.Indicators import CommodityChannelIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import CommodityChannelIndex, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math
@@ -98,8 +98,10 @@ class gold_warrior02b_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        cci_result = self._cci.Process(candle)
-        cci_value = float(cci_result) if not cci_result.IsEmpty else 0.0
+        civ = CandleIndicatorValue(self._cci, candle)
+        civ.IsFinal = True
+        cci_result = self._cci.Process(civ)
+        cci_value = float(cci_result.Value) if not cci_result.IsEmpty else 0.0
         impulse_value = self._compute_impulse(candle)
 
         if not self._cci.IsFormed or not self._impulse_formed:

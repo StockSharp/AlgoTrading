@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     DecimalIndicatorValue, ExponentialMovingAverage,
@@ -272,6 +272,7 @@ class blau_sm_stochastic_strategy(Strategy):
                 return
 
     def _compute_indicator(self, candle):
+        self._candle_time = candle.ServerTime
         h = float(candle.HighPrice)
         l = float(candle.LowPrice)
 
@@ -323,13 +324,12 @@ class blau_sm_stochastic_strategy(Strategy):
         return (main, sig, True)
 
     def _process_stage(self, indicator, value):
-        result = indicator.Process(DecimalIndicatorValue(indicator, value))
+        iv = DecimalIndicatorValue(indicator, Decimal(float(value)), self._candle_time)
+        iv.IsFinal = True
+        result = indicator.Process(iv)
         if not indicator.IsFormed:
             return None
-        try:
-            return float(result.GetValue[float]())
-        except:
-            return None
+        return float(result.Value)
 
     def _get_applied_price(self, candle):
         o = float(candle.OpenPrice)

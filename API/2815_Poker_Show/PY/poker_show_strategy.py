@@ -7,7 +7,7 @@ from StockSharp.Algo.Indicators import (ExponentialMovingAverage, SimpleMovingAv
     SmoothedMovingAverage, WeightedMovingAverage, DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class poker_show_strategy(Strategy):
@@ -50,12 +50,14 @@ class poker_show_strategy(Strategy):
             return
 
         price = float(candle.ClosePrice)
-        ma_result = self._ma.Process(DecimalIndicatorValue(self._ma, price, candle.OpenTime))
+        div = DecimalIndicatorValue(self._ma, Decimal(float(price)), candle.OpenTime)
+        div.IsFinal = True
+        ma_result = self._ma.Process(div)
 
         if ma_result.IsEmpty or not self._ma.IsFormed:
             return
 
-        ma_value = float(ma_result)
+        ma_value = float(ma_result.Value)
         self._ma_history.append(ma_value)
 
         shift = max(0, self._ma_shift.Value)

@@ -21,7 +21,7 @@ class universal_trailing_manager_strategy(Strategy):
         self._time_minute = self.Param("TimeMinute", 59).SetDisplay("Minute", "Scheduled minute", "Time")
         self._time_buy = self.Param("TimeBuy", True).SetDisplay("Time Buy", "Open buy at time", "Time")
         self._time_sell = self.Param("TimeSell", True).SetDisplay("Time Sell", "Open sell at time", "Time")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from StockSharp.Algo.Indicators import (ExponentialMovingAverage, DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 
 
 class brandy_strategy(Strategy):
@@ -72,17 +72,19 @@ class brandy_strategy(Strategy):
         open_source = float(candle.ClosePrice)
         close_source = float(candle.ClosePrice)
 
-        ma_open_result = self._ma_open_indicator.Process(
-            DecimalIndicatorValue(self._ma_open_indicator, open_source, candle.OpenTime))
-        ma_close_result = self._ma_close_indicator.Process(
-            DecimalIndicatorValue(self._ma_close_indicator, close_source, candle.OpenTime))
+        d1 = DecimalIndicatorValue(self._ma_open_indicator, Decimal(float(open_source)), candle.OpenTime)
+        d1.IsFinal = True
+        ma_open_result = self._ma_open_indicator.Process(d1)
+        d2 = DecimalIndicatorValue(self._ma_close_indicator, Decimal(float(close_source)), candle.OpenTime)
+        d2.IsFinal = True
+        ma_close_result = self._ma_close_indicator.Process(d2)
 
         if (ma_open_result.IsEmpty or ma_close_result.IsEmpty or
                 not self._ma_open_indicator.IsFormed or not self._ma_close_indicator.IsFormed):
             return
 
-        ma_open = float(ma_open_result)
-        ma_close = float(ma_close_result)
+        ma_open = float(ma_open_result.Value)
+        ma_close = float(ma_close_result.Value)
 
         self._enqueue_value(self._ma_open_values, ma_open, self._max_open_queue_size)
         self._enqueue_value(self._ma_close_values, ma_close, self._max_close_queue_size)

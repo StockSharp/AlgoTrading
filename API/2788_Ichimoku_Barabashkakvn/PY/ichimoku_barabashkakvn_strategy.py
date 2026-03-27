@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Ichimoku
+from StockSharp.Algo.Indicators import Ichimoku, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -118,7 +118,9 @@ class ichimoku_barabashkakvn_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        ichimoku_value = self._ichimoku.Process(candle)
+        civ = CandleIndicatorValue(self._ichimoku, candle)
+        civ.IsFinal = True
+        ichimoku_value = self._ichimoku.Process(civ)
 
         if not ichimoku_value.IsFinal:
             return

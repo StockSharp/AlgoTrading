@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from StockSharp.Algo.Indicators import BollingerBands, DoubleExponentialMovingAverage
+from StockSharp.Algo.Indicators import BollingerBands, DoubleExponentialMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan
@@ -50,8 +50,12 @@ class coensio_trader1_v06_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        bb_result = self._bollinger.Process(candle)
-        dema_result = self._dema.Process(candle)
+        civ1 = CandleIndicatorValue(self._bollinger, candle)
+        civ1.IsFinal = True
+        bb_result = self._bollinger.Process(civ1)
+        civ2 = CandleIndicatorValue(self._dema, candle)
+        civ2.IsFinal = True
+        dema_result = self._dema.Process(civ2)
 
         if bb_result.IsEmpty or dema_result.IsEmpty or not self._bollinger.IsFormed or not self._dema.IsFormed:
             self._prev_open = float(candle.OpenPrice)

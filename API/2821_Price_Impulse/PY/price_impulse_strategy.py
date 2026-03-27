@@ -18,7 +18,7 @@ class price_impulse_strategy(Strategy):
         self._history_gap = self.Param("HistoryGap", 15).SetNotNegative().SetDisplay("Gap Candles", "Candles between comparison points", "Signals")
         self._extra_history = self.Param("ExtraHistory", 15).SetNotNegative().SetDisplay("Extra History", "Additional buffer samples", "Signals")
         self._cooldown_seconds = self.Param("CooldownSeconds", 100).SetNotNegative().SetDisplay("Cooldown Seconds", "Min seconds between trades", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle type for price tracking", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle type for price tracking", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

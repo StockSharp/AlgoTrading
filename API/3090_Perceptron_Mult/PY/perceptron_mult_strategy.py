@@ -17,7 +17,7 @@ class perceptron_mult_strategy(Strategy):
         self._slow_period = self.Param("SlowPeriod", 200).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator")
         self._sl_points = self.Param("StopLossPoints", 100).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 200).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

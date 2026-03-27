@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import AverageDirectionalIndex
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -91,7 +91,9 @@ class ytg_adx_level_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        adx_val = self._adx.Process(candle)
+        civ = CandleIndicatorValue(self._adx, candle)
+        civ.IsFinal = True
+        adx_val = self._adx.Process(civ)
         if not self._adx.IsFormed:
             return
         if not adx_val.IsFinal:

@@ -18,7 +18,7 @@ class twenty_200_pips_strategy(Strategy):
         self._first_offset = self.Param("FirstOffset", 7).SetGreaterThanZero().SetDisplay("First Offset", "Older bar index", "Signal")
         self._second_offset = self.Param("SecondOffset", 2).SetGreaterThanZero().SetDisplay("Second Offset", "Newer bar index", "Signal")
         self._delta = self.Param("DeltaPoints", 1).SetGreaterThanZero().SetDisplay("Delta", "Min difference", "Signal")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -36,10 +36,14 @@ class twenty_200_pips_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(self.OnProcess).Start()
 
+        sec = self.Security
+        point_value = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None and sec.PriceStep > 0 else 1.0
         sl = self._sl.Value
         tp = self._tp.Value
-        if sl > 0 or tp > 0:
-            self.StartProtection(self.CreateProtection(sl if sl > 0 else 0, tp if tp > 0 else 0))
+        from StockSharp.Messages import Unit, UnitTypes
+        tp_unit = Unit(tp * point_value, UnitTypes.Absolute) if tp > 0 else None
+        sl_unit = Unit(sl * point_value, UnitTypes.Absolute) if sl > 0 else None
+        self.StartProtection(tp_unit, sl_unit)
 
         area = self.CreateChartArea()
         if area is not None:

@@ -18,7 +18,7 @@ class triple_ma_channel_crossover_strategy(Strategy):
         self._mid_period = self.Param("MiddlePeriod", 15).SetGreaterThanZero().SetDisplay("Middle MA", "Middle period", "MAs")
         self._slow_period = self.Param("SlowPeriod", 30).SetGreaterThanZero().SetDisplay("Slow MA", "Slow period", "MAs")
         self._channel_period = self.Param("ChannelPeriod", 15).SetGreaterThanZero().SetDisplay("Channel", "Highest/Lowest period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

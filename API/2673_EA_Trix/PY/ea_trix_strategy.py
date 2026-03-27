@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
@@ -236,13 +236,18 @@ class ea_trix_strategy(Strategy):
         elif self.Position == 0:
             self._clear_position_state()
 
+    def _make_div(self, ind, val, t):
+        iv = DecimalIndicatorValue(ind, Decimal(val), t)
+        iv.IsFinal = True
+        return float(ind.Process(iv).Value)
+
     def _try_calculate_indicators(self, candle):
         close = float(candle.ClosePrice)
-        t = candle.OpenTime
+        t = candle.ServerTime
 
-        ema1_val = float(self._trix_ema1.Process(DecimalIndicatorValue(self._trix_ema1, close, t)).GetValue[float]())
-        ema2_val = float(self._trix_ema2.Process(DecimalIndicatorValue(self._trix_ema2, ema1_val, t)).GetValue[float]())
-        ema3_val = float(self._trix_ema3.Process(DecimalIndicatorValue(self._trix_ema3, ema2_val, t)).GetValue[float]())
+        ema1_val = self._make_div(self._trix_ema1, close, t)
+        ema2_val = self._make_div(self._trix_ema2, ema1_val, t)
+        ema3_val = self._make_div(self._trix_ema3, ema2_val, t)
 
         if self._prev_third_trix is None:
             self._prev_third_trix = ema3_val
@@ -251,9 +256,9 @@ class ea_trix_strategy(Strategy):
         trix = (ema3_val - self._prev_third_trix) / self._prev_third_trix if self._prev_third_trix != 0 else 0.0
         self._prev_third_trix = ema3_val
 
-        sig1_val = float(self._signal_ema1.Process(DecimalIndicatorValue(self._signal_ema1, close, t)).GetValue[float]())
-        sig2_val = float(self._signal_ema2.Process(DecimalIndicatorValue(self._signal_ema2, sig1_val, t)).GetValue[float]())
-        sig_base = float(self._signal_ema3.Process(DecimalIndicatorValue(self._signal_ema3, sig2_val, t)).GetValue[float]())
+        sig1_val = self._make_div(self._signal_ema1, close, t)
+        sig2_val = self._make_div(self._signal_ema2, sig1_val, t)
+        sig_base = self._make_div(self._signal_ema3, sig2_val, t)
 
         if self._prev_third_signal is None:
             self._prev_third_signal = sig_base

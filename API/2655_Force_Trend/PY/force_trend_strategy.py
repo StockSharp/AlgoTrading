@@ -79,8 +79,8 @@ class force_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        h_val = float(self._highest.Process(CandleIndicatorValue(self._highest, candle)).GetValue[float]())
-        l_val = float(self._lowest.Process(CandleIndicatorValue(self._lowest, candle)).GetValue[float]())
+        h_val = float(self._highest.Process(CandleIndicatorValue(self._highest, candle)))
+        l_val = float(self._lowest.Process(CandleIndicatorValue(self._lowest, candle)))
 
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return

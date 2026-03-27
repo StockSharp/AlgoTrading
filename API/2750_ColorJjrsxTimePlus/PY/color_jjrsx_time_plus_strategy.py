@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, JurikMovingAverage, DecimalIndicatorValue
@@ -101,8 +101,8 @@ class color_jjrsx_time_plus_strategy(Strategy):
 
         sec = self.Security
         ps = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 0.01
-        sl_unit = None
-        tp_unit = None
+        sl_unit = Unit()
+        tp_unit = Unit()
         if self.StopLossPoints > 0:
             sl_unit = Unit(self.StopLossPoints * ps, UnitTypes.Absolute)
         if self.TakeProfitPoints > 0:
@@ -128,13 +128,14 @@ class color_jjrsx_time_plus_strategy(Strategy):
             return
 
         rsi_v = float(rsi_value)
-        smooth_val = self._smoother.Process(
-            DecimalIndicatorValue(self._smoother, rsi_v, candle.CloseTime))
+        iv = DecimalIndicatorValue(self._smoother, Decimal(rsi_v), candle.ServerTime)
+        iv.IsFinal = True
+        smooth_val = self._smoother.Process(iv)
 
         if not self._smoother.IsFormed:
             return
 
-        sv = float(smooth_val)
+        sv = float(smooth_val.Value)
         self._smoothed_values.append(sv)
 
         required = self.SignalShift + 3

@@ -6,12 +6,12 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class pending_order_grid_strategy(Strategy):
     def __init__(self):
         super(pending_order_grid_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
         self._sl_points = self.Param("StopLossPoints", 200).SetNotNegative().SetDisplay("Stop Loss (steps)", "Stop loss distance", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 200).SetNotNegative().SetDisplay("Take Profit (steps)", "Take profit distance", "Risk")
         self._cooldown = self.Param("CooldownBars", 50).SetDisplay("Cooldown", "Bars between trades", "General")

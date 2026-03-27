@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import VortexIndicator
+from StockSharp.Algo.Indicators import VortexIndicator, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -127,7 +127,7 @@ class vortex_indicator_duplex_strategy(Strategy):
         if self._check_risk_management(float(candle.ClosePrice)):
             return
 
-        value = self._long_vortex.Process(candle)
+        value = self._long_vortex.Process(CandleIndicatorValue(self._long_vortex, candle))
 
         try:
             vi_plus = float(value.PlusVi)
@@ -169,7 +169,7 @@ class vortex_indicator_duplex_strategy(Strategy):
         if self._check_risk_management(float(candle.ClosePrice)):
             return
 
-        value = self._short_vortex.Process(candle)
+        value = self._short_vortex.Process(CandleIndicatorValue(self._short_vortex, candle))
 
         try:
             vi_plus = float(value.PlusVi)
