@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class sidus_v1_strategy(Strategy):
     def __init__(self):
@@ -23,7 +21,7 @@ class sidus_v1_strategy(Strategy):
         self._buy_rsi_thresh = self.Param("BuyRsiThreshold", 45.0).SetDisplay("Buy RSI Threshold", "Max RSI for buy", "Trading")
         self._sell_diff = self.Param("SellDifferenceThreshold", 100.0).SetDisplay("Sell EMA Threshold", "Min fast-slow EMA diff for sell", "Trading")
         self._sell_rsi_thresh = self.Param("SellRsiThreshold", 55.0).SetDisplay("Sell RSI Threshold", "Min RSI for sell", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -49,6 +47,10 @@ class sidus_v1_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(fast_ema, slow_ema, fast_ema2, slow_ema2, rsi, rsi2, self.OnProcess).Start()
 
+        tp = Unit(500.0, UnitTypes.Absolute)
+        sl = Unit(500.0, UnitTypes.Absolute)
+        self.StartProtection(tp, sl)
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, sub)
@@ -60,17 +62,20 @@ class sidus_v1_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         diff_buy = fast_val - slow_val
         diff_sell = fast2_val - slow2_val
 
         if diff_buy < self._buy_diff.Value and rsi_val < self._buy_rsi_thresh.Value and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
+            self.BuyMarket(self.Volume)
         elif diff_sell > self._sell_diff.Value and rsi2_val > self._sell_rsi_thresh.Value and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(self.Position)
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return sidus_v1_strategy()

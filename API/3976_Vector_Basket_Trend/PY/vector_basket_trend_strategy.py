@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class vector_basket_trend_strategy(Strategy):
     """Smoothed MA trend strategy (single instrument simplification of multi-pair basket)."""
@@ -16,7 +14,7 @@ class vector_basket_trend_strategy(Strategy):
         super(vector_basket_trend_strategy, self).__init__()
         self._tp = self.Param("TakeProfitPoints", 500).SetDisplay("Take Profit", "TP distance", "Risk")
         self._sl = self.Param("StopLossPoints", 300).SetDisplay("Stop Loss", "SL distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -39,10 +37,7 @@ class vector_basket_trend_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(fast, slow, self.OnProcess).Start()
 
-        sl = self._sl.Value
-        tp = self._tp.Value
-        if sl > 0 or tp > 0:
-            self.StartProtection(self.CreateProtection(sl if sl > 0 else 0, tp if tp > 0 else 0))
+        self.StartProtection(None, None)
 
         area = self.CreateChartArea()
         if area is not None:

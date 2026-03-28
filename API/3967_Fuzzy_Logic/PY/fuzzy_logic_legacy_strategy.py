@@ -12,6 +12,7 @@ from StockSharp.Algo.Indicators import (
     RelativeStrengthIndex,
     SmoothedMovingAverage,
     SimpleMovingAverage,
+    DecimalIndicatorValue,
 )
 
 class fuzzy_logic_legacy_strategy(Strategy):
@@ -99,7 +100,8 @@ class fuzzy_logic_legacy_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(self._williams_indicator, self._rsi_indicator, self.ProcessCandle).Start()
 
-        step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        step = float(ps) if ps is not None else 1.0
         sl_pts = float(self.StopLossPoints)
         sl = Unit(sl_pts * step, UnitTypes.Absolute) if sl_pts > 0 else None
         trailing = float(self.TrailingStopPoints) > 0
@@ -112,32 +114,44 @@ class fuzzy_logic_legacy_strategy(Strategy):
 
         hl2 = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
 
-        jaw_value = self._jaw.Process(hl2, candle.OpenTime, True)
-        teeth_value = self._teeth.Process(hl2, candle.OpenTime, True)
-        lips_value = self._lips.Process(hl2, candle.OpenTime, True)
-        ao_fast_value = self._ao_fast.Process(hl2, candle.OpenTime, True)
-        ao_slow_value = self._ao_slow.Process(hl2, candle.OpenTime, True)
+        jaw_input = DecimalIndicatorValue(self._jaw, hl2, candle.OpenTime)
+        jaw_input.IsFinal = True
+        jaw_value = self._jaw.Process(jaw_input)
+        teeth_input = DecimalIndicatorValue(self._teeth, hl2, candle.OpenTime)
+        teeth_input.IsFinal = True
+        teeth_value = self._teeth.Process(teeth_input)
+        lips_input = DecimalIndicatorValue(self._lips, hl2, candle.OpenTime)
+        lips_input.IsFinal = True
+        lips_value = self._lips.Process(lips_input)
+        ao_fast_input = DecimalIndicatorValue(self._ao_fast, hl2, candle.OpenTime)
+        ao_fast_input.IsFinal = True
+        ao_fast_value = self._ao_fast.Process(ao_fast_input)
+        ao_slow_input = DecimalIndicatorValue(self._ao_slow, hl2, candle.OpenTime)
+        ao_slow_input.IsFinal = True
+        ao_slow_value = self._ao_slow.Process(ao_slow_input)
 
         if (not jaw_value.IsFinal or not teeth_value.IsFinal or not lips_value.IsFinal
                 or not ao_fast_value.IsFinal or not ao_slow_value.IsFinal):
             self._update_demarker(candle)
             return
 
-        jaw_shifted = self._update_shift_buffer(self._jaw_buffer, 8, jaw_value.GetValue[float](), 'jaw')
-        teeth_shifted = self._update_shift_buffer(self._teeth_buffer, 5, teeth_value.GetValue[float](), 'teeth')
-        lips_shifted = self._update_shift_buffer(self._lips_buffer, 3, lips_value.GetValue[float](), 'lips')
+        jaw_shifted = self._update_shift_buffer(self._jaw_buffer, 8, float(jaw_value), 'jaw')
+        teeth_shifted = self._update_shift_buffer(self._teeth_buffer, 5, float(teeth_value), 'teeth')
+        lips_shifted = self._update_shift_buffer(self._lips_buffer, 3, float(lips_value), 'lips')
 
         if jaw_shifted is None or teeth_shifted is None or lips_shifted is None:
             self._update_demarker(candle)
             return
 
-        ao = float(ao_fast_value.GetValue[float]()) - float(ao_slow_value.GetValue[float]())
-        ac_average_value = self._ac_average.Process(ao, candle.OpenTime, True)
+        ao = float(ao_fast_value) - float(ao_slow_value)
+        ac_avg_input = DecimalIndicatorValue(self._ac_average, ao, candle.OpenTime)
+        ac_avg_input.IsFinal = True
+        ac_average_value = self._ac_average.Process(ac_avg_input)
         if not ac_average_value.IsFinal:
             self._update_demarker(candle)
             return
 
-        ac = ao - float(ac_average_value.GetValue[float]())
+        ac = ao - float(ac_average_value)
         demarker = self._update_demarker(candle)
         if demarker is None:
             self._update_ac_history(ac)
@@ -152,8 +166,8 @@ class fuzzy_logic_legacy_strategy(Strategy):
             return
 
         sum_gator = abs(jaw_shifted - teeth_shifted) + abs(teeth_shifted - lips_shifted)
-        wpr = float(williams_value.GetValue[float]())
-        rsi = float(rsi_value.GetValue[float]())
+        wpr = float(williams_value)
+        rsi = float(rsi_value)
         decision = self._calculate_decision(sum_gator, wpr, demarker, rsi)
 
         if self.IsFormedAndOnlineAndAllowTrading() and self.Position == 0:

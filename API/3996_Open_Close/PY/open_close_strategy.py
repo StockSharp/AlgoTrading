@@ -7,15 +7,13 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class open_close_strategy(Strategy):
     def __init__(self):
         super(open_close_strategy, self).__init__()
         self._sl_points = self.Param("StopLossPoints", 500.0).SetNotNegative().SetDisplay("Stop Loss", "Stop loss in absolute points", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 500.0).SetNotNegative().SetDisplay("Take Profit", "Take profit in absolute points", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Time-frame for open/close pattern.", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Time-frame for open/close pattern.", "Data")
         self.Volume = 1
 
     @property

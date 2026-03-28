@@ -109,9 +109,10 @@ class master_mind2_strategy(Strategy):
             return
 
         signal = float(signal)
-        wpr = float(williams_value.GetValue[float]())
+        wpr = float(williams_value)
 
-        step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        step = float(ps) if ps is not None else 1.0
         if step <= 0:
             step = 1.0
 

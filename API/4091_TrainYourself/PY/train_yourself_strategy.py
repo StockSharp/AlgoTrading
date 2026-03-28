@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class train_yourself_strategy(Strategy):
     """Donchian channel breakout: arm inside channel, trade on breakout, exit at midline."""
@@ -16,7 +14,7 @@ class train_yourself_strategy(Strategy):
         super(train_yourself_strategy, self).__init__()
         self._channel_length = self.Param("ChannelLength", 20).SetDisplay("Channel Length", "Highest/Lowest period", "Channel")
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR Length", "ATR for stop distance", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -114,8 +114,12 @@ class expert_master_eurusd_strategy(Strategy):
         macd_main = None
         macd_signal = None
         if hasattr(indicator_value, 'Macd') and hasattr(indicator_value, 'Signal'):
-            macd_main = float(indicator_value.Macd)
-            macd_signal = float(indicator_value.Signal)
+            m = indicator_value.Macd
+            s = indicator_value.Signal
+            if m is not None:
+                macd_main = float(m)
+            if s is not None:
+                macd_signal = float(s)
 
         if macd_main is None or macd_signal is None:
             return
@@ -178,11 +182,11 @@ class expert_master_eurusd_strategy(Strategy):
                     self._reset_long()
         elif self.Position > 0:
             if mac1 < mac2:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 self._reset_long()
         elif self.Position < 0:
             if mac1 > mac2:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 self._reset_short()
 
     def _manage_trailing(self, candle):
@@ -205,7 +209,7 @@ class expert_master_eurusd_strategy(Strategy):
                     self._long_trailing_stop = new_stop
 
             if self._long_trailing_stop is not None and low <= self._long_trailing_stop:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 self._reset_long()
                 return True
 
@@ -220,7 +224,7 @@ class expert_master_eurusd_strategy(Strategy):
                     self._short_trailing_stop = new_stop
 
             if self._short_trailing_stop is not None and high >= self._short_trailing_stop:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 self._reset_short()
                 return True
 

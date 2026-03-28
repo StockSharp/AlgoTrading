@@ -108,6 +108,9 @@ class master_mind_triple_wpr_strategy(Strategy):
         is_overbought = (wpr26_value >= overbought and wpr27_value >= overbought and
                          wpr29_value >= overbought and wpr30_value >= overbought)
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if is_oversold:
             self._open_long(candle)
         elif is_overbought:
@@ -157,7 +160,7 @@ class master_mind_triple_wpr_strategy(Strategy):
                 self._reset_long_state()
 
         elif self.Position < 0:
-            short_volume = abs(self.Position)
+            short_volume = Math.Abs(self.Position)
             if self._short_stop_price is not None and high_price >= self._short_stop_price:
                 self.BuyMarket(short_volume)
                 self._reset_short_state()

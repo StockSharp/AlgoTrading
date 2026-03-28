@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AwesomeOscillator
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AwesomeOscillator, DecimalIndicatorValue
 
 class ravi_iao_strategy(Strategy):
     def __init__(self):
@@ -67,32 +67,30 @@ class ravi_iao_strategy(Strategy):
         self._ao_average.Length = 5
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx([fast_ma, slow_ma, ao], self.ProcessCandle).Start()
+        subscription.BindEx(fast_ma, slow_ma, ao, self.ProcessCandle).Start()
 
         tp = Unit(float(self.TakeProfitPoints), UnitTypes.Absolute) if float(self.TakeProfitPoints) > 0 else None
         sl = Unit(float(self.StopLossPoints), UnitTypes.Absolute) if float(self.StopLossPoints) > 0 else None
         self.StartProtection(tp, sl)
 
-    def ProcessCandle(self, candle, values):
+    def ProcessCandle(self, candle, fast_val, slow_val, ao_val):
         if candle.State != CandleStates.Finished:
             return
-
-        fast_val = values[0]
-        slow_val = values[1]
-        ao_val = values[2]
 
         if fast_val.IsEmpty or slow_val.IsEmpty or ao_val.IsEmpty:
             return
 
-        fast_value = float(fast_val.GetValue[float]())
-        slow_value = float(slow_val.GetValue[float]())
-        ao_value = float(ao_val.GetValue[float]())
+        fast_value = float(fast_val)
+        slow_value = float(slow_val)
+        ao_value = float(ao_val)
 
-        ao_avg_result = self._ao_average.Process(ao_val)
+        ao_input = DecimalIndicatorValue(self._ao_average, ao_value, candle.OpenTime)
+        ao_input.IsFinal = True
+        ao_avg_result = self._ao_average.Process(ao_input)
         if ao_avg_result.IsEmpty:
             return
 
-        ao_avg_value = float(ao_avg_result.GetValue[float]())
+        ao_avg_value = float(ao_avg_result)
         ac = ao_value - ao_avg_value
 
         if slow_value == 0:

@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class stat_euclidean_metric_strategy(Strategy):
     """MACD reversal with trend MA filter."""
@@ -17,7 +15,7 @@ class stat_euclidean_metric_strategy(Strategy):
         self._fast_length = self.Param("FastLength", 12).SetDisplay("Fast Length", "Fast EMA for MACD", "Indicators")
         self._slow_length = self.Param("SlowLength", 26).SetDisplay("Slow Length", "Slow EMA for MACD", "Indicators")
         self._trend_ma_length = self.Param("TrendMaLength", 50).SetDisplay("Trend MA Length", "Period for trend filter", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

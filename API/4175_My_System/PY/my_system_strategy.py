@@ -79,10 +79,6 @@ class my_system_strategy(Strategy):
                 self.BuyMarket()
                 self._entry_price = 0.0
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_rsi = rv
-            return
-
         if self.Position == 0:
             if rv > 55 and self._prev_rsi <= 55 and close > ev:
                 self._entry_price = close

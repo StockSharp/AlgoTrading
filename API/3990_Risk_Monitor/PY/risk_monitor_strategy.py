@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class risk_monitor_strategy(Strategy):
     def __init__(self):
@@ -17,7 +15,7 @@ class risk_monitor_strategy(Strategy):
         self._slow_period = self.Param("SlowPeriod", 30).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._tp_points = self.Param("TakeProfitPoints", 500.0).SetNotNegative().SetDisplay("Take Profit", "TP distance", "Risk")
         self._sl_points = self.Param("StopLossPoints", 500.0).SetNotNegative().SetDisplay("Stop Loss", "SL distance", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -44,6 +42,12 @@ class risk_monitor_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(fast_ema, slow_ema, self.OnProcess).Start()
 
+        tp_val = float(self._tp_points.Value)
+        sl_val = float(self._sl_points.Value)
+        tp = Unit(tp_val, UnitTypes.Absolute) if tp_val > 0 else None
+        sl = Unit(sl_val, UnitTypes.Absolute) if sl_val > 0 else None
+        self.StartProtection(tp, sl)
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, sub)
@@ -55,59 +59,30 @@ class risk_monitor_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._prev_fast is None or self._prev_slow is None:
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
+        pf = self._prev_fast
+        ps = self._prev_slow
+        self._prev_fast = fast_val
+        self._prev_slow = slow_val
+
+        if pf is None or ps is None:
             return
 
-        close = candle.ClosePrice
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Check SL/TP for existing positions
-        if self.Position > 0 and self._entry_price > 0:
-            if self._sl_points.Value > 0 and close <= self._entry_price - self._sl_points.Value:
-                self.SellMarket()
-                self._entry_price = 0
-                self._prev_fast = fast_val
-                self._prev_slow = slow_val
-                return
-            if self._tp_points.Value > 0 and close >= self._entry_price + self._tp_points.Value:
-                self.SellMarket()
-                self._entry_price = 0
-                self._prev_fast = fast_val
-                self._prev_slow = slow_val
-                return
-        elif self.Position < 0 and self._entry_price > 0:
-            if self._sl_points.Value > 0 and close >= self._entry_price + self._sl_points.Value:
-                self.BuyMarket()
-                self._entry_price = 0
-                self._prev_fast = fast_val
-                self._prev_slow = slow_val
-                return
-            if self._tp_points.Value > 0 and close <= self._entry_price - self._tp_points.Value:
-                self.BuyMarket()
-                self._entry_price = 0
-                self._prev_fast = fast_val
-                self._prev_slow = slow_val
-                return
-
-        prev_diff = self._prev_fast - self._prev_slow
+        prev_diff = pf - ps
         curr_diff = fast_val - slow_val
 
         if prev_diff <= 0 and curr_diff > 0:
             if self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
             if self.Position == 0:
-                self.BuyMarket()
-                self._entry_price = close
+                self.BuyMarket(self.Volume)
         elif prev_diff >= 0 and curr_diff < 0:
             if self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(self.Position)
             if self.Position == 0:
-                self.SellMarket()
-                self._entry_price = close
-
-        self._prev_fast = fast_val
-        self._prev_slow = slow_val
+                self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return risk_monitor_strategy()

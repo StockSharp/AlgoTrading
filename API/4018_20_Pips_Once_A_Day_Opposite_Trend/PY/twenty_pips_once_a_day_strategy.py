@@ -353,9 +353,9 @@ class twenty_pips_once_a_day_strategy(Strategy):
         if direction == 0:
             return
 
-        volume = abs(self.Position)
+        volume = Math.Abs(self.Position)
         if volume <= 0:
-            volume = abs(self._entry_volume)
+            volume = Math.Abs(self._entry_volume)
 
         if volume <= 0:
             self._reset_position_state()

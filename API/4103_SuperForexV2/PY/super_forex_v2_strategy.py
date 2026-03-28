@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class super_forex_v2_strategy(Strategy):
     """RSI threshold reversal with ATR trailing stop."""
@@ -18,7 +16,7 @@ class super_forex_v2_strategy(Strategy):
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR Length", "ATR period for trailing", "Indicators")
         self._upper_level = self.Param("UpperLevel", 62.0).SetDisplay("RSI Upper", "Overbought for shorts", "Signals")
         self._lower_level = self.Param("LowerLevel", 42.0).SetDisplay("RSI Lower", "Oversold for longs", "Signals")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

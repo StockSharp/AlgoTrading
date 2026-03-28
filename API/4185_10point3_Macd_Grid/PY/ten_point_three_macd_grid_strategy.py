@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class ten_point_three_macd_grid_strategy(Strategy):
     """EMA crossover with RSI filter and ATR stops."""
@@ -18,7 +16,7 @@ class ten_point_three_macd_grid_strategy(Strategy):
         self._slow_ema = self.Param("SlowEmaLength", 26).SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14).SetDisplay("RSI Length", "RSI period", "Indicators")
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR Length", "ATR period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -54,7 +54,7 @@ class error_ea_strategy(Strategy):
         sl = self._stop_loss_points.Value
         tp_unit = Unit(float(tp), UnitTypes.Absolute) if tp > 0 else None
         sl_unit = Unit(float(sl), UnitTypes.Absolute) if sl > 0 else None
-        self.StartProtection(tp_unit, sl_unit)
+        self.StartProtection(tp_unit, sl_unit, useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
@@ -100,7 +100,7 @@ class error_ea_strategy(Strategy):
 
     def _handle_long_signal(self):
         if self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(Math.Abs(self.Position))
             self._short_trades = 0
 
         if self._long_trades >= self._max_trades.Value:
@@ -111,7 +111,7 @@ class error_ea_strategy(Strategy):
 
     def _handle_short_signal(self):
         if self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(Math.Abs(self.Position))
             self._long_trades = 0
 
         if self._short_trades >= self._max_trades.Value:

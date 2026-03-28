@@ -15,7 +15,7 @@ class rnd_trade_random_hold_strategy(Strategy):
         super(rnd_trade_random_hold_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 14).SetDisplay("EMA Period", "EMA filter", "Indicators")
         self._momentum_period = self.Param("MomentumPeriod", 10).SetDisplay("Momentum", "Momentum period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -45,6 +45,8 @@ class rnd_trade_random_hold_strategy(Strategy):
     def OnProcess(self, candle, ema_val, mom_val):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         close = candle.ClosePrice
         if not self._has_prev:
@@ -57,10 +59,12 @@ class rnd_trade_random_hold_strategy(Strategy):
             return
 
         if close > ema_val and self._prev_mom <= 0 and mom_val > 0 and self.Position <= 0:
-            self.BuyMarket()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
             self._cooldown = 2
         elif close < ema_val and self._prev_mom >= 0 and mom_val < 0 and self.Position >= 0:
-            self.SellMarket()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
             self._cooldown = 2
 
         self._prev_mom = mom_val

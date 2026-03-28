@@ -195,20 +195,29 @@ class day_trading_impulse_strategy(Strategy):
         if not sar_value.IsFinal or not macd_value.IsFinal or not stochastic_value.IsFinal or not momentum_value.IsFinal:
             return
 
-        sar = float(sar_value)
+        try:
+            sar = float(sar_value)
+        except:
+            sar = float(sar_value.Value)
         previous_sar = self._previous_sar
         self._previous_sar = sar
 
         if previous_sar is None:
             return
 
-        mom = float(momentum_value)
+        try:
+            mom = float(momentum_value)
+        except:
+            mom = float(momentum_value.Value)
         close_price = float(candle.ClosePrice)
 
-        macd_val = float(macd_value.Macd) if hasattr(macd_value, 'Macd') else 0.0
-        signal_val = float(macd_value.Signal) if hasattr(macd_value, 'Signal') else 0.0
+        macd_raw = macd_value.Macd if hasattr(macd_value, 'Macd') else None
+        signal_raw = macd_value.Signal if hasattr(macd_value, 'Signal') else None
+        macd_val = float(macd_raw) if macd_raw is not None else 0.0
+        signal_val = float(signal_raw) if signal_raw is not None else 0.0
 
-        stoch_k = float(stochastic_value.K) if hasattr(stochastic_value, 'K') else 0.0
+        stoch_k_raw = stochastic_value.K if hasattr(stochastic_value, 'K') else None
+        stoch_k = float(stoch_k_raw) if stoch_k_raw is not None else 0.0
 
         mom_neutral = float(self.MomentumNeutralLevel)
         stoch_buy = float(self.StochasticBuyThreshold)
@@ -221,7 +230,7 @@ class day_trading_impulse_strategy(Strategy):
 
         if self.Position > 0:
             if sell_signal:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 self._reset_long_state()
                 closed_position = True
             elif self._handle_long_risk(candle):
@@ -229,7 +238,7 @@ class day_trading_impulse_strategy(Strategy):
 
         elif self.Position < 0:
             if buy_signal:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 self._reset_short_state()
                 closed_position = True
             elif self._handle_short_risk(candle):
@@ -257,16 +266,16 @@ class day_trading_impulse_strategy(Strategy):
                 self._short_take_profit = entry_price - self._convert_points(tp) if tp > 0 else None
 
     def _handle_long_risk(self, candle):
-        if abs(self.Position) <= 0:
+        if Math.Abs(self.Position) <= 0:
             return False
 
         if self._long_take_profit is not None and float(candle.HighPrice) >= self._long_take_profit:
-            self.SellMarket(abs(self.Position))
+            self.SellMarket(Math.Abs(self.Position))
             self._reset_long_state()
             return True
 
         if self._long_stop_price is not None and float(candle.LowPrice) <= self._long_stop_price:
-            self.SellMarket(abs(self.Position))
+            self.SellMarket(Math.Abs(self.Position))
             self._reset_long_state()
             return True
 
@@ -281,16 +290,16 @@ class day_trading_impulse_strategy(Strategy):
         return False
 
     def _handle_short_risk(self, candle):
-        if abs(self.Position) <= 0:
+        if Math.Abs(self.Position) <= 0:
             return False
 
         if self._short_take_profit is not None and float(candle.LowPrice) <= self._short_take_profit:
-            self.BuyMarket(abs(self.Position))
+            self.BuyMarket(Math.Abs(self.Position))
             self._reset_short_state()
             return True
 
         if self._short_stop_price is not None and float(candle.HighPrice) >= self._short_stop_price:
-            self.BuyMarket(abs(self.Position))
+            self.BuyMarket(Math.Abs(self.Position))
             self._reset_short_state()
             return True
 

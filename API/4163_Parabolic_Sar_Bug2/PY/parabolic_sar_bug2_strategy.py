@@ -7,13 +7,11 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class parabolic_sar_bug2_strategy(Strategy):
     def __init__(self):
         super(parabolic_sar_bug2_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
         self._fast_ema_length = self.Param("FastEmaLength", 10).SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_ema_length = self.Param("SlowEmaLength", 30).SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14).SetDisplay("RSI Length", "RSI period", "Indicators")

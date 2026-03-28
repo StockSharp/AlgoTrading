@@ -130,7 +130,8 @@ class she_kanskigor_daily_strategy(Strategy):
         if self.Position == 0:
             return
 
-        step = float(self.Security.PriceStep) if self.Security is not None else 0.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        step = float(ps) if ps is not None else 0.0
         if step <= 0 or self._entry_price == 0:
             return
 

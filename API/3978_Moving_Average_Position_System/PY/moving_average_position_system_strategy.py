@@ -90,7 +90,8 @@ class moving_average_position_system_strategy(Strategy):
 
         self._current_volume = float(self.InitialVolume)
         self.Volume = self._current_volume
-        self._price_step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        self._price_step = float(ps) if ps is not None else 1.0
 
         ma = WeightedMovingAverage()
         ma.Length = self.MaPeriod

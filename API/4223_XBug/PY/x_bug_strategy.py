@@ -37,6 +37,8 @@ class x_bug_strategy(Strategy):
 
     def OnStarted(self, time):
         super(x_bug_strategy, self).OnStarted(time)
+        from System import Decimal
+        self.Volume = Decimal(0.001)
         self._prev_fast = None
         self._prev_slow = None
         self._slow_ma = SimpleMovingAverage()
@@ -47,8 +49,11 @@ class x_bug_strategy(Strategy):
     def ProcessCandle(self, candle, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        sv = float(slow_val)
-        fast_value = float(candle.ClosePrice)
+        if not self._slow_ma.IsFormed:
+            return
+        from System import Decimal
+        sv = Decimal(float(slow_val))
+        fast_value = candle.ClosePrice
         if self._prev_fast is None or self._prev_slow is None:
             self._prev_fast = fast_value
             self._prev_slow = sv

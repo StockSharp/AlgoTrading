@@ -320,7 +320,8 @@ class divergence_trader_classic_strategy(Strategy):
         return hour >= start or hour < stop
 
     def _calculate_pip_size(self):
-        step = float(self.Security.PriceStep) if self.Security is not None else 0.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        step = float(ps) if ps is not None else 0.0
         return step if step > 0 else 0.0001
 
     def _ensure_pip_size(self):

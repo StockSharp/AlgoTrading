@@ -53,6 +53,8 @@ class hbs_system_strategy(Strategy):
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         fast = float(fast_val)
         slow = float(slow_val)
@@ -70,10 +72,12 @@ class hbs_system_strategy(Strategy):
             return
 
         if self._prev_fast <= self._prev_slow and fast > slow and self.Position <= 0:
-            self.BuyMarket()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
             self._cooldown = 2
         elif self._prev_fast >= self._prev_slow and fast < slow and self.Position >= 0:
-            self.SellMarket()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
             self._cooldown = 2
 
         self._prev_fast = fast

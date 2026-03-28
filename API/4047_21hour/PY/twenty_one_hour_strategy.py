@@ -6,8 +6,6 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class twenty_one_hour_strategy(Strategy):
     """Time-based breakout: enter on breakout from previous candle range, close at stop hour."""
@@ -15,7 +13,7 @@ class twenty_one_hour_strategy(Strategy):
         super(twenty_one_hour_strategy, self).__init__()
         self._start_hour = self.Param("StartHour", 10).SetDisplay("Start Hour", "Hour to look for breakout entries", "Schedule")
         self._stop_hour = self.Param("StopHour", 22).SetDisplay("Stop Hour", "Hour to close positions", "Schedule")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

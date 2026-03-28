@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import CandleStates, Sides
+from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class altarius_rsi_stochastic_dual_strategy(Strategy):
     """
@@ -50,7 +48,7 @@ class altarius_rsi_stochastic_dual_strategy(Strategy):
             .SetDisplay("Exit Stochastic High", "Slow stochastic signal level confirming long exit", "Exits")
         self._exit_stoch_low = self.Param("ExitStochasticLow", 30.0) \
             .SetDisplay("Exit Stochastic Low", "Slow stochastic signal level confirming short exit", "Exits")
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candles used for calculations", "Market Data")
 
         self._prev_slow_signal = 0.0
@@ -97,13 +95,18 @@ class altarius_rsi_stochastic_dual_strategy(Strategy):
 
         rsi = float(rsi_value)
 
-        slow_k = get_stoch_k(slow_value)
-        slow_d = get_stoch_d(slow_value)
-        fast_k = get_stoch_k(fast_value)
-        fast_d = get_stoch_d(fast_value)
+        slow_k_raw = slow_value.K if hasattr(slow_value, 'K') else None
+        slow_d_raw = slow_value.D if hasattr(slow_value, 'D') else None
+        fast_k_raw = fast_value.K if hasattr(fast_value, 'K') else None
+        fast_d_raw = fast_value.D if hasattr(fast_value, 'D') else None
 
-        if slow_k is None or slow_d is None or fast_k is None or fast_d is None:
+        if slow_k_raw is None or slow_d_raw is None or fast_k_raw is None or fast_d_raw is None:
             return
+
+        slow_k = float(slow_k_raw)
+        slow_d = float(slow_d_raw)
+        fast_k = float(fast_k_raw)
+        fast_d = float(fast_d_raw)
 
         if not self._has_prev_slow_signal:
             self._prev_slow_signal = slow_d

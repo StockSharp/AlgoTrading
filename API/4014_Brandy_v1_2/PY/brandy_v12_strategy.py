@@ -97,6 +97,9 @@ class brandy_v12_strategy(Strategy):
         if self._manage_existing_position(candle, long_prev, long_shifted):
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self.Position == 0:
             bullish = long_prev > long_shifted and short_prev > short_shifted
             bearish = long_prev < long_shifted and short_prev < short_shifted
@@ -118,11 +121,11 @@ class brandy_v12_strategy(Strategy):
                 return True
         elif self.Position < 0:
             if long_prev > long_shifted:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 self._reset_position_state()
                 return True
             if self._update_short_stops(candle):
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 self._reset_position_state()
                 return True
         return False

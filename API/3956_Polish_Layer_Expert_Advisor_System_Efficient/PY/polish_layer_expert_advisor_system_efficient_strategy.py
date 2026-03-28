@@ -13,6 +13,8 @@ from StockSharp.Algo.Indicators import (
     StochasticOscillator,
     DeMarker,
     WilliamsR,
+    DecimalIndicatorValue,
+    CandleIndicatorValue,
 )
 
 class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
@@ -165,12 +167,22 @@ class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
         slow_price = float(slow_price)
         rsi_val = float(rsi)
 
-        fast_rsi_result = self._short_rsi_average.Process(rsi, candle.OpenTime, True)
-        slow_rsi_result = self._long_rsi_average.Process(rsi, candle.OpenTime, True)
+        fast_rsi_input = DecimalIndicatorValue(self._short_rsi_average, rsi, candle.OpenTime)
+        fast_rsi_input.IsFinal = True
+        fast_rsi_result = self._short_rsi_average.Process(fast_rsi_input)
+        slow_rsi_input = DecimalIndicatorValue(self._long_rsi_average, rsi, candle.OpenTime)
+        slow_rsi_input.IsFinal = True
+        slow_rsi_result = self._long_rsi_average.Process(slow_rsi_input)
 
-        stochastic_result = self._stochastic.Process(candle)
-        demarker_result = self._de_marker.Process(candle)
-        williams_result = self._williams.Process(candle)
+        stoch_input = CandleIndicatorValue(self._stochastic, candle)
+        stoch_input.IsFinal = True
+        stochastic_result = self._stochastic.Process(stoch_input)
+        dm_input = CandleIndicatorValue(self._de_marker, candle)
+        dm_input.IsFinal = True
+        demarker_result = self._de_marker.Process(dm_input)
+        wr_input = CandleIndicatorValue(self._williams, candle)
+        wr_input.IsFinal = True
+        williams_result = self._williams.Process(wr_input)
 
         if not self._stochastic.IsFormed or not self._de_marker.IsFormed or not self._williams.IsFormed:
             return
@@ -178,8 +190,8 @@ class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
         if not self._short_rsi_average.IsFormed or not self._long_rsi_average.IsFormed:
             return
 
-        fast_rsi = float(fast_rsi_result.GetValue[float]())
-        slow_rsi = float(slow_rsi_result.GetValue[float]())
+        fast_rsi = float(fast_rsi_result)
+        slow_rsi = float(slow_rsi_result)
 
         stoch_val = stochastic_result
         current_stochastic_main = stoch_val.K
@@ -191,8 +203,8 @@ class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
         current_stochastic_main = float(current_stochastic_main)
         current_stochastic_signal = float(current_stochastic_signal)
 
-        demarker = float(demarker_result.GetValue[float]())
-        williams = float(williams_result.GetValue[float]())
+        demarker = float(demarker_result)
+        williams = float(williams_result)
 
         if (self._previous_stochastic_main is None or
             self._previous_stochastic_signal is None or

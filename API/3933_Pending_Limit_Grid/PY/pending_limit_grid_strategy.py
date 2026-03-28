@@ -14,7 +14,7 @@ class pending_limit_grid_strategy(Strategy):
     def __init__(self):
         super(pending_limit_grid_strategy, self).__init__()
         self._channel_period = self.Param("ChannelPeriod", 24).SetDisplay("Channel Period", "Grid channel lookback", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -53,14 +53,13 @@ class pending_limit_grid_strategy(Strategy):
             return
 
         if self._prev_close <= self._prev_mid and close > mid and self.Position <= 0:
-
-
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
 
-
         elif self._prev_close >= self._prev_mid and close < mid and self.Position >= 0:
-
-
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
 
         self._prev_close = close

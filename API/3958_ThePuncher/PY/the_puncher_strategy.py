@@ -24,7 +24,7 @@ class the_puncher_strategy(Strategy):
         self._trail_pips = self.Param("TrailingStopPips", 0).SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
         self._trail_step = self.Param("TrailingStepPips", 1).SetNotNegative().SetDisplay("Trailing Step (pips)", "Min move before trailing", "Risk")
         self._be_pips = self.Param("BreakEvenPips", 0).SetNotNegative().SetDisplay("Break-Even (pips)", "Profit to move stop to entry", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Primary timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Primary timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -91,19 +91,14 @@ class awesome_fx_trader_strategy(Strategy):
         bullish_signal = self._is_ao_increasing and ao > 0 and is_trend_bullish
         bearish_signal = not self._is_ao_increasing and ao < 0 and is_trend_bearish
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._previous_ao = ao
-            self._previous_lwma = lwma
-            return
-
         if bullish_signal and self.Position <= 0:
-            volume = self.Volume + abs(self.Position)
+            volume = self.Volume + Math.Abs(self.Position)
             if volume <= 0:
                 volume = 1
             self.BuyMarket(volume)
 
         elif bearish_signal and self.Position >= 0:
-            volume = self.Volume + abs(self.Position)
+            volume = self.Volume + Math.Abs(self.Position)
             if volume <= 0:
                 volume = 1
             self.SellMarket(volume)

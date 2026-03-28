@@ -255,9 +255,9 @@ class burg_extrapolator_forecast_strategy(Strategy):
         return predictions
 
     def _evaluate_signals(self, predictions):
-        step = self.Security.PriceStep if self.Security.PriceStep is not None else 1.0
-        max_loss_delta = self._max_loss.Value * step
-        min_profit_delta = self._min_profit.Value * step
+        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        max_loss_delta = float(self._max_loss.Value) * step
+        min_profit_delta = float(self._min_profit.Value) * step
 
         ymax = predictions[0]
         ymin = ymax
@@ -287,10 +287,10 @@ class burg_extrapolator_forecast_strategy(Strategy):
         return open_signal, close_signal
 
     def _manage_protection(self, candle):
-        step = self.Security.PriceStep if self.Security.PriceStep is not None else 1.0
-        stop_dist = self._stop_loss.Value * step
-        take_dist = self._take_profit.Value * step
-        trail_dist = self._trailing_stop.Value * step
+        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        stop_dist = float(self._stop_loss.Value) * step
+        take_dist = float(self._take_profit.Value) * step
+        trail_dist = float(self._trailing_stop.Value) * step
 
         if self.Position > 0:
             if self._long_entry_price is None:
@@ -298,18 +298,18 @@ class burg_extrapolator_forecast_strategy(Strategy):
             self._long_high = max(self._long_high, float(candle.HighPrice)) if self._long_high is not None else float(candle.HighPrice)
 
             if self._stop_loss.Value > 0 and float(candle.LowPrice) <= self._long_entry_price - stop_dist:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._long_entry_price = None
                 self._long_high = None
                 return True
             if self._take_profit.Value > 0 and float(candle.HighPrice) >= self._long_entry_price + take_dist:
-                self.SellMarket()
+                self.SellMarket(self.Position)
                 self._long_entry_price = None
                 self._long_high = None
                 return True
             if self._trailing_stop.Value > 0 and self._stop_loss.Value > 0 and self._long_high is not None:
                 if float(candle.LowPrice) <= self._long_high - trail_dist:
-                    self.SellMarket()
+                    self.SellMarket(self.Position)
                     self._long_entry_price = None
                     self._long_high = None
                     return True
@@ -323,18 +323,18 @@ class burg_extrapolator_forecast_strategy(Strategy):
             self._short_low = min(self._short_low, float(candle.LowPrice)) if self._short_low is not None else float(candle.LowPrice)
 
             if self._stop_loss.Value > 0 and float(candle.HighPrice) >= self._short_entry_price + stop_dist:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._short_entry_price = None
                 self._short_low = None
                 return True
             if self._take_profit.Value > 0 and float(candle.LowPrice) <= self._short_entry_price - take_dist:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(self.Position))
                 self._short_entry_price = None
                 self._short_low = None
                 return True
             if self._trailing_stop.Value > 0 and self._stop_loss.Value > 0 and self._short_low is not None:
                 if float(candle.HighPrice) >= self._short_low + trail_dist:
-                    self.BuyMarket()
+                    self.BuyMarket(Math.Abs(self.Position))
                     self._short_entry_price = None
                     self._short_low = None
                     return True
@@ -346,22 +346,37 @@ class burg_extrapolator_forecast_strategy(Strategy):
 
     def _handle_signal_closures(self, open_signal, close_signal):
         if self.Position > 0 and (close_signal == -1 or open_signal == -1):
-            self.SellMarket()
+            self.SellMarket(self.Position)
             self._long_entry_price = None
             self._long_high = None
         elif self.Position < 0 and (close_signal == 1 or open_signal == 1):
-            self.BuyMarket()
+            self.BuyMarket(Math.Abs(self.Position))
             self._short_entry_price = None
             self._short_low = None
 
+    def _get_trade_count(self, base_vol):
+        if float(base_vol) <= 0:
+            return 0
+        trades = float(Math.Abs(self.Position)) / float(base_vol)
+        return int(math.ceil(trades - 1e-8))
+
+    def _calculate_order_volume(self, base_vol, existing_trades):
+        multiplier = 1.0 + existing_trades * float(self._max_risk.Value)
+        if multiplier <= 0:
+            return 0.0
+        return float(base_vol) * multiplier
+
     def _try_open_long(self, candle):
         base_vol = self.Volume
-        if base_vol <= 0:
+        if float(base_vol) <= 0:
             return
-        trade_count = int(math.ceil(abs(self.Position) / base_vol - 1e-8)) if base_vol > 0 else 0
+        trade_count = self._get_trade_count(base_vol)
         if trade_count >= self._max_trades.Value:
             return
-        self.BuyMarket()
+        order_volume = self._calculate_order_volume(base_vol, trade_count)
+        if order_volume <= 0:
+            return
+        self.BuyMarket(order_volume)
         self._long_entry_price = float(candle.ClosePrice)
         self._long_high = float(candle.ClosePrice)
         self._short_entry_price = None
@@ -369,12 +384,15 @@ class burg_extrapolator_forecast_strategy(Strategy):
 
     def _try_open_short(self, candle):
         base_vol = self.Volume
-        if base_vol <= 0:
+        if float(base_vol) <= 0:
             return
-        trade_count = int(math.ceil(abs(self.Position) / base_vol - 1e-8)) if base_vol > 0 else 0
+        trade_count = self._get_trade_count(base_vol)
         if trade_count >= self._max_trades.Value:
             return
-        self.SellMarket()
+        order_volume = self._calculate_order_volume(base_vol, trade_count)
+        if order_volume <= 0:
+            return
+        self.SellMarket(order_volume)
         self._short_entry_price = float(candle.ClosePrice)
         self._short_low = float(candle.ClosePrice)
         self._long_entry_price = None

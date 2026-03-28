@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import Lowest, Highest
+from StockSharp.Algo.Indicators import Lowest, Highest, DecimalIndicatorValue
 
 class zig_and_zag_trader_strategy(Strategy):
     PIVOT_NONE = 0
@@ -89,10 +89,18 @@ class zig_and_zag_trader_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.CloseTime
-        long_low = float(self._long_term_low.Process(candle.LowPrice, t, True).ToDecimal())
-        long_high = float(self._long_term_high.Process(candle.HighPrice, t, True).ToDecimal())
-        short_low = float(self._short_term_low.Process(candle.LowPrice, t, True).ToDecimal())
-        short_high = float(self._short_term_high.Process(candle.HighPrice, t, True).ToDecimal())
+        low_input = DecimalIndicatorValue(self._long_term_low, candle.LowPrice, t)
+        low_input.IsFinal = True
+        long_low = float(self._long_term_low.Process(low_input))
+        high_input = DecimalIndicatorValue(self._long_term_high, candle.HighPrice, t)
+        high_input.IsFinal = True
+        long_high = float(self._long_term_high.Process(high_input))
+        slow_input = DecimalIndicatorValue(self._short_term_low, candle.LowPrice, t)
+        slow_input.IsFinal = True
+        short_low = float(self._short_term_low.Process(slow_input))
+        shigh_input = DecimalIndicatorValue(self._short_term_high, candle.HighPrice, t)
+        shigh_input.IsFinal = True
+        short_high = float(self._short_term_high.Process(shigh_input))
         long_formed = self._long_term_low.IsFormed and self._long_term_high.IsFormed
         short_formed = self._short_term_low.IsFormed and self._short_term_high.IsFormed
         cl = float(candle.ClosePrice)

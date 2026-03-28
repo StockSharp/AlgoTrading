@@ -142,7 +142,7 @@ class open_tiks_strategy(Strategy):
     def OnPositionReceived(self, position):
         super(open_tiks_strategy, self).OnPositionReceived(position)
 
-        delta = self.Position - self._previous_position
+        delta = float(self.Position) - self._previous_position
 
         if self.Position > 0:
             if self._previous_position <= 0:
@@ -151,8 +151,8 @@ class open_tiks_strategy(Strategy):
                 self._short_entry_price = None
                 self._short_trailing_stop = None
             elif delta > 0 and self._last_trade_price is not None:
-                prev_vol = max(0.0, self._previous_position)
-                cur_vol = max(0.0, self.Position)
+                prev_vol = max(0.0, float(self._previous_position))
+                cur_vol = max(0.0, float(self.Position))
                 if cur_vol > 0:
                     current_entry = self._long_entry_price if self._long_entry_price is not None else self._last_trade_price
                     self._long_entry_price = (current_entry * prev_vol + self._last_trade_price * delta) / cur_vol
@@ -163,8 +163,8 @@ class open_tiks_strategy(Strategy):
                 self._long_entry_price = None
                 self._long_trailing_stop = None
             elif delta < 0 and self._last_trade_price is not None:
-                prev_vol = max(0.0, abs(self._previous_position))
-                cur_vol = max(0.0, abs(self.Position))
+                prev_vol = max(0.0, abs(float(self._previous_position)))
+                cur_vol = max(0.0, float(float(Math.Abs(self.Position))))
                 if cur_vol > 0:
                     current_entry = self._short_entry_price if self._short_entry_price is not None else self._last_trade_price
                     self._short_entry_price = (current_entry * prev_vol + self._last_trade_price * abs(delta)) / cur_vol
@@ -174,7 +174,7 @@ class open_tiks_strategy(Strategy):
             self._long_trailing_stop = None
             self._short_trailing_stop = None
 
-        self._previous_position = self.Position
+        self._previous_position = float(self.Position)
 
     def ProcessCandle(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
@@ -236,7 +236,7 @@ class open_tiks_strategy(Strategy):
         base_volume = self._normalize_entry_volume(float(self.OrderVolume))
         if base_volume <= 0:
             return 1 if position_volume != 0 else 0
-        ratio = abs(position_volume) / base_volume
+        ratio = float(Math.Abs(position_volume)) / base_volume
         if ratio <= 0:
             return 0
         return int(math.ceil(ratio))
@@ -253,7 +253,7 @@ class open_tiks_strategy(Strategy):
             entry_long = self._long_entry_price
 
             if stop_distance > 0 and low <= entry_long - stop_distance:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(float(Math.Abs(self.Position)))
                 return
 
             if trailing_distance > 0 and close - entry_long >= trailing_distance:
@@ -263,11 +263,11 @@ class open_tiks_strategy(Strategy):
                     self._try_reduce_long_position()
 
                 if self._long_trailing_stop is not None and low <= self._long_trailing_stop:
-                    self.SellMarket(abs(self.Position))
+                    self.SellMarket(float(Math.Abs(self.Position)))
 
         elif self.Position < 0 and self._short_entry_price is not None:
             entry_short = self._short_entry_price
-            position_volume = abs(self.Position)
+            position_volume = float(Math.Abs(self.Position))
 
             if stop_distance > 0 and high >= entry_short + stop_distance:
                 self.BuyMarket(position_volume)
@@ -288,7 +288,7 @@ class open_tiks_strategy(Strategy):
         if self.Position <= 0:
             return
 
-        position_volume = abs(self.Position)
+        position_volume = float(Math.Abs(self.Position))
         half = position_volume / 2.0
         normalized_half = self._normalize_exit_volume(half, position_volume)
 
@@ -305,7 +305,7 @@ class open_tiks_strategy(Strategy):
         if self.Position >= 0:
             return
 
-        position_volume = abs(self.Position)
+        position_volume = float(Math.Abs(self.Position))
         half = position_volume / 2.0
         normalized_half = self._normalize_exit_volume(half, position_volume)
 

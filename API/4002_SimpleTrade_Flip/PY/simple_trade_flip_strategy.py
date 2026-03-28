@@ -45,7 +45,8 @@ class simple_trade_flip_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()
 
-        step = float(self.Security.PriceStep) if self.Security is not None else 0.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        step = float(ps) if ps is not None and float(ps) > 0 else 0.0
         sl_pts = float(self.StopLossPoints)
         sl = Unit(sl_pts * step, UnitTypes.Absolute) if sl_pts > 0 and step > 0 else None
         self.StartProtection(None, sl)
@@ -60,8 +61,11 @@ class simple_trade_flip_strategy(Strategy):
         if len(self._open_history) > max_history:
             self._open_history = self._open_history[-max_history:]
 
-        lookback = self.LookbackBars
+        lookback = int(self.LookbackBars)
         if len(self._open_history) <= lookback:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self._cooldown > 0:
@@ -81,7 +85,7 @@ class simple_trade_flip_strategy(Strategy):
 
         if diff > 0 and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
             self.BuyMarket(volume)
             self._cooldown = 5
         elif diff < 0 and self.Position >= 0:

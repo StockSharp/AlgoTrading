@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import CommodityChannelIndex, StochasticOscillator
+from StockSharp.Algo.Indicators import CommodityChannelIndex, StochasticOscillator, CandleIndicatorValue
 
 class kloss_mql8186_strategy(Strategy):
     def __init__(self):
@@ -146,24 +146,28 @@ class kloss_mql8186_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        cci_result = self._cci.Process(candle)
-        stoch_result = self._stochastic.Process(candle)
+        cci_input = CandleIndicatorValue(self._cci, candle)
+        cci_input.IsFinal = True
+        cci_result = self._cci.Process(cci_input)
+        stoch_input = CandleIndicatorValue(self._stochastic, candle)
+        stoch_input.IsFinal = True
+        stoch_result = self._stochastic.Process(stoch_input)
 
         self._update_history(candle)
 
-        cci_val = cci_result.ToNullableDecimal()
-        if cci_val is None:
+        if not cci_result.IsFormed:
             return
 
         if not self._stochastic.IsFormed:
             return
 
-        stoch_k = stoch_result.K
-        if stoch_k is None:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        cci_val = float(cci_val)
-        stoch_k_val = float(stoch_k)
+        cci_val = float(cci_result)
+        stoch_k_val = float(stoch_result.K) if stoch_result.K is not None else None
+        if stoch_k_val is None:
+            return
 
         if self._previous_open is not None and self._previous_close is not None and self._typical_history[4] is not None:
             prev_open = self._previous_open

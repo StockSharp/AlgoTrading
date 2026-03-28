@@ -7,13 +7,11 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class pinball_machine_random_draw_strategy(Strategy):
     def __init__(self):
         super(pinball_machine_random_draw_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR Length", "ATR period for stops", "Indicators")
 
     @property

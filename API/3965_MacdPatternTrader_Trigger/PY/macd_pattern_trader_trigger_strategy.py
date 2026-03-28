@@ -95,7 +95,8 @@ class macd_pattern_trader_trigger_strategy(Strategy):
     def OnStarted(self, time):
         super(macd_pattern_trader_trigger_strategy, self).OnStarted(time)
 
-        self._price_step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        self._price_step = float(ps) if ps is not None else 1.0
         if self._price_step <= 0:
             self._price_step = 1.0
 

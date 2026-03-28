@@ -3,12 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class parabolic_sar_first_dot_strategy(Strategy):
     def __init__(self):
@@ -19,7 +17,7 @@ class parabolic_sar_first_dot_strategy(Strategy):
         self._use_multiplier = self.Param("UseStopMultiplier", True).SetDisplay("Use Stop Multiplier", "Multiply distances by 10", "Risk")
         self._sar_step = self.Param("SarAccelerationStep", 0.02).SetDisplay("SAR Step", "Initial acceleration factor", "Indicator")
         self._sar_max = self.Param("SarAccelerationMax", 0.2).SetDisplay("SAR Max", "Maximum acceleration factor", "Indicator")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -58,14 +56,14 @@ class parabolic_sar_first_dot_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def _get_price_step(self):
-        step = 0.0001
-        if self.Security is not None and self.Security.PriceStep is not None and self.Security.PriceStep > 0:
-            step = float(self.Security.PriceStep)
+        step = Decimal(0.0001)
+        if self.Security is not None and self.Security.PriceStep is not None and self.Security.PriceStep > Decimal.Zero:
+            step = self.Security.PriceStep
         return step
 
     def _get_distance(self, base_points):
         multiplier = 10 if self._use_multiplier.Value else 1
-        return base_points * multiplier * self._price_step
+        return Decimal(base_points * multiplier) * self._price_step
 
     def OnProcess(self, candle, sar_value):
         if candle.State != CandleStates.Finished:
@@ -73,7 +71,9 @@ class parabolic_sar_first_dot_strategy(Strategy):
 
         self._check_protective_levels(candle)
 
-        is_sar_above = sar_value > candle.ClosePrice
+        close = float(candle.ClosePrice)
+        sar_f = float(sar_value)
+        is_sar_above = sar_f > close
 
         if self._prev_is_sar_above is None:
             self._prev_is_sar_above = is_sar_above

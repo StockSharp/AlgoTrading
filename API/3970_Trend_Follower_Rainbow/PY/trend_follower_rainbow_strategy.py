@@ -97,7 +97,8 @@ class trend_follower_rainbow_strategy(Strategy):
     def OnStarted(self, time):
         super(trend_follower_rainbow_strategy, self).OnStarted(time)
 
-        self._point_value = float(self.Security.PriceStep) if self.Security is not None else 0.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        self._point_value = float(ps) if ps is not None else 1.0
         self.Volume = float(self.OrderVolume)
 
         tp_pts = float(self.TakeProfitPoints)
@@ -140,8 +141,8 @@ class trend_follower_rainbow_strategy(Strategy):
             self._update_prev(fast_val, slow_val)
             return
 
-        fast_ema = float(fast_val.GetValue[float]())
-        slow_ema = float(slow_val.GetValue[float]())
+        fast_ema = float(fast_val)
+        slow_ema = float(slow_val)
 
         if not macd_val.IsFinal:
             self._update_prev_values(fast_ema, slow_ema)
@@ -176,9 +177,9 @@ class trend_follower_rainbow_strategy(Strategy):
 
     def _update_prev(self, fast_val, slow_val):
         if not fast_val.IsEmpty:
-            self._previous_fast_ema = float(fast_val.GetValue[float]())
+            self._previous_fast_ema = float(fast_val)
         if not slow_val.IsEmpty:
-            self._previous_slow_ema = float(slow_val.GetValue[float]())
+            self._previous_slow_ema = float(slow_val)
 
     def _update_prev_values(self, fast_ema, slow_ema):
         self._previous_fast_ema = fast_ema

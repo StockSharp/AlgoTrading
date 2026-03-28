@@ -4,11 +4,9 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class trend_rds_reversal_strategy(Strategy):
     """Three-bar momentum reversal with EMA filter and StartProtection SL/TP."""
@@ -17,7 +15,7 @@ class trend_rds_reversal_strategy(Strategy):
         self._sl = self.Param("StopLoss", 500.0).SetDisplay("Stop Loss", "Stop-loss distance", "Risk")
         self._tp = self.Param("TakeProfit", 500.0).SetDisplay("Take Profit", "Take-profit distance", "Risk")
         self._depth = self.Param("MaxPatternDepth", 10).SetGreaterThanZero().SetDisplay("Pattern Depth", "Max candles for pattern", "General")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(8).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -38,10 +36,11 @@ class trend_rds_reversal_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(ema, self.OnProcess).Start()
 
-        sl = self._sl.Value
-        tp = self._tp.Value
-        if sl > 0 or tp > 0:
-            self.StartProtection(self.CreateProtection(sl if sl > 0 else 0, tp if tp > 0 else 0))
+        tp_val = float(self._tp.Value)
+        sl_val = float(self._sl.Value)
+        tp = Unit(tp_val, UnitTypes.Absolute) if tp_val > 0 else None
+        sl = Unit(sl_val, UnitTypes.Absolute) if sl_val > 0 else None
+        self.StartProtection(tp, sl)
 
         area = self.CreateChartArea()
         if area is not None:
@@ -61,6 +60,9 @@ class trend_rds_reversal_strategy(Strategy):
         if len(self._extremes) > depth + 2:
             self._extremes.pop()
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if len(self._extremes) < 3:
             return
 
@@ -68,14 +70,14 @@ class trend_rds_reversal_strategy(Strategy):
 
         if buy_signal:
             if self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
             if self.Position <= 0:
-                self.BuyMarket()
+                self.BuyMarket(self.Volume)
         elif sell_signal:
             if self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(self.Position)
             if self.Position >= 0:
-                self.SellMarket()
+                self.SellMarket(self.Volume)
 
     def _detect_signals(self):
         depth = min(len(self._extremes) - 2, self._depth.Value)

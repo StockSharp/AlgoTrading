@@ -97,9 +97,9 @@ class three_ma_cross_channel_strategy(Strategy):
         if not self._fast_ma.IsFormed or not self._medium_ma.IsFormed or not self._slow_ma.IsFormed:
             return
 
-        fast_value = float(fast_val.GetValue[float]())
-        medium_value = float(medium_val.GetValue[float]())
-        slow_value = float(slow_val.GetValue[float]())
+        fast_value = float(fast_val)
+        medium_value = float(medium_val)
+        slow_value = float(slow_val)
 
         upper_band = 0.0
         lower_band = 0.0

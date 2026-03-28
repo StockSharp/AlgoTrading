@@ -7,8 +7,6 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class rsi_test_strategy(Strategy):
     def __init__(self):
@@ -17,7 +15,7 @@ class rsi_test_strategy(Strategy):
         self._buy_level = self.Param("BuyLevel", 40.0).SetDisplay("RSI Buy Level", "Oversold threshold for long entries", "Trading")
         self._sell_level = self.Param("SellLevel", 60.0).SetDisplay("RSI Sell Level", "Overbought threshold for short entries", "Trading")
         self._trailing_distance_steps = self.Param("TrailingDistanceSteps", 50).SetDisplay("Trailing Distance Steps", "Steps before activating trailing stop", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Primary timeframe", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Primary timeframe", "Data")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class true_sort_1001_strategy(Strategy):
     """Trend-following: strict SMA alignment (fast>mid>slow) + rising ATR for entries."""
@@ -18,7 +16,7 @@ class true_sort_1001_strategy(Strategy):
         self._mid_len = self.Param("MidLength", 50).SetDisplay("Mid SMA", "Medium SMA period", "Indicators")
         self._slow_len = self.Param("SlowLength", 200).SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
         self._atr_len = self.Param("AtrLength", 14).SetDisplay("ATR Length", "ATR period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

@@ -151,6 +151,8 @@ class de_mark_lines_strategy(Strategy):
         self._last_short_signal = -1
 
     def _evaluate_breakouts(self, candle):
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         current_index = self._processed_bars - 1
         price_buffer = self._breakout_buffer.Value * (self._pip_size if self._pip_size > 0 else 1.0)
@@ -160,19 +162,19 @@ class de_mark_lines_strategy(Strategy):
                 and current_index != self._last_long_signal):
             resistance = self._calc_trend_value(self._prev_high, self._recent_high, current_index)
             if close > resistance + price_buffer and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-                self._last_long_signal = current_index
+                volume = self.Volume + abs(self.Position)
+                if volume > 0:
+                    self.BuyMarket(volume)
+                    self._last_long_signal = current_index
 
         if (self._recent_low["index"] >= 0 and self._prev_low["index"] >= 0
                 and current_index != self._last_short_signal):
             support = self._calc_trend_value(self._prev_low, self._recent_low, current_index)
             if close < support - price_buffer and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
-                self._last_short_signal = current_index
+                volume = self.Volume + abs(self.Position)
+                if volume > 0:
+                    self.SellMarket(volume)
+                    self._last_short_signal = current_index
 
     def _calc_trend_value(self, older, newer, current_index):
         index_diff = newer["index"] - older["index"]

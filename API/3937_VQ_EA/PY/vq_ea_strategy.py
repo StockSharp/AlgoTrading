@@ -16,7 +16,7 @@ class vq_ea_strategy(Strategy):
         super(vq_ea_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 20).SetDisplay("EMA Period", "EMA filter", "Indicators")
         self._mom_period = self.Param("MomentumPeriod", 14).SetDisplay("Momentum", "Momentum period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -52,6 +52,8 @@ class vq_ea_strategy(Strategy):
     def OnProcess(self, candle, ema_val, mom_val):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         ev = float(ema_val)
         mv = float(mom_val)
@@ -68,14 +70,12 @@ class vq_ea_strategy(Strategy):
             return
 
         if close > ev and self._prev_mom <= 0 and mv > 0 and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
             self._cooldown = 2
         elif close < ev and self._prev_mom >= 0 and mv < 0 and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
             self._cooldown = 2
 
         self._prev_mom = mv

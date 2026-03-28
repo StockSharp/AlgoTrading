@@ -10,8 +10,7 @@ from StockSharp.Algo.Indicators import (
     ExponentialMovingAverage,
     WilliamsR,
     CommodityChannelIndex,
-    Highest,
-    Lowest,
+    DonchianChannels,
 )
 
 class rabbit_m2_regime_swing_strategy(Strategy):
@@ -57,8 +56,8 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         self._take_distance = 0.0
         self._active_stop = 0.0
         self._active_take = 0.0
-        self._high_history = []
-        self._low_history = []
+        self._previous_upper_band = None
+        self._previous_lower_band = None
 
     @property
     def CciSellLevel(self):
@@ -165,21 +164,23 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         self._wpr.Length = self.WprPeriod
         self._cci = CommodityChannelIndex()
         self._cci.Length = self.CciPeriod
+        self._donchian = DonchianChannels()
+        self._donchian.Length = self.DonchianPeriod
 
         self._ema_fast = ExponentialMovingAverage()
         self._ema_fast.Length = self.FastEmaPeriod
         self._ema_slow = ExponentialMovingAverage()
         self._ema_slow.Length = self.SlowEmaPeriod
 
-        self._high_history = []
-        self._low_history = []
+        self._previous_upper_band = None
+        self._previous_lower_band = None
 
         trend_type = DataType.TimeFrame(TimeSpan.FromHours(2))
         trend_sub = self.SubscribeCandles(trend_type)
         trend_sub.Bind(self._ema_fast, self._ema_slow, self._process_trend).Start()
 
         primary_sub = self.SubscribeCandles(self.CandleType)
-        primary_sub.Bind(self._wpr, self._process_primary).Start()
+        primary_sub.BindEx(self._wpr, self._cci, self._donchian, self._process_primary).Start()
 
     def _process_trend(self, candle, fast_ema, slow_ema):
         if candle.State != CandleStates.Finished:
@@ -197,48 +198,40 @@ class rabbit_m2_regime_swing_strategy(Strategy):
             self._short_regime_enabled = False
             self._close_short_position()
 
-    def _process_primary(self, candle, wpr_value):
+    def _process_primary(self, candle, wpr_value, cci_value, donchian_value):
         if candle.State != CandleStates.Finished:
             return
 
-        wpr_val = float(wpr_value)
+        if not wpr_value.IsFinal or not cci_value.IsFinal or not donchian_value.IsFinal:
+            return
 
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-        close = float(candle.ClosePrice)
+        upper_band = donchian_value.UpperBand
+        lower_band = donchian_value.LowerBand
+        if upper_band is None or lower_band is None:
+            return
+        upper_band = float(upper_band)
+        lower_band = float(lower_band)
 
-        self._high_history.append(high)
-        self._low_history.append(low)
-        don_period = self.DonchianPeriod
-        while len(self._high_history) > don_period:
-            self._high_history.pop(0)
-        while len(self._low_history) > don_period:
-            self._low_history.pop(0)
+        self._handle_active_position(candle)
 
-        previous_upper = None
-        previous_lower = None
-        if len(self._high_history) >= 2:
-            previous_upper = max(self._high_history[:-1]) if len(self._high_history) > 1 else None
-        if len(self._low_history) >= 2:
-            previous_lower = min(self._low_history[:-1]) if len(self._low_history) > 1 else None
-
-        cci_result = self._cci.Process(candle)
-        current_cci = float(cci_result) if cci_result is not None else 0.0
-
-        self._handle_active_position(candle, previous_upper, previous_lower)
-
-        current_wpr = wpr_val
+        current_wpr = float(wpr_value.Value) if hasattr(wpr_value, 'Value') else float(wpr_value)
         if current_wpr == 0:
             current_wpr = -1.0
+
+        current_cci = float(cci_value.Value) if hasattr(cci_value, 'Value') else float(cci_value)
 
         previous_wpr = self._previous_wpr
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             self._previous_wpr = current_wpr
+            self._previous_upper_band = upper_band
+            self._previous_lower_band = lower_band
             return
 
         if previous_wpr is None:
             self._previous_wpr = current_wpr
+            self._previous_upper_band = upper_band
+            self._previous_lower_band = lower_band
             return
 
         wpr_lag = previous_wpr
@@ -252,21 +245,23 @@ class rabbit_m2_regime_swing_strategy(Strategy):
             self._try_open_long(candle, current_wpr, wpr_lag, current_cci)
 
         self._previous_wpr = current_wpr
+        self._previous_upper_band = upper_band
+        self._previous_lower_band = lower_band
 
-    def _handle_active_position(self, candle, previous_upper, previous_lower):
+    def _handle_active_position(self, candle):
         if self.Position > 0:
             if self._take_distance > 0 and self._active_take > 0 and float(candle.HighPrice) >= self._active_take:
                 self._close_long_position()
             elif self._stop_distance > 0 and self._active_stop > 0 and float(candle.LowPrice) <= self._active_stop:
                 self._close_long_position()
-            elif previous_lower is not None and float(candle.ClosePrice) < previous_lower:
+            elif self._previous_lower_band is not None and float(candle.ClosePrice) < self._previous_lower_band:
                 self._close_long_position()
         elif self.Position < 0:
             if self._take_distance > 0 and self._active_take > 0 and float(candle.LowPrice) <= self._active_take:
                 self._close_short_position()
             elif self._stop_distance > 0 and self._active_stop > 0 and float(candle.HighPrice) >= self._active_stop:
                 self._close_short_position()
-            elif previous_upper is not None and float(candle.ClosePrice) > previous_upper:
+            elif self._previous_upper_band is not None and float(candle.ClosePrice) > self._previous_upper_band:
                 self._close_short_position()
 
     def _try_open_short(self, candle, current_wpr, previous_wpr, current_cci):
@@ -276,7 +271,7 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         if self._base_volume <= 0:
             return
 
-        net_volume = abs(self.Position)
+        net_volume = Math.Abs(self.Position)
         max_volume = self._base_volume * self.MaxTrades
         if max_volume <= 0 or net_volume >= max_volume:
             return
@@ -298,7 +293,7 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         if self._base_volume <= 0:
             return
 
-        net_volume = abs(self.Position)
+        net_volume = Math.Abs(self.Position)
         max_volume = self._base_volume * self.MaxTrades
         if max_volume <= 0 or net_volume >= max_volume:
             return
@@ -314,7 +309,7 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         self._active_take = close_price + self._take_distance if self._take_distance > 0 else 0.0
 
     def _close_long_position(self):
-        volume = abs(self.Position)
+        volume = Math.Abs(self.Position)
         if volume <= 0:
             return
         self.SellMarket(volume)
@@ -322,7 +317,7 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         self._active_take = 0.0
 
     def _close_short_position(self):
-        volume = abs(self.Position)
+        volume = Math.Abs(self.Position)
         if volume <= 0:
             return
         self.BuyMarket(volume)
@@ -342,7 +337,7 @@ class rabbit_m2_regime_swing_strategy(Strategy):
             if self._profit_threshold > 0:
                 self._profit_threshold *= 2.0
 
-        if abs(self.Position) == 0:
+        if Math.Abs(self.Position) == 0:
             self._active_stop = 0.0
             self._active_take = 0.0
 
@@ -358,8 +353,8 @@ class rabbit_m2_regime_swing_strategy(Strategy):
         self._take_distance = 0.0
         self._active_stop = 0.0
         self._active_take = 0.0
-        self._high_history = []
-        self._low_history = []
+        self._previous_upper_band = None
+        self._previous_lower_band = None
 
     def CreateClone(self):
         return rabbit_m2_regime_swing_strategy()

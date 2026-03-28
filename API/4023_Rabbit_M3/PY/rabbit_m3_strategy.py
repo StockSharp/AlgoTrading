@@ -10,6 +10,7 @@ from StockSharp.Algo.Indicators import (
     ExponentialMovingAverage,
     WilliamsR,
     CommodityChannelIndex,
+    DonchianChannels,
 )
 
 class rabbit_m3_strategy(Strategy):
@@ -64,8 +65,8 @@ class rabbit_m3_strategy(Strategy):
         self._long_take_profit_price = 0.0
         self._short_stop_price = 0.0
         self._short_take_profit_price = 0.0
-        self._high_history = []
-        self._low_history = []
+        self._current_donchian_upper = None
+        self._current_donchian_lower = None
         self._prev_donchian_upper = None
         self._prev_donchian_lower = None
 
@@ -158,43 +159,33 @@ class rabbit_m3_strategy(Strategy):
         self._williams = WilliamsR()
         self._williams.Length = self.WilliamsPeriod
 
-        self._high_history = []
-        self._low_history = []
+        self._donchian = DonchianChannels()
+        self._donchian.Length = self.DonchianLength
+
+        self._current_donchian_upper = None
+        self._current_donchian_lower = None
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._fast_ema, self._slow_ema, self._williams, self.ProcessCandle).Start()
+        subscription.Bind(self._fast_ema, self._slow_ema, self._cci, self._williams, self.ProcessCandle)
+        subscription.BindEx(self._donchian, self._update_donchian)
+        subscription.Start()
 
-    def ProcessCandle(self, candle, fast_value, slow_value, williams_value):
+    def ProcessCandle(self, candle, fast_value, slow_value, cci_value, williams_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         fast_val = float(fast_value)
         slow_val = float(slow_value)
+        cci_val = float(cci_value)
         williams_val = float(williams_value)
-
-        cci_result = self._cci.Process(candle)
-        cci_val = float(cci_result) if cci_result is not None else 0.0
-
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-
-        self._high_history.append(high)
-        self._low_history.append(low)
-        don_len = self.DonchianLength
-        while len(self._high_history) > don_len:
-            self._high_history.pop(0)
-        while len(self._low_history) > don_len:
-            self._low_history.pop(0)
-
-        cur_upper = max(self._high_history) if len(self._high_history) > 0 else None
-        cur_lower = min(self._low_history) if len(self._low_history) > 0 else None
 
         self._update_trend_state(fast_val, slow_val)
 
         if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed or not self._cci.IsFormed or not self._williams.IsFormed:
             self._previous_williams = williams_val
-            self._prev_donchian_upper = cur_upper
-            self._prev_donchian_lower = cur_lower
             return
 
         exit_upper = self._prev_donchian_upper
@@ -202,23 +193,32 @@ class rabbit_m3_strategy(Strategy):
 
         if exit_upper is None or exit_lower is None:
             self._previous_williams = williams_val
-            self._prev_donchian_upper = cur_upper
-            self._prev_donchian_lower = cur_lower
             return
 
         self._manage_exits(candle, exit_upper, exit_lower)
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._previous_williams = williams_val
-            self._prev_donchian_upper = cur_upper
-            self._prev_donchian_lower = cur_lower
-            return
-
         self._try_enter_position(candle, cci_val, williams_val)
 
         self._previous_williams = williams_val
-        self._prev_donchian_upper = cur_upper
-        self._prev_donchian_lower = cur_lower
+
+    def _update_donchian(self, candle, donchian_value):
+        if not donchian_value.IsFinal:
+            return
+
+        upper_band = donchian_value.UpperBand
+        lower_band = donchian_value.LowerBand
+        if upper_band is None or lower_band is None:
+            return
+
+        upper = float(upper_band)
+        lower = float(lower_band)
+
+        if self._current_donchian_upper is not None and self._current_donchian_lower is not None:
+            self._prev_donchian_upper = self._current_donchian_upper
+            self._prev_donchian_lower = self._current_donchian_lower
+
+        self._current_donchian_upper = upper
+        self._current_donchian_lower = lower
 
     def _update_trend_state(self, fast_value, slow_value):
         if fast_value < slow_value:
@@ -318,7 +318,7 @@ class rabbit_m3_strategy(Strategy):
     def _close_short_position(self):
         if self.Position >= 0:
             return
-        self.BuyMarket(abs(self.Position))
+        self.BuyMarket(Math.Abs(self.Position))
         self._short_active = False
         self._short_entry_price = 0.0
         self._short_stop_price = 0.0
@@ -341,8 +341,8 @@ class rabbit_m3_strategy(Strategy):
         self._long_take_profit_price = 0.0
         self._short_stop_price = 0.0
         self._short_take_profit_price = 0.0
-        self._high_history = []
-        self._low_history = []
+        self._current_donchian_upper = None
+        self._current_donchian_lower = None
         self._prev_donchian_upper = None
         self._prev_donchian_lower = None
 

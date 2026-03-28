@@ -7,14 +7,12 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class smoothed_ma_directional_strategy(Strategy):
     def __init__(self):
         super(smoothed_ma_directional_strategy, self).__init__()
         self._ma_period = self.Param("MaPeriod", 12).SetDisplay("MA Period", "Number of bars for MA", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Time frame", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Time frame", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

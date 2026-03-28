@@ -67,7 +67,8 @@ class r_point250_strategy(Strategy):
         lowest = Lowest()
         lowest.Length = max(1, self.ReversePoint)
 
-        self._price_step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        self._price_step = float(ps) if ps is not None else 1.0
         if self._price_step <= 0:
             self._price_step = 1.0
 

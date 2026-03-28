@@ -90,7 +90,8 @@ class martingail_expert_v10_stochastic_strategy(Strategy):
     def OnStarted(self, time):
         super(martingail_expert_v10_stochastic_strategy, self).OnStarted(time)
 
-        self._point_size = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        self._point_size = float(ps) if ps is not None else 1.0
         if self._point_size <= 0:
             self._point_size = 1.0
 
@@ -164,7 +165,7 @@ class martingail_expert_v10_stochastic_strategy(Strategy):
         add_trigger = self._buy_last_price - step_pts * self._point_size
 
         if self._buy_last_volume > 0 and float(candle.LowPrice) <= add_trigger:
-            next_volume = max(1.0, round(self._buy_last_volume * float(self.Multiplier)))
+            next_volume = max(1.0, float(round(float(self._buy_last_volume) * float(self.Multiplier))))
             self.BuyMarket(next_volume)
 
             execution_price = float(candle.ClosePrice)
@@ -191,7 +192,7 @@ class martingail_expert_v10_stochastic_strategy(Strategy):
         add_trigger = self._sell_last_price + step_pts * self._point_size
 
         if self._sell_last_volume > 0 and float(candle.HighPrice) >= add_trigger:
-            next_volume = max(1.0, round(self._sell_last_volume * float(self.Multiplier)))
+            next_volume = max(1.0, float(round(float(self._sell_last_volume) * float(self.Multiplier))))
             self.SellMarket(next_volume)
 
             execution_price = float(candle.ClosePrice)

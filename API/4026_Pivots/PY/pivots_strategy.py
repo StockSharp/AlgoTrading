@@ -81,18 +81,14 @@ class pivots_strategy(Strategy):
             self._previous_close = close
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._previous_close = close
-            return
-
         if self.Position > 0:
             if high >= self._r2 or low <= self._s1:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 self._entry_price = None
 
         elif self.Position < 0:
             if low <= self._s2 or high >= self._r1:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 self._entry_price = None
 
         if self.Position == 0:

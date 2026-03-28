@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, CommodityChannelIndex, StochasticOscillator, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, CommodityChannelIndex, StochasticOscillator, DecimalIndicatorValue, CandleIndicatorValue
 
 class kloss_simple_strategy(Strategy):
     def __init__(self):
@@ -98,26 +98,29 @@ class kloss_simple_strategy(Strategy):
             return
 
         close = float(candle.ClosePrice)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
+        weighted_close = (candle.ClosePrice * 2 + candle.HighPrice + candle.LowPrice) / 4
 
-        weighted_close = (close * 2.0 + high + low) / 4.0
+        ma_input = DecimalIndicatorValue(self._ema, weighted_close, candle.CloseTime)
+        ma_input.IsFinal = True
+        ma_result = self._ema.Process(ma_input)
 
-        ma_result = self._ema.Process(DecimalIndicatorValue(self._ema, weighted_close, candle.CloseTime))
-        ma_val = ma_result.ToNullableDecimal()
-        cci_result = self._cci.Process(candle)
-        cci_val = cci_result.ToNullableDecimal()
-        stoch_value = self._stochastic.Process(candle)
+        cci_input = CandleIndicatorValue(self._cci, candle)
+        cci_input.IsFinal = True
+        cci_result = self._cci.Process(cci_input)
 
-        if ma_val is None or cci_val is None:
+        stoch_input = CandleIndicatorValue(self._stochastic, candle)
+        stoch_input.IsFinal = True
+        stoch_value = self._stochastic.Process(stoch_input)
+
+        if not self._ema.IsFormed or not self._cci.IsFormed or not self._stochastic.IsFormed:
             return
 
         stoch_k = stoch_value.K
         if stoch_k is None:
             return
 
-        ma_val = float(ma_val)
-        cci_val = float(cci_val)
+        ma_val = float(ma_result)
+        cci_val = float(cci_result)
         stoch_k_val = float(stoch_k)
 
         if self._previous_close is None or self._previous_ma is None or self._previous_cci is None or self._previous_stochastic is None:

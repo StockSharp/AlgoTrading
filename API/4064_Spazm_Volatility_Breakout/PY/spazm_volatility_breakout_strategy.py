@@ -7,15 +7,13 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class spazm_volatility_breakout_strategy(Strategy):
     def __init__(self):
         super(spazm_volatility_breakout_strategy, self).__init__()
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR Length", "Period for ATR volatility", "Indicators")
         self._multiplier = self.Param("Multiplier", 2.0).SetDisplay("Multiplier", "ATR multiplier for breakout threshold", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

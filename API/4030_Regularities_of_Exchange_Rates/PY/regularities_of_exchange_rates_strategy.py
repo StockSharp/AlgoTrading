@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import SimpleMovingAverage
@@ -82,9 +82,9 @@ class regularities_of_exchange_rates_strategy(Strategy):
         # At closing hour: flatten position and cancel breakout watch
         if hour == self.ClosingHour:
             if self.Position > 0:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
             elif self.Position < 0:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
             self._waiting_for_breakout = False
             self._entry_price = 0.0
 
@@ -95,12 +95,12 @@ class regularities_of_exchange_rates_strategy(Strategy):
 
             if self.Position > 0:
                 if (tp > 0 and close - self._entry_price >= tp) or (sl > 0 and self._entry_price - close >= sl):
-                    self.SellMarket(abs(self.Position))
+                    self.SellMarket(Math.Abs(self.Position))
                     self._entry_price = 0.0
                     self._waiting_for_breakout = False
             elif self.Position < 0:
                 if (tp > 0 and self._entry_price - close >= tp) or (sl > 0 and close - self._entry_price >= sl):
-                    self.BuyMarket(abs(self.Position))
+                    self.BuyMarket(Math.Abs(self.Position))
                     self._entry_price = 0.0
                     self._waiting_for_breakout = False
 

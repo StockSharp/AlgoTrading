@@ -52,8 +52,6 @@ class support_resistance_breakout_strategy(Strategy):
         return self._candle_type.Value
 
     def OnStarted(self, time):
-        super(support_resistance_breakout_strategy, self).OnStarted(time)
-
         ema = ExponentialMovingAverage()
         ema.Length = self.EmaPeriod
 
@@ -67,6 +65,8 @@ class support_resistance_breakout_strategy(Strategy):
         if tp_unit is not None or sl_unit is not None:
             self.StartProtection(tp_unit, sl_unit)
 
+        super(support_resistance_breakout_strategy, self).OnStarted(time)
+
     def ProcessCandle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
@@ -78,7 +78,7 @@ class support_resistance_breakout_strategy(Strategy):
 
         self._highs.append(high)
         self._lows.append(low)
-        rl = self.RangeLength
+        rl = int(self.RangeLength)
         if len(self._highs) > rl:
             self._highs.pop(0)
         if len(self._lows) > rl:
@@ -95,21 +95,26 @@ class support_resistance_breakout_strategy(Strategy):
         is_bullish = close > ema_value
         is_bearish = close < ema_value
 
-        if self.Position > 0 and self._entry_price is not None:
+        pos = float(self.Position)
+
+        if pos > 0 and self._entry_price is not None:
             if close - self._entry_price > 0 and close < self._support:
                 self.SellMarket(self.Position)
                 return
-        elif self.Position < 0 and self._entry_price is not None:
+        elif pos < 0 and self._entry_price is not None:
             if self._entry_price - close > 0 and close > self._resistance:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 return
 
-        if is_bullish and self.Position <= 0 and close > self._resistance and self._resistance > 0:
-            if self.Position < 0:
-                self.BuyMarket(abs(self.Position))
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if is_bullish and pos <= 0 and close > self._resistance and self._resistance > 0:
+            if pos < 0:
+                self.BuyMarket(Math.Abs(self.Position))
             self.BuyMarket(self.Volume)
-        elif is_bearish and self.Position >= 0 and close < self._support and self._support > 0:
-            if self.Position > 0:
+        elif is_bearish and pos >= 0 and close < self._support and self._support > 0:
+            if pos > 0:
                 self.SellMarket(self.Position)
             self.SellMarket(self.Volume)
 

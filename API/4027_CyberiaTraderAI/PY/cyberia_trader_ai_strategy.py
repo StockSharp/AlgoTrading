@@ -145,14 +145,20 @@ class cyberia_trader_ai_strategy(Strategy):
         macd_signal_val = None
         if macd_value.IsFinal:
             if hasattr(macd_value, 'Macd') and hasattr(macd_value, 'Signal'):
-                macd_main_val = float(macd_value.Macd)
-                macd_signal_val = float(macd_value.Signal)
+                m = macd_value.Macd
+                s = macd_value.Signal
+                if m is not None:
+                    macd_main_val = float(m)
+                if s is not None:
+                    macd_signal_val = float(s)
         elif self.EnableMacd:
             return
 
         ema_snapshot = None
         if ema_value.IsFinal:
-            ema_snapshot = float(ema_value)
+            v = ema_value.Value if hasattr(ema_value, 'Value') else None
+            if v is not None:
+                ema_snapshot = float(v)
         elif self.EnableMa:
             return
 
@@ -190,7 +196,7 @@ class cyberia_trader_ai_strategy(Strategy):
                            stats['sell_suc_possibility_mid'] > 0) or \
                           (flags['disable_buy'] and stats['current_decision'] != _DECISION_BUY)
             if should_exit:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 return
 
         elif self.Position < 0:
@@ -199,7 +205,7 @@ class cyberia_trader_ai_strategy(Strategy):
                            stats['buy_suc_possibility_mid'] > 0) or \
                           (flags['disable_sell'] and stats['current_decision'] != _DECISION_SELL)
             if should_exit:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 return
 
         if (stats['current_decision'] == _DECISION_BUY and
@@ -207,7 +213,7 @@ class cyberia_trader_ai_strategy(Strategy):
                 stats['buy_possibility'] >= stats['buy_suc_possibility_mid'] and
                 stats['buy_suc_possibility_mid'] > 0 and
                 self.Position <= 0):
-            volume = self.Volume + (abs(self.Position) if self.Position < 0 else 0)
+            volume = self.Volume + (Math.Abs(self.Position) if self.Position < 0 else 0)
             self.BuyMarket(volume)
             return
 
@@ -216,7 +222,7 @@ class cyberia_trader_ai_strategy(Strategy):
                 stats['sell_possibility'] >= stats['sell_suc_possibility_mid'] and
                 stats['sell_suc_possibility_mid'] > 0 and
                 self.Position >= 0):
-            volume = self.Volume + (abs(self.Position) if self.Position > 0 else 0)
+            volume = self.Volume + (Math.Abs(self.Position) if self.Position > 0 else 0)
             self.SellMarket(volume)
 
     def _calculate_direction(self, ema_val, macd_main, macd_signal):

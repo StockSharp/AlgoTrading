@@ -81,7 +81,8 @@ class macd_pattern_trader_double_top_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(self._macd, self.ProcessCandle).Start()
 
-        pip_size = float(self.Security.PriceStep) if self.Security is not None else 0.01
+        ps = self.Security.PriceStep if self.Security is not None else None
+        pip_size = float(ps) if ps is not None else 0.01
         if pip_size <= 0:
             pip_size = 0.01
 

@@ -16,7 +16,7 @@ class pendulum_swing_strategy(Strategy):
         self._max_levels = self.Param("MaxLevels", 8).SetGreaterThanZero().SetDisplay("Maximum levels", "Max fills per direction", "Risk")
         self._manual_step_pips = self.Param("ManualStepPips", 50).SetGreaterThanZero().SetDisplay("Manual step (pips)", "Fallback distance", "Entry")
         self._tp_pips = self.Param("TakeProfitPips", 10).SetDisplay("Take profit (pips)", "Local profit target", "Exit")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(6).TimeFrame()).SetDisplay("Trading candle", "Primary timeframe", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(6))).SetDisplay("Trading candle", "Primary timeframe", "Data")
 
     @property
     def CandleType(self): return self._candle_type.Value

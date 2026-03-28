@@ -130,6 +130,9 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         self._update_close_history(float(candle.ClosePrice))
 
         if self.Position != 0 and self._update_protective_logic(candle):
@@ -183,10 +186,10 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
 
         if self._entry_side == Sides.Buy:
             if float(self.StopLossPips) > 0 and low_price <= entry - sl_dist:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 return True
             if float(self.TakeProfitPips) > 0 and high_price >= entry + tp_dist:
-                self.SellMarket(abs(self.Position))
+                self.SellMarket(Math.Abs(self.Position))
                 return True
             if float(self.TrailingStopPips) > 0 and trail_dist > 0:
                 candidate = high_price - trail_dist
@@ -194,21 +197,21 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
                     if self._trailing_stop_price is None or candidate > self._trailing_stop_price:
                         self._trailing_stop_price = candidate
                 if self._trailing_stop_price is not None and low_price <= self._trailing_stop_price:
-                    self.SellMarket(abs(self.Position))
+                    self.SellMarket(Math.Abs(self.Position))
                     return True
         elif self._entry_side == Sides.Sell:
             if float(self.StopLossPips) > 0 and high_price >= entry + sl_dist:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 return True
             if float(self.TakeProfitPips) > 0 and low_price <= entry - tp_dist:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(Math.Abs(self.Position))
                 return True
             if float(self.TrailingStopPips) > 0 and trail_dist > 0:
                 candidate = low_price + trail_dist
                 if self._trailing_stop_price is None or candidate < self._trailing_stop_price:
                     self._trailing_stop_price = candidate
                 if self._trailing_stop_price is not None and high_price >= self._trailing_stop_price:
-                    self.BuyMarket(abs(self.Position))
+                    self.BuyMarket(Math.Abs(self.Position))
                     return True
         return False
 
@@ -220,10 +223,10 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         if age.TotalSeconds < max_age:
             return False
         if self.Position > 0:
-            self.SellMarket(abs(self.Position))
+            self.SellMarket(Math.Abs(self.Position))
             return True
         if self.Position < 0:
-            self.BuyMarket(abs(self.Position))
+            self.BuyMarket(Math.Abs(self.Position))
             return True
         return False
 
@@ -238,9 +241,9 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
 
     def _flatten(self):
         if self.Position > 0:
-            self.SellMarket(abs(self.Position))
+            self.SellMarket(Math.Abs(self.Position))
         elif self.Position < 0:
-            self.BuyMarket(abs(self.Position))
+            self.BuyMarket(Math.Abs(self.Position))
 
     def _has_trend_sample(self):
         return self.HoursToCheckTrend > 0 and len(self._close_history) >= self.HoursToCheckTrend

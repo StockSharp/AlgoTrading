@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
@@ -27,7 +27,7 @@ class jk_bull_p_auto_trader_strategy(Strategy):
             .SetDisplay("Candle Type", "Timeframe", "General")
 
         self._prev_rsi = 0.0
-        self._entry_price = 0.0
+        self._entry_price = Decimal.Zero
 
     @property
     def candle_type(self):
@@ -36,7 +36,7 @@ class jk_bull_p_auto_trader_strategy(Strategy):
     def OnReseted(self):
         super(jk_bull_p_auto_trader_strategy, self).OnReseted()
         self._prev_rsi = 0.0
-        self._entry_price = 0.0
+        self._entry_price = Decimal.Zero
 
     def OnStarted(self, time):
         super(jk_bull_p_auto_trader_strategy, self).OnStarted(time)
@@ -62,29 +62,29 @@ class jk_bull_p_auto_trader_strategy(Strategy):
             return
 
         rsi = float(rsi_val)
-        ema = float(ema_val)
-        atr = float(atr_val)
+        ema_v = Decimal(float(ema_val))
+        atr_v = Decimal(float(atr_val))
 
-        if self._prev_rsi == 0 or atr <= 0:
+        if self._prev_rsi == 0 or atr_v <= Decimal.Zero:
             self._prev_rsi = rsi
             return
 
-        close = float(candle.ClosePrice)
+        close = candle.ClosePrice
 
         if self.Position > 0:
-            if close >= self._entry_price + atr * 2.5 or close <= self._entry_price - atr * 1.5 or rsi > 75:
+            if close >= self._entry_price + atr_v * Decimal(2.5) or close <= self._entry_price - atr_v * Decimal(1.5) or rsi > 75:
                 self.SellMarket()
-                self._entry_price = 0.0
+                self._entry_price = Decimal.Zero
         elif self.Position < 0:
-            if close <= self._entry_price - atr * 2.5 or close >= self._entry_price + atr * 1.5 or rsi < 25:
+            if close <= self._entry_price - atr_v * Decimal(2.5) or close >= self._entry_price + atr_v * Decimal(1.5) or rsi < 25:
                 self.BuyMarket()
-                self._entry_price = 0.0
+                self._entry_price = Decimal.Zero
 
         if self.Position == 0:
-            if rsi > 55 and self._prev_rsi <= 55 and close > ema:
+            if rsi > 55 and self._prev_rsi <= 55 and close > ema_v:
                 self._entry_price = close
                 self.BuyMarket()
-            elif rsi < 45 and self._prev_rsi >= 45 and close < ema:
+            elif rsi < 45 and self._prev_rsi >= 45 and close < ema_v:
                 self._entry_price = close
                 self.SellMarket()
 

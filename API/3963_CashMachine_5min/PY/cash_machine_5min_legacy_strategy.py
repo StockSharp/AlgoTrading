@@ -109,7 +109,7 @@ class cash_machine_5min_legacy_strategy(Strategy):
         if not stochastic_value.IsFinal or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        demarker = demarker_value.ToDecimal()
+        demarker = float(demarker_value)
         current_k = stochastic_value.K
         if current_k is None:
             return

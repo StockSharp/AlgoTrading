@@ -133,7 +133,7 @@ class app_price_level_cross_strategy(Strategy):
 
         volume = base_volume
         if self.Position < 0:
-            volume += abs(self.Position)
+            volume += Math.Abs(self.Position)
 
         volume = self._align_volume(volume)
         if volume <= 0:
@@ -151,7 +151,7 @@ class app_price_level_cross_strategy(Strategy):
 
         volume = base_volume
         if self.Position > 0:
-            volume += abs(self.Position)
+            volume += Math.Abs(self.Position)
 
         volume = self._align_volume(volume)
         if volume <= 0:

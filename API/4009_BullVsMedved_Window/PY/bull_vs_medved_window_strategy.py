@@ -88,7 +88,8 @@ class bull_vs_medved_window_strategy(Strategy):
     def OnStarted(self, time):
         super(bull_vs_medved_window_strategy, self).OnStarted(time)
 
-        self._point_value = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        ps = self.Security.PriceStep if self.Security is not None else None
+        self._point_value = float(ps) if ps is not None else 1.0
         if self._point_value <= 0:
             self._point_value = 1.0
 
@@ -203,7 +204,7 @@ class bull_vs_medved_window_strategy(Strategy):
                 self._reset_protection()
                 return True
         elif self.Position < 0:
-            vol = abs(self.Position)
+            vol = Math.Abs(self.Position)
             if self._short_stop is not None and high >= self._short_stop:
                 self.BuyMarket(vol)
                 self._reset_protection()

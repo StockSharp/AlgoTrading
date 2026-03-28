@@ -7,13 +7,11 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class pipso_night_breakout_strategy(Strategy):
     def __init__(self):
         super(pipso_night_breakout_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
         self._breakout_period = self.Param("BreakoutPeriod", 36).SetDisplay("Breakout Period", "Period for Highest/Lowest channel", "Indicators")
 
     @property
