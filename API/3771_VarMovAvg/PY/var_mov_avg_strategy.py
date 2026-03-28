@@ -230,10 +230,12 @@ class var_mov_avg_strategy(Strategy):
 
     def _process_stop_ma(self, ma, value, time):
         """Process a decimal value through the stop MA indicator."""
-        result = ma.Process(DecimalIndicatorValue(ma, value, time))
+        inp = DecimalIndicatorValue(ma, value, time)
+        inp.IsFinal = True
+        result = ma.Process(inp)
         if result.IsEmpty:
             return None
-        return float(result.GetValue[float]())
+        return float(result)
 
     def _get_shifted_value(self, buffer, value, shift):
         """Get a shifted MA value from the buffer."""

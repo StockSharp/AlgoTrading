@@ -157,7 +157,7 @@ class multi_ea_v12_strategy(Strategy):
                 not adx_val.IsFormed or not macd_val.IsFormed:
             return
 
-        rsi = float(rsi_val.GetValue[float]())
+        rsi = float(rsi_val)
 
         stoch_k_raw = stoch_val.K
         stoch_k = float(stoch_k_raw) if stoch_k_raw is not None else 50.0

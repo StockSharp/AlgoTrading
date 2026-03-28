@@ -15,7 +15,7 @@ class space_x_delete_stop_loss_take_profit_button_strategy(Strategy):
         super(space_x_delete_stop_loss_take_profit_button_strategy, self).__init__()
         self._sma_period = self.Param("SmaPeriod", 20).SetGreaterThanZero().SetDisplay("SMA Period", "SMA period for baseline", "Indicators")
         self._std_period = self.Param("StdDevPeriod", 20).SetGreaterThanZero().SetDisplay("StdDev Period", "Standard Deviation period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

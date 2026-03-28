@@ -21,7 +21,7 @@ class tunnel_method_ema_strategy(Strategy):
         self._tp_points = self.Param("TakeProfitPoints", 230.0).SetNotNegative().SetDisplay("Take Profit", "TP in points", "Risk")
         self._trail_points = self.Param("TrailingStopPoints", 35.0).SetNotNegative().SetDisplay("Trailing Stop", "Trail distance", "Risk")
         self._trail_trigger = self.Param("TrailingTriggerPoints", 20.0).SetNotNegative().SetDisplay("Trail Trigger", "Profit to activate trail", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

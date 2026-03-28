@@ -84,14 +84,13 @@ class adx_ma_strategy(Strategy):
             return
 
         if self._prev_close <= self._prev_ema and close > ema and self.Position <= 0:
-
-
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
 
-
         elif self._prev_close >= self._prev_ema and close < ema and self.Position >= 0:
-
-
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
 
         self._prev_close = close

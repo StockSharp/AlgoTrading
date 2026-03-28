@@ -15,7 +15,7 @@ class sudoku_ui_strategy(Strategy):
     def __init__(self):
         super(sudoku_ui_strategy, self).__init__()
         self._sma_period = self.Param("SmaPeriod", 20).SetGreaterThanZero().SetDisplay("SMA Period", "SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

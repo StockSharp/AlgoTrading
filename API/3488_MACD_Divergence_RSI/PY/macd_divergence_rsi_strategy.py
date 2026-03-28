@@ -64,6 +64,8 @@ class macd_divergence_rsi_strategy(Strategy):
         if not macd_value.IsFinal or not rsi_value.IsFinal:
             return
 
+        if macd_value.Macd is None or macd_value.Signal is None:
+            return
         macd_main = float(macd_value.Macd)
         signal = float(macd_value.Signal)
         rsi_val = float(rsi_value)

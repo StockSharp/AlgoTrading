@@ -39,24 +39,22 @@ class macd_secrets_strategy(Strategy):
 
     def OnStarted(self, time):
         super(macd_secrets_strategy, self).OnStarted(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_period.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_period.Value
+        self._fast_ind = ExponentialMovingAverage()
+        self._fast_ind.Length = self._fast_period.Value
+        self._slow_ind = ExponentialMovingAverage()
+        self._slow_ind.Length = self._slow_period.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, self._process_candle).Start()
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
-            self.DrawOwnTrades(area)
+        subscription.Bind(self._fast_ind, self._slow_ind, self._process_candle).Start()
 
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
         fast = float(fast_val)
         slow = float(slow_val)
+        if not self._fast_ind.IsFormed or not self._slow_ind.IsFormed:
+            self._prev_fast = fast
+            self._prev_slow = slow
+            return
         if self._cooldown > 0:
             self._cooldown -= 1
             self._prev_fast = fast
@@ -95,10 +93,14 @@ class macd_secrets_strategy(Strategy):
                 self._prev_slow = slow
                 return
         if self._prev_fast <= self._prev_slow and fast > slow and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
             self._entry_price = close
             self._cooldown = 100
         elif self._prev_fast >= self._prev_slow and fast < slow and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
             self._entry_price = close
             self._cooldown = 100

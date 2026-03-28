@@ -81,20 +81,26 @@ class cronex_de_marker_crossover_strategy(Strategy):
         if self._de_marker is None or self._fast_ma is None or self._slow_ma is None:
             return
 
-        dm_result = self._de_marker.Process(CandleIndicatorValue(self._de_marker, candle))
+        dm_input = CandleIndicatorValue(self._de_marker, candle)
+        dm_input.IsFinal = True
+        dm_result = self._de_marker.Process(dm_input)
         if dm_result.IsEmpty:
             return
-        dm_value = float(dm_result.GetValue[float]())
+        dm_value = float(dm_result)
 
-        fast_result = self._fast_ma.Process(DecimalIndicatorValue(self._fast_ma, dm_value, candle.OpenTime))
+        fast_input = DecimalIndicatorValue(self._fast_ma, dm_value, candle.OpenTime)
+        fast_input.IsFinal = True
+        fast_result = self._fast_ma.Process(fast_input)
         if fast_result.IsEmpty:
             return
-        fast_value = float(fast_result.GetValue[float]())
+        fast_value = float(fast_result)
 
-        slow_result = self._slow_ma.Process(DecimalIndicatorValue(self._slow_ma, dm_value, candle.OpenTime))
+        slow_input = DecimalIndicatorValue(self._slow_ma, dm_value, candle.OpenTime)
+        slow_input.IsFinal = True
+        slow_result = self._slow_ma.Process(slow_input)
         if slow_result.IsEmpty:
             return
-        slow_value = float(slow_result.GetValue[float]())
+        slow_value = float(slow_result)
 
         if not self._de_marker.IsFormed or not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             self._previous_fast = fast_value

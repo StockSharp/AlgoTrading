@@ -7,8 +7,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class swing_trader_strategy(Strategy):
     """Bollinger Band touch swing: buy on lower touch + middle cross up, sell on upper touch + middle cross down."""
@@ -16,7 +14,7 @@ class swing_trader_strategy(Strategy):
         super(swing_trader_strategy, self).__init__()
         self._bb_period = self.Param("BollingerPeriod", 20).SetGreaterThanZero().SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
         self._bb_width = self.Param("BollingerWidth", 2.0).SetGreaterThanZero().SetDisplay("BB Width", "Bollinger Bands deviation", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe for signals", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe for signals", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

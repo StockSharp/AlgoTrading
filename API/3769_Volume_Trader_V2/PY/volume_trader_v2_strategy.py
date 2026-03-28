@@ -59,6 +59,8 @@ class volume_trader_v2_strategy(Strategy):
 
         self.Volume = float(self.TradeVolume)
 
+        self.StartProtection(None, None)
+
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()
 
@@ -66,7 +68,7 @@ class volume_trader_v2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        current_volume = float(candle.TotalVolume)
+        current_volume = candle.TotalVolume
 
         if self._previous_volume is None:
             self._previous_volume = current_volume

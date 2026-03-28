@@ -15,7 +15,7 @@ class reversing_martingale_strategy(Strategy):
         super(reversing_martingale_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 10).SetGreaterThanZero().SetDisplay("Fast WMA", "Fast WMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 30).SetGreaterThanZero().SetDisplay("Slow WMA", "Slow WMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

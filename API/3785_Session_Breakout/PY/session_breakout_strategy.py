@@ -15,7 +15,7 @@ class session_breakout_strategy(Strategy):
         self._range_start = self.Param("RangeStartHour", 0).SetDisplay("Range Start", "Hour to start tracking range", "Sessions")
         self._range_end = self.Param("RangeEndHour", 8).SetDisplay("Range End", "Hour to stop tracking range", "Sessions")
         self._trade_end = self.Param("TradeEndHour", 20).SetDisplay("Trade End", "Hour to stop trading", "Sessions")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

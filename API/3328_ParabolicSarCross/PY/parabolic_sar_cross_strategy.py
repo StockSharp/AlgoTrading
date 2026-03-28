@@ -13,7 +13,7 @@ from indicator_extensions import *
 class parabolic_sar_cross_strategy(Strategy):
     def __init__(self):
         super(parabolic_sar_cross_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

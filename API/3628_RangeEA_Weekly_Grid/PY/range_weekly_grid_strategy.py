@@ -7,15 +7,13 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class range_weekly_grid_strategy(Strategy):
     def __init__(self):
         super(range_weekly_grid_strategy, self).__init__()
         self._range_period = self.Param("RangePeriod", 100).SetDisplay("Range Period", "Candles to determine range", "Logic")
         self._grid_levels = self.Param("GridLevels", 5).SetDisplay("Grid Levels", "Grid levels within range", "Logic")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Primary candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Primary candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

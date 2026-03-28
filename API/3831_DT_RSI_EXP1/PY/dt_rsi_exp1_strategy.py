@@ -6,7 +6,8 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
-from StockSharp.Algo.Strategies import Strategy, Unit, UnitTypes
+from StockSharp.Algo.Strategies import Strategy
+from StockSharp.Messages import Unit, UnitTypes
 
 
 class dt_rsi_exp1_strategy(Strategy):

@@ -57,13 +57,10 @@ class dark_cloud_piercing_cci_strategy(Strategy):
         subscription.Bind(self._cci, self._process_candle)
         subscription.Start()
 
-        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent), useMarketOrders=True)
+        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent))
 
     def _process_candle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
-            return
-
-        if not self._cci.IsFormed:
             return
 
         cci_val = float(cci_value)

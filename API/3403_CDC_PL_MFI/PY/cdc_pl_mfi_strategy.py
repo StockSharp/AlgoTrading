@@ -63,13 +63,10 @@ class cdc_pl_mfi_strategy(Strategy):
         subscription.Bind(self._mfi, self._process_candle)
         subscription.Start()
 
-        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent), useMarketOrders=True)
+        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent))
 
     def _process_candle(self, candle, mfi_value):
         if candle.State != CandleStates.Finished:
-            return
-
-        if not self._mfi.IsFormed:
             return
 
         mfi_val = float(mfi_value)

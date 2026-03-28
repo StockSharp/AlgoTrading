@@ -43,11 +43,13 @@ class graal_fractal_channel_strategy(Strategy):
             self._has_prev = True
             return
         if self._prev_close <= self._prev_mid and close > mid and self.Position <= 0:
-
+            if self.Position < 0:
+                self.BuyMarket()
             self.BuyMarket()
 
         elif self._prev_close >= self._prev_mid and close < mid and self.Position >= 0:
-
+            if self.Position > 0:
+                self.SellMarket()
             self.SellMarket()
         self._prev_close = close
         self._prev_mid = mid

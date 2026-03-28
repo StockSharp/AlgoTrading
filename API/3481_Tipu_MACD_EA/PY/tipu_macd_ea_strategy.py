@@ -94,6 +94,8 @@ class tipu_macd_ea_strategy(Strategy):
         if self._candles_since_trade < self.SignalCooldownCandles:
             self._candles_since_trade += 1
 
+        if macd_value.Macd is None or macd_value.Signal is None:
+            return
         macd_main = float(macd_value.Macd)
         signal = float(macd_value.Signal)
 

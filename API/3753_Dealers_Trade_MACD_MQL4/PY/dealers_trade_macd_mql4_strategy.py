@@ -98,7 +98,7 @@ class dealers_trade_macd_mql4_strategy(Strategy):
         if not macd_result.IsFinal:
             return
 
-        macd_value = float(macd_result.GetValue[float]())
+        macd_value = float(macd_result)
 
         self._update_trailing_and_stops(candle)
 

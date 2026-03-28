@@ -345,15 +345,19 @@ class universal_ma_cross_v4_strategy(Strategy):
         slow_price = self._get_price(candle, self.SlowPriceType)
         time = candle.OpenTime
 
-        fast_result = self._fast_ma.Process(DecimalIndicatorValue(self._fast_ma, fast_price, time))
+        fast_input = DecimalIndicatorValue(self._fast_ma, fast_price, time)
+        fast_input.IsFinal = True
+        fast_result = self._fast_ma.Process(fast_input)
         if fast_result.IsEmpty:
             return
-        fast_value = float(fast_result.GetValue[float]())
+        fast_value = float(fast_result)
 
-        slow_result = self._slow_ma.Process(DecimalIndicatorValue(self._slow_ma, slow_price, time))
+        slow_input = DecimalIndicatorValue(self._slow_ma, slow_price, time)
+        slow_input.IsFinal = True
+        slow_result = self._slow_ma.Process(slow_input)
         if slow_result.IsEmpty:
             return
-        slow_value = float(slow_result.GetValue[float]())
+        slow_value = float(slow_result)
 
         prev_fast = self._fast_prev
         prev_slow = self._slow_prev

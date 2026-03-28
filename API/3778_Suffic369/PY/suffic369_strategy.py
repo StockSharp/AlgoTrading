@@ -16,7 +16,7 @@ class suffic369_strategy(Strategy):
         super(suffic369_strategy, self).__init__()
         self._fast_ma_length = self.Param("FastMaLength", 3).SetDisplay("Fast SMA Length", "Fast moving average period", "Indicators")
         self._slow_ma_length = self.Param("SlowMaLength", 6).SetDisplay("Slow SMA Length", "Slow moving average period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Primary candle source", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Primary candle source", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

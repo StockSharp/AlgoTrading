@@ -16,7 +16,7 @@ class oz_fx_simple_strategy(Strategy):
         self._fast_period = self.Param("FastPeriod", 20).SetDisplay("Fast WMA", "Fast WMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 80).SetDisplay("Slow WMA", "Slow WMA period", "Indicators")
         self._cooldown_candles = self.Param("CooldownCandles", 100).SetDisplay("Cooldown", "Candles between signals", "General")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

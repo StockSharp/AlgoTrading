@@ -149,7 +149,9 @@ class exp_trend_magic_strategy(Strategy):
             return
 
         price = self._get_applied_price(candle, self.CciPrice)
-        cci_indicator_value = cci.Process(DecimalIndicatorValue(cci, price, candle.OpenTime))
+        cci_input = DecimalIndicatorValue(cci, price, candle.OpenTime)
+        cci_input.IsFinal = True
+        cci_indicator_value = cci.Process(cci_input)
 
         if not cci.IsFormed or not atr.IsFormed:
             return

@@ -61,13 +61,10 @@ class expert_adc_pl_stoch_strategy(Strategy):
         subscription.BindEx(self._stoch, self._process_candle)
         subscription.Start()
 
-        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent), useMarketOrders=True)
+        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent))
 
     def _process_candle(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
-            return
-
-        if not self._stoch.IsFormed:
             return
 
         if self._candles_since_trade < self.signal_cooldown:

@@ -7,15 +7,13 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class turn_grid_strategy(Strategy):
     """Simplified grid: SMA crossover (10/30) for direction with alternating trades."""
     def __init__(self):
         super(turn_grid_strategy, self).__init__()
         self._grid_dist = self.Param("GridDistance", 0.01).SetDisplay("Grid Distance", "Relative distance between levels", "Grid")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle type", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candle type", "Data")
 
     @property
     def CandleType(self): return self._candle_type.Value

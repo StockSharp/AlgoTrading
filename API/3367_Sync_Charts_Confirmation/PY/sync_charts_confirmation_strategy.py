@@ -17,7 +17,7 @@ class sync_charts_confirmation_strategy(Strategy):
         self._fast_period = self.Param("FastPeriod", 10).SetGreaterThanZero().SetDisplay("Fast Period", "Fast SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 40).SetGreaterThanZero().SetDisplay("Slow Period", "Slow SMA period", "Indicators")
         self._cooldown = self.Param("SignalCooldownCandles", 6).SetGreaterThanZero().SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

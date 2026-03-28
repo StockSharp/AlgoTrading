@@ -74,7 +74,7 @@ class e_turbo_fx_classic_strategy(Strategy):
         sl_unit = Unit(sl_steps, UnitTypes.Absolute) if sl_steps > 0 else None
 
         if tp_unit is not None or sl_unit is not None:
-            self.StartProtection(tp_unit, sl_unit, False, True)
+            self.StartProtection(tp_unit, sl_unit)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()

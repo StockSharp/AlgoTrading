@@ -30,21 +30,15 @@ class sniper_jaw_strategy(Strategy):
 
     def OnReseted(self):
         super(sniper_jaw_strategy, self).OnReseted()
-        self._long_stop = None
-        self._long_take = None
-        self._short_stop = None
-        self._short_take = None
+        self._stop = None
+        self._take = None
         self._finished_candles = 0
-        self._last_signal_time = None
 
     def OnStarted(self, time):
         super(sniper_jaw_strategy, self).OnStarted(time)
-        self._long_stop = None
-        self._long_take = None
-        self._short_stop = None
-        self._short_take = None
+        self._stop = None
+        self._take = None
         self._finished_candles = 0
-        self._last_signal_time = None
 
         self._pip_size = self._calculate_pip_size()
 
@@ -58,28 +52,6 @@ class sniper_jaw_strategy(Strategy):
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(self.ProcessCandle).Start()
 
-    def OnOwnTradeReceived(self, trade):
-        super(sniper_jaw_strategy, self).OnOwnTradeReceived(trade)
-        if trade.Order is None or trade.Order.Security != self.Security:
-            return
-        entry_price = float(trade.Trade.Price)
-        pip = self._pip_size
-        if self.Position > 0:
-            self._long_stop = entry_price - self._sl_pips.Value * pip if self._sl_pips.Value > 0 else None
-            self._long_take = entry_price + self._tp_pips.Value * pip if self._tp_pips.Value > 0 else None
-            self._short_stop = None
-            self._short_take = None
-        elif self.Position < 0:
-            self._short_stop = entry_price + self._sl_pips.Value * pip if self._sl_pips.Value > 0 else None
-            self._short_take = entry_price - self._tp_pips.Value * pip if self._tp_pips.Value > 0 else None
-            self._long_stop = None
-            self._long_take = None
-        else:
-            self._long_stop = None
-            self._long_take = None
-            self._short_stop = None
-            self._short_take = None
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
@@ -87,29 +59,24 @@ class sniper_jaw_strategy(Strategy):
         self._finished_candles += 1
 
         # Manage existing position (SL/TP) BEFORE indicator processing
-        closed = False
         if self.Position > 0:
-            if self._long_take is not None and float(candle.HighPrice) >= self._long_take:
+            if self._take is not None and float(candle.HighPrice) >= self._take:
                 self.SellMarket(float(self.Position))
-                self._long_stop = None
-                self._long_take = None
-                closed = True
-            elif self._long_stop is not None and float(candle.LowPrice) <= self._long_stop:
+                self._stop = None
+                self._take = None
+            elif self._stop is not None and float(candle.LowPrice) <= self._stop:
                 self.SellMarket(float(self.Position))
-                self._long_stop = None
-                self._long_take = None
-                closed = True
+                self._stop = None
+                self._take = None
         elif self.Position < 0:
-            if self._short_take is not None and float(candle.LowPrice) <= self._short_take:
+            if self._take is not None and float(candle.LowPrice) <= self._take:
                 self.BuyMarket(abs(float(self.Position)))
-                self._short_stop = None
-                self._short_take = None
-                closed = True
-            elif self._short_stop is not None and float(candle.HighPrice) >= self._short_stop:
+                self._stop = None
+                self._take = None
+            elif self._stop is not None and float(candle.HighPrice) >= self._stop:
                 self.BuyMarket(abs(float(self.Position)))
-                self._short_stop = None
-                self._short_take = None
-                closed = True
+                self._stop = None
+                self._take = None
 
         median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
 
@@ -146,27 +113,25 @@ class sniper_jaw_strategy(Strategy):
         if is_uptrend:
             if self.Position < 0 and self._use_entry_to_exit.Value:
                 self.BuyMarket(abs(float(self.Position)))
-                self._short_stop = None
-                self._short_take = None
+                self._stop = None
+                self._take = None
                 return
             if self.Position != 0:
                 return
-            if self._last_signal_time == candle.OpenTime:
-                return
             self.BuyMarket(vol)
-            self._last_signal_time = candle.OpenTime
+            self._stop = close - self._sl_pips.Value * pip if self._sl_pips.Value > 0 else None
+            self._take = close + self._tp_pips.Value * pip if self._tp_pips.Value > 0 else None
         elif is_downtrend:
             if self.Position > 0 and self._use_entry_to_exit.Value:
                 self.SellMarket(float(self.Position))
-                self._long_stop = None
-                self._long_take = None
+                self._stop = None
+                self._take = None
                 return
             if self.Position != 0:
                 return
-            if self._last_signal_time == candle.OpenTime:
-                return
             self.SellMarket(vol)
-            self._last_signal_time = candle.OpenTime
+            self._stop = close + self._sl_pips.Value * pip if self._sl_pips.Value > 0 else None
+            self._take = close - self._tp_pips.Value * pip if self._tp_pips.Value > 0 else None
 
     def _calculate_pip_size(self):
         step = 0.0

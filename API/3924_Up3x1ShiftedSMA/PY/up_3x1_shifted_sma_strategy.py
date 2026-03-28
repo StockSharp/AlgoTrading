@@ -16,7 +16,7 @@ class up_3x1_shifted_sma_strategy(Strategy):
         super(up_3x1_shifted_sma_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 8).SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 24).SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -55,6 +55,8 @@ class up_3x1_shifted_sma_strategy(Strategy):
     def OnProcess(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
         fv = float(fast_val)
         sv = float(slow_val)
@@ -72,14 +74,12 @@ class up_3x1_shifted_sma_strategy(Strategy):
             return
 
         if self._prev_fast <= self._prev_slow and fv > sv and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume)
             self._cooldown = 2
         elif self._prev_fast >= self._prev_slow and fv < sv and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume)
             self._cooldown = 2
 
         self._prev_fast = fv

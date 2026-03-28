@@ -6,12 +6,11 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class pause_trading_on_consecutive_loss_strategy(Strategy):
     def __init__(self):
         super(pause_trading_on_consecutive_loss_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(60).TimeFrame()).SetDisplay("Candle Type", "Timeframe for momentum entries", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60))).SetDisplay("Candle Type", "Timeframe for momentum entries", "General")
         self._consecutive_losses = self.Param("ConsecutiveLosses", 3).SetGreaterThanZero().SetDisplay("Consecutive Losses", "Losses before pausing", "Risk")
         self._pause_bars = self.Param("PauseBars", 8).SetGreaterThanZero().SetDisplay("Pause Bars", "Number of bars to pause after loss streak", "Risk")
 

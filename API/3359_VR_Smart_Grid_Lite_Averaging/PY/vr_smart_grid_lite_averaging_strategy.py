@@ -15,7 +15,7 @@ class vr_smart_grid_lite_averaging_strategy(Strategy):
     def __init__(self):
         super(vr_smart_grid_lite_averaging_strategy, self).__init__()
         self._bb_period = self.Param("BbPeriod", 20).SetGreaterThanZero().SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

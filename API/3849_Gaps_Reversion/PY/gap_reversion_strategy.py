@@ -4,7 +4,8 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
-from StockSharp.Algo.Strategies import Strategy, Unit, UnitTypes
+from StockSharp.Algo.Strategies import Strategy
+from StockSharp.Messages import Unit, UnitTypes
 
 class gap_reversion_strategy(Strategy):
     def __init__(self):
