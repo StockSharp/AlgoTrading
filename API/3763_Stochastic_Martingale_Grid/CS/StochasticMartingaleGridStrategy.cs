@@ -44,9 +44,6 @@ public class StochasticMartingaleGridStrategy : Strategy
 	private decimal? _previousMain;
 	private decimal? _previousSignal;
 	private decimal _pipSize;
-	private decimal _lastEntryVolume;
-	private decimal _lastEntryPrice;
-	private Sides? _currentSide;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="StochasticMartingaleGridStrategy"/> class.
@@ -219,9 +216,6 @@ public class StochasticMartingaleGridStrategy : Strategy
 		_previousMain = null;
 		_previousSignal = null;
 		_pipSize = 0m;
-		_lastEntryPrice = 0m;
-		_lastEntryVolume = 0m;
-		_currentSide = null;
 	}
 
 	/// <inheritdoc />

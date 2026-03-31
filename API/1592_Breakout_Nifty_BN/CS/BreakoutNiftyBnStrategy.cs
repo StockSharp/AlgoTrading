@@ -21,9 +21,6 @@ public class BreakoutNiftyBnStrategy : Strategy
 	private readonly StrategyParam<int> _channelLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _trailSl;
-	private decimal _entryPrice;
-
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
 	public int ChannelLength { get => _channelLength.Value; set => _channelLength.Value = value; }
@@ -55,8 +52,6 @@ public class BreakoutNiftyBnStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_trailSl = 0;
-		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />

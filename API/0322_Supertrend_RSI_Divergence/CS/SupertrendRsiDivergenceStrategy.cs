@@ -29,8 +29,6 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 	// Data for divergence detection
 	private readonly SynchronizedList<decimal> _prices = [];
 	private readonly SynchronizedList<decimal> _rsiValues = [];
-	private bool _isLongPosition;
-	private bool _isShortPosition;
 
 	// Supertrend state tracking
 	private decimal _supertrendValue;
@@ -109,8 +107,6 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 
 		_prices.Clear();
 		_rsiValues.Clear();
-		_isLongPosition = false;
-		_isShortPosition = false;
 _trendDirection = TrendDirections.None;
 		_supertrendValue = 0;
 	}

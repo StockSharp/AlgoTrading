@@ -27,8 +27,6 @@ public class TrailingStopStrategy : Strategy
 	private ExponentialMovingAverage _fastMa;
 	private ExponentialMovingAverage _slowMa;
 
-	private decimal _entryPrice;
-	private decimal _stopPrice;
 	private decimal _prevFastMa;
 	private decimal _prevSlowMa;
 	private bool _isInitialized;
@@ -137,8 +135,6 @@ public class TrailingStopStrategy : Strategy
 
 		_fastMa = null;
 		_slowMa = null;
-		_entryPrice = 0m;
-		_stopPrice = 0m;
 		_prevFastMa = 0m;
 		_prevSlowMa = 0m;
 		_isInitialized = false;

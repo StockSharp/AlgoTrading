@@ -32,9 +32,6 @@ public class EscapeStrategy : Strategy
 	private SimpleMovingAverage _fastMa;
 	private SimpleMovingAverage _slowMa;
 	private bool _initialized;
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takePrice;
 	private decimal _previousClose;
 	private decimal _previousFast;
 	private decimal _previousSlow;
@@ -148,9 +145,6 @@ public class EscapeStrategy : Strategy
 		_fastMa = null;
 		_slowMa = null;
 		_initialized = false;
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_takePrice = 0m;
 		_previousClose = 0m;
 		_previousFast = 0m;
 		_previousSlow = 0m;

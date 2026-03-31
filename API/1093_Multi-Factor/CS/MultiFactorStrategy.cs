@@ -24,7 +24,6 @@ public class MultiFactorStrategy : Strategy
 	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
 	private decimal _prevDiff;
 	private bool _hasPrevDiff;
 	private int _cooldownRemaining;
@@ -92,7 +91,6 @@ public class MultiFactorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
 		_prevDiff = 0m;
 		_hasPrevDiff = false;
 		_cooldownRemaining = 0;
@@ -122,7 +120,6 @@ public class MultiFactorStrategy : Strategy
 		_atr = new() { Length = AtrLength };
 		_sma50 = new() { Length = 50 };
 		_sma200 = new() { Length = 200 };
-		_entryPrice = 0m;
 		_prevDiff = 0m;
 		_hasPrevDiff = false;
 		_cooldownRemaining = 0;

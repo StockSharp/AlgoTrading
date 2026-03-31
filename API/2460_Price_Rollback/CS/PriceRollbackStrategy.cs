@@ -28,8 +28,6 @@ public class PriceRollbackStrategy : Strategy
 	private readonly StrategyParam<DataType> _type;
 
 	private decimal _prevClose;
-	private decimal _entryPrice;
-	private decimal _trailPrice;
 	private bool _hasPrev;
 
 	public decimal Corridor { get => _corridor.Value; set => _corridor.Value = value; }
@@ -57,8 +55,6 @@ public class PriceRollbackStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevClose = 0m;
-		_entryPrice = 0m;
-		_trailPrice = 0m;
 		_hasPrev = false;
 	}
 
@@ -69,8 +65,6 @@ public class PriceRollbackStrategy : Strategy
 		base.OnStarted2(time);
 
 		_hasPrev = false;
-		_entryPrice = 0;
-		_trailPrice = 0;
 
 		var atr = new AverageTrueRange { Length = 14 };
 

@@ -20,7 +20,6 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
-	private decimal _stopPrice;
 	private decimal _prevHighest;
 	private decimal _prevLowest;
 
@@ -57,7 +56,6 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 		base.OnReseted();
 
 		_entryPrice = 0;
-		_stopPrice = 0;
 		_prevHighest = 0;
 		_prevLowest = 0;
 	}
@@ -67,7 +65,6 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 		base.OnStarted2(time);
 
 		_entryPrice = 0;
-		_stopPrice = 0;
 		_prevHighest = 0;
 		_prevLowest = 0;
 

@@ -38,8 +38,6 @@ public class KeltnerKalmanStrategy : Strategy
 	private decimal _atrValue;
 	private decimal _upperBand;
 	private decimal _lowerBand;
-	private bool _isLongPosition;
-	private bool _isShortPosition;
 
 	/// <summary>
 	/// EMA period for Keltner Channel.
@@ -143,8 +141,6 @@ public class KeltnerKalmanStrategy : Strategy
 		_kalmanEstimate = 0;
 		_kalmanError = 1;
 		_prices.Clear();
-		_isLongPosition = false;
-		_isShortPosition = false;
 		_emaValue = 0;
 		_atrValue = 0;
 		_upperBand = 0;

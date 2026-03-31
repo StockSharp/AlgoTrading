@@ -21,7 +21,6 @@ public class ExpertAdcPlStochStrategy : Strategy
 
 	private readonly List<ICandleMessage> _candles = new();
 	private decimal _prevSignal;
-	private bool _hasPrevSignal;
 	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -52,7 +51,6 @@ public class ExpertAdcPlStochStrategy : Strategy
 		base.OnReseted();
 		_candles.Clear();
 		_prevSignal = 0m;
-		_hasPrevSignal = false;
 		_candlesSinceTrade = SignalCooldownCandles;
 	}
 
@@ -61,7 +59,6 @@ public class ExpertAdcPlStochStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		_candles.Clear();
-		_hasPrevSignal = false;
 		_candlesSinceTrade = SignalCooldownCandles;
 		var stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
 		var subscription = SubscribeCandles(CandleType);
@@ -117,6 +114,5 @@ public class ExpertAdcPlStochStrategy : Strategy
 		}
 
 		_prevSignal = kValue;
-		_hasPrevSignal = true;
 	}
 }

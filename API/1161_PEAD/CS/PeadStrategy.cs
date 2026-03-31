@@ -29,9 +29,6 @@ public class PeadStrategy : Strategy
 	private decimal _prevClose;
 	private decimal _prevEma;
 	private decimal _prevRoc;
-	private decimal _stopLevel;
-	private int _barsInTrade;
-	private decimal _entryPrice;
 
 	/// <summary>
 	/// Gap-up threshold (%).
@@ -139,9 +136,6 @@ public class PeadStrategy : Strategy
 		_prevClose = 0;
 		_prevEma = 0;
 		_prevRoc = 0;
-		_stopLevel = 0;
-		_barsInTrade = 0;
-		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />

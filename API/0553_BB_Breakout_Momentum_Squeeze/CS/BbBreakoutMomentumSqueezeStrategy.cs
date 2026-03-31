@@ -42,12 +42,6 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 	
 	private decimal? _prevBull;
 	private decimal? _prevBear;
-	private decimal _longEntry;
-	private decimal _longSl;
-	private decimal _longTp;
-	private decimal _shortEntry;
-	private decimal _shortSl;
-	private decimal _shortTp;
 	
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BbBreakoutMomentumSqueezeStrategy"/>.
@@ -154,8 +148,6 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		
 		_prevBull = null;
 		_prevBear = null;
-		_longEntry = _longSl = _longTp = default;
-		_shortEntry = _shortSl = _shortTp = default;
 	}
 	
 	/// <inheritdoc />

@@ -27,9 +27,6 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	private readonly StrategyParam<decimal> _histogramThreshold;
 	private readonly StrategyParam<int> _trailingPeriod;
 
-	private bool _isHistogramInitialized;
-	private decimal _prevHistogram;
-
 	/// <summary>
 	/// Candle type to process.
 	/// </summary>
@@ -161,8 +158,6 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_isHistogramInitialized = false;
-		_prevHistogram = 0m;
 	}
 
 	/// <inheritdoc />

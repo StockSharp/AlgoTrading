@@ -28,8 +28,6 @@ public class SupertrendStochasticStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private int _cooldown;
-	private bool _hasPrevTrend;
-	private bool _prevBullish;
 
 	// Indicators
 	private SuperTrend _supertrend;
@@ -169,8 +167,6 @@ public class SupertrendStochasticStrategy : Strategy
 		_supertrend = null;
 		_stochastic = null;
 		_cooldown = 0;
-		_hasPrevTrend = false;
-		_prevBullish = false;
 	}
 
 	/// <inheritdoc />

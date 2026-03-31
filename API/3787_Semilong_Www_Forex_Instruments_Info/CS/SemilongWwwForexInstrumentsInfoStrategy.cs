@@ -35,10 +35,6 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 
 	private readonly List<decimal> _closes = new();
 	private decimal _pipSize;
-	private int _positionDirection;
-	private decimal _entryPrice;
-	private decimal _bestPrice;
-	private int _lossStreak;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SemilongWwwForexInstrumentsInfoStrategy"/> class.
@@ -210,10 +206,6 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 
 		_closes.Clear();
 		_pipSize = 0m;
-		_positionDirection = 0;
-		_entryPrice = 0m;
-		_bestPrice = 0m;
-		_lossStreak = 0;
 	}
 
 	/// <inheritdoc />

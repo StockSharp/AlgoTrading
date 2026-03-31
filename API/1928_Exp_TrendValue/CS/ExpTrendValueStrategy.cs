@@ -36,9 +36,7 @@ public class ExpTrendValueStrategy : Strategy
 	private int _prevTrend;
 	private bool _initialized;
 
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
+
 
 	/// <summary>
 	/// Allow opening long positions.
@@ -130,7 +128,6 @@ public class ExpTrendValueStrategy : Strategy
 		_prevHighBand = _prevLowBand = 0m;
 		_prevTrend = 0;
 		_initialized = false;
-		_entryPrice = _stopPrice = _takeProfitPrice = 0m;
 	}
 
 	/// <inheritdoc />

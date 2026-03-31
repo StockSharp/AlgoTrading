@@ -24,7 +24,6 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ParabolicSar _parabolicSar;
-	private decimal _prevSentiment;
 	private decimal _prevPrice;
 	private bool _prevAboveSar;
 	private bool _isFirstCandle = true;
@@ -101,7 +100,6 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 		base.OnReseted();
 
 		_parabolicSar = null;
-		_prevSentiment = default;
 		_prevPrice = default;
 		_prevAboveSar = default;
 		_isFirstCandle = true;

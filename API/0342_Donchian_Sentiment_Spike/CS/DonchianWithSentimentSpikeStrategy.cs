@@ -37,9 +37,7 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 
 	private decimal _midChannel;
 
-	// Flags to track entry conditions
-	private bool _isLong;
-	private bool _isShort;
+
 
 	/// <summary>
 	/// Donchian channel period.
@@ -130,7 +128,6 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_isLong = _isShort = default;
 		_midChannel = _sentimentAverage = _sentimentStdDev = _currentSentiment = default;
 		_sentimentHistory.Clear();
 	}
