@@ -21,7 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../API/**/*.cs" Link="CS\%(RecursiveDir)%(Filename)%(Extension)" />
-    <None Include="../API/**/*.py" Link="PY\%(RecursiveDir)%(Filename)%(Extension)" />
+    <AdditionalFiles Include="../API/**/*.py" Link="PY\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Tests.SourceGen/Tests.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
