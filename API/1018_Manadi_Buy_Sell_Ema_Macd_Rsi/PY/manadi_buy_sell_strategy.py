@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class manadi_buy_sell_strategy(Strategy):
         self._take_profit_price = 0.0
         self._bars_from_trade = self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(manadi_buy_sell_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(manadi_buy_sell_strategy, self).OnStarted2(time)
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._stop_price = 0.0

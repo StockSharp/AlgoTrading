@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -21,8 +23,8 @@ class dvd_level_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, v): self._candle_type.Value = v
 
-    def OnStarted(self, time):
-        super(dvd_level_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dvd_level_strategy, self).OnStarted2(time)
         self._prev_ravi = 0.0
         self._has_prev = False
         self._ema_fast = EMA()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class volatility_bias_model_strategy(Strategy):
         self._bars_in_position = 0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(volatility_bias_model_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatility_bias_model_strategy, self).OnStarted2(time)
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = 10
         slow_ema = ExponentialMovingAverage()

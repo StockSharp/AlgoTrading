@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -63,8 +65,8 @@ class afl_winner_sign_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(afl_winner_sign_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(afl_winner_sign_strategy, self).OnStarted2(time)
 
         self._fast = ExponentialMovingAverage()
         self._fast.Length = self.KPeriod

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class vlt_trader_filter_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(vlt_trader_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vlt_trader_filter_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.process_candle).Start()

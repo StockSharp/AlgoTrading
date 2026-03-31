@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class intra_bullish_profit_ping_v4_0_strategy(Strategy):
         self._last_rsi = 0.0
         self._last_histogram = 0.0
 
-    def OnStarted(self, time):
-        super(intra_bullish_profit_ping_v4_0_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(intra_bullish_profit_ping_v4_0_strategy, self).OnStarted2(time)
         ema_short = ExponentialMovingAverage()
         ema_short.Length = self._short_ema_length.Value
         ema_long = ExponentialMovingAverage()

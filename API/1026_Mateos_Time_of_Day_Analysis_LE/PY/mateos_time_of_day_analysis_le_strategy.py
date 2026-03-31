@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class mateos_time_of_day_analysis_le_strategy(Strategy):
         super(mateos_time_of_day_analysis_le_strategy, self).OnReseted()
         self._entry_date = None
 
-    def OnStarted(self, time):
-        super(mateos_time_of_day_analysis_le_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mateos_time_of_day_analysis_le_strategy, self).OnStarted2(time)
         self._entry_date = None
         dummy1 = ExponentialMovingAverage()
         dummy1.Length = 10

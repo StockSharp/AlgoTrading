@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -126,8 +128,8 @@ class macd_stochastic_strategy(Strategy):
         digits = int(round(math.log10(ratio)))
         self._pip_size = price_step * 10.0 if (digits == 3 or digits == 5) else price_step
 
-    def OnStarted(self, time):
-        super(macd_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_stochastic_strategy, self).OnStarted2(time)
 
         self._stochastic_history = []
         self._prev_macd = 0.0

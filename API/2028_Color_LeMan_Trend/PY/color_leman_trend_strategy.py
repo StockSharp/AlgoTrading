@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -130,8 +132,8 @@ class color_leman_trend_strategy(Strategy):
     def AllowSellClose(self, value):
         self._allow_sell_close.Value = value
 
-    def OnStarted(self, time):
-        super(color_leman_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_leman_trend_strategy, self).OnStarted2(time)
 
         self._bulls_ema = ExponentialMovingAverage()
         self._bulls_ema.Length = self.PeriodEma

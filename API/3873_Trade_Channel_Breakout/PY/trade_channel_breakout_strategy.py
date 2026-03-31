@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest
@@ -18,8 +20,8 @@ class trade_channel_breakout_strategy(Strategy):
     def OnReseted(self):
         super(trade_channel_breakout_strategy, self).OnReseted()
         self._prev_close = 0.0; self._prev_mid = 0.0; self._has_prev = False
-    def OnStarted(self, time):
-        super(trade_channel_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trade_channel_breakout_strategy, self).OnStarted2(time)
         self._has_prev = False
         highest = Highest(); highest.Length = self.channel_period
         lowest = Lowest(); lowest.Length = self.channel_period

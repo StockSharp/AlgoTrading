@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates
@@ -52,8 +54,8 @@ class neural_network_macd_strategy(Strategy):
         self._entry_price = 0
         self._is_long = False
 
-    def OnStarted(self, time):
-        super(neural_network_macd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(neural_network_macd_strategy, self).OnStarted2(time)
         self._macd_initialized = False
         self._prev_macd = 0
         self._prev_signal = 0

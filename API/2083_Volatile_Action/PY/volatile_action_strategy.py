@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -56,8 +58,8 @@ class volatile_action_strategy(Strategy):
         self._teeth = None
         self._lips = None
 
-    def OnStarted(self, time):
-        super(volatile_action_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatile_action_strategy, self).OnStarted2(time)
         self._atr1 = AverageTrueRange()
         self._atr1.Length = 1
         self._atr_base = AverageTrueRange()

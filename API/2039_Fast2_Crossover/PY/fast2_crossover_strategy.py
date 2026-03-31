@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan
@@ -46,8 +48,8 @@ class fast2_crossover_strategy(Strategy):
         self._has_prev_diff1 = False
         self._has_prev_diff2 = False
 
-    def OnStarted(self, time):
-        super(fast2_crossover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fast2_crossover_strategy, self).OnStarted2(time)
 
         self._fast = WeightedMovingAverage()
         self._fast.Length = self._fast_length.Value

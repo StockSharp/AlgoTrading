@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -60,8 +62,8 @@ class center_of_gravity_candle_strategy(Strategy):
         self._low_smooth = None
         self._close_smooth = None
 
-    def OnStarted(self, time):
-        super(center_of_gravity_candle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(center_of_gravity_candle_strategy, self).OnStarted2(time)
 
         length = self._period.Value
         s_len = self._smooth_period.Value

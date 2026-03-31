@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -64,8 +66,8 @@ class altarius_rsi_stochastic_dual_strategy(Strategy):
         self._prev_slow_signal = 0.0
         self._has_prev_slow_signal = False
 
-    def OnStarted(self, time):
-        super(altarius_rsi_stochastic_dual_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(altarius_rsi_stochastic_dual_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value

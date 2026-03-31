@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -52,8 +54,8 @@ class gazonkos_expert_strategy(Strategy):
         self._last_trade_hour = None
         self._last_signal_hour = None
 
-    def OnStarted(self, time):
-        super(gazonkos_expert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gazonkos_expert_strategy, self).OnStarted2(time)
 
         ps = 0.0001
         if self.Security is not None and self.Security.PriceStep is not None:

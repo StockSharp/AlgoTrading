@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class multi_time_frame_regression_strategy(Strategy):
         self._prev_lr = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(multi_time_frame_regression_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_time_frame_regression_strategy, self).OnStarted2(time)
         lr = LinearReg()
         lr.Length = self._regression_length.Value
         highest = Highest()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -77,8 +79,8 @@ class supermacbot_by_the_guardian_forex_tv_strategy(Strategy):
         self._is_histogram_initialized = False
         self._prev_histogram = 0.0
 
-    def OnStarted(self, time):
-        super(supermacbot_by_the_guardian_forex_tv_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(supermacbot_by_the_guardian_forex_tv_strategy, self).OnStarted2(time)
 
         fast_ma = SimpleMovingAverage()
         fast_ma.Length = self.FastMaPeriod

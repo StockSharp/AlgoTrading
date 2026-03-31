@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -76,8 +78,8 @@ class exp_oracle_strategy(Strategy):
         self._rsi_buf = [0.0] * 4
         self._cci_buf = [0.0] * 4
 
-    def OnStarted(self, time):
-        super(exp_oracle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_oracle_strategy, self).OnStarted2(time)
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.oracle_period
         self._cci = CommodityChannelIndex()

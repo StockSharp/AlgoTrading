@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -71,8 +73,8 @@ class gandalf_pro_strategy(Strategy):
         self._short_target = None
         self._price_step = 1.0
 
-    def OnStarted(self, time):
-        super(gandalf_pro_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gandalf_pro_strategy, self).OnStarted2(time)
 
         ps = 1.0
         if self.Security is not None and self.Security.PriceStep is not None:

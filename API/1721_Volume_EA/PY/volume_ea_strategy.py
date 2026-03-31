@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -70,8 +72,8 @@ class volume_ea_strategy(Strategy):
         self._long_stop = 0.0
         self._short_stop = 0.0
 
-    def OnStarted(self, time):
-        super(volume_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_ea_strategy, self).OnStarted2(time)
         cci = CommodityChannelIndex()
         cci.Length = 14
         subscription = self.SubscribeCandles(self.candle_type)

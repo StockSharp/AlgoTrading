@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -62,8 +64,8 @@ class zig_zag_evge_trofi_strategy(Strategy):
     def SignalReverse(self):
         return self._signal_reverse.Value
 
-    def OnStarted(self, time):
-        super(zig_zag_evge_trofi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zig_zag_evge_trofi_strategy, self).OnStarted2(time)
 
         sec = self.Security
         if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0:

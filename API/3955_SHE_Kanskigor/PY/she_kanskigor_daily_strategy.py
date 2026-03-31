@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DateTime
 from StockSharp.Messages import DataType, CandleStates
@@ -71,8 +73,8 @@ class she_kanskigor_daily_strategy(Strategy):
     def IntradayCandleType(self, value):
         self._intraday_candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(she_kanskigor_daily_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(she_kanskigor_daily_strategy, self).OnStarted2(time)
 
         intraday = self.SubscribeCandles(self.IntradayCandleType)
         intraday.Bind(self.ProcessIntraday).Start()

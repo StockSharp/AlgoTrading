@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -134,8 +136,8 @@ class ichimoku_adx_strategy(Strategy):
         self._is_tenkan_above_kijun = False
         self._last_adx_value = 0.0
 
-    def OnStarted(self, time):
-        super(ichimoku_adx_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_adx_strategy, self).OnStarted2(time)
 
         # Create indicators
         ichimoku = Ichimoku()

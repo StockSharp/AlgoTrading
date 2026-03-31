@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class epsi_multi_set_strategy(Strategy):
         super(epsi_multi_set_strategy, self).OnReseted()
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(epsi_multi_set_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(epsi_multi_set_strategy, self).OnStarted2(time)
 
         atr = StandardDeviation()
         atr.Length = self._atr_period.Value

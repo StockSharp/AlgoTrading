@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class cci_normalized_reversal_strategy(Strategy):
         self._prev_color = 2
         self._prev_prev_color = 2
 
-    def OnStarted(self, time):
-        super(cci_normalized_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cci_normalized_reversal_strategy, self).OnStarted2(time)
         self._prev_color = 2
         self._prev_prev_color = 2
 

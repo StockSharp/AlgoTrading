@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -52,8 +54,8 @@ class cryptos_strategy(Strategy):
     def OnReseted(self):
         super(cryptos_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(cryptos_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cryptos_strategy, self).OnStarted2(time)
 
         band_ema = ExponentialMovingAverage()
         band_ema.Length = self.BollingerPeriod

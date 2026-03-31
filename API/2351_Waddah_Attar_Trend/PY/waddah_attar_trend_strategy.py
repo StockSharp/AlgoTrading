@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -73,8 +75,8 @@ class waddah_attar_trend_strategy(Strategy):
         self._colors = []
         self._buffer_index = 0
 
-    def OnStarted(self, time):
-        super(waddah_attar_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(waddah_attar_trend_strategy, self).OnStarted2(time)
         sb = int(self.signal_bar)
         self._colors = [0.0] * (sb + 2)
         self._buffer_index = 0

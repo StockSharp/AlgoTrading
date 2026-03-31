@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -81,8 +83,8 @@ class os_ma_ster_v0_strategy(Strategy):
                 decimals += 1
         return step * 10.0 if (decimals == 3 or decimals == 5) else step
 
-    def OnStarted(self, time):
-        super(os_ma_ster_v0_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(os_ma_ster_v0_strategy, self).OnStarted2(time)
 
         self._hist_current = None
         self._hist_prev1 = None

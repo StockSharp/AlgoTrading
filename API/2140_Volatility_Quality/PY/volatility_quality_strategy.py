@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -34,8 +36,8 @@ class volatility_quality_strategy(Strategy):
         self._prev_sma = 0.0
         self._prev_color = -1
 
-    def OnStarted(self, time):
-        super(volatility_quality_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatility_quality_strategy, self).OnStarted2(time)
         self._sma = ExponentialMovingAverage()
         self._sma.Length = self.length
         subscription = self.SubscribeCandles(self.candle_type)

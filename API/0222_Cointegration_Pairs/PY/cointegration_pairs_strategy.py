@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -128,8 +130,8 @@ class cointegration_pairs_strategy(Strategy):
         self._asset1Price = 0
         self._asset2Price = 0
 
-    def OnStarted(self, time):
-        super(cointegration_pairs_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cointegration_pairs_strategy, self).OnStarted2(time)
 
         if self.Asset2 is None:
             raise Exception("Second asset is not specified.")

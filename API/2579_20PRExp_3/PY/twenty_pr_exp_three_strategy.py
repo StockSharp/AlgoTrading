@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -108,8 +110,8 @@ class twenty_pr_exp_three_strategy(Strategy):
             step = 1.0
         return step
 
-    def OnStarted(self, time):
-        super(twenty_pr_exp_three_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(twenty_pr_exp_three_strategy, self).OnStarted2(time)
 
         self._daily_high = 0.0
         self._daily_low = 0.0

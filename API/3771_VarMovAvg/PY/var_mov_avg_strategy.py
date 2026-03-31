@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -157,8 +159,8 @@ class var_mov_avg_strategy(Strategy):
         self._short_bar_a_ref = 0.0
         self._short_entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(var_mov_avg_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(var_mov_avg_strategy, self).OnStarted2(time)
 
         method = self.StopMaMethod
         period = self.StopMaPeriod

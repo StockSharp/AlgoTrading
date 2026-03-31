@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DateTime
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -35,8 +37,8 @@ class volume_profile_makit0_strategy(Strategy):
         self._max_volume = 0.0
         self._session_trade_done = False
 
-    def OnStarted(self, time):
-        super(volume_profile_makit0_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_profile_makit0_strategy, self).OnStarted2(time)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.on_process).Start()
         self.StartProtection(Unit(2, UnitTypes.Percent), Unit(1, UnitTypes.Percent))

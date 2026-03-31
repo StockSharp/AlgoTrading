@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class macd_1_min_scalper_strategy(Strategy):
         self._entry_price = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(macd_1_min_scalper_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_1_min_scalper_strategy, self).OnStarted2(time)
         self._fast_ind = ExponentialMovingAverage()
         self._fast_ind.Length = self._fast_period.Value
         self._slow_ind = ExponentialMovingAverage()

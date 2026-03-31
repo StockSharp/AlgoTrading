@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class ttm_squeeze_strategy(Strategy):
         self._narrow_bars = 0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(ttm_squeeze_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ttm_squeeze_strategy, self).OnStarted2(time)
 
         bb_len = int(self._bb_length.Value)
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -95,8 +97,8 @@ class x_fatl_x_satl_cloud_duplex_strategy(Strategy):
     def LongTakeProfit(self):
         return self._long_take_profit.Value
 
-    def OnStarted(self, time):
-        super(x_fatl_x_satl_cloud_duplex_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(x_fatl_x_satl_cloud_duplex_strategy, self).OnStarted2(time)
 
         self._fast_smoother = JurikMovingAverage()
         self._fast_smoother.Length = max(1, self.LongLength1)

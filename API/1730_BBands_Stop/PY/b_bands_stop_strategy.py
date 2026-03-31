@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -76,8 +78,8 @@ class b_bands_stop_strategy(Strategy):
         self._bsmin1 = 0.0
         self._initialized = False
 
-    def OnStarted(self, time):
-        super(b_bands_stop_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(b_bands_stop_strategy, self).OnStarted2(time)
         bb = BollingerBands()
         bb.Length = self.length
         bb.Width = self.deviation

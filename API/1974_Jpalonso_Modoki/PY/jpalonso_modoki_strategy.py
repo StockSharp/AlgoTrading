@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -31,8 +33,8 @@ class jpalonso_modoki_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(jpalonso_modoki_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(jpalonso_modoki_strategy, self).OnStarted2(time)
 
         tp = Unit(self._take_profit.Value, UnitTypes.Absolute)
         sl = Unit(self._stop_loss.Value, UnitTypes.Absolute)

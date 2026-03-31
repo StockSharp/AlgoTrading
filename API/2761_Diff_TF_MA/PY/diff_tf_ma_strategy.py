@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class diff_tf_ma_strategy(Strategy):
     def ReverseSignals(self):
         return self._reverse_signals.Value
 
-    def OnStarted(self, time):
-        super(diff_tf_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(diff_tf_ma_strategy, self).OnStarted2(time)
         base_span = self.CandleType.Arg
         higher_span = self.HigherCandleType.Arg
         ratio = higher_span.TotalMinutes / base_span.TotalMinutes

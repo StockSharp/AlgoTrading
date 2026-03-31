@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -92,8 +94,8 @@ class ultra_wpr_cross_strategy(Strategy):
     def CooldownBars(self, value):
         self._cooldown_bars.Value = value
 
-    def OnStarted(self, time):
-        super(ultra_wpr_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ultra_wpr_cross_strategy, self).OnStarted2(time)
 
         self._fast_ma.Length = self.FastLength
         self._slow_ma.Length = self.SlowLength

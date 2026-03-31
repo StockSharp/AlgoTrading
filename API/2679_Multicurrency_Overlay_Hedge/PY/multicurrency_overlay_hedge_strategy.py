@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -90,8 +92,8 @@ class multicurrency_overlay_hedge_strategy(Strategy):
     def MaxSpread(self):
         return self._max_spread.Value
 
-    def OnStarted(self, time):
-        super(multicurrency_overlay_hedge_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multicurrency_overlay_hedge_strategy, self).OnStarted2(time)
 
         self.LogWarning("MulticurrencyOverlayHedge requires multiple securities. Running in single-security mode with no trading logic.")
 

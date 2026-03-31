@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -66,8 +68,8 @@ class adjustable_moving_average_strategy(Strategy):
         self._previous_signal = 0
         self._has_initial_signal = False
 
-    def OnStarted(self, time):
-        super(adjustable_moving_average_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adjustable_moving_average_strategy, self).OnStarted2(time)
 
         fast_len = min(self.FastPeriod, self.SlowPeriod)
         slow_len = max(self.FastPeriod, self.SlowPeriod)

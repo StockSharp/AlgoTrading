@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -78,8 +80,8 @@ class choppiness_index_breakout_strategy(Strategy):
     def CooldownBars(self, value):
         self._cooldown_bars.Value = value
 
-    def OnStarted(self, time):
-        super(choppiness_index_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(choppiness_index_breakout_strategy, self).OnStarted2(time)
 
         self._prev_choppiness = 100.0
         self._cooldown = 0

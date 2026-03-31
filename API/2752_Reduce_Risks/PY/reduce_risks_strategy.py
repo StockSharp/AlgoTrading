@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -72,8 +74,8 @@ class reduce_risks_strategy(Strategy):
     def RiskPercent(self):
         return self._risk_percent.Value
 
-    def OnStarted(self, time):
-        super(reduce_risks_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(reduce_risks_strategy, self).OnStarted2(time)
 
         sec = self.Security
         self._price_step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 0.01

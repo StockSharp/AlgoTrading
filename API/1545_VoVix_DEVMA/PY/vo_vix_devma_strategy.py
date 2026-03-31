@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -65,8 +67,8 @@ class vo_vix_devma_strategy(Strategy):
         self._stop_dist = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(vo_vix_devma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vo_vix_devma_strategy, self).OnStarted2(time)
         self._fast_std = StandardDeviation()
         self._fast_std.Length = self.fast_length
         self._slow_std = StandardDeviation()

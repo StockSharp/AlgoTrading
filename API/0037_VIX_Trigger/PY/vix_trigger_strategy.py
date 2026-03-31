@@ -4,6 +4,8 @@ clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Drawing import Color
@@ -82,13 +84,13 @@ class vix_trigger_strategy(Strategy):
         self._latestVix = 0
         self._isVixRising = False
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.
         
         :param time: The time when the strategy started.
         """
-        super(vix_trigger_strategy, self).OnStarted(time)
+        super(vix_trigger_strategy, self).OnStarted2(time)
 
         # Create indicator
         sma = SimpleMovingAverage()

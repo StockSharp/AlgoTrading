@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -80,8 +82,8 @@ class five_eight_ma_cross_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(five_eight_ma_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(five_eight_ma_cross_strategy, self).OnStarted2(time)
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

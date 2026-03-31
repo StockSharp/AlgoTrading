@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class outlier_detector_with_n_sigma_confidence_intervals_strategy(Strategy):
         super(outlier_detector_with_n_sigma_confidence_intervals_strategy, self).OnReseted()
         self._last_signal_ticks = 0
 
-    def OnStarted(self, time):
-        super(outlier_detector_with_n_sigma_confidence_intervals_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(outlier_detector_with_n_sigma_confidence_intervals_strategy, self).OnStarted2(time)
         self._last_signal_ticks = 0
         self._sma = SimpleMovingAverage()
         self._sma.Length = self._sample_size.Value

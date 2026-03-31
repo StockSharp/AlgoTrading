@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit
@@ -47,8 +49,8 @@ class ichimoku_volume_cluster_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(ichimoku_volume_cluster_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_volume_cluster_strategy, self).OnStarted2(time)
 
         vol_period = int(self._volume_avg_period.Value)
         self._volume_avg = SimpleMovingAverage()

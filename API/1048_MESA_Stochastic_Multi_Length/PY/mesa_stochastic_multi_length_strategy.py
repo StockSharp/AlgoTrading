@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class mesa_stochastic_multi_length_strategy(Strategy):
         self._prev_stoch2 = 0.5
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(mesa_stochastic_multi_length_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mesa_stochastic_multi_length_strategy, self).OnStarted2(time)
         self._prices = []
         self._prev_stoch1 = 0.5
         self._prev_stoch2 = 0.5

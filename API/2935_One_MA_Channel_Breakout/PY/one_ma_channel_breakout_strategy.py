@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class one_ma_channel_breakout_strategy(Strategy):
     def ChannelOffset(self):
         return self._channel_offset.Value
 
-    def OnStarted(self, time):
-        super(one_ma_channel_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(one_ma_channel_breakout_strategy, self).OnStarted2(time)
 
         sma = SimpleMovingAverage()
         sma.Length = self.MaPeriod

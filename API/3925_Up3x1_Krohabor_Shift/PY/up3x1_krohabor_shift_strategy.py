@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest
@@ -25,8 +27,8 @@ class up3x1_krohabor_shift_strategy(Strategy):
         super(up3x1_krohabor_shift_strategy, self).OnReseted()
         self._prev_close = 0.0; self._prev_mid = 0.0; self._has_prev = False; self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(up3x1_krohabor_shift_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(up3x1_krohabor_shift_strategy, self).OnStarted2(time)
         self._has_prev = False; self._cooldown = 0
         highest = Highest(); highest.Length = self.channel_period
         lowest = Lowest(); lowest.Length = self.channel_period

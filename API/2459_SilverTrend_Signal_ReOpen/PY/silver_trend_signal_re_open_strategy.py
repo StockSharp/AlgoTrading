@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -84,8 +86,8 @@ class silver_trend_signal_re_open_strategy(Strategy):
     def TakeProfit(self, value):
         self._take_profit.Value = value
 
-    def OnStarted(self, time):
-        super(silver_trend_signal_re_open_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(silver_trend_signal_re_open_strategy, self).OnStarted2(time)
 
         self._has_prev = False
         self._uptrend = False

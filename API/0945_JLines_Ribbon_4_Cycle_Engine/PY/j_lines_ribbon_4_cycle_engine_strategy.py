@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -43,8 +45,8 @@ class j_lines_ribbon_4_cycle_engine_strategy(Strategy):
         self._initialized = False
         self._bars_since_signal = 0
 
-    def OnStarted(self, time):
-        super(j_lines_ribbon_4_cycle_engine_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(j_lines_ribbon_4_cycle_engine_strategy, self).OnStarted2(time)
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = self._fast_length.Value
         slow_ema = ExponentialMovingAverage()

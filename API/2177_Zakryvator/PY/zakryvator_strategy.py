@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math
 from StockSharp.Messages import DataType
@@ -55,8 +57,8 @@ class zakryvator_strategy(Strategy):
     def min_from1(self):
         return self._min_from1.Value
 
-    def OnStarted(self, time):
-        super(zakryvator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zakryvator_strategy, self).OnStarted2(time)
         self.SubscribeTicks().Bind(self.process_trade).Start()
 
     def process_trade(self, trade):

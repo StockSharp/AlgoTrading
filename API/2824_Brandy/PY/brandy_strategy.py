@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import (ExponentialMovingAverage, DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
@@ -40,8 +42,8 @@ class brandy_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(brandy_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(brandy_strategy, self).OnStarted2(time)
 
         self._ma_open_indicator = ExponentialMovingAverage()
         self._ma_open_indicator.Length = self._ma_open_period.Value

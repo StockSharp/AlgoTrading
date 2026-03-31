@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -46,8 +48,8 @@ class lsma_angle_strategy(Strategy):
         self._prev_lsma = None
         self._prev_slope = 0.0
 
-    def OnStarted(self, time):
-        super(lsma_angle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(lsma_angle_strategy, self).OnStarted2(time)
         lsma = LinearReg()
         lsma.Length = self.lsma_period
         subscription = self.SubscribeCandles(self.candle_type)

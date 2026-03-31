@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class btc_difficulty_adjustments_strategy(Strategy):
         self._prev_roc = 0.0
         self._prev_sma = 0.0
 
-    def OnStarted(self, time):
-        super(btc_difficulty_adjustments_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(btc_difficulty_adjustments_strategy, self).OnStarted2(time)
         roc = RateOfChange()
         roc.Length = self.roc_period
         sma = SimpleMovingAverage()

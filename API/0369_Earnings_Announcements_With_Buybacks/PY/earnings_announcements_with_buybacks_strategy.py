@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -71,8 +73,8 @@ class earnings_announcements_with_buybacks_strategy(Strategy):
         self._cooldown_remaining = 0
         self._latest_buyback_value = 0.0
 
-    def OnStarted(self, time):
-        super(earnings_announcements_with_buybacks_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(earnings_announcements_with_buybacks_strategy, self).OnStarted2(time)
 
         self._buyback_proxy = ExponentialMovingAverage()
         self._buyback_proxy.Length = int(self._buyback_length.Value)

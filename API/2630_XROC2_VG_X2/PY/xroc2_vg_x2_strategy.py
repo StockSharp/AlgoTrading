@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -184,8 +186,8 @@ class xroc2_vg_x2_strategy(Strategy):
     def CloseSellOnLower(self):
         return self._close_sell_lower.Value
 
-    def OnStarted(self, time):
-        super(xroc2_vg_x2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xroc2_vg_x2_strategy, self).OnStarted2(time)
 
         self._higher_series = _Xroc2VgSeries(
             self.HigherFastPeriod, self.HigherFastLength,

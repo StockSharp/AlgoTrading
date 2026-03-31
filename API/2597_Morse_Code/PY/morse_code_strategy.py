@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -97,8 +99,8 @@ class morse_code_strategy(Strategy):
 
         return step
 
-    def OnStarted(self, time):
-        super(morse_code_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(morse_code_strategy, self).OnStarted2(time)
 
         idx = int(self.Pattern)
         if idx < 0 or idx >= len(PATTERN_VALUES):

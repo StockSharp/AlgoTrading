@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class post_holiday_weakness_strategy(Strategy):
         self._prev_day_of_week = DayOfWeek.Sunday
         self._entered_this_day = False
 
-    def OnStarted(self, time):
-        super(post_holiday_weakness_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(post_holiday_weakness_strategy, self).OnStarted2(time)
 
         self._cooldown = 0
         self._prev_day_of_week = DayOfWeek.Sunday

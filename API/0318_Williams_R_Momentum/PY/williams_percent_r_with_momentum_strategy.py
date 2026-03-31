@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -41,8 +43,8 @@ class williams_percent_r_with_momentum_strategy(Strategy):
     def OnReseted(self):
         super(williams_percent_r_with_momentum_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(williams_percent_r_with_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(williams_percent_r_with_momentum_strategy, self).OnStarted2(time)
 
         williams_r = WilliamsR()
         williams_r.Length = int(self._williams_r_period.Value)

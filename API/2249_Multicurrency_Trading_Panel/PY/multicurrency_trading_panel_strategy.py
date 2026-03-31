@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -24,8 +26,8 @@ class multicurrency_trading_panel_strategy(Strategy):
         super(multicurrency_trading_panel_strategy, self).OnReseted()
         self._prev = None
 
-    def OnStarted(self, time):
-        super(multicurrency_trading_panel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multicurrency_trading_panel_strategy, self).OnStarted2(time)
         warmup = ExponentialMovingAverage()
         warmup.Length = 5
         subscription = self.SubscribeCandles(self.candle_type)

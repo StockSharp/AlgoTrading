@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
@@ -101,9 +103,9 @@ class stochastic_mean_reversion_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """Called when the strategy starts."""
-        super(stochastic_mean_reversion_strategy, self).OnStarted(time)
+        super(stochastic_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._stochastic = StochasticOscillator()

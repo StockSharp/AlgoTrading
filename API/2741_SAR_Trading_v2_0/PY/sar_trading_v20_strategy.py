@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -73,8 +75,8 @@ class sar_trading_v20_strategy(Strategy):
     def TrailingStepPips(self):
         return self._trailing_step_pips.Value
 
-    def OnStarted(self, time):
-        super(sar_trading_v20_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(sar_trading_v20_strategy, self).OnStarted2(time)
 
         sec = self.Security
         ps = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 0.0

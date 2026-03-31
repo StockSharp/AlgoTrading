@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class improved_ema_cdc_trailing_stop_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(improved_ema_cdc_trailing_stop_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(improved_ema_cdc_trailing_stop_strategy, self).OnStarted2(time)
         ema60 = ExponentialMovingAverage()
         ema60.Length = self._ema60_period.Value
         ema90 = ExponentialMovingAverage()

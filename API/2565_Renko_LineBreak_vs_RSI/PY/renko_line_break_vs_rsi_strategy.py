@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class renko_line_break_vs_rsi_strategy(Strategy):
         self._trend = 0  # 1=up, -1=down, 0=none
         self._prev_bull = None
 
-    def OnStarted(self, time):
-        super(renko_line_break_vs_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(renko_line_break_vs_rsi_strategy, self).OnStarted2(time)
         self._prev_high1 = 0
         self._prev_high2 = 0
         self._prev_high3 = 0

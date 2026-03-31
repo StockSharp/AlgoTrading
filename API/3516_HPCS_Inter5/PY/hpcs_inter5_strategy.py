@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -39,8 +41,8 @@ class hpcs_inter5_strategy(Strategy):
         self._was_long_signal = False
         self._has_signal = False
 
-    def OnStarted(self, time):
-        super(hpcs_inter5_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hpcs_inter5_strategy, self).OnStarted2(time)
 
         step = 0.01
         if self.Security is not None and self.Security.PriceStep is not None:

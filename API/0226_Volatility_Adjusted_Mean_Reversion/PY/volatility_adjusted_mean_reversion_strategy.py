@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -76,8 +78,8 @@ class volatility_adjusted_mean_reversion_strategy(Strategy):
         self._atr = None
         self._std_dev = None
 
-    def OnStarted(self, time):
-        super(volatility_adjusted_mean_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatility_adjusted_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._sma = SimpleMovingAverage()

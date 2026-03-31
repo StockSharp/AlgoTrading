@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -142,8 +144,8 @@ class alligator_trend_strategy(Strategy):
         self._reset_long()
         self._reset_short()
 
-    def OnStarted(self, time):
-        super(alligator_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(alligator_trend_strategy, self).OnStarted2(time)
 
         jaw = SmoothedMovingAverage()
         jaw.Length = self.JawLength

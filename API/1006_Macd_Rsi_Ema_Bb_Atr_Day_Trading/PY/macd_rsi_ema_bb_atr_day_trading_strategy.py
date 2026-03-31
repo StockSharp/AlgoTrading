@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class macd_rsi_ema_bb_atr_day_trading_strategy(Strategy):
         self._stop_price = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(macd_rsi_ema_bb_atr_day_trading_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_rsi_ema_bb_atr_day_trading_strategy, self).OnStarted2(time)
         self._ema_fast = ExponentialMovingAverage()
         self._ema_fast.Length = self._ema_fast_len.Value
         self._ema_slow = ExponentialMovingAverage()

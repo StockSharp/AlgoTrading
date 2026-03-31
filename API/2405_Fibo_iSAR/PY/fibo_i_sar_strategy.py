@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderStates
@@ -126,8 +128,8 @@ class fibo_i_sar_strategy(Strategy):
     def StopHour(self, value):
         self._stop_hour.Value = value
 
-    def OnStarted(self, time):
-        super(fibo_i_sar_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fibo_i_sar_strategy, self).OnStarted2(time)
 
         self._fast_sar = ParabolicSar()
         self._fast_sar.Acceleration = self.StepFast

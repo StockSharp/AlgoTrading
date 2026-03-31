@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class two_ma_bunny_cross_strategy(Strategy):
     @SlowLength.setter
     def SlowLength(self, v): self._slow_length.Value = v
 
-    def OnStarted(self, time):
-        super(two_ma_bunny_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(two_ma_bunny_cross_strategy, self).OnStarted2(time)
         fast_sma = SMA()
         fast_sma.Length = self.FastLength
         slow_sma = SMA()

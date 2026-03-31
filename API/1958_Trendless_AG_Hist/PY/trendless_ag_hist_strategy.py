@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -109,8 +111,8 @@ class trendless_ag_hist_strategy(Strategy):
             if price >= self._entry_price + self.StopLoss or price <= self._entry_price - self.TakeProfit:
                 self.BuyMarket(abs(self.Position))
 
-    def OnStarted(self, time):
-        super(trendless_ag_hist_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trendless_ag_hist_strategy, self).OnStarted2(time)
 
         self._fast_ema = ExponentialMovingAverage()
         self._fast_ema.Length = self.FastLength

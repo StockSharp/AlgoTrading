@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class parabolic_sar_first_dot_strategy(Strategy):
         self._short_stop = None
         self._short_take = None
 
-    def OnStarted(self, time):
-        super(parabolic_sar_first_dot_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_first_dot_strategy, self).OnStarted2(time)
         self._prev_is_sar_above = None
         self._long_stop = None
         self._long_take = None

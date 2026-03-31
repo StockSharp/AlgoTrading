@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class bnb_strategy(Strategy):
         self._count = 0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(bnb_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bnb_strategy, self).OnStarted2(time)
         self._k = 2.0 / (self.length + 1.0)
         self._count = 0
         sma = SimpleMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class lunch_break_fade_strategy(Strategy):
         self._prev_prev_close = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(lunch_break_fade_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(lunch_break_fade_strategy, self).OnStarted2(time)
         ma = SimpleMovingAverage()
         ma.Length = self._ma_period.Value
         subscription = self.SubscribeCandles(self.candle_type)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -29,8 +31,8 @@ class rsi_test_strategy(Strategy):
         self._stop_price = None
         self._trailing_armed = False
 
-    def OnStarted(self, time):
-        super(rsi_test_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rsi_test_strategy, self).OnStarted2(time)
         self._prev_rsi = None
         self._entry_price = None
         self._stop_price = None

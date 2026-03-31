@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Math
@@ -70,8 +72,8 @@ class fisher_cyber_cycle_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(fisher_cyber_cycle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fisher_cyber_cycle_strategy, self).OnStarted2(time)
 
         self._prev_fisher = 0.0
         self._prev_trigger = 0.0

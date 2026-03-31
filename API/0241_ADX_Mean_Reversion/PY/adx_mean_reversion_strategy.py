@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Sides
@@ -107,12 +109,12 @@ class adx_mean_reversion_strategy(Strategy):
         self._count = 0
         self._adx_values.clear()
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """
         Called when the strategy starts. Resets statistics, creates indicators,
         and sets up charting.
         """
-        super(adx_mean_reversion_strategy, self).OnStarted(time)
+        super(adx_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create ADX indicator
         adx = AverageDirectionalIndex()

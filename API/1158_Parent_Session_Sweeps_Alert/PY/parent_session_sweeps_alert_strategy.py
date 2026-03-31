@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class parent_session_sweeps_alert_strategy(Strategy):
         self._stop_price = None
         self._target_price = None
 
-    def OnStarted(self, time):
-        super(parent_session_sweeps_alert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parent_session_sweeps_alert_strategy, self).OnStarted2(time)
         self._prev_high = None
         self._prev_low = None
         self._session_high = 0.0

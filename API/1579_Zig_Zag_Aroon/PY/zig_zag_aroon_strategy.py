@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class zig_zag_aroon_strategy(Strategy):
         self._prev_aroon_up = 0.0
         self._prev_aroon_down = 0.0
 
-    def OnStarted(self, time):
-        super(zig_zag_aroon_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zig_zag_aroon_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = 10
         subscription = self.SubscribeCandles(self.candle_type)

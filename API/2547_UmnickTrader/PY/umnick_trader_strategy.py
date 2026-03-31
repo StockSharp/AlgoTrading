@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -89,8 +91,8 @@ class umnick_trader_strategy(Strategy):
         self._loss_buffer = [0.0] * length
         self._current_index = 0
 
-    def OnStarted(self, time):
-        super(umnick_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(umnick_trader_strategy, self).OnStarted2(time)
 
         self._resize_buffers()
         self._last_average_price = 0.0

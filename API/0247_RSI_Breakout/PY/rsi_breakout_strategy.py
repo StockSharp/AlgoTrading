@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -102,9 +104,9 @@ class rsi_breakout_strategy(Strategy):
         self._currentRsiAvg = 0.0
         self._currentRsiStdDev = 0.0
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """Called when the strategy starts."""
-        super(rsi_breakout_strategy, self).OnStarted(time)
+        super(rsi_breakout_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._rsi = RelativeStrengthIndex()

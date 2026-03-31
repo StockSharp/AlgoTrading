@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class stochastic_rsi_cross_strategy(Strategy):
         self._has_prev = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(stochastic_rsi_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(stochastic_rsi_cross_strategy, self).OnStarted2(time)
 
         stoch = StochasticOscillator()
         stoch.K.Length = self._k_period.Value

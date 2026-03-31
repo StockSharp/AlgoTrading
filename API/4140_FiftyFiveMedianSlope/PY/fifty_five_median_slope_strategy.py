@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class fifty_five_median_slope_strategy(Strategy):
         self._bar_count = 0
         self._ema_history = [0.0] * 20
 
-    def OnStarted(self, time):
-        super(fifty_five_median_slope_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fifty_five_median_slope_strategy, self).OnStarted2(time)
 
         self._entry_price = 0.0
         self._prev_ema = 0.0

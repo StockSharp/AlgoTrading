@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import BollingerBands, DoubleExponentialMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
@@ -33,8 +35,8 @@ class coensio_trader1_v06_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(coensio_trader1_v06_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(coensio_trader1_v06_strategy, self).OnStarted2(time)
 
         self._bollinger = BollingerBands()
         self._bollinger.Length = self._bollinger_period.Value

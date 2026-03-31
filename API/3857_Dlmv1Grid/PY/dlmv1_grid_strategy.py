@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
@@ -23,8 +25,8 @@ class dlmv1_grid_strategy(Strategy):
     def OnReseted(self):
         super(dlmv1_grid_strategy, self).OnReseted()
         self._prev_ema = 0.0; self._has_prev = False
-    def OnStarted(self, time):
-        super(dlmv1_grid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dlmv1_grid_strategy, self).OnStarted2(time)
         self._has_prev = False
         ema = ExponentialMovingAverage()
         ema.Length = self.ema_period

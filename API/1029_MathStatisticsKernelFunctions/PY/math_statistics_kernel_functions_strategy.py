@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class math_statistics_kernel_functions_strategy(Strategy):
         self._bar_index = 0
         self._last_trade_bar = -1
 
-    def OnStarted(self, time):
-        super(math_statistics_kernel_functions_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(math_statistics_kernel_functions_strategy, self).OnStarted2(time)
         self._bar_index = 0
         self._last_trade_bar = -1
         subscription = self.SubscribeCandles(self.candle_type)

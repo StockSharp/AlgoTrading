@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class high_low_ma_breakout_strategy(Strategy):
         self._prev_close = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(high_low_ma_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(high_low_ma_breakout_strategy, self).OnStarted2(time)
         ma_high = SimpleMovingAverage()
         ma_high.Length = self.ma_high_period
         ma_low = SimpleMovingAverage()

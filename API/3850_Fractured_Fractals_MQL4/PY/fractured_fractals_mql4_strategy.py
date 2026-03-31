@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest
@@ -24,8 +26,8 @@ class fractured_fractals_mql4_strategy(Strategy):
         self._prev_close = 0.0
         self._prev_mid = 0.0
         self._has_prev = False
-    def OnStarted(self, time):
-        super(fractured_fractals_mql4_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fractured_fractals_mql4_strategy, self).OnStarted2(time)
         self._has_prev = False
         highest = Highest()
         highest.Length = self.channel_period

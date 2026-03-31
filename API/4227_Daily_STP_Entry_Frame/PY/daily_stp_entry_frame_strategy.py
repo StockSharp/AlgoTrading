@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class daily_stp_entry_frame_strategy(Strategy):
     def TakeProfitPoints(self):
         return float(self._take_profit_points.Value)
 
-    def OnStarted(self, time):
-        super(daily_stp_entry_frame_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(daily_stp_entry_frame_strategy, self).OnStarted2(time)
         self._pip_size = 0.01
         sec = self.Security
         if sec is not None:

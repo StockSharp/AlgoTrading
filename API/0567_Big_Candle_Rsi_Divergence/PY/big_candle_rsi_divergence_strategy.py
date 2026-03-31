@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class big_candle_rsi_divergence_strategy(Strategy):
         self._lowest_since_entry = 0.0
         self._trailing_active = False
 
-    def OnStarted(self, time):
-        super(big_candle_rsi_divergence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(big_candle_rsi_divergence_strategy, self).OnStarted2(time)
         rsi_fast = RelativeStrengthIndex()
         rsi_fast.Length = 5
         rsi_slow = RelativeStrengthIndex()

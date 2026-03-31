@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -93,8 +95,8 @@ class color_schaff_rsi_trend_cycle_strategy(Strategy):
     def SignalCooldownBars(self, value):
         self._signal_cooldown_bars.Value = value
 
-    def OnStarted(self, time):
-        super(color_schaff_rsi_trend_cycle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_schaff_rsi_trend_cycle_strategy, self).OnStarted2(time)
 
         self._fast_indicator = RelativeStrengthIndex()
         self._fast_indicator.Length = self.FastRsi

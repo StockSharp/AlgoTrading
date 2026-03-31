@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class multik_sma_exp_strategy(Strategy):
         self._ma1 = None
         self._ma2 = None
 
-    def OnStarted(self, time):
-        super(multik_sma_exp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multik_sma_exp_strategy, self).OnStarted2(time)
         self._ma0 = None
         self._ma1 = None
         self._ma2 = None

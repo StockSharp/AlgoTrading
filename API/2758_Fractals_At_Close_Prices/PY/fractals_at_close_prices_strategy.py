@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -71,8 +73,8 @@ class fractals_at_close_prices_strategy(Strategy):
     def TrailingStepPips(self):
         return self._trailing_step_pips.Value
 
-    def OnStarted(self, time):
-        super(fractals_at_close_prices_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fractals_at_close_prices_strategy, self).OnStarted2(time)
 
         sec = self.Security
         price_step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0

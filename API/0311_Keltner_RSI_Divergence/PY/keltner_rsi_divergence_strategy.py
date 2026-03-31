@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -60,8 +62,8 @@ class keltner_rsi_divergence_strategy(Strategy):
         self._is_initialized = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(keltner_rsi_divergence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(keltner_rsi_divergence_strategy, self).OnStarted2(time)
 
         ema = ExponentialMovingAverage()
         ema.Length = int(self._ema_period.Value)

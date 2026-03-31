@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -81,8 +83,8 @@ class macd_multi_timeframe_expert_strategy(Strategy):
     def FourHourCandleType(self):
         return self._four_hour_type.Value
 
-    def OnStarted(self, time):
-        super(macd_multi_timeframe_expert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_multi_timeframe_expert_strategy, self).OnStarted2(time)
 
         self._macd_five_minute = self._create_macd()
         self._macd_fifteen_minute = self._create_macd()

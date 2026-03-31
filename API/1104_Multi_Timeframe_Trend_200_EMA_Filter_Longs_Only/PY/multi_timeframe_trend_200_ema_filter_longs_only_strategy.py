@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class multi_timeframe_trend_200_ema_filter_longs_only_strategy(Strategy):
         self._trend15 = 0
         self._trend30 = 0
 
-    def OnStarted(self, time):
-        super(multi_timeframe_trend_200_ema_filter_longs_only_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_timeframe_trend_200_ema_filter_longs_only_strategy, self).OnStarted2(time)
 
         fast_len = self._fast_length.Value
         slow_len = self._slow_length.Value

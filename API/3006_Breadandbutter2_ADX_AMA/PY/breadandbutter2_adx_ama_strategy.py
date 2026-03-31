@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class breadandbutter2_adx_ama_strategy(Strategy):
         super(breadandbutter2_adx_ama_strategy, self).OnReseted()
         self._prev_kama = None
 
-    def OnStarted(self, time):
-        super(breadandbutter2_adx_ama_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(breadandbutter2_adx_ama_strategy, self).OnStarted2(time)
         self._prev_kama = None
 
         fast = ExponentialMovingAverage()

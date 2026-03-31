@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -89,8 +91,8 @@ class fractal_adx_cloud_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(fractal_adx_cloud_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fractal_adx_cloud_strategy, self).OnStarted2(time)
 
         self._prev_plus_di = None
         self._prev_minus_di = None

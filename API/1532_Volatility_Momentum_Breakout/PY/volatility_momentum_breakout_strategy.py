@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -80,8 +82,8 @@ class volatility_momentum_breakout_strategy(Strategy):
         self._stop_dist = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(volatility_momentum_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatility_momentum_breakout_strategy, self).OnStarted2(time)
         ema = ExponentialMovingAverage()
         ema.Length = self.ema_length
         rsi = RelativeStrengthIndex()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class average_candle_cross_strategy(Strategy):
         self._prev_sma = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(average_candle_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(average_candle_cross_strategy, self).OnStarted2(time)
         self._has_prev = False
         sma = SimpleMovingAverage()
         sma.Length = self.period

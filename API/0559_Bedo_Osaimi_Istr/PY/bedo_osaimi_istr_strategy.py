@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -33,8 +35,8 @@ class bedo_osaimi_istr_strategy(Strategy):
         self._prev_close = None
         self._prev_open = None
 
-    def OnStarted(self, time):
-        super(bedo_osaimi_istr_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bedo_osaimi_istr_strategy, self).OnStarted2(time)
         self._close_ma = SimpleMovingAverage()
         self._close_ma.Length = self._ma_length.Value
         self._open_ma = SimpleMovingAverage()

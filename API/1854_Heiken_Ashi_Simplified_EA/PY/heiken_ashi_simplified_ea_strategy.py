@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -56,8 +58,8 @@ class heiken_ashi_simplified_ea_strategy(Strategy):
         self._position_count = 0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(heiken_ashi_simplified_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(heiken_ashi_simplified_ea_strategy, self).OnStarted2(time)
         step = self.Security.PriceStep if self.Security.PriceStep is not None else 1.0
         self._price_distance = self.distance_points * float(step)
         subscription = self.SubscribeCandles(self.candle_type)

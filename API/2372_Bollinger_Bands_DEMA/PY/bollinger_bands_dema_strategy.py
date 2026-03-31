@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class bollinger_bands_dema_strategy(Strategy):
         self._dema1 = None
         self._dema2 = None
 
-    def OnStarted(self, time):
-        super(bollinger_bands_dema_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bollinger_bands_dema_strategy, self).OnStarted2(time)
         self._dema0 = None
         self._dema1 = None
         self._dema2 = None

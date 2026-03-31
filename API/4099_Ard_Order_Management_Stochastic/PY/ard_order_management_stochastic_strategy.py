@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -51,8 +53,8 @@ class ard_order_management_stochastic_strategy(Strategy):
     def SellThreshold(self):
         return self._sell_threshold.Value
 
-    def OnStarted(self, time):
-        super(ard_order_management_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ard_order_management_stochastic_strategy, self).OnStarted2(time)
 
         self._prev_rsi = 0.0
 

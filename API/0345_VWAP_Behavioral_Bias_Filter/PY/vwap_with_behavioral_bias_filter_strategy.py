@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -53,8 +55,8 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
         self._recent_price_movements = []
         self._vwap = None
 
-    def OnStarted(self, time):
-        super(vwap_with_behavioral_bias_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vwap_with_behavioral_bias_filter_strategy, self).OnStarted2(time)
 
         self._vwap = VolumeWeightedMovingAverage()
 

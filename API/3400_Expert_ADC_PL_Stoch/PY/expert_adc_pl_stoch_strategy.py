@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -48,8 +50,8 @@ class expert_adc_pl_stoch_strategy(Strategy):
         self._candles = []
         self._candles_since_trade = self.signal_cooldown
 
-    def OnStarted(self, time):
-        super(expert_adc_pl_stoch_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(expert_adc_pl_stoch_strategy, self).OnStarted2(time)
 
         self._stoch = StochasticOscillator()
         self._stoch.K.Length = self.stoch_period

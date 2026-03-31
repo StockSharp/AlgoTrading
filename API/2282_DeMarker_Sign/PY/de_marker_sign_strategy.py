@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class de_marker_sign_strategy(Strategy):
         super(de_marker_sign_strategy, self).OnReseted()
         self._prev_de_marker = None
 
-    def OnStarted(self, time):
-        super(de_marker_sign_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(de_marker_sign_strategy, self).OnStarted2(time)
         self._prev_de_marker = None
         de_marker = DeMarker()
         de_marker.Length = self.de_marker_period

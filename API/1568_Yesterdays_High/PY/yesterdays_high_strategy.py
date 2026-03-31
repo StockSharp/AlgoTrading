@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -62,8 +64,8 @@ class yesterdays_high_strategy(Strategy):
         self._trail_highest = 0.0
         self._trail_active = False
 
-    def OnStarted(self, time):
-        super(yesterdays_high_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(yesterdays_high_strategy, self).OnStarted2(time)
         ema = ExponentialMovingAverage()
         ema.Length = 20
         subscription = self.SubscribeCandles(self.candle_type)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class ketty_channel_breakout_strategy(Strategy):
         self._prev_high = None
         self._prev_low = None
 
-    def OnStarted(self, time):
-        super(ketty_channel_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ketty_channel_breakout_strategy, self).OnStarted2(time)
         self._prev_high = None
         self._prev_low = None
 

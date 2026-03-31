@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -128,8 +130,8 @@ class multi_hedging_scheduler_strategy(Strategy):
             overflow = end_total - 1440
             return current_minutes >= start_total or current_minutes < overflow
 
-    def OnStarted(self, time):
-        super(multi_hedging_scheduler_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_hedging_scheduler_strategy, self).OnStarted2(time)
 
         self._initial_balance = 0.0
         self._position_opened = False

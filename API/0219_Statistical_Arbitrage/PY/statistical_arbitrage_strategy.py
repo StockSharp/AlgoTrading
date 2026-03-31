@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
@@ -98,13 +100,13 @@ class statistical_arbitrage_strategy(Strategy):
         self._entry_spread = 0
         self._second_ma_value = 0
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.
 
         :param time: The time when the strategy started.
         """
-        super(statistical_arbitrage_strategy, self).OnStarted(time)
+        super(statistical_arbitrage_strategy, self).OnStarted2(time)
 
         if self.SecondSecurity is None:
             raise Exception("Second security is not specified.")

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -92,8 +94,8 @@ class autocorrelation_reversion_strategy(Strategy):
         self._latest_autocorrelation = 0.0
         self._current_price = 0.0
 
-    def OnStarted(self, time):
-        super(autocorrelation_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(autocorrelation_reversion_strategy, self).OnStarted2(time)
 
 
         # Initialize the SMA indicator (using same period as autocorrelation for simplicity)

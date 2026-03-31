@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -99,8 +101,8 @@ class money_rain_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(money_rain_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(money_rain_strategy, self).OnStarted2(time)
 
         self._update_offsets()
 

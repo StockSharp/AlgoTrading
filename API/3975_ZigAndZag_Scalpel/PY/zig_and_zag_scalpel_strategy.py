@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DateTime
 from StockSharp.Messages import DataType, CandleStates
@@ -79,8 +81,8 @@ class zig_and_zag_scalpel_strategy(Strategy):
     def CloseOnOppositePivot(self):
         return self._close_on_opposite_pivot.Value
 
-    def OnStarted(self, time):
-        super(zig_and_zag_scalpel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zig_and_zag_scalpel_strategy, self).OnStarted2(time)
 
         self._price_step = float(self.Security.PriceStep) if self.Security is not None else 1.0
         self._deviation = max(self._price_step, abs(float(self.DeviationPoints)) * self._price_step)

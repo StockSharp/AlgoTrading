@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 import math
@@ -54,8 +56,8 @@ class voss_predictor_strategy(Strategy):
         self._prev_bpf = 0.0
         self._voss_buffer = [0.0] * 9
 
-    def OnStarted(self, time):
-        super(voss_predictor_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(voss_predictor_strategy, self).OnStarted2(time)
         alpha = 2.0 * math.pi / float(self.period_bandpass)
         self._cos_alpha = math.cos(alpha)
         gamma = math.cos(alpha * float(self.band_width))

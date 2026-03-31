@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -75,8 +77,8 @@ class get_rich_or_die_trying_gbp_strategy(Strategy):
             return step * 10.0
         return step
 
-    def OnStarted(self, time):
-        super(get_rich_or_die_trying_gbp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(get_rich_or_die_trying_gbp_strategy, self).OnStarted2(time)
 
         self._pip_value = self._calc_pip()
         self._dir_queue = []

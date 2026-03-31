@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class expert610_breakout_strategy(Strategy):
         self._prev_low = 0.0
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(expert610_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(expert610_breakout_strategy, self).OnStarted2(time)
 
         self._prev_high = 0.0
         self._prev_low = 0.0

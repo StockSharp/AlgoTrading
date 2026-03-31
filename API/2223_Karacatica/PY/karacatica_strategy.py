@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class karacatica_strategy(Strategy):
         self._close_queue = []
         self._last_signal = 0
 
-    def OnStarted(self, time):
-        super(karacatica_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(karacatica_strategy, self).OnStarted2(time)
         adx = AverageDirectionalIndex()
         adx.Length = self.period
         subscription = self.SubscribeCandles(self.candle_type)

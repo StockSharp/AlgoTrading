@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -33,8 +35,8 @@ class trade_ea_template_for_news_strategy(Strategy):
     def StopLossPoints(self):
         return int(self._stop_loss_points.Value)
 
-    def OnStarted(self, time):
-        super(trade_ea_template_for_news_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trade_ea_template_for_news_strategy, self).OnStarted2(time)
 
         self._previous_open_price = None
 

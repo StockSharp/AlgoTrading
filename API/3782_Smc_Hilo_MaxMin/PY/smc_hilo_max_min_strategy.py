@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -109,8 +111,8 @@ class smc_hilo_max_min_strategy(Strategy):
     def _to_price(self, pips):
         return float(pips) * self._pip_size
 
-    def OnStarted(self, time):
-        super(smc_hilo_max_min_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(smc_hilo_max_min_strategy, self).OnStarted2(time)
 
         self._update_pip_size()
 

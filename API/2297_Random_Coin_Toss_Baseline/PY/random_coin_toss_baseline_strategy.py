@@ -3,6 +3,8 @@ import random as py_random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class random_coin_toss_baseline_strategy(Strategy):
         self._random = None
         self._bars_in_position = 0
 
-    def OnStarted(self, time):
-        super(random_coin_toss_baseline_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(random_coin_toss_baseline_strategy, self).OnStarted2(time)
         self._random = py_random.Random(42)
         self._bars_in_position = 0
         subscription = self.SubscribeCandles(self.candle_type)

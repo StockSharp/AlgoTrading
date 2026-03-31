@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class divergence_trader_basket_strategy(Strategy):
         self._previous_difference = None
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(divergence_trader_basket_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(divergence_trader_basket_strategy, self).OnStarted2(time)
 
         fast_ma = SimpleMovingAverage()
         fast_ma.Length = self._fast_period.Value

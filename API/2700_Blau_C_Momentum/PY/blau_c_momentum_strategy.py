@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 
@@ -114,8 +116,8 @@ class blau_c_momentum_strategy(Strategy):
     def SignalBar(self):
         return self._signal_bar.Value
 
-    def OnStarted(self, time):
-        super(blau_c_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(blau_c_momentum_strategy, self).OnStarted2(time)
 
         self._indicator_history = []
         self._momentum_calc = _BlauMomentumCalc(

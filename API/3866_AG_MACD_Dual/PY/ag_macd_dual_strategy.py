@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, ExponentialMovingAverage
@@ -18,8 +20,8 @@ class ag_macd_dual_strategy(Strategy):
     def OnReseted(self):
         super(ag_macd_dual_strategy, self).OnReseted()
         self._prev_macd = 0.0; self._prev_signal = 0.0; self._has_prev = False; self._current_ema = 0.0
-    def OnStarted(self, time):
-        super(ag_macd_dual_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ag_macd_dual_strategy, self).OnStarted2(time)
         self._has_prev = False
         macd = MovingAverageConvergenceDivergenceSignal()
         ema = ExponentialMovingAverage(); ema.Length = self.ema_period

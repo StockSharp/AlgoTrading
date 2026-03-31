@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -79,8 +81,8 @@ class obv_mean_reversion_strategy(Strategy):
         self._obv_avg_value = None
         self._obv_std_dev_value = None
 
-    def OnStarted(self, time):
-        super(obv_mean_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(obv_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._obv = OnBalanceVolume()

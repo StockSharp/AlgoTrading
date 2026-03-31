@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class color_coppock_strategy(Strategy):
         self._prev_coppock = None
         self._prev_prev_coppock = None
 
-    def OnStarted(self, time):
-        super(color_coppock_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_coppock_strategy, self).OnStarted2(time)
 
         sma = ExponentialMovingAverage()
         sma.Length = int(self.roc1_period)

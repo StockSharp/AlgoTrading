@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -58,8 +60,8 @@ class macd_waterline_cross_expectator_strategy(Strategy):
         self._has_prev = False
         self._prev_signal = 0.0
 
-    def OnStarted(self, time):
-        super(macd_waterline_cross_expectator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_waterline_cross_expectator_strategy, self).OnStarted2(time)
         sl = float(self.stop_loss_pct)
         rr = float(self.rr_multiplier)
         self.StartProtection(

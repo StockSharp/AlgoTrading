@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class surfing_30_strategy(Strategy):
         self._sl_price = None
         self._tp_price = None
 
-    def OnStarted(self, time):
-        super(surfing_30_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(surfing_30_strategy, self).OnStarted2(time)
 
         self.Volume = float(self.OrderVolume)
 

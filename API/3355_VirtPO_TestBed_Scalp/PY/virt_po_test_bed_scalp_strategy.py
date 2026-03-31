@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class virt_po_test_bed_scalp_strategy(Strategy):
         self._prev_high = None
         self._prev_low = None
 
-    def OnStarted(self, time):
-        super(virt_po_test_bed_scalp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(virt_po_test_bed_scalp_strategy, self).OnStarted2(time)
 
         self._atr = AverageTrueRange()
         self._atr.Length = self.atr_period

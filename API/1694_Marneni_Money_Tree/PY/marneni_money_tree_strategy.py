@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class marneni_money_tree_strategy(Strategy):
         self._buffer_index = 0
         self._values_count = 0
 
-    def OnStarted(self, time):
-        super(marneni_money_tree_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(marneni_money_tree_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self.sma_period
         atr = StandardDeviation()

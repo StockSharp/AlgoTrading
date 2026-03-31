@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import CandleStates, DataType
@@ -71,8 +73,8 @@ class artificial_intelligence_strategy(Strategy):
         self._entry_price = 0.0
         self._stop_price = 0.0
 
-    def OnStarted(self, time):
-        super(artificial_intelligence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(artificial_intelligence_strategy, self).OnStarted2(time)
 
         ao = AwesomeOscillator()
 

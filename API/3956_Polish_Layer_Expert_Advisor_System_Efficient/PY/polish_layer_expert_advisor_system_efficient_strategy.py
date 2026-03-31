@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes
@@ -126,8 +128,8 @@ class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
     def StochasticOverboughtLevel(self):
         return self._stochastic_overbought_level.Value
 
-    def OnStarted(self, time):
-        super(polish_layer_expert_advisor_system_efficient_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(polish_layer_expert_advisor_system_efficient_strategy, self).OnStarted2(time)
 
         from StockSharp.Messages import Unit
         self.StartProtection(Unit(2, UnitTypes.Percent), Unit(1, UnitTypes.Percent))

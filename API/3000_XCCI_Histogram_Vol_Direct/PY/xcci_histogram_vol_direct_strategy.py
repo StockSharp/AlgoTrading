@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class xcci_histogram_vol_direct_strategy(Strategy):
         super(xcci_histogram_vol_direct_strategy, self).OnReseted()
         self._prev_cci = None
 
-    def OnStarted(self, time):
-        super(xcci_histogram_vol_direct_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xcci_histogram_vol_direct_strategy, self).OnStarted2(time)
         self._prev_cci = None
 
         cci = CommodityChannelIndex()

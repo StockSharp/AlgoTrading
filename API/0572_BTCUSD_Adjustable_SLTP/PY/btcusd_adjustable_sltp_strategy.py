@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class btcusd_adjustable_sltp_strategy(Strategy):
         self._prev_fast = 0.0
         self._prev_slow = 0.0
 
-    def OnStarted(self, time):
-        super(btcusd_adjustable_sltp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(btcusd_adjustable_sltp_strategy, self).OnStarted2(time)
         fast_sma = SimpleMovingAverage()
         fast_sma.Length = self._fast_sma_length.Value
         slow_sma = SimpleMovingAverage()

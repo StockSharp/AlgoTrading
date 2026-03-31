@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class pivot_heiken_strategy(Strategy):
     @TrailingStopPips.setter
     def TrailingStopPips(self, v): self._trailing_stop_pips.Value = v
 
-    def OnStarted(self, time):
-        super(pivot_heiken_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pivot_heiken_strategy, self).OnStarted2(time)
         self._step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         self._trailing_distance = float(self.TrailingStopPips) * self._step
         subscription = self.SubscribeCandles(self.CandleType)

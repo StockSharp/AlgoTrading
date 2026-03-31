@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class vix_spike_strategy(Strategy):
         super(vix_spike_strategy, self).OnReseted()
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(vix_spike_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vix_spike_strategy, self).OnStarted2(time)
         bb = BollingerBands()
         bb.Length = self.bb_length
         bb.Width = self.bb_width

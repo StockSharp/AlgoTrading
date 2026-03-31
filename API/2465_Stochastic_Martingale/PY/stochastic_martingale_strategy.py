@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class stochastic_martingale_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(stochastic_martingale_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(stochastic_martingale_strategy, self).OnStarted2(time)
 
         self._last_buy_price = 0.0
         self._last_buy_volume = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes, Unit, UnitTypes
@@ -62,8 +64,8 @@ class bitcoin_intraday_seasonality_strategy(Strategy):
         super(bitcoin_intraday_seasonality_strategy, self).OnReseted()
         self._latest_price = 0.0
 
-    def OnStarted(self, time):
-        super(bitcoin_intraday_seasonality_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bitcoin_intraday_seasonality_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -54,8 +56,8 @@ class price_extreme_strategy(Strategy):
     def ReverseSignals(self):
         return self._reverse_signals.Value
 
-    def OnStarted(self, time):
-        super(price_extreme_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(price_extreme_strategy, self).OnStarted2(time)
 
         self._highs = []
         self._lows = []

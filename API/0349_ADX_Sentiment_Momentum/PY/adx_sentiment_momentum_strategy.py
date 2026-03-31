@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -63,8 +65,8 @@ class adx_sentiment_momentum_strategy(Strategy):
         self._prev_di_minus = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(adx_sentiment_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_sentiment_momentum_strategy, self).OnStarted2(time)
 
         self._adx = AverageDirectionalIndex()
         self._adx.Length = int(self._adx_period.Value)

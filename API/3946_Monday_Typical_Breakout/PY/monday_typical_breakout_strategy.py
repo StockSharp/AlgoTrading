@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -105,8 +107,8 @@ class monday_typical_breakout_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(monday_typical_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(monday_typical_breakout_strategy, self).OnStarted2(time)
 
         ps = self.Security.PriceStep if self.Security is not None else 0
         self._price_step = float(ps) if ps is not None and float(ps) > 0 else 0.0001

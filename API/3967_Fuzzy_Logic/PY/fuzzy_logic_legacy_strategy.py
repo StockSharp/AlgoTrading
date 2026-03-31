@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from collections import deque
@@ -89,8 +91,8 @@ class fuzzy_logic_legacy_strategy(Strategy):
     def FixedVolume(self):
         return self._fixed_volume.Value
 
-    def OnStarted(self, time):
-        super(fuzzy_logic_legacy_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fuzzy_logic_legacy_strategy, self).OnStarted2(time)
 
         self._williams_indicator = WilliamsR()
         self._williams_indicator.Length = 14

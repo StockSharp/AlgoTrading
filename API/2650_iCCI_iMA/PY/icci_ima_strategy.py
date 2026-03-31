@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -72,8 +74,8 @@ class icci_ima_strategy(Strategy):
             return step * 10.0
         return step
 
-    def OnStarted(self, time):
-        super(icci_ima_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(icci_ima_strategy, self).OnStarted2(time)
 
         self._reset_state()
         self._pip_size = self._calc_pip_size()

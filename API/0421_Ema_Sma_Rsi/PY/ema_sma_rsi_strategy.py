@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -51,8 +53,8 @@ class ema_sma_rsi_strategy(Strategy):
         self._prev_ema_b = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(ema_sma_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_sma_rsi_strategy, self).OnStarted2(time)
 
         self._ema_a = ExponentialMovingAverage()
         self._ema_a.Length = int(self._ema_a_length.Value)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -67,8 +69,8 @@ class multi_timeframe_rsi_buy_sell_strategy(Strategy):
         self._buy_cooldown = 0
         self._sell_cooldown = 0
 
-    def OnStarted(self, time):
-        super(multi_timeframe_rsi_buy_sell_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_timeframe_rsi_buy_sell_strategy, self).OnStarted2(time)
         cd = int(self.cooldown_period)
         self._buy_cooldown = cd
         self._sell_cooldown = cd

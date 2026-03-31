@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -124,8 +126,8 @@ class exp_trend_magic_strategy(Strategy):
         self._next_long_trade_allowed = None
         self._next_short_trade_allowed = None
 
-    def OnStarted(self, time):
-        super(exp_trend_magic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_trend_magic_strategy, self).OnStarted2(time)
 
         self._color_history = []
         self._candle_time_frame = TimeSpan.FromHours(4)

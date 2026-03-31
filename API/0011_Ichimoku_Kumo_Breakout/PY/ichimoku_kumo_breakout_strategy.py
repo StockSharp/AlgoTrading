@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class ichimoku_kumo_breakout_strategy(Strategy):
         self._has_prev = False
         self._candles_since_trade = 0
 
-    def OnStarted(self, time):
-        super(ichimoku_kumo_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_kumo_breakout_strategy, self).OnStarted2(time)
         tenkan_h = Highest()
         tenkan_h.Length = self._tenkan_period.Value
         tenkan_l = Lowest()

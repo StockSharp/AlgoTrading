@@ -3,6 +3,8 @@ import clr
 clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Drawing import Color
@@ -128,8 +130,8 @@ class ma_williams_r_strategy(Strategy):
         super(ma_williams_r_strategy, self).OnReseted()
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(ma_williams_r_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_williams_r_strategy, self).OnStarted2(time)
 
         # Create MA based on selected type
         if self.MaType == MovingAverageTypeEnum.Exponential:

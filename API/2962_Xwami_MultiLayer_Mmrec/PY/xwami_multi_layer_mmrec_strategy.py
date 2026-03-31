@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class xwami_multi_layer_mmrec_strategy(Strategy):
         self._prev_fast = None
         self._prev_mid = None
 
-    def OnStarted(self, time):
-        super(xwami_multi_layer_mmrec_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xwami_multi_layer_mmrec_strategy, self).OnStarted2(time)
         self._prev_fast = None
         self._prev_mid = None
 

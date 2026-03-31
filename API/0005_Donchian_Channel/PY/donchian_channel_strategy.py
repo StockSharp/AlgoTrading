@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class donchian_channel_strategy(Strategy):
         self._prev_upper_band = 0.0
         self._prev_lower_band = 0.0
 
-    def OnStarted(self, time):
-        super(donchian_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(donchian_channel_strategy, self).OnStarted2(time)
 
         donchian = DonchianChannels()
         donchian.Length = self._channel_period.Value

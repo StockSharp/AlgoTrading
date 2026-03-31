@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class tunnel_method_ema_strategy(Strategy):
         self._long_trail = 0
         self._short_trail = 0
 
-    def OnStarted(self, time):
-        super(tunnel_method_ema_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(tunnel_method_ema_strategy, self).OnStarted2(time)
         self._prev_fast = 0
         self._prev_mid = 0
         self._prev_slow = 0

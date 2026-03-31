@@ -3,6 +3,8 @@ import random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class at_random_strategy(Strategy):
         self._rng = None
         self._bar_count = 0
 
-    def OnStarted(self, time):
-        super(at_random_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(at_random_strategy, self).OnStarted2(time)
         seed = self.RandomSeed
         self._rng = random.Random(seed if seed != 0 else None)
         self._bar_count = 0

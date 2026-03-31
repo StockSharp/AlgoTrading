@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class z_strike_recovery_strategy(Strategy):
         self._bars_in_position = 0
         self._changes = []
 
-    def OnStarted(self, time):
-        super(z_strike_recovery_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(z_strike_recovery_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = 10
         subscription = self.SubscribeCandles(self.candle_type)

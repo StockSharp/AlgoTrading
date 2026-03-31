@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class five_minutes_scalping_ea_v11_strategy(Strategy):
         self._prev_fast = None
         self._prev_slow = None
 
-    def OnStarted(self, time):
-        super(five_minutes_scalping_ea_v11_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(five_minutes_scalping_ea_v11_strategy, self).OnStarted2(time)
 
         self._fast_ind = WeightedMovingAverage()
         self._fast_ind.Length = self._fast_period.Value

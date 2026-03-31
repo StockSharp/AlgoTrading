@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -101,8 +103,8 @@ class williams_r_mean_reversion_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stop_loss_percent.Value = value
 
-    def OnStarted(self, time):
-        super(williams_r_mean_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(williams_r_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create Williams %R indicator
         williams_r = WilliamsR()

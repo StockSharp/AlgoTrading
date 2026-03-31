@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -94,8 +96,8 @@ class proper_bot_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(proper_bot_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(proper_bot_strategy, self).OnStarted2(time)
 
         self._has_previous_candle = False
         self._previous_open = 0.0

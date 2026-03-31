@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -90,8 +92,8 @@ class expert_zzlwa_strategy(Strategy):
     def FastMaPeriod(self):
         return self._fast_ma_period.Value
 
-    def OnStarted(self, time):
-        super(expert_zzlwa_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(expert_zzlwa_strategy, self).OnStarted2(time)
 
         step = self._get_price_step()
         self.StartProtection(

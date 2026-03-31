@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class good_gbbi_strategy(Strategy):
         self._entry_price = 0.0
         self._entry_time = None
 
-    def OnStarted(self, time):
-        super(good_gbbi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(good_gbbi_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._process_candle).Start()

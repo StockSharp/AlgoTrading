@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -41,8 +43,8 @@ class error_ea_strategy(Strategy):
         self._long_trades = 0
         self._short_trades = 0
 
-    def OnStarted(self, time):
-        super(error_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(error_ea_strategy, self).OnStarted2(time)
 
         self._adx = AverageDirectionalIndex()
         self._adx.Length = self._adx_period.Value

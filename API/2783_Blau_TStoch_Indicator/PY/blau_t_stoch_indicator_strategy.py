@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -131,8 +133,8 @@ class blau_t_stoch_indicator_strategy(Strategy):
     def StopLossPoints(self):
         return self._stop_loss_points.Value
 
-    def OnStarted(self, time):
-        super(blau_t_stoch_indicator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(blau_t_stoch_indicator_strategy, self).OnStarted2(time)
 
         self._highest = Highest()
         self._highest.Length = max(1, self.MomentumLength)

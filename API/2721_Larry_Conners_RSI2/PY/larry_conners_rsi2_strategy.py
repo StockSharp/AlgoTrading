@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -101,8 +103,8 @@ class larry_conners_rsi2_strategy(Strategy):
             result = step
         return result
 
-    def OnStarted(self, time):
-        super(larry_conners_rsi2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(larry_conners_rsi2_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calc_pip_size()
         self._long_entry_price = None

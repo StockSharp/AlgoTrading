@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -61,8 +63,8 @@ class pos_neg_di_crossover_strategy(Strategy):
         self._di_initialized = False
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(pos_neg_di_crossover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pos_neg_di_crossover_strategy, self).OnStarted2(time)
         self._prev_plus_di = 0.0
         self._prev_minus_di = 0.0
         self._di_initialized = False

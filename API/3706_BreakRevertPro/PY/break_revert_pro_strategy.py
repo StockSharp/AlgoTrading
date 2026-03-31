@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -114,8 +116,8 @@ class break_revert_pro_strategy(Strategy):
         self._last_safety_check = None
         self._safety_trade_sent = False
 
-    def OnStarted(self, time):
-        super(break_revert_pro_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(break_revert_pro_strategy, self).OnStarted2(time)
 
         lookback = max(1, self.LookbackPeriod)
 

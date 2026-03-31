@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class payday_anomaly2_strategy(Strategy):
         super(payday_anomaly2_strategy, self).OnReseted()
         self._trade_opened = False
 
-    def OnStarted(self, time):
-        super(payday_anomaly2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(payday_anomaly2_strategy, self).OnStarted2(time)
         self._trade_opened = False
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.OnProcess).Start()

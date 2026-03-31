@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class amstell_sl_strategy(Strategy):
     def EmaLength(self):
         return self._ema_length.Value
 
-    def OnStarted(self, time):
-        super(amstell_sl_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(amstell_sl_strategy, self).OnStarted2(time)
 
         self._entry_price = 0.0
         self._prev_ema = 0.0

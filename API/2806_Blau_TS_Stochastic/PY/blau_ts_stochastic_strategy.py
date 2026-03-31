@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import (SimpleMovingAverage, ExponentialMovingAverage,
     SmoothedMovingAverage, WeightedMovingAverage, Highest, Lowest, DecimalIndicatorValue, CandleIndicatorValue)
@@ -46,8 +48,8 @@ class blau_ts_stochastic_strategy(Strategy):
         ma.Length = length
         return ma
 
-    def OnStarted(self, time):
-        super(blau_ts_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(blau_ts_stochastic_strategy, self).OnStarted2(time)
 
         self._highest = Highest()
         self._highest.Length = self._base_length.Value

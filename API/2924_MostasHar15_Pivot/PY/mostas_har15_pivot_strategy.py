@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class mostas_har15_pivot_strategy(Strategy):
         self._pivot_mid = 0.0
         self._has_pivot = False
 
-    def OnStarted(self, time):
-        super(mostas_har15_pivot_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mostas_har15_pivot_strategy, self).OnStarted2(time)
         self._pivot_mid = 0.0
         self._has_pivot = False
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import CommodityChannelIndex, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
@@ -59,8 +61,8 @@ class gold_warrior02b_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(gold_warrior02b_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gold_warrior02b_strategy, self).OnStarted2(time)
 
         self._cci = CommodityChannelIndex()
         self._cci.Length = self._impulse_period.Value

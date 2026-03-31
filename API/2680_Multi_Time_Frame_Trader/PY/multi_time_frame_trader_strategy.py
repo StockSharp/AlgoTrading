@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -175,8 +177,8 @@ class multi_time_frame_trader_strategy(Strategy):
     def UseTrading(self):
         return self._use_trading.Value
 
-    def OnStarted(self, time):
-        super(multi_time_frame_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_time_frame_trader_strategy, self).OnStarted2(time)
 
         degree = max(1, min(3, self.Degree))
         bars = max(1, self.Bars)

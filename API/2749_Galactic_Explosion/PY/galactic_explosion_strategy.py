@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan
@@ -51,8 +53,8 @@ class galactic_explosion_strategy(Strategy):
         self._last_price = 0.0
         self._missed_bars = 0
 
-    def OnStarted(self, time):
-        super(galactic_explosion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(galactic_explosion_strategy, self).OnStarted2(time)
 
         ma = SimpleMovingAverage()
         ma.Length = self._ma_length.Value

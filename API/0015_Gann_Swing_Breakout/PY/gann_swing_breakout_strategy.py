@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class gann_swing_breakout_strategy(Strategy):
         self._highs = []
         self._lows = []
 
-    def OnStarted(self, time):
-        super(gann_swing_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gann_swing_breakout_strategy, self).OnStarted2(time)
 
         ma = SimpleMovingAverage()
         ma.Length = self._ma_period.Value

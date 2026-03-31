@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal as NetDecimal
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class exp_muv_nor_diff_cloud_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, v): self._candle_type.Value = v
 
-    def OnStarted(self, time):
-        super(exp_muv_nor_diff_cloud_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_muv_nor_diff_cloud_strategy, self).OnStarted2(time)
         self._sma_high = Highest()
         self._sma_high.Length = self.KPeriod
         self._sma_low = Lowest()

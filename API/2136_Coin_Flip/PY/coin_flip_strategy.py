@@ -3,6 +3,8 @@ import random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -68,8 +70,8 @@ class coin_flip_strategy(Strategy):
         self._is_long = False
         self._last_trade_loss = False
 
-    def OnStarted(self, time):
-        super(coin_flip_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(coin_flip_strategy, self).OnStarted2(time)
         self._current_volume = float(self.Volume)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.process_candle).Start()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -56,8 +58,8 @@ class ha_ma_zi_strategy(Strategy):
         self._last_zigzag_high = 0.0
         self._last_zigzag_low = 0.0
 
-    def OnStarted(self, time):
-        super(ha_ma_zi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ha_ma_zi_strategy, self).OnStarted2(time)
         ema = ExponentialMovingAverage()
         ema.Length = self.ma_period
         self._highest = Highest()

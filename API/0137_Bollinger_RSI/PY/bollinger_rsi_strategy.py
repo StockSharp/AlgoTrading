@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -56,8 +58,8 @@ class bollinger_rsi_strategy(Strategy):
         self._rsi_value = 50.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(bollinger_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bollinger_rsi_strategy, self).OnStarted2(time)
         bollinger = BollingerBands()
         bollinger.Length = self.bollinger_period
         bollinger.Width = self.bollinger_deviation

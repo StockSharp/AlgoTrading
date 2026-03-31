@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class doctor_strategy(Strategy):
         self._stop_price = 0.0
         self._take_price = 0.0
 
-    def OnStarted(self, time):
-        super(doctor_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(doctor_strategy, self).OnStarted2(time)
 
         wma_slope = WeightedMovingAverage()
         wma_slope.Length = 10

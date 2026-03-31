@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -54,8 +56,8 @@ class wlx_bw5_zone_strategy(Strategy):
         self._flag_up = False
         self._flag_down = False
 
-    def OnStarted(self, time):
-        super(wlx_bw5_zone_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(wlx_bw5_zone_strategy, self).OnStarted2(time)
         self._ao0 = self._ao1 = self._ao2 = self._ao3 = self._ao4 = None
         self._ac0 = self._ac1 = self._ac2 = self._ac3 = self._ac4 = None
         self._flag_up = False

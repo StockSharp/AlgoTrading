@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -61,8 +63,8 @@ class max_profit_min_loss_options_strategy(Strategy):
         self._has_prev = False
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(max_profit_min_loss_options_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(max_profit_min_loss_options_strategy, self).OnStarted2(time)
         self._entry_price = 0.0
         self._highest_price = 0.0
         self._lowest_price = 999999999.0

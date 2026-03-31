@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class vr_moving_distance_strategy(Strategy):
         self._long_entry_price = None
         self._short_entry_price = None
 
-    def OnStarted(self, time):
-        super(vr_moving_distance_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vr_moving_distance_strategy, self).OnStarted2(time)
         self._long_entries = 0
         self._short_entries = 0
         self._long_highest = 0

@@ -3,6 +3,8 @@ from collections import deque
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class grid_trading_at_volatile_market_strategy(Strategy):
         self._grid_level = 0
         self._last_entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(grid_trading_at_volatile_market_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(grid_trading_at_volatile_market_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value

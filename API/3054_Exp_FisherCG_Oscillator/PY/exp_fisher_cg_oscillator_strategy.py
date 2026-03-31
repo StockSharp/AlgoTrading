@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class exp_fisher_cg_oscillator_strategy(Strategy):
         self._oscillator_history = []
         self._entry_price = None
 
-    def OnStarted(self, time):
-        super(exp_fisher_cg_oscillator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_fisher_cg_oscillator_strategy, self).OnStarted2(time)
         self._median_prices = []
         self._cg_values = []
         self._value_buffer = [0.0, 0.0, 0.0, 0.0]

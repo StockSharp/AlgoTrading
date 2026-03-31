@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -55,8 +57,8 @@ class adaptive_cg_oscillator_x2_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(adaptive_cg_oscillator_x2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_cg_oscillator_x2_strategy, self).OnStarted2(time)
 
         self._prices = []
         self._prev_cg = 0.0

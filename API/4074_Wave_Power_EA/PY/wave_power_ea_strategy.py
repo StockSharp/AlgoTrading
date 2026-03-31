@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -54,8 +56,8 @@ class wave_power_ea_strategy(Strategy):
     def MaxGridOrders(self):
         return self._max_grid_orders.Value
 
-    def OnStarted(self, time):
-        super(wave_power_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(wave_power_ea_strategy, self).OnStarted2(time)
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -55,8 +57,8 @@ class bill_williams_strategy(Strategy):
         self._teeth = None
         self._lips = None
 
-    def OnStarted(self, time):
-        super(bill_williams_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bill_williams_strategy, self).OnStarted2(time)
         self._jaw = SmoothedMovingAverage()
         self._jaw.Length = 13
         self._teeth = SmoothedMovingAverage()

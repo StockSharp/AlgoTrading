@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -107,8 +109,8 @@ class fm_one_scalping_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(fm_one_scalping_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fm_one_scalping_strategy, self).OnStarted2(time)
 
         fast_ma = ExponentialMovingAverage()
         fast_ma.Length = self.FastMaPeriod

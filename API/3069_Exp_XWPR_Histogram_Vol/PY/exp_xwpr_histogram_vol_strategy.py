@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -59,8 +61,8 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         self._prev_color = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(exp_xwpr_histogram_vol_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_xwpr_histogram_vol_strategy, self).OnStarted2(time)
         self._prev_color = None
         self._cooldown_remaining = 0
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class ema_cross_trailing_strategy(Strategy):
         self._current_direction = 0
         self._has_initial_direction = False
 
-    def OnStarted(self, time):
-        super(ema_cross_trailing_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_cross_trailing_strategy, self).OnStarted2(time)
 
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = self._fast_ema_length.Value

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -47,8 +49,8 @@ class bollinger_bands_session_reversal_strategy(Strategy):
     def BollingerWidth(self, value):
         self._bollinger_width.Value = value
 
-    def OnStarted(self, time):
-        super(bollinger_bands_session_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bollinger_bands_session_reversal_strategy, self).OnStarted2(time)
 
         bollinger = BollingerBands()
         bollinger.Length = self.BollingerLength

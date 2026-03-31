@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class pipsover_chaikin_hedge_strategy(Strategy):
         self._has_prev = False
         self._has_prev_chaikin = False
 
-    def OnStarted(self, time):
-        super(pipsover_chaikin_hedge_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pipsover_chaikin_hedge_strategy, self).OnStarted2(time)
         self._pip_size = self._calc_pip_size()
         self._entry_price = None
         self._stop_price = None

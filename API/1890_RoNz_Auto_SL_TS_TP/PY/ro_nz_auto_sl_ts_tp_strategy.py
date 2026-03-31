@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -87,8 +89,8 @@ class ro_nz_auto_sl_ts_tp_strategy(Strategy):
         self._profit_locked = False
         self._bars_since_exit = 0
 
-    def OnStarted(self, time):
-        super(ro_nz_auto_sl_ts_tp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ro_nz_auto_sl_ts_tp_strategy, self).OnStarted2(time)
         ema10 = ExponentialMovingAverage()
         ema10.Length = 10
         ema20 = ExponentialMovingAverage()

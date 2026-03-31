@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import CandleStates
@@ -66,8 +68,8 @@ class aud_usd_scalping_strategy(Strategy):
         self._bar_index = 0
         self._last_trade_bar = 0
 
-    def OnStarted(self, time):
-        super(aud_usd_scalping_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(aud_usd_scalping_strategy, self).OnStarted2(time)
 
         ema_fast = ExponentialMovingAverage()
         ema_fast.Length = self.EmaShort

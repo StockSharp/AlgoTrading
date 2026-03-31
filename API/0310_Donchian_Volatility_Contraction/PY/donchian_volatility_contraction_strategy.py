@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -62,8 +64,8 @@ class donchian_volatility_contraction_strategy(Strategy):
         self._is_initialized = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(donchian_volatility_contraction_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(donchian_volatility_contraction_strategy, self).OnStarted2(time)
 
         donchian_high = Highest()
         donchian_high.Length = int(self._donchian_period.Value)

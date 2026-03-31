@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -88,8 +90,8 @@ class delta_rsi_strategy(Strategy):
         super(delta_rsi_strategy, self).OnReseted()
         self._prev_color = int(self.pass_state)
 
-    def OnStarted(self, time):
-        super(delta_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(delta_rsi_strategy, self).OnStarted2(time)
         self._prev_color = int(self.pass_state)
         rsi_fast = RelativeStrengthIndex()
         rsi_fast.Length = int(self.fast_period)

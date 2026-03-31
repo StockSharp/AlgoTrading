@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -84,8 +86,8 @@ class e_skoch_open_strategy(Strategy):
         self._baseline_equity = 0.0
         self._prev_pattern_signal = 0
 
-    def OnStarted(self, time):
-        super(e_skoch_open_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(e_skoch_open_strategy, self).OnStarted2(time)
 
         self.Volume = self._initial_volume.Value
         self._point_value = self._calculate_point_value()

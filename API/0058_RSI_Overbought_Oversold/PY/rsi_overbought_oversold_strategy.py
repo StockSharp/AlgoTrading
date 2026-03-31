@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class rsi_overbought_oversold_strategy(Strategy):
         super(rsi_overbought_oversold_strategy, self).OnReseted()
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(rsi_overbought_oversold_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rsi_overbought_oversold_strategy, self).OnStarted2(time)
 
         self._cooldown = 0
 

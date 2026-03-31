@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -162,8 +164,8 @@ class day_trading_impulse_strategy(Strategy):
             step = float(self.Security.PriceStep)
         return pts * step if step > 0 else pts
 
-    def OnStarted(self, time):
-        super(day_trading_impulse_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(day_trading_impulse_strategy, self).OnStarted2(time)
 
         self.Volume = float(self.LotSize)
         self._point_size = self._calculate_point_size()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -164,8 +166,8 @@ class xo_signal_re_open_strategy(Strategy):
     def SignalBar(self, value):
         self._signal_bar.Value = value
 
-    def OnStarted(self, time):
-        super(xo_signal_re_open_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xo_signal_re_open_strategy, self).OnStarted2(time)
 
         self._signal_queue = []
         self._hi = 0.0

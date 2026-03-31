@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class fine_tune_gann_laplace_vzo_strategy(Strategy):
         self._prev_fast = 0.0
         self._prev_slow = 0.0
 
-    def OnStarted(self, time):
-        super(fine_tune_gann_laplace_vzo_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fine_tune_gann_laplace_vzo_strategy, self).OnStarted2(time)
 
         fast = ExponentialMovingAverage()
         fast.Length = self._fast_period.Value

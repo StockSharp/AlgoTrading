@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -71,8 +73,8 @@ class three_ma_cross_channel_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(three_ma_cross_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(three_ma_cross_channel_strategy, self).OnStarted2(time)
 
         self._fast_ma = ExponentialMovingAverage()
         self._fast_ma.Length = self.FastLength

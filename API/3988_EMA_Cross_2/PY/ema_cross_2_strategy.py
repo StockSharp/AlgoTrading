@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class ema_cross_2_strategy(Strategy):
         self._point_size = 0.0
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(ema_cross_2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_cross_2_strategy, self).OnStarted2(time)
         self._point_size = self._calculate_point_size()
 
         short_ema = ExponentialMovingAverage()

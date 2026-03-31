@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class monthly_purchase_with_dynamic_contract_size_strategy(Strategy):
         self._last_buy_month = -1
         self._last_buy_year = -1
 
-    def OnStarted(self, time):
-        super(monthly_purchase_with_dynamic_contract_size_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(monthly_purchase_with_dynamic_contract_size_strategy, self).OnStarted2(time)
         self._last_buy_month = -1
         self._last_buy_year = -1
         subscription = self.SubscribeCandles(self.candle_type)

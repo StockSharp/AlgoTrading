@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -76,8 +78,8 @@ class adx_stop_order_template_strategy(Strategy):
         self._prev_minus = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(adx_stop_order_template_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_stop_order_template_strategy, self).OnStarted2(time)
         dmi = DirectionalIndex()
         dmi.Length = self.adx_period
         adx = AverageDirectionalIndex()

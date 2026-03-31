@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -80,8 +82,8 @@ class crude_oil_predicts_equity_strategy(Strategy):
         self._oil_updated = False
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(crude_oil_predicts_equity_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(crude_oil_predicts_equity_strategy, self).OnStarted2(time)
 
         sec2_id = str(self._oil_security_id.Value)
         if not sec2_id:

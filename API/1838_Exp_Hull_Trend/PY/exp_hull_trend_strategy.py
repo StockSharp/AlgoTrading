@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -52,8 +54,8 @@ class exp_hull_trend_strategy(Strategy):
         self._final_buffer = []
         self._final_length = 0
 
-    def OnStarted(self, time):
-        super(exp_hull_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_hull_trend_strategy, self).OnStarted2(time)
         self._final_length = max(1, int(Math.Sqrt(self.length)))
         wma_half = WeightedMovingAverage()
         wma_half.Length = max(1, self.length // 2)

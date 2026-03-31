@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -57,8 +59,8 @@ class macd_adaptive_histogram_strategy(Strategy):
         self._hist_std_dev = None
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(macd_adaptive_histogram_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_adaptive_histogram_strategy, self).OnStarted2(time)
 
         hist_period = int(self._histogram_avg_period.Value)
 

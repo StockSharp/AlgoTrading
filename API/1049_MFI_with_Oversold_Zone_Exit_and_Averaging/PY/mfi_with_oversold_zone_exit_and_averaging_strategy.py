@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -35,8 +37,8 @@ class mfi_with_oversold_zone_exit_and_averaging_strategy(Strategy):
         self._in_oversold = False
         self._bars_from_signal = self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(mfi_with_oversold_zone_exit_and_averaging_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mfi_with_oversold_zone_exit_and_averaging_strategy, self).OnStarted2(time)
         mfi = MoneyFlowIndex()
         mfi.Length = self._mfi_period.Value
         subscription = self.SubscribeCandles(self.candle_type)

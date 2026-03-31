@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -73,9 +75,9 @@ class vwap_mean_reversion_strategy(Strategy):
         """!! REQUIRED!! Override to return securities used by the strategy."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """Set up indicators, subscriptions and protection."""
-        super(vwap_mean_reversion_strategy, self).OnStarted(time)
+        super(vwap_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._atr = AverageTrueRange()

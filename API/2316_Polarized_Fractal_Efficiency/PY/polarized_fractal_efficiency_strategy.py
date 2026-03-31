@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class polarized_fractal_efficiency_strategy(Strategy):
         self._prev_prev_pfe = 0.0
         self._formed = 0
 
-    def OnStarted(self, time):
-        super(polarized_fractal_efficiency_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(polarized_fractal_efficiency_strategy, self).OnStarted2(time)
         self._closes = []
         self._prev_pfe = 0.0
         self._prev_prev_pfe = 0.0

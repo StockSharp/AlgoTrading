@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -56,8 +58,8 @@ class adaptive_fractal_grid_scalping_strategy(Strategy):
         self._cooldown_remaining = 0
         self._bar_count = 0
 
-    def OnStarted(self, time):
-        super(adaptive_fractal_grid_scalping_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_fractal_grid_scalping_strategy, self).OnStarted2(time)
 
         atr = AverageTrueRange()
         atr.Length = int(self._atr_length.Value)

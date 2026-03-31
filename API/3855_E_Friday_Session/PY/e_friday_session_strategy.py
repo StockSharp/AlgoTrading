@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
@@ -21,8 +23,8 @@ class e_friday_session_strategy(Strategy):
     def OnReseted(self):
         super(e_friday_session_strategy, self).OnReseted()
         self._prev_open = 0.0; self._prev_close = 0.0; self._has_prev = False
-    def OnStarted(self, time):
-        super(e_friday_session_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(e_friday_session_strategy, self).OnStarted2(time)
         self._has_prev = False
         ema = ExponentialMovingAverage()
         ema.Length = self.ema_period

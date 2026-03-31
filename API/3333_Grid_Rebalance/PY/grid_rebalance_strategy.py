@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class grid_rebalance_strategy(Strategy):
         self._prev_close = None
         self._prev_ema = None
 
-    def OnStarted(self, time):
-        super(grid_rebalance_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(grid_rebalance_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value

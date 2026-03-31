@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class two_x_spy_tips_strategy(Strategy):
         self._slow_sma = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(two_x_spy_tips_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(two_x_spy_tips_strategy, self).OnStarted2(time)
 
         self._fast_sma = SimpleMovingAverage()
         self._fast_sma.Length = int(self._fast_sma_length.Value)

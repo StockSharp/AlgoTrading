@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -51,8 +53,8 @@ class nto_qf_strategy(Strategy):
     def RsiLower(self):
         return self._rsi_lower.Value
 
-    def OnStarted(self, time):
-        super(nto_qf_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(nto_qf_strategy, self).OnStarted2(time)
 
         self._prev_rsi = 0.0
 

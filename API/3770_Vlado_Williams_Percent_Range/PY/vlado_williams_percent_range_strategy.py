@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class vlado_williams_percent_range_strategy(Strategy):
         self._sell_signal = False
         self._last_signal = 0
 
-    def OnStarted(self, time):
-        super(vlado_williams_percent_range_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vlado_williams_percent_range_strategy, self).OnStarted2(time)
 
         williams_r = WilliamsR()
         williams_r.Length = self.WprLength

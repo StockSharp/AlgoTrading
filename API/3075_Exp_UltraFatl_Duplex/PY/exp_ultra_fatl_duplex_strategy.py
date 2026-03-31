@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -211,8 +213,8 @@ class exp_ultra_fatl_duplex_strategy(Strategy):
         self._short_fatl_buffer = []
         self._short_fatl_filled = 0
 
-    def OnStarted(self, time):
-        super(exp_ultra_fatl_duplex_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_ultra_fatl_duplex_strategy, self).OnStarted2(time)
 
         self._price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 0.0
 

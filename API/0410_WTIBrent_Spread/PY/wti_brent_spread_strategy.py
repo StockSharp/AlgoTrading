@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class wti_brent_spread_strategy(Strategy):
         self._bb = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(wti_brent_spread_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(wti_brent_spread_strategy, self).OnStarted2(time)
         self._bb = BollingerBands()
         self._bb.Length = int(self._bb_period.Value)
         self._bb.Width = float(self._bb_width.Value)

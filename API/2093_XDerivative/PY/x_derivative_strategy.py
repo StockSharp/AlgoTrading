@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -48,8 +50,8 @@ class x_derivative_strategy(Strategy):
         self._prev_value = None
         self._prev_prev_value = None
 
-    def OnStarted(self, time):
-        super(x_derivative_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(x_derivative_strategy, self).OnStarted2(time)
         self._jma = JurikMovingAverage()
         self._jma.Length = self.ma_length
         roc = RateOfChange()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -66,8 +68,8 @@ class le_man_trend_strategy(Strategy):
         self._prev_bulls = 0.0
         self._prev_bears = 0.0
 
-    def OnStarted(self, time):
-        super(le_man_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(le_man_trend_strategy, self).OnStarted2(time)
         self._high_min = Highest()
         self._high_min.Length = self.min_period
         self._high_midle = Highest()

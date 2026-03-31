@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -42,8 +44,8 @@ class ema_wma_crossover_strategy(Strategy):
         self._prev_ema = 0.0
         self._prev_wma = 0.0
 
-    def OnStarted(self, time):
-        super(ema_wma_crossover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_wma_crossover_strategy, self).OnStarted2(time)
 
         tick = 1.0
         if self.Security is not None and self.Security.PriceStep is not None:

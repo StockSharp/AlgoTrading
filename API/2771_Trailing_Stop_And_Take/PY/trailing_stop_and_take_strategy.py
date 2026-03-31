@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -78,8 +80,8 @@ class trailing_stop_and_take_strategy(Strategy):
     def SpreadMultiplier(self):
         return self._spread_multiplier.Value
 
-    def OnStarted(self, time):
-        super(trailing_stop_and_take_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trailing_stop_and_take_strategy, self).OnStarted2(time)
         sec = self.Security
         self._price_step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0 else 1.0
         self._previous_position = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -28,8 +30,8 @@ class state_aware_ma_cross_strategy(Strategy):
         self._bar_index = 0
         self._last_trade_bar = 0
 
-    def OnStarted(self, time):
-        super(state_aware_ma_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(state_aware_ma_cross_strategy, self).OnStarted2(time)
         self._prev_fast = 0
         self._prev_slow = 0
         self._bar_index = 0

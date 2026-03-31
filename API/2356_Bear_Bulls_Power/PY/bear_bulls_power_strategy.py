@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class bear_bulls_power_strategy(Strategy):
         self._signal_ma = None
         self._prev_value = None
 
-    def OnStarted(self, time):
-        super(bear_bulls_power_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bear_bulls_power_strategy, self).OnStarted2(time)
         self._price_ma = SimpleMovingAverage()
         self._price_ma.Length = self.first_length
         self._signal_ma = SimpleMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class matrix_machine_learning_strategy(Strategy):
         self._closes = []
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(matrix_machine_learning_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(matrix_machine_learning_strategy, self).OnStarted2(time)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._process_candle).Start()
         area = self.CreateChartArea()

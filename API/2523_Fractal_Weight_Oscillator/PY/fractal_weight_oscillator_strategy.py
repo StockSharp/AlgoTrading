@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -180,8 +182,8 @@ class fractal_weight_oscillator_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(fractal_weight_oscillator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fractal_weight_oscillator_strategy, self).OnStarted2(time)
 
         self._oscillator_history = []
         self._previous_high = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -48,8 +50,8 @@ class martingale_bone_crusher_strategy(Strategy):
     def InitialVolume(self):
         return self._initial_volume.Value
 
-    def OnStarted(self, time):
-        super(martingale_bone_crusher_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(martingale_bone_crusher_strategy, self).OnStarted2(time)
 
         self._current_volume = self.InitialVolume
         self._last_order_volume = self.InitialVolume

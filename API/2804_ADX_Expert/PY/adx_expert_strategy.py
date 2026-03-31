@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
@@ -30,8 +32,8 @@ class adx_expert_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(adx_expert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_expert_strategy, self).OnStarted2(time)
 
         self._adx = AverageDirectionalIndex()
         self._adx.Length = self._adx_period.Value

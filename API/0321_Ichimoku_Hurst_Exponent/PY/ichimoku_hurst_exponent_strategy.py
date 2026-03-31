@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class ichimoku_hurst_exponent_strategy(Strategy):
         self._prev_kijun = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(ichimoku_hurst_exponent_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_hurst_exponent_strategy, self).OnStarted2(time)
 
         ichimoku = Ichimoku()
         ichimoku.Tenkan.Length = int(self._tenkan_period.Value)

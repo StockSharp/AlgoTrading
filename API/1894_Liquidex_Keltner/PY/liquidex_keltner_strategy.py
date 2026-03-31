@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -87,8 +89,8 @@ class liquidex_keltner_strategy(Strategy):
         super(liquidex_keltner_strategy, self).OnReseted()
         self._prev_price = 0.0
 
-    def OnStarted(self, time):
-        super(liquidex_keltner_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(liquidex_keltner_strategy, self).OnStarted2(time)
         self._ma = SimpleMovingAverage()
         self._ma.Length = self.ma_period
         keltner = KeltnerChannels()

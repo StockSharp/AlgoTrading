@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -138,8 +140,8 @@ class macd_pattern_trader_session_strategy(Strategy):
     def UseMartingale(self, value):
         self._use_martingale.Value = value
 
-    def OnStarted(self, time):
-        super(macd_pattern_trader_session_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_pattern_trader_session_strategy, self).OnStarted2(time)
 
         self._point_size = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 0.0001
         if self._point_size <= 0.0:

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -49,8 +51,8 @@ class area_macd_strategy(Strategy):
         self._pos_area = 0.0
         self._neg_area = 0.0
 
-    def OnStarted(self, time):
-        super(area_macd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(area_macd_strategy, self).OnStarted2(time)
         self._diff_history = deque()
         self._pos_area = 0.0
         self._neg_area = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -110,8 +112,8 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
         self._has_prev_values = False
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(parabolic_sar_rsi_divergence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_rsi_divergence_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod

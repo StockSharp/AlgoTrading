@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class yeong_rrg_strategy(Strategy):
         self._rm_ratio_history = []
         self._prev_rs_ratio = 0.0
 
-    def OnStarted(self, time):
-        super(yeong_rrg_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(yeong_rrg_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self.length
         self._rs_ratio_history = []

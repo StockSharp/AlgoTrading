@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -70,8 +72,8 @@ class resonance_hunter_strategy(Strategy):
         self._prev_fast_d = None
         self._prev_slow_d = None
 
-    def OnStarted(self, time):
-        super(resonance_hunter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(resonance_hunter_strategy, self).OnStarted2(time)
         self._highs = []
         self._lows = []
         self._bar_count = 0

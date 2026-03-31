@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -100,8 +102,8 @@ class nevalyashka_martingale_strategy(Strategy):
 
         return step
 
-    def OnStarted(self, time):
-        super(nevalyashka_martingale_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(nevalyashka_martingale_strategy, self).OnStarted2(time)
 
         self._equity_peak = float(self.Portfolio.CurrentValue) if self.Portfolio is not None and self.Portfolio.CurrentValue is not None else 0.0
         self._planned_volume = float(self.BaseVolume)

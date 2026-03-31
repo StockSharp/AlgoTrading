@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -41,8 +43,8 @@ class cci_ma_v15_strategy(Strategy):
         self._prev_cci = None
         self._prev_signal_cci = None
 
-    def OnStarted(self, time):
-        super(cci_ma_v15_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cci_ma_v15_strategy, self).OnStarted2(time)
 
         cci = CommodityChannelIndex()
         cci.Length = self._cci_period.Value

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -61,8 +63,8 @@ class ex_fractals_strategy(Strategy):
         self._down_count1 = 0
         self._down_count2 = 0
 
-    def OnStarted(self, time):
-        super(ex_fractals_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ex_fractals_strategy, self).OnStarted2(time)
         self._body_queue = deque()
         self._body_sum = 0.0
         self._h1 = self._h2 = self._h3 = self._h4 = self._h5 = 0.0

@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -86,8 +88,8 @@ class macd_pattern_trader_v02_strategy(Strategy):
     @property
     def MaxHistoryParam(self): return self._max_history_param.Value
 
-    def OnStarted(self, time):
-        super(macd_pattern_trader_v02_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_pattern_trader_v02_strategy, self).OnStarted2(time)
         ps = self.Security.PriceStep if self.Security is not None else None
         self._point_size = float(ps) if ps is not None and float(ps) > 0 else 0.0001
         macd = MovingAverageConvergenceDivergence()

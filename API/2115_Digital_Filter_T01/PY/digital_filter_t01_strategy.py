@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from System.Collections.Generic import Queue
@@ -45,8 +47,8 @@ class digital_filter_t01_strategy(Strategy):
         self._prev_trigger = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(digital_filter_t01_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(digital_filter_t01_strategy, self).OnStarted2(time)
         self._prices = []
         self._prev_digital = 0.0
         self._prev_trigger = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Math
@@ -67,8 +69,8 @@ class vwap_slope_breakout_strategy(Strategy):
         self._cooldown = 0
         self._is_initialized = False
 
-    def OnStarted(self, time):
-        super(vwap_slope_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vwap_slope_breakout_strategy, self).OnStarted2(time)
 
         lb = int(self._lookback_period.Value)
         self._slopes = [0.0] * lb

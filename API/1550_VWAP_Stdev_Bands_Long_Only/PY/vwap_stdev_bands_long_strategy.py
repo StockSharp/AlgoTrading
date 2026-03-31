@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DateTimeOffset
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class vwap_stdev_bands_long_strategy(Strategy):
         self._last_entry_price = 0.0
         self._last_entry_time = None
 
-    def OnStarted(self, time):
-        super(vwap_stdev_bands_long_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vwap_stdev_bands_long_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = 2
         subscription = self.SubscribeCandles(self.candle_type)

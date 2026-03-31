@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class mk_custome_adaptive_super_trend_strategy(Strategy):
         self._prev_super_trend = 0.0
         self._prev_direction = 0
 
-    def OnStarted(self, time):
-        super(mk_custome_adaptive_super_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mk_custome_adaptive_super_trend_strategy, self).OnStarted2(time)
         self._atr_history = []
         self._prev_lower_band = 0.0
         self._prev_upper_band = 0.0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Math
@@ -75,8 +77,8 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
         self._previous_high = 0.0
         self._previous_low = 0.0
 
-    def OnStarted(self, time):
-        super(parabolic_sar_distance_mean_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_distance_mean_reversion_strategy, self).OnStarted2(time)
 
         lb = int(self._lookback_period.Value)
         self._distance_history = [0.0] * lb

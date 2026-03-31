@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
@@ -24,8 +26,8 @@ class ak47_a1_strategy(Strategy):
     def OnReseted(self):
         super(ak47_a1_strategy, self).OnReseted()
         self._prev_fast = 0.0; self._prev_med = 0.0; self._has_prev = False
-    def OnStarted(self, time):
-        super(ak47_a1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ak47_a1_strategy, self).OnStarted2(time)
         self._has_prev = False
         fast = SimpleMovingAverage(); fast.Length = self.fast_period
         med = SimpleMovingAverage(); med.Length = self.med_period

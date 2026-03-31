@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -154,8 +156,8 @@ class rabbit3_strategy(Strategy):
     def TakeProfitPips(self, value):
         self._take_profit_pips.Value = value
 
-    def OnStarted(self, time):
-        super(rabbit3_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rabbit3_strategy, self).OnStarted2(time)
 
         self._previous_williams = 0.0
         self._has_prev_williams = False

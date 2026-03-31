@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -104,8 +106,8 @@ class precipice_martin_strategy(Strategy):
         else:
             self._martingale_multiplier *= self.MartingaleCoefficient
 
-    def OnStarted(self, time):
-        super(precipice_martin_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(precipice_martin_strategy, self).OnStarted2(time)
 
         sec = self.Security
         step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0

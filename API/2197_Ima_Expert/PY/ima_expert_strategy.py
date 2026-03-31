@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
@@ -22,8 +24,8 @@ class ima_expert_strategy(Strategy):
     def OnReseted(self):
         super(ima_expert_strategy, self).OnReseted()
         self._previous_ima = None
-    def OnStarted(self, time):
-        super(ima_expert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ima_expert_strategy, self).OnStarted2(time)
         sma = ExponentialMovingAverage()
         sma.Length = self.sma_period
         subscription = self.SubscribeCandles(self.candle_type)

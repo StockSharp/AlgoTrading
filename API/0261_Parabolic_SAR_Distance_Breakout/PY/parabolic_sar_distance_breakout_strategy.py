@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -122,7 +124,7 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
         self._last_short_distance = 0
         self._samples_count = 0
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         self._parabolic_sar = ParabolicSar()
         self._parabolic_sar.Acceleration = self.Acceleration
         self._parabolic_sar.AccelerationMax = self.MaxAcceleration
@@ -144,7 +146,7 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
             stopLoss=None,
             isStopTrailing=True
         )
-        super(parabolic_sar_distance_breakout_strategy, self).OnStarted(time)
+        super(parabolic_sar_distance_breakout_strategy, self).OnStarted2(time)
 
     def ProcessCandle(self, candle, sar_value):
         # Skip unfinished candles

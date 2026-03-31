@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -54,8 +56,8 @@ class hybrid_ea_strategy(Strategy):
         self._has_prev = False
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(hybrid_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hybrid_ea_strategy, self).OnStarted2(time)
         fast = ExponentialMovingAverage()
         fast.Length = self.fast_period
         slow = ExponentialMovingAverage()

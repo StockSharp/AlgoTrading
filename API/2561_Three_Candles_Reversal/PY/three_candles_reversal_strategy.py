@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -112,8 +114,8 @@ class three_candles_reversal_strategy(Strategy):
     def TakeProfitPips(self, value):
         self._take_profit_pips.Value = value
 
-    def OnStarted(self, time):
-        super(three_candles_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(three_candles_reversal_strategy, self).OnStarted2(time)
 
         self._candles = []
         self._last_bullish_signal_time = None

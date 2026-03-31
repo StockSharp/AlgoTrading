@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -14,8 +16,8 @@ class rnd_trade_strategy(Strategy):
         super(rnd_trade_strategy, self).__init__()
         self._interval_minutes = self.Param("IntervalMinutes", 360).SetGreaterThanZero().SetDisplay("Interval Minutes", "Minutes between trades", "General")
 
-    def OnStarted(self, time):
-        super(rnd_trade_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rnd_trade_strategy, self).OnStarted2(time)
 
         tf = DataType.TimeFrame(TimeSpan.FromMinutes(self._interval_minutes.Value))
         sub = self.SubscribeCandles(tf)

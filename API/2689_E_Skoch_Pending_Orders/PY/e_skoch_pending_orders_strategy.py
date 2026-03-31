@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -75,8 +77,8 @@ class e_skoch_pending_orders_strategy(Strategy):
     def CheckExistingTrade(self):
         return self._check_existing_trade.Value
 
-    def OnStarted(self, time):
-        super(e_skoch_pending_orders_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(e_skoch_pending_orders_strategy, self).OnStarted2(time)
 
         self._prev_high1 = None
         self._prev_high2 = None

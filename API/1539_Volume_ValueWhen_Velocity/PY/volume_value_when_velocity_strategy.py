@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -62,8 +64,8 @@ class volume_value_when_velocity_strategy(Strategy):
         self._prev_cross = 0.0
         self._bars_since_cross = 2147483647
 
-    def OnStarted(self, time):
-        super(volume_value_when_velocity_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_value_when_velocity_strategy, self).OnStarted2(time)
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_length
         atr_short = AverageTrueRange()

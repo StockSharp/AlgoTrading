@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -75,8 +77,8 @@ class amstell_grid_manager_strategy(Strategy):
             return step * 10.0
         return step
 
-    def OnStarted(self, time):
-        super(amstell_grid_manager_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(amstell_grid_manager_strategy, self).OnStarted2(time)
 
         self.Volume = self.OrderVolume
         self._pip_value = self._calc_pip_value()

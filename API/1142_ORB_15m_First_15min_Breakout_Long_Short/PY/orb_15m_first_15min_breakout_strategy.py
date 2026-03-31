@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class orb_15m_first_15min_breakout_strategy(Strategy):
         self._current_day = None
         self._or_established = False
 
-    def OnStarted(self, time):
-        super(orb_15m_first_15min_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(orb_15m_first_15min_breakout_strategy, self).OnStarted2(time)
         self._or_high = 0.0
         self._or_low = 0.0
         self._trade_taken_today = False

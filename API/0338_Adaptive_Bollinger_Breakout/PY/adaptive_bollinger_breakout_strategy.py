@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -66,8 +68,8 @@ class adaptive_bollinger_breakout_strategy(Strategy):
         self._atr_count = 0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(adaptive_bollinger_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_bollinger_breakout_strategy, self).OnStarted2(time)
 
         min_period = int(self._min_bollinger_period.Value)
         max_period = int(self._max_bollinger_period.Value)

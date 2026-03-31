@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -87,8 +89,8 @@ class expert_master_eurusd_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(expert_master_eurusd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(expert_master_eurusd_strategy, self).OnStarted2(time)
 
         self._price_step = 1.0
         if self.Security is not None and self.Security.PriceStep is not None:

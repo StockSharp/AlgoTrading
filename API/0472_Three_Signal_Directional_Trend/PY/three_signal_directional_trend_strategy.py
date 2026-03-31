@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -49,8 +51,8 @@ class three_signal_directional_trend_strategy(Strategy):
         self._macd_init = False
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(three_signal_directional_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(three_signal_directional_trend_strategy, self).OnStarted2(time)
 
         self._macd = MovingAverageConvergenceDivergenceSignal()
         self._macd.Macd.ShortMa.Length = int(self._macd_fast_length.Value)

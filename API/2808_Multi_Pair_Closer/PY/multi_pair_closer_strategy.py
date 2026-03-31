@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -27,8 +29,8 @@ class multi_pair_closer_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(multi_pair_closer_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_pair_closer_strategy, self).OnStarted2(time)
 
         self._sma = SimpleMovingAverage()
         self._sma.Length = self._sma_period.Value

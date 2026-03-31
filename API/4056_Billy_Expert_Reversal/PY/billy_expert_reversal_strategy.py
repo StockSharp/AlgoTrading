@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class billy_expert_reversal_strategy(Strategy):
     def RsiLength(self):
         return self._rsi_length.Value
 
-    def OnStarted(self, time):
-        super(billy_expert_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(billy_expert_reversal_strategy, self).OnStarted2(time)
 
         self._prev_high1 = 0.0
         self._prev_high2 = 0.0

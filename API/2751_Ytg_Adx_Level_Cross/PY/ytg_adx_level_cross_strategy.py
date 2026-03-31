@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -58,8 +60,8 @@ class ytg_adx_level_cross_strategy(Strategy):
     def StopLossPoints(self):
         return self._stop_loss_points.Value
 
-    def OnStarted(self, time):
-        super(ytg_adx_level_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ytg_adx_level_cross_strategy, self).OnStarted2(time)
 
         self._adx = AverageDirectionalIndex()
         self._adx.Length = self.AdxPeriod

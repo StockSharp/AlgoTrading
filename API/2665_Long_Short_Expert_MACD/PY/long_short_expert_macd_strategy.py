@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -68,8 +70,8 @@ class long_short_expert_macd_strategy(Strategy):
         step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0 else 1.0
         return step
 
-    def OnStarted(self, time):
-        super(long_short_expert_macd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(long_short_expert_macd_strategy, self).OnStarted2(time)
 
         self._prev_above = None
         self._entry_price = None

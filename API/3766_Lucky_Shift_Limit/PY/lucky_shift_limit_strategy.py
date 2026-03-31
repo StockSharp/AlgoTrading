@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -73,8 +75,8 @@ class lucky_shift_limit_strategy(Strategy):
         step = float(step)
         return points * step * self._get_pip_multiplier(step)
 
-    def OnStarted(self, time):
-        super(lucky_shift_limit_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(lucky_shift_limit_strategy, self).OnStarted2(time)
 
         self._shift_offset = self._calculate_price_offset(self.ShiftPoints)
         self._limit_offset = self._calculate_price_offset(self.LimitPoints)

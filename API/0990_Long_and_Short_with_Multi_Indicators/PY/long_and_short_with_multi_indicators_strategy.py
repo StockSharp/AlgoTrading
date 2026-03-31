@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class long_and_short_with_multi_indicators_strategy(Strategy):
         super(long_and_short_with_multi_indicators_strategy, self).OnReseted()
         self._bars_since_signal = 0
 
-    def OnStarted(self, time):
-        super(long_and_short_with_multi_indicators_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(long_and_short_with_multi_indicators_strategy, self).OnStarted2(time)
         self._bars_since_signal = 0
 
         self._rsi = RelativeStrengthIndex()

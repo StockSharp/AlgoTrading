@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import AwesomeOscillator, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
@@ -33,8 +35,8 @@ class fx_chaos_scalp_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(fx_chaos_scalp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fx_chaos_scalp_strategy, self).OnStarted2(time)
 
         self._ao = AwesomeOscillator()
         self._ao.ShortMa.Length = 5

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, ICandleMessage, CandleStates, Sides
@@ -97,11 +99,11 @@ class volume_mean_reversion_strategy(Strategy):
         self._count = 0
         self._volume_values = []
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """
         Initialize indicators, subscriptions and charting.
         """
-        super(volume_mean_reversion_strategy, self).OnStarted(time)
+        super(volume_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create Volume indicator (for visualization)
         volume = VolumeIndicator()

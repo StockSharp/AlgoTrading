@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -52,8 +54,8 @@ class vwap_williams_r_strategy(Strategy):
         self._vwap_cum_pv = 0.0
         self._vwap_cum_vol = 0.0
 
-    def OnStarted(self, time):
-        super(vwap_williams_r_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vwap_williams_r_strategy, self).OnStarted2(time)
         self._previous_williams_r = 0.0
         self._cooldown = 0
         self._vwap_date = None

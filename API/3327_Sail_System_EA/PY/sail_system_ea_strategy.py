@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class sail_system_ea_strategy(Strategy):
         self._prev_close = None
         self._prev_sma = None
 
-    def OnStarted(self, time):
-        super(sail_system_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(sail_system_ea_strategy, self).OnStarted2(time)
 
         self._sma = SimpleMovingAverage()
         self._sma.Length = self.sma_period

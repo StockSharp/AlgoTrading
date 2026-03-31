@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class time_session_filter_macd_example_strategy(Strategy):
         self._init = False
         self._last_signal_ticks = 0
 
-    def OnStarted(self, time):
-        super(time_session_filter_macd_example_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(time_session_filter_macd_example_strategy, self).OnStarted2(time)
         self._fast = ExponentialMovingAverage()
         self._fast.Length = 14
         self._slow = ExponentialMovingAverage()

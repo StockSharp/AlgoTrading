@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class nday_breakout_strategy(Strategy):
         self._n_day_low = float('inf')
         self._is_formed = False
 
-    def OnStarted(self, time):
-        super(nday_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(nday_breakout_strategy, self).OnStarted2(time)
 
         self._highest = Highest()
         self._highest.Length = self._lookback_period.Value

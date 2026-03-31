@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Decimal
@@ -119,8 +121,8 @@ class color_jfatl_digit_tm_strategy(Strategy):
     def SignalBar(self):
         return self._signal_bar.Value
 
-    def OnStarted(self, time):
-        super(color_jfatl_digit_tm_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_jfatl_digit_tm_strategy, self).OnStarted2(time)
 
         self.Volume = self.OrderVolume
         self._jma = ExponentialMovingAverage()

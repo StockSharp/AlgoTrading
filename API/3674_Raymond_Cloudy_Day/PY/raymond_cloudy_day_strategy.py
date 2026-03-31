@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -76,8 +78,8 @@ class raymond_cloudy_day_strategy(Strategy):
         self._take_price = None
         self._stop_price = None
 
-    def OnStarted(self, time):
-        super(raymond_cloudy_day_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(raymond_cloudy_day_strategy, self).OnStarted2(time)
 
         self.Volume = float(self.TradeVolume)
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class close_by_equity_percent_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(close_by_equity_percent_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(close_by_equity_percent_strategy, self).OnStarted2(time)
 
         portfolio = self.Portfolio
         if portfolio is not None:

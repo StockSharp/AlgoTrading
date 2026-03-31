@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class john_bob_trading_bot_strategy(Strategy):
         self._stop_price = 0.0
         self._target_price = 0.0
 
-    def OnStarted(self, time):
-        super(john_bob_trading_bot_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(john_bob_trading_bot_strategy, self).OnStarted2(time)
         atr = AverageTrueRange()
         atr.Length = 14
         subscription = self.SubscribeCandles(self.candle_type)

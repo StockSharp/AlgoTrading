@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class simplistic_automatic_growth_models_strategy(Strategy):
         self._cum_low = 0.0
         self._count = 0
 
-    def OnStarted(self, time):
-        super(simplistic_automatic_growth_models_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(simplistic_automatic_growth_models_strategy, self).OnStarted2(time)
         highest = Highest()
         highest.Length = self.length
         lowest = Lowest()

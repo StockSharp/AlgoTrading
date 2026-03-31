@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class macd_aggressive_scalp_simple_strategy(Strategy):
         self._initialized = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(macd_aggressive_scalp_simple_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_aggressive_scalp_simple_strategy, self).OnStarted2(time)
         self._prev_macd = 0.0
         self._initialized = False
         self._cooldown = 0

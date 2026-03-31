@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -102,13 +104,13 @@ class rsi_supertrend_strategy(Strategy):
         self._prev_close = 0
         self._up_value = 0
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.
 
         :param time: The time when the strategy started.
         """
-        super(rsi_supertrend_strategy, self).OnStarted(time)
+        super(rsi_supertrend_strategy, self).OnStarted2(time)
 
         # Create RSI indicator
         rsi = RelativeStrengthIndex()

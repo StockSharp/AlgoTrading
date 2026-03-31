@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class adx_trend_strategy(Strategy):
         self._prev_adx_value = 0.0
         self._prev_ma_value = 0.0
 
-    def OnStarted(self, time):
-        super(adx_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_trend_strategy, self).OnStarted2(time)
 
         adx = AverageDirectionalIndex()
         adx.Length = self._adx_period.Value

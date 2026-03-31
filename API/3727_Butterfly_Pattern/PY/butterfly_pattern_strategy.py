@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -156,8 +158,8 @@ class butterfly_pattern_strategy(Strategy):
         self._reset_position()
         self._last_pattern_time = None
 
-    def OnStarted(self, time):
-        super(butterfly_pattern_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(butterfly_pattern_strategy, self).OnStarted2(time)
 
         self._candles = []
         self._pivots = []

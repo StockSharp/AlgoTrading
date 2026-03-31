@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -51,8 +53,8 @@ class gazonkos_strategy(Strategy):
         self._last_signal_hour = -1
         self._update_history_size()
 
-    def OnStarted(self, time):
-        super(gazonkos_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gazonkos_strategy, self).OnStarted2(time)
 
         self._close_history = []
         self._state = 0

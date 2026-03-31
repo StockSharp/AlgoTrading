@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -78,8 +80,8 @@ class keltner_with_rl_signal_strategy(Strategy):
         self._previous_above_upper = False
         self._previous_below_lower = False
 
-    def OnStarted(self, time):
-        super(keltner_with_rl_signal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(keltner_with_rl_signal_strategy, self).OnStarted2(time)
 
         keltner = KeltnerChannels()
         keltner.Length = int(self._ema_period.Value)

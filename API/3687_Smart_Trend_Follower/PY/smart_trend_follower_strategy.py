@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -173,8 +175,8 @@ class smart_trend_follower_strategy(Strategy):
         self._long_exit_requested = False
         self._short_exit_requested = False
 
-    def OnStarted(self, time):
-        super(smart_trend_follower_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(smart_trend_follower_strategy, self).OnStarted2(time)
 
         self._fast_sma = SimpleMovingAverage()
         self._fast_sma.Length = max(1, self.FastPeriod)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -126,8 +128,8 @@ class n_ratio_sign_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stop_loss.Value = value
 
-    def OnStarted(self, time):
-        super(n_ratio_sign_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(n_ratio_sign_strategy, self).OnStarted2(time)
 
         self._ema = ExponentialMovingAverage()
         self._ema.Length = self.Length

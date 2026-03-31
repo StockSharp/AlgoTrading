@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Strategies import Strategy
 
@@ -19,8 +21,8 @@ class pixel_art_strategy(Strategy):
     def logo(self):
         return self._logo.Value
 
-    def OnStarted(self, time):
-        super(pixel_art_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pixel_art_strategy, self).OnStarted2(time)
 
         pixels = {
             "Pine": self._pine_array,

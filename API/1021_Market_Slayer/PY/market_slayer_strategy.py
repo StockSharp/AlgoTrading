@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class market_slayer_strategy(Strategy):
         self._prev_short = None
         self._prev_long = None
 
-    def OnStarted(self, time):
-        super(market_slayer_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(market_slayer_strategy, self).OnStarted2(time)
         self._trend_hlv = 0
         self._is_trend_bullish = False
         self._prev_short = None

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class simple_pivot_flip_strategy(Strategy):
         self._previous_low = 0.0
         self._has_previous_candle = False
 
-    def OnStarted(self, time):
-        super(simple_pivot_flip_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(simple_pivot_flip_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()

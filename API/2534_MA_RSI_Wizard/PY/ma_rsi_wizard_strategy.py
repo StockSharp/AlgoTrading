@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -171,8 +173,8 @@ class ma_rsi_wizard_strategy(Strategy):
     def RsiWeight(self, value):
         self._rsi_weight.Value = value
 
-    def OnStarted(self, time):
-        super(ma_rsi_wizard_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_rsi_wizard_strategy, self).OnStarted2(time)
 
         self._bar_index = 0
         self._last_long_entry_bar = None

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -110,8 +112,8 @@ class exp_time_zone_pivots_open_system_tm_plus_strategy(Strategy):
         self._short_stop_price = None
         self._short_take_price = None
 
-    def OnStarted(self, time):
-        super(exp_time_zone_pivots_open_system_tm_plus_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_time_zone_pivots_open_system_tm_plus_strategy, self).OnStarted2(time)
         self._zone_history = []
         self._last_session_date = None
         self._session_open_price = None

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class pendulum_swing_strategy(Strategy):
         self._short_level = 0
         self._entry_price = 0
 
-    def OnStarted(self, time):
-        super(pendulum_swing_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pendulum_swing_strategy, self).OnStarted2(time)
         self._pip_size = self._get_pip_size()
         self._pending_buy_price = 0
         self._pending_sell_price = 0

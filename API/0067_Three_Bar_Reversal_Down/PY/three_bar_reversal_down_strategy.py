@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class three_bar_reversal_down_strategy(Strategy):
         self._bar2 = None
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(three_bar_reversal_down_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(three_bar_reversal_down_strategy, self).OnStarted2(time)
 
         self._bar1 = None
         self._bar2 = None

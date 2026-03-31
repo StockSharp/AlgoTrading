@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class renko_chart_from_ticks_strategy(Strategy):
         self._prev_up = None
         self._bars_since_signal = int(self.cooldown_candles)
 
-    def OnStarted(self, time):
-        super(renko_chart_from_ticks_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(renko_chart_from_ticks_strategy, self).OnStarted2(time)
         self._prev_up = None
         self._bars_since_signal = int(self.cooldown_candles)
         atr = AverageTrueRange()

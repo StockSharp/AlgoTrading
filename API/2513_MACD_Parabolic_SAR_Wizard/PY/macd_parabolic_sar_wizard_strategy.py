@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -35,8 +37,8 @@ class macd_parabolic_sar_wizard_strategy(Strategy):
     def OnReseted(self):
         super(macd_parabolic_sar_wizard_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(macd_parabolic_sar_wizard_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_parabolic_sar_wizard_strategy, self).OnStarted2(time)
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self._macd_fast.Value
         macd.Macd.LongMa.Length = self._macd_slow.Value

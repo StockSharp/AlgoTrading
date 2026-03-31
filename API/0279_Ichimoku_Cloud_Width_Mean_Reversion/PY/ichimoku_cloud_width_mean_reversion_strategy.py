@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Math
@@ -67,8 +69,8 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         self._filled_count = 0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(ichimoku_cloud_width_mean_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_cloud_width_mean_reversion_strategy, self).OnStarted2(time)
 
         lb = int(self._lookback_period.Value)
         self._cloud_width_history = [0.0] * lb

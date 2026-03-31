@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class rsi_bollinger_bands_ea_strategy(Strategy):
     def RsiOverbought(self):
         return self._rsi_overbought.Value
 
-    def OnStarted(self, time):
-        super(rsi_bollinger_bands_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rsi_bollinger_bands_ea_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod

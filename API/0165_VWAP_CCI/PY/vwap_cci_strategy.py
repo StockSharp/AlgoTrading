@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -93,8 +95,8 @@ class vwap_cci_strategy(Strategy):
         super(vwap_cci_strategy, self).OnReseted()
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(vwap_cci_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vwap_cci_strategy, self).OnStarted2(time)
 
         # Create indicators
         vwap = VolumeWeightedMovingAverage()

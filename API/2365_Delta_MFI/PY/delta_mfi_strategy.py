@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class delta_mfi_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(delta_mfi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(delta_mfi_strategy, self).OnStarted2(time)
         fast_mfi = MoneyFlowIndex()
         fast_mfi.Length = int(self.fast_period)
         slow_mfi = MoneyFlowIndex()

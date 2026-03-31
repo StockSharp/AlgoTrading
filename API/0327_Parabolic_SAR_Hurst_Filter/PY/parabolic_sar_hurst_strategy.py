@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -66,8 +68,8 @@ class parabolic_sar_hurst_strategy(Strategy):
         self._prev_price_above_sar = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(parabolic_sar_hurst_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_hurst_strategy, self).OnStarted2(time)
 
         self._parabolic_sar = ParabolicSar()
         self._parabolic_sar.Acceleration = Decimal(self._sar_acceleration_factor.Value)

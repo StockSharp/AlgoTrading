@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -46,8 +48,8 @@ class intelle_city_world_cycle_ath_atl_logarithmic_strategy(Strategy):
         self._prev_atl_long = 0.0
         self._prev_atl_short = 0.0
 
-    def OnStarted(self, time):
-        super(intelle_city_world_cycle_ath_atl_logarithmic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(intelle_city_world_cycle_ath_atl_logarithmic_strategy, self).OnStarted2(time)
         ma_ath_long = SimpleMovingAverage()
         ma_ath_long.Length = self._ath_long_length.Value
         ma_ath_short = SimpleMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class up_3x1_shifted_sma_strategy(Strategy):
         self._has_prev = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(up_3x1_shifted_sma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(up_3x1_shifted_sma_strategy, self).OnStarted2(time)
         self._prev_fast = 0
         self._prev_slow = 0
         self._has_prev = False

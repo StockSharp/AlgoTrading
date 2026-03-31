@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -50,8 +52,8 @@ class color_zerolag_jjrsx_strategy(Strategy):
         self._prev_fast = None
         self._prev_slow = None
 
-    def OnStarted(self, time):
-        super(color_zerolag_jjrsx_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_zerolag_jjrsx_strategy, self).OnStarted2(time)
         fast_rsi = RelativeStrengthIndex()
         fast_rsi.Length = self.fast_period
         slow_rsi = RelativeStrengthIndex()

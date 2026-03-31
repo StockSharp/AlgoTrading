@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class the_puncher_strategy(Strategy):
         self._tp_price = 0
         self._be_activated = False
 
-    def OnStarted(self, time):
-        super(the_puncher_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(the_puncher_strategy, self).OnStarted2(time)
         self._entry_price = 0
         self._stop_price = 0
         self._tp_price = 0

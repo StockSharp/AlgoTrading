@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -90,8 +92,8 @@ class exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy(Strategy):
         self._entry_price = None
         self._cooldown_left = 0
 
-    def OnStarted(self, time):
-        super(exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_skyscraper_fix_color_aml_x2_ma_candle_mm_rec_strategy, self).OnStarted2(time)
         self._highs = []
         self._lows = []
         self._closes = []

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -62,8 +64,8 @@ class de_mark_lines_strategy(Strategy):
         self._last_long_signal = -1
         self._last_short_signal = -1
 
-    def OnStarted(self, time):
-        super(de_mark_lines_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(de_mark_lines_strategy, self).OnStarted2(time)
 
         self._window_size = max(3, self._pivot_depth.Value * 2 + 1)
         self._high_buffer = [0.0] * self._window_size

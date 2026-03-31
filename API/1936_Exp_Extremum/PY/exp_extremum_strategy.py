@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -93,8 +95,8 @@ class exp_extremum_strategy(Strategy):
     def SellPosClose(self, value):
         self._sell_pos_close.Value = value
 
-    def OnStarted(self, time):
-        super(exp_extremum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_extremum_strategy, self).OnStarted2(time)
 
         self._min_high.Length = self.Length
         self._max_low.Length = self.Length

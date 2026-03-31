@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -116,9 +118,9 @@ class volatility_mean_reversion_strategy(Strategy):
         self._count = 0
         self._atrValues.Clear()
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """Called when the strategy starts."""
-        super(volatility_mean_reversion_strategy, self).OnStarted(time)
+        super(volatility_mean_reversion_strategy, self).OnStarted2(time)
 
         # Create ATR indicator
         atr = AverageTrueRange()

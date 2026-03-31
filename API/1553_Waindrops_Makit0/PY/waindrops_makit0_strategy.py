@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class waindrops_makit0_strategy(Strategy):
         self._left_value = 0.0
         self._right_value = 0.0
 
-    def OnStarted(self, time):
-        super(waindrops_makit0_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(waindrops_makit0_strategy, self).OnStarted2(time)
         self._left_vwap = VolumeWeightedMovingAverage()
         self._right_vwap = VolumeWeightedMovingAverage()
         subscription = self.SubscribeCandles(self.candle_type)

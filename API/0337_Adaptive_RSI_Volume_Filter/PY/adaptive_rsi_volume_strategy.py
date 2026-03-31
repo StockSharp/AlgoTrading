@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -63,8 +65,8 @@ class adaptive_rsi_volume_strategy(Strategy):
         self._atr_value = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(adaptive_rsi_volume_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_rsi_volume_strategy, self).OnStarted2(time)
 
         self._fast_rsi = RelativeStrengthIndex()
         self._fast_rsi.Length = int(self._min_rsi_period.Value)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class dealers_trade_v751_rivot_strategy(Strategy):
         self._floating_pivot = 0.0
         self._gap_in_pips = 0.0
 
-    def OnStarted(self, time):
-        super(dealers_trade_v751_rivot_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dealers_trade_v751_rivot_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._process_candle).Start()

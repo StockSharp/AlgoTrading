@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -148,8 +150,8 @@ class rabbit_m2_regime_swing_strategy(Strategy):
             volume = float(max_v)
         return volume
 
-    def OnStarted(self, time):
-        super(rabbit_m2_regime_swing_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rabbit_m2_regime_swing_strategy, self).OnStarted2(time)
 
         self._base_volume = float(self.InitialVolume)
         self._profit_threshold = float(self.BigWinTarget)

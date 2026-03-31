@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -49,8 +51,8 @@ class instantaneous_trend_filter_strategy(Strategy):
         self._k3 = 0.0
         self._k4 = 0.0
 
-    def OnStarted(self, time):
-        super(instantaneous_trend_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(instantaneous_trend_filter_strategy, self).OnStarted2(time)
         self._bars = 0
         a = float(self.alpha)
         a2 = a * a

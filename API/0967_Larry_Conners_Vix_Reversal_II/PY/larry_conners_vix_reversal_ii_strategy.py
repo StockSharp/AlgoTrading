@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -82,8 +84,8 @@ class larry_conners_vix_reversal_ii_strategy(Strategy):
         self._entries_executed = 0
         self._bars_since_signal = 0
 
-    def OnStarted(self, time):
-        super(larry_conners_vix_reversal_ii_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(larry_conners_vix_reversal_ii_strategy, self).OnStarted2(time)
 
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.rsi_period

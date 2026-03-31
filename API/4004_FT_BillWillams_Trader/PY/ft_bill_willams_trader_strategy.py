@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class ft_bill_willams_trader_strategy(Strategy):
     def FractalLen(self):
         return self._fractal_len.Value
 
-    def OnStarted(self, time):
-        super(ft_bill_willams_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ft_bill_willams_trader_strategy, self).OnStarted2(time)
 
         self._jaw = SimpleMovingAverage()
         self._jaw.Length = self.JawPeriod

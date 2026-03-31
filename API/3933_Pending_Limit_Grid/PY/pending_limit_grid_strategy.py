@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -27,8 +29,8 @@ class pending_limit_grid_strategy(Strategy):
         self._prev_close = 0
         self._prev_mid = 0
 
-    def OnStarted(self, time):
-        super(pending_limit_grid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pending_limit_grid_strategy, self).OnStarted2(time)
         self._has_prev = False
         self._prev_close = 0
         self._prev_mid = 0

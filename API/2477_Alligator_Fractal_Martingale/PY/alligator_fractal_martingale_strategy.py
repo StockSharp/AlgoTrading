@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 
@@ -176,8 +178,8 @@ class alligator_fractal_martingale_strategy(Strategy):
     def MaxVolume(self):
         return self._max_volume.Value
 
-    def OnStarted(self, time):
-        super(alligator_fractal_martingale_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(alligator_fractal_martingale_strategy, self).OnStarted2(time)
 
         self._jaw = SmoothedMovingAverage()
         self._jaw.Length = self.JawLength

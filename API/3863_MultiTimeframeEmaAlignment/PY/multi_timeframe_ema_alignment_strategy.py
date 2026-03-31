@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
@@ -25,8 +27,8 @@ class multi_timeframe_ema_alignment_strategy(Strategy):
     def OnReseted(self):
         super(multi_timeframe_ema_alignment_strategy, self).OnReseted()
         self._prev_fast = 0.0; self._prev_slow = 0.0; self._has_prev = False
-    def OnStarted(self, time):
-        super(multi_timeframe_ema_alignment_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_timeframe_ema_alignment_strategy, self).OnStarted2(time)
         self._has_prev = False
         fast = ExponentialMovingAverage()
         fast.Length = self.fast_period

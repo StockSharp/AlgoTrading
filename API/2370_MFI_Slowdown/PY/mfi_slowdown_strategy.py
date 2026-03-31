@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -84,8 +86,8 @@ class mfi_slowdown_strategy(Strategy):
         super(mfi_slowdown_strategy, self).OnReseted()
         self._prev_mfi = None
 
-    def OnStarted(self, time):
-        super(mfi_slowdown_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mfi_slowdown_strategy, self).OnStarted2(time)
         self._prev_mfi = None
         mfi = MoneyFlowIndex()
         mfi.Length = int(self.mfi_period)

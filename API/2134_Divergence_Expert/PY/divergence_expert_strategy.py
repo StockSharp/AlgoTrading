@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DateTimeOffset, DateTime, TimeSpan as SysTimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class divergence_expert_strategy(Strategy):
         self._last_rsi_high = 0.0
         self._last_rsi_low = 0.0
 
-    def OnStarted(self, time):
-        super(divergence_expert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(divergence_expert_strategy, self).OnStarted2(time)
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period
         subscription = self.SubscribeCandles(self.candle_type)

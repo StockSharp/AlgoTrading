@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -94,8 +96,8 @@ class cmo_duplex_strategy(Strategy):
     def ShortTakeProfitPoints(self):
         return int(self._short_take_profit_points.Value)
 
-    def OnStarted(self, time):
-        super(cmo_duplex_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cmo_duplex_strategy, self).OnStarted2(time)
 
         self._long_values = []
         self._short_values = []

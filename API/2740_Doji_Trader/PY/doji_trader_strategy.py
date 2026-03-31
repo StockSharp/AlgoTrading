@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -53,8 +55,8 @@ class doji_trader_strategy(Strategy):
     def MaximumDojiHeight(self):
         return self._maximum_doji_height.Value
 
-    def OnStarted(self, time):
-        super(doji_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(doji_trader_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calculate_pip_size()
 

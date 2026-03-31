@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -67,8 +69,8 @@ class backtesting_trade_assistant_panel_strategy(Strategy):
             return step_val * 10.0
         return step_val
 
-    def OnStarted(self, time):
-        super(backtesting_trade_assistant_panel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(backtesting_trade_assistant_panel_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calculate_pip_size()
 

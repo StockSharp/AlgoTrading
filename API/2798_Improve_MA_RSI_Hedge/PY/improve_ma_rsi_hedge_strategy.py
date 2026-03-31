@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import SmoothedMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
@@ -56,8 +58,8 @@ class improve_ma_rsi_hedge_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(improve_ma_rsi_hedge_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(improve_ma_rsi_hedge_strategy, self).OnStarted2(time)
 
         self._fast_ma = SmoothedMovingAverage()
         self._fast_ma.Length = self.FastMaPeriod

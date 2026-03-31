@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DateTimeOffset
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -76,8 +78,8 @@ class candle_strategy(Strategy):
         self._finished_candles = 0
         self._next_allowed_time = DateTimeOffset.MinValue
 
-    def OnStarted(self, time):
-        super(candle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(candle_strategy, self).OnStarted2(time)
 
         self._pip_size = (self.Security.PriceStep if self.Security.PriceStep is not None else 1.0) * 10.0
 

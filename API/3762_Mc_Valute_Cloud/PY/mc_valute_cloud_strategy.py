@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -115,8 +117,8 @@ class mc_valute_cloud_strategy(Strategy):
         self._macd_signal_value = None
         self._last_processed_time = None
 
-    def OnStarted(self, time):
-        super(mc_valute_cloud_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mc_valute_cloud_strategy, self).OnStarted2(time)
 
         filter_ma = ExponentialMovingAverage()
         filter_ma.Length = self.FilterMaLength

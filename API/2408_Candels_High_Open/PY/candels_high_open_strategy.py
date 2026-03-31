@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -68,8 +70,8 @@ class candels_high_open_strategy(Strategy):
     def SarMax(self, value):
         self._sar_max.Value = value
 
-    def OnStarted(self, time):
-        super(candels_high_open_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(candels_high_open_strategy, self).OnStarted2(time)
 
         psar = ParabolicSar()
         psar.Acceleration = self.SarStep

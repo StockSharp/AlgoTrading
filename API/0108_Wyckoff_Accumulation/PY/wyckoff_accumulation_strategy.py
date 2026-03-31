@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class wyckoff_accumulation_strategy(Strategy):
         self._prev_close = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(wyckoff_accumulation_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(wyckoff_accumulation_strategy, self).OnStarted2(time)
 
         self._phase = PHASE_NONE
         self._range_high = 0.0

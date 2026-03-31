@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import CandleStates
@@ -59,8 +61,8 @@ class alma_optimized_strategy(Strategy):
         self._prev_alma = 0.0
         self._prev_ema = 0.0
 
-    def OnStarted(self, time):
-        super(alma_optimized_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(alma_optimized_strategy, self).OnStarted2(time)
 
         alma = ArnaudLegouxMovingAverage()
         alma.Length = self.AlmaLength

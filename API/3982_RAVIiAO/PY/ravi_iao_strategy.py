@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -55,8 +57,8 @@ class ravi_iao_strategy(Strategy):
     def TakeProfitPoints(self):
         return self._take_profit_points.Value
 
-    def OnStarted(self, time):
-        super(ravi_iao_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ravi_iao_strategy, self).OnStarted2(time)
 
         fast_ma = SimpleMovingAverage()
         fast_ma.Length = self.FastLength

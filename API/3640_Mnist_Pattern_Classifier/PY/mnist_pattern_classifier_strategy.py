@@ -3,6 +3,8 @@ from collections import deque
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -66,8 +68,8 @@ class mnist_pattern_classifier_strategy(Strategy):
         self._last_confidence = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(mnist_pattern_classifier_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mnist_pattern_classifier_strategy, self).OnStarted2(time)
         self._close_window = deque()
         self._first_close = 0.0
         self._previous_close = 0.0

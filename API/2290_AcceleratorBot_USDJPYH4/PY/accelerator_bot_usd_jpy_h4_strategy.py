@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class accelerator_bot_usd_jpy_h4_strategy(Strategy):
         self._prev_k = None
         self._prev_d = None
 
-    def OnStarted(self, time):
-        super(accelerator_bot_usd_jpy_h4_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(accelerator_bot_usd_jpy_h4_strategy, self).OnStarted2(time)
         self._prev_k = None
         self._prev_d = None
         adx = AverageDirectionalIndex()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -123,8 +125,8 @@ class starter_v6_mod_strategy(Strategy):
     def LevelDown(self):
         return self._level_down.Value
 
-    def OnStarted(self, time):
-        super(starter_v6_mod_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(starter_v6_mod_strategy, self).OnStarted2(time)
 
         self._long_ema = ExponentialMovingAverage()
         self._long_ema.Length = self.LongEmaPeriod

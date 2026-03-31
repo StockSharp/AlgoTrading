@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -51,8 +53,8 @@ class mcots_intuition_strategy(Strategy):
         self._bar_index = 0
         self._entry_bar = -1
 
-    def OnStarted(self, time):
-        super(mcots_intuition_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mcots_intuition_strategy, self).OnStarted2(time)
         self._prev_rsi = 0.0
         self._prev_momentum = 0.0
         self._has_prev = False

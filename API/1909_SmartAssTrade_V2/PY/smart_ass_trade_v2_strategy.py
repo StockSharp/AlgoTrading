@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -44,8 +46,8 @@ class smart_ass_trade_v2_strategy(Strategy):
         self._prev_wpr = None
         self._prev_rsi = None
 
-    def OnStarted(self, time):
-        super(smart_ass_trade_v2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(smart_ass_trade_v2_strategy, self).OnStarted2(time)
         self._macd = MovingAverageConvergenceDivergence()
         self._ma = SimpleMovingAverage()
         self._ma.Length = 20

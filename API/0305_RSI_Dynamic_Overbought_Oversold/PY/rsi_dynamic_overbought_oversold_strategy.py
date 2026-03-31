@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -54,8 +56,8 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         self._rsi_std_dev = None
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(rsi_dynamic_overbought_oversold_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rsi_dynamic_overbought_oversold_strategy, self).OnStarted2(time)
 
         ma_period = int(self._moving_avg_period.Value)
 

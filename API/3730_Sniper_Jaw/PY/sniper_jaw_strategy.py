@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class sniper_jaw_strategy(Strategy):
         self._take = None
         self._finished_candles = 0
 
-    def OnStarted(self, time):
-        super(sniper_jaw_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(sniper_jaw_strategy, self).OnStarted2(time)
         self._stop = None
         self._take = None
         self._finished_candles = 0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -64,8 +66,8 @@ class rsi_stochastic_ma_strategy(Strategy):
         super(rsi_stochastic_ma_strategy, self).OnReseted()
         self._stochastic = None
 
-    def OnStarted(self, time):
-        super(rsi_stochastic_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rsi_stochastic_ma_strategy, self).OnStarted2(time)
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period
         ma = ExponentialMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -53,8 +55,8 @@ class i_gap_strategy(Strategy):
         super(i_gap_strategy, self).OnReseted()
         self._prev_close = None
 
-    def OnStarted(self, time):
-        super(i_gap_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(i_gap_strategy, self).OnStarted2(time)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.process_candle).Start()
         self.StartProtection(

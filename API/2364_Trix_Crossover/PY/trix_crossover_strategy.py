@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -62,8 +64,8 @@ class trix_crossover_strategy(Strategy):
         self._prev_fast_tema = 0.0
         self._prev_slow_tema = 0.0
 
-    def OnStarted(self, time):
-        super(trix_crossover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trix_crossover_strategy, self).OnStarted2(time)
         self._fast_trix_prev1 = 0.0
         self._fast_trix_prev2 = 0.0
         self._slow_trix_prev = 0.0

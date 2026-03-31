@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -77,8 +79,8 @@ class rd_trend_trigger_strategy(Strategy):
             return inp
         return alpha * inp + (1.0 - alpha) * prev
 
-    def OnStarted(self, time):
-        super(rd_trend_trigger_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rd_trend_trigger_strategy, self).OnStarted2(time)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.process_candle).Start()
 

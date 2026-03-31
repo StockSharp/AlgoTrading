@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -45,8 +47,8 @@ class adx_bollinger_strategy(Strategy):
     def OnReseted(self):
         super(adx_bollinger_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(adx_bollinger_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_bollinger_strategy, self).OnStarted2(time)
 
         adx = AverageDirectionalIndex()
         adx.Length = self._adx_period.Value

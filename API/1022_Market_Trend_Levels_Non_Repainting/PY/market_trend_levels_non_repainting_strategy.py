@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class market_trend_levels_non_repainting_strategy(Strategy):
         super(market_trend_levels_non_repainting_strategy, self).OnReseted()
         self._prev_diff = None
 
-    def OnStarted(self, time):
-        super(market_trend_levels_non_repainting_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(market_trend_levels_non_repainting_strategy, self).OnStarted2(time)
         self._prev_diff = None
         self._ema_fast = ExponentialMovingAverage()
         self._ema_fast.Length = self._fast_length.Value

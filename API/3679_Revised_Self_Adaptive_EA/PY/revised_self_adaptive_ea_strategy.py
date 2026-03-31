@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Sides, Level1Fields
@@ -178,8 +180,8 @@ class revised_self_adaptive_ea_strategy(Strategy):
         self._short_take_profit_price = None
         self._short_trailing_stop_price = None
 
-    def OnStarted(self, time):
-        super(revised_self_adaptive_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(revised_self_adaptive_ea_strategy, self).OnStarted2(time)
 
         self.Volume = float(self.TradeVolume)
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan, DateTimeOffset
 from StockSharp.Messages import DataType, CandleStates
@@ -109,8 +111,8 @@ class euro_surge_simplified_strategy(Strategy):
         self._slow_ma_value = 0.0
         self._rsi_value = 0.0
 
-    def OnStarted(self, time):
-        super(euro_surge_simplified_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(euro_surge_simplified_strategy, self).OnStarted2(time)
 
         self._fast_ma = SimpleMovingAverage()
         self._fast_ma.Length = 20

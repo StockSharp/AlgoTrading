@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -52,8 +54,8 @@ class genie_pivot_fixed_strategy(Strategy):
         self._lows = [0.0] * 8
         self._highs = [0.0] * 8
 
-    def OnStarted(self, time):
-        super(genie_pivot_fixed_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(genie_pivot_fixed_strategy, self).OnStarted2(time)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.process_candle).Start()
         self.StartProtection(

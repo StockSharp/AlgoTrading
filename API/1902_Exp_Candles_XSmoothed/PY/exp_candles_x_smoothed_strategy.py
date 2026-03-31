@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class exp_candles_x_smoothed_strategy(Strategy):
     def sell_pos_close(self):
         return self._sell_pos_close.Value
 
-    def OnStarted(self, time):
-        super(exp_candles_x_smoothed_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_candles_x_smoothed_strategy, self).OnStarted2(time)
         self._high_ma = WeightedMovingAverage()
         self._high_ma.Length = self.ma_length
         self._low_ma = WeightedMovingAverage()

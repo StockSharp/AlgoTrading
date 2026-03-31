@@ -3,6 +3,8 @@ import random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -47,8 +49,8 @@ class coin_flipping_strategy(Strategy):
     def StopLossPips(self):
         return self._stop_loss_pips.Value
 
-    def OnStarted(self, time):
-        super(coin_flipping_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(coin_flipping_strategy, self).OnStarted2(time)
 
         self._rng = random.Random()
 

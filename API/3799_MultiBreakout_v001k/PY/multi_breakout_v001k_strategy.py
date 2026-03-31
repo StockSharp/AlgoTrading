@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -43,8 +45,8 @@ class multi_breakout_v001k_strategy(Strategy):
         self._prev_mid = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(multi_breakout_v001k_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_breakout_v001k_strategy, self).OnStarted2(time)
 
         self._has_prev = False
 

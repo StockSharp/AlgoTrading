@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -27,8 +29,8 @@ class ma_mirror_strategy(Strategy):
         super(ma_mirror_strategy, self).OnReseted()
         self._prev_diff = None
 
-    def OnStarted(self, time):
-        super(ma_mirror_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_mirror_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self._moving_period.Value
         subscription = self.SubscribeCandles(self.candle_type)

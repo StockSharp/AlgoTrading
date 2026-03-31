@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -48,8 +50,8 @@ class roboti_adx_profit_strategy(Strategy):
         self._prev_minus = 0.0
         self._bars_since_trade = self.cooldown_bars
 
-    def OnStarted(self, time):
-        super(roboti_adx_profit_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(roboti_adx_profit_strategy, self).OnStarted2(time)
         dmi = DirectionalIndex()
         dmi.Length = self.dmi_period
         subscription = self.SubscribeCandles(self.candle_type)

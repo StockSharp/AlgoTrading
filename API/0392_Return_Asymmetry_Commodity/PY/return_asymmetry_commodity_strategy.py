@@ -4,6 +4,8 @@ import collections
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -93,8 +95,8 @@ class return_asymmetry_commodity_strategy(Strategy):
         self._benchmark_updated = False
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(return_asymmetry_commodity_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(return_asymmetry_commodity_strategy, self).OnStarted2(time)
 
         sec2_id = str(self._security2_id.Value)
         if not sec2_id:

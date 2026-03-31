@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -29,8 +31,8 @@ class rrs_randomness_strategy(Strategy):
         self._open_long_next = True
         self._entry_price = 0
 
-    def OnStarted(self, time):
-        super(rrs_randomness_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rrs_randomness_strategy, self).OnStarted2(time)
         self._trailing_stop = None
         self._open_long_next = True
         self._entry_price = 0

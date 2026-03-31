@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -92,8 +94,8 @@ class adam_and_eve_strategy(Strategy):
             return False
         return current > prev1 and prev1 > prev2
 
-    def OnStarted(self, time):
-        super(adam_and_eve_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adam_and_eve_strategy, self).OnStarted2(time)
         sma5 = ExponentialMovingAverage()
         sma5.Length = 5
         sma7 = ExponentialMovingAverage()

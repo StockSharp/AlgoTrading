@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -61,8 +63,8 @@ class hull_kmeans_cluster_strategy(Strategy):
         self._rsi_data = []
         self._volume_ratio_data = []
 
-    def OnStarted(self, time):
-        super(hull_kmeans_cluster_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hull_kmeans_cluster_strategy, self).OnStarted2(time)
 
         hull_ma = HullMovingAverage()
         hull_ma.Length = int(self._hull_period.Value)

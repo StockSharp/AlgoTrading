@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -51,8 +53,8 @@ class kdj_expert_advisor_strategy(Strategy):
         multiplier = 10.0 if decimals in (3, 5) else 1.0
         return step * multiplier
 
-    def OnStarted(self, time):
-        super(kdj_expert_advisor_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(kdj_expert_advisor_strategy, self).OnStarted2(time)
 
         pip_size = self._calculate_pip_size()
         sl_pips = self._stop_loss_pips.Value

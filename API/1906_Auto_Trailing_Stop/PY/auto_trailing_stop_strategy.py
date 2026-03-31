@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -41,8 +43,8 @@ class auto_trailing_stop_strategy(Strategy):
         self._prev_slow = 0.0
         self._is_first = True
 
-    def OnStarted(self, time):
-        super(auto_trailing_stop_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(auto_trailing_stop_strategy, self).OnStarted2(time)
 
         fast_ma = SimpleMovingAverage()
         fast_ma.Length = self._fast_ma_period.Value

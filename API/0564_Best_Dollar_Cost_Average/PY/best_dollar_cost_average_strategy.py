@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class best_dollar_cost_average_strategy(Strategy):
         self._bars_since_last_buy = 0
         self._total_bars_in_position = 0
 
-    def OnStarted(self, time):
-        super(best_dollar_cost_average_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(best_dollar_cost_average_strategy, self).OnStarted2(time)
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value
         subscription = self.SubscribeCandles(self.candle_type)

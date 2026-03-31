@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -64,8 +66,8 @@ class divergence_ema_rsi_close_buy_only_strategy(Strategy):
         super(divergence_ema_rsi_close_buy_only_strategy, self).OnReseted()
         self._prev_rsi = None
 
-    def OnStarted(self, time):
-        super(divergence_ema_rsi_close_buy_only_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(divergence_ema_rsi_close_buy_only_strategy, self).OnStarted2(time)
         self._prev_rsi = None
 
         ema = ExponentialMovingAverage()

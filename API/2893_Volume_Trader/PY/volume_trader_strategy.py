@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -27,8 +29,8 @@ class volume_trader_strategy(Strategy):
         self._prev_vol = None
         self._prev_prev_vol = None
 
-    def OnStarted(self, time):
-        super(volume_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_trader_strategy, self).OnStarted2(time)
         self._prev_vol = None
         self._prev_prev_vol = None
 

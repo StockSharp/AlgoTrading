@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from collections import deque
@@ -132,8 +134,8 @@ class dss_bressert_strategy(Strategy):
 
         return dss_value
 
-    def OnStarted(self, time):
-        super(dss_bressert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dss_bressert_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

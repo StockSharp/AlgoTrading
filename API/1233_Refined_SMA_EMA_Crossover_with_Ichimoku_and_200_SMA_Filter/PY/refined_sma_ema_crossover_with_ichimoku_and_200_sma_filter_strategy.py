@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DateTimeOffset
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class refined_sma_ema_crossover_with_ichimoku_and_200_sma_filter_strategy(Strate
         self._init = False
         self._last_signal = DateTimeOffset.MinValue
 
-    def OnStarted(self, time):
-        super(refined_sma_ema_crossover_with_ichimoku_and_200_sma_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(refined_sma_ema_crossover_with_ichimoku_and_200_sma_filter_strategy, self).OnStarted2(time)
 
         fast = ExponentialMovingAverage()
         fast.Length = 14

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class long_ema_advanced_exit_strategy(Strategy):
         self._prev_mid = 0.0
         self._bars_since_signal = 0
 
-    def OnStarted(self, time):
-        super(long_ema_advanced_exit_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(long_ema_advanced_exit_strategy, self).OnStarted2(time)
         ema_short = ExponentialMovingAverage()
         ema_short.Length = self._short_period.Value
         ema_mid = ExponentialMovingAverage()

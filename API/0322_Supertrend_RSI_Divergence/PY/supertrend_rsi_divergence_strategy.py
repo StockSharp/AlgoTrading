@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -43,8 +45,8 @@ class supertrend_rsi_divergence_strategy(Strategy):
         self._rsi_values = []
         self._supertrend_val = 0.0
 
-    def OnStarted(self, time):
-        super(supertrend_rsi_divergence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(supertrend_rsi_divergence_strategy, self).OnStarted2(time)
 
         supertrend = SuperTrend()
         supertrend.Length = int(self._supertrend_period.Value)

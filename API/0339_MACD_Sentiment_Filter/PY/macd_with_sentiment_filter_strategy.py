@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -69,8 +71,8 @@ class macd_with_sentiment_filter_strategy(Strategy):
         self._has_previous_macd = False
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(macd_with_sentiment_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_with_sentiment_filter_strategy, self).OnStarted2(time)
 
         self._macd_ind = MovingAverageConvergenceDivergenceSignal()
         self._macd_ind.Macd.ShortMa.Length = int(self._macd_fast.Value)

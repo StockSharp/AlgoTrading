@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -94,8 +96,8 @@ class vortex_indicator_duplex_strategy(Strategy):
         self._long_vortex = None
         self._short_vortex = None
 
-    def OnStarted(self, time):
-        super(vortex_indicator_duplex_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vortex_indicator_duplex_strategy, self).OnStarted2(time)
         sec = self.Security
         self._price_step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
         if self._price_step <= 0.0:

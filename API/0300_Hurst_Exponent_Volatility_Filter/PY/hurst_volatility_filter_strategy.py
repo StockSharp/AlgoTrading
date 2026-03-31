@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -60,8 +62,8 @@ class hurst_volatility_filter_strategy(Strategy):
         self._atr_average = None
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(hurst_volatility_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hurst_volatility_filter_strategy, self).OnStarted2(time)
 
         atr_period = int(self._atr_period.Value)
 

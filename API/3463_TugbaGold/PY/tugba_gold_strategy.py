@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class tugba_gold_strategy(Strategy):
         self._was_bullish_signal = False
         self._has_prev_signal = False
 
-    def OnStarted(self, time):
-        super(tugba_gold_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(tugba_gold_strategy, self).OnStarted2(time)
         self._was_bullish_signal = False
         self._has_prev_signal = False
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
@@ -69,8 +71,8 @@ class spot_futures_arbitrage_strategy(Strategy):
         self._is_long = False
         self._entry_time = None
 
-    def OnStarted(self, time):
-        super(spot_futures_arbitrage_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(spot_futures_arbitrage_strategy, self).OnStarted2(time)
 
         self._spread_average = SMA()
         self._spread_average.Length = self.lookback_period

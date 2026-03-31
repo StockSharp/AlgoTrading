@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -78,8 +80,8 @@ class cash_machine_5min_legacy_strategy(Strategy):
         adjust = 10.0 if digits in (3, 5) else 1.0
         return step * adjust
 
-    def OnStarted(self, time):
-        super(cash_machine_5min_legacy_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cash_machine_5min_legacy_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calculate_pip_size()
 

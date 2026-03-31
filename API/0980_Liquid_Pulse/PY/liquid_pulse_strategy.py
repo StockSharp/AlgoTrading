@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -68,8 +70,8 @@ class liquid_pulse_strategy(Strategy):
         self._atr = None
         self._vol_sma = None
 
-    def OnStarted(self, time):
-        super(liquid_pulse_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(liquid_pulse_strategy, self).OnStarted2(time)
 
         self._prev_macd = 0.0
         self._prev_signal = 0.0

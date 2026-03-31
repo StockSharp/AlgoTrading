@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class flat_channel_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(flat_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(flat_channel_strategy, self).OnStarted2(time)
 
         self._previous_std_dev = 0.0
         self._flat_bar_count = 0

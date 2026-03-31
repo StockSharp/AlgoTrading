@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class bb_strategy(Strategy):
         self._closes = []
         self._wait_direction = 0
 
-    def OnStarted(self, time):
-        super(bb_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bb_strategy, self).OnStarted2(time)
         self._closes = []
         self._wait_direction = 0
 

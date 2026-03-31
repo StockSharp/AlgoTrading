@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class ten_pips_eurusd_strategy(Strategy):
         self._take_price = None
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(ten_pips_eurusd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ten_pips_eurusd_strategy, self).OnStarted2(time)
         self._prev_high = 0.0
         self._prev_low = 0.0
         self._entry_price = 0.0

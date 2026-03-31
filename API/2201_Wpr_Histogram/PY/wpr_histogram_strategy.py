@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import WilliamsR
@@ -25,8 +27,8 @@ class wpr_histogram_strategy(Strategy):
     def OnReseted(self):
         super(wpr_histogram_strategy, self).OnReseted()
         self._previous_zone = None
-    def OnStarted(self, time):
-        super(wpr_histogram_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(wpr_histogram_strategy, self).OnStarted2(time)
         wpr = WilliamsR()
         wpr.Length = self.wpr_period
         subscription = self.SubscribeCandles(self.candle_type)

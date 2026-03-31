@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class two_pole_ideal_ma_strategy(Strategy):
         self._prev_slow = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(two_pole_ideal_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(two_pole_ideal_ma_strategy, self).OnStarted2(time)
         fast_ma = ExponentialMovingAverage()
         fast_ma.Length = self.fast_period
         slow_ma = TripleExponentialMovingAverage()

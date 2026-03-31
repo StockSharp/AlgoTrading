@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType
@@ -62,8 +64,8 @@ class waddah_attar_win_strategy(Strategy):
         steps = round(price / step)
         return steps * step
 
-    def OnStarted(self, time):
-        super(waddah_attar_win_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(waddah_attar_win_strategy, self).OnStarted2(time)
 
         portfolio = self.Portfolio
         self._reference_balance = float(portfolio.CurrentValue) if portfolio is not None and portfolio.CurrentValue is not None else 0.0

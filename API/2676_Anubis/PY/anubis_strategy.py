@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -176,8 +178,8 @@ class anubis_strategy(Strategy):
         self._threshold_distance = self.ThresholdPips * self._adjusted_point
         self._spacing_distance = self.SpacingPips * self._adjusted_point
 
-    def OnStarted(self, time):
-        super(anubis_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(anubis_strategy, self).OnStarted2(time)
 
         self._last_atr = 0.0
         self._atr_ready = False

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import CandleStates
@@ -72,8 +74,8 @@ class atr_based_trendlines_strategy(Strategy):
         self._bar_index = 0
         self._last_trade_bar = 0
 
-    def OnStarted(self, time):
-        super(atr_based_trendlines_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(atr_based_trendlines_strategy, self).OnStarted2(time)
 
         atr = AverageTrueRange()
         atr.Length = max(1, self.LookbackLength // 2)

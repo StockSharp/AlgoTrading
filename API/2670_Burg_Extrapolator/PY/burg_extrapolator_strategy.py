@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -68,8 +70,8 @@ class burg_extrapolator_strategy(Strategy):
         self._forecast_steps = 1
         self._history_capacity = 0
 
-    def OnStarted(self, time):
-        super(burg_extrapolator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(burg_extrapolator_strategy, self).OnStarted2(time)
 
         self._pip_size = self.Security.PriceStep if self.Security.PriceStep is not None else 1.0
         decimals = self.Security.Decimals if self.Security.Decimals is not None else 0

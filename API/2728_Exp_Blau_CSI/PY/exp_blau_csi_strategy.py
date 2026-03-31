@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -113,8 +115,8 @@ class exp_blau_csi_strategy(Strategy):
     def AllowShortExits(self):
         return self._allow_short_exits.Value
 
-    def OnStarted(self, time):
-        super(exp_blau_csi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_blau_csi_strategy, self).OnStarted2(time)
 
         self._indicator_values = []
         self._stop_price = None

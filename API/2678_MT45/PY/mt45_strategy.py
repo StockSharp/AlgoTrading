@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal, Math as CMath
 
@@ -58,8 +60,8 @@ class mt45_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(mt45_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mt45_strategy, self).OnStarted2(time)
 
         sec = self.Security
         self._point_value = sec.PriceStep if sec is not None and sec.PriceStep is not None else Decimal(1)

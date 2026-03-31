@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import CandleStates, Sides
@@ -52,8 +54,8 @@ class amstell_grid_strategy(Strategy):
         self._last_sell_price = None
         self._has_initial_order = False
 
-    def OnStarted(self, time):
-        super(amstell_grid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(amstell_grid_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

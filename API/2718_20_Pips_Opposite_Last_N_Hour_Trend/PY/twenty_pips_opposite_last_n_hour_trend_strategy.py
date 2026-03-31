@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -102,8 +104,8 @@ class twenty_pips_opposite_last_n_hour_trend_strategy(Strategy):
             return step * 10.0
         return step
 
-    def OnStarted(self, time):
-        super(twenty_pips_opposite_last_n_hour_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(twenty_pips_opposite_last_n_hour_trend_strategy, self).OnStarted2(time)
 
         self._close_history = []
         self._entry_price = None

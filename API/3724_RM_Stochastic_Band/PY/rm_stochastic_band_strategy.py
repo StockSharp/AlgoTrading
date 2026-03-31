@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -125,8 +127,8 @@ class rm_stochastic_band_strategy(Strategy):
         stoch.D.Length = self.StochasticSignalLength
         return stoch
 
-    def OnStarted(self, time):
-        super(rm_stochastic_band_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rm_stochastic_band_strategy, self).OnStarted2(time)
 
         base_stochastic = self._create_stochastic()
         mid_stochastic = self._create_stochastic()

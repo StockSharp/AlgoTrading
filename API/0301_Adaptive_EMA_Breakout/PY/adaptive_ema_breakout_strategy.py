@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -57,8 +59,8 @@ class adaptive_ema_breakout_strategy(Strategy):
         self._is_initialized = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(adaptive_ema_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_ema_breakout_strategy, self).OnStarted2(time)
 
         self._adaptive_ema = KaufmanAdaptiveMovingAverage()
         self._adaptive_ema.Length = int(self._lookback.Value)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -33,8 +35,8 @@ class go_risk_managed_strategy(Strategy):
         super(go_risk_managed_strategy, self).OnReseted()
         self._prev_go = None
 
-    def OnStarted(self, time):
-        super(go_risk_managed_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(go_risk_managed_strategy, self).OnStarted2(time)
 
         self._open_ma = SimpleMovingAverage()
         self._open_ma.Length = self._ma_period.Value

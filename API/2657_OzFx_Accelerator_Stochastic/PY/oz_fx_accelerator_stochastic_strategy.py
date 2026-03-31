@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -90,8 +92,8 @@ class oz_fx_accelerator_stochastic_strategy(Strategy):
         self._pip_initialized = True
         return self._pip_size
 
-    def OnStarted(self, time):
-        super(oz_fx_accelerator_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(oz_fx_accelerator_stochastic_strategy, self).OnStarted2(time)
 
         self._last_ac = None
         self._last_exit_was_tp = False

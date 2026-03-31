@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -55,8 +57,8 @@ class fractals_minimum_distance_strategy(Strategy):
             return step * 10.0
         return step
 
-    def OnStarted(self, time):
-        super(fractals_minimum_distance_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fractals_minimum_distance_strategy, self).OnStarted2(time)
 
         self._signal_offset = max(2, self.SignalBar)
         self._window_size = max(self._signal_offset + 3, 5)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class tuyul_gap_end_of_week_strategy(Strategy):
         self._prev_lowest = 0
         self._tick_size = 0
 
-    def OnStarted(self, time):
-        super(tuyul_gap_end_of_week_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(tuyul_gap_end_of_week_strategy, self).OnStarted2(time)
         self._entry_price = 0
         self._virtual_stop = None
         self._prev_highest = 0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class virtual_trailing_stop_level1_strategy(Strategy):
         self._prev_ema = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(virtual_trailing_stop_level1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(virtual_trailing_stop_level1_strategy, self).OnStarted2(time)
         self._high_since_entry = 0.0
         self._low_since_entry = 1e18
         self._prev_close = 0.0

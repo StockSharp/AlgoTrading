@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from collections import deque
@@ -48,8 +50,8 @@ class exp_x_period_candle_strategy(Strategy):
         self._low_smoother = None
         self._close_smoother = None
 
-    def OnStarted(self, time):
-        super(exp_x_period_candle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_x_period_candle_strategy, self).OnStarted2(time)
 
         length = self._smoothing_length.Value
         self._open_smoother = _EmaSmoother(length)

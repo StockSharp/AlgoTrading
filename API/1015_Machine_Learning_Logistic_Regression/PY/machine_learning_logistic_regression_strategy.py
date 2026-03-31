@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -51,8 +53,8 @@ class machine_learning_logistic_regression_strategy(Strategy):
         self._hp_counter = 0
         self._is_initialized = False
 
-    def OnStarted(self, time):
-        super(machine_learning_logistic_regression_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(machine_learning_logistic_regression_strategy, self).OnStarted2(time)
         lb = self._lookback.Value
         self._base_series = [0.0] * lb
         self._synth_series = [0.0] * lb

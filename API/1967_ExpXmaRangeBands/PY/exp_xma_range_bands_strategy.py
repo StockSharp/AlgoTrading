@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DateTime
 from StockSharp.Messages import DataType, CandleStates
@@ -87,8 +89,8 @@ class exp_xma_range_bands_strategy(Strategy):
         return (self._last_signal_time == DateTime.MinValue
                 or candle.CloseTime >= self._last_signal_time + self._signal_cooldown)
 
-    def OnStarted(self, time):
-        super(exp_xma_range_bands_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_xma_range_bands_strategy, self).OnStarted2(time)
 
         mid = KeltnerChannelMiddle()
         mid.Length = self.MaLength

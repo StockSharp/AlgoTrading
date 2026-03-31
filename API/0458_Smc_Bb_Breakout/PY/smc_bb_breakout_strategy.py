@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class smc_bb_breakout_strategy(Strategy):
         self._has_prev = False
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(smc_bb_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(smc_bb_breakout_strategy, self).OnStarted2(time)
 
         self._bb = BollingerBands()
         self._bb.Length = int(self._bb_length.Value)

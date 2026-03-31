@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -124,8 +126,8 @@ class exp_hlr_sign_strategy(Strategy):
     def SellClose(self, value):
         self._sell_close.Value = value
 
-    def OnStarted(self, time):
-        super(exp_hlr_sign_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_hlr_sign_strategy, self).OnStarted2(time)
 
         donchian = DonchianChannels()
         donchian.Length = self.Range

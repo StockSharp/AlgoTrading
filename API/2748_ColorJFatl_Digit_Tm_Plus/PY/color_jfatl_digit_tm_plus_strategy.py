@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -122,8 +124,8 @@ class color_jfatl_digit_tm_plus_strategy(Strategy):
     def HoldingMinutes(self):
         return self._holding_minutes.Value
 
-    def OnStarted(self, time):
-        super(color_jfatl_digit_tm_plus_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_jfatl_digit_tm_plus_strategy, self).OnStarted2(time)
 
         self._jma = JurikMovingAverage()
         self._jma.Length = max(1, self.JmaLength)

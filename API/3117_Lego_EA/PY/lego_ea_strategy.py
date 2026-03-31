@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class lego_ea_strategy(Strategy):
         self._entry_price = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(lego_ea_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(lego_ea_strategy, self).OnStarted2(time)
 
         fast = SimpleMovingAverage()
         fast.Length = self._fast_period.Value

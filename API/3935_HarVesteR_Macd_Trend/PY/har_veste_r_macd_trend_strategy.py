@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
@@ -25,8 +27,8 @@ class har_veste_r_macd_trend_strategy(Strategy):
         super(har_veste_r_macd_trend_strategy, self).OnReseted()
         self._prev_fast = 0.0; self._prev_slow = 0.0; self._has_prev = False; self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(har_veste_r_macd_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(har_veste_r_macd_trend_strategy, self).OnStarted2(time)
         self._has_prev = False; self._cooldown = 0
         fast = ExponentialMovingAverage(); fast.Length = self.fast_period
         slow = ExponentialMovingAverage(); slow.Length = self.slow_period

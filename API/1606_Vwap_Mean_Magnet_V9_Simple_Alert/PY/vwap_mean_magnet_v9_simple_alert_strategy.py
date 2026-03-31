@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -49,8 +51,8 @@ class vwap_mean_magnet_v9_simple_alert_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(vwap_mean_magnet_v9_simple_alert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vwap_mean_magnet_v9_simple_alert_strategy, self).OnStarted2(time)
         vwap = VolumeWeightedMovingAverage()
         vwap.Length = self.vwap_length
         rsi = RelativeStrengthIndex()

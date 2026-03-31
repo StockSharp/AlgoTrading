@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -121,8 +123,8 @@ class cyberia_trader_adaptive_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(cyberia_trader_adaptive_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cyberia_trader_adaptive_strategy, self).OnStarted2(time)
 
         self._current_value_period = max(1, self._initial_period.Value)
         self._previous_value_period = self._current_value_period

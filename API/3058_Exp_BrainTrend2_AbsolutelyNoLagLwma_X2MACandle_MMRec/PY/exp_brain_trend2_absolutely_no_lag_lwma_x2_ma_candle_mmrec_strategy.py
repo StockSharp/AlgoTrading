@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -62,8 +64,8 @@ class exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy(Strate
         self._long_entry_price = None
         self._short_entry_price = None
 
-    def OnStarted(self, time):
-        super(exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy, self).OnStarted2(time)
         self._allow_long_signal = False
         self._allow_short_signal = False
         self._long_entry_price = None

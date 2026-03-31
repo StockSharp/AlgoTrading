@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -64,8 +66,8 @@ class mean_reversion_momentum_strategy(Strategy):
         super(mean_reversion_momentum_strategy, self).OnReseted()
         self._close_history = []
 
-    def OnStarted(self, time):
-        super(mean_reversion_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mean_reversion_momentum_strategy, self).OnStarted2(time)
         self._close_history = []
 
         rsi = RelativeStrengthIndex()

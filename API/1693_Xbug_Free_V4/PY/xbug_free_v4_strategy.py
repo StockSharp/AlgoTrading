@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class xbug_free_v4_strategy(Strategy):
         self._prev2_price = 0.0
         self._bar_count = 0
 
-    def OnStarted(self, time):
-        super(xbug_free_v4_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xbug_free_v4_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self.ma_period
         stdev = StandardDeviation()

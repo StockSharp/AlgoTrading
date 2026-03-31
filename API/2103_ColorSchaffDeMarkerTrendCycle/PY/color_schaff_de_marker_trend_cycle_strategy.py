@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -76,8 +78,8 @@ class color_schaff_de_marker_trend_cycle_strategy(Strategy):
         self._macd_buf = []
         self._st_buf = []
 
-    def OnStarted(self, time):
-        super(color_schaff_de_marker_trend_cycle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_schaff_de_marker_trend_cycle_strategy, self).OnStarted2(time)
         fast = DeMarker()
         fast.Length = self.fast_period
         slow = DeMarker()

@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -153,8 +155,8 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         self._is_short_primary_open = False
         self._is_short_secondary_open = False
 
-    def OnStarted(self, time):
-        super(exp_x_bulls_bears_eyes_vol_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_x_bulls_bears_eyes_vol_strategy, self).OnStarted2(time)
 
         period = max(1, self.indicator_period)
         self._ema = ExponentialMovingAverage()

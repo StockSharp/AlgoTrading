@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -45,8 +47,8 @@ class linear_continuation_strategy(Strategy):
         self._last_trend = 0
         self._bars_from_signal = 999999
 
-    def OnStarted(self, time):
-        super(linear_continuation_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(linear_continuation_strategy, self).OnStarted2(time)
         ma1 = SimpleMovingAverage()
         ma1.Length = self._ma1_period.Value
         ma2 = SimpleMovingAverage()

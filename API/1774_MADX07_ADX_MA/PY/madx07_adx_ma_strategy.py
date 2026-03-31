@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class madx07_adx_ma_strategy(Strategy):
         self._prev_big = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(madx07_adx_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(madx07_adx_ma_strategy, self).OnStarted2(time)
         big_ma = ExponentialMovingAverage()
         big_ma.Length = self.big_ma_period
         small_ma = ExponentialMovingAverage()

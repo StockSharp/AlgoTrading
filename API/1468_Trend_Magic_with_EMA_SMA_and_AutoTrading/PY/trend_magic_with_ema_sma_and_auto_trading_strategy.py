@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DateTime
 from StockSharp.Messages import DataType, CandleStates
@@ -23,8 +25,8 @@ class trend_magic_with_ema_sma_and_auto_trading_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(trend_magic_with_ema_sma_and_auto_trading_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trend_magic_with_ema_sma_and_auto_trading_strategy, self).OnStarted2(time)
         fast = ExponentialMovingAverage()
         fast.Length = 14
         slow = ExponentialMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -59,8 +61,8 @@ class ergodic_ticks_volume_osma_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(ergodic_ticks_volume_osma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ergodic_ticks_volume_osma_strategy, self).OnStarted2(time)
 
         inner_macd = MovingAverageConvergenceDivergence()
         inner_macd.ShortMa.Length = self.FastLength

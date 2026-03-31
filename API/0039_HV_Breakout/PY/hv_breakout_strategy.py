@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class hv_breakout_strategy(Strategy):
         self._is_reference_set = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(hv_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hv_breakout_strategy, self).OnStarted2(time)
 
         self._reference_price = 0.0
         self._is_reference_set = False

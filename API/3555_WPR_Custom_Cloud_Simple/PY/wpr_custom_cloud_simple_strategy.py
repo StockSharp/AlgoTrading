@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -59,8 +61,8 @@ class wpr_custom_cloud_simple_strategy(Strategy):
         self._older_wpr = 0.0
         self._count = 0
 
-    def OnStarted(self, time):
-        super(wpr_custom_cloud_simple_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(wpr_custom_cloud_simple_strategy, self).OnStarted2(time)
         self._prev_wpr = 0.0
         self._older_wpr = 0.0
         self._count = 0

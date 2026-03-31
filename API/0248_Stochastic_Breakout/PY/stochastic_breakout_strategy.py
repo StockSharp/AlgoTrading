@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -112,9 +114,9 @@ class stochastic_breakout_strategy(Strategy):
         self._prevStochAverage = 0
         self._prevStochStdDev = 0
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """Called when the strategy starts."""
-        super(stochastic_breakout_strategy, self).OnStarted(time)
+        super(stochastic_breakout_strategy, self).OnStarted2(time)
 
         # Initialize indicators
         self._stochastic = StochasticOscillator()

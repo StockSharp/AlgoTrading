@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class iu_gap_fill_strategy(Strategy):
         self._valid_gap = False
         self._is_first_bar = False
 
-    def OnStarted(self, time):
-        super(iu_gap_fill_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(iu_gap_fill_strategy, self).OnStarted2(time)
         ema1 = ExponentialMovingAverage()
         ema1.Length = 10
         ema2 = ExponentialMovingAverage()

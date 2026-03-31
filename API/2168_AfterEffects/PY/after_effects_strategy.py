@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -49,8 +51,8 @@ class after_effects_strategy(Strategy):
         self._open_2p = 0.0
         self._stop_price = 0.0
 
-    def OnStarted(self, time):
-        super(after_effects_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(after_effects_strategy, self).OnStarted2(time)
         self._p_queue = []
         self._two_p_queue = []
         self._open_p = 0.0

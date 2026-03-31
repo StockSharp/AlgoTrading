@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -63,8 +65,8 @@ class volume_block_order_analyzer_strategy(Strategy):
         self._cooldown_remaining = 0
         self._volume_buffer = []
 
-    def OnStarted(self, time):
-        super(volume_block_order_analyzer_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_block_order_analyzer_strategy, self).OnStarted2(time)
         self._cumulative_impact = 0.0
         self._cooldown_remaining = 0
         self._volume_buffer = []

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -28,8 +30,8 @@ class rnd_trade_random_hold_strategy(Strategy):
         self._has_prev = False
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(rnd_trade_random_hold_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rnd_trade_random_hold_strategy, self).OnStarted2(time)
         self._prev_mom = 0
         self._has_prev = False
         self._cooldown = 0

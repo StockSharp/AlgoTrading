@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -77,8 +79,8 @@ class multi_stochastic_strategy(Strategy):
         multiplier = 10.0 if (decimals == 3 or decimals == 5) else 1.0
         return step * multiplier
 
-    def OnStarted(self, time):
-        super(multi_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_stochastic_strategy, self).OnStarted2(time)
 
         self._prev_k = None
         self._prev_d = None

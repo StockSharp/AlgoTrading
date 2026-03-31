@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -92,8 +94,8 @@ class asset_growth_effect_strategy(Strategy):
         self._previous_z_score = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(asset_growth_effect_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(asset_growth_effect_strategy, self).OnStarted2(time)
 
         sec2_id = str(self._security2_id.Value)
         if not sec2_id:

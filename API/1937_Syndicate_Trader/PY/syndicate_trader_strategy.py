@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -153,8 +155,8 @@ class syndicate_trader_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(syndicate_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(syndicate_trader_strategy, self).OnStarted2(time)
 
         self._fast_ema.Length = self.FastEmaLength
         self._slow_ema.Length = self.SlowEmaLength

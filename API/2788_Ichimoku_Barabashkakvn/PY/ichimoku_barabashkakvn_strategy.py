@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -96,8 +98,8 @@ class ichimoku_barabashkakvn_strategy(Strategy):
     def EndHour(self):
         return self._end_hour.Value
 
-    def OnStarted(self, time):
-        super(ichimoku_barabashkakvn_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_barabashkakvn_strategy, self).OnStarted2(time)
 
         self._ichimoku = Ichimoku()
         self._ichimoku.Tenkan.Length = self.TenkanPeriod

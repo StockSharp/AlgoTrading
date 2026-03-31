@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import CandleStates
@@ -100,8 +102,8 @@ class alma_ut_bot_confluence_strategy(Strategy):
         self._last_trade_index = None
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(alma_ut_bot_confluence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(alma_ut_bot_confluence_strategy, self).OnStarted2(time)
 
         ema = ExponentialMovingAverage()
         ema.Length = self.EmaLength

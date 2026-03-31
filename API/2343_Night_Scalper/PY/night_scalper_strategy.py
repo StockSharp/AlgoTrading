@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class night_scalper_strategy(Strategy):
         self._close_index = 0
         self._close_count = 0
 
-    def OnStarted(self, time):
-        super(night_scalper_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(night_scalper_strategy, self).OnStarted2(time)
         self._closes = [0.0] * self.BUFFER_SIZE
         self._close_index = 0
         self._close_count = 0

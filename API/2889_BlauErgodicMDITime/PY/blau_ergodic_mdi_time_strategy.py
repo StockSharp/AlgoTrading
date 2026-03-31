@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -86,8 +88,8 @@ class blau_ergodic_mdi_time_strategy(Strategy):
         self._hist_buffer = []
         self._bars_processed = 0
 
-    def OnStarted(self, time):
-        super(blau_ergodic_mdi_time_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(blau_ergodic_mdi_time_strategy, self).OnStarted2(time)
         self._price_ema = None
         self._diff_ema1 = None
         self._diff_ema2 = None

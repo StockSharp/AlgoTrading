@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
@@ -58,8 +60,8 @@ class donchian_macd_strategy(Strategy):
         self._entryPrice = None
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(donchian_macd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(donchian_macd_strategy, self).OnStarted2(time)
         self._previousHighest = 0.0
         self._previousLowest = float('inf')
         self._previousMacd = None

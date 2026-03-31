@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -75,8 +77,8 @@ class martingale_breakout_strategy(Strategy):
         self._entry_side = 0
         self._last_was_loss = False
 
-    def OnStarted(self, time):
-        super(martingale_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(martingale_breakout_strategy, self).OnStarted2(time)
         self._range_buffer = [0.0] * 10
         self._range_buffer_count = 0
         self._range_buffer_index = 0

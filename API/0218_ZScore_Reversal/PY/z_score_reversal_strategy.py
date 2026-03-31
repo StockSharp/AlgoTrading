@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
@@ -92,8 +94,8 @@ class z_score_reversal_strategy(Strategy):
         self._std_dev = None
         self._last_z_score = 0.0
 
-    def OnStarted(self, time):
-        super(z_score_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(z_score_reversal_strategy, self).OnStarted2(time)
 
         # Initialize indicators
         self._ma = SimpleMovingAverage()

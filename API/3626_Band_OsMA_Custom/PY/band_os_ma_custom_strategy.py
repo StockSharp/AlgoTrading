@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -93,8 +95,8 @@ class band_os_ma_custom_strategy(Strategy):
         self._prev_upper = None
         self._prev_lower = None
 
-    def OnStarted(self, time):
-        super(band_os_ma_custom_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(band_os_ma_custom_strategy, self).OnStarted2(time)
         self._macd_history = []
         self._osma_history = []
         self._osma_ma_history = []

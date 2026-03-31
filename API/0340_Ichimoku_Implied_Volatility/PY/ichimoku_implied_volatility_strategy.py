@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -68,8 +70,8 @@ class ichimoku_implied_volatility_strategy(Strategy):
         self._current_iv = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(ichimoku_implied_volatility_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_implied_volatility_strategy, self).OnStarted2(time)
 
         ichimoku = Ichimoku()
         ichimoku.Tenkan.Length = int(self._tenkan_period.Value)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -40,8 +42,8 @@ class ichimoku_cloud_buy_sell_strategy(Strategy):
         super(ichimoku_cloud_buy_sell_strategy, self).OnReseted()
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(ichimoku_cloud_buy_sell_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_cloud_buy_sell_strategy, self).OnStarted2(time)
         self._ichimoku = Ichimoku()
         self._ichimoku.Tenkan.Length = self._tenkan_period.Value
         self._ichimoku.Kijun.Length = self._kijun_period.Value

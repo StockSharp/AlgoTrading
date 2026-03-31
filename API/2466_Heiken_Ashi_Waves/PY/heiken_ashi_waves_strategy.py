@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -65,8 +67,8 @@ class heiken_ashi_waves_strategy(Strategy):
     def UseTrailing(self, value):
         self._use_trailing.Value = value
 
-    def OnStarted(self, time):
-        super(heiken_ashi_waves_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(heiken_ashi_waves_strategy, self).OnStarted2(time)
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

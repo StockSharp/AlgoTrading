@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -52,8 +54,8 @@ class rijfie_pyramid_strategy(Strategy):
         self._next_buy_price = 0.0
         self._prev_k = None
 
-    def OnStarted(self, time):
-        super(rijfie_pyramid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rijfie_pyramid_strategy, self).OnStarted2(time)
         self._stochastic = StochasticOscillator()
         ema = ExponentialMovingAverage()
         ema.Length = self.ma_period

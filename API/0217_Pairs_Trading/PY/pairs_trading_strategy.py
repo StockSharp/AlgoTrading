@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
@@ -113,8 +115,8 @@ class pairs_trading_strategy(Strategy):
         self._spread = 0
         self._last_second_price = 0
 
-    def OnStarted(self, time):
-        super(pairs_trading_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pairs_trading_strategy, self).OnStarted2(time)
 
         if self.second_security is None:
             raise Exception("Second security is not specified.")

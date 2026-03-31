@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class adx_cci_ma_strategy(Strategy):
         self._prev_minus_di = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(adx_cci_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_cci_ma_strategy, self).OnStarted2(time)
         cci = CommodityChannelIndex()
         cci.Length = int(self._cci_period.Value)
         adx = AverageDirectionalIndex()

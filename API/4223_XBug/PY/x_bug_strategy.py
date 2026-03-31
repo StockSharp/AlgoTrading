@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class x_bug_strategy(Strategy):
     def ReverseSignals(self):
         return self._reverse_signals.Value
 
-    def OnStarted(self, time):
-        super(x_bug_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(x_bug_strategy, self).OnStarted2(time)
         from System import Decimal
         self.Volume = Decimal(0.001)
         self._prev_fast = None

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -110,8 +112,8 @@ class dig_variation_strategy(Strategy):
     def CooldownPeriod(self, value):
         self._cooldown_period.Value = value
 
-    def OnStarted(self, time):
-        super(dig_variation_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dig_variation_strategy, self).OnStarted2(time)
 
         self.StartProtection(
             stopLoss=Unit(self.StopLoss, UnitTypes.Absolute),

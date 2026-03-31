@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -29,8 +31,8 @@ class ten_point_three_macd_grid_strategy(Strategy):
         self._prev_slow = 0
         self._entry_price = 0
 
-    def OnStarted(self, time):
-        super(ten_point_three_macd_grid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ten_point_three_macd_grid_strategy, self).OnStarted2(time)
         self._prev_fast = 0
         self._prev_slow = 0
         self._entry_price = 0

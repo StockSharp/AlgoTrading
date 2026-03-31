@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -60,8 +62,8 @@ class dual_lot_step_hedge_strategy(Strategy):
     def ScalingMode(self):
         return self._scaling_mode.Value
 
-    def OnStarted(self, time):
-        super(dual_lot_step_hedge_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dual_lot_step_hedge_strategy, self).OnStarted2(time)
 
         sec = self.Security
         vs = float(sec.VolumeStep) if sec is not None and sec.VolumeStep is not None else 0.0

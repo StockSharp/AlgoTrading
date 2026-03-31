@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -28,8 +30,8 @@ class re_open_positions_strategy(Strategy):
         self._current_stop = 0
         self._current_take = 0
 
-    def OnStarted(self, time):
-        super(re_open_positions_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(re_open_positions_strategy, self).OnStarted2(time)
         self._opened_count = 0
         self._last_entry = 0
         self._current_stop = 0

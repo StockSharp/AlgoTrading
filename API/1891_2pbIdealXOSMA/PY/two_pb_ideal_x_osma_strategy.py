@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -57,8 +59,8 @@ class two_pb_ideal_x_osma_strategy(Strategy):
         self._prev_hist = None
         self._bars_since_trade = self.cooldown_bars
 
-    def OnStarted(self, time):
-        super(two_pb_ideal_x_osma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(two_pb_ideal_x_osma_strategy, self).OnStarted2(time)
         self.StartProtection(None, None)
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self.fast_period

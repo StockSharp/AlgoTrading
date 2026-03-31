@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -44,8 +46,8 @@ class previous_candle_breakout_strategy(Strategy):
     def TakeProfitOffset(self, value):
         self._take_profit_offset.Value = value
 
-    def OnStarted(self, time):
-        super(previous_candle_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(previous_candle_breakout_strategy, self).OnStarted2(time)
 
         self._previous_high = None
         self._previous_low = None

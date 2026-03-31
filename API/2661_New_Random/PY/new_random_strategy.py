@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class new_random_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(new_random_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(new_random_strategy, self).OnStarted2(time)
 
         self._seq_last_side = -1  # start with sell, so first entry is buy
         self._pos_side = 0

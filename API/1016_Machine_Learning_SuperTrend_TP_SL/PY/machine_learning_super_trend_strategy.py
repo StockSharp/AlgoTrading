@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class machine_learning_super_trend_strategy(Strategy):
         self._take_profit = 0.0
         self._bars_from_signal = self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(machine_learning_super_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(machine_learning_super_trend_strategy, self).OnStarted2(time)
         self._bars_from_signal = self._cooldown_bars.Value
         self._super_trend = SuperTrend()
         self._super_trend.Length = self._atr_period.Value

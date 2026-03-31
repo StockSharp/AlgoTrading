@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class candlesticks_bw_strategy(Strategy):
         self._has_prev = False
         self._prev_color = -1
 
-    def OnStarted(self, time):
-        super(candlesticks_bw_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(candlesticks_bw_strategy, self).OnStarted2(time)
         self._prev_ao = 0.0
         self._prev_ac = 0.0
         self._has_prev = False

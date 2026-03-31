@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class bands_pending_breakout_strategy(Strategy):
     def bb_period(self, value):
         self._bb_period.Value = value
 
-    def OnStarted(self, time):
-        super(bands_pending_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bands_pending_breakout_strategy, self).OnStarted2(time)
         self._bb = BollingerBands()
         self._bb.Length = self.bb_period
         self._bb.Width = 1.0

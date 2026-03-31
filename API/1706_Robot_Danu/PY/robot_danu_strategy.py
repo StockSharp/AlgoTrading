@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class robot_danu_strategy(Strategy):
         self._last_slow_low = 0.0
         self._slow_direction = 0
 
-    def OnStarted(self, time):
-        super(robot_danu_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(robot_danu_strategy, self).OnStarted2(time)
         fast_high = Highest()
         fast_high.Length = self.fast_length
         fast_low = Lowest()

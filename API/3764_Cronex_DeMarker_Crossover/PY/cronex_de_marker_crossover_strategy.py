@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -59,8 +61,8 @@ class cronex_de_marker_crossover_strategy(Strategy):
         self._previous_fast = None
         self._previous_slow = None
 
-    def OnStarted(self, time):
-        super(cronex_de_marker_crossover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cronex_de_marker_crossover_strategy, self).OnStarted2(time)
 
         self._de_marker = DeMarker()
         self._de_marker.Length = self.DeMarkerPeriod

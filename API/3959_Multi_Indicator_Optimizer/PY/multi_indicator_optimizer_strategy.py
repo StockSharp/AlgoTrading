@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class multi_indicator_optimizer_strategy(Strategy):
         self._prev_prev_stoch_k = None
         self._prev_stoch_signal = None
 
-    def OnStarted(self, time):
-        super(multi_indicator_optimizer_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_indicator_optimizer_strategy, self).OnStarted2(time)
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = 12
         macd.Macd.LongMa.Length = 26

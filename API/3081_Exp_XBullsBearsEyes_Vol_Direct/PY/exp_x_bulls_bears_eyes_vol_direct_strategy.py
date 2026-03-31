@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -109,8 +111,8 @@ class exp_x_bulls_bears_eyes_vol_direct_strategy(Strategy):
         self._previous_smoothed_value = None
         self._previous_direction = 0
 
-    def OnStarted(self, time):
-        super(exp_x_bulls_bears_eyes_vol_direct_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_x_bulls_bears_eyes_vol_direct_strategy, self).OnStarted2(time)
 
         self._ema = ExponentialMovingAverage()
         self._ema.Length = max(1, self.period)

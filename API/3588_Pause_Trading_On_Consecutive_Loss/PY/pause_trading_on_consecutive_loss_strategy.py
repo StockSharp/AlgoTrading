@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -27,8 +29,8 @@ class pause_trading_on_consecutive_loss_strategy(Strategy):
         self._entry_price = 0
         self._entry_direction = None
 
-    def OnStarted(self, time):
-        super(pause_trading_on_consecutive_loss_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pause_trading_on_consecutive_loss_strategy, self).OnStarted2(time)
         self._previous_close = None
         self._loss_streak = 0
         self._pause_countdown = 0

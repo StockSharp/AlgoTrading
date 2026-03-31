@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -94,8 +96,8 @@ class color_pema_envelopes_digit_system_strategy(Strategy):
     def TakeProfitPoints(self):
         return self._take_profit_points.Value
 
-    def OnStarted(self, time):
-        super(color_pema_envelopes_digit_system_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_pema_envelopes_digit_system_strategy, self).OnStarted2(time)
 
         self._ema_values = [0.0] * 8
         self._has_history = False

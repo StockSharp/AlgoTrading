@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class m_trend_line_strategy(Strategy):
         self._prev_slope = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(m_trend_line_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(m_trend_line_strategy, self).OnStarted2(time)
         lr = LinearReg()
         lr.Length = self._regression_length.Value
         ema = ExponentialMovingAverage()

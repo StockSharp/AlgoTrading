@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy(Strategy):
         self._psar_above_prev2 = False
         self._bars_since_bearish_flip = -1
 
-    def OnStarted(self, time):
-        super(momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(momentum_sync_psar_rsi_adx_filtered_3_tier_exit_strategy, self).OnStarted2(time)
         self._psar_above_prev1 = False
         self._psar_above_prev2 = False
         self._bars_since_bearish_flip = -1

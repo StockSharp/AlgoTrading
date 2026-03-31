@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class litecoin_trailing_stop_strategy(Strategy):
         self._highest_price = 0.0
         self._lowest_price = 0.0
 
-    def OnStarted(self, time):
-        super(litecoin_trailing_stop_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(litecoin_trailing_stop_strategy, self).OnStarted2(time)
         self._prev_kama = 0.0
         self._bars_since_entry = 0
         self._bars_since_last_trade = 1000

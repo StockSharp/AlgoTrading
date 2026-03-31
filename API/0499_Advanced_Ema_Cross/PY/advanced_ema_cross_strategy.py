@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class advanced_ema_cross_strategy(Strategy):
         self._prev_ema_long = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(advanced_ema_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(advanced_ema_cross_strategy, self).OnStarted2(time)
         ema_short = ExponentialMovingAverage()
         ema_short.Length = int(self._ema_short_length.Value)
         ema_long = ExponentialMovingAverage()

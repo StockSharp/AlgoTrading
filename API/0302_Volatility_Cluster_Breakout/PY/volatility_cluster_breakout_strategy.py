@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -57,8 +59,8 @@ class volatility_cluster_breakout_strategy(Strategy):
         self._entry_atr = 0.0
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(volatility_cluster_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatility_cluster_breakout_strategy, self).OnStarted2(time)
 
         atr_period = int(self._atr_period.Value)
         price_period = int(self._price_avg_period.Value)

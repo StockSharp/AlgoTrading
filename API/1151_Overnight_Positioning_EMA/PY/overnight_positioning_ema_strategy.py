@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class overnight_positioning_ema_strategy(Strategy):
         self._current_day = None
         self._trade_taken_today = False
 
-    def OnStarted(self, time):
-        super(overnight_positioning_ema_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(overnight_positioning_ema_strategy, self).OnStarted2(time)
         self._current_day = None
         self._trade_taken_today = False
         self._ema = ExponentialMovingAverage()

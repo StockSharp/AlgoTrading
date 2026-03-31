@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class obv_traffic_lights_strategy(Strategy):
         self._count = 0
         self._last_signal_ticks = 0
 
-    def OnStarted(self, time):
-        super(obv_traffic_lights_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(obv_traffic_lights_strategy, self).OnStarted2(time)
         self._prev_close = 0.0
         self._obv = 0.0
         self._prev_fast = 0.0

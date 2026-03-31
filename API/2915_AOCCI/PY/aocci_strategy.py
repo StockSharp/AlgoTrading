@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import AwesomeOscillator, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
@@ -46,8 +48,8 @@ class aocci_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(aocci_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(aocci_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calculate_pip_size()
 

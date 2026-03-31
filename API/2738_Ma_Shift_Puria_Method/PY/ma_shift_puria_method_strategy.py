@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -121,8 +123,8 @@ class ma_shift_puria_method_strategy(Strategy):
     def UseFractalTrailing(self):
         return self._use_fractal_trailing.Value
 
-    def OnStarted(self, time):
-        super(ma_shift_puria_method_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_shift_puria_method_strategy, self).OnStarted2(time)
 
         self._fast_ema = ExponentialMovingAverage()
         self._fast_ema.Length = self.FastLength

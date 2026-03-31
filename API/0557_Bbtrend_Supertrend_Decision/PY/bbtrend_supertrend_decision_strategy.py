@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -57,8 +59,8 @@ class bbtrend_supertrend_decision_strategy(Strategy):
         self._prev_atr = None
         self._prev_st = None
 
-    def OnStarted(self, time):
-        super(bbtrend_supertrend_decision_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bbtrend_supertrend_decision_strategy, self).OnStarted2(time)
         short_bb = BollingerBands()
         short_bb.Length = self.short_bb_length
         short_bb.Width = self.std_dev

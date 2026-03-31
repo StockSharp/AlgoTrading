@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, Level1Fields
@@ -53,8 +55,8 @@ class trailing_stop_step_manager_strategy(Strategy):
     def PriceDeviationPoints(self):
         return self._price_deviation_points.Value
 
-    def OnStarted(self, time):
-        super(trailing_stop_step_manager_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trailing_stop_step_manager_strategy, self).OnStarted2(time)
 
         self.SubscribeLevel1() \
             .Bind(self.process_level1) \

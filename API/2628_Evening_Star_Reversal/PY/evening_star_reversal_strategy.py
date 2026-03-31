@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -80,8 +82,8 @@ class evening_star_reversal_strategy(Strategy):
             return step * 10.0
         return step
 
-    def OnStarted(self, time):
-        super(evening_star_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(evening_star_reversal_strategy, self).OnStarted2(time)
         self._pip_size = self._calc_pip_size()
 
         subscription = self.SubscribeCandles(self.CandleType)

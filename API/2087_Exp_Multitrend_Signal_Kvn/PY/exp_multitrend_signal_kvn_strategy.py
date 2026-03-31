@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -52,8 +54,8 @@ class exp_multitrend_signal_kvn_strategy(Strategy):
         self._min_low = None
         self._trend = 0
 
-    def OnStarted(self, time):
-        super(exp_multitrend_signal_kvn_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_multitrend_signal_kvn_strategy, self).OnStarted2(time)
         self._max_high = Highest()
         self._max_high.Length = self.k_period
         self._min_low = Lowest()

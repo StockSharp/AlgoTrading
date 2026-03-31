@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class ema_cross_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, v): self._candle_type.Value = v
 
-    def OnStarted(self, time):
-        super(ema_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_cross_strategy, self).OnStarted2(time)
         fast_ema = EMA()
         fast_ema.Length = self.ShortLength
         slow_ema = EMA()

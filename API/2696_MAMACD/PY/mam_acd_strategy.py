@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -86,8 +88,8 @@ class mam_acd_strategy(Strategy):
             count += 1
         return step * 10.0 if (count == 3 or count == 5) else step
 
-    def OnStarted(self, time):
-        super(mam_acd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mam_acd_strategy, self).OnStarted2(time)
 
         self._previous_macd = None
         self._ready_for_long = False

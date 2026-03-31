@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -127,8 +129,8 @@ class delta_neutral_arbitrage_strategy(Strategy):
         self._asset1_volume = 0.0
         self._asset2_volume = 0.0
 
-    def OnStarted(self, time):
-        super(delta_neutral_arbitrage_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(delta_neutral_arbitrage_strategy, self).OnStarted2(time)
 
         if self.asset2_security is None:
             raise Exception("Asset2Security is not specified.")

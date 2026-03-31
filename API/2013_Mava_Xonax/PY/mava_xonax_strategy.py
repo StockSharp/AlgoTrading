@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -55,8 +57,8 @@ class mava_xonax_strategy(Strategy):
         self._ema_high = None
         self._ema_low = None
 
-    def OnStarted(self, time):
-        super(mava_xonax_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mava_xonax_strategy, self).OnStarted2(time)
         self._ema_close = ExponentialMovingAverage()
         self._ema_close.Length = self._ema_period.Value
         self._ema_open = ExponentialMovingAverage()

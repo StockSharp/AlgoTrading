@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -101,8 +103,8 @@ class williams_r_breakout_strategy(Strategy):
         self._prevWilliamsRValue = 0
         self._prevWilliamsRAvgValue = 0
 
-    def OnStarted(self, time):
-        super(williams_r_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(williams_r_breakout_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._williamsR = WilliamsR()

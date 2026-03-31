@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -56,8 +58,8 @@ class ef_distance_strategy(Strategy):
         self._prev = None
         self._prev2 = None
 
-    def OnStarted(self, time):
-        super(ef_distance_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ef_distance_strategy, self).OnStarted2(time)
         ema = ExponentialMovingAverage()
         ema.Length = self.sma_period
         atr = AverageTrueRange()

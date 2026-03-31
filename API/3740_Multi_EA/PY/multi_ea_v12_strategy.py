@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -124,8 +126,8 @@ class multi_ea_v12_strategy(Strategy):
     def MacdSignal(self):
         return self._macd_signal.Value
 
-    def OnStarted(self, time):
-        super(multi_ea_v12_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_ea_v12_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod

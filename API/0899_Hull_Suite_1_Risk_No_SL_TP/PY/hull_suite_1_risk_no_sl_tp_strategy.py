@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class hull_suite_1_risk_no_sl_tp_strategy(Strategy):
         self._prev_fast = 0.0
         self._prev_slow = 0.0
 
-    def OnStarted(self, time):
-        super(hull_suite_1_risk_no_sl_tp_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hull_suite_1_risk_no_sl_tp_strategy, self).OnStarted2(time)
 
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = self._fast_ema_period.Value

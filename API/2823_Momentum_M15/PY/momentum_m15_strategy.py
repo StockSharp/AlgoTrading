@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import (SmoothedMovingAverage, Momentum,
     DecimalIndicatorValue)
@@ -40,8 +42,8 @@ class momentum_m15_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(momentum_m15_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(momentum_m15_strategy, self).OnStarted2(time)
 
         self._ma = SmoothedMovingAverage()
         self._ma.Length = self._ma_period.Value

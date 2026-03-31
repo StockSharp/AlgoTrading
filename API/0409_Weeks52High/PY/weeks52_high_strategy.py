@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class weeks52_high_strategy(Strategy):
         self._highest = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(weeks52_high_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(weeks52_high_strategy, self).OnStarted2(time)
         self._highest = Highest()
         self._highest.Length = int(self._high_period.Value)
         subscription = self.SubscribeCandles(self.candle_type)

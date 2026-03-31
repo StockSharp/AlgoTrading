@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -161,8 +163,8 @@ class perceptron_adaptive_strategy(Strategy):
         self._is_long_position = False
         self._entry_candle_time = None
 
-    def OnStarted(self, time):
-        super(perceptron_adaptive_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(perceptron_adaptive_strategy, self).OnStarted2(time)
         self._reset_state()
 
         self._fast_ma = SimpleMovingAverage()

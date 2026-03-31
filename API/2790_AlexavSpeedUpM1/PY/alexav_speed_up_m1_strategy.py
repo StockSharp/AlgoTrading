@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import CandleStates, Sides
@@ -107,8 +109,8 @@ class alexav_speed_up_m1_strategy(Strategy):
         super(alexav_speed_up_m1_strategy, self).OnReseted()
         self._reset_position_state()
 
-    def OnStarted(self, time):
-        super(alexav_speed_up_m1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(alexav_speed_up_m1_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -109,8 +111,8 @@ class martin1_strategy(Strategy):
                     return 0.0
         return volume
 
-    def OnStarted(self, time):
-        super(martin1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(martin1_strategy, self).OnStarted2(time)
 
         self._long_positions = []
         self._short_positions = []

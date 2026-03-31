@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class anomaly_counter_trend_strategy(Strategy):
         self._bar_index = 0
         self._last_trade_bar = 0
 
-    def OnStarted(self, time):
-        super(anomaly_counter_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(anomaly_counter_trend_strategy, self).OnStarted2(time)
         roc = RateOfChange()
         roc.Length = self._roc_length.Value
         subscription = self.SubscribeCandles(self.candle_type)

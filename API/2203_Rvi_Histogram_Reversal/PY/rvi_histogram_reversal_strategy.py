@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeVigorIndex
@@ -21,8 +23,8 @@ class rvi_histogram_reversal_strategy(Strategy):
         super(rvi_histogram_reversal_strategy, self).OnReseted()
         self._prev_avg = None
         self._prev_sig = None
-    def OnStarted(self, time):
-        super(rvi_histogram_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rvi_histogram_reversal_strategy, self).OnStarted2(time)
         rvi = RelativeVigorIndex()
         rvi.Average.Length = self.rvi_period
         rvi.Signal.Length = self.rvi_period

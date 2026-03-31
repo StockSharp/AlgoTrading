@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -43,8 +45,8 @@ class fractal_wpr_strategy(Strategy):
         super(fractal_wpr_strategy, self).OnReseted()
         self._prev_wpr = None
 
-    def OnStarted(self, time):
-        super(fractal_wpr_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fractal_wpr_strategy, self).OnStarted2(time)
 
         wpr = WilliamsR()
         wpr.Length = self._wpr_period.Value

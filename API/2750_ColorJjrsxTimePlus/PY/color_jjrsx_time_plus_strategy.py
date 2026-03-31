@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 
@@ -84,8 +86,8 @@ class color_jjrsx_time_plus_strategy(Strategy):
     def TakeProfitPoints(self):
         return self._take_profit_points.Value
 
-    def OnStarted(self, time):
-        super(color_jjrsx_time_plus_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_jjrsx_time_plus_strategy, self).OnStarted2(time)
 
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.RsiLength

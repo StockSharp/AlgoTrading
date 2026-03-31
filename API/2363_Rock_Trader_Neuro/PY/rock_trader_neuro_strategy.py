@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -28,8 +30,8 @@ class rock_trader_neuro_strategy(Strategy):
         self._stop_price = 0
         self._take_price = 0
 
-    def OnStarted(self, time):
-        super(rock_trader_neuro_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rock_trader_neuro_strategy, self).OnStarted2(time)
         self._bands = [0.0] * 7
         self._entry_price = 0
         self._stop_price = 0

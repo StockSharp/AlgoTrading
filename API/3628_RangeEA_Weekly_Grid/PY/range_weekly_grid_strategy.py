@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -20,8 +22,8 @@ class range_weekly_grid_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, value): self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(range_weekly_grid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(range_weekly_grid_strategy, self).OnStarted2(time)
 
         highest = Highest()
         highest.Length = self._range_period.Value

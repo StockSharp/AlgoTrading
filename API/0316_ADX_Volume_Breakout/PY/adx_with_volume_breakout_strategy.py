@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -46,8 +48,8 @@ class adx_with_volume_breakout_strategy(Strategy):
         super(adx_with_volume_breakout_strategy, self).OnReseted()
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(adx_with_volume_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adx_with_volume_breakout_strategy, self).OnStarted2(time)
 
         adx = AverageDirectionalIndex()
         adx.Length = int(self._adx_period.Value)

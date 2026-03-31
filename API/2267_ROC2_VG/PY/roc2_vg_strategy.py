@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -80,8 +82,8 @@ class roc2_vg_strategy(Strategy):
             return (value + 1.0) * 100.0
         return value
 
-    def OnStarted(self, time):
-        super(roc2_vg_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(roc2_vg_strategy, self).OnStarted2(time)
         ind1 = self._create_indicator(self.roc_type1, self.roc_period1)
         ind2 = self._create_indicator(self.roc_type2, self.roc_period2)
         subscription = self.SubscribeCandles(self.candle_type)

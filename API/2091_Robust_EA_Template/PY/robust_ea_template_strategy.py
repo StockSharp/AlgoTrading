@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -39,8 +41,8 @@ class robust_ea_template_strategy(Strategy):
     def stop_loss_pct(self):
         return self._stop_loss_pct.Value
 
-    def OnStarted(self, time):
-        super(robust_ea_template_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(robust_ea_template_strategy, self).OnStarted2(time)
         cci = CommodityChannelIndex()
         cci.Length = self.cci_period
         rsi = RelativeStrengthIndex()

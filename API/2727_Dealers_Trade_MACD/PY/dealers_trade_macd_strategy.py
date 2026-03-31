@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -119,8 +121,8 @@ class dealers_trade_macd_strategy(Strategy):
     def VolumeMultiplier(self):
         return self._volume_multiplier.Value
 
-    def OnStarted(self, time):
-        super(dealers_trade_macd_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dealers_trade_macd_strategy, self).OnStarted2(time)
 
         slow_ema = ExponentialMovingAverage()
         slow_ema.Length = self.MacdSlowPeriod

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class fibonacci_retracement_reversal_strategy(Strategy):
         self._lows = []
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(fibonacci_retracement_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fibonacci_retracement_reversal_strategy, self).OnStarted2(time)
 
         self._highs = []
         self._lows = []

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -50,8 +52,8 @@ class keltner_seasonal_strategy(Strategy):
         super(keltner_seasonal_strategy, self).OnReseted()
         self._current_seasonal_strength = 0.0
 
-    def OnStarted(self, time):
-        super(keltner_seasonal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(keltner_seasonal_strategy, self).OnStarted2(time)
 
         self._update_seasonal_strength(time)
 

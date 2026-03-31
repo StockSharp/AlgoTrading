@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -45,8 +47,8 @@ class crossing_of_two_i_ma_v2_strategy(Strategy):
         self._prev_second = 0.0
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(crossing_of_two_i_ma_v2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(crossing_of_two_i_ma_v2_strategy, self).OnStarted2(time)
 
         first_ma = SimpleMovingAverage()
         first_ma.Length = self._first_period.Value

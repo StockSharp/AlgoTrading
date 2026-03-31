@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -131,8 +133,8 @@ class blau_ergodic_mdi_strategy(Strategy):
     def Phase(self):
         return self._phase.Value
 
-    def OnStarted(self, time):
-        super(blau_ergodic_mdi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(blau_ergodic_mdi_strategy, self).OnStarted2(time)
         sec = self.Security
         self._point_value = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0 else 1.0
         self._price_average = self._create_ma(self.SmoothingMethod, self.PrimaryLength)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -65,8 +67,8 @@ class cross_line_trader_strategy(Strategy):
     def TakeProfitOffset(self):
         return self._take_profit_offset.Value
 
-    def OnStarted(self, time):
-        super(cross_line_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cross_line_trader_strategy, self).OnStarted2(time)
         self._lines = self._parse_line_definitions(self.LineDefinitions)
         self._previous_open = None
         self._entry_price = 0.0

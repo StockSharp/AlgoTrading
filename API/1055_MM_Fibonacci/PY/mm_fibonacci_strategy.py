@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class mm_fibonacci_strategy(Strategy):
         self._prev_fib_dir = 0
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(mm_fibonacci_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mm_fibonacci_strategy, self).OnStarted2(time)
         self._since_high = 0
         self._since_low = 0
         self._prev_fib_dir = 0

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class rpm5_bulls_bears_eyes_strategy(Strategy):
         self._prev_bear = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(rpm5_bulls_bears_eyes_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rpm5_bulls_bears_eyes_strategy, self).OnStarted2(time)
 
         self._has_prev = False
 

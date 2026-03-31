@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -106,8 +108,8 @@ class russian20_time_filter_momentum_strategy(Strategy):
             digits += 1
         return digits
 
-    def OnStarted(self, time):
-        super(russian20_time_filter_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(russian20_time_filter_momentum_strategy, self).OnStarted2(time)
 
         self._update_pip_settings()
 

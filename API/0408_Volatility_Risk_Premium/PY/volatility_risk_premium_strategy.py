@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class volatility_risk_premium_strategy(Strategy):
         self._atr = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(volatility_risk_premium_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volatility_risk_premium_strategy, self).OnStarted2(time)
         self._stddev = StandardDeviation()
         self._stddev.Length = int(self._stddev_period.Value)
         self._atr = AverageTrueRange()

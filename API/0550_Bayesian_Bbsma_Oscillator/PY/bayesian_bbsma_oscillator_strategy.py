@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -64,8 +66,8 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
         self._prev_sigma_probs_down = 0.0
         self._prev_prob_prime = 0.0
 
-    def OnStarted(self, time):
-        super(bayesian_bbsma_oscillator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bayesian_bbsma_oscillator_strategy, self).OnStarted2(time)
 
         self._bb = BollingerBands()
         self._bb.Length = self._bb_sma_period.Value

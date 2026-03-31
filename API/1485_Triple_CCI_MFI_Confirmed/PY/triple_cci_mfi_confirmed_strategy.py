@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, DateTimeOffset, DateTime
 from StockSharp.Messages import DataType, CandleStates
@@ -100,8 +102,8 @@ class triple_cci_mfi_confirmed_strategy(Strategy):
         self._trailing_activated = False
         self._last_signal = DateTime.MinValue
 
-    def OnStarted(self, time):
-        super(triple_cci_mfi_confirmed_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(triple_cci_mfi_confirmed_strategy, self).OnStarted2(time)
         fast_cci = CommodityChannelIndex()
         fast_cci.Length = self.fast_cci_period
         middle_cci = CommodityChannelIndex()

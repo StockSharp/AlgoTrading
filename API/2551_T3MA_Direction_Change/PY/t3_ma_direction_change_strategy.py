@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -32,8 +34,8 @@ class t3_ma_direction_change_strategy(Strategy):
         self._prev_direction = 0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(t3_ma_direction_change_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(t3_ma_direction_change_strategy, self).OnStarted2(time)
         self._recent_smoothed = []
         self._pending_signals = []
         self._prev_direction = 0

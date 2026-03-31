@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -59,8 +61,8 @@ class ma_delta_strategy(Strategy):
         self._delta_step = 0.0
         self._multiplier_factor = 0.0
 
-    def OnStarted(self, time):
-        super(ma_delta_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_delta_strategy, self).OnStarted2(time)
         self._hi = 0.0
         self._lo = 0.0
         self._is_init = False

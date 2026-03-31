@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class multi_timeframe_parabolic_sar_strategy(Strategy):
     def OnReseted(self):
         super(multi_timeframe_parabolic_sar_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(multi_timeframe_parabolic_sar_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(multi_timeframe_parabolic_sar_strategy, self).OnStarted2(time)
         self._ema = ExponentialMovingAverage()
         self._ema.Length = self._ema_length.Value
         self._rsi = RelativeStrengthIndex()

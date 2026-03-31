@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class vqzl_z_score_strategy(Strategy):
     def OnReseted(self):
         super(vqzl_z_score_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(vqzl_z_score_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vqzl_z_score_strategy, self).OnStarted2(time)
         ma = SimpleMovingAverage()
         ma.Length = self.price_smoothing
         dev = StandardDeviation()

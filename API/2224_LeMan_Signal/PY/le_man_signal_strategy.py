@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class le_man_signal_strategy(Strategy):
         self._highs = []
         self._lows = []
 
-    def OnStarted(self, time):
-        super(le_man_signal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(le_man_signal_strategy, self).OnStarted2(time)
         warmup = ExponentialMovingAverage()
         warmup.Length = 2 * self.period + 3
         subscription = self.SubscribeCandles(self.candle_type)

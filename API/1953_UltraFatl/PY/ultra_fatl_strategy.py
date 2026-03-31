@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class ultra_fatl_strategy(Strategy):
     def SignalBar(self, value):
         self._signal_bar.Value = value
 
-    def OnStarted(self, time):
-        super(ultra_fatl_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ultra_fatl_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.Length

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class macd_ema_sar_bollinger_bull_bear_strategy(Strategy):
         self._prev_slow = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(macd_ema_sar_bollinger_bull_bear_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_ema_sar_bollinger_bull_bear_strategy, self).OnStarted2(time)
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = self.fast_ma_period
         slow_ema = ExponentialMovingAverage()

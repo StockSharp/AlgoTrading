@@ -4,6 +4,8 @@ import random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class monte_carlo_range_forecast_strategy(Strategy):
         super(monte_carlo_range_forecast_strategy, self).OnReseted()
         self._bars_from_signal = self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(monte_carlo_range_forecast_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(monte_carlo_range_forecast_strategy, self).OnStarted2(time)
         atr = AverageTrueRange()
         atr.Length = 14
         subscription = self.SubscribeCandles(self.candle_type)

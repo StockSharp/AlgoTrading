@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -24,8 +26,8 @@ class pinball_machine_random_draw_strategy(Strategy):
         self._entry_price = 0
         self._candle_count = 0
 
-    def OnStarted(self, time):
-        super(pinball_machine_random_draw_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pinball_machine_random_draw_strategy, self).OnStarted2(time)
         self._entry_price = 0
         self._candle_count = 0
 

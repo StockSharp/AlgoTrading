@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -77,8 +79,8 @@ class risk_management_atr_strategy(Strategy):
         self._price_step = 0.0
         self._virtual_stop_price = None
 
-    def OnStarted(self, time):
-        super(risk_management_atr_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(risk_management_atr_strategy, self).OnStarted2(time)
 
         self._price_step = 1.0
         if self.Security is not None and self.Security.PriceStep is not None:

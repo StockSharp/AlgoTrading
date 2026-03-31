@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -171,8 +173,8 @@ class stopreversal_tm_strategy(Strategy):
             return current_minutes >= start_minutes and current_minutes < end_minutes
         return current_minutes >= start_minutes or current_minutes < end_minutes
 
-    def OnStarted(self, time):
-        super(stopreversal_tm_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(stopreversal_tm_strategy, self).OnStarted2(time)
 
         self._previous_applied_price = None
         self._previous_stop_level = None

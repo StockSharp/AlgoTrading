@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -66,8 +68,8 @@ class ma_adx_strategy(Strategy):
     def cooldown_bars(self):
         return self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(ma_adx_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_adx_strategy, self).OnStarted2(time)
 
         self._highs = []
         self._lows = []

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -156,8 +158,8 @@ class hybrid_scalper_strategy(Strategy):
             return self.TradeFriday
         return False
 
-    def OnStarted(self, time):
-        super(hybrid_scalper_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hybrid_scalper_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod

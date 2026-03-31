@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class eugene_candle_pattern_strategy(Strategy):
         self._take = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(eugene_candle_pattern_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(eugene_candle_pattern_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._process).Start()

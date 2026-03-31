@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -51,8 +53,8 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
         self._is_first_candle = True
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(parabolic_sar_sentiment_divergence_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_sentiment_divergence_strategy, self).OnStarted2(time)
 
         sar = ParabolicSar()
         sar.Acceleration = Decimal(float(self._start_af.Value))

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -85,8 +87,8 @@ class bull_vs_medved_window_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(bull_vs_medved_window_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bull_vs_medved_window_strategy, self).OnStarted2(time)
 
         ps = self.Security.PriceStep if self.Security is not None else None
         self._point_value = float(ps) if ps is not None else 1.0

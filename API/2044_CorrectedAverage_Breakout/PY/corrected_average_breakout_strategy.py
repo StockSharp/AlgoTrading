@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -47,8 +49,8 @@ class corrected_average_breakout_strategy(Strategy):
         self._is_initialized = False
         self._level = 0.0
 
-    def OnStarted(self, time):
-        super(corrected_average_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(corrected_average_breakout_strategy, self).OnStarted2(time)
 
         step = 1.0
         if self.Security is not None and self.Security.PriceStep is not None:

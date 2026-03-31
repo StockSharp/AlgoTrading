@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class parabolic_sar_stochastic_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(parabolic_sar_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_stochastic_strategy, self).OnStarted2(time)
         self._sar_value = 0.0
         self._last_stoch_k = 50.0
         self._is_above_sar = False

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class balance_of_power_histogram_strategy(Strategy):
         self._bars_since_signal = int(self.cooldown_candles)
         self._prev_bop = None
 
-    def OnStarted(self, time):
-        super(balance_of_power_histogram_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(balance_of_power_histogram_strategy, self).OnStarted2(time)
         self._bars_since_signal = int(self.cooldown_candles)
         self._prev_bop = None
         bop = BalanceOfPower()

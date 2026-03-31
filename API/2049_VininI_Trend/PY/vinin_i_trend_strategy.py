@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -26,8 +28,8 @@ class vinin_i_trend_strategy(Strategy):
         super(vinin_i_trend_strategy, self).OnReseted()
         self._prev_cci = None
 
-    def OnStarted(self, time):
-        super(vinin_i_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vinin_i_trend_strategy, self).OnStarted2(time)
         self._prev_cci = None
 
         cci = CommodityChannelIndex()

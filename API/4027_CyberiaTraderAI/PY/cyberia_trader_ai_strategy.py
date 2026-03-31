@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from collections import deque
@@ -117,8 +119,8 @@ class cyberia_trader_ai_strategy(Strategy):
     def StopLossPercent(self):
         return self._stop_loss_percent.Value
 
-    def OnStarted(self, time):
-        super(cyberia_trader_ai_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cyberia_trader_ai_strategy, self).OnStarted2(time)
 
         self._macd_indicator = MovingAverageConvergenceDivergenceSignal()
         self._macd_indicator.Macd.ShortMa.Length = self.MacdFast

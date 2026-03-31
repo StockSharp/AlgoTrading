@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -102,8 +104,8 @@ class exp_hans_indicator_cloud_system_tm_plus_strategy(Strategy):
         self._take_price = None
         self._entry_time = None
 
-    def OnStarted(self, time):
-        super(exp_hans_indicator_cloud_system_tm_plus_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_hans_indicator_cloud_system_tm_plus_strategy, self).OnStarted2(time)
         self._color_history = []
         self._s1_high = None
         self._s1_low = None

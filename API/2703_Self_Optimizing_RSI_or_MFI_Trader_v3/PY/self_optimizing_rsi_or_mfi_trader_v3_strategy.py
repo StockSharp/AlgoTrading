@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -136,8 +138,8 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(self_optimizing_rsi_or_mfi_trader_v3_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(self_optimizing_rsi_or_mfi_trader_v3_strategy, self).OnStarted2(time)
 
         self._history = []
         self._entry_price = None

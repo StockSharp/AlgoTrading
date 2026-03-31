@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class asset_class_momentum_rotational_strategy(Strategy):
         self._sma = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(asset_class_momentum_rotational_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(asset_class_momentum_rotational_strategy, self).OnStarted2(time)
         self._roc = RateOfChange()
         self._roc.Length = int(self._roc_length.Value)
         self._sma = SimpleMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class jk_bull_p_auto_trader_strategy(Strategy):
         self._prev_rsi = 0.0
         self._entry_price = Decimal.Zero
 
-    def OnStarted(self, time):
-        super(jk_bull_p_auto_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(jk_bull_p_auto_trader_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_length.Value

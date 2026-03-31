@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -84,8 +86,8 @@ class keltner_width_breakout_strategy(Strategy):
     def OnReseted(self):
         super(keltner_width_breakout_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(keltner_width_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(keltner_width_breakout_strategy, self).OnStarted2(time)
 
         ema = ExponentialMovingAverage()
         ema.Length = self.EMAPeriod

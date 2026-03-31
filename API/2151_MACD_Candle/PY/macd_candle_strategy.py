@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class macd_candle_strategy(Strategy):
         self._macd_open = None
         self._macd_close = None
 
-    def OnStarted(self, time):
-        super(macd_candle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_candle_strategy, self).OnStarted2(time)
         self._macd_open = MovingAverageConvergenceDivergenceSignal()
         self._macd_open.Macd.ShortMa.Length = self.fast_length
         self._macd_open.Macd.LongMa.Length = self.slow_length

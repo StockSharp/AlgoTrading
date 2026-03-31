@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -125,8 +127,8 @@ class starter_strategy(Strategy):
         self._last_entry_price = 0.0
         self._consecutive_losses = 0
 
-    def OnStarted(self, time):
-        super(starter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(starter_strategy, self).OnStarted2(time)
 
         self._pip_size = self._get_pip_size()
         self._history_capacity = self._calc_history_capacity()

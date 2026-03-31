@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -108,8 +110,8 @@ class momo_trades_strategy(Strategy):
     def CloseEndDay(self):
         return self._close_end_day.Value
 
-    def OnStarted(self, time):
-        super(momo_trades_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(momo_trades_strategy, self).OnStarted2(time)
 
         self._sma = SimpleMovingAverage()
         self._sma.Length = self.SmaPeriod

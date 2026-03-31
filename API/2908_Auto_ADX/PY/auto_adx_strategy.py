@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class auto_adx_strategy(Strategy):
     def RsiLow(self):
         return self._rsi_low.Value
 
-    def OnStarted(self, time):
-        super(auto_adx_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(auto_adx_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiLength

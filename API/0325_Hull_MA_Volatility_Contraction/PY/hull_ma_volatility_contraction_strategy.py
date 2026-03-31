@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -57,8 +59,8 @@ class hull_ma_volatility_contraction_strategy(Strategy):
         self._is_long = False
         self._is_short = False
 
-    def OnStarted(self, time):
-        super(hull_ma_volatility_contraction_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hull_ma_volatility_contraction_strategy, self).OnStarted2(time)
 
         hma = HullMovingAverage()
         hma.Length = int(self._hma_period.Value)

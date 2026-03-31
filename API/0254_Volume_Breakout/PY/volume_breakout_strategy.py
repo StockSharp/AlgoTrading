@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
@@ -94,8 +96,8 @@ class volume_breakout_strategy(Strategy):
         self._last_avg_volume = 0
         self._last_std_dev = 0
 
-    def OnStarted(self, time):
-        super(volume_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_breakout_strategy, self).OnStarted2(time)
 
 
         # Create indicators for volume analysis

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class triple_supertrend_strategy(Strategy):
         super(triple_supertrend_strategy, self).OnReseted()
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(triple_supertrend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(triple_supertrend_strategy, self).OnStarted2(time)
 
         ema1 = ExponentialMovingAverage()
         ema1.Length = int(self._p1.Value)

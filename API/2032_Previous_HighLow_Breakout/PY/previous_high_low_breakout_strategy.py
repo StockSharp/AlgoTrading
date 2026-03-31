@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -59,8 +61,8 @@ class previous_high_low_breakout_strategy(Strategy):
     def CooldownCandles(self, value):
         self._cooldown_candles.Value = value
 
-    def OnStarted(self, time):
-        super(previous_high_low_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(previous_high_low_breakout_strategy, self).OnStarted2(time)
 
         self.SubscribeCandles(self.CandleType) \
             .Bind(self.ProcessCandle) \

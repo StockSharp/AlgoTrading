@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class eur_usd_session_breakout_strategy(Strategy):
         self._stop_price = 0.0
         self._take_price = 0.0
 
-    def OnStarted(self, time):
-        super(eur_usd_session_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(eur_usd_session_breakout_strategy, self).OnStarted2(time)
 
         self._highest = Highest()
         self._highest.Length = self._eu_session_length.Value

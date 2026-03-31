@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -45,8 +47,8 @@ class two_direction_martin_stylized_strategy(Strategy):
         self._direction = 0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(two_direction_martin_stylized_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(two_direction_martin_stylized_strategy, self).OnStarted2(time)
         ema = ExponentialMovingAverage()
         ema.Length = 20
         subscription = self.SubscribeCandles(self.candle_type)

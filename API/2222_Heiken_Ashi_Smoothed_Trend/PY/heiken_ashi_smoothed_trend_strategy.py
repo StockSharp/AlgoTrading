@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class heiken_ashi_smoothed_trend_strategy(Strategy):
         self._prev_ha_close = None
         self._prev_is_green = None
 
-    def OnStarted(self, time):
-        super(heiken_ashi_smoothed_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(heiken_ashi_smoothed_trend_strategy, self).OnStarted2(time)
         self._open_ema = ExponentialMovingAverage()
         self._open_ema.Length = self.ema_length
         self._close_ema = ExponentialMovingAverage()

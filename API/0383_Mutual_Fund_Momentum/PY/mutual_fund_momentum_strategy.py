@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -98,8 +100,8 @@ class mutual_fund_momentum_strategy(Strategy):
         self._cooldown_remaining = 0
         self._last_primary_candle = None
 
-    def OnStarted(self, time):
-        super(mutual_fund_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mutual_fund_momentum_strategy, self).OnStarted2(time)
 
         sec2_id = str(self._security2_id.Value)
         if not sec2_id:

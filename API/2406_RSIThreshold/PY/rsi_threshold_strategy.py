@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -73,8 +75,8 @@ class rsi_threshold_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, v): self._candle_type.Value = v
 
-    def OnStarted(self, time):
-        super(rsi_threshold_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(rsi_threshold_strategy, self).OnStarted2(time)
         self._prev_rsi = None
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod

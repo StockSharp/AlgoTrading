@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class fibo_avg001a_strategy(Strategy):
         self._prev_slow = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(fibo_avg001a_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(fibo_avg001a_strategy, self).OnStarted2(time)
         fast_ma = SmoothedMovingAverage()
         fast_ma.Length = self.ma_period
         slow_ma = SmoothedMovingAverage()

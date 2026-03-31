@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class ais1_eur_usd_breakout_strategy(Strategy):
     def CandleType(self, value):
         self._entry_candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(ais1_eur_usd_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ais1_eur_usd_breakout_strategy, self).OnStarted2(time)
 
         self._reset_position_state()
         self._prev_day_high = 0.0

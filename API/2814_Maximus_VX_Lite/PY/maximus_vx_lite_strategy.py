@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class maximus_vx_lite_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(maximus_vx_lite_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(maximus_vx_lite_strategy, self).OnStarted2(time)
 
         self._update_derived_values()
 

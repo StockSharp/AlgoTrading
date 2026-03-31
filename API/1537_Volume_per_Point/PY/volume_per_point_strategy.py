@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Sides
@@ -60,8 +62,8 @@ class volume_per_point_strategy(Strategy):
         self._prev_volume = 0.0
         self._prev_close = 0.0
 
-    def OnStarted(self, time):
-        super(volume_per_point_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(volume_per_point_strategy, self).OnStarted2(time)
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_length
         subscription = self.SubscribeCandles(self.candle_type)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -69,8 +71,8 @@ class ema_prediction_strategy(Strategy):
     def StopLossTicks(self, value):
         self._stop_loss_ticks.Value = value
 
-    def OnStarted(self, time):
-        super(ema_prediction_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_prediction_strategy, self).OnStarted2(time)
 
         fast = ExponentialMovingAverage()
         fast.Length = self.FastPeriod

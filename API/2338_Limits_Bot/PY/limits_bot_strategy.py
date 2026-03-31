@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -93,8 +95,8 @@ class limits_bot_strategy(Strategy):
         self._last_position = 0.0
         self._bars_since_exit = int(self.cooldown_candles)
 
-    def OnStarted(self, time):
-        super(limits_bot_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(limits_bot_strategy, self).OnStarted2(time)
         self._buy_order = None
         self._sell_order = None
         self._entry_price = None

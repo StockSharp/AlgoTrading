@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -62,8 +64,8 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
         self._was_below_oversold = False
         self._stoch_queue = []
 
-    def OnStarted(self, time):
-        super(stochastic_with_dynamic_zones_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(stochastic_with_dynamic_zones_strategy, self).OnStarted2(time)
 
         self._prev_stoch_k = 50.0
         self._stoch_sum = 0.0

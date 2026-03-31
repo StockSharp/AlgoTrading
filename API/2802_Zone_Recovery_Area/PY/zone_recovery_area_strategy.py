@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -46,8 +48,8 @@ class zone_recovery_area_strategy(Strategy):
     def InitialVolume(self):
         return self._initial_volume.Value
 
-    def OnStarted(self, time):
-        super(zone_recovery_area_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zone_recovery_area_strategy, self).OnStarted2(time)
 
         self._fast_ma = SimpleMovingAverage()
         self._fast_ma.Length = self._fast_ma_length.Value

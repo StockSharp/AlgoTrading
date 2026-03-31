@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import CandleStates
@@ -79,8 +81,8 @@ class a_system_championship_strategy(Strategy):
         self._entry_price = 0.0
         self._stop_price = 0.0
 
-    def OnStarted(self, time):
-        super(a_system_championship_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(a_system_championship_strategy, self).OnStarted2(time)
 
         self._prev_high = 0.0
         self._prev_low = 0.0

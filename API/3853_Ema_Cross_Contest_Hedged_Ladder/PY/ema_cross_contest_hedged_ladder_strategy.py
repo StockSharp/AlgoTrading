@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
@@ -26,8 +28,8 @@ class ema_cross_contest_hedged_ladder_strategy(Strategy):
         self._prev_short = 0.0
         self._prev_long = 0.0
         self._has_prev = False
-    def OnStarted(self, time):
-        super(ema_cross_contest_hedged_ladder_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ema_cross_contest_hedged_ladder_strategy, self).OnStarted2(time)
         self._has_prev = False
         short_ema = ExponentialMovingAverage()
         short_ema.Length = self.short_period

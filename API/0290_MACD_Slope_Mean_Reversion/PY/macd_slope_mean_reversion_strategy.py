@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Math
@@ -74,8 +76,8 @@ class macd_slope_mean_reversion_strategy(Strategy):
         self._cooldown = 0
         self._is_initialized = False
 
-    def OnStarted(self, time):
-        super(macd_slope_mean_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_slope_mean_reversion_strategy, self).OnStarted2(time)
 
         lb = int(self._lookback_period.Value)
         self._slope_history = [0.0] * lb

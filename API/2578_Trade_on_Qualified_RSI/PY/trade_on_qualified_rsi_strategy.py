@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -88,8 +90,8 @@ class trade_on_qualified_rsi_strategy(Strategy):
             step = 1.0
         return int(self.StopLossPoints) * step
 
-    def OnStarted(self, time):
-        super(trade_on_qualified_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trade_on_qualified_rsi_strategy, self).OnStarted2(time)
 
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.RsiPeriod

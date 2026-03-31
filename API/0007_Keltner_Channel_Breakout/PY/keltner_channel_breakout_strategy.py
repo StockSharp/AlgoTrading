@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class keltner_channel_breakout_strategy(Strategy):
         self._prev_lower_band = 0.0
         self._prev_ema = 0.0
 
-    def OnStarted(self, time):
-        super(keltner_channel_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(keltner_channel_breakout_strategy, self).OnStarted2(time)
 
         keltner = KeltnerChannels()
         keltner.Length = self._ema_period.Value

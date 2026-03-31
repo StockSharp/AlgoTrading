@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -115,8 +117,8 @@ class trendline_alert_strategy(Strategy):
         else:
             self._stop_price = 0.0
 
-    def OnStarted(self, time):
-        super(trendline_alert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trendline_alert_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class spectral_rvi_crossover_strategy(Strategy):
         self._prev_sm_rvi = None
         self._prev_sm_sig = None
 
-    def OnStarted(self, time):
-        super(spectral_rvi_crossover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(spectral_rvi_crossover_strategy, self).OnStarted2(time)
         self._prev_sm_rvi = None
         self._prev_sm_sig = None
         self._smooth_rvi = SimpleMovingAverage()

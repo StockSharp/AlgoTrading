@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -54,8 +56,8 @@ class nrtr_trailing_stop_strategy(Strategy):
         self._trend = 0
         self._is_initialized = False
 
-    def OnStarted(self, time):
-        super(nrtr_trailing_stop_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(nrtr_trailing_stop_strategy, self).OnStarted2(time)
         atr = AverageTrueRange()
         atr.Length = self.length
         subscription = self.SubscribeCandles(self.candle_type)

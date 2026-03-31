@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -103,8 +105,8 @@ class linear_regression_slope_trigger_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(linear_regression_slope_trigger_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(linear_regression_slope_trigger_strategy, self).OnStarted2(time)
 
         self._trend_line.Length = self.SlopeLength
         self._trigger_line.Length = self.TriggerShift

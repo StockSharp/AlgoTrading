@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -45,8 +47,8 @@ class keltner_channel_based_grid_strategy(Strategy):
         self._rebalance_count = 0
         self._bars_since_rebalance = 0
 
-    def OnStarted(self, time):
-        super(keltner_channel_based_grid_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(keltner_channel_based_grid_strategy, self).OnStarted2(time)
         self._rebalance_count = 0
         self._bars_since_rebalance = self._cooldown_bars.Value
         ma = ExponentialMovingAverage()

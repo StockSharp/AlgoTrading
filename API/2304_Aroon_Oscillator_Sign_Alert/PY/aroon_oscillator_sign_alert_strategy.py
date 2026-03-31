@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class aroon_oscillator_sign_alert_strategy(Strategy):
         super(aroon_oscillator_sign_alert_strategy, self).OnReseted()
         self._previous_value = None
 
-    def OnStarted(self, time):
-        super(aroon_oscillator_sign_alert_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(aroon_oscillator_sign_alert_strategy, self).OnStarted2(time)
         self._previous_value = None
         aroon = AroonOscillator()
         aroon.Length = self.aroon_period

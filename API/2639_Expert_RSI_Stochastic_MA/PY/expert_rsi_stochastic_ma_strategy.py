@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -68,8 +70,8 @@ class expert_rsi_stochastic_ma_strategy(Strategy):
     def MaPeriod(self):
         return self._ma_period.Value
 
-    def OnStarted(self, time):
-        super(expert_rsi_stochastic_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(expert_rsi_stochastic_ma_strategy, self).OnStarted2(time)
 
         sma = SimpleMovingAverage()
         sma.Length = self.MaPeriod

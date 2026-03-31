@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -149,8 +151,8 @@ class asimmetric_stoch_nr_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(asimmetric_stoch_nr_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(asimmetric_stoch_nr_strategy, self).OnStarted2(time)
 
         stochastic = StochasticOscillator()
         stochastic.K.Length = self.KPeriodLong

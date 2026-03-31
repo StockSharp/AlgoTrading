@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan, Decimal
@@ -82,8 +84,8 @@ class dvd10050_cent_strategy(Strategy):
     def M30HistoryLength(self):
         return self._m30_hist_len.Value
 
-    def OnStarted(self, time):
-        super(dvd10050_cent_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dvd10050_cent_strategy, self).OnStarted2(time)
         self._m1_history = []
         self._m30_history = []
         self._h1_finished = []

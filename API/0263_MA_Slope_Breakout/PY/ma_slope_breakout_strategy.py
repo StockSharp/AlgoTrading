@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -38,8 +40,8 @@ class ma_slope_breakout_strategy(Strategy):
         self._current_index = 0
         self._is_init = False
 
-    def OnStarted(self, time):
-        super(ma_slope_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_slope_breakout_strategy, self).OnStarted2(time)
         lb = int(self._lookback.Value)
         self._slopes = [0.0] * lb
         self._current_index = 0

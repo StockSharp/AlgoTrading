@@ -3,6 +3,8 @@ import sys
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -55,8 +57,8 @@ class one_two_three_reversal_strategy(Strategy):
         self._bars_since_entry = 999999999
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(one_two_three_reversal_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(one_two_three_reversal_strategy, self).OnStarted2(time)
 
         self._sma = SimpleMovingAverage()
         self._sma.Length = int(self._ma_length.Value)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -80,8 +82,8 @@ class bollinger_breakout_dc2008_strategy(Strategy):
         else:
             return candle.ClosePrice
 
-    def OnStarted(self, time):
-        super(bollinger_breakout_dc2008_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bollinger_breakout_dc2008_strategy, self).OnStarted2(time)
 
         self._bollinger = BollingerBands()
         self._bollinger.Length = self.BandsPeriod

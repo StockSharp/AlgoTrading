@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class vidya_n_bars_borders_martingale_strategy(Strategy):
         self._low_history = []
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(vidya_n_bars_borders_martingale_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vidya_n_bars_borders_martingale_strategy, self).OnStarted2(time)
         self._high_history = []
         self._low_history = []
         self._entry_price = 0.0

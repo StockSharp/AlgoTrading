@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -98,8 +100,8 @@ class cronex_cci_strategy(Strategy):
     def EnableShortExit(self, value):
         self._enable_short_exit.Value = value
 
-    def OnStarted(self, time):
-        super(cronex_cci_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cronex_cci_strategy, self).OnStarted2(time)
 
         cci = CommodityChannelIndex()
         cci.Length = self.CciPeriod

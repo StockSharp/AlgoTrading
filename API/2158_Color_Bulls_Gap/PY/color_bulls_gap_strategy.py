@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from System.Collections.Generic import Queue
@@ -49,8 +51,8 @@ class color_bulls_gap_strategy(Strategy):
         self._is_first = True
         self._color_history = []
 
-    def OnStarted(self, time):
-        super(color_bulls_gap_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_bulls_gap_strategy, self).OnStarted2(time)
         self._sma_close = ExponentialMovingAverage()
         self._sma_close.Length = self.length1
         self._sma_open = ExponentialMovingAverage()

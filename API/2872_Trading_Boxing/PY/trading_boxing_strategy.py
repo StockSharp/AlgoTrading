@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -22,8 +24,8 @@ class trading_boxing_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, value): self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(trading_boxing_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trading_boxing_strategy, self).OnStarted2(time)
 
         cci = CommodityChannelIndex()
         cci.Length = self._cci_length.Value

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class three_white_soldiers_strategy(Strategy):
         self._candle2 = None
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(three_white_soldiers_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(three_white_soldiers_strategy, self).OnStarted2(time)
 
         self._candle1 = None
         self._candle2 = None

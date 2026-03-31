@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -58,8 +60,8 @@ class color_metro_de_marker_strategy(Strategy):
         self._prev_m_minus = 0.0
         self._is_first = True
 
-    def OnStarted(self, time):
-        super(color_metro_de_marker_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_metro_de_marker_strategy, self).OnStarted2(time)
         self._fmin = 999999.0
         self._fmax = -999999.0
         self._smin = 999999.0

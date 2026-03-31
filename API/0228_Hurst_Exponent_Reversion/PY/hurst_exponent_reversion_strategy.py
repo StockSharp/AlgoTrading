@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Random, Math, Int32
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -27,8 +29,8 @@ class hurst_exponent_reversion_strategy(Strategy):
     def OnReseted(self):
         super(hurst_exponent_reversion_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(hurst_exponent_reversion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hurst_exponent_reversion_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self._ma_period.Value
         subscription = self.SubscribeCandles(self.candle_type)

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class big_bar_sound_strategy(Strategy):
         self._take_profit_price = 0.0
         self._direction = 0
 
-    def OnStarted(self, time):
-        super(big_bar_sound_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(big_bar_sound_strategy, self).OnStarted2(time)
         self._stop_price = 0.0
         self._take_profit_price = 0.0
         self._direction = 0

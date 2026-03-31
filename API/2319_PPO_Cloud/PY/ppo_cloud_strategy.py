@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class ppo_cloud_strategy(Strategy):
         self._ppo = None
         self._signal_ema = None
 
-    def OnStarted(self, time):
-        super(ppo_cloud_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ppo_cloud_strategy, self).OnStarted2(time)
         self._prev_ppo = 0.0
         self._prev_signal = 0.0
         self._has_prev = False

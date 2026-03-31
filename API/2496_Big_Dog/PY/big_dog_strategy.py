@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -85,8 +87,8 @@ class big_dog_strategy(Strategy):
     def _convert_to_price(self, points):
         return points * self._adjusted_point_size
 
-    def OnStarted(self, time):
-        super(big_dog_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(big_dog_strategy, self).OnStarted2(time)
         self.Volume = self._order_volume.Value
         self._adjusted_point_size = self._calc_adjusted_point_size()
         subscription = self.SubscribeCandles(self._candle_type.Value)

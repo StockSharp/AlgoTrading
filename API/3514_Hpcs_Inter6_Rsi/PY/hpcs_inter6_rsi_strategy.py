@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class hpcs_inter6_rsi_strategy(Strategy):
         self._is_long_position = False
         self._candles_since_trade = self._signal_cooldown_candles.Value
 
-    def OnStarted(self, time):
-        super(hpcs_inter6_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hpcs_inter6_rsi_strategy, self).OnStarted2(time)
 
         self._candles_since_trade = self._signal_cooldown_candles.Value
 

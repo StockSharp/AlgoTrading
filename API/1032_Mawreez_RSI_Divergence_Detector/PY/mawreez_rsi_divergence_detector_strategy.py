@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -52,8 +54,8 @@ class mawreez_rsi_divergence_detector_strategy(Strategy):
         self._index = 0
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(mawreez_rsi_divergence_detector_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mawreez_rsi_divergence_detector_strategy, self).OnStarted2(time)
         buf_size = self._max_div_length.Value + 1
         self._price_history = [0.0] * buf_size
         self._rsi_history = [0.0] * buf_size

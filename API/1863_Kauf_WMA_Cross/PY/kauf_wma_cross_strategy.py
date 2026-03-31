@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -80,8 +82,8 @@ class kauf_wma_cross_strategy(Strategy):
         self._is_first = True
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(kauf_wma_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(kauf_wma_cross_strategy, self).OnStarted2(time)
         kama = KaufmanAdaptiveMovingAverage()
         kama.Length = self.ama_period
         kama.FastSCPeriod = self.fast_period

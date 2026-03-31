@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class compass_line_strategy(Strategy):
         self._prev_lower = None
         self._prev_upper = None
 
-    def OnStarted(self, time):
-        super(compass_line_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(compass_line_strategy, self).OnStarted2(time)
 
         self._bb = BollingerBands()
         self._bb.Length = self.bb_period

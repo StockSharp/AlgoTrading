@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -43,8 +45,8 @@ class robot_adx_two_ma_strategy(Strategy):
     def AtrLength(self):
         return self._atr_length.Value
 
-    def OnStarted(self, time):
-        super(robot_adx_two_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(robot_adx_two_ma_strategy, self).OnStarted2(time)
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._entry_price = 0.0

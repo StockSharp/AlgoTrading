@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -119,8 +121,8 @@ class gg_rsi_cci_strategy(Strategy):
     def Mode(self, value):
         self._mode.Value = value
 
-    def OnStarted(self, time):
-        super(gg_rsi_cci_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gg_rsi_cci_strategy, self).OnStarted2(time)
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self.Length

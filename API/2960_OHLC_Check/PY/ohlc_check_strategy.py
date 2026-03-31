@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -33,8 +35,8 @@ class ohlc_check_strategy(Strategy):
         self._bull_count = 0
         self._bear_count = 0
 
-    def OnStarted(self, time):
-        super(ohlc_check_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ohlc_check_strategy, self).OnStarted2(time)
         self._bull_count = 0
         self._bear_count = 0
 

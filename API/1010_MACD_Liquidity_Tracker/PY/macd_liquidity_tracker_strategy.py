@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class macd_liquidity_tracker_strategy(Strategy):
         self._is_init = False
         self._bars_from_signal = 9999
 
-    def OnStarted(self, time):
-        super(macd_liquidity_tracker_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(macd_liquidity_tracker_strategy, self).OnStarted2(time)
         fast = ExponentialMovingAverage()
         fast.Length = self._fast_length.Value
         slow = ExponentialMovingAverage()

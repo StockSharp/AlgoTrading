@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -141,8 +143,8 @@ class forex_profit_strategy(Strategy):
     def SarMaxAcceleration(self, value):
         self._sar_max_acceleration.Value = value
 
-    def OnStarted(self, time):
-        super(forex_profit_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(forex_profit_strategy, self).OnStarted2(time)
 
         self._ema10_prev = None
         self._ema10_prev_prev = None

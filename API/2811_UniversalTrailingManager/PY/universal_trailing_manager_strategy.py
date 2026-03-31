@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class universal_trailing_manager_strategy(Strategy):
         self._take_price = None
         self._last_entry_day = -1
 
-    def OnStarted(self, time):
-        super(universal_trailing_manager_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(universal_trailing_manager_strategy, self).OnStarted2(time)
         self._entry_price = 0
         self._stop_price = None
         self._take_price = None

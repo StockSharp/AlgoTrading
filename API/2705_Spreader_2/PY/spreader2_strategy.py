@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -45,8 +47,8 @@ class spreader2_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type_param.Value = value
 
-    def OnStarted(self, time):
-        super(spreader2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(spreader2_strategy, self).OnStarted2(time)
 
         self.LogWarning("Spreader2 requires a second security. Running in single-security mode with no trading logic.")
 

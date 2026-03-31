@@ -4,6 +4,8 @@ import random
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -141,8 +143,8 @@ class neural_network_atr_strategy(Strategy):
         self._has_prev = False
         self._init_network()
 
-    def OnStarted(self, time):
-        super(neural_network_atr_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(neural_network_atr_strategy, self).OnStarted2(time)
         self._has_prev = False
         self._init_network()
 

@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
@@ -91,8 +93,8 @@ class dispersion_trading_strategy(Strategy):
         self._last_day = DateTime.MinValue
         self._open = False
 
-    def OnStarted(self, time):
-        super(dispersion_trading_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dispersion_trading_strategy, self).OnStarted2(time)
         if self.Security is None:
             raise Exception("IndexSec is not set.")
         if self.Constituents is None or len(self.Constituents) == 0:

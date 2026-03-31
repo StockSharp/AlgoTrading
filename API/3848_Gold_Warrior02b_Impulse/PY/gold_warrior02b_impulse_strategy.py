@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, ExponentialMovingAverage
@@ -24,8 +26,8 @@ class gold_warrior02b_impulse_strategy(Strategy):
         super(gold_warrior02b_impulse_strategy, self).OnReseted()
         self._prev_cci = 0.0
         self._has_prev = False
-    def OnStarted(self, time):
-        super(gold_warrior02b_impulse_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(gold_warrior02b_impulse_strategy, self).OnStarted2(time)
         self._has_prev = False
         cci = CommodityChannelIndex()
         cci.Length = self.cci_period

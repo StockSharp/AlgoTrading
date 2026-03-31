@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class color_jjrsx_trend_strategy(Strategy):
         super(color_jjrsx_trend_strategy, self).OnReseted()
         self._prev_rsi = None
 
-    def OnStarted(self, time):
-        super(color_jjrsx_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_jjrsx_trend_strategy, self).OnStarted2(time)
         self._prev_rsi = None
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -64,8 +66,8 @@ class digital_cci_woodies_strategy(Strategy):
         self._prev_slow = 0.0
         self._is_first = True
 
-    def OnStarted(self, time):
-        super(digital_cci_woodies_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(digital_cci_woodies_strategy, self).OnStarted2(time)
 
         fast_cci = CommodityChannelIndex()
         fast_cci.Length = self.fast_length

@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -41,8 +43,8 @@ class trail_sl_manager_strategy(Strategy):
         super(trail_sl_manager_strategy, self).OnReseted()
         self._reset_state()
 
-    def OnStarted(self, time):
-        super(trail_sl_manager_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trail_sl_manager_strategy, self).OnStarted2(time)
         sec = self.Security
         ps = 0.0
         if sec is not None and sec.PriceStep is not None:

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class external_level_strategy(Strategy):
         self._prev_resistance = 0.0
         self._prev_support = 0.0
 
-    def OnStarted(self, time):
-        super(external_level_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(external_level_strategy, self).OnStarted2(time)
         highest = Highest()
         highest.Length = self.lookback
         lowest = Lowest()

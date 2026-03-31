@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class pavan_cpr_strategy(Strategy):
         self._session_close = 0.0
         self._current_day = None
 
-    def OnStarted(self, time):
-        super(pavan_cpr_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pavan_cpr_strategy, self).OnStarted2(time)
         self._today_pivot = 0.0
         self._today_top = 0.0
         self._last_close = 0.0

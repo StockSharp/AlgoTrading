@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -82,8 +84,8 @@ class autotrade_pending_stops_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(autotrade_pending_stops_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(autotrade_pending_stops_strategy, self).OnStarted2(time)
 
         self._prev_open = 0.0
         self._prev_close = 0.0

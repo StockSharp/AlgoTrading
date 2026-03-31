@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import DateTime, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -112,8 +114,8 @@ class news_hour_trade_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(news_hour_trade_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(news_hour_trade_strategy, self).OnStarted2(time)
 
         ps = self.Security.PriceStep
         self._tick_size = float(ps) if ps is not None else 1.0

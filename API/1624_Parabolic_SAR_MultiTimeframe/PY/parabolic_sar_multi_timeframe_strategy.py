@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -37,8 +39,8 @@ class parabolic_sar_multi_timeframe_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(parabolic_sar_multi_timeframe_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(parabolic_sar_multi_timeframe_strategy, self).OnStarted2(time)
         sar = ParabolicSar()
         sar.Acceleration = self.sar_acceleration
         sar.AccelerationMax = self.sar_max_acceleration

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -65,8 +67,8 @@ class balance_drawdown_in_mt4_strategy(Strategy):
         self._max_balance = 0.0
         self._last_entry_date = None
 
-    def OnStarted(self, time):
-        super(balance_drawdown_in_mt4_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(balance_drawdown_in_mt4_strategy, self).OnStarted2(time)
         self._max_balance = float(self.StartBalance)
         self._last_entry_date = None
 

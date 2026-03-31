@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -43,8 +45,8 @@ class pedro_mod_strategy(Strategy):
     def OnReseted(self):
         super(pedro_mod_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(pedro_mod_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pedro_mod_strategy, self).OnStarted2(time)
 
         bb = BollingerBands()
         bb.Length = self.BollingerPeriod

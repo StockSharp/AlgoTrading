@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class reflex_trendflex_strategy(Strategy):
         self._prev_reflex = 0.0
         self._prev_trend = 0.0
 
-    def OnStarted(self, time):
-        super(reflex_trendflex_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(reflex_trendflex_strategy, self).OnStarted2(time)
         reflex = ExponentialMovingAverage()
         reflex.Length = self.reflex_len
         trend = ExponentialMovingAverage()

@@ -3,6 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("Ecng.Common")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from Ecng.Common import RandomGen
@@ -61,8 +63,8 @@ class supertrend_put_call_ratio_strategy(Strategy):
         self._pcr_average = 0.0
         self._pcr_std_dev = 0.0
 
-    def OnStarted(self, time):
-        super(supertrend_put_call_ratio_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(supertrend_put_call_ratio_strategy, self).OnStarted2(time)
 
         supertrend = SuperTrend()
         supertrend.Length = int(self._period.Value)

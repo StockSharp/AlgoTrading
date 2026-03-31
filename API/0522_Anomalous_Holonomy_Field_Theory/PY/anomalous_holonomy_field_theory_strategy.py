@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class anomalous_holonomy_field_theory_strategy(Strategy):
         self._bar_index = 0
         self._last_trade_bar = -200
 
-    def OnStarted(self, time):
-        super(anomalous_holonomy_field_theory_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(anomalous_holonomy_field_theory_strategy, self).OnStarted2(time)
         ema20 = ExponentialMovingAverage()
         ema20.Length = 20
         ema50 = ExponentialMovingAverage()

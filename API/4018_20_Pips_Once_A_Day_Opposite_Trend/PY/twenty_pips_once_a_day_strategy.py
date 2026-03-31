@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -189,8 +191,8 @@ class twenty_pips_once_a_day_strategy(Strategy):
             return True
         return hour in self._allowed_hours
 
-    def OnStarted(self, time):
-        super(twenty_pips_once_a_day_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(twenty_pips_once_a_day_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calculate_pip_size()
         self._update_trading_hours()

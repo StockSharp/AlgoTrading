@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -30,8 +32,8 @@ class bw_wise_man2_strategy(Strategy):
         self._ao2 = 0.0
         self._ao_count = 0
 
-    def OnStarted(self, time):
-        super(bw_wise_man2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bw_wise_man2_strategy, self).OnStarted2(time)
         ao = AwesomeOscillator()
         self.SubscribeCandles(self.candle_type) \
             .Bind(ao, self.process_candle) \

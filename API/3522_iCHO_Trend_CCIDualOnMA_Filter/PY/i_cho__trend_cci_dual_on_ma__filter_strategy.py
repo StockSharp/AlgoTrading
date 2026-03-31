@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -61,8 +63,8 @@ class i_cho__trend_cci_dual_on_ma__filter_strategy(Strategy):
         self._candles_since_trade = self.SignalCooldownCandles
         self._has_two = False
 
-    def OnStarted(self, time):
-        super(i_cho__trend_cci_dual_on_ma__filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(i_cho__trend_cci_dual_on_ma__filter_strategy, self).OnStarted2(time)
         self._prev_cci = 0.0
         self._prev_prev_cci = 0.0
         self._candles_since_trade = self.SignalCooldownCandles

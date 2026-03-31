@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
@@ -38,8 +40,8 @@ class hans123_trader_v2_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(hans123_trader_v2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(hans123_trader_v2_strategy, self).OnStarted2(time)
 
         self._pip_size = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         self._sl_dist = self._stop_loss_pips.Value * self._pip_size

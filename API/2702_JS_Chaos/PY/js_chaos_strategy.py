@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -165,8 +167,8 @@ class js_chaos_strategy(Strategy):
                 return round(price / step) * step
         return price
 
-    def OnStarted(self, time):
-        super(js_chaos_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(js_chaos_strategy, self).OnStarted2(time)
 
         self._update_price_settings()
 

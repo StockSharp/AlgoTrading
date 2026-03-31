@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates
@@ -31,8 +33,8 @@ class ehlers_swami_charts_rsi_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(ehlers_swami_charts_rsi_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ehlers_swami_charts_rsi_strategy, self).OnStarted2(time)
         rsis = []
         for i in range(24):
             ind = RelativeStrengthIndex()

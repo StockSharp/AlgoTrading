@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -102,8 +104,8 @@ class color_xmuv_time_strategy(Strategy):
     def TakeProfitPoints(self):
         return self._take_profit_points.Value
 
-    def OnStarted(self, time):
-        super(color_xmuv_time_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_xmuv_time_strategy, self).OnStarted2(time)
 
         self._xma = SimpleMovingAverage()
         self._xma.Length = self.XLength

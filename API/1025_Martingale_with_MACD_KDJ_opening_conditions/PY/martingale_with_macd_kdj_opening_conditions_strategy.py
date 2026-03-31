@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class martingale_with_macd_kdj_opening_conditions_strategy(Strategy):
         self._entry_price = 0.0
         self._bars_from_trade = self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(martingale_with_macd_kdj_opening_conditions_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(martingale_with_macd_kdj_opening_conditions_strategy, self).OnStarted2(time)
         self._prev_macd = 0.0
         self._has_prev = False
         self._entry_price = 0.0

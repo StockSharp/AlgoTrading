@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -80,8 +82,8 @@ class zs1_forex_instruments_strategy(Strategy):
         self._last_order_direction = None
         self._is_closing_all = False
 
-    def OnStarted(self, time):
-        super(zs1_forex_instruments_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zs1_forex_instruments_strategy, self).OnStarted2(time)
 
         self._pip_value = self._calculate_pip_value()
 

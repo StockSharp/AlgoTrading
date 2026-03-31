@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -46,8 +48,8 @@ class linear_regression_slope_v1_strategy(Strategy):
         self._slope_history = []
         self._filled = 0
 
-    def OnStarted(self, time):
-        super(linear_regression_slope_v1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(linear_regression_slope_v1_strategy, self).OnStarted2(time)
         max_len = int(self.trigger_shift) + 3
         self._slope_history = [0.0] * max_len
         self._filled = 0

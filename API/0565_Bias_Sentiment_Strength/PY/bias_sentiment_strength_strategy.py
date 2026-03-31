@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Array
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class bias_sentiment_strength_strategy(Strategy):
         super(bias_sentiment_strength_strategy, self).OnReseted()
         self._prev_bass = 0.0
 
-    def OnStarted(self, time):
-        super(bias_sentiment_strength_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bias_sentiment_strength_strategy, self).OnStarted2(time)
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self._macd_fast.Value
         macd.Macd.LongMa.Length = self._macd_slow.Value

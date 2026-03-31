@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -37,8 +39,8 @@ class zonal_trading_oscillator_strategy(Strategy):
             s += values[i]
         return s / length
 
-    def OnStarted(self, time):
-        super(zonal_trading_oscillator_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zonal_trading_oscillator_strategy, self).OnStarted2(time)
 
         self._medians = []
         self._ao_values = []

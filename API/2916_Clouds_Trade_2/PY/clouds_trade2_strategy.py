@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
@@ -67,8 +69,8 @@ class clouds_trade2_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(clouds_trade2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(clouds_trade2_strategy, self).OnStarted2(time)
 
         if self._use_stochastic.Value:
             self._stochastic = StochasticOscillator()

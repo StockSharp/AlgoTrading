@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -38,8 +40,8 @@ class cai_channel_system_digit_strategy(Strategy):
         self._prev_up = False
         self._prev_down = False
 
-    def OnStarted(self, time):
-        super(cai_channel_system_digit_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cai_channel_system_digit_strategy, self).OnStarted2(time)
         self._prev_up = False
         self._prev_down = False
         bb = BollingerBands()

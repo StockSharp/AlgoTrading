@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -46,8 +48,8 @@ class intraday_beta_strategy(Strategy):
         self._short_stop = 0.0
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(intraday_beta_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(intraday_beta_strategy, self).OnStarted2(time)
         ma10 = SimpleMovingAverage()
         ma10.Length = 10
         rsi = RelativeStrengthIndex()

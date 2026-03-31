@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from collections import deque
@@ -84,8 +86,8 @@ class xma_ichimoku_channel_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(xma_ichimoku_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xma_ichimoku_channel_strategy, self).OnStarted2(time)
 
         self._sma = SimpleMovingAverage()
         self._sma.Length = self.MaLength

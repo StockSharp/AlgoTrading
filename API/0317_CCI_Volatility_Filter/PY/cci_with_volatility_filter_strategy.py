@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -48,8 +50,8 @@ class cci_with_volatility_filter_strategy(Strategy):
         super(cci_with_volatility_filter_strategy, self).OnReseted()
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(cci_with_volatility_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(cci_with_volatility_filter_strategy, self).OnStarted2(time)
 
         self._cci = CommodityChannelIndex()
         self._cci.Length = int(self._cci_period.Value)

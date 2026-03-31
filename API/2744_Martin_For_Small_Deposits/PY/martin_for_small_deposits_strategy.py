@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 
@@ -71,8 +73,8 @@ class martin_for_small_deposits_strategy(Strategy):
     def MinProfit(self):
         return self._min_profit.Value
 
-    def OnStarted(self, time):
-        super(martin_for_small_deposits_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(martin_for_small_deposits_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()

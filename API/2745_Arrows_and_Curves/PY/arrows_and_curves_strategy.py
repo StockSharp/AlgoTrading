@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import CandleStates
@@ -98,8 +100,8 @@ class arrows_and_curves_strategy(Strategy):
         self._stop_price = None
         self._take_price = None
 
-    def OnStarted(self, time):
-        super(arrows_and_curves_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(arrows_and_curves_strategy, self).OnStarted2(time)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

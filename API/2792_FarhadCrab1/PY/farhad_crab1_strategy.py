@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from collections import deque
@@ -62,8 +64,8 @@ class farhad_crab1_strategy(Strategy):
         self._previous_candle = None
         self._entry_price = 0.0
 
-    def OnStarted(self, time):
-        super(farhad_crab1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(farhad_crab1_strategy, self).OnStarted2(time)
 
         ema = ExponentialMovingAverage()
         ema.Length = self._ma_length.Value

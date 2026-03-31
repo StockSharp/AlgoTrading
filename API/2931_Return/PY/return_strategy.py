@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -32,8 +34,8 @@ class return_strategy(Strategy):
     def Width(self):
         return self._width.Value
 
-    def OnStarted(self, time):
-        super(return_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(return_strategy, self).OnStarted2(time)
 
         ma = SimpleMovingAverage()
         ma.Length = self.Period

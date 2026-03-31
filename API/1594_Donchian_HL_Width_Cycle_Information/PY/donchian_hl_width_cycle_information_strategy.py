@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -30,8 +32,8 @@ class donchian_hl_width_cycle_information_strategy(Strategy):
         super(donchian_hl_width_cycle_information_strategy, self).OnReseted()
         self._cycle_trend = 0
 
-    def OnStarted(self, time):
-        super(donchian_hl_width_cycle_information_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(donchian_hl_width_cycle_information_strategy, self).OnStarted2(time)
         highest = Highest()
         highest.Length = self.length
         lowest = Lowest()

@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class mcginley_dynamic_improved_strategy(Strategy):
         self._has_previous_diff = False
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(mcginley_dynamic_improved_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mcginley_dynamic_improved_strategy, self).OnStarted2(time)
         self._md_prev = None
         self._previous_diff = 0.0
         self._has_previous_diff = False

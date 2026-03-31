@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -36,8 +38,8 @@ class js_ma_day_strategy(Strategy):
         self._prev_ma = None
         self._prev_open = None
 
-    def OnStarted(self, time):
-        super(js_ma_day_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(js_ma_day_strategy, self).OnStarted2(time)
 
         self.StartProtection(
             Unit(2000.0, UnitTypes.Absolute),

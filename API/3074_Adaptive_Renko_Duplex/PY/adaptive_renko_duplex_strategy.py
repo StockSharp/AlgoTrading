@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -231,8 +233,8 @@ class adaptive_renko_duplex_strategy(Strategy):
         self._long_entry_price = None
         self._short_entry_price = None
 
-    def OnStarted(self, time):
-        super(adaptive_renko_duplex_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_renko_duplex_strategy, self).OnStarted2(time)
         self._long_processor.reset()
         self._short_processor.reset()
         self._long_entry_price = None

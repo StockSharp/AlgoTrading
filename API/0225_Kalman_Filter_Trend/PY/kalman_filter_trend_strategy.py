@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -26,8 +28,8 @@ class kalman_filter_trend_strategy(Strategy):
     def OnReseted(self):
         super(kalman_filter_trend_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(kalman_filter_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(kalman_filter_trend_strategy, self).OnStarted2(time)
         kf = KalmanFilter()
         kf.ProcessNoise = self._process_noise.Value
         kf.MeasurementNoise = self._measurement_noise.Value

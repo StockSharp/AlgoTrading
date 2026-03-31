@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -109,9 +111,9 @@ class adx_breakout_strategy(Strategy):
         self._prev_adx_value = 0
         self._prev_adx_avg_value = 0
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         """Called when the strategy starts."""
-        super(adx_breakout_strategy, self).OnStarted(time)
+        super(adx_breakout_strategy, self).OnStarted2(time)
 
 
         # Create indicators

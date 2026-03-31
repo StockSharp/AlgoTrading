@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class percentage_crossover_channel_strategy(Strategy):
         self._take_price = None
         self._entry_price = 0
 
-    def OnStarted(self, time):
-        super(percentage_crossover_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(percentage_crossover_channel_strategy, self).OnStarted2(time)
         self._last_middle = 0
         self._has_state = False
         self._prev_upper = None

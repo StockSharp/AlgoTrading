@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -40,8 +42,8 @@ class ttm_trend_reopen_strategy(Strategy):
         self._prev_ha_close = None
         self._ha_history = []
 
-    def OnStarted(self, time):
-        super(ttm_trend_reopen_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ttm_trend_reopen_strategy, self).OnStarted2(time)
         self._color_history = []
         self._long_entries = 0
         self._short_entries = 0

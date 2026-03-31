@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -59,8 +61,8 @@ class zig_zag_evge_trofi1_strategy(Strategy):
     def VolumePerTrade(self):
         return self._volume_param.Value
 
-    def OnStarted(self, time):
-        super(zig_zag_evge_trofi1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zig_zag_evge_trofi1_strategy, self).OnStarted2(time)
 
         self._price_step = self._get_effective_price_step()
 

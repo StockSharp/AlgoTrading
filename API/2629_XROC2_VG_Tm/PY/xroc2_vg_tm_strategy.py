@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -122,8 +124,8 @@ class xroc2_vg_tm_strategy(Strategy):
     def TakeProfit(self):
         return self._take_profit.Value
 
-    def OnStarted(self, time):
-        super(xroc2_vg_tm_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(xroc2_vg_tm_strategy, self).OnStarted2(time)
 
         self.Volume = self.OrderVolume
         self._smooth_fast = ExponentialMovingAverage()

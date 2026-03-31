@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class consecutive_bars_above_ma_strategy(Strategy):
         self._prev_low = 0.0
         self._is_ready = False
 
-    def OnStarted(self, time):
-        super(consecutive_bars_above_ma_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(consecutive_bars_above_ma_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self.ma_length
         ema = ExponentialMovingAverage()

@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import WeightedMovingAverage
@@ -27,8 +29,8 @@ class liquidex_v1_strategy(Strategy):
         self._prev_close = 0.0
         self._prev_wma = 0.0
         self._has_prev = False
-    def OnStarted(self, time):
-        super(liquidex_v1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(liquidex_v1_strategy, self).OnStarted2(time)
         wma = WeightedMovingAverage()
         wma.Length = self.ma_period
         self.SubscribeCandles(self.candle_type).Bind(wma, self.process_candle).Start()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class mtc_combo_v2_strategy(Strategy):
         self._sl = float(self._sl1.Value)
         self._tp = float(self._tp1.Value)
 
-    def OnStarted(self, time):
-        super(mtc_combo_v2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mtc_combo_v2_strategy, self).OnStarted2(time)
         ma = SimpleMovingAverage()
         ma.Length = self._ma_period.Value
         subscription = self.SubscribeCandles(self.candle_type)

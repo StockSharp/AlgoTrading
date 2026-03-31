@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class exp_rj_sliding_range_rj_digit_system_tm_plus_strategy(Strategy):
         self._prev_upper = None
         self._prev_lower = None
 
-    def OnStarted(self, time):
-        super(exp_rj_sliding_range_rj_digit_system_tm_plus_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp_rj_sliding_range_rj_digit_system_tm_plus_strategy, self).OnStarted2(time)
         self._prev_upper = None
         self._prev_lower = None
 

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -78,8 +80,8 @@ class bollinger_bands_n_positions_v2_strategy(Strategy):
         self._reset_long_state()
         self._reset_short_state()
 
-    def OnStarted(self, time):
-        super(bollinger_bands_n_positions_v2_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bollinger_bands_n_positions_v2_strategy, self).OnStarted2(time)
         self._pip_value = self._calculate_pip_value()
         self._update_risk_distances()
         self._bollinger = BollingerBands()

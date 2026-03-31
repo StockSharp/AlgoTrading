@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -40,8 +42,8 @@ class z_score_buy_sell_strategy(Strategy):
         self._buy_cooldown_counter = cd
         self._sell_cooldown_counter = cd
 
-    def OnStarted(self, time):
-        super(z_score_buy_sell_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(z_score_buy_sell_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self._rolling_window.Value
         std_dev = StandardDeviation()

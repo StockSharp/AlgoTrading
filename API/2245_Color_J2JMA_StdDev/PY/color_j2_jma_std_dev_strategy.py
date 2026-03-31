@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -50,8 +52,8 @@ class color_j2_jma_std_dev_strategy(Strategy):
         self._prev_jma = None
         self._std_dev = None
 
-    def OnStarted(self, time):
-        super(color_j2_jma_std_dev_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_j2_jma_std_dev_strategy, self).OnStarted2(time)
         self._prev_jma = None
         jma = JurikMovingAverage()
         jma.Length = self.jma_length

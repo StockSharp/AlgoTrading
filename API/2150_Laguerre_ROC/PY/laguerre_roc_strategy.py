@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -57,8 +59,8 @@ class laguerre_roc_strategy(Strategy):
         self._l0 = self._l1 = self._l2 = self._l3 = 0.0
         self._roc = None
 
-    def OnStarted(self, time):
-        super(laguerre_roc_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(laguerre_roc_strategy, self).OnStarted2(time)
         self._roc = RateOfChange()
         self._roc.Length = self.period
         subscription = self.SubscribeCandles(self.candle_type)

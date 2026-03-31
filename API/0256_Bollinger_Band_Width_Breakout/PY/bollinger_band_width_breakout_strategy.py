@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -112,8 +114,8 @@ class bollinger_band_width_breakout_strategy(Strategy):
     def OnReseted(self):
         super(bollinger_band_width_breakout_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(bollinger_band_width_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(bollinger_band_width_breakout_strategy, self).OnStarted2(time)
 
         # Create indicators
         self._bollinger = BollingerBands()

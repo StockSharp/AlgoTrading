@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class moving_average_trade_system_strategy(Strategy):
         self._reset_long_state()
         self._reset_short_state()
 
-    def OnStarted(self, time):
-        super(moving_average_trade_system_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(moving_average_trade_system_strategy, self).OnStarted2(time)
         self._sma_fast = SimpleMovingAverage()
         self._sma_fast.Length = self._fast_period.Value
         self._sma_medium = SimpleMovingAverage()

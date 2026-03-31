@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -56,8 +58,8 @@ class zig_and_zag_trader_strategy(Strategy):
     @property
     def TakeProfitPips(self): return self._take_profit_pips.Value
 
-    def OnStarted(self, time):
-        super(zig_and_zag_trader_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zig_and_zag_trader_strategy, self).OnStarted2(time)
         ps = self.Security.PriceStep if self.Security is not None else None
         self._pip_size = float(ps) if ps is not None and float(ps) > 0 else 0.0001
         vs = self.Security.VolumeStep if self.Security is not None else None

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan
@@ -43,8 +45,8 @@ class e_regression_channel_strategy(Strategy):
         self._closes.clear()
         self._previous_mid = None
 
-    def OnStarted(self, time):
-        super(e_regression_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(e_regression_channel_strategy, self).OnStarted2(time)
 
         ema = ExponentialMovingAverage()
         length = self._regression_length.Value

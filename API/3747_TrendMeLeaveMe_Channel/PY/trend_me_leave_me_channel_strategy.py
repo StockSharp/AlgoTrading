@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -115,8 +117,8 @@ class trend_me_leave_me_channel_strategy(Strategy):
         self._active_take = None
         self._active_direction = 0
 
-    def OnStarted(self, time):
-        super(trend_me_leave_me_channel_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trend_me_leave_me_channel_strategy, self).OnStarted2(time)
 
         regression = LinearRegression()
         regression.Length = self.TrendLength

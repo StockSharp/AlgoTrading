@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -59,8 +61,8 @@ class donchian_width_breakout_strategy(Strategy):
     def OnReseted(self):
         super(donchian_width_breakout_strategy, self).OnReseted()
 
-    def OnStarted(self, time):
-        super(donchian_width_breakout_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(donchian_width_breakout_strategy, self).OnStarted2(time)
 
         highest = Highest()
         highest.Length = self.DonchianPeriod

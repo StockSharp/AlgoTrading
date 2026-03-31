@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class pipsover_strategy(Strategy):
         self._tp_price = 0.0
         self._has_targets = False
 
-    def OnStarted(self, time):
-        super(pipsover_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(pipsover_strategy, self).OnStarted2(time)
         self._has_prev = False
         self._prev_open = 0.0
         self._prev_high = 0.0

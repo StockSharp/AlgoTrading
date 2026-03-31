@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -35,8 +37,8 @@ class long_explosive_v1_strategy(Strategy):
         self._previous_close = 0.0
         self._bars_since_signal = 0
 
-    def OnStarted(self, time):
-        super(long_explosive_v1_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(long_explosive_v1_strategy, self).OnStarted2(time)
         self._previous_close = 0.0
         self._bars_since_signal = 0
         subscription = self.SubscribeCandles(self.candle_type)

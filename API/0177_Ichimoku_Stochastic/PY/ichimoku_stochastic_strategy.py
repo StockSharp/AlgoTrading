@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
@@ -52,8 +54,8 @@ class ichimoku_stochastic_strategy(Strategy):
         super(ichimoku_stochastic_strategy, self).OnReseted()
         self._cooldown = 0
 
-    def OnStarted(self, time):
-        super(ichimoku_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ichimoku_stochastic_strategy, self).OnStarted2(time)
         self._cooldown = 0
 
         ichimoku = Ichimoku()

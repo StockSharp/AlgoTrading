@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -47,8 +49,8 @@ class lanz20_backtest_strategy(Strategy):
         self._tp_price = 0.0
         self._last_trade_day = None
 
-    def OnStarted(self, time):
-        super(lanz20_backtest_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(lanz20_backtest_strategy, self).OnStarted2(time)
         ema1 = ExponentialMovingAverage()
         ema1.Length = 10
         ema2 = ExponentialMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -43,8 +45,8 @@ class inside_candle_strategy(Strategy):
         self._stop_price = 0.0
         self._take_profit_price = 0.0
 
-    def OnStarted(self, time):
-        super(inside_candle_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(inside_candle_strategy, self).OnStarted2(time)
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.OnProcess).Start()
         area = self.CreateChartArea()

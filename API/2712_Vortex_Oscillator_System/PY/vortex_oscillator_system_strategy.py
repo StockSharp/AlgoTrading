@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -78,8 +80,8 @@ class vortex_oscillator_system_strategy(Strategy):
     def SellTakeProfitLevel(self):
         return float(self._sell_take_profit_level.Value)
 
-    def OnStarted(self, time):
-        super(vortex_oscillator_system_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(vortex_oscillator_system_strategy, self).OnStarted2(time)
 
         self._vortex = VortexIndicator()
         self._vortex.Length = self.Length

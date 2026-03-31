@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -41,8 +43,8 @@ class mh_hull_moving_average_based_trading_strategy(Strategy):
         self._has_prev_diff = False
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(mh_hull_moving_average_based_trading_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(mh_hull_moving_average_based_trading_strategy, self).OnStarted2(time)
         self._prev_diff_percent = 0.0
         self._has_prev_diff = False
         self._bars_from_signal = self._signal_cooldown_bars.Value

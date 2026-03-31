@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -34,8 +36,8 @@ class ma_sar_adx_strategy(Strategy):
         super(ma_sar_adx_strategy, self).OnReseted()
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(ma_sar_adx_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(ma_sar_adx_strategy, self).OnStarted2(time)
         sma = SimpleMovingAverage()
         sma.Length = self._ma_period.Value
         sar = ParabolicSar()

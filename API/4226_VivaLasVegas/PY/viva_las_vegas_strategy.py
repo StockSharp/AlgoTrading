@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan
@@ -39,8 +41,8 @@ class viva_las_vegas_strategy(Strategy):
     def SeedValue(self):
         return self._seed.Value
 
-    def OnStarted(self, time):
-        super(viva_las_vegas_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(viva_las_vegas_strategy, self).OnStarted2(time)
         import time as _time
         self._active_seed = int(_time.time() * 1000) if self.SeedValue == 0 else self.SeedValue
         self._prev_position = 0.0

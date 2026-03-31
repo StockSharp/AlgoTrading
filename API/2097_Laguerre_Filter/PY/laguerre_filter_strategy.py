@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -36,8 +38,8 @@ class laguerre_filter_strategy(Strategy):
         self._prev_fir = None
         self._prev_laguerre = None
 
-    def OnStarted(self, time):
-        super(laguerre_filter_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(laguerre_filter_strategy, self).OnStarted2(time)
         laguerre = ExponentialMovingAverage()
         laguerre.Length = 10
         fir = WeightedMovingAverage()

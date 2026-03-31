@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -44,8 +46,8 @@ class trend_following_stocks_strategy(Strategy):
         self._entry_price = 0.0
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(trend_following_stocks_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trend_following_stocks_strategy, self).OnStarted2(time)
         self._atr = AverageTrueRange()
         self._atr.Length = int(self._atr_len.Value)
         self._highest = Highest()

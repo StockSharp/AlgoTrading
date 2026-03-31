@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -90,8 +92,8 @@ class autotrader_momentum_strategy(Strategy):
         self._trailing_step_offset = Decimal(0)
         self._cooldown_left = 0
 
-    def OnStarted(self, time):
-        super(autotrader_momentum_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(autotrader_momentum_strategy, self).OnStarted2(time)
         self._close_history = []
         self._reset_position_state()
         self.Volume = self.TradeVolume

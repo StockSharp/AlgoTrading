@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class moc_delta_moo_entry_strategy(Strategy):
         self._window_bar_count = 0
         self._bars_from_signal = 0
 
-    def OnStarted(self, time):
-        super(moc_delta_moo_entry_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(moc_delta_moo_entry_strategy, self).OnStarted2(time)
         self._window_buy_volume = 0.0
         self._window_sell_volume = 0.0
         self._window_bar_count = 0

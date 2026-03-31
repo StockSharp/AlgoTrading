@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -39,8 +41,8 @@ class validate_me_strategy(Strategy):
         self._prev_rsi = 0.0
         self._has_prev = False
 
-    def OnStarted(self, time):
-        super(validate_me_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(validate_me_strategy, self).OnStarted2(time)
         self._has_prev = False
 
         rsi = RelativeStrengthIndex()

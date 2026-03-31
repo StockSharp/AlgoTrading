@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -139,8 +141,8 @@ class blau_sm_stochastic_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(blau_sm_stochastic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(blau_sm_stochastic_strategy, self).OnStarted2(time)
 
         self._smooth1 = self._create_average(self.FirstSmoothingLength)
         self._smooth2 = self._create_average(self.SecondSmoothingLength)

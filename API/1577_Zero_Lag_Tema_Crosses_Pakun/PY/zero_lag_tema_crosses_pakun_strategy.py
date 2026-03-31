@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -56,8 +58,8 @@ class zero_lag_tema_crosses_pakun_strategy(Strategy):
         self._take_profit_price = 0.0
         self._entry_placed = False
 
-    def OnStarted(self, time):
-        super(zero_lag_tema_crosses_pakun_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(zero_lag_tema_crosses_pakun_strategy, self).OnStarted2(time)
         fast_tema = TripleExponentialMovingAverage()
         fast_tema.Length = self.fast_period
         slow_tema = TripleExponentialMovingAverage()

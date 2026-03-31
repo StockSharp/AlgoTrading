@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -121,8 +123,8 @@ class get_trend_strategy(Strategy):
     def TradeVolume(self, value):
         self._trade_volume.Value = value
 
-    def OnStarted(self, time):
-        super(get_trend_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(get_trend_strategy, self).OnStarted2(time)
 
         self._ma_h1_value = None
         self._last_h1_close = None

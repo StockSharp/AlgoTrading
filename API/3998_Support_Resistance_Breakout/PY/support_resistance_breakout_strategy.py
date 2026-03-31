@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
@@ -51,7 +53,7 @@ class support_resistance_breakout_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
+    def OnStarted2(self, time):
         ema = ExponentialMovingAverage()
         ema.Length = self.EmaPeriod
 
@@ -65,7 +67,7 @@ class support_resistance_breakout_strategy(Strategy):
         if tp_unit is not None or sl_unit is not None:
             self.StartProtection(tp_unit, sl_unit)
 
-        super(support_resistance_breakout_strategy, self).OnStarted(time)
+        super(support_resistance_breakout_strategy, self).OnStarted2(time)
 
     def ProcessCandle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:

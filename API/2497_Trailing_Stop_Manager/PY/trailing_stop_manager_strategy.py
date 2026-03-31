@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
@@ -42,8 +44,8 @@ class trailing_stop_manager_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(trailing_stop_manager_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(trailing_stop_manager_strategy, self).OnStarted2(time)
 
         self._entry_price = Decimal(0)
         self._trailing_stop_price = Decimal(0)

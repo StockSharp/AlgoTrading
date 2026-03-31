@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class modular_range_trading_strategy(Strategy):
         self._has_prev = False
         self._bars_from_signal = self._cooldown_bars.Value
 
-    def OnStarted(self, time):
-        super(modular_range_trading_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(modular_range_trading_strategy, self).OnStarted2(time)
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value
         sma = SimpleMovingAverage()

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -74,8 +76,8 @@ class universum_30_strategy(Strategy):
     def LossesLimit(self, value):
         self._losses_limit.Value = value
 
-    def OnStarted(self, time):
-        super(universum_30_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(universum_30_strategy, self).OnStarted2(time)
 
         self._current_volume = float(self.InitialVolume)
         self._losses = 0

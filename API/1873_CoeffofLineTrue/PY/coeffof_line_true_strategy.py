@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -63,8 +65,8 @@ class coeffof_line_true_strategy(Strategy):
         self._prev_value = None
         self._cooldown_remaining = 0
 
-    def OnStarted(self, time):
-        super(coeffof_line_true_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(coeffof_line_true_strategy, self).OnStarted2(time)
         slope_proxy = ExponentialMovingAverage()
         slope_proxy.Length = self.slope_period
         subscription = self.SubscribeCandles(self.candle_type)

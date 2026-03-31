@@ -1,6 +1,8 @@
 import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands
@@ -20,8 +22,8 @@ class firebird_ma_envelope_exhaustion_strategy(Strategy):
     def candle_type(self): return self._candle_type.Value
     def OnReseted(self):
         super(firebird_ma_envelope_exhaustion_strategy, self).OnReseted()
-    def OnStarted(self, time):
-        super(firebird_ma_envelope_exhaustion_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(firebird_ma_envelope_exhaustion_strategy, self).OnStarted2(time)
         bb = BollingerBands()
         bb.Length = self.bb_period
         bb.Width = self.bb_width

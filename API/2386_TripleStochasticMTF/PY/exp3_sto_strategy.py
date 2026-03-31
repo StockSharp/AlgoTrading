@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -93,8 +95,8 @@ class exp3_sto_strategy(Strategy):
     @SellPosClose3.setter
     def SellPosClose3(self, v): self._sell_pos_close3.Value = v
 
-    def OnStarted(self, time):
-        super(exp3_sto_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(exp3_sto_strategy, self).OnStarted2(time)
         self._stoch1 = StochasticOscillator()
         self._stoch1.K.Length = self.KPeriod
         self._stoch1.D.Length = self.DPeriod

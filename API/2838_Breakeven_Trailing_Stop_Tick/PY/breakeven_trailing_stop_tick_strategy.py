@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
@@ -29,8 +31,8 @@ class breakeven_trailing_stop_tick_strategy(Strategy):
     def CandleType(self):
         return self._candle_type.Value
 
-    def OnStarted(self, time):
-        super(breakeven_trailing_stop_tick_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(breakeven_trailing_stop_tick_strategy, self).OnStarted2(time)
 
         self._point_value = self._calculate_adjusted_point()
         self._candle_count = 0

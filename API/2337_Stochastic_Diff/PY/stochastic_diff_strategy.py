@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -69,8 +71,8 @@ class stochastic_diff_strategy(Strategy):
         self._prev_diff = None
         self._prev_prev_diff = None
 
-    def OnStarted(self, time):
-        super(stochastic_diff_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(stochastic_diff_strategy, self).OnStarted2(time)
         self._highs = [0.0] * self.BUFFER_SIZE
         self._lows = [0.0] * self.BUFFER_SIZE
         self._raw_k = [0.0] * self.BUFFER_SIZE

@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -53,8 +55,8 @@ class kaufman_adaptive_moving_average_strategy(Strategy):
         self._was_rising = False
         self._was_falling = False
 
-    def OnStarted(self, time):
-        super(kaufman_adaptive_moving_average_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(kaufman_adaptive_moving_average_strategy, self).OnStarted2(time)
         kama = KaufmanAdaptiveMovingAverage()
         kama.Length = self._length.Value
         kama.FastSCPeriod = self._fast.Value

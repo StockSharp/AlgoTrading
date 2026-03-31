@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -51,8 +53,8 @@ class color_xtrix_histogram_strategy(Strategy):
         self._prev1 = None
         self._prev2 = None
 
-    def OnStarted(self, time):
-        super(color_xtrix_histogram_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(color_xtrix_histogram_strategy, self).OnStarted2(time)
         self._prev1 = None
         self._prev2 = None
         self._triple_ema = TripleExponentialMovingAverage()

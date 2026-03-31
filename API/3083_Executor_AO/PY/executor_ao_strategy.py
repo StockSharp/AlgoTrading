@@ -3,6 +3,8 @@ import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -86,8 +88,8 @@ class executor_ao_strategy(Strategy):
         self._reset_long_state()
         self._reset_short_state()
 
-    def OnStarted(self, time):
-        super(executor_ao_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(executor_ao_strategy, self).OnStarted2(time)
 
         self._pip_size = self._calculate_pip_size()
 

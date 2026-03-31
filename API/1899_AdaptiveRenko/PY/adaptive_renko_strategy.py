@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
@@ -48,8 +50,8 @@ class adaptive_renko_strategy(Strategy):
         self._last_brick_price = 0.0
         self._has_brick = False
 
-    def OnStarted(self, time):
-        super(adaptive_renko_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(adaptive_renko_strategy, self).OnStarted2(time)
         atr = AverageTrueRange()
         atr.Length = self.volatility_period
         subscription = self.SubscribeCandles(self.candle_type)

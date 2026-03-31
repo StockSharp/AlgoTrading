@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -36,8 +38,8 @@ class q2ma_cross_strategy(Strategy):
         self._prev_up = None
         self._prev_dn = None
 
-    def OnStarted(self, time):
-        super(q2ma_cross_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(q2ma_cross_strategy, self).OnStarted2(time)
         self._prev_up = None
         self._prev_dn = None
         self._close_ma = ExponentialMovingAverage()

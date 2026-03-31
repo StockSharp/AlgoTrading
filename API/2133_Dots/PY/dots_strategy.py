@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan
@@ -51,8 +53,8 @@ class dots_strategy(Strategy):
         self._prev_color = 0.0
         self._prev_out_color = None
 
-    def OnStarted(self, time):
-        super(dots_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(dots_strategy, self).OnStarted2(time)
         self._prices = []
         self._prev_ma = None
         self._prev_color = 0.0

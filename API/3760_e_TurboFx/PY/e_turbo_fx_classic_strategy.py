@@ -2,6 +2,8 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -61,8 +63,8 @@ class e_turbo_fx_classic_strategy(Strategy):
         super(e_turbo_fx_classic_strategy, self).OnReseted()
         self._reset_state()
 
-    def OnStarted(self, time):
-        super(e_turbo_fx_classic_strategy, self).OnStarted(time)
+    def OnStarted2(self, time):
+        super(e_turbo_fx_classic_strategy, self).OnStarted2(time)
 
         self._reset_state()
         self.Volume = float(self.TradeVolume)
