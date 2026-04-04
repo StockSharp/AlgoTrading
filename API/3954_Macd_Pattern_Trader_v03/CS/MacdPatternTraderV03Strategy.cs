@@ -504,7 +504,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override void OnReseted()
+	protected override void OnReseted()
 	{
 		base.OnReseted();
 
