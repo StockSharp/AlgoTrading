@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
@@ -55,7 +56,7 @@ class stochastic_three_periods_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        inp = DecimalIndicatorValue(self._slow_rsi, candle.ClosePrice)
+        inp = DecimalIndicatorValue(self._slow_rsi, candle.ClosePrice, candle.OpenTime)
         inp.IsFinal = True
         slow_result = self._slow_rsi.Process(inp)
         if not self._slow_rsi.IsFormed or slow_result.IsEmpty:

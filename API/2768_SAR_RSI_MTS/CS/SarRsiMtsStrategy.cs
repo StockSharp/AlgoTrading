@@ -35,6 +35,7 @@ public class SarRsiMtsStrategy : Strategy
 	private decimal? _shortTrailingStop;
 	private decimal _pipSize;
 	private decimal _entryPrice;
+	private DateTimeOffset _lastTradeTime;
 
 	/// <summary>
 	/// Stop loss distance expressed in pips.
@@ -176,6 +177,18 @@ public class SarRsiMtsStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousSar = null;
+		_previousRsi = null;
+		_longTrailingStop = null;
+		_shortTrailingStop = null;
+		_pipSize = 0;
+		_entryPrice = 0;
+		_lastTradeTime = default;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -235,6 +248,14 @@ public class SarRsiMtsStrategy : Strategy
 			return;
 		}
 
+		// Cooldown: skip if a trade was placed within the last ~240 candles (5-min candles = ~1200 min)
+		if (_lastTradeTime != default && (candle.OpenTime - _lastTradeTime) < TimeSpan.FromMinutes(1200))
+		{
+			_previousSar = sarValue;
+			_previousRsi = rsiValue;
+			return;
+		}
+
 		var sarPrev = _previousSar.Value;
 		var rsiPrev = _previousRsi.Value;
 
@@ -286,6 +307,7 @@ public class SarRsiMtsStrategy : Strategy
 		BuyMarket(required);
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
+		_lastTradeTime = candle.OpenTime;
 	}
 
 	private void EnterShort(ICandleMessage candle)
@@ -307,6 +329,7 @@ public class SarRsiMtsStrategy : Strategy
 		SellMarket(required);
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
+		_lastTradeTime = candle.OpenTime;
 	}
 
 	private bool ManageRisk(ICandleMessage candle)

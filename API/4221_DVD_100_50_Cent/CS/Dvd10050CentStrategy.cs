@@ -344,6 +344,11 @@ public class Dvd10050CentStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_h1Fast = null!;
+		_h1Slow = null!;
+		_d1Fast = null!;
+		_d1Slow = null!;
+
 		_m1History.Clear();
 		_m30History.Clear();
 		_h1Finished.Clear();
@@ -354,6 +359,9 @@ public class Dvd10050CentStrategy : Strategy
 		_raviD1Prev1 = null;
 		_raviD1Prev2 = null;
 		_raviD1Prev3 = null;
+
+		_pipSize = 0m;
+		_pointValue = 0m;
 
 		_buyOrderExpiry = null;
 		_sellOrderExpiry = null;

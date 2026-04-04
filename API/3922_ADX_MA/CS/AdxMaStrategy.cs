@@ -26,6 +26,14 @@ public class AdxMaStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevEma = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

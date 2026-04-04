@@ -23,6 +23,7 @@ public class RangeWeeklyGridStrategy : Strategy
 	private decimal _rangeLow;
 	private bool _rangeSet;
 	private decimal _entryPrice;
+	private DateTimeOffset _lastTradeTime;
 
 	public DataType CandleType
 	{
@@ -52,6 +53,16 @@ public class RangeWeeklyGridStrategy : Strategy
 
 		_gridLevels = Param(nameof(GridLevels), 5)
 			.SetDisplay("Grid Levels", "Number of grid levels within the range", "Logic");
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rangeHigh = 0;
+		_rangeLow = 0;
+		_rangeSet = false;
+		_entryPrice = 0;
+		_lastTradeTime = default;
 	}
 
 	/// <inheritdoc />
@@ -94,6 +105,10 @@ public class RangeWeeklyGridStrategy : Strategy
 		if (range <= 0)
 			return;
 
+		// Cooldown: at least 1 day between trades
+		if (_lastTradeTime != default && candle.CloseTime - _lastTradeTime < TimeSpan.FromDays(1))
+			return;
+
 		var gridStep = range / (GridLevels + 1);
 		var close = candle.ClosePrice;
 		var mid = (_rangeHigh + _rangeLow) / 2;
@@ -103,21 +118,25 @@ public class RangeWeeklyGridStrategy : Strategy
 		{
 			BuyMarket();
 			_entryPrice = close;
+			_lastTradeTime = candle.CloseTime;
 		}
 		// Sell when price is in upper portion of range
 		else if (close >= _rangeHigh - gridStep && Position >= 0)
 		{
 			SellMarket();
 			_entryPrice = close;
+			_lastTradeTime = candle.CloseTime;
 		}
 		// Take profit at mid-range
 		else if (Position > 0 && close >= mid)
 		{
 			SellMarket();
+			_lastTradeTime = candle.CloseTime;
 		}
 		else if (Position < 0 && close <= mid)
 		{
 			BuyMarket();
+			_lastTradeTime = candle.CloseTime;
 		}
 	}
 }

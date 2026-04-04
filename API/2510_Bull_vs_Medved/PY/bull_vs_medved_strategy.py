@@ -153,12 +153,12 @@ class bull_vs_medved_strategy(Strategy):
         self.StartProtection(sl_unit, tp_unit, True)
 
     def _process_depth(self, depth):
-        bb = depth.GetBestBid()
-        if bb is not None:
-            self._best_bid = float(bb.Value.Price)
-        ba = depth.GetBestAsk()
-        if ba is not None:
-            self._best_ask = float(ba.Value.Price)
+        bids = depth.Bids
+        if bids is not None and len(bids) > 0:
+            self._best_bid = float(bids[0].Price)
+        asks = depth.Asks
+        if asks is not None and len(asks) > 0:
+            self._best_ask = float(asks[0].Price)
 
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:

@@ -23,7 +23,7 @@ public class Fortrader10PipsStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 7).SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 21).SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -46,5 +46,13 @@ public class Fortrader10PipsStrategy : Strategy
 		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
 		{ if (Position > 0) SellMarket(); SellMarket(); }
 		_prevFast = fast; _prevSlow = slow;
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 }

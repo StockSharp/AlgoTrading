@@ -33,6 +33,7 @@ public class ParabolicSarFirstDotStrategy : Strategy
 	private decimal? _shortTake;
 	private bool? _prevIsSarAbovePrice;
 	private decimal _priceStep;
+	private DateTimeOffset _lastTradeTime;
 
 	/// <summary>
 	/// Trading volume in lots.
@@ -160,6 +161,8 @@ public class ParabolicSarFirstDotStrategy : Strategy
 		_shortStop = null;
 		_shortTake = null;
 		Volume = _tradeVolume.Value;
+		_priceStep = 0;
+		_lastTradeTime = default;
 	}
 
 	/// <inheritdoc />
@@ -227,11 +230,16 @@ public class ParabolicSarFirstDotStrategy : Strategy
 		if (Position > 0m)
 			return;
 
+		// Cooldown: at least 2 days between trades to avoid over-trading.
+		if (_lastTradeTime != default && (candle.OpenTime - _lastTradeTime).TotalHours < 48)
+			return;
+
 		var volume = Volume + Math.Abs(Position);
 		if (volume <= 0m)
 			return;
 
 		BuyMarket(volume);
+		_lastTradeTime = candle.OpenTime;
 
 		var entryPrice = candle.ClosePrice;
 		var stopDistance = GetDistance(StopLossPoints);
@@ -251,11 +259,16 @@ public class ParabolicSarFirstDotStrategy : Strategy
 		if (Position < 0m)
 			return;
 
+		// Cooldown: at least 2 days between trades to avoid over-trading.
+		if (_lastTradeTime != default && (candle.OpenTime - _lastTradeTime).TotalHours < 48)
+			return;
+
 		var volume = Volume + Math.Abs(Position);
 		if (volume <= 0m)
 			return;
 
 		SellMarket(volume);
+		_lastTradeTime = candle.OpenTime;
 
 		var entryPrice = candle.ClosePrice;
 		var stopDistance = GetDistance(StopLossPoints);

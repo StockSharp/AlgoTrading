@@ -39,6 +39,8 @@ public class TrailSlManagerStrategy : Strategy
 	private decimal _lastEntryPrice;
 	private SimpleMovingAverage _smaFast;
 	private SimpleMovingAverage _smaSlow;
+	private int _cooldown;
+	private int _lastSignal;
 
 	/// <summary>
 	/// Enables automatic break-even adjustment.
@@ -168,6 +170,16 @@ public class TrailSlManagerStrategy : Strategy
 	{
 		base.OnReseted();
 		ResetState();
+		_priceStep = 0;
+		_longStop = 0;
+		_shortStop = 0;
+		_longBreakEvenActive = false;
+		_shortBreakEvenActive = false;
+		_lastEntryPrice = 0;
+		_smaFast = default;
+		_smaSlow = default;
+		_cooldown = 0;
+		_lastSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -221,19 +233,28 @@ public class TrailSlManagerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (fast > slow && Position <= 0)
+		if (_cooldown > 0)
 		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
-			_lastEntryPrice = candle.ClosePrice;
+			_cooldown--;
 		}
-		else if (fast < slow && Position >= 0)
+		else
 		{
-			if (Position > 0)
+			var signal = fast > slow ? 1 : fast < slow ? -1 : 0;
+
+			if (signal == 1 && _lastSignal != 1 && Position == 0)
+			{
+				BuyMarket();
+				_lastEntryPrice = candle.ClosePrice;
+				_lastSignal = 1;
+				_cooldown = 20;
+			}
+			else if (signal == -1 && _lastSignal != -1 && Position == 0)
+			{
 				SellMarket();
-			SellMarket();
-			_lastEntryPrice = candle.ClosePrice;
+				_lastEntryPrice = candle.ClosePrice;
+				_lastSignal = -1;
+				_cooldown = 20;
+			}
 		}
 
 		ManageLongPosition(candle);

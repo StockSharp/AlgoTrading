@@ -1,13 +1,14 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal, Array, Object
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import (RelativeStrengthIndex, SimpleMovingAverage,
+from StockSharp.Algo.Indicators import (RelativeStrengthIndex, SimpleMovingAverage,, DecimalIndicatorValue
     ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage,
     Highest, Lowest)
 from StockSharp.Algo.Strategies import Strategy
@@ -170,7 +171,9 @@ class IbsRsiCciCalculator(object):
         return (up, signal)
 
     def _process_cci(self, price, open_time):
-        ma_result = self._cci_sma.Process(self._cci_sma.CreateValue(open_time, Array[object]([Decimal(float(price))])))
+        _di = DecimalIndicatorValue(self._cci_sma, Decimal(Array[object]([Decimal(float(price), open_time)
+        _di.IsFinal = True
+        ma_result = self._cci_sma.Process(_di)
         self._cci_buffer.append(price)
         if len(self._cci_buffer) > self._cci_period:
             self._cci_buffer.pop(0)

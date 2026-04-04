@@ -84,7 +84,7 @@ class zig_and_zag_scalpel_strategy(Strategy):
     def OnStarted2(self, time):
         super(zig_and_zag_scalpel_strategy, self).OnStarted2(time)
 
-        self._price_step = float(self.Security.PriceStep) if self.Security is not None else 1.0
+        self._price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         self._deviation = max(self._price_step, abs(float(self.DeviationPoints)) * self._price_step)
         self._breakout_distance = max(0.0, abs(float(self.BreakoutDistancePoints)) * self._price_step)
 
@@ -101,6 +101,8 @@ class zig_and_zag_scalpel_strategy(Strategy):
             return
 
         self._update_daily_counter(candle.OpenTime)
+        if major_value is None or minor_value is None:
+            return
         self._update_major_trend(float(major_value))
         self._update_minor_pivot(float(minor_value))
 

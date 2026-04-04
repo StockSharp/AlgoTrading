@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
@@ -8,7 +9,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, CommodityChannelIndex
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, CommodityChannelIndex, CandleIndicatorValue
 
 class starter2005_strategy(Strategy):
     def __init__(self):
@@ -123,7 +124,7 @@ class starter2005_strategy(Strategy):
 
         ma = float(ma_value)
 
-        cci_result = self._cci.Process(candle)
+        cci_result = self._cci.Process(CandleIndicatorValue(self._cci, candle))
         cci = float(cci_result) if cci_result is not None else 0.0
 
         if not self._ema.IsFormed or not self._cci.IsFormed:

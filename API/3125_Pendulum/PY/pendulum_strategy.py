@@ -9,8 +9,6 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class pendulum_strategy(Strategy):
     def __init__(self):
@@ -19,7 +17,7 @@ class pendulum_strategy(Strategy):
         self._slow_period = self.Param("SlowPeriod", 80).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator")
         self._sl_points = self.Param("StopLossPoints", 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
         self._tp_points = self.Param("TakeProfitPoints", 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

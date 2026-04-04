@@ -64,7 +64,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		_breakoutDistancePoints = Param(nameof(BreakoutDistancePoints), 2m)
 		.SetDisplay("Breakout Distance (pts)", "Required distance from the pivot to trigger an order", "Trading");
 
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 1)
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 10)
 		.SetDisplay("Max Trades Per Day", "Daily limit matching the original expert advisor", "Trading");
 
 		_closeOnOppositePivot = Param(nameof(CloseOnOppositePivot), true)
@@ -144,14 +144,22 @@ public class ZigAndZagScalpelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_priceStep = Security?.PriceStep ?? 1m;
-		_deviation = Math.Max(_priceStep, Math.Abs(DeviationPoints) * _priceStep);
-		_breakoutDistance = Math.Max(0m, Math.Abs(BreakoutDistancePoints) * _priceStep);
+		_priceStep = 1m;
+		_deviation = 0;
+		_breakoutDistance = 0;
+		_previousMajorPivot = 0;
+		_lastMajorPivot = 0;
+		_previousMinorPivot = 0;
+		_lastMinorPivot = 0;
+		_currentDay = DateTime.MinValue;
+		_tradesToday = 0;
+		_trendUp = false;
+		_lastMinorPivotType = PivotTypes.None;
+		_minorPivotUsed = false;
 	}
 
 		protected override void OnStarted2(DateTime time)

@@ -41,6 +41,8 @@ public class MomoTradesV3Strategy : Strategy
 	private decimal _pointValue;
 	private decimal? _breakevenPrice;
 	private Sides? _breakevenSide;
+	private int _candlesSinceLastOrder;
+	private const int CooldownCandles = 200;
 
 	/// <summary>
 	/// Primary candle type for the strategy.
@@ -276,6 +278,8 @@ public class MomoTradesV3Strategy : Strategy
 		_closeHistory.Clear();
 		_breakevenPrice = null;
 		_breakevenSide = null;
+		_pointValue = 0;
+		_candlesSinceLastOrder = 0;
 	}
 
 	/// <inheritdoc />
@@ -341,6 +345,8 @@ public class MomoTradesV3Strategy : Strategy
 		_closeHistory.Insert(0, candle.ClosePrice);
 		TrimHistory(_closeHistory);
 
+		_candlesSinceLastOrder++;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
@@ -348,6 +354,9 @@ public class MomoTradesV3Strategy : Strategy
 		HandleBreakeven(candle);
 
 		if (Position != 0)
+			return;
+
+		if (_candlesSinceLastOrder < CooldownCandles)
 			return;
 
 		var priceShift = PriceShiftPoints * _pointValue;
@@ -362,6 +371,7 @@ public class MomoTradesV3Strategy : Strategy
 			if (volume > 0m)
 			{
 				BuyMarket(volume);
+				_candlesSinceLastOrder = 0;
 			}
 		}
 		else if (canSell)
@@ -371,6 +381,7 @@ public class MomoTradesV3Strategy : Strategy
 			if (volume > 0m)
 			{
 				SellMarket(volume);
+				_candlesSinceLastOrder = 0;
 			}
 		}
 	}

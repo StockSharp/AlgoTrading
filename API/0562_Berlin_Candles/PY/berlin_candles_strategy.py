@@ -1,13 +1,14 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DonchianChannels
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DonchianChannels, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -56,7 +57,7 @@ class berlin_candles_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         ema_v = float(ema_val)
-        donchian_result = self._donchian.Process(candle)
+        donchian_result = self._donchian.Process(CandleIndicatorValue(self._donchian, candle))
         middle = donchian_result.Middle
         if middle is None:
             return

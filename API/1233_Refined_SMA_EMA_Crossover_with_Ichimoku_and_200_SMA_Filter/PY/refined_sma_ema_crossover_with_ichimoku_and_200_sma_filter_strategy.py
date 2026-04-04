@@ -72,7 +72,7 @@ class refined_sma_ema_crossover_with_ichimoku_and_200_sma_filter_strategy(Strate
             self._init = True
             return
 
-        if (candle.OpenTime - self._last_signal) >= self._cooldown:
+        if self._last_signal == DateTimeOffset.MinValue or candle.OpenTime.Subtract(self._last_signal) >= self._cooldown:
             if self._prev_f <= self._prev_s and fv > sv and self.Position <= 0:
                 self.BuyMarket()
                 self._last_signal = candle.OpenTime

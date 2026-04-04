@@ -202,6 +202,16 @@ public class RangeEaStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe", "Parameters");
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+		_nextStepPrice = 0;
+		_turnPrice = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{

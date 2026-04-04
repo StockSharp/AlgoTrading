@@ -212,6 +212,29 @@ public class RelativeCurrencyStrengthStrategy : Strategy
 		];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_mainStart = null;
+		_mainStrength = 0;
+		_audUsdStart = null;
+		_audUsdStrength = 0;
+		_nzdUsdStart = null;
+		_nzdUsdStrength = 0;
+		_usdJpyStart = null;
+		_usdJpyStrength = 0;
+		_usdChfStart = null;
+		_usdChfStrength = 0;
+		_usdCadStart = null;
+		_usdCadStrength = 0;
+		_gbpUsdStart = null;
+		_gbpUsdStrength = 0;
+		_eurUsdStart = null;
+		_eurUsdStrength = 0;
+		_xauUsdStart = null;
+		_xauUsdStrength = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{

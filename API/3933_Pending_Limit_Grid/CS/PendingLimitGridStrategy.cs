@@ -11,22 +11,38 @@ public class PendingLimitGridStrategy : Strategy
 {
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevClose; private decimal _prevMid; private bool _hasPrev;
+	private decimal _prevClose;
+	private decimal _prevMid;
+	private bool _hasPrev;
+	private int _barsSinceLastTrade;
 
 	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public PendingLimitGridStrategy()
 	{
 		_channelPeriod = Param(nameof(ChannelPeriod), 24).SetDisplay("Channel Period", "Grid channel lookback", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 200).SetDisplay("Cooldown Bars", "Minimum bars between trades", "Risk");
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevMid = 0;
+		_hasPrev = false;
+		_barsSinceLastTrade = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_hasPrev = false;
+		_barsSinceLastTrade = 0;
 		var highest = new Highest { Length = ChannelPeriod };
 		var lowest = new Lowest { Length = ChannelPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -36,14 +52,31 @@ public class PendingLimitGridStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
 		if (candle.State != CandleStates.Finished) return;
+
 		var close = candle.ClosePrice;
 		var mid = (highest + lowest) / 2;
+
 		if (!_hasPrev) { _prevClose = close; _prevMid = mid; _hasPrev = true; return; }
 
-		if (_prevClose <= _prevMid && close > mid && Position <= 0)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); }
-		else if (_prevClose >= _prevMid && close < mid && Position >= 0)
-		{ if (Position > 0) SellMarket(); SellMarket(); }
-		_prevClose = close; _prevMid = mid;
+		_barsSinceLastTrade++;
+
+		if (_barsSinceLastTrade >= CooldownBars)
+		{
+			if (_prevClose <= _prevMid && close > mid && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+				_barsSinceLastTrade = 0;
+			}
+			else if (_prevClose >= _prevMid && close < mid && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+				_barsSinceLastTrade = 0;
+			}
+		}
+
+		_prevClose = close;
+		_prevMid = mid;
 	}
 }

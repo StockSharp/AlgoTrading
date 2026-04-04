@@ -260,7 +260,9 @@ public class FiboISarStrategy : Strategy
 	{
 		if (_pendingOrder != null)
 		{
-			CancelOrder(_pendingOrder);
+			if (_pendingOrder.State == OrderStates.Active)
+				CancelOrder(_pendingOrder);
+
 			_pendingOrder = null;
 		}
 	}

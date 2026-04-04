@@ -65,6 +65,8 @@ public class DailyTrendReversalStrategy : Strategy
 	private decimal _shortStopPrice;
 	private bool _shortBreakEvenActive;
 
+	private DateTimeOffset _lastEntryTime;
+
 	private enum TrendDirections
 	{
 		Flat,
@@ -270,6 +272,8 @@ public class DailyTrendReversalStrategy : Strategy
 		base.OnReseted();
 
 		_cciHistory.Clear();
+		_pipSize = 0m;
+		_tenPips = 0m;
 		_currentDay = null;
 		_dailyOpen = 0m;
 		_dailyHigh = 0m;
@@ -290,6 +294,8 @@ public class DailyTrendReversalStrategy : Strategy
 		_shortTakeProfitPrice = 0m;
 		_shortStopPrice = 0m;
 		_shortBreakEvenActive = false;
+
+		_lastEntryTime = default;
 	}
 
 	/// <inheritdoc />
@@ -353,6 +359,9 @@ public class DailyTrendReversalStrategy : Strategy
 
 	private void EvaluateEntries(ICandleMessage candle, TrendDirections trend, TrendDirections rangeTrend, TrendDirections cciTrend)
 	{
+		if (_lastEntryTime != default && candle.CloseTime - _lastEntryTime < TimeSpan.FromHours(3))
+			return;
+
 		var price = candle.ClosePrice;
 
 		if (trend == TrendDirections.Up && rangeTrend == TrendDirections.Up && cciTrend == TrendDirections.Up && price > _dailyOpen && Position <= 0m)
@@ -361,6 +370,7 @@ public class DailyTrendReversalStrategy : Strategy
 			if (volume > 0m)
 			{
 				BuyMarket(volume);
+				_lastEntryTime = candle.CloseTime;
 				LogInfo($"Enter long at {price} due to daily trend confirmation.");
 			}
 		}
@@ -371,6 +381,7 @@ public class DailyTrendReversalStrategy : Strategy
 			if (volume > 0m)
 			{
 				SellMarket(volume);
+				_lastEntryTime = candle.CloseTime;
 				LogInfo($"Enter short at {price} due to daily trend confirmation.");
 			}
 		}

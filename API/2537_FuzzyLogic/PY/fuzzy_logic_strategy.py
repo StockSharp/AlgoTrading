@@ -1,13 +1,14 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import WilliamsR, RelativeStrengthIndex, SmoothedMovingAverage, SimpleMovingAverage
+from StockSharp.Algo.Indicators import WilliamsR, RelativeStrengthIndex, SmoothedMovingAverage, SimpleMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -170,11 +171,21 @@ class fuzzy_logic_strategy(Strategy):
         low = float(candle.LowPrice)
         hl2 = (high + low) / 2.0
 
-        jaw_result = self._jaw.Process(self._jaw.CreateValue(candle.OpenTime, hl2))
-        teeth_result = self._teeth.Process(self._teeth.CreateValue(candle.OpenTime, hl2))
-        lips_result = self._lips.Process(self._lips.CreateValue(candle.OpenTime, hl2))
-        ao_fast_result = self._ao_fast.Process(self._ao_fast.CreateValue(candle.OpenTime, hl2))
-        ao_slow_result = self._ao_slow.Process(self._ao_slow.CreateValue(candle.OpenTime, hl2))
+        _di = DecimalIndicatorValue(self._jaw, Decimal(hl2), candle.OpenTime)
+        _di.IsFinal = True
+        jaw_result = self._jaw.Process(_di)
+        _di = DecimalIndicatorValue(self._teeth, Decimal(hl2), candle.OpenTime)
+        _di.IsFinal = True
+        teeth_result = self._teeth.Process(_di)
+        _di = DecimalIndicatorValue(self._lips, Decimal(hl2), candle.OpenTime)
+        _di.IsFinal = True
+        lips_result = self._lips.Process(_di)
+        _di = DecimalIndicatorValue(self._ao_fast, Decimal(hl2), candle.OpenTime)
+        _di.IsFinal = True
+        ao_fast_result = self._ao_fast.Process(_di)
+        _di = DecimalIndicatorValue(self._ao_slow, Decimal(hl2), candle.OpenTime)
+        _di.IsFinal = True
+        ao_slow_result = self._ao_slow.Process(_di)
 
         if not jaw_result.IsFinal or not teeth_result.IsFinal or not lips_result.IsFinal or not ao_fast_result.IsFinal or not ao_slow_result.IsFinal:
             self._update_demarker(candle)
@@ -189,7 +200,9 @@ class fuzzy_logic_strategy(Strategy):
             return
 
         ao = float(ao_fast_result) - float(ao_slow_result)
-        ac_avg_result = self._ac_average.Process(self._ac_average.CreateValue(candle.OpenTime, ao))
+        _di = DecimalIndicatorValue(self._ac_average, Decimal(ao), candle.OpenTime)
+        _di.IsFinal = True
+        ac_avg_result = self._ac_average.Process(_di)
         if not ac_avg_result.IsFinal:
             self._update_demarker(candle)
             return

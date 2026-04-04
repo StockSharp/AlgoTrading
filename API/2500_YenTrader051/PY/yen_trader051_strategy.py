@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
@@ -10,7 +11,7 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage, RelativeStrengthIndex,
-    CommodityChannelIndex, DecimalIndicatorValue
+    CommodityChannelIndex, DecimalIndicatorValue, CandleIndicatorValue
 )
 from collections import deque
 
@@ -159,7 +160,7 @@ class yen_trader051_strategy(Strategy):
         if rsi_out.IsFinal:
             self._rsi_value = float(rsi_out)
 
-        cci_out = self._cci.Process(candle)
+        cci_out = self._cci.Process(CandleIndicatorValue(self._cci, candle))
         if cci_out.IsFinal:
             self._cci_value = float(cci_out)
 

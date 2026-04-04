@@ -294,7 +294,7 @@ public class ForexProfitStrategy : Strategy
 		var ema10Value = _emaFast.Process(new DecimalIndicatorValue(_emaFast, median, candle.OpenTime) { IsFinal = isFinal }).ToDecimal();
 		var ema25Value = _emaMedium.Process(new DecimalIndicatorValue(_emaMedium, median, candle.OpenTime) { IsFinal = isFinal }).ToDecimal();
 		var ema50Value = _emaSlow.Process(new DecimalIndicatorValue(_emaSlow, median, candle.OpenTime) { IsFinal = isFinal }).ToDecimal();
-		var sarValue = _sar.Process(candle).ToDecimal();
+		var sarResult = _sar.Process(candle);
 
 		if (!_emaSlow.IsFormed || !_sar.IsFormed)
 		{
@@ -302,6 +302,8 @@ public class ForexProfitStrategy : Strategy
 			_ema10Prev = ema10Value;
 			return;
 		}
+
+		var sarValue = sarResult.ToDecimal();
 
 		var step = Security?.PriceStep ?? 1m;
 		if (step <= 0m)

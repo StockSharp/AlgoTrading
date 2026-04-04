@@ -123,8 +123,11 @@ public class ExpTrendValueStrategy : Strategy
 		base.OnReseted();
 
 		_wmaHigh.Reset();
+		_wmaHigh.Length = 1;
 		_wmaLow.Reset();
+		_wmaLow.Length = 1;
 		_rangeAverage.Reset();
+		_rangeAverage.Length = 1;
 		_prevHighBand = _prevLowBand = 0m;
 		_prevTrend = 0;
 		_initialized = false;

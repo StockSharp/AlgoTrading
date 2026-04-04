@@ -168,15 +168,17 @@ public class DivergenceMacdStochasticStrategy : Strategy
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
+		base.OnReseted();
+
 		_fastEma = 0;
 		_slowEma = 0;
 		_emaInitialized = false;
 		_barCount = 0;
 		_fastMultiplier = 0;
 		_slowMultiplier = 0;
+		Array.Clear(_macdWindow, 0, _macdWindow.Length);
+		Array.Clear(_priceWindow, 0, _priceWindow.Length);
 		_windowCount = 0;
 		_windowIndex = 0;
-
-		base.OnReseted();
 	}
 }

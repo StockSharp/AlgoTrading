@@ -30,7 +30,6 @@ public class BreakevenTrailingStopTickStrategy : Strategy
 	private bool _exitOrderPending;
 	private decimal _entryPrice;
 	private DateTimeOffset? _lastDemoEntryTime;
-	private readonly Random _random = new();
 
 	/// <summary>
 	/// Trailing stop distance in pips.
@@ -105,6 +104,7 @@ public BreakevenTrailingStopTickStrategy()
 		_shortStopPrice = null;
 		_exitOrderPending = false;
 		_lastDemoEntryTime = null;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -160,7 +160,7 @@ public BreakevenTrailingStopTickStrategy()
 		if (volume <= 0m)
 			return;
 
-		if (_random.NextDouble() < 0.5)
+		if (Random.Shared.NextDouble() < 0.5)
 		{
 			BuyMarket(volume);
 			_entryPrice = price;

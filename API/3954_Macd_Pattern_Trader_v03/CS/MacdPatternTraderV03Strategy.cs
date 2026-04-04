@@ -502,5 +502,40 @@ public class MacdPatternTraderV03Strategy : Strategy
 		_firstLowerTrough = 0m;
 		_secondLowerTrough = 0m;
 	}
+
+	/// <inheritdoc />
+	public override void OnReseted()
+	{
+		base.OnReseted();
+
+		_previousMacd = null;
+		_olderMacd = null;
+		_entryPrice = 0m;
+
+		_isAboveUpperActivation = false;
+		_firstUpperDropConfirmed = false;
+		_secondUpperDropConfirmed = false;
+		_sellReady = false;
+		_firstUpperPeak = 0m;
+		_secondUpperPeak = 0m;
+
+		_isBelowLowerActivation = false;
+		_firstLowerRiseConfirmed = false;
+		_secondLowerRiseConfirmed = false;
+		_buyReady = false;
+		_firstLowerTrough = 0m;
+		_secondLowerTrough = 0m;
+
+		_emaTwoValue = null;
+		_smaValue = null;
+		_emaFourValue = null;
+
+		_previousCandle = null;
+
+		_longScaleStage = 0;
+		_shortScaleStage = 0;
+		_initialLongPosition = 0m;
+		_initialShortPosition = 0m;
+	}
 }
 

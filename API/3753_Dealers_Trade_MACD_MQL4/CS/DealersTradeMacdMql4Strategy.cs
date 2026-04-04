@@ -43,6 +43,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 	private decimal? _previousMacd;
 	private decimal _pipSize;
 	private decimal _stepValue;
+	private int _cooldown;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="DealersTradeMacdMql4Strategy"/>.
@@ -303,6 +304,9 @@ public class DealersTradeMacdMql4Strategy : Strategy
 		_macd = null;
 		_positions = null;
 		_previousMacd = null;
+		_pipSize = 0;
+		_stepValue = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -340,6 +344,13 @@ public class DealersTradeMacdMql4Strategy : Strategy
 
 		UpdateTrailingAndStops(candle);
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_previousMacd = macdValue;
+			return;
+		}
+
 		var openTrades = _positions.Count;
 		var allowNewTrade = openTrades < MaxTrades;
 
@@ -359,6 +370,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			if (totalProfit >= SecureProfit)
 			{
 				CloseLastPosition();
+				_cooldown = 3;
 				_previousMacd = macdValue;
 				return;
 			}
@@ -422,7 +434,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 		};
 
 		_positions.Add(state);
-
+		_cooldown = 3;
 	}
 
 	private void UpdateTrailingAndStops(ICandleMessage candle)
@@ -440,6 +452,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 				{
 					SellMarket();
 					_positions.RemoveAt(i);
+					_cooldown = 3;
 					continue;
 				}
 
@@ -447,6 +460,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 				{
 					SellMarket();
 					_positions.RemoveAt(i);
+					_cooldown = 3;
 					continue;
 				}
 
@@ -463,6 +477,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 				{
 					BuyMarket();
 					_positions.RemoveAt(i);
+					_cooldown = 3;
 					continue;
 				}
 
@@ -470,6 +485,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 				{
 					BuyMarket();
 					_positions.RemoveAt(i);
+					_cooldown = 3;
 					continue;
 				}
 
@@ -541,7 +557,6 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			BuyMarket();
 
 		_positions.RemoveAt(index);
-
 	}
 
 	private decimal GetReferencePrice(Sides side)
@@ -621,4 +636,3 @@ public class DealersTradeMacdMql4Strategy : Strategy
 		public decimal? TakeProfitPrice { get; set; }
 	}
 }
-

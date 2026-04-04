@@ -75,6 +75,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 	private bool _blockSellFlag;
 
 	private DecisionTypes _currentDecision = DecisionTypes.Unknown;
+	private int _candlesSinceLastTrade;
 	private decimal _buyPossibility;
 	private decimal _sellPossibility;
 	private decimal _undefinedPossibility;
@@ -421,6 +422,53 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ema = default;
+		_macd = default;
+		_cci = default;
+		_adx = default;
+		_history.Clear();
+		_currentValuePeriod = 0;
+		_previousValuePeriod = 0;
+		_currentValuesPeriodCount = 0;
+		_lastSuitablePeriodQuality = 0;
+		_previousEmaValue = null;
+		_lastEmaValue = null;
+		_lastMacdValue = null;
+		_lastMacdSignal = null;
+		_lastCciValue = null;
+		_lastPlusDi = null;
+		_lastMinusDi = null;
+		_fractalDirection = default;
+		_disableBuy = false;
+		_disableSell = false;
+		_blockBuyFlag = false;
+		_blockSellFlag = false;
+		_currentDecision = default;
+		_candlesSinceLastTrade = 0;
+		_buyPossibility = 0;
+		_sellPossibility = 0;
+		_undefinedPossibility = 0;
+		_decisionValue = 0;
+		_previousDecisionValue = 0;
+		_buyPossibilityMid = 0;
+		_sellPossibilityMid = 0;
+		_undefinedPossibilityMid = 0;
+		_buySucPossibilityMid = 0;
+		_sellSucPossibilityMid = 0;
+		_undefinedSucPossibilityMid = 0;
+		_buyPossibilityQuality = 0;
+		_sellPossibilityQuality = 0;
+		_undefinedPossibilityQuality = 0;
+		_buySucPossibilityQuality = 0;
+		_sellSucPossibilityQuality = 0;
+		_undefinedSucPossibilityQuality = 0;
+		_possibilityQuality = 0;
+		_possibilitySuccessQuality = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -501,6 +549,8 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		AddCandle(candle);
 		UpdateFractalState();
 
+		_candlesSinceLastTrade++;
+
 		// Skip trading until the probability model is ready.
 		if (!UpdateAdaptivePeriod())
 		return;
@@ -544,30 +594,38 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		// Enforce a minimum holding period to prevent rapid order churn.
+		var minHold = Math.Max(MaxPeriod, _currentValuePeriod) * HistoryMultiplier;
+		if (_candlesSinceLastTrade < minHold)
+			return;
+
 		// Combine internal logic and user defined blocks.
 		var allowBuy = !_disableBuy && !_blockBuyFlag;
 		var allowSell = !_disableSell && !_blockSellFlag;
 
-		if (_currentDecision == DecisionTypes.Buy && allowBuy)
+		if (_currentDecision == DecisionTypes.Buy && allowBuy && Position <= 0)
 		{
+			_candlesSinceLastTrade = 0;
 			if (Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-			if (Position <= 0)
-			BuyMarket(Volume);
+				BuyMarket(Math.Abs(Position) + Volume);
+			else
+				BuyMarket(Volume);
 		}
-		else if (_currentDecision == DecisionTypes.Sell && allowSell)
+		else if (_currentDecision == DecisionTypes.Sell && allowSell && Position >= 0)
 		{
+			_candlesSinceLastTrade = 0;
 			if (Position > 0)
-			SellMarket(Position);
-
-			if (Position >= 0)
-			SellMarket(Volume);
+				SellMarket(Position + Volume);
+			else
+				SellMarket(Volume);
 		}
 		else if (_currentDecision == DecisionTypes.Unknown)
 		{
 			if (_possibilityQuality < 0.5m)
-			ClosePosition();
+			{
+				_candlesSinceLastTrade = 0;
+				ClosePosition();
+			}
 		}
 	}
 

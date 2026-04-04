@@ -24,6 +24,8 @@ public class FuturePatternMemoryStrategy : Strategy
 	private readonly Queue<int> _patternWindow = new();
 	private readonly Dictionary<string, (int buyCount, int sellCount)> _patterns = new();
 	private decimal _entryPrice;
+	private int _barIndex;
+	private int _lastEntryBar;
 
 	public FuturePatternMemoryStrategy()
 	{
@@ -73,6 +75,16 @@ public class FuturePatternMemoryStrategy : Strategy
 		set => _minMatches.Value = value;
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_patternWindow.Clear();
+		_patterns.Clear();
+		_entryPrice = 0;
+		_barIndex = 0;
+		_lastEntryBar = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -81,6 +93,8 @@ public class FuturePatternMemoryStrategy : Strategy
 		_patternWindow.Clear();
 		_patterns.Clear();
 		_entryPrice = 0;
+		_barIndex = 0;
+		_lastEntryBar = 0;
 
 		var fastEma = new ExponentialMovingAverage { Length = FastMaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowMaLength };
@@ -105,6 +119,7 @@ public class FuturePatternMemoryStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barIndex++;
 		var close = candle.ClosePrice;
 
 		// Normalize the MA spread into a discrete value
@@ -131,24 +146,33 @@ public class FuturePatternMemoryStrategy : Strategy
 
 		_patterns[key] = stats;
 
+		// Cooldown: minimum SlowMaLength*4 bars between any trade action
+		var cooldownBars = SlowMaLength * 4;
+		var cooledDown = _barIndex - _lastEntryBar >= cooldownBars;
+
 		// Position management
+		var exitedThisBar = false;
 		if (Position > 0)
 		{
-			if (spread < 0 || (_entryPrice > 0 && close < _entryPrice * 0.985m))
+			if (cooledDown && (spread < 0 || (_entryPrice > 0 && close < _entryPrice * 0.985m)))
 			{
 				SellMarket();
+				_lastEntryBar = _barIndex;
+				exitedThisBar = true;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (spread > 0 || (_entryPrice > 0 && close > _entryPrice * 1.015m))
+			if (cooledDown && (spread > 0 || (_entryPrice > 0 && close > _entryPrice * 1.015m)))
 			{
 				BuyMarket();
+				_lastEntryBar = _barIndex;
+				exitedThisBar = true;
 			}
 		}
 
-		// Entry based on pattern statistics
-		if (Position == 0)
+		// Entry based on pattern statistics (cooldown between entries)
+		if (!exitedThisBar && Position == 0 && cooledDown)
 		{
 			var total = stats.buyCount + stats.sellCount;
 			if (total >= MinMatches)
@@ -156,11 +180,13 @@ public class FuturePatternMemoryStrategy : Strategy
 				if (stats.buyCount > stats.sellCount && spread > 0)
 				{
 					_entryPrice = close;
+					_lastEntryBar = _barIndex;
 					BuyMarket();
 				}
 				else if (stats.sellCount > stats.buyCount && spread < 0)
 				{
 					_entryPrice = close;
+					_lastEntryBar = _barIndex;
 					SellMarket();
 				}
 			}

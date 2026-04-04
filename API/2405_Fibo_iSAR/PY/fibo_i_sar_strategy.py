@@ -208,7 +208,8 @@ class fibo_i_sar_strategy(Strategy):
 
     def _cancel_pending_order(self):
         if self._pending_order is not None:
-            self.CancelOrder(self._pending_order)
+            if self._pending_order.State == OrderStates.Active:
+                self.CancelOrder(self._pending_order)
             self._pending_order = None
 
     def OnReseted(self):

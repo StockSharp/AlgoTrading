@@ -57,11 +57,25 @@ public class SymbolSyncStrategy : Strategy
 
 	private SimpleMovingAverage _smaFast;
 	private SimpleMovingAverage _smaSlow;
+	private int _candleCount;
+	private int _lastTradeCandle;
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_linkedStrategies.Clear();
+		_initialSecurity = default;
+		_smaFast = default;
+		_smaSlow = default;
+		_candleCount = default;
+		_lastTradeCandle = default;
+		_syncSecurityId.Value = string.Empty;
 	}
 
 	/// <inheritdoc />
@@ -88,17 +102,24 @@ public class SymbolSyncStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_candleCount++;
+
+		if (_candleCount - _lastTradeCandle < 200)
+			return;
+
 		if (fast > slow && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
+			_lastTradeCandle = _candleCount;
 		}
 		else if (fast < slow && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+			_lastTradeCandle = _candleCount;
 		}
 	}
 

@@ -90,6 +90,17 @@ public class ExpMaRoundingChannelStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_atr = default;
+		_prevUpper = default;
+		_prevLower = default;
+		_prevClose = default;
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
 		if (candle.State != CandleStates.Finished)

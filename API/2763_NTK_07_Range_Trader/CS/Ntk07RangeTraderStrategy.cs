@@ -49,6 +49,8 @@ public class Ntk07RangeTraderStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
+	private int _candlesSinceLastTrade;
+	private const int CooldownCandles = 210;
 
 	/// <summary>
 	/// Base volume used for each entry order.
@@ -263,6 +265,8 @@ public class Ntk07RangeTraderStrategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = null;
 		_takePrice = null;
+		_priceStep = 0;
+		_candlesSinceLastTrade = 0;
 	}
 
 	/// <inheritdoc />
@@ -349,35 +353,42 @@ public class Ntk07RangeTraderStrategy : Strategy
 
 		if (Position == 0 && netOffset > 0m)
 		{
-			// Flat - check if candle broke through entry levels.
-			var allowEntries = true;
+			_candlesSinceLastTrade++;
 
-			if (rangeHigh.HasValue && rangeLow.HasValue && rangeHigh.Value > rangeLow.Value)
+			if (_candlesSinceLastTrade > CooldownCandles)
 			{
-				allowEntries = TradeMode switch
-				{
-					TradeModeOptions.EdgesOfRange => candle.ClosePrice >= rangeHigh.Value || candle.ClosePrice <= rangeLow.Value,
-					TradeModeOptions.CenterOfRange => Math.Abs(candle.ClosePrice - ((rangeHigh.Value + rangeLow.Value) / 2m)) <= _priceStep,
-					_ => true,
-				};
-			}
+				// Flat - check if candle broke through entry levels.
+				var allowEntries = true;
 
-			if (allowEntries && _previousCandle != null)
-			{
-				var buyLevel = _previousCandle.ClosePrice + netOffset;
-				var sellLevel = _previousCandle.ClosePrice - netOffset;
-
-				if (candle.HighPrice >= buyLevel)
+				if (rangeHigh.HasValue && rangeLow.HasValue && rangeHigh.Value > rangeLow.Value)
 				{
-					BuyMarket(EntryVolume);
-					_entryPrice = candle.ClosePrice;
-					SetProtectionLevels(true, candle, maValue);
+					allowEntries = TradeMode switch
+					{
+						TradeModeOptions.EdgesOfRange => candle.ClosePrice >= rangeHigh.Value || candle.ClosePrice <= rangeLow.Value,
+						TradeModeOptions.CenterOfRange => Math.Abs(candle.ClosePrice - ((rangeHigh.Value + rangeLow.Value) / 2m)) <= _priceStep,
+						_ => true,
+					};
 				}
-				else if (candle.LowPrice <= sellLevel)
+
+				if (allowEntries && _previousCandle != null)
 				{
-					SellMarket(EntryVolume);
-					_entryPrice = candle.ClosePrice;
-					SetProtectionLevels(false, candle, maValue);
+					var buyLevel = _previousCandle.ClosePrice + netOffset;
+					var sellLevel = _previousCandle.ClosePrice - netOffset;
+
+					if (candle.HighPrice >= buyLevel)
+					{
+						BuyMarket(EntryVolume);
+						_entryPrice = candle.ClosePrice;
+						_candlesSinceLastTrade = 0;
+						SetProtectionLevels(true, candle, maValue);
+					}
+					else if (candle.LowPrice <= sellLevel)
+					{
+						SellMarket(EntryVolume);
+						_entryPrice = candle.ClosePrice;
+						_candlesSinceLastTrade = 0;
+						SetProtectionLevels(false, candle, maValue);
+					}
 				}
 			}
 		}
@@ -514,6 +525,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = null;
 		_takePrice = null;
+		_candlesSinceLastTrade = 0;
 	}
 
 	private decimal ToPrice(decimal points)

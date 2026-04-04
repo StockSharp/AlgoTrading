@@ -33,6 +33,8 @@ public class MartingaleEa5LevelsStrategy : Strategy
 	private int _additions;
 	private decimal _lastVolume;
 	private Sides? _activeSide;
+	private int _candleCount;
+	private int _lastOrderCandle;
 
 	public DataType CandleType
 	{
@@ -95,6 +97,20 @@ public class MartingaleEa5LevelsStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Floating loss % to close group", "Risk");
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sma = default;
+		_prevClose = null;
+		_prevMa = null;
+		_entries.Clear();
+		_additions = 0;
+		_lastVolume = 0;
+		_activeSide = null;
+		_candleCount = 0;
+		_lastOrderCandle = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -106,6 +122,8 @@ public class MartingaleEa5LevelsStrategy : Strategy
 		_additions = 0;
 		_lastVolume = 0;
 		_activeSide = null;
+		_candleCount = 0;
+		_lastOrderCandle = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -133,10 +151,15 @@ public class MartingaleEa5LevelsStrategy : Strategy
 			return;
 		}
 
+		_candleCount++;
+
 		var close = candle.ClosePrice;
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
+
+		// Cooldown: allow at most one order per 100 candles
+		var cooldownPassed = (_candleCount - _lastOrderCandle) >= 100;
 
 		// Check martingale closure first
 		if (_entries.Count > 0)
@@ -148,7 +171,7 @@ public class MartingaleEa5LevelsStrategy : Strategy
 			{
 				var pnlPercent = floatingPnl / totalCost * 100m;
 
-				if (pnlPercent >= TakeProfitPercent || pnlPercent <= -StopLossPercent)
+				if (cooldownPassed && (pnlPercent >= TakeProfitPercent || pnlPercent <= -StopLossPercent))
 				{
 					// Close entire position
 					if (Position > 0)
@@ -156,6 +179,7 @@ public class MartingaleEa5LevelsStrategy : Strategy
 					else if (Position < 0)
 						BuyMarket(Math.Abs(Position));
 
+					_lastOrderCandle = _candleCount;
 					_entries.Clear();
 					_additions = 0;
 					_lastVolume = 0;
@@ -168,7 +192,7 @@ public class MartingaleEa5LevelsStrategy : Strategy
 			}
 
 			// Check for martingale additions
-			if (_additions < MaxAdditions)
+			if (cooldownPassed && _additions < MaxAdditions)
 			{
 				var avgPrice = CalculateAvgPrice();
 				var adversePercent = _activeSide == Sides.Buy
@@ -195,12 +219,13 @@ public class MartingaleEa5LevelsStrategy : Strategy
 
 					_lastVolume = nextVol;
 					_additions++;
+					_lastOrderCandle = _candleCount;
 				}
 			}
 		}
 
 		// Initial entry signal: MA crossover
-		if (_prevClose != null && _prevMa != null && _activeSide == null)
+		if (cooldownPassed && _prevClose != null && _prevMa != null && _activeSide == null)
 		{
 			var buySignal = _prevClose.Value < _prevMa.Value && close > smaValue;
 			var sellSignal = _prevClose.Value > _prevMa.Value && close < smaValue;
@@ -213,6 +238,7 @@ public class MartingaleEa5LevelsStrategy : Strategy
 				_additions = 0;
 				_lastVolume = volume;
 				_activeSide = Sides.Buy;
+				_lastOrderCandle = _candleCount;
 			}
 			else if (sellSignal)
 			{
@@ -222,6 +248,7 @@ public class MartingaleEa5LevelsStrategy : Strategy
 				_additions = 0;
 				_lastVolume = volume;
 				_activeSide = Sides.Sell;
+				_lastOrderCandle = _candleCount;
 			}
 		}
 

@@ -52,6 +52,9 @@ public class ZigAndZagTraderStrategy : Strategy
 
 	private PivotTypes _lastPivot;
 
+	private int _cooldown;
+	private const int CooldownBars = 500;
+
 	/// <summary>
 	/// Trading candles.
 	/// </summary>
@@ -168,12 +171,16 @@ public class ZigAndZagTraderStrategy : Strategy
 		_lastSlalomZig = null;
 		_lastSlalomZag = null;
 
-		_trendUp = true;
-		_prevTrendUp = true;
+		_trendUp = false;
+		_prevTrendUp = false;
 		_buyArmed = false;
 		_sellArmed = false;
 		_limitArmed = false;
 		_lastPivot = PivotTypes.None;
+		_pipSize = 0;
+		_volumeStep = 0;
+		_breakoutThreshold = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -220,6 +227,9 @@ public class ZigAndZagTraderStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldown > 0)
+			_cooldown--;
 
 		var t = candle.CloseTime;
 		var longLow = _longTermLow.Process(candle.LowPrice, t, true).ToDecimal();
@@ -369,6 +379,9 @@ public class ZigAndZagTraderStrategy : Strategy
 
 	private void ExecuteSignals(bool buySignal, bool sellSignal, bool closeSignal)
 	{
+		if (_cooldown > 0)
+			return;
+
 		var volume = Volume;
 		if (volume <= 0m || MaxOrders <= 0)
 			return;
@@ -383,6 +396,8 @@ public class ZigAndZagTraderStrategy : Strategy
 			{
 				var tradeVolume = Math.Min(volume, available);
 				BuyMarket(tradeVolume);
+				_cooldown = CooldownBars;
+				return;
 			}
 		}
 
@@ -394,6 +409,8 @@ public class ZigAndZagTraderStrategy : Strategy
 			{
 				var tradeVolume = Math.Min(volume, available);
 				SellMarket(tradeVolume);
+				_cooldown = CooldownBars;
+				return;
 			}
 		}
 
@@ -403,6 +420,7 @@ public class ZigAndZagTraderStrategy : Strategy
 				SellMarket(Position);
 			else
 				BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 

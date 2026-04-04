@@ -49,6 +49,9 @@ public class Laptrend1Strategy : Strategy
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
 	private int _lastPositionSign;
+	private bool _pendingClose;
+	private int _candleIndex;
+	private int _lastCloseCandle;
 
 
 	/// <summary>
@@ -212,6 +215,13 @@ public class Laptrend1Strategy : Strategy
 		ResetLongState();
 		ResetShortState();
 		_lastPositionSign = 0;
+		_longEntryPrice = null;
+		_shortEntryPrice = null;
+		_longTrailingStop = null;
+		_shortTrailingStop = null;
+		_pendingClose = false;
+		_candleIndex = 0;
+		_lastCloseCandle = 0;
 	}
 
 	/// <inheritdoc />
@@ -232,6 +242,9 @@ public class Laptrend1Strategy : Strategy
 		ResetLongState();
 		ResetShortState();
 		_lastPositionSign = Math.Sign(Position);
+		_pendingClose = false;
+		_candleIndex = 0;
+		_lastCloseCandle = -20;
 
 		_fisher = new FisherYur4ikIndicator
 		{
@@ -263,6 +276,8 @@ public class Laptrend1Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_candleIndex++;
+
 		// Update LabTrend state on the signal timeframe.
 		_signalTrend.Process(candle, ChannelLength, RiskFactor);
 
@@ -280,7 +295,6 @@ public class Laptrend1Strategy : Strategy
 			adxData.Dx.Plus is not decimal plusDi ||
 			adxData.Dx.Minus is not decimal minusDi)
 		{
-			ManagePosition(candle, canTrade);
 			return;
 		}
 
@@ -304,34 +318,61 @@ public class Laptrend1Strategy : Strategy
 			_fisherExitShort = false;
 
 			if (Position > 0)
+			{
+				_lastCloseCandle = _candleIndex;
 				SellMarket(Position);
+			}
 			else if (Position < 0)
+			{
+				_lastCloseCandle = _candleIndex;
 				BuyMarket(Math.Abs(Position));
+			}
 
-			ManagePosition(candle, canTrade);
 			return;
 		}
 
 		if (canTrade)
 		{
-			if (Position <= 0 && _trendTrend.IsUpTrend && _signalTrend.IsUpTrend && _fisherBullish && bullDirectional && adxRising)
-			{
-				var volume = Volume + Math.Abs(Position);
-				if (volume > 0m)
-					BuyMarket(volume);
-			}
-			else if (Position >= 0 && _trendTrend.IsDownTrend && _signalTrend.IsDownTrend && _fisherBearish && bearDirectional && adxRising)
-			{
-				var volume = Volume + Math.Abs(Position);
-				if (volume > 0m)
-					SellMarket(volume);
-			}
+			const int CooldownCandles = 20;
+			var cooldownOk = (_candleIndex - _lastCloseCandle) >= CooldownCandles;
 
-			if (Position > 0 && (_signalTrend.IsDownTrend || _fisherBearish || _fisherExitLong))
-				SellMarket(Position);
-
-			if (Position < 0 && (_signalTrend.IsUpTrend || _fisherBullish || _fisherExitShort))
-				BuyMarket(Math.Abs(Position));
+			if (Position == 0)
+			{
+				// Only enter when flat, cooldown has elapsed, and ADX is strong enough
+				var adxStrong = adxCurrent >= 20m;
+				if (cooldownOk && adxStrong && _trendTrend.IsUpTrend && _signalTrend.IsUpTrend && _fisherBullish && bullDirectional && adxRising)
+				{
+					_fisherBullish = false;
+					BuyMarket(Volume);
+					return;
+				}
+				else if (cooldownOk && adxStrong && _trendTrend.IsDownTrend && _signalTrend.IsDownTrend && _fisherBearish && bearDirectional && adxRising)
+				{
+					_fisherBearish = false;
+					SellMarket(Volume);
+					return;
+				}
+			}
+			else if (Position > 0)
+			{
+				if (_fisherExitLong)
+				{
+					_fisherExitLong = false;
+					_lastCloseCandle = _candleIndex;
+					SellMarket(Position);
+					return;
+				}
+			}
+			else // Position < 0
+			{
+				if (_fisherExitShort)
+				{
+					_fisherExitShort = false;
+					_lastCloseCandle = _candleIndex;
+					BuyMarket(Math.Abs(Position));
+					return;
+				}
+			}
 		}
 
 		ManagePosition(candle, canTrade);
@@ -355,6 +396,18 @@ public class Laptrend1Strategy : Strategy
 		{
 			_lastPositionSign = positionSign;
 			return;
+		}
+
+		// If we submitted a close order, wait until position is actually flat.
+		if (_pendingClose)
+		{
+			if (positionSign == 0)
+				_pendingClose = false;
+			else
+			{
+				_lastPositionSign = positionSign;
+				return;
+			}
 		}
 
 		var step = _pointValue > 0m ? _pointValue : 1m;
@@ -382,6 +435,8 @@ public class Laptrend1Strategy : Strategy
 					SellMarket(volume);
 					ResetLongState();
 					_lastPositionSign = 0;
+					_pendingClose = true;
+					_lastCloseCandle = _candleIndex;
 					return;
 				}
 
@@ -390,6 +445,8 @@ public class Laptrend1Strategy : Strategy
 					SellMarket(volume);
 					ResetLongState();
 					_lastPositionSign = 0;
+					_pendingClose = true;
+					_lastCloseCandle = _candleIndex;
 					return;
 				}
 
@@ -404,6 +461,7 @@ public class Laptrend1Strategy : Strategy
 						SellMarket(volume);
 						ResetLongState();
 						_lastPositionSign = 0;
+						_pendingClose = true;
 						return;
 					}
 				}
@@ -429,6 +487,8 @@ public class Laptrend1Strategy : Strategy
 					BuyMarket(volume);
 					ResetShortState();
 					_lastPositionSign = 0;
+					_pendingClose = true;
+					_lastCloseCandle = _candleIndex;
 					return;
 				}
 
@@ -437,6 +497,8 @@ public class Laptrend1Strategy : Strategy
 					BuyMarket(volume);
 					ResetShortState();
 					_lastPositionSign = 0;
+					_pendingClose = true;
+					_lastCloseCandle = _candleIndex;
 					return;
 				}
 
@@ -451,6 +513,7 @@ public class Laptrend1Strategy : Strategy
 						BuyMarket(volume);
 						ResetShortState();
 						_lastPositionSign = 0;
+						_pendingClose = true;
 						return;
 					}
 				}
@@ -536,6 +599,18 @@ public class Laptrend1Strategy : Strategy
 			_lows.Clear();
 			_trend = 0m;
 		}
+
+		public override bool Equals(object obj)
+		{
+			if (obj is not LabTrendState other) return false;
+			return _trend == other._trend
+				&& _highs.Count == other._highs.Count
+				&& _lows.Count == other._lows.Count
+				&& _highs.SequenceEqual(other._highs)
+				&& _lows.SequenceEqual(other._lows);
+		}
+
+		public override int GetHashCode() => HashCode.Combine(_trend, _highs.Count, _lows.Count);
 
 		public void Process(ICandleMessage candle, int length, decimal risk)
 		{

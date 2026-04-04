@@ -25,6 +25,7 @@ public class TrailingStopEAStrategy : Strategy
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _isFirst = true;
+	private DateTimeOffset _lastTradeTime;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -52,6 +53,16 @@ public class TrailingStopEAStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_slowEma = default;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isFirst = true;
+		_lastTradeTime = default;
 	}
 
 	/// <inheritdoc />
@@ -104,17 +115,22 @@ public class TrailingStopEAStrategy : Strategy
 			return;
 		}
 
+		var cooldown = TimeSpan.FromHours(24);
+		var canTrade = _lastTradeTime == default || (candle.OpenTime - _lastTradeTime) >= cooldown;
+
 		// EMA cross up -> buy
-		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0 && canTrade)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
+			_lastTradeTime = candle.OpenTime;
 		}
 		// EMA cross down -> sell
-		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0 && canTrade)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();
+			_lastTradeTime = candle.OpenTime;
 		}
 
 		_prevFast = fast;

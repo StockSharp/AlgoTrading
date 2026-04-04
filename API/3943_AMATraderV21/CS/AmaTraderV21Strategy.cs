@@ -14,6 +14,7 @@ public class AmaTraderV21Strategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevFast; private decimal _prevSlow; private bool _hasPrev;
+	private int _cooldown;
 
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
@@ -41,10 +42,21 @@ public class AmaTraderV21Strategy : Strategy
 		if (candle.State != CandleStates.Finished) return;
 		if (!_hasPrev) { _prevFast = fast; _prevSlow = slow; _hasPrev = true; return; }
 
+		if (_cooldown > 0) { _cooldown--; _prevFast = fast; _prevSlow = slow; return; }
+
 		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _cooldown = 140; }
 		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
-		{ if (Position > 0) SellMarket(); SellMarket(); }
+		{ if (Position > 0) SellMarket(); SellMarket(); _cooldown = 140; }
 		_prevFast = fast; _prevSlow = slow;
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+		_cooldown = 0;
 	}
 }

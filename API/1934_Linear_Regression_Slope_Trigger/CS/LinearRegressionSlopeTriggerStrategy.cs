@@ -155,12 +155,14 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		base.OnReseted();
 
 		_trendLine.Reset();
+		_trendLine.Length = 1;
 		_triggerLine.Reset();
+		_triggerLine.Length = 1;
 		_previousTrendValue = 0m;
 		_previousSlope = 0m;
 		_previousTrigger = 0m;
 		_isInitialized = false;
-		_barsSinceTrade = CooldownBars;
+		_barsSinceTrade = 0;
 	}
 
 	/// <inheritdoc />

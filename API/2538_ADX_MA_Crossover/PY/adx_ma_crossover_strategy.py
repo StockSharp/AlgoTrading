@@ -1,13 +1,14 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SmoothedMovingAverage, AverageDirectionalIndex
+from StockSharp.Algo.Indicators import SmoothedMovingAverage, AverageDirectionalIndex, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -160,7 +161,9 @@ class adx_ma_crossover_strategy(Strategy):
         low = float(candle.LowPrice)
         median = (high + low) / 2.0
 
-        ma_result = self._ma.Process(self._ma.CreateValue(candle.OpenTime, median))
+        ma_input = DecimalIndicatorValue(self._ma, Decimal(median), candle.OpenTime)
+        ma_input.IsFinal = True
+        ma_result = self._ma.Process(ma_input)
         if not ma_result.IsFinal:
             return
 

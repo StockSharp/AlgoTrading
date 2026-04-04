@@ -9,14 +9,13 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 from indicator_extensions import *
 
 class re_init_chart_strategy(Strategy):
     def __init__(self):
         super(re_init_chart_strategy, self).__init__()
         self._sma_length = self.Param("SmaLength", 20).SetGreaterThanZero().SetDisplay("SMA Length", "Moving average length", "Reinitialization")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "Data")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "Data")
 
     @property
     def CandleType(self): return self._candle_type.Value

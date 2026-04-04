@@ -1,13 +1,14 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import (Ichimoku, SimpleMovingAverage, ExponentialMovingAverage,
+from StockSharp.Algo.Indicators import (Ichimoku, SimpleMovingAverage, ExponentialMovingAverage, DecimalIndicatorValue,
     SmoothedMovingAverage, WeightedMovingAverage, JurikMovingAverage, KaufmanAdaptiveMovingAverage)
 from StockSharp.Algo.Strategies import Strategy
 
@@ -222,7 +223,9 @@ class ichi_oscillator_strategy(Strategy):
         trend = tenkan_val - kijun_val
         raw_oscillator = (markt - trend) / step
 
-        smooth_result = self._smoother.Process(self._smoother.CreateValue(candle.OpenTime, raw_oscillator))
+        _di = DecimalIndicatorValue(self._smoother, Decimal(raw_oscillator), candle.OpenTime)
+        _di.IsFinal = True
+        smooth_result = self._smoother.Process(_di)
         if not smooth_result.IsFinal:
             return
 

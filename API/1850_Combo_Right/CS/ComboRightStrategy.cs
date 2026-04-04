@@ -137,7 +137,7 @@ public class ComboRightStrategy : Strategy
 		_volume = Param(nameof(TradeVolume), 0.1m).SetDisplay("Volume", "Trading volume", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 		_minCciSignal = Param(nameof(MinCciSignal), 50m).SetDisplay("Minimum CCI", "Minimum absolute CCI value for entries", "Filters");
-		_cooldownBars = Param(nameof(CooldownBars), 4).SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
+		_cooldownBars = Param(nameof(CooldownBars), 10).SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -153,6 +153,35 @@ public class ComboRightStrategy : Strategy
 		_barIndex = 0;
 		_cooldownRemaining = 0;
 		_previousSignal = 0;
+
+		_w11 = 0;
+		_w12 = 0;
+		_w13 = 0;
+		_w14 = 0;
+		_w21 = 0;
+		_w22 = 0;
+		_w23 = 0;
+		_w24 = 0;
+		_w31 = 0;
+		_w32 = 0;
+		_w33 = 0;
+		_w34 = 0;
+
+		_sh11 = 0;
+		_sh12 = 0;
+		_sh13 = 0;
+		_sh14 = 0;
+		_sh15 = 0;
+		_sh21 = 0;
+		_sh22 = 0;
+		_sh23 = 0;
+		_sh24 = 0;
+		_sh25 = 0;
+		_sh31 = 0;
+		_sh32 = 0;
+		_sh33 = 0;
+		_sh34 = 0;
+		_sh35 = 0;
 	}
 
 	/// <inheritdoc />

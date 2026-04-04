@@ -24,6 +24,8 @@ public class XBugStrategy : Strategy
 	private SimpleMovingAverage _slowMa;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
+	private int _cooldown;
+	private int _candleCount;
 
 	public XBugStrategy()
 	{
@@ -69,6 +71,16 @@ public class XBugStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_slowMa = default;
+		_prevFast = null;
+		_prevSlow = null;
+		_cooldown = 0;
+		_candleCount = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -76,6 +88,8 @@ public class XBugStrategy : Strategy
 		Volume = 0.001m;
 		_prevFast = null;
 		_prevSlow = null;
+		_cooldown = 0;
+		_candleCount = 0;
 
 		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
 
@@ -92,6 +106,13 @@ public class XBugStrategy : Strategy
 
 		if (!_slowMa.IsFormed)
 			return;
+
+		_candleCount++;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
 
 		// Use close price as the "fast" value (period=1 effectively)
 		var fastValue = candle.ClosePrice;
@@ -121,10 +142,12 @@ public class XBugStrategy : Strategy
 		if (signal > 0 && Position <= 0)
 		{
 			BuyMarket();
+			_cooldown = 100;
 		}
 		else if (signal < 0 && Position >= 0)
 		{
 			SellMarket();
+			_cooldown = 100;
 		}
 	}
 }
