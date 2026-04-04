@@ -2,43 +2,35 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
 
 class lucky_shift_limit_strategy(Strategy):
-    """Quote-reversion strategy converted from Level1 bid/ask jumps to candle-based.
-    Detects sudden close-to-close movements with pip multiplier logic and
-    enforces a MetaTrader-style loss cap."""
+    """Candle-based reversion strategy that reacts to sudden price jumps (high/low shifts)
+    and enforces a configurable loss cap. Adapted from a Level1 quote-reversion approach
+    to work with candle data for backtesting."""
 
     def __init__(self):
         super(lucky_shift_limit_strategy, self).__init__()
 
         self._shift_points = self.Param("ShiftPoints", 3) \
             .SetGreaterThanZero() \
-            .SetDisplay("Shift points", "Minimum pip delta between consecutive closes", "Trading")
+            .SetDisplay("Shift points", "Minimum price delta between consecutive candles", "Trading")
         self._limit_points = self.Param("LimitPoints", 18) \
             .SetGreaterThanZero() \
-            .SetDisplay("Limit points", "Maximum allowed drawdown in pips", "Risk management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Timeframe of candles used for price tracking", "General")
+            .SetDisplay("Limit points", "Maximum allowed drawdown in percentage", "Risk management")
 
-        self._previous_close = None
+        self._previous_high = None
+        self._previous_low = None
+        self._shift_threshold = 0.0
+        self._limit_threshold = 0.0
         self._entry_price = 0.0
-        self._shift_offset = 0.0
-        self._limit_offset = 0.0
-
-    @property
-    def CandleType(self):
-        return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+        self._thresholds_ready = False
+        self._hold_bars = 0
 
     @property
     def ShiftPoints(self):
@@ -50,65 +42,83 @@ class lucky_shift_limit_strategy(Strategy):
 
     def OnReseted(self):
         super(lucky_shift_limit_strategy, self).OnReseted()
-        self._previous_close = None
+        self._previous_high = None
+        self._previous_low = None
+        self._shift_threshold = 0.0
+        self._limit_threshold = 0.0
         self._entry_price = 0.0
-        self._shift_offset = 0.0
-        self._limit_offset = 0.0
-
-    def _get_pip_multiplier(self, step):
-        """Reproduces the MQL4 pip multiplier for 3/5-digit brokers."""
-        digits = 0
-        temp = step
-        while temp > 0 and temp < 1.0 and digits < 10:
-            temp *= 10.0
-            digits += 1
-        if digits == 3 or digits == 5:
-            return 10.0
-        return 1.0
-
-    def _calculate_price_offset(self, points):
-        if points <= 0:
-            return 0.0
-        step = self.Security.PriceStep if self.Security is not None else 0.0
-        if step is None or float(step) <= 0:
-            return 0.0
-        step = float(step)
-        return points * step * self._get_pip_multiplier(step)
+        self._thresholds_ready = False
+        self._hold_bars = 0
 
     def OnStarted2(self, time):
         super(lucky_shift_limit_strategy, self).OnStarted2(time)
 
-        self._shift_offset = self._calculate_price_offset(self.ShiftPoints)
-        self._limit_offset = self._calculate_price_offset(self.LimitPoints)
+        tf = DataType.TimeFrame(TimeSpan.FromMinutes(5))
 
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(tf)
         subscription.Bind(self._process_candle).Start()
+
+    def _ensure_thresholds(self, price):
+        if self._thresholds_ready:
+            return
+
+        if price <= 0:
+            return
+
+        # ShiftPoints=3 -> 0.9% shift threshold, LimitPoints=18 -> 1.8% limit threshold
+        self._shift_threshold = float(price) * self.ShiftPoints * 0.003
+        self._limit_threshold = float(price) * self.LimitPoints * 0.01
+        self._thresholds_ready = True
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
         close = float(candle.ClosePrice)
 
-        # Try to close existing position first
-        self._try_close_position(close)
+        self._ensure_thresholds(close)
 
-        if self._previous_close is not None and self.Position == 0:
-            prev = self._previous_close
+        if not self._thresholds_ready:
+            return
 
-            # Close jumped up sharply -> sell on reversal
-            if self._shift_offset > 0 and close - prev >= self._shift_offset:
+        # Count hold bars for position management.
+        if self.Position != 0:
+            self._hold_bars += 1
+
+        # Entry logic: detect sudden shifts in high/low between consecutive candles.
+        # Only enter when flat.
+        if self.Position == 0 and self._previous_high is not None and self._previous_low is not None:
+            prev_high = self._previous_high
+            prev_low = self._previous_low
+
+            # High jumped up sharply -> sell on expected reversion
+            if high - prev_high >= self._shift_threshold:
                 self.SellMarket()
                 self._entry_price = close
-
-            # Close dropped sharply -> buy on reversal
-            elif self._shift_offset > 0 and prev - close >= self._shift_offset:
+                self._hold_bars = 0
+            # Low dropped sharply -> buy on expected rebound
+            elif prev_low - low >= self._shift_threshold:
                 self.BuyMarket()
                 self._entry_price = close
+                self._hold_bars = 0
 
-        self._previous_close = close
+        self._previous_high = high
+        self._previous_low = low
 
-    def _try_close_position(self, close):
+        self._try_close_position(close)
+
+    def OnOwnTradeReceived(self, trade):
+        super(lucky_shift_limit_strategy, self).OnOwnTradeReceived(trade)
+
+        if self.Position != 0 and self._entry_price == 0:
+            self._entry_price = float(trade.Trade.Price)
+
+        if self.Position == 0:
+            self._entry_price = 0.0
+
+    def _try_close_position(self, current_price):
         if self.Position == 0:
             return
 
@@ -116,26 +126,29 @@ class lucky_shift_limit_strategy(Strategy):
         if avg_price <= 0:
             return
 
+        # Minimum hold of 5 bars before checking exit.
+        if self._hold_bars < 5:
+            return
+
+        # Use half of shift threshold as profit target.
+        profit_target = self._shift_threshold * 0.5
+
         if self.Position > 0:
-            # Close long on any profit
-            if close > avg_price:
+            # Close long on profit or loss cap.
+            if current_price - avg_price >= profit_target:
                 self.SellMarket()
-                self._entry_price = 0.0
-                return
-            # Close long on loss cap
-            if self._limit_offset > 0 and avg_price - close >= self._limit_offset:
+                self._hold_bars = 0
+            elif self._limit_threshold > 0 and avg_price - current_price >= self._limit_threshold:
                 self.SellMarket()
-                self._entry_price = 0.0
+                self._hold_bars = 0
         elif self.Position < 0:
-            # Close short on any profit
-            if close < avg_price:
+            # Close short on profit or loss cap.
+            if avg_price - current_price >= profit_target:
                 self.BuyMarket()
-                self._entry_price = 0.0
-                return
-            # Close short on loss cap
-            if self._limit_offset > 0 and close - avg_price >= self._limit_offset:
+                self._hold_bars = 0
+            elif self._limit_threshold > 0 and current_price - avg_price >= self._limit_threshold:
                 self.BuyMarket()
-                self._entry_price = 0.0
+                self._hold_bars = 0
 
     def CreateClone(self):
         return lucky_shift_limit_strategy()

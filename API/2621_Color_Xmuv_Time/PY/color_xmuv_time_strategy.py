@@ -1,18 +1,21 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import (
-    SimpleMovingAverage, ExponentialMovingAverage,
-    SmoothedMovingAverage, WeightedMovingAverage,
-    KaufmanAdaptiveMovingAverage, DecimalIndicatorValue
-)
+from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+
+
+# TrendColors: 0=Bearish, 1=Neutral, 2=Bullish
+BEARISH = 0
+NEUTRAL = 1
+BULLISH = 2
 
 
 class color_xmuv_time_strategy(Strategy):
@@ -21,9 +24,9 @@ class color_xmuv_time_strategy(Strategy):
     def __init__(self):
         super(color_xmuv_time_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Source candles for the Color XMUV line", "General")
-        self._order_volume = self.Param("OrderVolume", 1.0) \
+        self._order_volume = self.Param("OrderVolume", Decimal(1)) \
             .SetGreaterThanZero() \
             .SetDisplay("Order Volume", "Size of market orders", "Trading")
         self._enable_buy_entries = self.Param("EnableBuyEntries", True) \
@@ -34,7 +37,7 @@ class color_xmuv_time_strategy(Strategy):
             .SetDisplay("Close Longs", "Close long positions on bearish flips", "Trading")
         self._enable_sell_exits = self.Param("EnableSellExits", True) \
             .SetDisplay("Close Shorts", "Close short positions on bullish flips", "Trading")
-        self._use_time_filter = self.Param("UseTimeFilter", True) \
+        self._use_time_filter = self.Param("UseTimeFilter", False) \
             .SetDisplay("Use Time Filter", "Restrict trading to the specified session", "Time Filter")
         self._start_hour = self.Param("StartHour", 0) \
             .SetDisplay("Start Hour", "Trading session start hour", "Time Filter")
@@ -49,9 +52,11 @@ class color_xmuv_time_strategy(Strategy):
             .SetDisplay("Length", "Smoothing length", "Indicator")
         self._signal_bar = self.Param("SignalBar", 1) \
             .SetDisplay("Signal Bar", "Number of completed bars to delay signals", "Indicator")
-        self._stop_loss_points = self.Param("StopLossPoints", 1000.0) \
+        self._max_color_history = self.Param("MaxColorHistory", 64) \
+            .SetDisplay("Max Color History", "Maximum stored trend color values", "Indicator")
+        self._stop_loss_points = self.Param("StopLossPoints", Decimal(0)) \
             .SetDisplay("Stop Loss (pts)", "Stop loss distance in points", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 2000.0) \
+        self._take_profit_points = self.Param("TakeProfitPoints", Decimal(0)) \
             .SetDisplay("Take Profit (pts)", "Take profit distance in points", "Risk")
 
         self._color_history = []
@@ -98,6 +103,9 @@ class color_xmuv_time_strategy(Strategy):
     def SignalBar(self):
         return self._signal_bar.Value
     @property
+    def MaxColorHistory(self):
+        return self._max_color_history.Value
+    @property
     def StopLossPoints(self):
         return self._stop_loss_points.Value
     @property
@@ -113,26 +121,40 @@ class color_xmuv_time_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.process_candle).Start()
 
+        self.StartProtection(self._create_tp_unit(), self._create_sl_unit())
+
+    def _create_sl_unit(self):
+        sl = self.StopLossPoints
+        if sl <= 0:
+            return Unit()
         sec = self.Security
-        step = 0.0
-        if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0:
-            step = float(sec.PriceStep)
+        if sec is None or sec.PriceStep is None:
+            return Unit()
+        step = sec.PriceStep
+        if step <= 0:
+            return Unit()
+        return Unit(step * sl, UnitTypes.Absolute)
 
-        tp_unit = None
-        sl_unit = None
-        if self.TakeProfitPoints > 0 and step > 0:
-            tp_unit = Unit(self.TakeProfitPoints * step, UnitTypes.Absolute)
-        if self.StopLossPoints > 0 and step > 0:
-            sl_unit = Unit(self.StopLossPoints * step, UnitTypes.Absolute)
-
-        self.StartProtection(takeProfit=tp_unit, stopLoss=sl_unit)
+    def _create_tp_unit(self):
+        tp = self.TakeProfitPoints
+        if tp <= 0:
+            return Unit()
+        sec = self.Security
+        if sec is None or sec.PriceStep is None:
+            return Unit()
+        step = sec.PriceStep
+        if step <= 0:
+            return Unit()
+        return Unit(step * tp, UnitTypes.Absolute)
 
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
         price = self._calc_signal_price(candle)
-        ind_out = self._xma.Process(DecimalIndicatorValue(self._xma, price, candle.OpenTime))
+        ind_val = DecimalIndicatorValue(self._xma, price, candle.OpenTime)
+        ind_val.IsFinal = True
+        ind_out = self._xma.Process(ind_val)
 
         if not self._xma.IsFormed:
             self._previous_xmuv = float(ind_out)
@@ -158,25 +180,21 @@ class color_xmuv_time_strategy(Strategy):
         in_session = (not self.UseTimeFilter) or self._is_inside_session(candle.CloseTime)
 
         if not in_session:
-            if self.Position > 0 and self.EnableBuyExits:
-                self.SellMarket()
-            elif self.Position < 0 and self.EnableSellExits:
-                self.BuyMarket()
+            self._force_exit_if_needed()
             return
 
-        # 2=bullish, 0=bearish, 1=neutral
-        bullish_flip = current_color == 2 and previous_color != 2
-        bearish_flip = current_color == 0 and previous_color != 0
+        bullish_flip = current_color == BULLISH and previous_color != BULLISH
+        bearish_flip = current_color == BEARISH and previous_color != BEARISH
 
         if bullish_flip:
-            if self.EnableSellExits and self.Position < 0:
+            if self.Position < 0 and self.EnableSellExits:
                 self.BuyMarket()
-            if self.EnableBuyEntries and self.Position <= 0:
+            elif self.Position == 0 and self.EnableBuyEntries:
                 self.BuyMarket()
         elif bearish_flip:
-            if self.EnableBuyExits and self.Position > 0:
+            if self.Position > 0 and self.EnableBuyExits:
                 self.SellMarket()
-            if self.EnableSellEntries and self.Position >= 0:
+            elif self.Position == 0 and self.EnableSellEntries:
                 self.SellMarket()
 
     def _calc_signal_price(self, candle):
@@ -185,35 +203,43 @@ class color_xmuv_time_strategy(Strategy):
         h = float(candle.HighPrice)
         lo = float(candle.LowPrice)
         if c < o:
-            return (lo + c) / 2.0
+            return Decimal((lo + c) / 2.0)
         if c > o:
-            return (h + c) / 2.0
-        return c
+            return Decimal((h + c) / 2.0)
+        return candle.ClosePrice
 
     def _determine_color(self, current_xmuv):
         if self._previous_xmuv is None:
-            return 1
+            return NEUTRAL
         if current_xmuv > self._previous_xmuv:
-            return 2
+            return BULLISH
         if current_xmuv < self._previous_xmuv:
-            return 0
-        return 1
+            return BEARISH
+        return NEUTRAL
 
     def _store_color(self, color):
         max_size = max(self.SignalBar + 2, 2)
+        if max_size > self.MaxColorHistory:
+            max_size = self.MaxColorHistory
         self._color_history.append(color)
         if len(self._color_history) > max_size:
             self._color_history.pop(0)
 
+    def _force_exit_if_needed(self):
+        if self.Position > 0 and self.EnableBuyExits:
+            self.SellMarket()
+        elif self.Position < 0 and self.EnableSellExits:
+            self.BuyMarket()
+
     def _is_inside_session(self, time):
         start = TimeSpan(self.StartHour, self.StartMinute, 0)
         end = TimeSpan(self.EndHour, self.EndMinute, 0)
-        current = time.TimeOfDay
+        moment = time.TimeOfDay
         if start == end:
-            return False
+            return moment >= start and moment < end
         if start < end:
-            return current >= start and current <= end
-        return current >= start or current <= end
+            return moment >= start and moment <= end
+        return moment >= start or moment <= end
 
     def OnReseted(self):
         super(color_xmuv_time_strategy, self).OnReseted()

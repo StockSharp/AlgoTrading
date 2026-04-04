@@ -2,14 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
-from System import TimeSpan, Decimal
+from System import TimeSpan, Decimal, DateTime
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 
 
 class color_jfatl_digit_tm_strategy(Strategy):
@@ -31,10 +29,10 @@ class color_jfatl_digit_tm_strategy(Strategy):
     def __init__(self):
         super(color_jfatl_digit_tm_strategy, self).__init__()
 
-        self._order_volume = self.Param("OrderVolume", 1.0) \
+        self._order_volume = self.Param("OrderVolume", Decimal(1)) \
             .SetGreaterThanZero() \
             .SetDisplay("Order Volume", "Trade volume per position", "Risk")
-        self._enable_time_filter = self.Param("EnableTimeFilter", True) \
+        self._enable_time_filter = self.Param("EnableTimeFilter", False) \
             .SetDisplay("Enable Time Filter", "Restrict trading to session hours", "Session")
         self._start_hour = self.Param("StartHour", 0) \
             .SetDisplay("Start Hour", "Session start hour", "Session")
@@ -56,12 +54,14 @@ class color_jfatl_digit_tm_strategy(Strategy):
             .SetDisplay("Enable Buy Close", "Allow closing long positions", "Signals")
         self._sell_close = self.Param("SellCloseEnabled", True) \
             .SetDisplay("Enable Sell Close", "Allow closing short positions", "Signals")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("SignalCandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Signal Candle Type", "Timeframe used for indicator", "Indicator")
-        self._jma_length = self.Param("JmaLength", 5) \
+        self._jma_length = self.Param("JmaLength", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("JMA Length", "Period for Jurik moving average", "Indicator")
-        self._digit_rounding = self.Param("DigitRounding", 2) \
+        self._jma_phase = self.Param("JmaPhase", -100) \
+            .SetDisplay("JMA Phase", "Phase shift for Jurik moving average", "Indicator")
+        self._digit_rounding = self.Param("DigitRounding", 0) \
             .SetDisplay("Digit Rounding", "Rounding precision multiplier", "Indicator")
         self._signal_bar = self.Param("SignalBar", 1) \
             .SetGreaterThanZero() \
@@ -70,7 +70,10 @@ class color_jfatl_digit_tm_strategy(Strategy):
         self._price_buffer = []
         self._color_history = []
         self._previous_line = None
-        self._jma = None
+        self._ema_value = None
+        self._ema_count = 0
+        self._next_buy_time = DateTime.MinValue
+        self._next_sell_time = DateTime.MinValue
 
     @property
     def OrderVolume(self):
@@ -115,6 +118,9 @@ class color_jfatl_digit_tm_strategy(Strategy):
     def JmaLength(self):
         return self._jma_length.Value
     @property
+    def JmaPhase(self):
+        return self._jma_phase.Value
+    @property
     def DigitRounding(self):
         return self._digit_rounding.Value
     @property
@@ -125,28 +131,40 @@ class color_jfatl_digit_tm_strategy(Strategy):
         super(color_jfatl_digit_tm_strategy, self).OnStarted2(time)
 
         self.Volume = self.OrderVolume
-        self._jma = ExponentialMovingAverage()
-        self._jma.Length = self.JmaLength
+
+        self._ema_value = None
+        self._ema_count = 0
+        self._ema_length = self.JmaLength
+        self._ema_multiplier = 2.0 / (self._ema_length + 1)
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.process_candle).Start()
 
-        step = 0.0
+        price_step = Decimal(0)
         sec = self.Security
-        if sec is not None and sec.PriceStep is not None and float(sec.PriceStep) > 0:
-            step = float(sec.PriceStep)
+        if sec is not None and sec.PriceStep is not None and sec.PriceStep > Decimal(0):
+            price_step = sec.PriceStep
 
         tp_unit = None
         sl_unit = None
-        if self.TakeProfitPoints > 0 and step > 0:
-            tp_unit = Unit(self.TakeProfitPoints * step, UnitTypes.Absolute)
-        if self.StopLossPoints > 0 and step > 0:
-            sl_unit = Unit(self.StopLossPoints * step, UnitTypes.Absolute)
+        if self.TakeProfitPoints > 0 and price_step > Decimal(0):
+            tp_unit = Unit(Decimal(self.TakeProfitPoints) * price_step, UnitTypes.Absolute)
+        if self.StopLossPoints > 0 and price_step > Decimal(0):
+            sl_unit = Unit(Decimal(self.StopLossPoints) * price_step, UnitTypes.Absolute)
 
-        if tp_unit is not None or sl_unit is not None:
-            self.StartProtection(
-                tp_unit if tp_unit is not None else Unit(0, UnitTypes.Absolute),
-                sl_unit if sl_unit is not None else Unit(0, UnitTypes.Absolute))
+        self.StartProtection(takeProfit=tp_unit, stopLoss=sl_unit)
+
+    def _process_ema(self, value):
+        """Manual EMA matching ExponentialMovingAverage behavior."""
+        self._ema_count += 1
+        if self._ema_value is None:
+            self._ema_value = value
+        else:
+            self._ema_value = value * self._ema_multiplier + self._ema_value * (1.0 - self._ema_multiplier)
+        return self._ema_value
+
+    def _ema_is_formed(self):
+        return self._ema_count >= self._ema_length
 
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -165,11 +183,10 @@ class color_jfatl_digit_tm_strategy(Strategy):
         for i in range(coeffs_len):
             fatl += self.FATL_COEFFICIENTS[i] * self._price_buffer[len(self._price_buffer) - 1 - i]
 
-        jma_out = self._jma.Process(DecimalIndicatorValue(self._jma, Decimal(fatl), candle.OpenTime))
-        if not self._jma.IsFormed:
+        jma_val = self._process_ema(fatl)
+        if not self._ema_is_formed():
             return
 
-        jma_val = float(jma_out)
         rounding_step = self._get_rounding_step()
         rounded_line = self._round_to_step(jma_val, rounding_step)
 
@@ -193,8 +210,9 @@ class color_jfatl_digit_tm_strategy(Strategy):
 
         current_color = self._color_history[self.SignalBar - 1]
         previous_color = self._color_history[self.SignalBar]
+        now = candle.CloseTime
 
-        in_session = (not self.EnableTimeFilter) or self._is_within_trading_window(candle.CloseTime)
+        in_session = (not self.EnableTimeFilter) or self._is_within_trading_window(now)
         if self.EnableTimeFilter and not in_session:
             if self.Position > 0:
                 self.SellMarket()
@@ -202,10 +220,10 @@ class color_jfatl_digit_tm_strategy(Strategy):
                 self.BuyMarket()
             return
 
-        buy_open_signal = self.BuyOpenEnabled and previous_color == 2 and current_color < 2
-        sell_close_signal = self.SellCloseEnabled and previous_color == 2
-        sell_open_signal = self.SellOpenEnabled and previous_color == 0 and current_color > 0
-        buy_close_signal = self.BuyCloseEnabled and previous_color == 0
+        buy_open_signal = self.BuyOpenEnabled and current_color == 2 and previous_color != 2
+        sell_close_signal = self.SellCloseEnabled and current_color == 2
+        sell_open_signal = self.SellOpenEnabled and current_color == 0 and previous_color != 0
+        buy_close_signal = self.BuyCloseEnabled and current_color == 0
 
         if buy_close_signal and self.Position > 0:
             self.SellMarket()
@@ -213,11 +231,13 @@ class color_jfatl_digit_tm_strategy(Strategy):
         if sell_close_signal and self.Position < 0:
             self.BuyMarket()
 
-        if buy_open_signal and self.Position == 0:
+        if buy_open_signal and self.Position == 0 and now >= self._next_buy_time:
             self.BuyMarket()
+            self._next_buy_time = now
 
-        if sell_open_signal and self.Position == 0:
+        if sell_open_signal and self.Position == 0 and now >= self._next_sell_time:
             self.SellMarket()
+            self._next_sell_time = now
 
     def _get_rounding_step(self):
         sec = self.Security
@@ -264,7 +284,10 @@ class color_jfatl_digit_tm_strategy(Strategy):
         self._price_buffer = []
         self._color_history = []
         self._previous_line = None
-        self._jma = None
+        self._ema_value = None
+        self._ema_count = 0
+        self._next_buy_time = DateTime.MinValue
+        self._next_sell_time = DateTime.MinValue
 
     def CreateClone(self):
         return color_jfatl_digit_tm_strategy()

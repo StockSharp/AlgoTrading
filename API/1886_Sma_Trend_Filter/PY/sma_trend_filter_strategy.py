@@ -14,21 +14,18 @@ from StockSharp.Algo.Strategies import Strategy
 class sma_trend_filter_strategy(Strategy):
     def __init__(self):
         super(sma_trend_filter_strategy, self).__init__()
-        self._open_level = self.Param("OpenLevel", 1) \
-            .SetDisplay("Open Level", "Signal threshold to open position", "Trading")
-        self._close_level = self.Param("CloseLevel", 0) \
-            .SetDisplay("Close Level", "Signal threshold to close position", "Trading")
-        self._cooldown_bars = self.Param("CooldownBars", 12) \
+        self._cooldown_bars = self.Param("CooldownBars", 200) \
             .SetDisplay("Cooldown Bars", "Minimum number of primary timeframe bars between orders", "Trading")
-        self._candle_type1 = self.Param("CandleType1", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type1 = self.Param("CandleType1", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type 1", "Primary timeframe", "General")
-        self._candle_type2 = self.Param("CandleType2", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type2 = self.Param("CandleType2", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type 2", "Secondary timeframe", "General")
-        self._candle_type3 = self.Param("CandleType3", DataType.TimeFrame(TimeSpan.FromDays(1))) \
+        self._candle_type3 = self.Param("CandleType3", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type 3", "Tertiary timeframe", "General")
 
         self._periods = [5, 8, 13, 21, 34]
         self._smas = [[None] * 5 for _ in range(3)]
+        # Previous values: [tf_index][sma_index]
         self._previous = [[0.0] * 5 for _ in range(3)]
         self._uitog = [0.0] * 3
         self._ditog = [0.0] * 3
@@ -41,14 +38,6 @@ class sma_trend_filter_strategy(Strategy):
                 sma = SimpleMovingAverage()
                 sma.Length = self._periods[j]
                 self._smas[i][j] = sma
-
-    @property
-    def open_level(self):
-        return self._open_level.Value
-
-    @property
-    def close_level(self):
-        return self._close_level.Value
 
     @property
     def cooldown_bars(self):
@@ -87,85 +76,100 @@ class sma_trend_filter_strategy(Strategy):
         sub3 = self.SubscribeCandles(self.candle_type3)
         sub3.Bind(self._smas[2][0], self._smas[2][1], self._smas[2][2], self._smas[2][3], self._smas[2][4], self.process_tf3).Start()
 
-    def process_tf1(self, candle, sma5, sma8, sma13, sma21, sma34):
-        self._process_tf(0, candle, [sma5, sma8, sma13, sma21, sma34])
-
-    def process_tf2(self, candle, sma5, sma8, sma13, sma21, sma34):
-        self._process_tf(1, candle, [sma5, sma8, sma13, sma21, sma34])
-
-    def process_tf3(self, candle, sma5, sma8, sma13, sma21, sma34):
-        self._process_tf(2, candle, [sma5, sma8, sma13, sma21, sma34])
-
-    def _process_tf(self, index, candle, values):
+    def process_tf1(self, candle, v0, v1, v2, v3, v4):
         if candle.State != CandleStates.Finished:
             return
+        self._process_tf_values(0, v0, v1, v2, v3, v4)
+        if self._is_ready[0]:
+            self._bars_since_trade += 1
+            self._evaluate_signal()
 
-        up = 0
-        down = 0
-        is_ready = True
+    def process_tf2(self, candle, v0, v1, v2, v3, v4):
+        if candle.State != CandleStates.Finished:
+            return
+        self._process_tf_values(1, v0, v1, v2, v3, v4)
+
+    def process_tf3(self, candle, v0, v1, v2, v3, v4):
+        if candle.State != CandleStates.Finished:
+            return
+        self._process_tf_values(2, v0, v1, v2, v3, v4)
+
+    def _process_tf_values(self, tf_index, v0, v1, v2, v3, v4):
+        vals = [float(v0), float(v1), float(v2), float(v3), float(v4)]
 
         for i in range(5):
-            val = float(values[i])
-            if val == 0.0:
+            if vals[i] == 0.0:
                 return
-            prev = self._previous[index][i]
-            if prev == 0.0:
-                self._previous[index][i] = val
+
+        # Get previous values
+        prevs = [self._previous[tf_index][i] for i in range(5)]
+
+        is_ready = True
+        for i in range(5):
+            if prevs[i] == 0.0:
                 is_ready = False
-                continue
-            if val > prev:
-                up += 1
-            elif val < prev:
-                down += 1
-            self._previous[index][i] = val
+
+        # Store current values
+        for i in range(5):
+            self._previous[tf_index][i] = vals[i]
 
         if not is_ready:
             return
 
-        self._is_ready[index] = True
-        self._uitog[index] = up / 5.0 * 100.0
-        self._ditog[index] = down / 5.0 * 100.0
+        up = 0
+        down = 0
+        for i in range(5):
+            if vals[i] > prevs[i]:
+                up += 1
+            elif vals[i] < prevs[i]:
+                down += 1
 
-        if index == 0:
-            self._bars_since_trade += 1
-            self._evaluate_signal()
+        up_pct = up / 5.0 * 100.0
+        down_pct = down / 5.0 * 100.0
+
+        self._uitog[tf_index] = up_pct
+        self._ditog[tf_index] = down_pct
+        self._is_ready[tf_index] = True
 
     def _evaluate_signal(self):
         if not self._is_ready[0] or not self._is_ready[1] or not self._is_ready[2]:
             return
 
+        # Compute average trend strength across all 3 timeframes
+        avg_up = (self._uitog[0] + self._uitog[1] + self._uitog[2]) / 3.0
+        avg_down = (self._ditog[0] + self._ditog[1] + self._ditog[2]) / 3.0
+
+        # Determine signal based on average trend strength
         self._signal = 0
 
-        if self._uitog[0] >= 100.0 and self._uitog[1] >= 100.0 and self._uitog[2] >= 100.0:
+        if avg_up >= 80.0:
             self._signal = 2
-        elif self._ditog[0] >= 100.0 and self._ditog[1] >= 100.0 and self._ditog[2] >= 100.0:
+        elif avg_down >= 80.0:
             self._signal = -2
-        elif self._uitog[0] >= 80.0 and self._uitog[1] >= 80.0 and self._uitog[2] >= 80.0:
+        elif avg_up >= 60.0:
             self._signal = 1
-        elif self._ditog[0] >= 80.0 and self._ditog[1] >= 80.0 and self._ditog[2] >= 80.0:
+        elif avg_down >= 60.0:
             self._signal = -1
-
-        open_buy = self._signal > self.open_level
-        open_sell = self._signal < -self.open_level
-        close_buy = self._signal <= -self.close_level
-        close_sell = self._signal >= self.close_level
-
-        if self.Position > 0 and close_buy:
-            self.SellMarket()
-            self._bars_since_trade = 0
-
-        if self.Position < 0 and close_sell:
-            self.BuyMarket()
-            self._bars_since_trade = 0
 
         if self._bars_since_trade < self.cooldown_bars:
             return
 
-        if open_buy and self.Position <= 0 and not close_buy:
+        # Close logic: close when signal reverses strongly
+        if self.Position > 0 and self._signal <= -2:
+            self.SellMarket()
+            self._bars_since_trade = 0
+            return
+
+        if self.Position < 0 and self._signal >= 2:
             self.BuyMarket()
             self._bars_since_trade = 0
+            return
 
-        if open_sell and self.Position >= 0 and not close_sell:
+        # Open logic: open when signal is strong (level 2)
+        if self._signal >= 2 and self.Position <= 0:
+            self.BuyMarket()
+            self._bars_since_trade = 0
+        elif self._signal <= -2 and self.Position >= 0:
             self.SellMarket()
             self._bars_since_trade = 0
 

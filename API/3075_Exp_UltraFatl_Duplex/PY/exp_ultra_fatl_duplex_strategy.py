@@ -2,20 +2,10 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import (
-    ExponentialMovingAverage,
-    SimpleMovingAverage,
-    SmoothedMovingAverage,
-    WeightedMovingAverage,
-    JurikMovingAverage,
-    KaufmanAdaptiveMovingAverage,
-    DecimalIndicatorValue,
-)
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -43,21 +33,21 @@ class exp_ultra_fatl_duplex_strategy(Strategy):
             .SetDisplay("Allow Long Entries", "Enable opening long positions", "Long")
         self._allow_long_exits = self.Param("AllowLongExits", True) \
             .SetDisplay("Allow Long Exits", "Enable closing long positions on opposite signals", "Long")
-        self._long_candle_type = self.Param("LongCandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._long_candle_type = self.Param("LongCandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Long Candle Type", "Timeframe used by the long UltraFATL block", "Long")
-        self._long_start_length = self.Param("LongStartLength", 3) \
+        self._long_start_length = self.Param("LongStartLength", 8) \
             .SetDisplay("Long Start Length", "Initial smoothing length for the ladder", "Long")
-        self._long_step = self.Param("LongStep", 1) \
+        self._long_step = self.Param("LongStep", 3) \
             .SetDisplay("Long Step", "Increment between ladder lengths", "Long")
-        self._long_steps_total = self.Param("LongStepsTotal", 3) \
+        self._long_steps_total = self.Param("LongStepsTotal", 6) \
             .SetDisplay("Long Steps", "Number of smoothing steps for the ladder", "Long")
-        self._long_smooth_length = self.Param("LongSmoothLength", 3) \
+        self._long_smooth_length = self.Param("LongSmoothLength", 8) \
             .SetDisplay("Long Counter Length", "Length used when smoothing the counters", "Long")
         self._long_signal_bar = self.Param("LongSignalBar", 1) \
             .SetDisplay("Long Signal Bar", "Closed-bar offset used when evaluating long signals", "Long")
-        self._long_stop_loss_points = self.Param("LongStopLossPoints", 1000) \
+        self._long_stop_loss_points = self.Param("LongStopLossPoints", 0) \
             .SetDisplay("Long Stop pts", "Protective stop distance in price steps for long trades", "Long")
-        self._long_take_profit_points = self.Param("LongTakeProfitPoints", 2000) \
+        self._long_take_profit_points = self.Param("LongTakeProfitPoints", 0) \
             .SetDisplay("Long Target pts", "Take-profit distance in price steps for long trades", "Long")
 
         self._short_volume = self.Param("ShortVolume", 1.0) \
@@ -66,44 +56,26 @@ class exp_ultra_fatl_duplex_strategy(Strategy):
             .SetDisplay("Allow Short Entries", "Enable opening short positions", "Short")
         self._allow_short_exits = self.Param("AllowShortExits", True) \
             .SetDisplay("Allow Short Exits", "Enable closing short positions on opposite signals", "Short")
-        self._short_candle_type = self.Param("ShortCandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._short_candle_type = self.Param("ShortCandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Short Candle Type", "Timeframe used by the short UltraFATL block", "Short")
-        self._short_start_length = self.Param("ShortStartLength", 3) \
+        self._short_start_length = self.Param("ShortStartLength", 8) \
             .SetDisplay("Short Start Length", "Initial smoothing length for the short ladder", "Short")
-        self._short_step = self.Param("ShortStep", 1) \
+        self._short_step = self.Param("ShortStep", 3) \
             .SetDisplay("Short Step", "Increment between smoothing lengths for the short ladder", "Short")
-        self._short_steps_total = self.Param("ShortStepsTotal", 3) \
+        self._short_steps_total = self.Param("ShortStepsTotal", 6) \
             .SetDisplay("Short Steps", "Number of smoothing steps for the short ladder", "Short")
-        self._short_smooth_length = self.Param("ShortSmoothLength", 3) \
+        self._short_smooth_length = self.Param("ShortSmoothLength", 8) \
             .SetDisplay("Short Counter Length", "Length used when smoothing the short counters", "Short")
         self._short_signal_bar = self.Param("ShortSignalBar", 1) \
             .SetDisplay("Short Signal Bar", "Closed-bar offset used when evaluating short signals", "Short")
-        self._short_stop_loss_points = self.Param("ShortStopLossPoints", 1000) \
+        self._short_stop_loss_points = self.Param("ShortStopLossPoints", 0) \
             .SetDisplay("Short Stop pts", "Protective stop distance in price steps for short trades", "Short")
-        self._short_take_profit_points = self.Param("ShortTakeProfitPoints", 2000) \
+        self._short_take_profit_points = self.Param("ShortTakeProfitPoints", 0) \
             .SetDisplay("Short Target pts", "Take-profit distance in price steps for short trades", "Short")
 
         self._long_entry_price = None
         self._short_entry_price = None
         self._price_step = 0.0
-
-        # Long context state
-        self._long_ladder = []
-        self._long_prev_values = []
-        self._long_bulls_smoother = None
-        self._long_bears_smoother = None
-        self._long_history = []
-        self._long_fatl_buffer = []
-        self._long_fatl_filled = 0
-
-        # Short context state
-        self._short_ladder = []
-        self._short_prev_values = []
-        self._short_bulls_smoother = None
-        self._short_bears_smoother = None
-        self._short_history = []
-        self._short_fatl_buffer = []
-        self._short_fatl_filled = 0
 
     @property
     def long_volume(self):
@@ -198,98 +170,75 @@ class exp_ultra_fatl_duplex_strategy(Strategy):
         self._long_entry_price = None
         self._short_entry_price = None
         self._price_step = 0.0
-        self._long_ladder = []
-        self._long_prev_values = []
-        self._long_bulls_smoother = None
-        self._long_bears_smoother = None
-        self._long_history = []
-        self._long_fatl_buffer = []
-        self._long_fatl_filled = 0
-        self._short_ladder = []
-        self._short_prev_values = []
-        self._short_bulls_smoother = None
-        self._short_bears_smoother = None
-        self._short_history = []
-        self._short_fatl_buffer = []
-        self._short_fatl_filled = 0
+        self._long_ctx = None
+        self._short_ctx = None
+
+    def _make_context(self, start_length, step, steps_total, smooth_length):
+        ladder_lengths = []
+        for i in range(steps_total + 1):
+            ladder_lengths.append(max(1, start_length + i * step))
+        counter_len = max(1, smooth_length)
+        return {
+            'fatl_buffer': [0.0] * len(self._FATL_COEFFICIENTS),
+            'fatl_filled': 0,
+            'ladder_lengths': ladder_lengths,
+            'ladder_ema_vals': [None] * (steps_total + 1),
+            'prev_values': [None] * (steps_total + 1),
+            'bulls_ema_val': None,
+            'bears_ema_val': None,
+            'ladder_multipliers': [2.0 / (l + 1) for l in ladder_lengths],
+            'bulls_mult': 2.0 / (counter_len + 1),
+            'bears_mult': 2.0 / (counter_len + 1),
+            'history': [],
+        }
+
+    def _ema_process(self, prev_val, new_val, mult):
+        if prev_val is None:
+            return new_val
+        return prev_val + mult * (new_val - prev_val)
 
     def OnStarted2(self, time):
         super(exp_ultra_fatl_duplex_strategy, self).OnStarted2(time)
 
         self._price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 0.0
 
-        # Build long context ladder
-        self._long_ladder = []
-        self._long_prev_values = []
-        self._long_fatl_buffer = [0.0] * len(self._FATL_COEFFICIENTS)
-        self._long_fatl_filled = 0
-        self._long_history = []
-        for i in range(self.long_steps_total + 1):
-            length = max(1, self.long_start_length + i * self.long_step)
-            ind = ExponentialMovingAverage()
-            ind.Length = length
-            self._long_ladder.append(ind)
-            self._long_prev_values.append(None)
-        counter_len = max(1, self.long_smooth_length)
-        self._long_bulls_smoother = ExponentialMovingAverage()
-        self._long_bulls_smoother.Length = counter_len
-        self._long_bears_smoother = ExponentialMovingAverage()
-        self._long_bears_smoother.Length = counter_len
+        self._long_ctx = self._make_context(
+            self.long_start_length, self.long_step, self.long_steps_total, self.long_smooth_length)
+        self._short_ctx = self._make_context(
+            self.short_start_length, self.short_step, self.short_steps_total, self.short_smooth_length)
 
-        # Build short context ladder
-        self._short_ladder = []
-        self._short_prev_values = []
-        self._short_fatl_buffer = [0.0] * len(self._FATL_COEFFICIENTS)
-        self._short_fatl_filled = 0
-        self._short_history = []
-        for i in range(self.short_steps_total + 1):
-            length = max(1, self.short_start_length + i * self.short_step)
-            ind = ExponentialMovingAverage()
-            ind.Length = length
-            self._short_ladder.append(ind)
-            self._short_prev_values.append(None)
-        counter_len = max(1, self.short_smooth_length)
-        self._short_bulls_smoother = ExponentialMovingAverage()
-        self._short_bulls_smoother.Length = counter_len
-        self._short_bears_smoother = ExponentialMovingAverage()
-        self._short_bears_smoother.Length = counter_len
-
-        # Subscribe to candles for long context
         sub_long = self.SubscribeCandles(self.long_candle_type)
         sub_long.Bind(self._process_long_candle).Start()
 
-        # Subscribe to candles for short context (may be same timeframe)
         sub_short = self.SubscribeCandles(self.short_candle_type)
         sub_short.Bind(self._process_short_candle).Start()
 
-    def _fatl_process(self, buffer, filled_count, value):
+    def _fatl_process(self, ctx, value):
+        buf = ctx['fatl_buffer']
         buf_len = len(self._FATL_COEFFICIENTS)
         for i in range(buf_len - 1, 0, -1):
-            buffer[i] = buffer[i - 1]
-        buffer[0] = value
-        new_filled = min(filled_count + 1, buf_len)
-        if new_filled < buf_len:
-            return None, new_filled
+            buf[i] = buf[i - 1]
+        buf[0] = value
+        filled = ctx['fatl_filled']
+        if filled < buf_len:
+            filled += 1
+            ctx['fatl_filled'] = filled
+        if filled < buf_len:
+            return None
         total = 0.0
         for i in range(buf_len):
-            total += self._FATL_COEFFICIENTS[i] * buffer[i]
-        return total, new_filled
+            total += self._FATL_COEFFICIENTS[i] * buf[i]
+        return total
 
     def _process_context_candle(self, candle, is_long):
         if candle.State != CandleStates.Finished:
             return
 
         close = float(candle.ClosePrice)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
         price_step = self._price_step
 
         if is_long:
-            ladder = self._long_ladder
-            prev_values = self._long_prev_values
-            bulls_sm = self._long_bulls_smoother
-            bears_sm = self._long_bears_smoother
-            history = self._long_history
+            ctx = self._long_ctx
             signal_bar = self.long_signal_bar
             sl_pts = self.long_stop_loss_points
             tp_pts = self.long_take_profit_points
@@ -297,17 +246,16 @@ class exp_ultra_fatl_duplex_strategy(Strategy):
             allow_entries = self.allow_long_entries
             allow_exits = self.allow_long_exits
         else:
-            ladder = self._short_ladder
-            prev_values = self._short_prev_values
-            bulls_sm = self._short_bulls_smoother
-            bears_sm = self._short_bears_smoother
-            history = self._short_history
+            ctx = self._short_ctx
             signal_bar = self.short_signal_bar
             sl_pts = self.short_stop_loss_points
             tp_pts = self.short_take_profit_points
             vol = float(self.short_volume)
             allow_entries = self.allow_short_entries
             allow_exits = self.allow_short_exits
+
+        if ctx is None:
+            return
 
         # Check stops first
         self._check_stops(is_long, candle, sl_pts, tp_pts, price_step)
@@ -316,55 +264,41 @@ class exp_ultra_fatl_duplex_strategy(Strategy):
             return
 
         # FATL filter
-        if is_long:
-            fatl_val, self._long_fatl_filled = self._fatl_process(
-                self._long_fatl_buffer, self._long_fatl_filled, close)
-        else:
-            fatl_val, self._short_fatl_filled = self._fatl_process(
-                self._short_fatl_buffer, self._short_fatl_filled, close)
-
+        fatl_val = self._fatl_process(ctx, close)
         if fatl_val is None:
             return
 
-        # Process ladder
+        # Process ladder with manual EMA
         up_count = 0.0
         down_count = 0.0
+        ladder_count = len(ctx['ladder_lengths'])
 
-        for i in range(len(ladder)):
-            ind = ladder[i]
-            ind_value = ind.Process(
-                DecimalIndicatorValue(ind, fatl_val, candle.OpenTime))
-            if not ind_value.IsFinal:
+        for i in range(ladder_count):
+            new_ema = self._ema_process(ctx['ladder_ema_vals'][i], fatl_val, ctx['ladder_multipliers'][i])
+            ctx['ladder_ema_vals'][i] = new_ema
+
+            if ctx['prev_values'][i] is None:
+                ctx['prev_values'][i] = new_ema
                 return
 
-            cur_val = float(ind_value)
-
-            if prev_values[i] is None:
-                prev_values[i] = cur_val
-                return
-
-            prev_val = prev_values[i]
-            if cur_val > prev_val:
+            prev_val = ctx['prev_values'][i]
+            if new_ema > prev_val:
                 up_count += 1.0
             else:
                 down_count += 1.0
-            prev_values[i] = cur_val
+            ctx['prev_values'][i] = new_ema
 
-        if bulls_sm is None or bears_sm is None:
-            return
+        # Smooth counters with EMA
+        new_bulls = self._ema_process(ctx['bulls_ema_val'], up_count, ctx['bulls_mult'])
+        ctx['bulls_ema_val'] = new_bulls
+        new_bears = self._ema_process(ctx['bears_ema_val'], down_count, ctx['bears_mult'])
+        ctx['bears_ema_val'] = new_bears
 
-        bulls_value = bulls_sm.Process(
-            DecimalIndicatorValue(bulls_sm, up_count, candle.OpenTime))
-        bears_value = bears_sm.Process(
-            DecimalIndicatorValue(bears_sm, down_count, candle.OpenTime))
+        bulls = new_bulls
+        bears = new_bears
 
-        if not bulls_value.IsFinal or not bears_value.IsFinal:
-            return
-
-        bulls = float(bulls_value)
-        bears = float(bears_value)
-
-        history.append((bulls, bears, close, high, low))
+        history = ctx['history']
+        history.append((bulls, bears, float(candle.ClosePrice), float(candle.HighPrice), float(candle.LowPrice)))
         max_hist = max(10, max(1, signal_bar) + 5)
         if len(history) > max_hist:
             history[:] = history[-max_hist:]

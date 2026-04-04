@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
@@ -16,29 +17,29 @@ class rnn_probability_strategy(Strategy):
         super(rnn_probability_strategy, self).__init__()
 
         self._trade_volume = self.Param("TradeVolume", 1.0) \
-            .SetDisplay("Trade Volume", "Lot size used for each market entry", "General")
+            .SetDisplay("Trade Volume", "Lot size used for each market entry.", "General")
         self._rsi_period = self.Param("RsiPeriod", 9) \
-            .SetDisplay("RSI Period", "Length of the RSI indicator feeding the neural network", "Indicator")
+            .SetDisplay("RSI Period", "Length of the RSI indicator feeding the neural network.", "Indicator")
         self._stop_loss_take_profit_pips = self.Param("StopLossTakeProfitPips", 100.0) \
-            .SetDisplay("Stop Loss and Take Profit pips", "Distance used for both SL and TP levels", "Risk")
+            .SetDisplay("Stop Loss & Take Profit (pips)", "Distance used for both stop-loss and take-profit levels.", "Risk")
         self._weight0 = self.Param("Weight0", 6.0) \
-            .SetDisplay("Weight 0", "Probability weight when all RSI inputs are low", "Model")
+            .SetDisplay("Weight 0", "Probability weight applied when all RSI inputs are low.", "Model")
         self._weight1 = self.Param("Weight1", 96.0) \
-            .SetDisplay("Weight 1", "Probability weight for low low high branch", "Model")
+            .SetDisplay("Weight 1", "Probability weight for the (low, low, high) branch.", "Model")
         self._weight2 = self.Param("Weight2", 90.0) \
-            .SetDisplay("Weight 2", "Probability weight for low high low branch", "Model")
+            .SetDisplay("Weight 2", "Probability weight for the (low, high, low) branch.", "Model")
         self._weight3 = self.Param("Weight3", 35.0) \
-            .SetDisplay("Weight 3", "Probability weight for low high high branch", "Model")
+            .SetDisplay("Weight 3", "Probability weight for the (low, high, high) branch.", "Model")
         self._weight4 = self.Param("Weight4", 64.0) \
-            .SetDisplay("Weight 4", "Probability weight for high low low branch", "Model")
+            .SetDisplay("Weight 4", "Probability weight for the (high, low, low) branch.", "Model")
         self._weight5 = self.Param("Weight5", 83.0) \
-            .SetDisplay("Weight 5", "Probability weight for high low high branch", "Model")
+            .SetDisplay("Weight 5", "Probability weight for the (high, low, high) branch.", "Model")
         self._weight6 = self.Param("Weight6", 66.0) \
-            .SetDisplay("Weight 6", "Probability weight for high high low branch", "Model")
+            .SetDisplay("Weight 6", "Probability weight for the (high, high, low) branch.", "Model")
         self._weight7 = self.Param("Weight7", 50.0) \
-            .SetDisplay("Weight 7", "Probability weight for high high high branch", "Model")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
-            .SetDisplay("Candle Type", "Primary timeframe used for signal generation", "General")
+            .SetDisplay("Weight 7", "Probability weight for the (high, high, high) branch.", "Model")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+            .SetDisplay("Candle Type", "Primary timeframe used for signal generation.", "General")
 
         self._rsi = None
         self._rsi_history = []
@@ -131,21 +132,19 @@ class rnn_probability_strategy(Strategy):
             return
 
         price = float(candle.OpenPrice)
-        rsi_ind_value = self._rsi.Process(
-            DecimalIndicatorValue(self._rsi, price, candle.OpenTime))
+        div = DecimalIndicatorValue(self._rsi, price, candle.OpenTime)
+        div.IsFinal = True
+        rsi_ind_value = self._rsi.Process(div)
 
         if not self._rsi.IsFormed or rsi_ind_value.IsEmpty:
             return
 
-        rsi_value = float(rsi_ind_value)
+        rsi_value = float(rsi_ind_value.Value)
 
         self._rsi_history.append(rsi_value)
         max_size = max(2 * rsi_period + 5, rsi_period + 1)
         if len(self._rsi_history) > max_size:
             self._rsi_history = self._rsi_history[-max_size:]
-
-        if not self.IsOnline:
-            return
 
         last_index = len(self._rsi_history) - 1
         delayed_index = last_index - rsi_period
@@ -165,13 +164,18 @@ class rnn_probability_strategy(Strategy):
         if tv <= 0:
             return
 
-        if self.Position != 0:
-            return
+        pos = float(self.Position)
 
         if signal < 0:
-            self.BuyMarket(tv)
+            # want long
+            if pos <= 0:
+                vol = abs(pos) + tv
+                self.BuyMarket(vol)
         else:
-            self.SellMarket(tv)
+            # want short
+            if pos >= 0:
+                vol = pos + tv
+                self.SellMarket(vol)
 
     def _calculate_probability(self, p1, p2, p3):
         pn1 = 1.0 - p1

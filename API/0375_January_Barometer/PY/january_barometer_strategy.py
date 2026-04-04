@@ -2,123 +2,111 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security, Order
 
 
 class january_barometer_strategy(Strategy):
-    """January barometer strategy that rotates between the primary instrument and a benchmark proxy based on the primary January return."""
+    """
+    January barometer strategy generalized to any month.
+    Measures the return over the first N candles of each evaluation period,
+    then goes long if bullish or short if bearish for the remainder.
+    Re-evaluates at the start of each new period.
+    """
 
     def __init__(self):
         super(january_barometer_strategy, self).__init__()
 
-        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
-            .SetDisplay("Benchmark Security Id", "Defensive benchmark proxy", "General")
+        self._measure_candles = self.Param("MeasureCandles", 50) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Measure Candles", "Number of candles for barometer measurement", "General")
 
-        self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
-            .SetRange(1.0, 100000.0) \
-            .SetDisplay("Min trade USD", "Minimum order value", "Risk")
+        self._period_candles = self.Param("PeriodCandles", 200) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Period Candles", "Total candles per evaluation period", "General")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._latest_prices = {}
-        self._january_open = 0.0
-        self._decision_year = 0
+        self._candle_count = 0
+        self._period_open = 0
+        self._measure_close = 0
+        self._measured = False
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def MeasureCandles(self):
+        return self._measure_candles.Value
 
-    def GetWorkingSecurities(self):
-        result = []
-        if self.Security is not None:
-            result.append((self.Security, self.candle_type))
-        sec2_id = str(self._security2_id.Value)
-        if sec2_id:
-            s = Security()
-            s.Id = sec2_id
-            result.append((s, self.candle_type))
-        return result
+    @property
+    def PeriodCandles(self):
+        return self._period_candles.Value
+
+    @property
+    def CandleType(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(january_barometer_strategy, self).OnReseted()
-        self._latest_prices = {}
-        self._january_open = 0.0
-        self._decision_year = 0
+        self._candle_count = 0
+        self._period_open = 0
+        self._measure_close = 0
+        self._measured = False
 
     def OnStarted2(self, time):
         super(january_barometer_strategy, self).OnStarted2(time)
 
-        sec2_id = str(self._security2_id.Value)
-        if not sec2_id:
-            raise Exception("Benchmark security identifier is not specified.")
-
-        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
-        primary_subscription.Bind(lambda candle: self.ProcessCandle(candle, self.Security)).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self.ProcessCandle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, primary_subscription)
+            self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, security):
+    def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._latest_prices[security] = candle.ClosePrice
+        self._candle_count += 1
 
-        if security != self.Security:
-            return
+        # Start of a new period
+        if self._candle_count == 1:
+            self._period_open = candle.OpenPrice
+            self._measured = False
 
-        day = candle.OpenTime.Date
+        # End of measurement window
+        if self._candle_count == self.MeasureCandles and not self._measured:
+            self._measure_close = candle.ClosePrice
+            self._measured = True
 
-        if day.Month == 1 and self._january_open == 0.0:
-            self._january_open = float(candle.OpenPrice)
+            if self._period_open > 0:
+                barometer_return = (self._measure_close - self._period_open) / self._period_open
+                bullish = barometer_return > 0
 
-        if day.Month == 2 and self._decision_year != day.Year and self._january_open > 0.0:
-            self._decision_year = day.Year
-            january_return = (float(candle.ClosePrice) - self._january_open) / self._january_open
-            self.Rebalance(january_return > 0.0)
+                # Enter position based on barometer reading
+                if bullish and self.Position <= 0:
+                    if self.Position < 0:
+                        self.BuyMarket()
+                    self.BuyMarket()
+                elif not bullish and self.Position >= 0:
+                    if self.Position > 0:
+                        self.SellMarket()
+                    self.SellMarket()
 
-    def Rebalance(self, bullish):
-        weight = 1.0 if bullish else -1.0
-        self.Move(self.Security, weight)
+        # End of period: close position and reset for next period
+        if self._candle_count >= self.PeriodCandles:
+            if self.Position > 0:
+                self.SellMarket()
+            elif self.Position < 0:
+                self.BuyMarket()
 
-    def Move(self, security, weight):
-        price = self.GetLatestPrice(security)
-        if price <= 0.0:
-            return
-
-        portfolio_value = float(self.Portfolio.CurrentValue) if self.Portfolio.CurrentValue is not None else 0.0
-        target = weight * portfolio_value / price
-        pos_val = self.GetPositionValue(security, self.Portfolio)
-        current_pos = float(pos_val) if pos_val is not None else 0.0
-        diff = target - current_pos
-
-        min_trade = float(self._min_trade_usd.Value)
-        if abs(diff) * price < min_trade:
-            return
-
-        order = Order()
-        order.Security = security
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy if diff > 0 else Sides.Sell
-        order.Volume = abs(diff)
-        order.Type = OrderTypes.Market
-        order.Comment = "JanBar"
-        self.RegisterOrder(order)
-
-    def GetLatestPrice(self, security):
-        if security in self._latest_prices:
-            return float(self._latest_prices[security])
-        return 0.0
+            self._candle_count = 0
+            self._period_open = 0
+            self._measure_close = 0
+            self._measured = False
 
     def CreateClone(self):
         return january_barometer_strategy()

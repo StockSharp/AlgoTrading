@@ -1,16 +1,15 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import (
-    ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue, DecimalIndicatorValue
-)
 
 
 class omni_trend_strategy(Strategy):
@@ -19,7 +18,7 @@ class omni_trend_strategy(Strategy):
     def __init__(self):
         super(omni_trend_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe used to build Omni Trend signals", "General")
         self._ma_length = self.Param("MaLength", 13) \
             .SetGreaterThanZero() \
@@ -33,7 +32,7 @@ class omni_trend_strategy(Strategy):
         self._money_risk = self.Param("MoneyRisk", 0.15) \
             .SetGreaterThanZero() \
             .SetDisplay("Money Risk", "Offset factor used to position trend bands", "Indicators")
-        self._signal_bar = self.Param("SignalBar", 1) \
+        self._signal_bar = self.Param("SignalBar", 0) \
             .SetDisplay("Signal Bar", "Delay in bars before acting on a signal", "Trading")
         self._enable_buy_open = self.Param("EnableBuyOpen", True) \
             .SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading")
@@ -43,11 +42,15 @@ class omni_trend_strategy(Strategy):
             .SetDisplay("Enable Long Exits", "Allow closing long positions", "Trading")
         self._enable_sell_close = self.Param("EnableSellClose", True) \
             .SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading")
-        self._stop_loss_points = self.Param("StopLossPoints", 1000) \
+        self._stop_loss_points = self.Param("StopLossPoints", 0) \
             .SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 2000) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 0) \
             .SetDisplay("Take Profit (points)", "Profit target distance expressed in price steps", "Risk")
 
+        self.Volume = 1
+
+        self._ma = None
+        self._atr = None
         self._prev_smin = 0.0
         self._prev_smax = 0.0
         self._prev_trend_up = 0.0
@@ -114,7 +117,7 @@ class omni_trend_strategy(Strategy):
         self._atr.Length = self.AtrLength
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._atr, self.process_candle).Start()
+        subscription.Bind(self.process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -122,20 +125,34 @@ class omni_trend_strategy(Strategy):
             self.DrawIndicator(area, self._ma)
             self.DrawOwnTrades(area)
 
-    def process_candle(self, candle, atr_val):
+    def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        atr_v = float(atr_val)
-        close = float(candle.ClosePrice)
+        if self._ma is None or self._atr is None:
+            return
 
-        ma_result = self._ma.Process(DecimalIndicatorValue(self._ma, close, candle.OpenTime))
-        if not ma_result.IsFinal:
+        atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
+        applied_price = Decimal(float(candle.ClosePrice))
+        iv = DecimalIndicatorValue(self._ma, applied_price, candle.OpenTime)
+        iv.IsFinal = True
+        ma_result = self._ma.Process(iv)
+
+        if not atr_result.IsFinal or not ma_result.IsFinal:
             return
 
         self._check_risk(candle)
 
-        ma_v = float(ma_result.GetValue[float]())
+        atr_v = float(atr_result)
+        ma_v = float(ma_result)
+        sig = self._calculate_signal(candle, ma_v, atr_v)
+
+        self._pending_signals.append(sig)
+        while len(self._pending_signals) > self.SignalBar:
+            pending = self._pending_signals.pop(0)
+            self._execute_signal(candle, pending)
+
+    def _calculate_signal(self, candle, ma_v, atr_v):
         vf = float(self.VolatilityFactor)
         mr = float(self.MoneyRisk)
 
@@ -149,7 +166,7 @@ class omni_trend_strategy(Strategy):
             self._prev_trend_down = 0.0
             self._prev_trend = 0
             self._is_initialized = True
-            return
+            return [False, False, False, False]
 
         trend = self._prev_trend
         if float(candle.HighPrice) > self._prev_smax:
@@ -194,10 +211,7 @@ class omni_trend_strategy(Strategy):
         self._prev_trend_up = trend_up if trend_up is not None else 0.0
         self._prev_trend_down = trend_down if trend_down is not None else 0.0
 
-        self._pending_signals.append(sig)
-        while len(self._pending_signals) > self.SignalBar:
-            pending = self._pending_signals.pop(0)
-            self._execute_signal(candle, pending)
+        return sig
 
     def _execute_signal(self, candle, sig):
         buy_open, buy_close, sell_open, sell_close = sig
@@ -263,6 +277,9 @@ class omni_trend_strategy(Strategy):
 
     def OnReseted(self):
         super(omni_trend_strategy, self).OnReseted()
+        self._pending_signals = []
+        self._ma = None
+        self._atr = None
         self._prev_smin = 0.0
         self._prev_smax = 0.0
         self._prev_trend_up = 0.0
@@ -271,7 +288,6 @@ class omni_trend_strategy(Strategy):
         self._is_initialized = False
         self._long_entry_price = None
         self._short_entry_price = None
-        self._pending_signals = []
 
     def CreateClone(self):
         return omni_trend_strategy()

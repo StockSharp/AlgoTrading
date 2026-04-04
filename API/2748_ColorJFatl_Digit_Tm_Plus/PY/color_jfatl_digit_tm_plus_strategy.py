@@ -1,16 +1,16 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import JurikMovingAverage, DecimalIndicatorValue
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
 
 # Applied price constants
 PRICE_CLOSE = 1
@@ -39,33 +39,32 @@ _FATL_COEFF = [
     0.0007860160, 0.0130129076, 0.0040364019,
 ]
 
+_FATL_LEN = len(_FATL_COEFF)
+
 
 class color_jfatl_digit_tm_plus_strategy(Strategy):
     def __init__(self):
         super(color_jfatl_digit_tm_plus_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
-        self._jma_length = self.Param("JmaLength", 5)
-        self._applied_price = self.Param("AppliedPrice", PRICE_CLOSE)
-        self._rounding_digits = self.Param("RoundingDigits", 2)
-        self._signal_bar = self.Param("SignalBar", 1)
-        self._stop_loss_points = self.Param("StopLossPoints", 1000)
-        self._take_profit_points = self.Param("TakeProfitPoints", 2000)
+        self._trade_volume = self.Param("TradeVolume", Decimal(1))
+        self._stop_loss_points = self.Param("StopLossPoints", 0)
+        self._take_profit_points = self.Param("TakeProfitPoints", 0)
         self._enable_buy_entries = self.Param("EnableBuyEntries", True)
         self._enable_sell_entries = self.Param("EnableSellEntries", True)
         self._enable_buy_exits = self.Param("EnableBuyExits", True)
         self._enable_sell_exits = self.Param("EnableSellExits", True)
-        self._use_time_exit = self.Param("UseTimeExit", True)
+        self._use_time_exit = self.Param("UseTimeExit", False)
         self._holding_minutes = self.Param("HoldingMinutes", 240)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
+        self._jma_length = self.Param("JmaLength", 14)
+        self._applied_price = self.Param("AppliedPrice", PRICE_CLOSE)
+        self._digit_rounding = self.Param("DigitRounding", 0)
+        self._signal_bar = self.Param("SignalBar", 1)
 
         self._jma = None
-        self._price_buffer = [0.0] * len(_FATL_COEFF)
-        self._buf_idx = 0
-        self._buf_count = 0
-        self._prev_line = None
-        self._prev_color = None
+        self._price_buffer = []
         self._color_history = []
-        self._entry_price = None
+        self._previous_line = None
         self._entry_time = None
 
     @property
@@ -76,282 +75,191 @@ class color_jfatl_digit_tm_plus_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    @property
-    def JmaLength(self):
-        return self._jma_length.Value
-
-    @property
-    def AppliedPrice(self):
-        return self._applied_price.Value
-
-    @property
-    def RoundingDigits(self):
-        return self._rounding_digits.Value
-
-    @property
-    def SignalBar(self):
-        return self._signal_bar.Value
-
-    @property
-    def StopLossPoints(self):
-        return self._stop_loss_points.Value
-
-    @property
-    def TakeProfitPoints(self):
-        return self._take_profit_points.Value
-
-    @property
-    def EnableBuyEntries(self):
-        return self._enable_buy_entries.Value
-
-    @property
-    def EnableSellEntries(self):
-        return self._enable_sell_entries.Value
-
-    @property
-    def EnableBuyExits(self):
-        return self._enable_buy_exits.Value
-
-    @property
-    def EnableSellExits(self):
-        return self._enable_sell_exits.Value
-
-    @property
-    def UseTimeExit(self):
-        return self._use_time_exit.Value
-
-    @property
-    def HoldingMinutes(self):
-        return self._holding_minutes.Value
-
     def OnStarted2(self, time):
         super(color_jfatl_digit_tm_plus_strategy, self).OnStarted2(time)
 
-        self._jma = JurikMovingAverage()
-        self._jma.Length = max(1, self.JmaLength)
+        self.Volume = self._trade_volume.Value
+        self._jma = ExponentialMovingAverage()
+        self._jma.Length = self._jma_length.Value
 
-        self._price_buffer = [0.0] * len(_FATL_COEFF)
-        self._buf_idx = 0
-        self._buf_count = 0
-        self._prev_line = None
-        self._prev_color = None
+        self._price_buffer = []
         self._color_history = []
-        self._entry_price = None
+        self._previous_line = None
         self._entry_time = None
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()
 
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawOwnTrades(area)
+        sec = self.Security
+        price_step = sec.PriceStep if sec is not None and sec.PriceStep is not None else Decimal(0)
 
-    def _get_price(self, candle):
-        ap = self.AppliedPrice
+        take_profit_unit = None
+        stop_loss_unit = None
+
+        tp = self._take_profit_points.Value
+        sl = self._stop_loss_points.Value
+
+        if tp > 0 and price_step > Decimal(0):
+            take_profit_unit = Unit(Decimal(tp) * price_step, UnitTypes.Absolute)
+
+        if sl > 0 and price_step > Decimal(0):
+            stop_loss_unit = Unit(Decimal(sl) * price_step, UnitTypes.Absolute)
+
+        self.StartProtection(take_profit_unit, stop_loss_unit)
+
+    def _get_applied_price(self, candle):
+        ap = self._applied_price.Value
         o = float(candle.OpenPrice)
         h = float(candle.HighPrice)
-        l = float(candle.LowPrice)
+        low = float(candle.LowPrice)
         c = float(candle.ClosePrice)
-        if ap == PRICE_OPEN:
+
+        if ap == PRICE_CLOSE:
+            return c
+        elif ap == PRICE_OPEN:
             return o
         elif ap == PRICE_HIGH:
             return h
         elif ap == PRICE_LOW:
-            return l
+            return low
         elif ap == PRICE_MEDIAN:
-            return (h + l) / 2.0
+            return (h + low) / 2.0
         elif ap == PRICE_TYPICAL:
-            return (h + l + c) / 3.0
+            return (c + h + low) / 3.0
         elif ap == PRICE_WEIGHTED:
-            return (2.0 * c + h + l) / 4.0
+            return (2.0 * c + h + low) / 4.0
         elif ap == PRICE_AVERAGE_OC:
             return (o + c) / 2.0
         elif ap == PRICE_AVERAGE_OHLC:
-            return (o + h + l + c) / 4.0
+            return (o + c + h + low) / 4.0
         elif ap == PRICE_TREND_FOLLOW1:
             if c > o:
                 return h
             elif c < o:
-                return l
+                return low
             else:
                 return c
         elif ap == PRICE_TREND_FOLLOW2:
             if c > o:
                 return (h + c) / 2.0
             elif c < o:
-                return (l + c) / 2.0
+                return (low + c) / 2.0
             else:
                 return c
         elif ap == PRICE_DEMARK:
-            res = h + l + c
-            if c < o:
-                res = (res + l) / 2.0
-            elif c > o:
-                res = (res + h) / 2.0
-            else:
-                res = (res + c) / 2.0
-            return ((res - l) + (res - h)) / 2.0
+            return self._get_demark_price(o, h, low, c)
         else:
             return c
+
+    def _get_demark_price(self, o, h, low, c):
+        res = h + low + c
+        if c < o:
+            res = (res + low) / 2.0
+        elif c > o:
+            res = (res + h) / 2.0
+        else:
+            res = (res + c) / 2.0
+        return ((res - low) + (res - h)) / 2.0
+
+    def _get_rounding_step(self):
+        sec = self.Security
+        step = sec.PriceStep if sec is not None and sec.PriceStep is not None else Decimal(0)
+        if step <= Decimal(0):
+            return 0.0
+        multiplier = Math.Pow(10.0, float(self._digit_rounding.Value))
+        return float(step) * multiplier
+
+    def _round_to_step(self, value, step):
+        if step <= 0.0:
+            return value
+        return round(value / step) * step
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        price = self._get_price(candle)
-        buf_len = len(self._price_buffer)
-        self._price_buffer[self._buf_idx] = price
-        self._buf_idx = (self._buf_idx + 1) % buf_len
-        if self._buf_count < buf_len:
-            self._buf_count += 1
+        price = self._get_applied_price(candle)
+        self._price_buffer.append(price)
+        if len(self._price_buffer) > _FATL_LEN:
+            self._price_buffer.pop(0)
 
-        if self._buf_count < buf_len:
+        if len(self._price_buffer) < _FATL_LEN:
             return
 
         fatl = 0.0
-        idx = self._buf_idx
-        for i in range(len(_FATL_COEFF)):
-            idx = (idx - 1 + buf_len) % buf_len
-            fatl += _FATL_COEFF[i] * self._price_buffer[idx]
+        for i in range(_FATL_LEN):
+            fatl += _FATL_COEFF[i] * self._price_buffer[len(self._price_buffer) - 1 - i]
 
-        t = candle.OpenTime
-        jma_val = self._jma.Process(DecimalIndicatorValue(self._jma, fatl, t))
+        iv = DecimalIndicatorValue(self._jma, Decimal(fatl), candle.OpenTime)
+        iv.IsFinal = True
+        jma_result = self._jma.Process(iv)
         if not self._jma.IsFormed:
             return
 
-        smoothed = round(float(jma_val), self.RoundingDigits)
+        jma_val = float(jma_result.Value)
+        rounding_step = self._get_rounding_step()
+        rounded_line = self._round_to_step(jma_val, rounding_step)
 
         color = 1
-        if self._prev_line is not None:
-            diff = smoothed - self._prev_line
+        if self._previous_line is not None:
+            diff = rounded_line - self._previous_line
             if diff > 0:
                 color = 2
             elif diff < 0:
                 color = 0
-            elif self._prev_color is not None:
-                color = self._prev_color
+            elif len(self._color_history) > 0:
+                color = self._color_history[0]
 
-        self._prev_line = smoothed
-        self._prev_color = color
+        self._previous_line = rounded_line
+        self._color_history.insert(0, color)
+        if len(self._color_history) > 100:
+            self._color_history.pop()
 
-        self._color_history.append(color)
-        max_hist = max(self.SignalBar + 2, 2)
-        while len(self._color_history) > max_hist:
-            self._color_history.pop(0)
-
-        offset = max(self.SignalBar, 1)
-        if len(self._color_history) < offset + 1:
+        signal_bar = self._signal_bar.Value
+        if len(self._color_history) <= signal_bar:
             return
 
-        current_color = self._color_history[-offset]
-        previous_color = self._color_history[-(offset + 1)]
+        current_color = self._color_history[signal_bar - 1]
+        previous_color = self._color_history[signal_bar]
 
-        buy_open = False
-        sell_open = False
-        buy_close = False
-        sell_close = False
+        # Time-based exit
+        if self._use_time_exit.Value and self.Position != 0 and self._entry_time is not None and self._holding_minutes.Value > 0:
+            elapsed = candle.CloseTime.Subtract(self._entry_time)
+            if elapsed >= TimeSpan.FromMinutes(self._holding_minutes.Value):
+                if self.Position > 0:
+                    self.SellMarket()
+                elif self.Position < 0:
+                    self.BuyMarket()
+                self._entry_time = None
 
-        if current_color == 2:
-            if self.EnableBuyEntries and previous_color < 2:
-                buy_open = True
-            if self.EnableSellExits:
-                sell_close = True
-        elif current_color == 0:
-            if self.EnableSellEntries and previous_color > 0:
-                sell_open = True
-            if self.EnableBuyExits:
-                buy_close = True
+        buy_open_signal = self._enable_buy_entries.Value and current_color == 2 and previous_color != 2
+        sell_close_signal = self._enable_sell_exits.Value and current_color == 2
+        sell_open_signal = self._enable_sell_entries.Value and current_color == 0 and previous_color != 0
+        buy_close_signal = self._enable_buy_exits.Value and current_color == 0
 
-        self._handle_time_exit(candle)
-        if self._handle_stops(candle):
-            return
-
-        if buy_close and self.Position > 0:
+        if buy_close_signal and self.Position > 0:
             self.SellMarket()
-            self._entry_price = None
             self._entry_time = None
 
-        if sell_close and self.Position < 0:
+        if sell_close_signal and self.Position < 0:
             self.BuyMarket()
-            self._entry_price = None
             self._entry_time = None
 
-        if buy_open and self.Position == 0:
+        if buy_open_signal and self.Position == 0:
             self.BuyMarket()
-            self._entry_price = float(candle.ClosePrice)
-            self._entry_time = candle.CloseTime
-        elif sell_open and self.Position == 0:
-            self.SellMarket()
-            self._entry_price = float(candle.ClosePrice)
             self._entry_time = candle.CloseTime
 
-        if self.Position == 0:
-            self._entry_price = None
-            self._entry_time = None
-
-    def _handle_time_exit(self, candle):
-        if not self.UseTimeExit or self.Position == 0 or self._entry_time is None:
-            return
-        if self.HoldingMinutes <= 0:
-            return
-
-        elapsed = candle.CloseTime - self._entry_time
-        if elapsed < TimeSpan.FromMinutes(self.HoldingMinutes):
-            return
-
-        if self.Position > 0:
+        if sell_open_signal and self.Position == 0:
             self.SellMarket()
-        elif self.Position < 0:
-            self.BuyMarket()
-
-        self._entry_price = None
-        self._entry_time = None
-
-    def _handle_stops(self, candle):
-        if self.Position == 0 or self._entry_price is None:
-            return False
-
-        sec = self.Security
-        step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
-        stop_offset = self.StopLossPoints * step if self.StopLossPoints > 0 else 0.0
-        take_offset = self.TakeProfitPoints * step if self.TakeProfitPoints > 0 else 0.0
-
-        if self.Position > 0:
-            if stop_offset > 0 and float(candle.LowPrice) <= self._entry_price - stop_offset:
-                self.SellMarket()
-                self._entry_price = None
-                self._entry_time = None
-                return True
-            if take_offset > 0 and float(candle.HighPrice) >= self._entry_price + take_offset:
-                self.SellMarket()
-                self._entry_price = None
-                self._entry_time = None
-                return True
-        elif self.Position < 0:
-            if stop_offset > 0 and float(candle.HighPrice) >= self._entry_price + stop_offset:
-                self.BuyMarket()
-                self._entry_price = None
-                self._entry_time = None
-                return True
-            if take_offset > 0 and float(candle.LowPrice) <= self._entry_price - take_offset:
-                self.BuyMarket()
-                self._entry_price = None
-                self._entry_time = None
-                return True
-
-        return False
+            self._entry_time = candle.CloseTime
 
     def OnReseted(self):
         super(color_jfatl_digit_tm_plus_strategy, self).OnReseted()
+        self._jma = None
+        self._price_buffer = []
         self._color_history = []
-        self._entry_price = None
+        self._previous_line = None
         self._entry_time = None
-        self._price_buffer = [0.0] * len(_FATL_COEFF)
-        self._buf_idx = 0
-        self._buf_count = 0
-        self._prev_line = None
-        self._prev_color = None
 
     def CreateClone(self):
         return color_jfatl_digit_tm_plus_strategy()

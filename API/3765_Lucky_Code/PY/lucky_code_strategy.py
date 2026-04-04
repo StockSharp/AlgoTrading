@@ -2,72 +2,81 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
 
 class lucky_code_strategy(Strategy):
-    """Momentum strategy converted from Level1 bid/ask jumps to candle-based.
-    Detects large consecutive close-to-close moves and enters on reversal expectation.
-    Exits quickly on any profit or caps the loss at a configurable distance."""
+    """Momentum strategy that opens trades when candle price jumps reach a configurable distance
+    and manages exits with profit and drawdown filters."""
 
     def __init__(self):
         super(lucky_code_strategy, self).__init__()
 
         self._shift_points = self.Param("ShiftPoints", 3) \
             .SetGreaterThanZero() \
-            .SetDisplay("Shift points", "Minimum close-to-close jump required to trigger entries", "Trading")
+            .SetDisplay("Shift points", "Minimum price jump required to trigger entries", "Trading") \
+            .SetOptimize(1, 20, 1)
+
         self._limit_points = self.Param("LimitPoints", 18) \
             .SetGreaterThanZero() \
-            .SetDisplay("Limit points", "Maximum number of points allowed against the position", "Risk management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Timeframe of candles used for price tracking", "General")
+            .SetDisplay("Limit points", "Maximum number of points allowed against the position", "Risk management") \
+            .SetOptimize(5, 100, 5)
 
         self._previous_close = None
-        self._entry_price = 0.0
         self._shift_threshold = 0.0
         self._limit_threshold = 0.0
-
-    @property
-    def CandleType(self):
-        return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+        self._entry_price = 0.0
+        self._thresholds_ready = False
+        self._hold_bars = 0
 
     @property
     def ShiftPoints(self):
         return self._shift_points.Value
 
+    @ShiftPoints.setter
+    def ShiftPoints(self, value):
+        self._shift_points.Value = value
+
     @property
     def LimitPoints(self):
         return self._limit_points.Value
 
+    @LimitPoints.setter
+    def LimitPoints(self, value):
+        self._limit_points.Value = value
+
     def OnReseted(self):
         super(lucky_code_strategy, self).OnReseted()
         self._previous_close = None
-        self._entry_price = 0.0
         self._shift_threshold = 0.0
         self._limit_threshold = 0.0
+        self._entry_price = 0.0
+        self._thresholds_ready = False
+        self._hold_bars = 0
 
     def OnStarted2(self, time):
         super(lucky_code_strategy, self).OnStarted2(time)
 
-        step = self.Security.PriceStep if self.Security is not None else 0.0
-        if step is None or float(step) <= 0:
-            step = 1.0
-        step = float(step)
+        tf = DataType.TimeFrame(TimeSpan.FromMinutes(5))
 
-        self._shift_threshold = self.ShiftPoints * step
-        self._limit_threshold = self.LimitPoints * step
-
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(tf)
         subscription.Bind(self._process_candle).Start()
+
+    def _ensure_thresholds(self, price):
+        if self._thresholds_ready:
+            return
+
+        if price <= 0.0:
+            return
+
+        # Use percentage of price. ShiftPoints=3 means 3% shift, LimitPoints=18 means 18% limit.
+        self._shift_threshold = price * self.ShiftPoints * 0.01
+        self._limit_threshold = price * self.LimitPoints * 0.01
+        self._thresholds_ready = True
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -75,52 +84,74 @@ class lucky_code_strategy(Strategy):
 
         close = float(candle.ClosePrice)
 
-        # Try to close existing position first
-        self._try_close_position(candle)
+        self._ensure_thresholds(close)
 
-        if self._previous_close is not None and self.Position == 0:
-            prev = self._previous_close
+        if not self._thresholds_ready:
+            return
 
-            # Ask jumped up (close rose sharply) -> sell on reversal expectation
-            if self._shift_threshold > 0 and close - prev >= self._shift_threshold:
-                self.SellMarket()
-                self._entry_price = close
+        # Count hold bars for position management.
+        if self.Position != 0:
+            self._hold_bars += 1
 
-            # Bid dropped (close fell sharply) -> buy on reversal expectation
-            elif self._shift_threshold > 0 and prev - close >= self._shift_threshold:
-                self.BuyMarket()
-                self._entry_price = close
+        if self._previous_close is not None:
+            prev_close = self._previous_close
+            delta = close - prev_close
+
+            # Only enter if flat.
+            if self.Position == 0:
+                # Price dropped sharply -> buy on expected rebound.
+                if (-delta) >= self._shift_threshold:
+                    self.BuyMarket()
+                    self._entry_price = close
+                    self._hold_bars = 0
+                    self.LogInfo("Buy triggered by fast price drop. Price=" + str(close))
+                # Price rose sharply -> sell on expected reversal.
+                elif delta >= self._shift_threshold:
+                    self.SellMarket()
+                    self._entry_price = close
+                    self._hold_bars = 0
+                    self.LogInfo("Sell triggered by fast price rise. Price=" + str(close))
 
         self._previous_close = close
 
-    def _try_close_position(self, candle):
+        self._try_close_position(close)
+
+    def _try_close_position(self, current_price):
         if self.Position == 0:
             return
 
         avg_price = self._entry_price
-        if avg_price <= 0:
+
+        if avg_price <= 0.0:
             return
 
-        close = float(candle.ClosePrice)
+        # Minimum hold of 3 bars before checking exit.
+        if self._hold_bars < 3:
+            return
+
+        # Use half of shift threshold as profit target.
+        profit_target = self._shift_threshold * 0.5
 
         if self.Position > 0:
-            # Close long on any profit
-            if close > avg_price:
+            # Close long on profit target or drawdown limit.
+            if current_price - avg_price >= profit_target:
                 self.SellMarket()
-                self._entry_price = 0.0
-            # Close long on drawdown limit
-            elif self._limit_threshold > 0 and avg_price - close >= self._limit_threshold:
+                self._hold_bars = 0
+                self.LogInfo("Closed long on profit. Price=" + str(current_price))
+            elif self._limit_threshold > 0.0 and avg_price - current_price >= self._limit_threshold:
                 self.SellMarket()
-                self._entry_price = 0.0
+                self._hold_bars = 0
+                self.LogInfo("Closed long on drawdown limit. Price=" + str(current_price))
         elif self.Position < 0:
-            # Close short on any profit
-            if close < avg_price:
+            # Close short on profit target or drawdown limit.
+            if avg_price - current_price >= profit_target:
                 self.BuyMarket()
-                self._entry_price = 0.0
-            # Close short on drawdown limit
-            elif self._limit_threshold > 0 and close - avg_price >= self._limit_threshold:
+                self._hold_bars = 0
+                self.LogInfo("Closed short on profit. Price=" + str(current_price))
+            elif self._limit_threshold > 0.0 and current_price - avg_price >= self._limit_threshold:
                 self.BuyMarket()
-                self._entry_price = 0.0
+                self._hold_bars = 0
+                self.LogInfo("Closed short on drawdown limit. Price=" + str(current_price))
 
     def CreateClone(self):
         return lucky_code_strategy()

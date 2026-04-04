@@ -5,9 +5,9 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AverageTrueRange
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AverageTrueRange, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -23,16 +23,16 @@ class keltner_channel_golden_cross_strategy(Strategy):
             .SetDisplay("Profit Mult", "ATR multiplier for take profit", "Risk")
         self._exit_atr_mult = self.Param("ExitAtrMultiplier", -1.0) \
             .SetDisplay("Exit Mult", "ATR multiplier for stop", "Risk")
-        self._short_ma_length = self.Param("ShortMaLength", 50) \
+        self._short_ma_length = self.Param("ShortMaLength", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Short MA", "Short moving average length", "Trend")
-        self._long_ma_length = self.Param("LongMaLength", 200) \
+        self._long_ma_length = self.Param("LongMaLength", 30) \
             .SetGreaterThanZero() \
             .SetDisplay("Long MA", "Long moving average length", "Trend")
         self._max_entries = self.Param("MaxEntries", 45) \
             .SetGreaterThanZero() \
             .SetDisplay("Max Entries", "Maximum entries per run", "Risk")
-        self._cooldown_bars = self.Param("CooldownBars", 12000) \
+        self._cooldown_bars = self.Param("CooldownBars", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
@@ -81,6 +81,10 @@ class keltner_channel_golden_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         self._bars_since_signal += 1
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         bv = float(basis_val)
         ea = float(entry_atr_val)
         av = float(atr_val)
@@ -98,26 +102,32 @@ class keltner_channel_golden_cross_strategy(Strategy):
         stop_short = bv - exit_mult * av
         long_trend = sm > lm
         short_trend = sm < lm
+
         if self._bars_since_signal < self._cooldown_bars.Value:
             return
-        if self.Position > 0:
+
+        pos = self.Position
+        if pos > 0:
             if price >= take_profit or price <= stop_long:
-                self.SellMarket()
+                self.SellMarket(Math.Abs(pos))
                 self._bars_since_signal = 0
             return
-        if self.Position < 0:
+
+        if pos < 0:
             if price <= take_profit_short or price >= stop_short:
-                self.BuyMarket()
+                self.BuyMarket(Math.Abs(pos))
                 self._bars_since_signal = 0
             return
-        if self._entries_executed >= self._max_entries.Value:
+
+        if self._entries_executed >= self._max_entries.Value or self._bars_since_signal < self._cooldown_bars.Value:
             return
+
         if long_trend and price > upper_entry:
-            self.BuyMarket()
+            self.BuyMarket(self.Volume)
             self._entries_executed += 1
             self._bars_since_signal = 0
         elif short_trend and price < lower_entry:
-            self.SellMarket()
+            self.SellMarket(self.Volume)
             self._entries_executed += 1
             self._bars_since_signal = 0
 

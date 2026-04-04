@@ -5,9 +5,9 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -74,16 +74,16 @@ class constituents_ea_strategy(Strategy):
         self._lowest.Length = self.search_depth
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._process_candle).Start()
+        subscription.Bind(self._highest, self._lowest, self._process_candle).Start()
 
-    def _process_candle(self, candle):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle, high_value, low_value):
         if candle.State != CandleStates.Finished:
             return
-
-        high_value = self._highest.Process(
-            DecimalIndicatorValue(self._highest, candle.HighPrice, candle.OpenTime))
-        low_value = self._lowest.Process(
-            DecimalIndicatorValue(self._lowest, candle.LowPrice, candle.OpenTime))
 
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return

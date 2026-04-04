@@ -5,11 +5,16 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math, Decimal, Array
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import (SimpleMovingAverage, ExponentialMovingAverage,
-    SmoothedMovingAverage, WeightedMovingAverage, JurikMovingAverage)
+from System import TimeSpan, Decimal, Array
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
+try:
+    from StockSharp.Algo.Indicators import JurikMovingAverage
+    _has_jurik = True
+except:
+    _has_jurik = False
 
 SMOOTH_SMA = 0
 SMOOTH_EMA = 1
@@ -22,20 +27,20 @@ class stochastic_chaikins_volatility_strategy(Strategy):
     def __init__(self):
         super(stochastic_chaikins_volatility_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
         self._primary_method = self.Param("PrimaryMethod", SMOOTH_SMA)
-        self._primary_length = self.Param("PrimaryLength", 10)
+        self._primary_length = self.Param("PrimaryLength", 20)
         self._secondary_method = self.Param("SecondaryMethod", SMOOTH_JURIK)
-        self._secondary_length = self.Param("SecondaryLength", 5)
-        self._stochastic_length = self.Param("StochasticLength", 5)
+        self._secondary_length = self.Param("SecondaryLength", 10)
+        self._stochastic_length = self.Param("StochasticLength", 14)
         self._signal_shift = self.Param("SignalShift", 1)
         self._allow_long_entry = self.Param("AllowLongEntry", True)
         self._allow_short_entry = self.Param("AllowShortEntry", True)
         self._allow_long_exit = self.Param("AllowLongExit", True)
         self._allow_short_exit = self.Param("AllowShortExit", True)
-        self._high_level = self.Param("HighLevel", 300.0)
-        self._middle_level = self.Param("MiddleLevel", 50.0)
-        self._low_level = self.Param("LowLevel", -300.0)
+        self._high_level = self.Param("HighLevel", Decimal(70))
+        self._middle_level = self.Param("MiddleLevel", Decimal(50))
+        self._low_level = self.Param("LowLevel", Decimal(30))
 
         self._volatility_window = []
         self._main_history = []
@@ -156,24 +161,19 @@ class stochastic_chaikins_volatility_strategy(Strategy):
         m = int(method)
         if m == SMOOTH_EMA:
             ind = ExponentialMovingAverage()
-            ind.Length = length
-            return ind
         elif m == SMOOTH_SMMA:
             ind = SmoothedMovingAverage()
-            ind.Length = length
-            return ind
         elif m == SMOOTH_LWMA:
             ind = WeightedMovingAverage()
-            ind.Length = length
-            return ind
         elif m == SMOOTH_JURIK:
-            ind = JurikMovingAverage()
-            ind.Length = length
-            return ind
+            if _has_jurik:
+                ind = JurikMovingAverage()
+            else:
+                ind = ExponentialMovingAverage()
         else:
             ind = SimpleMovingAverage()
-            ind.Length = length
-            return ind
+        ind.Length = length
+        return ind
 
     def OnStarted2(self, time):
         super(stochastic_chaikins_volatility_strategy, self).OnStarted2(time)
@@ -191,9 +191,11 @@ class stochastic_chaikins_volatility_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        diff = float(candle.HighPrice) - float(candle.LowPrice)
+        diff = Decimal.Subtract(candle.HighPrice, candle.LowPrice)
 
-        smoothed_result = self._primary_smoother.Process(self._primary_smoother.CreateValue(candle.OpenTime, Array[object]([Decimal(diff)])))
+        input_val = self._primary_smoother.CreateValue(candle.OpenTime, Array[object]([diff]))
+        input_val.IsFinal = True
+        smoothed_result = self._primary_smoother.Process(input_val)
         if not smoothed_result.IsFormed:
             return
 
@@ -210,9 +212,11 @@ class stochastic_chaikins_volatility_strategy(Strategy):
         highest = max(self._volatility_window)
         lowest = min(self._volatility_window)
 
-        price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 0.0001
-        if price_step <= 0.0:
-            price_step = 0.0001
+        price_step = 0.0001
+        if self.Security is not None and self.Security.PriceStep is not None:
+            ps = float(self.Security.PriceStep)
+            if ps > 0.0:
+                price_step = ps
 
         range_val = highest - lowest
         denominator = range_val if range_val >= price_step else price_step
@@ -228,7 +232,9 @@ class stochastic_chaikins_volatility_strategy(Strategy):
 
         scaled = normalized * 100.0
 
-        stoch_result = self._secondary_smoother.Process(self._secondary_smoother.CreateValue(candle.OpenTime, Array[object]([Decimal(scaled)])))
+        stoch_input = self._secondary_smoother.CreateValue(candle.OpenTime, Array[object]([Decimal(scaled)]))
+        stoch_input.IsFinal = True
+        stoch_result = self._secondary_smoother.Process(stoch_input)
         if not stoch_result.IsFormed:
             return
 
@@ -246,10 +252,13 @@ class stochastic_chaikins_volatility_strategy(Strategy):
         value1 = self._main_history[idx + 1]
         value2 = self._main_history[idx + 2]
 
-        buy_close = self.AllowLongExit and value1 < value2
-        sell_close = self.AllowShortExit and value1 > value2
-        buy_open = self.AllowLongEntry and value1 > value2 and value0 <= value1
-        sell_open = self.AllowShortEntry and value1 < value2 and value0 >= value1
+        high_lvl = float(self.HighLevel)
+        low_lvl = float(self.LowLevel)
+
+        buy_close = self.AllowLongExit and value1 > high_lvl and value1 < value2
+        sell_close = self.AllowShortExit and value1 < low_lvl and value1 > value2
+        buy_open = self.AllowLongEntry and value1 < low_lvl and value1 > value2 and value0 <= value1
+        sell_open = self.AllowShortEntry and value1 > high_lvl and value1 < value2 and value0 >= value1
 
         if self.Position > 0 and buy_close:
             self.SellMarket()

@@ -5,10 +5,10 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import StandardDeviation
 
 
 class ii_outbreak_strategy(Strategy):
@@ -136,7 +136,7 @@ class ii_outbreak_strategy(Strategy):
         self._std_dev.Length = 10
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.process_candle).Start()
+        subscription.Bind(self._std_dev, self.process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -144,13 +144,13 @@ class ii_outbreak_strategy(Strategy):
             self.DrawIndicator(area, self._std_dev)
             self.DrawOwnTrades(area)
 
-    def process_candle(self, candle):
+    def process_candle(self, candle, std_dev_val):
         if candle.State != CandleStates.Finished:
             return
 
         self._update_timing(candle)
-        self._std_dev.Process(DecimalIndicatorValue(self._std_dev, float(candle.ClosePrice), candle.OpenTime))
         self._update_volatility(candle)
+        spread_points = self._get_spread_in_points()
 
         can_trade = self._std_dev.IsFormed
 
@@ -171,9 +171,9 @@ class ii_outbreak_strategy(Strategy):
                 self._has_previous_candle = True
                 return
 
-            self._try_open_position(candle)
+            self._try_open_position(candle, spread_points)
         else:
-            self._manage_open_position(candle)
+            self._manage_open_position(candle, spread_points)
 
         self._has_previous_candle = True
 
@@ -206,8 +206,11 @@ class ii_outbreak_strategy(Strategy):
         self._current_spread_limit = self.SpreadThreshold
         self._entry_price = 0.0
 
-    def _try_open_position(self, candle):
+    def _try_open_position(self, candle, spread_points):
         if not self._volatility_signal:
+            return
+
+        if self._current_spread_limit > 0.0 and spread_points > self._current_spread_limit:
             return
 
         close = float(candle.ClosePrice)
@@ -221,11 +224,15 @@ class ii_outbreak_strategy(Strategy):
             self._entry_price = close
             self._short_initial_stop = close + self._initial_stop_distance
 
-    def _manage_open_position(self, candle):
+    def _manage_open_position(self, candle, spread_points):
         if self.Position == 0:
             return
 
         if self._entry_price <= 0 or self._point <= 0:
+            return
+
+        volume = abs(float(self.Position))
+        if volume <= 0:
             return
 
         h = float(candle.HighPrice)
@@ -257,7 +264,8 @@ class ii_outbreak_strategy(Strategy):
                 self._reset_after_close()
                 return
 
-            self._try_add_to_position(True, profit_points, candle)
+            if self._current_spread_limit <= 0.0 or spread_points <= self._current_spread_limit:
+                self._try_add_to_position(True, profit_points, candle)
 
         else:
             new_stop = close + self._trail_stop_distance
@@ -269,7 +277,8 @@ class ii_outbreak_strategy(Strategy):
                 self._reset_after_close()
                 return
 
-            self._try_add_to_position(False, profit_points, candle)
+            if self._current_spread_limit <= 0.0 or spread_points <= self._current_spread_limit:
+                self._try_add_to_position(False, profit_points, candle)
 
     def _try_add_to_position(self, is_long, profit_points, candle):
         if not self._volatility_signal:
@@ -295,7 +304,26 @@ class ii_outbreak_strategy(Strategy):
             self._short_initial_stop = None
 
     def _is_equity_risk_exceeded(self, candle):
-        return False
+        pf = self.Portfolio
+        balance = None
+        if pf is not None:
+            balance = pf.CurrentValue if pf.CurrentValue is not None else pf.BeginValue
+        if balance is None or float(balance) <= 0 or self.Position == 0 or self._entry_price <= 0:
+            return False
+
+        volume = abs(float(self.Position))
+        current_price = float(candle.ClosePrice)
+        if self.Position > 0:
+            pnl = (current_price - self._entry_price) * volume
+        else:
+            pnl = (self._entry_price - current_price) * volume
+
+        drawdown = -pnl if pnl < 0 else 0.0
+        threshold = float(balance) * self.TotalEquityRisk / 100.0
+        return drawdown > threshold
+
+    def _get_spread_in_points(self):
+        return 0.0
 
     def _update_volatility(self, candle):
         self._volatility_signal = self._has_previous_candle
@@ -395,7 +423,7 @@ class ii_outbreak_strategy(Strategy):
         self._sell_signal = self._timing_values[1] >= self._timing_values[2] and self._timing_values[0] < self._timing_values[1]
 
     def _is_trading_blocked_by_calendar(self, t):
-        if t.DayOfWeek == 5 and t.Hour >= 23:  # Friday
+        if t.DayOfWeek == DayOfWeek.Friday and t.Hour >= 23:
             return True
         day_of_year = t.DayOfYear
         if (day_of_year == 358 or day_of_year == 359 or day_of_year == 365 or day_of_year == 366) and t.Hour >= 16:

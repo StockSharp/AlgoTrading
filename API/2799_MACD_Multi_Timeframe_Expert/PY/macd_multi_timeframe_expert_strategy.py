@@ -5,10 +5,9 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from System import Decimal
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -17,26 +16,20 @@ class macd_multi_timeframe_expert_strategy(Strategy):
     def __init__(self):
         super(macd_multi_timeframe_expert_strategy, self).__init__()
         self._order_volume = self.Param("OrderVolume", 0.1)
-        self._stop_loss_points = self.Param("StopLossPoints", 200.0)
-        self._take_profit_points = self.Param("TakeProfitPoints", 400.0)
-        self._max_spread_points = self.Param("MaxSpreadPoints", 20.0)
+        self._stop_loss_points = self.Param("StopLossPoints", 1500.0)
+        self._take_profit_points = self.Param("TakeProfitPoints", 2500.0)
         self._fast_period = self.Param("FastPeriod", 12)
         self._slow_period = self.Param("SlowPeriod", 26)
         self._signal_period = self.Param("SignalPeriod", 9)
-        self._five_minute_type = self.Param("FiveMinuteCandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
-        self._fifteen_minute_type = self.Param("FifteenMinuteCandleType", DataType.TimeFrame(TimeSpan.FromHours(2)))
-        self._hour_type = self.Param("HourCandleType", DataType.TimeFrame(TimeSpan.FromHours(8)))
-        self._four_hour_type = self.Param("FourHourCandleType", DataType.TimeFrame(TimeSpan.FromDays(1)))
+        self._primary_type = self.Param("PrimaryCandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+        self._confirm_type = self.Param("ConfirmCandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 
-        self._macd_five_minute = None
-        self._macd_fifteen_minute = None
-        self._macd_hour = None
-        self._macd_four_hour = None
-        self._relation_five_minute = None
-        self._relation_fifteen_minute = None
-        self._relation_hour = None
-        self._relation_four_hour = None
-        self._last_aligned_direction = 0
+        self._macd_primary = None
+        self._macd_confirm = None
+        self._relation_primary = None
+        self._relation_confirm = None
+        self._last_trade_direction = 0
+        self._candles_since_entry = 0
         self._entry_price = 0.0
 
     @property
@@ -52,10 +45,6 @@ class macd_multi_timeframe_expert_strategy(Strategy):
         return self._take_profit_points.Value
 
     @property
-    def MaxSpreadPoints(self):
-        return self._max_spread_points.Value
-
-    @property
     def FastPeriod(self):
         return self._fast_period.Value
 
@@ -68,39 +57,27 @@ class macd_multi_timeframe_expert_strategy(Strategy):
         return self._signal_period.Value
 
     @property
-    def FiveMinuteCandleType(self):
-        return self._five_minute_type.Value
+    def PrimaryCandleType(self):
+        return self._primary_type.Value
 
     @property
-    def FifteenMinuteCandleType(self):
-        return self._fifteen_minute_type.Value
-
-    @property
-    def HourCandleType(self):
-        return self._hour_type.Value
-
-    @property
-    def FourHourCandleType(self):
-        return self._four_hour_type.Value
+    def ConfirmCandleType(self):
+        return self._confirm_type.Value
 
     def OnStarted2(self, time):
         super(macd_multi_timeframe_expert_strategy, self).OnStarted2(time)
 
-        self._macd_five_minute = self._create_macd()
-        self._macd_fifteen_minute = self._create_macd()
-        self._macd_hour = self._create_macd()
-        self._macd_four_hour = self._create_macd()
+        self._macd_primary = self._create_macd()
+        self._macd_confirm = self._create_macd()
 
-        five_minute_subscription = self.SubscribeCandles(self.FiveMinuteCandleType)
-        five_minute_subscription.Bind(self._process_five_minute_candle).Start()
+        primary_subscription = self.SubscribeCandles(self.PrimaryCandleType)
+        primary_subscription.BindEx(self._macd_primary, self._process_primary_candle).Start()
 
-        self.SubscribeCandles(self.FifteenMinuteCandleType).Bind(self._process_fifteen_minute_candle).Start()
-        self.SubscribeCandles(self.HourCandleType).Bind(self._process_hour_candle).Start()
-        self.SubscribeCandles(self.FourHourCandleType).Bind(self._process_four_hour_candle).Start()
+        self.SubscribeCandles(self.ConfirmCandleType).BindEx(self._macd_confirm, self._process_confirm_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, five_minute_subscription)
+            self.DrawCandles(area, primary_subscription)
             self.DrawOwnTrades(area)
 
     def _create_macd(self):
@@ -110,67 +87,71 @@ class macd_multi_timeframe_expert_strategy(Strategy):
         macd.SignalMa.Length = self.SignalPeriod
         return macd
 
-    def _try_update_relation(self, macd_indicator, candle):
-        civ = CandleIndicatorValue(macd_indicator, candle)
-        civ.IsFinal = True
-        macd_value = macd_indicator.Process(civ)
-
-        if not macd_indicator.IsFormed:
+    def _try_update_relation(self, macd_value):
+        if not macd_value.IsFinal:
             return (False, 0)
 
         try:
             macd_val = float(macd_value.Macd)
             signal_val = float(macd_value.Signal)
         except Exception:
-            # Fallback: use .Value for main line
-            try:
-                macd_val = float(macd_value.Value)
-                signal_val = 0.0
-            except:
-                return (False, 0)
+            return (False, 0)
 
-        if signal_val > macd_val:
+        if macd_val > signal_val:
             return (True, 1)
-        elif signal_val < macd_val:
+        elif macd_val < signal_val:
             return (True, -1)
         else:
             return (True, 0)
 
-    def _process_five_minute_candle(self, candle):
+    def _process_primary_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
-        ok, relation = self._try_update_relation(self._macd_five_minute, candle)
+        ok, relation = self._try_update_relation(macd_value)
         if not ok:
             return
 
-        self._relation_five_minute = relation
+        self._relation_primary = relation
+        self._candles_since_entry += 1
 
-        if not self._has_all_relations():
-            return
-
-        aligned_direction = 0
-
-        if self._all_relations_equal(1):
-            aligned_direction = 1
-        elif self._all_relations_equal(-1):
-            aligned_direction = -1
-        else:
-            self._last_aligned_direction = 0
-            return
-
+        # Manage protective exits whenever a position is open.
         pos = float(self.Position)
         if pos != 0:
             self._manage_open_position(candle)
+
+            # If position was closed by SL/TP, allow new entry below
+            pos = float(self.Position)
+            if pos != 0:
+                return
+
+        if self._relation_confirm is None:
             return
 
         if float(self.OrderVolume) <= 0:
             return
 
-        if self._last_aligned_direction == aligned_direction:
+        # Cooldown: require at least 6 candles between trades.
+        if self._candles_since_entry < 6:
             return
 
-        self._last_aligned_direction = aligned_direction
+        # Determine aligned direction: both timeframes must agree.
+        aligned_direction = 0
+
+        if self._relation_primary == 1 and self._relation_confirm == 1:
+            aligned_direction = 1
+        elif self._relation_primary == -1 and self._relation_confirm == -1:
+            aligned_direction = -1
+
+        if aligned_direction == 0:
+            return
+
+        # Avoid repeated entries in the same direction.
+        if self._last_trade_direction == aligned_direction:
+            return
+
+        self._last_trade_direction = aligned_direction
+        self._candles_since_entry = 0
 
         if aligned_direction > 0:
             self.BuyMarket(float(self.OrderVolume))
@@ -179,41 +160,13 @@ class macd_multi_timeframe_expert_strategy(Strategy):
             self.SellMarket(float(self.OrderVolume))
             self._entry_price = float(candle.ClosePrice)
 
-    def _process_fifteen_minute_candle(self, candle):
+    def _process_confirm_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
-        ok, relation = self._try_update_relation(self._macd_fifteen_minute, candle)
+        ok, relation = self._try_update_relation(macd_value)
         if ok:
-            self._relation_fifteen_minute = relation
-
-    def _process_hour_candle(self, candle):
-        if candle.State != CandleStates.Finished:
-            return
-
-        ok, relation = self._try_update_relation(self._macd_hour, candle)
-        if ok:
-            self._relation_hour = relation
-
-    def _process_four_hour_candle(self, candle):
-        if candle.State != CandleStates.Finished:
-            return
-
-        ok, relation = self._try_update_relation(self._macd_four_hour, candle)
-        if ok:
-            self._relation_four_hour = relation
-
-    def _has_all_relations(self):
-        return (self._relation_five_minute is not None and
-                self._relation_fifteen_minute is not None and
-                self._relation_hour is not None and
-                self._relation_four_hour is not None)
-
-    def _all_relations_equal(self, value):
-        return (self._relation_five_minute == value and
-                self._relation_fifteen_minute == value and
-                self._relation_hour == value and
-                self._relation_four_hour == value)
+            self._relation_confirm = relation
 
     def _manage_open_position(self, candle):
         sec = self.Security
@@ -227,33 +180,34 @@ class macd_multi_timeframe_expert_strategy(Strategy):
             if float(self.TakeProfitPoints) > 0 and float(candle.HighPrice) >= self._entry_price + float(self.TakeProfitPoints) * point:
                 self.SellMarket(pos)
                 self._entry_price = 0.0
+                self._last_trade_direction = 0
                 return
             if float(self.StopLossPoints) > 0 and float(candle.LowPrice) <= self._entry_price - float(self.StopLossPoints) * point:
                 self.SellMarket(pos)
                 self._entry_price = 0.0
+                self._last_trade_direction = 0
         elif pos < 0:
             volume = abs(pos)
             if float(self.TakeProfitPoints) > 0 and float(candle.LowPrice) <= self._entry_price - float(self.TakeProfitPoints) * point:
                 self.BuyMarket(volume)
                 self._entry_price = 0.0
+                self._last_trade_direction = 0
                 return
             if float(self.StopLossPoints) > 0 and float(candle.HighPrice) >= self._entry_price + float(self.StopLossPoints) * point:
                 self.BuyMarket(volume)
                 self._entry_price = 0.0
+                self._last_trade_direction = 0
         else:
             self._entry_price = 0.0
 
     def OnReseted(self):
         super(macd_multi_timeframe_expert_strategy, self).OnReseted()
-        self._macd_five_minute = None
-        self._macd_fifteen_minute = None
-        self._macd_hour = None
-        self._macd_four_hour = None
-        self._relation_five_minute = None
-        self._relation_fifteen_minute = None
-        self._relation_hour = None
-        self._relation_four_hour = None
-        self._last_aligned_direction = 0
+        self._macd_primary = None
+        self._macd_confirm = None
+        self._relation_primary = None
+        self._relation_confirm = None
+        self._last_trade_direction = 0
+        self._candles_since_entry = 0
         self._entry_price = 0.0
 
     def CreateClone(self):

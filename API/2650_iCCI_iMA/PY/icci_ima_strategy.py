@@ -1,11 +1,12 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Decimal
+from System import TimeSpan, Decimal, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
@@ -28,14 +29,14 @@ class icci_ima_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 15) \
             .SetGreaterThanZero() \
             .SetDisplay("CCI EMA Period", "Length of the EMA applied to the CCI values", "Indicators")
-        self._stop_loss_pips = self.Param("StopLossPips", 50.0) \
+        self._stop_loss_pips = self.Param("StopLossPips", Decimal(50)) \
             .SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-        self._take_profit_pips = self.Param("TakeProfitPips", 40.0) \
+        self._take_profit_pips = self.Param("TakeProfitPips", Decimal(40)) \
             .SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Data series used for calculations", "General")
 
-        self._pip_size = 1.0
+        self._pip_size = Decimal(0)
         self._entry_price = None
         self._prev_cci = None
         self._prev2_cci = None
@@ -48,37 +49,70 @@ class icci_ima_strategy(Strategy):
     @property
     def CciPeriod(self):
         return self._cci_period.Value
+
+    @CciPeriod.setter
+    def CciPeriod(self, value):
+        self._cci_period.Value = value
+
     @property
     def CciClosePeriod(self):
         return self._cci_close_period.Value
+
+    @CciClosePeriod.setter
+    def CciClosePeriod(self, value):
+        self._cci_close_period.Value = value
+
     @property
     def MaPeriod(self):
         return self._ma_period.Value
+
+    @MaPeriod.setter
+    def MaPeriod(self, value):
+        self._ma_period.Value = value
+
     @property
     def StopLossPips(self):
         return self._stop_loss_pips.Value
+
+    @StopLossPips.setter
+    def StopLossPips(self, value):
+        self._stop_loss_pips.Value = value
+
     @property
     def TakeProfitPips(self):
         return self._take_profit_pips.Value
+
+    @TakeProfitPips.setter
+    def TakeProfitPips(self, value):
+        self._take_profit_pips.Value = value
+
     @property
     def CandleType(self):
         return self._candle_type.Value
 
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
     def _calc_pip_size(self):
         sec = self.Security
-        if sec is None or sec.PriceStep is None or float(sec.PriceStep) <= 0:
-            return 1.0
-        step = float(sec.PriceStep)
-        decimals = sec.Decimals if sec.Decimals is not None else 2
-        if decimals == 3 or decimals == 5:
-            return step * 10.0
-        return step
+        if sec is None or sec.PriceStep is None:
+            return Decimal(0)
+        step = sec.PriceStep
+        if step <= Decimal(0):
+            return Decimal(0)
+        bits = Decimal.GetBits(step)
+        scale = (bits[3] >> 16) & 0xFF
+        if scale == 3 or scale == 5:
+            multiplier = Decimal(10)
+        else:
+            multiplier = Decimal(1)
+        return Decimal.Multiply(step, multiplier)
 
     def OnStarted2(self, time):
         super(icci_ima_strategy, self).OnStarted2(time)
 
         self._reset_state()
-        self._pip_size = self._calc_pip_size()
 
         self._cci = CommodityChannelIndex()
         self._cci.Length = self.CciPeriod
@@ -87,20 +121,22 @@ class icci_ima_strategy(Strategy):
         self._cci_ma = ExponentialMovingAverage()
         self._cci_ma.Length = self.MaPeriod
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._cci, self._cci_close, self.process_candle).Start()
+        self._pip_size = self._calc_pip_size()
 
-    def process_candle(self, candle, cci_value, cci_close_value):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self._cci, self._cci_close, self._process_candle).Start()
+
+    def _process_candle(self, candle, cci_value, cci_close_value):
         if candle.State != CandleStates.Finished:
             return
 
-        cci_val = float(cci_value)
-        cci_close_val = float(cci_close_value)
+        cci_val = Decimal(float(cci_value))
+        cci_close_val = Decimal(float(cci_close_value))
 
-        ma_result = self._cci_ma.Process(
-            DecimalIndicatorValue(self._cci_ma, Decimal(cci_val), candle.OpenTime)
-        )
-        ma_val = float(ma_result)
+        div = DecimalIndicatorValue(self._cci_ma, cci_val, candle.OpenTime)
+        div.IsFinal = True
+        ma_result = self._cci_ma.Process(div)
+        ma_val = Decimal(float(ma_result))
 
         if not self._cci.IsFormed or not self._cci_close.IsFormed or not self._cci_ma.IsFormed:
             self._update_history(cci_val, cci_close_val, ma_val)
@@ -110,16 +146,18 @@ class icci_ima_strategy(Strategy):
             self._update_history(cci_val, cci_close_val, ma_val)
             return
 
-        # Check SL/TP
         self._handle_stops(candle)
 
-        cci_two_ago = self._prev2_cci if self._prev2_cci is not None else 0.0
-        ma_two_ago = self._prev2_ma if self._prev2_ma is not None else 0.0
-        cci_close_two_ago = self._prev2_cci_close if self._prev2_cci_close is not None else 0.0
+        cci_two_ago = self._prev2_cci if self._prev2_cci is not None else Decimal(0)
+        ma_two_ago = self._prev2_ma if self._prev2_ma is not None else Decimal(0)
+        cci_close_two_ago = self._prev2_cci_close if self._prev2_cci_close is not None else Decimal(0)
 
-        should_close_long = ((cci_close_two_ago > 100.0 and cci_close_val <= 100.0) or
+        d100 = Decimal(100)
+        dm100 = Decimal(-100)
+
+        should_close_long = ((cci_close_two_ago > d100 and cci_close_val <= d100) or
                              (cci_val < ma_val and cci_two_ago >= ma_two_ago))
-        should_close_short = ((cci_close_two_ago < -100.0 and cci_close_val >= -100.0) or
+        should_close_short = ((cci_close_two_ago < dm100 and cci_close_val >= dm100) or
                               (cci_val > ma_val and cci_two_ago <= ma_two_ago))
 
         if self.Position > 0 and should_close_long:
@@ -129,15 +167,12 @@ class icci_ima_strategy(Strategy):
             self.BuyMarket()
             self._entry_price = None
 
-        close = float(candle.ClosePrice)
-
-        # Entry signals: CCI crosses its MA
         if cci_val > ma_val and cci_two_ago < ma_two_ago and self.Position <= 0:
             self.BuyMarket()
-            self._entry_price = close
+            self._entry_price = candle.ClosePrice
         elif cci_val < ma_val and cci_two_ago > ma_two_ago and self.Position >= 0:
             self.SellMarket()
-            self._entry_price = close
+            self._entry_price = candle.ClosePrice
 
         if self.Position == 0:
             self._entry_price = None
@@ -148,26 +183,35 @@ class icci_ima_strategy(Strategy):
         if self._entry_price is None:
             return
 
-        pip = self._pip_size if self._pip_size > 0 else 1.0
-        sl_dist = float(self.StopLossPips) * pip if float(self.StopLossPips) > 0 else 0.0
-        tp_dist = float(self.TakeProfitPips) * pip if float(self.TakeProfitPips) > 0 else 0.0
+        if self._pip_size > Decimal(0):
+            price_step = self._pip_size
+        else:
+            sec = self.Security
+            price_step = sec.PriceStep if sec is not None and sec.PriceStep is not None else Decimal(0)
+        if price_step <= Decimal(0):
+            return
+
+        sl_pips = self.StopLossPips
+        tp_pips = self.TakeProfitPips
+        sl_dist = Decimal.Multiply(sl_pips, price_step) if sl_pips > Decimal(0) else Decimal(0)
+        tp_dist = Decimal.Multiply(tp_pips, price_step) if tp_pips > Decimal(0) else Decimal(0)
 
         if self.Position > 0:
             entry = self._entry_price
-            if sl_dist > 0 and float(candle.LowPrice) <= entry - sl_dist:
+            if sl_dist > Decimal(0) and candle.LowPrice <= Decimal.Subtract(entry, sl_dist):
                 self.SellMarket()
                 self._entry_price = None
                 return
-            if tp_dist > 0 and float(candle.HighPrice) >= entry + tp_dist:
+            if tp_dist > Decimal(0) and candle.HighPrice >= Decimal.Add(entry, tp_dist):
                 self.SellMarket()
                 self._entry_price = None
         elif self.Position < 0:
             entry = self._entry_price
-            if sl_dist > 0 and float(candle.HighPrice) >= entry + sl_dist:
+            if sl_dist > Decimal(0) and candle.HighPrice >= Decimal.Add(entry, sl_dist):
                 self.BuyMarket()
                 self._entry_price = None
                 return
-            if tp_dist > 0 and float(candle.LowPrice) <= entry - tp_dist:
+            if tp_dist > Decimal(0) and candle.LowPrice <= Decimal.Subtract(entry, tp_dist):
                 self.BuyMarket()
                 self._entry_price = None
 
@@ -182,6 +226,7 @@ class icci_ima_strategy(Strategy):
             self._history_count += 1
 
     def _reset_state(self):
+        self._pip_size = Decimal(0)
         self._entry_price = None
         self._prev_cci = None
         self._prev2_cci = None
