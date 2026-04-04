@@ -427,6 +427,7 @@ public class IcciImaStrategy : Strategy
 	private void ResetState()
 	{
 		// Restore cached values and multipliers before a new backtest/run.
+		_pipSize = 0m;
 		_lotMultiplier = 1m;
 		_entryPrice = null;
 		_prevCci = null;

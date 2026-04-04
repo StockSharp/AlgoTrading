@@ -172,7 +172,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	/// </summary>
 	public TotalPowerIndicatorXStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_powerPeriod = Param(nameof(PowerPeriod), 10)
@@ -180,7 +180,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		.SetDisplay("Power Period", "EMA length used by Total Power", "Indicator")
 		;
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 10)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Samples counted for bull/bear strength", "Indicator")
 		;
@@ -198,7 +198,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		_enableShortExit = Param(nameof(EnableShortExit), true)
 		.SetDisplay("Enable Short Exit", "Close shorts on bullish crossover", "Trading");
 
-		_useTradingHours = Param(nameof(UseTradingHours), true)
+		_useTradingHours = Param(nameof(UseTradingHours), false)
 		.SetDisplay("Use Trading Hours", "Restrict trading to session window", "Schedule");
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -213,11 +213,11 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		_endMinute = Param(nameof(EndMinute), 59)
 		.SetDisplay("End Minute", "Session end minute", "Schedule");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk");
+		_stopLossPoints = Param(nameof(StopLossPoints), 0)
+		.SetDisplay("Stop Loss Points", "Stop loss distance in price steps (0=disabled)", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetDisplay("Take Profit Points", "Take profit distance in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
+		.SetDisplay("Take Profit Points", "Take profit distance in price steps (0=disabled)", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -329,8 +329,6 @@ public class TotalPowerIndicatorXStrategy : Strategy
 
 		if (Position > 0m)
 		{
-			var volume = Position;
-
 			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
 			{
 				SellMarket();
@@ -347,8 +345,6 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			var volume = -Position;
-
 			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
 			{
 				BuyMarket();
@@ -374,10 +370,10 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		var current = time.TimeOfDay;
 
 		if (start == end)
-		return current >= start && current < end;
+			return true;
 
 		if (start < end)
-		return current >= start && current < end;
+			return current >= start && current < end;
 
 		return current >= start || current < end;
 	}
@@ -444,7 +440,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		private int _bullCount;
 		private int _bearCount;
 		private int _powerPeriod = 10;
-		private int _lookbackPeriod = 45;
+		private int _lookbackPeriod = 50;
 
 		public int PowerPeriod
 		{

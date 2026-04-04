@@ -77,7 +77,7 @@ public class BreakRevertProStrategy : Strategy
 		.SetDisplay("Reversion Threshold", "Maximum probability that still allows mean-reversion trades", "Signals")
 		.SetOptimize(0.2m, 0.8m, 0.05m);
 
-		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 86400)
+		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 300)
 		.SetDisplay("Trade Delay", "Minimum delay between consecutive entries (seconds)", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 1)

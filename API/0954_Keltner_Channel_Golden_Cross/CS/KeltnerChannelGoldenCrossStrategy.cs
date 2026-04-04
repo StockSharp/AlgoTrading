@@ -103,12 +103,12 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 		.SetDisplay("MA Type", "Type of basis moving average", "General");
 
-		_shortMaLength = Param(nameof(ShortMaLength), 50)
+		_shortMaLength = Param(nameof(ShortMaLength), 10)
 		.SetDisplay("Short MA", "Short moving average length", "Trend")
 		.SetGreaterThanZero()
 		;
 
-		_longMaLength = Param(nameof(LongMaLength), 200)
+		_longMaLength = Param(nameof(LongMaLength), 30)
 		.SetDisplay("Long MA", "Long moving average length", "Trend")
 		.SetGreaterThanZero()
 		;
@@ -117,7 +117,7 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		.SetDisplay("Max Entries", "Maximum entries per run", "Risk")
 		.SetGreaterThanZero();
 
-		_cooldownBars = Param(nameof(CooldownBars), 12000)
+		_cooldownBars = Param(nameof(CooldownBars), 5)
 		.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk")
 		.SetGreaterThanZero();
 

@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,27 +12,28 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy averaging z-scores of multiple volatility indices.
+/// Strategy that computes a Z-score of the instrument's own volatility
+/// (standard deviation of close prices) and trades mean-reversion:
+/// buy when Z-score drops below -threshold (low volatility, expect breakout),
+/// sell when Z-score rises above +threshold (high volatility).
+/// Adapted from multi-VIX Z-score approach to single instrument.
 /// </summary>
 public class ZScoreNormalizedVixStrategy : Strategy
 {
 	private readonly StrategyParam<int> _zScoreLength;
-	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<int> _volatilityLength;
+	private readonly StrategyParam<decimal> _buyThreshold;
+	private readonly StrategyParam<decimal> _sellThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _useVix;
-	private readonly StrategyParam<bool> _useVix3m;
-	private readonly StrategyParam<bool> _useVix9d;
-	private readonly StrategyParam<bool> _useVvix;
-	private readonly StrategyParam<Security> _vixSecurity;
-	private readonly StrategyParam<Security> _vix3mSecurity;
-	private readonly StrategyParam<Security> _vix9dSecurity;
-	private readonly StrategyParam<Security> _vvixSecurity;
-	
-	private decimal? _zVix;
-	private decimal? _zVix3m;
-	private decimal? _zVix9d;
-	private decimal? _zVvix;
-	
+
+	private StandardDeviation _volatility;
+	private SimpleMovingAverage _zMean;
+	private StandardDeviation _zStd;
+
+	private decimal _entryPrice;
+	private int _barsSinceLastTrade;
+
 	/// <summary>
 	/// Lookback period for z-score calculation.
 	/// </summary>
@@ -43,16 +42,43 @@ public class ZScoreNormalizedVixStrategy : Strategy
 		get => _zScoreLength.Value;
 		set => _zScoreLength.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Z-score threshold for entry and exit.
+	/// Lookback period for volatility (StdDev of close).
 	/// </summary>
-	public decimal Threshold
+	public int VolatilityLength
 	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
+		get => _volatilityLength.Value;
+		set => _volatilityLength.Value = value;
 	}
-	
+
+	/// <summary>
+	/// Z-score threshold for buy entry (negative means low vol).
+	/// </summary>
+	public decimal BuyThreshold
+	{
+		get => _buyThreshold.Value;
+		set => _buyThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold for sell/exit.
+	/// </summary>
+	public decimal SellThreshold
+	{
+		get => _sellThreshold.Value;
+		set => _sellThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between trades to avoid overtrading.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
@@ -61,282 +87,128 @@ public class ZScoreNormalizedVixStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	/// <summary>
-	/// Include VIX index.
-	/// </summary>
-	public bool UseVix
-	{
-		get => _useVix.Value;
-		set => _useVix.Value = value;
-	}
-	
-	/// <summary>
-	/// Include VIX3M index.
-	/// </summary>
-	public bool UseVix3m
-	{
-		get => _useVix3m.Value;
-		set => _useVix3m.Value = value;
-	}
-	
-	/// <summary>
-	/// Include VIX9D index.
-	/// </summary>
-	public bool UseVix9d
-	{
-		get => _useVix9d.Value;
-		set => _useVix9d.Value = value;
-	}
-	
-	/// <summary>
-	/// Include VVIX index.
-	/// </summary>
-	public bool UseVvix
-	{
-		get => _useVvix.Value;
-		set => _useVvix.Value = value;
-	}
-	
-	/// <summary>
-	/// Security representing VIX.
-	/// </summary>
-	public Security VixSecurity
-	{
-		get => _vixSecurity.Value;
-		set => _vixSecurity.Value = value;
-	}
-	
-	/// <summary>
-	/// Security representing VIX3M.
-	/// </summary>
-	public Security Vix3mSecurity
-	{
-		get => _vix3mSecurity.Value;
-		set => _vix3mSecurity.Value = value;
-	}
-	
-	/// <summary>
-	/// Security representing VIX9D.
-	/// </summary>
-	public Security Vix9dSecurity
-	{
-		get => _vix9dSecurity.Value;
-		set => _vix9dSecurity.Value = value;
-	}
-	
-	/// <summary>
-	/// Security representing VVIX.
-	/// </summary>
-	public Security VvixSecurity
-	{
-		get => _vvixSecurity.Value;
-		set => _vvixSecurity.Value = value;
-	}
-	
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
+
 	public ZScoreNormalizedVixStrategy()
 	{
-		_zScoreLength = Param(nameof(ZScoreLength), 6)
-		.SetDisplay("Z-Score Length", "Lookback period for z-score", "Parameters")
-		
-		.SetOptimize(3, 20, 1);
-		
-		_threshold = Param(nameof(Threshold), 1m)
-		.SetDisplay("Z-Score Threshold", "Entry and exit threshold", "Parameters")
-		
-		.SetOptimize(0.5m, 2m, 0.1m);
-		
-		_useVix = Param(nameof(UseVix), true)
-		.SetDisplay("Use VIX", "Include VIX index", "Indices");
-		_useVix3m = Param(nameof(UseVix3m), true)
-		.SetDisplay("Use VIX3M", "Include VIX3M index", "Indices");
-		_useVix9d = Param(nameof(UseVix9d), true)
-		.SetDisplay("Use VIX9D", "Include VIX9D index", "Indices");
-		_useVvix = Param(nameof(UseVvix), true)
-		.SetDisplay("Use VVIX", "Include VVIX index", "Indices");
-		
-		_vixSecurity = Param(nameof(VixSecurity), new Security { Id = "CBOE:VIX" })
-		.SetDisplay("VIX Security", "Security representing VIX", "Indices");
-		_vix3mSecurity = Param(nameof(Vix3mSecurity), new Security { Id = "CBOE:VIX3M" })
-		.SetDisplay("VIX3M Security", "Security representing VIX3M", "Indices");
-		_vix9dSecurity = Param(nameof(Vix9dSecurity), new Security { Id = "CBOE:VIX9D" })
-		.SetDisplay("VIX9D Security", "Security representing VIX9D", "Indices");
-		_vvixSecurity = Param(nameof(VvixSecurity), new Security { Id = "CBOE:VVIX" })
-		.SetDisplay("VVIX Security", "Security representing VVIX", "Indices");
-		
+		_zScoreLength = Param(nameof(ZScoreLength), 50)
+			.SetDisplay("Z-Score Length", "Lookback period for z-score of volatility", "Parameters")
+			.SetOptimize(20, 80, 10);
+
+		_volatilityLength = Param(nameof(VolatilityLength), 20)
+			.SetDisplay("Volatility Length", "Period for StdDev volatility measure", "Parameters")
+			.SetOptimize(10, 40, 5);
+
+		_buyThreshold = Param(nameof(BuyThreshold), -1.5m)
+			.SetDisplay("Buy Threshold", "Z-score below this triggers buy", "Parameters")
+			.SetOptimize(-2.5m, -0.5m, 0.25m);
+
+		_sellThreshold = Param(nameof(SellThreshold), 1.5m)
+			.SetDisplay("Sell Threshold", "Z-score above this triggers sell/exit", "Parameters")
+			.SetOptimize(0.5m, 2.5m, 0.25m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Minimum bars between trades", "Parameters")
+			.SetOptimize(50, 200, 25);
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "Data");
+			.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		if (UseVix)
-		yield return (VixSecurity, CandleType);
-		if (UseVix3m)
-		yield return (Vix3mSecurity, CandleType);
-		if (UseVix9d)
-		yield return (Vix9dSecurity, CandleType);
-		if (UseVvix)
-		yield return (VvixSecurity, CandleType);
-		
-		yield return (Security, CandleType);
-	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_zVix = _zVix3m = _zVix9d = _zVvix = null;
+
+		_volatility = null;
+		_zMean = null;
+		_zStd = null;
+		_entryPrice = 0;
+		_barsSinceLastTrade = 0;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(ProcessMainCandle).Start();
-		
-		if (UseVix)
-		{
-			var sma = new SMA { Length = ZScoreLength };
-			var std = new StandardDeviation { Length = ZScoreLength };
-			SubscribeCandles(CandleType, security: VixSecurity)
-			.Bind(sma, std, ProcessVixCandle)
-			.Start();
-		}
-		
-		if (UseVix3m)
-		{
-			var sma = new SMA { Length = ZScoreLength };
-			var std = new StandardDeviation { Length = ZScoreLength };
-			SubscribeCandles(CandleType, security: Vix3mSecurity)
-			.Bind(sma, std, ProcessVix3mCandle)
-			.Start();
-		}
-		
-		if (UseVix9d)
-		{
-			var sma = new SMA { Length = ZScoreLength };
-			var std = new StandardDeviation { Length = ZScoreLength };
-			SubscribeCandles(CandleType, security: Vix9dSecurity)
-			.Bind(sma, std, ProcessVix9dCandle)
-			.Start();
-		}
-		
-		if (UseVvix)
-		{
-			var sma = new SMA { Length = ZScoreLength };
-			var std = new StandardDeviation { Length = ZScoreLength };
-			SubscribeCandles(CandleType, security: VvixSecurity)
-			.Bind(sma, std, ProcessVvixCandle)
-			.Start();
-		}
-		
+
+		_volatility = new StandardDeviation { Length = VolatilityLength };
+		_zMean = new SimpleMovingAverage { Length = ZScoreLength };
+		_zStd = new StandardDeviation { Length = ZScoreLength };
+
+		_entryPrice = 0;
+		_barsSinceLastTrade = 0;
+
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(ProcessCandle).Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
+			DrawCandles(area, sub);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessVixCandle(ICandleMessage candle, decimal sma, decimal std)
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (std == 0)
-		return;
-		
-		_zVix = (candle.ClosePrice - sma) / std;
-	}
-	
-	private void ProcessVix3mCandle(ICandleMessage candle, decimal sma, decimal std)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (std == 0)
-		return;
-		
-		_zVix3m = (candle.ClosePrice - sma) / std;
-	}
-	
-	private void ProcessVix9dCandle(ICandleMessage candle, decimal sma, decimal std)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (std == 0)
-		return;
-		
-		_zVix9d = (candle.ClosePrice - sma) / std;
-	}
-	
-	private void ProcessVvixCandle(ICandleMessage candle, decimal sma, decimal std)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (std == 0)
-		return;
-		
-		_zVvix = (candle.ClosePrice - sma) / std;
-	}
-	
-	private void ProcessMainCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
+			return;
+
+		// Feed close price into volatility indicator
+		var volResult = _volatility.Process(candle);
+
+		if (!_volatility.IsFormed)
+			return;
+
+		var volValue = volResult.GetValue<decimal>();
+
+		// Feed volatility value into z-score components (SMA and StdDev of volatility)
+		var meanResult = _zMean.Process(new DecimalIndicatorValue(_zMean, volValue, candle.OpenTime) { IsFinal = true });
+		var stdResult = _zStd.Process(new DecimalIndicatorValue(_zStd, volValue, candle.OpenTime) { IsFinal = true });
+
+		if (!_zMean.IsFormed || !_zStd.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		decimal sum = 0m;
-		int count = 0;
-		
-		if (UseVix && _zVix is decimal z1)
+			return;
+
+		var mean = meanResult.GetValue<decimal>();
+		var std = stdResult.GetValue<decimal>();
+
+		if (std == 0)
+			return;
+
+		var zScore = (volValue - mean) / std;
+
+		_barsSinceLastTrade++;
+
+		// Low volatility (z-score below buy threshold) => buy (expect breakout)
+		if (Position == 0 && zScore < BuyThreshold && _barsSinceLastTrade >= CooldownBars)
 		{
-			sum += z1;
-			count++;
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_barsSinceLastTrade = 0;
 		}
-		
-		if (UseVix3m && _zVix3m is decimal z2)
+		// Z-score reverts toward mean => close long
+		else if (Position > 0 && zScore > 0 && _barsSinceLastTrade >= CooldownBars)
 		{
-			sum += z2;
-			count++;
+			SellMarket();
+			_entryPrice = 0;
+			_barsSinceLastTrade = 0;
 		}
-		
-		if (UseVix9d && _zVix9d is decimal z3)
+		// High volatility => short (expect mean reversion in vol)
+		else if (Position == 0 && zScore > SellThreshold && _barsSinceLastTrade >= CooldownBars)
 		{
-			sum += z3;
-			count++;
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_barsSinceLastTrade = 0;
 		}
-		
-		if (UseVvix && _zVvix is decimal z4)
+		// Z-score reverts toward mean => close short
+		else if (Position < 0 && zScore < 0 && _barsSinceLastTrade >= CooldownBars)
 		{
-			sum += z4;
-			count++;
-		}
-		
-		if (count == 0)
-		return;
-		
-		var combined = sum / count;
-		
-		if (Position <= 0 && combined < -Threshold)
-		{
-			BuyMarket(Volume);
-		}
-		else if (Position > 0 && combined > -Threshold)
-		{
-			SellMarket(Position);
+			BuyMarket();
+			_entryPrice = 0;
+			_barsSinceLastTrade = 0;
 		}
 	}
 }

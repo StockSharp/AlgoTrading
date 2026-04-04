@@ -37,13 +37,13 @@ public class WilliamsRStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "General");
 
-		_oversold = Param(nameof(Oversold), 20m)
+		_oversold = Param(nameof(Oversold), 25m)
 			.SetDisplay("Oversold", "Oversold level", "General");
 
-		_overbought = Param(nameof(Overbought), 80m)
+		_overbought = Param(nameof(Overbought), 75m)
 			.SetDisplay("Overbought", "Overbought/exit level", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

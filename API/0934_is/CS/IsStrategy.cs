@@ -15,6 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Simple strategy based on source values equal to 1 or 2.
+/// Uses short-term SMA crossover to classify candle close as signal 1 (bullish) or 2 (bearish).
 /// </summary>
 public class IsStrategy : Strategy
 {
@@ -25,6 +26,8 @@ public class IsStrategy : Strategy
 	private readonly StrategyParam<decimal> _lossPercent;
 
 	private decimal _previousValue;
+	private SimpleMovingAverage _smaFast;
+	private SimpleMovingAverage _smaSlow;
 
 	/// <summary>
 	/// Candle type for processing.
@@ -76,7 +79,7 @@ public class IsStrategy : Strategy
 	/// </summary>
 	public IsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
 
 		_reverse = Param(nameof(Reverse), false)
@@ -85,14 +88,14 @@ public class IsStrategy : Strategy
 		_enableShort = Param(nameof(EnableShort), true)
 			.SetDisplay("Sell On", "Enable short selling", "General");
 
-		_profitPercent = Param(nameof(ProfitPercent), 0.5m)
+		_profitPercent = Param(nameof(ProfitPercent), 1.5m)
 			.SetRange(0m, 30m)
-			
+
 			.SetDisplay("Profit %", "Take profit percent", "Risk");
 
-		_lossPercent = Param(nameof(LossPercent), 0.5m)
+		_lossPercent = Param(nameof(LossPercent), 1.5m)
 			.SetRange(0m, 30m)
-			
+
 			.SetDisplay("Loss %", "Stop loss percent", "Risk");
 	}
 
@@ -108,6 +111,8 @@ public class IsStrategy : Strategy
 		base.OnReseted();
 
 		_previousValue = 0m;
+		_smaFast = null;
+		_smaSlow = null;
 	}
 
 	/// <inheritdoc />
@@ -115,8 +120,13 @@ public class IsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_smaFast = new SimpleMovingAverage { Length = 80 };
+		_smaSlow = new SimpleMovingAverage { Length = 200 };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(_smaFast, _smaSlow, ProcessCandle)
+			.Start();
 
 		StartProtection(
 			takeProfit: new Unit(ProfitPercent, UnitTypes.Percent),
@@ -124,7 +134,7 @@ public class IsStrategy : Strategy
 			isStopTrailing: false);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -132,29 +142,26 @@ public class IsStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var hb5 = candle.ClosePrice;
+		// Map price action to signal: 1 = bullish (fast > slow), 2 = bearish (fast < slow)
+		var hb5 = fastVal > slowVal ? 1m : 2m;
 		var ii = Reverse ? 2m : 1m;
 		var i2 = Reverse ? 1m : 2m;
 		var prev = _previousValue;
 
 		if (hb5 == ii && prev != ii)
 		{
+			if (Position < 0 && EnableShort)
+				BuyMarket(Position.Abs());
+
 			BuyMarket();
 		}
 		else if (hb5 == i2 && prev != i2)
 		{
 			if (Position > 0)
 				SellMarket(Position);
-		}
 
-		if (hb5 == i2 && prev != i2 && EnableShort)
-		{
-			SellMarket();
-		}
-		else if (hb5 == ii && prev != ii && EnableShort)
-		{
-			if (Position < 0)
-				BuyMarket(-Position);
+			if (EnableShort)
+				SellMarket();
 		}
 
 		_previousValue = hb5;

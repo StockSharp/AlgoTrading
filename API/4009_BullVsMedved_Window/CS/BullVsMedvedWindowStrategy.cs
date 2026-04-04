@@ -15,16 +15,14 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Bull vs Medved strategy converted from MetaTrader 4.
-/// Places limit orders during predefined intraday windows when multi-candle patterns appear.
+/// Enters market orders during predefined intraday windows when multi-candle patterns appear.
+/// Exits on candle-based stop-loss / take-profit levels.
 /// </summary>
 public class BullVsMedvedWindowStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _candleSizePoints;
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
 	private readonly StrategyParam<decimal> _takeProfitMultiplier;
-	private readonly StrategyParam<decimal> _buyIndentPoints;
-	private readonly StrategyParam<decimal> _sellIndentPoints;
 	private readonly StrategyParam<int> _entryWindowMinutes;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TimeSpan> _startTime0;
@@ -38,25 +36,15 @@ public class BullVsMedvedWindowStrategy : Strategy
 	private decimal _candleSizeThreshold;
 	private decimal _bodyMinSize;
 	private decimal _pullbackSize;
-	private decimal _buyIndent;
-	private decimal _sellIndent;
 
 	private ICandleMessage _previousCandle1;
 	private ICandleMessage _previousCandle2;
 
 	private TimeSpan[] _entryTimes = Array.Empty<TimeSpan>();
 	private TimeSpan _entryWindow = TimeSpan.Zero;
-	private readonly TimeSpan _pendingLifetime = TimeSpan.FromMinutes(230);
-
-	private decimal _bestBid;
-	private decimal _bestAsk;
 	private bool _orderPlacedInWindow;
 
-	private Order _entryOrder;
-	private long _entryOrderId;
-	private Sides? _pendingOrderSide;
-	private decimal _pendingStopDistance;
-	private decimal _pendingTakeDistance;
+	private decimal _entryPrice;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakePrice;
@@ -69,10 +57,6 @@ public class BullVsMedvedWindowStrategy : Strategy
 	/// </summary>
 	public BullVsMedvedWindowStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetDisplay("Order Volume", "Volume for pending orders", "Trading")
-			.SetGreaterThanZero();
-
 		_candleSizePoints = Param(nameof(CandleSizePoints), 75m)
 			.SetDisplay("Body Size (points)", "Minimum body size for the latest candle", "Filters")
 			.SetGreaterThanZero();
@@ -85,15 +69,7 @@ public class BullVsMedvedWindowStrategy : Strategy
 			.SetDisplay("Take Profit Multiplier", "Coefficient applied to the candle body for take-profit", "Risk")
 			.SetGreaterThanZero();
 
-		_buyIndentPoints = Param(nameof(BuyIndentPoints), 16m)
-			.SetDisplay("Buy Limit Offset", "Indent below the ask for buy limit orders (points)", "Execution")
-			.SetGreaterThanZero();
-
-		_sellIndentPoints = Param(nameof(SellIndentPoints), 20m)
-			.SetDisplay("Sell Limit Offset", "Indent above the bid for sell limit orders (points)", "Execution")
-			.SetGreaterThanZero();
-
-		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 5)
+		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 10)
 			.SetDisplay("Entry Window", "Duration of each trading window in minutes", "Timing")
 			.SetGreaterThanZero();
 
@@ -117,15 +93,6 @@ public class BullVsMedvedWindowStrategy : Strategy
 
 		_startTime5 = Param(nameof(StartTime5), new TimeSpan(20, 5, 0))
 			.SetDisplay("Start Time #6", "Sixth trading window start", "Timing");
-	}
-
-	/// <summary>
-	/// Pending order volume.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
 	}
 
 	/// <summary>
@@ -153,24 +120,6 @@ public class BullVsMedvedWindowStrategy : Strategy
 	{
 		get => _takeProfitMultiplier.Value;
 		set => _takeProfitMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Offset (in points) below the ask for buy limit orders.
-	/// </summary>
-	public decimal BuyIndentPoints
-	{
-		get => _buyIndentPoints.Value;
-		set => _buyIndentPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Offset (in points) above the bid for sell limit orders.
-	/// </summary>
-	public decimal SellIndentPoints
-	{
-		get => _sellIndentPoints.Value;
-		set => _sellIndentPoints.Value = value;
 	}
 
 	/// <summary>
@@ -256,14 +205,10 @@ public class BullVsMedvedWindowStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_bestBid = 0m;
-		_bestAsk = 0m;
 		_pointValue = 0m;
 		_candleSizeThreshold = 0m;
 		_bodyMinSize = 0m;
 		_pullbackSize = 0m;
-		_buyIndent = 0m;
-		_sellIndent = 0m;
 		_entryWindow = TimeSpan.Zero;
 
 		_previousCandle1 = null;
@@ -271,13 +216,12 @@ public class BullVsMedvedWindowStrategy : Strategy
 		_entryTimes = Array.Empty<TimeSpan>();
 		_orderPlacedInWindow = false;
 
-		_entryOrder = null;
-		_entryOrderId = 0;
-		_pendingOrderSide = null;
-		_pendingStopDistance = 0m;
-		_pendingTakeDistance = 0m;
+		_entryPrice = 0m;
 
-		ResetProtectionLevels();
+		_longStopPrice = null;
+		_longTakePrice = null;
+		_shortStopPrice = null;
+		_shortTakePrice = null;
 		_exitRequested = false;
 	}
 
@@ -286,14 +230,10 @@ public class BullVsMedvedWindowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = OrderVolume;
-
 		_pointValue = Security?.PriceStep ?? 1m;
 		_candleSizeThreshold = CandleSizePoints * _pointValue;
 		_bodyMinSize = 10m * _pointValue;
 		_pullbackSize = 20m * _pointValue;
-		_buyIndent = BuyIndentPoints * _pointValue;
-		_sellIndent = SellIndentPoints * _pointValue;
 		_entryWindow = TimeSpan.FromMinutes(EntryWindowMinutes);
 
 		_entryTimes = new[]
@@ -306,34 +246,15 @@ public class BullVsMedvedWindowStrategy : Strategy
 			StartTime5,
 		};
 
-		var candleSubscription = SubscribeCandles(CandleType);
-		candleSubscription
+		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
-			.Start();
-
-		SubscribeOrderBook()
-			.Bind(depth =>
-			{
-				// Track best prices to place limit orders around the spread.
-				_bestBid = depth.GetBestBid()?.Price ?? _bestBid;
-				_bestAsk = depth.GetBestAsk()?.Price ?? _bestAsk;
-			})
 			.Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Ignore unfinished candles because their values are not final yet.
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		CleanUpExpiredOrders();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			ShiftHistory(candle);
-			return;
-		}
 
 		if (HandlePositionExits(candle))
 		{
@@ -344,13 +265,12 @@ public class BullVsMedvedWindowStrategy : Strategy
 		var inWindow = IsWithinEntryWindow(candle.CloseTime);
 		if (!inWindow)
 		{
-			// Reset the per-window flag so the next session can place new orders.
 			_orderPlacedInWindow = false;
 			ShiftHistory(candle);
 			return;
 		}
 
-		if (_orderPlacedInWindow || HasActiveOrderOrPosition())
+		if (_orderPlacedInWindow || Position != 0m)
 		{
 			ShiftHistory(candle);
 			return;
@@ -374,11 +294,11 @@ public class BullVsMedvedWindowStrategy : Strategy
 		var isBear = IsBear(shift1);
 
 		if (isBull && !isBadBull)
-			placedOrder = TryPlaceBuyLimit(shift1);
+			placedOrder = TryBuyMarket(shift1);
 		else if (isCoolBull)
-			placedOrder = TryPlaceBuyLimit(shift1);
+			placedOrder = TryBuyMarket(shift1);
 		else if (isBear)
-			placedOrder = TryPlaceSellLimit(shift1);
+			placedOrder = TrySellMarket(shift1);
 
 		if (placedOrder)
 			_orderPlacedInWindow = true;
@@ -392,17 +312,17 @@ public class BullVsMedvedWindowStrategy : Strategy
 		{
 			if (!_exitRequested && _longStopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				LogInfo($"Long stop triggered at {stop:0.####}.");
-				ClosePosition();
 				_exitRequested = true;
+				SellMarket();
+				ResetProtectionLevels();
 				return true;
 			}
 
 			if (!_exitRequested && _longTakePrice is decimal take && candle.HighPrice >= take)
 			{
-				LogInfo($"Long take-profit triggered at {take:0.####}.");
-				ClosePosition();
 				_exitRequested = true;
+				SellMarket();
+				ResetProtectionLevels();
 				return true;
 			}
 		}
@@ -410,17 +330,17 @@ public class BullVsMedvedWindowStrategy : Strategy
 		{
 			if (!_exitRequested && _shortStopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				LogInfo($"Short stop triggered at {stop:0.####}.");
-				ClosePosition();
 				_exitRequested = true;
+				BuyMarket();
+				ResetProtectionLevels();
 				return true;
 			}
 
 			if (!_exitRequested && _shortTakePrice is decimal take && candle.LowPrice <= take)
 			{
-				LogInfo($"Short take-profit triggered at {take:0.####}.");
-				ClosePosition();
 				_exitRequested = true;
+				BuyMarket();
+				ResetProtectionLevels();
 				return true;
 			}
 		}
@@ -428,61 +348,43 @@ public class BullVsMedvedWindowStrategy : Strategy
 		return false;
 	}
 
-	private bool TryPlaceBuyLimit(ICandleMessage referenceCandle)
+	private bool TryBuyMarket(ICandleMessage referenceCandle)
 	{
-		if (OrderVolume <= 0m)
-			return false;
-
-		var ask = _bestAsk > 0m ? _bestAsk : referenceCandle.ClosePrice;
-		var price = NormalizePrice(ask - _buyIndent);
-
-		if (price <= 0m)
-			return false;
-
-		var body = Math.Abs(referenceCandle.ClosePrice - referenceCandle.OpenPrice);
+		var body = (referenceCandle.ClosePrice - referenceCandle.OpenPrice).Abs();
 		var stopDistance = RoundToPoint(body * StopLossMultiplier);
 		var takeDistance = RoundToPoint(body * TakeProfitMultiplier);
 
-		var order = BuyLimit(price, OrderVolume);
-		if (order is null)
-			return false;
+		var price = referenceCandle.ClosePrice;
 
-		_entryOrder = order;
-		_entryOrderId = order.TransactionId;
-		_pendingOrderSide = Sides.Buy;
-		_pendingStopDistance = stopDistance;
-		_pendingTakeDistance = takeDistance;
+		BuyMarket();
 
-		LogInfo($"Placed buy limit at {price:0.####} with volume {OrderVolume}. Stop distance: {stopDistance:0.####}, take distance: {takeDistance:0.####}.");
+		_entryPrice = price;
+		_longStopPrice = stopDistance > 0m ? NormalizePrice(price - stopDistance) : null;
+		_longTakePrice = takeDistance > 0m ? NormalizePrice(price + takeDistance) : null;
+		_shortStopPrice = null;
+		_shortTakePrice = null;
+		_exitRequested = false;
+
 		return true;
 	}
 
-	private bool TryPlaceSellLimit(ICandleMessage referenceCandle)
+	private bool TrySellMarket(ICandleMessage referenceCandle)
 	{
-		if (OrderVolume <= 0m)
-			return false;
-
-		var bid = _bestBid > 0m ? _bestBid : referenceCandle.ClosePrice;
-		var price = NormalizePrice(bid + _sellIndent);
-
-		if (price <= 0m)
-			return false;
-
-		var body = Math.Abs(referenceCandle.ClosePrice - referenceCandle.OpenPrice);
+		var body = (referenceCandle.ClosePrice - referenceCandle.OpenPrice).Abs();
 		var stopDistance = RoundToPoint(body * StopLossMultiplier);
 		var takeDistance = RoundToPoint(body * TakeProfitMultiplier);
 
-		var order = SellLimit(price, OrderVolume);
-		if (order is null)
-			return false;
+		var price = referenceCandle.ClosePrice;
 
-		_entryOrder = order;
-		_entryOrderId = order.TransactionId;
-		_pendingOrderSide = Sides.Sell;
-		_pendingStopDistance = stopDistance;
-		_pendingTakeDistance = takeDistance;
+		SellMarket();
 
-		LogInfo($"Placed sell limit at {price:0.####} with volume {OrderVolume}. Stop distance: {stopDistance:0.####}, take distance: {takeDistance:0.####}.");
+		_entryPrice = price;
+		_shortStopPrice = stopDistance > 0m ? NormalizePrice(price + stopDistance) : null;
+		_shortTakePrice = takeDistance > 0m ? NormalizePrice(price - takeDistance) : null;
+		_longStopPrice = null;
+		_longTakePrice = null;
+		_exitRequested = false;
+
 		return true;
 	}
 
@@ -503,58 +405,6 @@ public class BullVsMedvedWindowStrategy : Strategy
 		}
 
 		return false;
-	}
-
-	private bool HasActiveOrderOrPosition()
-	{
-		if (Position != 0m)
-			return true;
-
-		foreach (var order in Orders)
-		{
-			if (order.Security != Security)
-				continue;
-
-			if (order.State == OrderStates.Active)
-				return true;
-		}
-
-		return false;
-	}
-
-	private void CleanUpExpiredOrders()
-	{
-		if (_pendingLifetime <= TimeSpan.Zero)
-			return;
-
-		var now = CurrentTime;
-
-		foreach (var order in Orders)
-		{
-			if (order.Security != Security)
-				continue;
-
-			if (order.State != OrderStates.Active)
-				continue;
-
-			var timestamp = order.Time;
-			if (timestamp == default)
-				continue;
-
-			if (now - timestamp > _pendingLifetime)
-			{
-				CancelOrder(order);
-
-				if (_entryOrderId == order.TransactionId)
-				{
-					_entryOrder = null;
-					_entryOrderId = 0;
-					_pendingOrderSide = null;
-					_pendingStopDistance = 0m;
-					_pendingTakeDistance = 0m;
-				}
-			}
-		}
 	}
 
 	private void ShiftHistory(ICandleMessage candle)
@@ -616,81 +466,5 @@ public class BullVsMedvedWindowStrategy : Strategy
 		_longTakePrice = null;
 		_shortStopPrice = null;
 		_shortTakePrice = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (_entryOrderId != 0 && order.TransactionId == _entryOrderId)
-		{
-			_entryOrder = order;
-
-			if (order.State is OrderStates.Failed or OrderStates.Done)
-			{
-				if (order.State != OrderStates.Done || order.Balance == 0m)
-				{
-					_entryOrder = null;
-					_entryOrderId = 0;
-					_pendingOrderSide = null;
-					_pendingStopDistance = 0m;
-					_pendingTakeDistance = 0m;
-				}
-			}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order is null)
-			return;
-
-		if (_entryOrderId != 0 && trade.Order.TransactionId == _entryOrderId)
-		{
-			var entryPrice = trade.Trade.Price != 0m ? trade.Trade.Price : trade.Trade.Price;
-
-			if (_pendingOrderSide == Sides.Buy)
-			{
-				_longStopPrice = _pendingStopDistance > 0m ? NormalizePrice(entryPrice - _pendingStopDistance) : null;
-				_longTakePrice = _pendingTakeDistance > 0m ? NormalizePrice(entryPrice + _pendingTakeDistance) : null;
-				_shortStopPrice = null;
-				_shortTakePrice = null;
-			}
-			else if (_pendingOrderSide == Sides.Sell)
-			{
-				_shortStopPrice = _pendingStopDistance > 0m ? NormalizePrice(entryPrice + _pendingStopDistance) : null;
-				_shortTakePrice = _pendingTakeDistance > 0m ? NormalizePrice(entryPrice - _pendingTakeDistance) : null;
-				_longStopPrice = null;
-				_longTakePrice = null;
-			}
-
-			_exitRequested = false;
-
-			if (trade.Order.Balance == 0m && trade.Order.State == OrderStates.Done)
-			{
-				_entryOrder = null;
-				_entryOrderId = 0;
-			}
-
-			_pendingOrderSide = null;
-			_pendingStopDistance = 0m;
-			_pendingTakeDistance = 0m;
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			ResetProtectionLevels();
-			_exitRequested = false;
-		}
 	}
 }

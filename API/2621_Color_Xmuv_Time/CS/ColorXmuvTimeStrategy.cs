@@ -214,7 +214,7 @@ public class ColorXmuvTimeStrategy : Strategy
 	/// </summary>
 	public ColorXmuvTimeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles for the Color XMUV line", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -233,7 +233,7 @@ public class ColorXmuvTimeStrategy : Strategy
 		_enableSellExits = Param(nameof(EnableSellExits), true)
 		.SetDisplay("Close Shorts", "Close short positions on bullish flips", "Trading");
 
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
+		_useTimeFilter = Param(nameof(UseTimeFilter), false)
 		.SetDisplay("Use Time Filter", "Restrict trading to the specified session", "Time Filter");
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -270,11 +270,11 @@ public class ColorXmuvTimeStrategy : Strategy
 		.SetRange(2, 512)
 		.SetDisplay("Max Color History", "Maximum stored trend color values", "Indicator");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pts)", "Stop loss distance in points", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Take profit distance in points", "Risk");
 	}
@@ -349,34 +349,28 @@ public class ColorXmuvTimeStrategy : Strategy
 
 		if (bullishFlip)
 		{
-			if (EnableSellExits && Position < 0)
+			if (Position < 0 && EnableSellExits)
 			{
+				// Close short position
 				BuyMarket();
 			}
-
-			if (EnableBuyEntries && Position <= 0)
+			else if (Position == 0 && EnableBuyEntries)
 			{
-				var volume = OrderVolume + (Position < 0 ? -Position : 0m);
-				if (volume > 0)
-				{
-					BuyMarket();
-				}
+				// Open new long
+				BuyMarket();
 			}
 		}
 		else if (bearishFlip)
 		{
-			if (EnableBuyExits && Position > 0)
+			if (Position > 0 && EnableBuyExits)
 			{
+				// Close long position
 				SellMarket();
 			}
-
-			if (EnableSellEntries && Position >= 0)
+			else if (Position == 0 && EnableSellEntries)
 			{
-				var volume = OrderVolume + (Position > 0 ? Position : 0m);
-				if (volume > 0)
-				{
-					SellMarket();
-				}
+				// Open new short
+				SellMarket();
 			}
 		}
 	}

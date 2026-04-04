@@ -14,36 +14,28 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-timeframe MACD confirmation strategy that aligns 5m, 15m, 1h and 4h trends.
+/// Multi-timeframe MACD confirmation strategy that aligns primary and confirmation timeframe trends.
 /// </summary>
 public class MacdMultiTimeframeExpertStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _maxSpreadPoints;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<DataType> _fiveMinuteType;
-	private readonly StrategyParam<DataType> _fifteenMinuteType;
-	private readonly StrategyParam<DataType> _hourType;
-	private readonly StrategyParam<DataType> _fourHourType;
+	private readonly StrategyParam<DataType> _primaryType;
+	private readonly StrategyParam<DataType> _confirmType;
 
-	private MovingAverageConvergenceDivergenceSignal _macdFiveMinute;
-	private MovingAverageConvergenceDivergenceSignal _macdFifteenMinute;
-	private MovingAverageConvergenceDivergenceSignal _macdHour;
-	private MovingAverageConvergenceDivergenceSignal _macdFourHour;
+	private MovingAverageConvergenceDivergenceSignal _macdPrimary;
+	private MovingAverageConvergenceDivergenceSignal _macdConfirm;
 
-	private int? _relationFiveMinute;
-	private int? _relationFifteenMinute;
-	private int? _relationHour;
-	private int? _relationFourHour;
-	private int _lastAlignedDirection;
+	private int? _relationPrimary;
+	private int? _relationConfirm;
+	private int _lastTradeDirection;
+	private int _candlesSinceEntry;
 
 	private decimal _entryPrice;
-	private decimal? _bestBidPrice;
-	private decimal? _bestAskPrice;
 
 	/// <summary>
 	/// Order volume in lots.
@@ -70,15 +62,6 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed spread in points.
-	/// </summary>
-	public decimal MaxSpreadPoints
-	{
-		get => _maxSpreadPoints.Value;
-		set => _maxSpreadPoints.Value = value;
 	}
 
 	/// <summary>
@@ -109,39 +92,21 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for the primary five-minute timeframe.
+	/// Candle type for the primary execution timeframe.
 	/// </summary>
-	public DataType FiveMinuteCandleType
+	public DataType PrimaryCandleType
 	{
-		get => _fiveMinuteType.Value;
-		set => _fiveMinuteType.Value = value;
+		get => _primaryType.Value;
+		set => _primaryType.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for the fifteen-minute confirmation timeframe.
+	/// Candle type for the confirmation timeframe.
 	/// </summary>
-	public DataType FifteenMinuteCandleType
+	public DataType ConfirmCandleType
 	{
-		get => _fifteenMinuteType.Value;
-		set => _fifteenMinuteType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for the one-hour confirmation timeframe.
-	/// </summary>
-	public DataType HourCandleType
-	{
-		get => _hourType.Value;
-		set => _hourType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for the four-hour confirmation timeframe.
-	/// </summary>
-	public DataType FourHourCandleType
-	{
-		get => _fourHourType.Value;
-		set => _fourHourType.Value = value;
+		get => _confirmType.Value;
+		set => _confirmType.Value = value;
 	}
 
 	/// <summary>
@@ -153,17 +118,13 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Position size in lots", "Trading");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 1500m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop-loss distance in points", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2500m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Take-profit distance in points", "Risk");
-
-		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
-			.SetNotNegative()
-			.SetDisplay("Max Spread", "Maximum allowed spread in points", "Risk");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
@@ -177,26 +138,18 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA period", "MACD");
 
-		_fiveMinuteType = Param(nameof(FiveMinuteCandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("5 Minute", "Primary execution timeframe", "Timeframes");
+		_primaryType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Primary", "Primary execution timeframe", "Timeframes");
 
-		_fifteenMinuteType = Param(nameof(FifteenMinuteCandleType), TimeSpan.FromHours(2).TimeFrame())
-			.SetDisplay("15 Minute", "First confirmation timeframe", "Timeframes");
-
-		_hourType = Param(nameof(HourCandleType), TimeSpan.FromHours(8).TimeFrame())
-			.SetDisplay("1 Hour", "Second confirmation timeframe", "Timeframes");
-
-		_fourHourType = Param(nameof(FourHourCandleType), TimeSpan.FromDays(1).TimeFrame())
-			.SetDisplay("4 Hour", "Third confirmation timeframe", "Timeframes");
+		_confirmType = Param(nameof(ConfirmCandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Confirm", "Confirmation timeframe", "Timeframes");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, FiveMinuteCandleType);
-		yield return (Security, FifteenMinuteCandleType);
-		yield return (Security, HourCandleType);
-		yield return (Security, FourHourCandleType);
+		yield return (Security, PrimaryCandleType);
+		yield return (Security, ConfirmCandleType);
 	}
 
 	/// <inheritdoc />
@@ -204,18 +157,13 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_macdFiveMinute = null;
-		_macdFifteenMinute = null;
-		_macdHour = null;
-		_macdFourHour = null;
-		_relationFiveMinute = null;
-		_relationFifteenMinute = null;
-		_relationHour = null;
-		_relationFourHour = null;
-		_lastAlignedDirection = 0;
+		_macdPrimary = null;
+		_macdConfirm = null;
+		_relationPrimary = null;
+		_relationConfirm = null;
+		_lastTradeDirection = 0;
+		_candlesSinceEntry = 0;
 		_entryPrice = 0m;
-		_bestBidPrice = null;
-		_bestAskPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -223,96 +171,88 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_macdFiveMinute = CreateMacd();
-		_macdFifteenMinute = CreateMacd();
-		_macdHour = CreateMacd();
-		_macdFourHour = CreateMacd();
+		_macdPrimary = CreateMacd();
+		_macdConfirm = CreateMacd();
 
-		// Bind the execution timeframe to the MACD handler.
-		var fiveMinuteSubscription = SubscribeCandles(FiveMinuteCandleType);
-		fiveMinuteSubscription
-			.Bind(ProcessFiveMinuteCandleRaw)
+		var primarySubscription = SubscribeCandles(PrimaryCandleType);
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
 			.Start();
 
-		SubscribeCandles(FifteenMinuteCandleType)
-			.Bind(ProcessFifteenMinuteCandleRaw)
-			.Start();
-
-		SubscribeCandles(HourCandleType)
-			.Bind(ProcessHourCandleRaw)
-			.Start();
-
-		SubscribeCandles(FourHourCandleType)
-			.Bind(ProcessFourHourCandleRaw)
+		SubscribeCandles(ConfirmCandleType)
+			.Bind(ProcessConfirmCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, fiveMinuteSubscription);
+			DrawCandles(area, primarySubscription);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private MovingAverageConvergenceDivergenceSignal CreateMacd()
 	{
-	return new MovingAverageConvergenceDivergenceSignal
-	{
-		Macd =
+		return new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod }
-		},
-		SignalMa = { Length = SignalPeriod }
-	};
+			Macd =
+			{
+				ShortMa = { Length = FastPeriod },
+				LongMa = { Length = SlowPeriod }
+			},
+			SignalMa = { Length = SignalPeriod }
+		};
 	}
 
-	private void OnLevel1(Level1ChangeMessage message)
-	{
-	_bestBidPrice = message.TryGetDecimal(Level1Fields.BestBidPrice) ?? _bestBidPrice;
-	_bestAskPrice = message.TryGetDecimal(Level1Fields.BestAskPrice) ?? _bestAskPrice;
-	}
-
-	private void ProcessFiveMinuteCandleRaw(ICandleMessage candle)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdValue = _macdFiveMinute.Process(candle);
+		var macdValue = _macdPrimary.Process(candle);
 		if (!TryUpdateRelation(macdValue, out var relation))
 			return;
 
-		_relationFiveMinute = relation;
-
-		if (!HasAllRelations())
-			return;
-
-		var alignedDirection = 0;
-
-		if (AllRelationsEqual(1))
-			alignedDirection = 1;
-		else if (AllRelationsEqual(-1))
-			alignedDirection = -1;
-		else
-		{
-			_lastAlignedDirection = 0;
-			return;
-		}
+		_relationPrimary = relation;
+		_candlesSinceEntry++;
 
 		// Manage protective exits whenever a position is open.
 		if (Position != 0)
 		{
 			ManageOpenPosition(candle);
-			return;
+
+			// If position was closed by SL/TP, allow new entry below
+			if (Position != 0)
+				return;
 		}
+
+		if (!_relationConfirm.HasValue)
+			return;
 
 		if (OrderVolume <= 0)
 			return;
 
-		if (_lastAlignedDirection == alignedDirection)
+		// Cooldown: require at least 6 candles between trades.
+		if (_candlesSinceEntry < 6)
 			return;
 
-		_lastAlignedDirection = alignedDirection;
+		// Determine aligned direction: both timeframes must agree.
+		var alignedDirection = 0;
+
+		if (_relationPrimary == 1 && _relationConfirm == 1)
+			alignedDirection = 1;
+		else if (_relationPrimary == -1 && _relationConfirm == -1)
+			alignedDirection = -1;
+
+		if (alignedDirection == 0)
+			return;
+
+		// Avoid repeated entries in the same direction.
+		if (_lastTradeDirection == alignedDirection)
+			return;
+
+		_lastTradeDirection = alignedDirection;
+		_candlesSinceEntry = 0;
 
 		if (alignedDirection > 0)
 		{
@@ -326,136 +266,85 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 		}
 	}
 
-	private void ProcessFifteenMinuteCandleRaw(ICandleMessage candle)
+	private void ProcessConfirmCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdValue = _macdFifteenMinute.Process(candle);
+		var macdValue = _macdConfirm.Process(candle);
 		if (TryUpdateRelation(macdValue, out var relation))
-			_relationFifteenMinute = relation;
-	}
-
-	private void ProcessHourCandleRaw(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var macdValue = _macdHour.Process(candle);
-		if (TryUpdateRelation(macdValue, out var relation))
-			_relationHour = relation;
-	}
-
-	private void ProcessFourHourCandleRaw(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var macdValue = _macdFourHour.Process(candle);
-		if (TryUpdateRelation(macdValue, out var relation))
-			_relationFourHour = relation;
+			_relationConfirm = relation;
 	}
 
 	private bool TryUpdateRelation(IIndicatorValue macdValue, out int relation)
 	{
-	relation = 0;
+		relation = 0;
 
-	if (!macdValue.IsFinal)
-	return false;
+		if (!macdValue.IsFinal)
+			return false;
 
-	var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
-	if (typed.Macd is not decimal macd || typed.Signal is not decimal signal)
-	return false;
+		if (typed.Macd is not decimal macd || typed.Signal is not decimal signal)
+			return false;
 
-	if (signal > macd)
-	relation = 1;
-	else if (signal < macd)
-	relation = -1;
-	else
-	relation = 0;
+		// Standard MACD: macd > signal = bullish, macd < signal = bearish.
+		if (macd > signal)
+			relation = 1;
+		else if (macd < signal)
+			relation = -1;
+		else
+			relation = 0;
 
-	return true;
-	}
-
-	private bool HasAllRelations()
-	{
-	return _relationFiveMinute.HasValue &&
-	_relationFifteenMinute.HasValue &&
-	_relationHour.HasValue &&
-	_relationFourHour.HasValue;
-	}
-
-	private bool AllRelationsEqual(int relation)
-	{
-	return _relationFiveMinute == relation &&
-	_relationFifteenMinute == relation &&
-	_relationHour == relation &&
-	_relationFourHour == relation;
-	}
-
-	private bool TryGetSpread(out decimal spreadPoints)
-	{
-	spreadPoints = 0m;
-
-	if (_bestBidPrice is not decimal bid || _bestAskPrice is not decimal ask)
-	return false;
-
-	if (bid <= 0 || ask <= 0 || ask <= bid)
-	return false;
-
-	// Convert the raw price spread into points using the instrument price step.
-	var step = Security?.PriceStep ?? 0m;
-	if (step > 0)
-	spreadPoints = (ask - bid) / step;
-	else
-	spreadPoints = ask - bid;
-
-	return true;
+		return true;
 	}
 
 	private void ManageOpenPosition(ICandleMessage candle)
 	{
-	// Derive the point value. Fall back to 1 if the security lacks a price step.
-	var point = Security?.PriceStep ?? 0m;
-	if (point <= 0)
-	point = 1m;
+		// Derive the point value. Fall back to 1 if the security lacks a price step.
+		var point = Security?.PriceStep ?? 0m;
+		if (point <= 0)
+			point = 1m;
 
-	if (Position > 0)
-	{
-	if (TakeProfitPoints > 0 && candle.HighPrice >= _entryPrice + TakeProfitPoints * point)
-	{
-	SellMarket(Position);
-	_entryPrice = 0m;
-	return;
-	}
+		if (Position > 0)
+		{
+			if (TakeProfitPoints > 0 && candle.HighPrice >= _entryPrice + TakeProfitPoints * point)
+			{
+				SellMarket(Position);
+				_entryPrice = 0m;
+				_lastTradeDirection = 0;
+				return;
+			}
 
-	if (StopLossPoints > 0 && candle.LowPrice <= _entryPrice - StopLossPoints * point)
-	{
-	SellMarket(Position);
-	_entryPrice = 0m;
-	}
-	}
-	else if (Position < 0)
-	{
-	var volume = Math.Abs(Position);
+			if (StopLossPoints > 0 && candle.LowPrice <= _entryPrice - StopLossPoints * point)
+			{
+				SellMarket(Position);
+				_entryPrice = 0m;
+				_lastTradeDirection = 0;
+			}
+		}
+		else if (Position < 0)
+		{
+			var volume = Position.Abs();
 
-	if (TakeProfitPoints > 0 && candle.LowPrice <= _entryPrice - TakeProfitPoints * point)
-	{
-	BuyMarket(volume);
-	_entryPrice = 0m;
-	return;
-	}
+			if (TakeProfitPoints > 0 && candle.LowPrice <= _entryPrice - TakeProfitPoints * point)
+			{
+				BuyMarket(volume);
+				_entryPrice = 0m;
+				_lastTradeDirection = 0;
+				return;
+			}
 
-	if (StopLossPoints > 0 && candle.HighPrice >= _entryPrice + StopLossPoints * point)
-	{
-	BuyMarket(volume);
-	_entryPrice = 0m;
-	}
-	}
-	else
-	{
-	_entryPrice = 0m;
-	}
+			if (StopLossPoints > 0 && candle.HighPrice >= _entryPrice + StopLossPoints * point)
+			{
+				BuyMarket(volume);
+				_entryPrice = 0m;
+				_lastTradeDirection = 0;
+			}
+		}
+		else
+		{
+			_entryPrice = 0m;
+		}
 	}
 }

@@ -1,13 +1,10 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
@@ -15,108 +12,64 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Pending order grid strategy that mirrors the classic AntiFragile EA behavior.
-/// Places layered stop orders above and below price with martingale style sizing.
-/// Applies optional take profit, stop loss, and trailing stop management.
+/// Places layered virtual grid levels above and below the initial price.
+/// When price reaches a grid level, a market order is executed.
+/// Applies take profit and stop loss management based on entry price.
 /// </summary>
 public class PendingOrderGridStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _startingVolume;
-	private readonly StrategyParam<decimal> _volumeIncreasePercent;
-	private readonly StrategyParam<decimal> _distanceFromPrice;
-	private readonly StrategyParam<int> _spaceBetweenTrades;
-	private readonly StrategyParam<int> _numberOfTrades;
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _trailingStopPoints;
+	private readonly StrategyParam<decimal> _gridSpacing;
+	private readonly StrategyParam<int> _gridLevels;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<bool> _tradeLong;
 	private readonly StrategyParam<bool> _tradeShort;
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
+	private decimal _initialPrice;
 	private decimal _entryPrice;
-	private decimal _tickSize;
-	private decimal _volumeStep;
-	private bool _gridInitialized;
-	private Order[] _longGridOrders = Array.Empty<Order>();
-	private Order[] _shortGridOrders = Array.Empty<Order>();
-	private Order _stopLossOrder;
-	private Order _takeProfitOrder;
-	private decimal? _currentStopPrice;
+	private bool _initialized;
+	private HashSet<int> _triggeredBuyLevels;
+	private HashSet<int> _triggeredSellLevels;
+	private int _tradeCount;
 
 	/// <summary>
-	/// Initial volume used for the first pending order.
+	/// Spacing between grid levels as a percentage of price.
 	/// </summary>
-	public decimal StartingVolume
+	public decimal GridSpacing
 	{
-		get => _startingVolume.Value;
-		set => _startingVolume.Value = value;
+		get => _gridSpacing.Value;
+		set => _gridSpacing.Value = value;
 	}
 
 	/// <summary>
-	/// Percentage increase applied to each additional grid order.
+	/// Number of grid levels per side.
 	/// </summary>
-	public decimal VolumeIncreasePercent
+	public int GridLevels
 	{
-		get => _volumeIncreasePercent.Value;
-		set => _volumeIncreasePercent.Value = value;
+		get => _gridLevels.Value;
+		set => _gridLevels.Value = value;
 	}
 
 	/// <summary>
-	/// Absolute distance added above or below price before the first order.
+	/// Take profit as percentage of entry price.
 	/// </summary>
-	public decimal DistanceFromPrice
+	public decimal TakeProfitPercent
 	{
-		get => _distanceFromPrice.Value;
-		set => _distanceFromPrice.Value = value;
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Spacing between consecutive orders expressed in price steps.
+	/// Stop loss as percentage of entry price.
 	/// </summary>
-	public int SpaceBetweenTrades
+	public decimal StopLossPercent
 	{
-		get => _spaceBetweenTrades.Value;
-		set => _spaceBetweenTrades.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Total number of orders per direction inside the grid.
-	/// </summary>
-	public int NumberOfTrades
-	{
-		get => _numberOfTrades.Value;
-		set => _numberOfTrades.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance measured in price steps.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance measured in price steps.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance measured in price steps.
-	/// </summary>
-	public int TrailingStopPoints
-	{
-		get => _trailingStopPoints.Value;
-		set => _trailingStopPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Enables the long side of the grid.
+	/// Enables buying on grid levels below price.
 	/// </summary>
 	public bool TradeLong
 	{
@@ -125,7 +78,7 @@ public class PendingOrderGridStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Enables the short side of the grid.
+	/// Enables selling on grid levels above price.
 	/// </summary>
 	public bool TradeShort
 	{
@@ -138,43 +91,30 @@ public class PendingOrderGridStrategy : Strategy
 	/// </summary>
 	public PendingOrderGridStrategy()
 	{
-		_startingVolume = Param(nameof(StartingVolume), 0.01m)
+		_gridSpacing = Param(nameof(GridSpacing), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Starting Volume", "Initial order volume", "Grid");
+			.SetDisplay("Grid Spacing %", "Percentage spacing between grid levels", "Grid");
 
-		_volumeIncreasePercent = Param(nameof(VolumeIncreasePercent), 0.1m)
-			.SetNotNegative()
-			.SetDisplay("Volume Increase %", "Percent increase applied per grid level", "Grid");
-
-		_distanceFromPrice = Param(nameof(DistanceFromPrice), 0.001m)
-			.SetNotNegative()
-			.SetDisplay("Distance", "Absolute distance from price to first order", "Grid");
-
-		_spaceBetweenTrades = Param(nameof(SpaceBetweenTrades), 150)
+		_gridLevels = Param(nameof(GridLevels), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Spacing (ticks)", "Number of price steps between orders", "Grid");
+			.SetDisplay("Grid Levels", "Number of grid levels per side", "Grid");
 
-		_numberOfTrades = Param(nameof(NumberOfTrades), 200)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Orders per side", "Maximum grid orders for each direction", "Grid");
+			.SetDisplay("Take Profit %", "Take profit as percentage of entry", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (ticks)", "Take profit distance in price steps", "Risk");
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 9999)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (ticks)", "Stop loss distance in price steps", "Risk");
-
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 150)
-			.SetNotNegative()
-			.SetDisplay("Trailing Stop (ticks)", "Trailing distance in price steps", "Risk");
+		_stopLossPercent = Param(nameof(StopLossPercent), 3.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry", "Risk");
 
 		_tradeLong = Param(nameof(TradeLong), true)
-			.SetDisplay("Enable Long Grid", "Place buy stop orders", "Grid");
+			.SetDisplay("Enable Long", "Enable buy grid levels", "Grid");
 
 		_tradeShort = Param(nameof(TradeShort), true)
-			.SetDisplay("Enable Short Grid", "Place sell stop orders", "Grid");
+			.SetDisplay("Enable Short", "Enable sell grid levels", "Grid");
+
+		_triggeredBuyLevels = new HashSet<int>();
+		_triggeredSellLevels = new HashSet<int>();
 	}
 
 	/// <inheritdoc />
@@ -182,18 +122,12 @@ public class PendingOrderGridStrategy : Strategy
 	{
 		base.OnReseted();
 
-		// Reset cached market data and order references.
-		_bestBid = 0m;
-		_bestAsk = 0m;
+		_initialPrice = 0m;
 		_entryPrice = 0m;
-		_tickSize = 0m;
-		_volumeStep = 0m;
-		_gridInitialized = false;
-		_longGridOrders = Array.Empty<Order>();
-		_shortGridOrders = Array.Empty<Order>();
-		_stopLossOrder = null;
-		_takeProfitOrder = null;
-		_currentStopPrice = null;
+		_initialized = false;
+		_triggeredBuyLevels = new HashSet<int>();
+		_triggeredSellLevels = new HashSet<int>();
+		_tradeCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -201,299 +135,125 @@ public class PendingOrderGridStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Cache trading steps to round prices and volumes.
-		_tickSize = Security?.PriceStep ?? 0m;
-		if (_tickSize <= 0m)
-			_tickSize = 0.0001m;
+		var tf = TimeSpan.FromMinutes(5).TimeFrame();
 
-		_volumeStep = Security?.VolumeStep ?? 0m;
-		if (_volumeStep <= 0m)
-			_volumeStep = 0.01m;
-
-		// Listen to order book updates to drive grid placement and trailing.
-		SubscribeOrderBook()
-			.Bind(ProcessOrderBook)
+		SubscribeCandles(tf)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessOrderBook(IOrderBookMessage depth)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Update the most recent bid and ask prices.
-		var bestBid = depth.GetBestBid();
-		if (bestBid != null)
-			_bestBid = bestBid.Value.Price;
-
-		var bestAsk = depth.GetBestAsk();
-		if (bestAsk != null)
-			_bestAsk = bestAsk.Value.Price;
-
-		// Allow a new grid only after previous orders are filled or canceled.
-		if (_gridInitialized && Position == 0m && CountActiveGridOrders() == 0)
-			_gridInitialized = false;
-
-		if (!_gridInitialized)
-			TryPlaceGridOrders();
-
-		// Continuously maintain trailing protection.
-		UpdateTrailing();
-	}
-
-	private void TryPlaceGridOrders()
-	{
-		if (!TradeLong && !TradeShort)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_bestBid <= 0m || _bestAsk <= 0m)
-			return;
+		var close = candle.ClosePrice;
 
-		var spacing = _tickSize * SpaceBetweenTrades;
-		var distance = DistanceFromPrice;
-
-		var longOrders = TradeLong ? new Order[NumberOfTrades] : Array.Empty<Order>();
-		var shortOrders = TradeShort ? new Order[NumberOfTrades] : Array.Empty<Order>();
-
-		for (var index = 1; index <= NumberOfTrades; index++)
+		// Initialize grid around the first candle's close price
+		if (!_initialized)
 		{
-			var multiplier = 1m + (index - 1) * VolumeIncreasePercent / 100m;
-			var rawVolume = StartingVolume * multiplier;
-			var volume = RoundVolume(rawVolume);
+			_initialPrice = close;
+			_initialized = true;
+			_triggeredBuyLevels.Clear();
+			_triggeredSellLevels.Clear();
+			return;
+		}
 
-			if (volume <= 0m)
-				continue;
-
-			if (TradeLong)
+		// Check if we have a position that needs TP/SL management
+		if (Position != 0m && _entryPrice > 0m)
+		{
+			if (Position > 0m)
 			{
-				var price = RoundPrice(_bestBid + distance + index * spacing);
-				if (price > 0m)
-					BuyMarket(); longOrders[index - 1] = null;
+				var tpPrice = _entryPrice * (1m + TakeProfitPercent / 100m);
+				var slPrice = _entryPrice * (1m - StopLossPercent / 100m);
+
+				if (close >= tpPrice || close <= slPrice)
+				{
+					SellMarket();
+					ResetGrid(close);
+					return;
+				}
 			}
-
-			if (TradeShort)
+			else if (Position < 0m)
 			{
-				var price = RoundPrice(_bestAsk - distance - index * spacing);
-				if (price > 0m)
-					SellMarket(); shortOrders[index - 1] = null;
+				var tpPrice = _entryPrice * (1m - TakeProfitPercent / 100m);
+				var slPrice = _entryPrice * (1m + StopLossPercent / 100m);
+
+				if (close <= tpPrice || close >= slPrice)
+				{
+					BuyMarket();
+					ResetGrid(close);
+					return;
+				}
 			}
 		}
 
-		_longGridOrders = longOrders;
-		_shortGridOrders = shortOrders;
-		_gridInitialized = true;
-	}
+		// Check grid levels for new entries
+		var spacing = GridSpacing / 100m;
 
-	private void UpdateTrailing()
-	{
-		if (TrailingStopPoints <= 0 || _tickSize <= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPoints * _tickSize;
-
-		if (Position > 0m && _bestBid > 0m)
+		// Buy levels below initial price
+		if (TradeLong)
 		{
-			var entryPrice = _entryPrice;
-			if (entryPrice <= 0m)
-				return;
-
-			var profit = _bestBid - entryPrice;
-			if (profit <= trailingDistance)
-				return;
-
-			var newStop = RoundPrice(_bestBid - trailingDistance);
-
-			if (_currentStopPrice is decimal current && newStop <= current)
-				return;
-
-			PlaceStopOrder(newStop, Position, true);
-		}
-		else if (Position < 0m && _bestAsk > 0m)
-		{
-			var entryPrice = _entryPrice;
-			if (entryPrice <= 0m)
-				return;
-
-			var profit = entryPrice - _bestAsk;
-			if (profit <= trailingDistance)
-				return;
-
-			var newStop = RoundPrice(_bestAsk + trailingDistance);
-
-			if (_currentStopPrice is decimal current && newStop >= current)
-				return;
-
-			PlaceStopOrder(newStop, Math.Abs(Position), false);
-		}
-	}
-
-	private void PlaceStopOrder(decimal price, decimal volume, bool forLongPosition)
-	{
-		if (_stopLossOrder != null)
-		{
-			// CancelOrder not available
-		}
-
-		var roundedVolume = RoundVolume(volume);
-		if (roundedVolume <= 0m)
-			return;
-
-		if (forLongPosition)
-			SellMarket();
-		else
-			BuyMarket();
-		_stopLossOrder = null;
-
-		_currentStopPrice = price;
-	}
-
-	private void SetupLongProtection()
-	{
-		CancelProtectionOrders();
-
-		var volume = RoundVolume(Position);
-		if (volume <= 0m)
-			return;
-
-		var entryPrice = _entryPrice;
-		if (entryPrice <= 0m)
-			return;
-
-		if (StopLossPoints > 0)
-		{
-			var stopPrice = RoundPrice(entryPrice - StopLossPoints * _tickSize);
-			// SellStop not available - using market order on check
-			_currentStopPrice = stopPrice;
-		}
-
-		if (TakeProfitPoints > 0)
-		{
-			var takePrice = RoundPrice(entryPrice + TakeProfitPoints * _tickSize);
-			// SellLimit not available
-		}
-	}
-
-	private void SetupShortProtection()
-	{
-		CancelProtectionOrders();
-
-		var volume = RoundVolume(Math.Abs(Position));
-		if (volume <= 0m)
-			return;
-
-		var entryPrice = _entryPrice;
-		if (entryPrice <= 0m)
-			return;
-
-		if (StopLossPoints > 0)
-		{
-			var stopPrice = RoundPrice(entryPrice + StopLossPoints * _tickSize);
-			// BuyStop not available - using market order on check
-			_currentStopPrice = stopPrice;
-		}
-
-		if (TakeProfitPoints > 0)
-		{
-			var takePrice = RoundPrice(entryPrice - TakeProfitPoints * _tickSize);
-			// BuyLimit not available
-		}
-	}
-
-	private void CancelProtectionOrders()
-	{
-		if (_stopLossOrder != null)
-		{
-			var state = _stopLossOrder.State;
-			if (state == OrderStates.Active || state == OrderStates.Pending)
-				// CancelOrder not available
-			_stopLossOrder = null;
-		}
-
-		if (_takeProfitOrder != null)
-		{
-			var state = _takeProfitOrder.State;
-			if (state == OrderStates.Active || state == OrderStates.Pending)
-				// CancelOrder not available
-			_takeProfitOrder = null;
-		}
-
-		_currentStopPrice = null;
-	}
-
-	private int CountActiveGridOrders()
-	{
-		var count = 0;
-
-		if (_longGridOrders.Length > 0)
-		{
-			for (var i = 0; i < _longGridOrders.Length; i++)
+			for (var i = 1; i <= GridLevels; i++)
 			{
-				var order = _longGridOrders[i];
-				if (order == null)
+				if (_triggeredBuyLevels.Contains(i))
 					continue;
 
-				var state = order.State;
-				if (state == OrderStates.Active || state == OrderStates.Pending)
-					count++;
+				var level = _initialPrice * (1m - i * spacing);
+
+				if (close <= level && Position <= 0m)
+				{
+					// Close any short first
+					if (Position < 0m)
+						BuyMarket();
+
+					BuyMarket();
+					_triggeredBuyLevels.Add(i);
+					_tradeCount++;
+					return;
+				}
 			}
 		}
 
-		if (_shortGridOrders.Length > 0)
+		// Sell levels above initial price
+		if (TradeShort)
 		{
-			for (var i = 0; i < _shortGridOrders.Length; i++)
+			for (var i = 1; i <= GridLevels; i++)
 			{
-				var order = _shortGridOrders[i];
-				if (order == null)
+				if (_triggeredSellLevels.Contains(i))
 					continue;
 
-				var state = order.State;
-				if (state == OrderStates.Active || state == OrderStates.Pending)
-					count++;
+				var level = _initialPrice * (1m + i * spacing);
+
+				if (close >= level && Position >= 0m)
+				{
+					// Close any long first
+					if (Position > 0m)
+						SellMarket();
+
+					SellMarket();
+					_triggeredSellLevels.Add(i);
+					_tradeCount++;
+					return;
+				}
 			}
 		}
-
-		return count;
 	}
 
-	private decimal RoundPrice(decimal price)
+	private void ResetGrid(decimal newPrice)
 	{
-		if (_tickSize <= 0m)
-			return price;
-
-		var steps = Math.Round(price / _tickSize, MidpointRounding.AwayFromZero);
-		return steps * _tickSize;
-	}
-
-	private decimal RoundVolume(decimal volume)
-	{
-		var absVolume = Math.Abs(volume);
-		if (absVolume <= 0m)
-			return 0m;
-
-		if (_volumeStep <= 0m)
-			return absVolume;
-
-		var steps = Math.Round(absVolume / _volumeStep, MidpointRounding.AwayFromZero);
-		if (steps <= 0m)
-			steps = 1m;
-
-		return steps * _volumeStep;
-	}
-
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
+		_initialPrice = newPrice;
+		_entryPrice = 0m;
+		_triggeredBuyLevels.Clear();
+		_triggeredSellLevels.Clear();
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnPositionReceived(position);
+		base.OnOwnTradeReceived(trade);
 
-		// Configure protection depending on current net position.
-		if (Position > 0m)
-			SetupLongProtection();
-		else if (Position < 0m)
-			SetupShortProtection();
-		else
-			CancelProtectionOrders();
+		if (trade?.Trade != null)
+			_entryPrice = trade.Trade.Price;
 	}
 }

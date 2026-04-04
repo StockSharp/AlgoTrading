@@ -92,20 +92,15 @@ public class BuildYourGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxMultiplierLot;
 	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<decimal> _maxSpread;
-	private readonly StrategyParam<bool> _useCompletedBar;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<PositionEntry> _longEntries = new();
 	private readonly List<PositionEntry> _shortEntries = new();
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private bool _hasBestBid;
-	private bool _hasBestAsk;
+	private decimal _currentPrice;
 	private decimal _pointSize;
 	private decimal _priceStep;
 	private decimal _stepPrice;
-	private bool _barReady;
 
 	private int _totalOrders;
 	private int _buyOrders;
@@ -123,6 +118,7 @@ public class BuildYourGridStrategy : Strategy
 	private decimal _lastBuyVolume;
 	private decimal _lastSellVolume;
 	private bool _isHedged;
+	private int _cooldownBars;
 
 	/// <summary>
 	/// Controls whether the strategy may open both directions or a single side only.
@@ -296,16 +292,7 @@ public class BuildYourGridStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Processes signals only when a bar closes when enabled.
-	/// </summary>
-	public bool UseCompletedBar
-	{
-		get => _useCompletedBar.Value;
-		set => _useCompletedBar.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used when bar completion mode is active.
+	/// Candle type used for price data.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -318,23 +305,23 @@ public class BuildYourGridStrategy : Strategy
 	/// </summary>
 	public BuildYourGridStrategy()
 	{
-		_orderPlacement = Param(nameof(OrderPlacement), OrderPlacementModes.Both)
+		_orderPlacement = Param(nameof(OrderPlacement), OrderPlacementModes.LongOnly)
 			.SetDisplay("Order Placement", "Allowed entry direction", "General");
 
 		_gridDirection = Param(nameof(GridDirection), GridDirectionModes.AgainstTrend)
 			.SetDisplay("Grid Direction", "Whether layers follow or fade the trend", "Grid");
 
-		_pipsForNextOrder = Param(nameof(PipsForNextOrder), 50m)
+		_pipsForNextOrder = Param(nameof(PipsForNextOrder), 500000m)
 			.SetDisplay("Grid Step (pips)", "Base spacing between grid levels", "Grid")
 			.SetGreaterThanZero();
 
-		_stepProgression = Param(nameof(StepProgression), StepProgressionModes.Geometric)
+		_stepProgression = Param(nameof(StepProgression), StepProgressionModes.Static)
 			.SetDisplay("Step Progression", "How the distance grows with each layer", "Grid");
 
 		_closeTargetMode = Param(nameof(CloseTarget), CloseTargetModes.Pips)
 			.SetDisplay("Close Target", "Profit target type", "Risk");
 
-		_pipsCloseInProfit = Param(nameof(PipsCloseInProfit), 10m)
+		_pipsCloseInProfit = Param(nameof(PipsCloseInProfit), 500000m)
 			.SetDisplay("Target (pips)", "Basket profit target in pips", "Risk")
 			.SetGreaterThanZero();
 
@@ -342,10 +329,10 @@ public class BuildYourGridStrategy : Strategy
 			.SetDisplay("Target (currency)", "Basket profit target in account currency", "Risk")
 			.SetGreaterThanZero();
 
-		_lossCloseMode = Param(nameof(LossMode), LossCloseModes.CloseAll)
+		_lossCloseMode = Param(nameof(LossMode), LossCloseModes.DoNothing)
 			.SetDisplay("Loss Handling", "Action when the loss threshold is hit", "Risk");
 
-		_pipsForCloseInLoss = Param(nameof(PipsForCloseInLoss), 100m)
+		_pipsForCloseInLoss = Param(nameof(PipsForCloseInLoss), 200000m)
 			.SetDisplay("Loss (pips)", "Allowed drawdown before protective close", "Risk")
 			.SetGreaterThanZero();
 
@@ -378,7 +365,7 @@ public class BuildYourGridStrategy : Strategy
 			.SetDisplay("Max Multiplier", "Cap for lot growth relative to the first entry", "Volume")
 			.SetGreaterThanZero();
 
-		_maxOrders = Param(nameof(MaxOrders), 0)
+		_maxOrders = Param(nameof(MaxOrders), 2)
 			.SetDisplay("Max Orders", "Maximum simultaneous positions (0 = unlimited)", "General")
 			.SetRange(0, 1000);
 
@@ -386,20 +373,14 @@ public class BuildYourGridStrategy : Strategy
 			.SetDisplay("Max Spread", "Maximum allowed spread in pips (0 = ignore)", "General")
 			.SetNotNegative();
 
-		_useCompletedBar = Param(nameof(UseCompletedBar), false)
-			.SetDisplay("Use Completed Bar", "Process signals only after a candle closes", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series used for bar completion", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series used for price data", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Level1);
-
-		if (UseCompletedBar)
-			yield return (Security, CandleType);
+		yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -409,14 +390,10 @@ public class BuildYourGridStrategy : Strategy
 
 		_longEntries.Clear();
 		_shortEntries.Clear();
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_hasBestBid = false;
-		_hasBestAsk = false;
+		_currentPrice = 0m;
 		_pointSize = 0m;
 		_priceStep = 0m;
 		_stepPrice = 0m;
-		_barReady = !UseCompletedBar;
 		_totalOrders = 0;
 		_buyOrders = 0;
 		_sellOrders = 0;
@@ -433,6 +410,7 @@ public class BuildYourGridStrategy : Strategy
 		_lastBuyVolume = 0m;
 		_lastSellVolume = 0m;
 		_isHedged = false;
+		_cooldownBars = 0;
 	}
 
 	/// <inheritdoc />
@@ -443,17 +421,9 @@ public class BuildYourGridStrategy : Strategy
 		_pointSize = CalculatePointSize();
 		_priceStep = Security?.PriceStep ?? 0m;
 		_stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
-		_barReady = !UseCompletedBar;
 
-		if (UseCompletedBar)
-		{
-			SubscribeCandles(CandleType)
-				.Bind(ProcessCandle)
-				.Start();
-		}
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
@@ -462,84 +432,55 @@ public class BuildYourGridStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barReady = true;
-	}
+		_currentPrice = candle.ClosePrice;
+		if (_currentPrice <= 0m)
+			return;
 
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-		{
-			var bid = (decimal)bidObj;
-			if (bid > 0m)
-			{
-				_bestBid = bid;
-				_hasBestBid = true;
-			}
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj))
-		{
-			var ask = (decimal)askObj;
-			if (ask > 0m)
-			{
-				_bestAsk = ask;
-				_hasBestAsk = true;
-			}
-		}
-
-		if (_hasBestBid && _hasBestAsk)
-			ProcessPrices();
+		ProcessPrices();
 	}
 
 	private void ProcessPrices()
 	{
-		// removed IsFormedAndOnlineAndAllowTrading guard
-
-		if (UseCompletedBar && !_barReady)
-			return;
-
-		try
+		if (_cooldownBars > 0)
 		{
-			var spread = _bestAsk - _bestBid;
-			var spreadPips = _pointSize > 0m ? spread / _pointSize : 0m;
+			_cooldownBars--;
+			return;
+		}
 
-			if (MaxSpread > 0m && spreadPips > MaxSpread)
-				return;
+		UpdateAggregates();
 
-			UpdateAggregates();
-
-			if (_totalOrders > 0)
+		if (_totalOrders > 0)
+		{
+			if (ShouldCloseInProfit())
 			{
-				if (ShouldCloseInProfit())
+				if (CloseAllPositions())
 				{
-					if (CloseAllPositions())
-						return;
-				}
-
-				if (LossMode != LossCloseModes.DoNothing && ShouldCloseInLoss())
-				{
-					var closed = LossMode == LossCloseModes.CloseFirst ? CloseFirstPositions() : CloseAllPositions();
-					if (closed)
-						return;
-				}
-
-				if (ShouldHedge())
-				{
-					if (ExecuteHedgeOrder())
-						return;
+					_cooldownBars = 200;
+					return;
 				}
 			}
 
-			if (TryOpenInitialOrders())
-				return;
+			if (LossMode != LossCloseModes.DoNothing && ShouldCloseInLoss())
+			{
+				var closed = LossMode == LossCloseModes.CloseFirst ? CloseFirstPositions() : CloseAllPositions();
+				if (closed)
+				{
+					_cooldownBars = 200;
+					return;
+				}
+			}
 
-			TryOpenNextOrders();
+			if (ShouldHedge())
+			{
+				if (ExecuteHedgeOrder())
+					return;
+			}
 		}
-		finally
-		{
-			if (UseCompletedBar)
-				_barReady = false;
-		}
+
+		if (TryOpenInitialOrders())
+			return;
+
+		TryOpenNextOrders();
 	}
 
 	private void UpdateAggregates()
@@ -562,7 +503,7 @@ public class BuildYourGridStrategy : Strategy
 			_totalLongVolume += entry.Volume;
 			_lastBuyPrice = entry.Price;
 
-			var diff = _bestBid - entry.Price;
+			var diff = _currentPrice - entry.Price;
 			_buyProfit += CalculateProfit(diff, entry.Volume);
 			_buyPips += CalculatePips(diff);
 		}
@@ -572,7 +513,7 @@ public class BuildYourGridStrategy : Strategy
 			_totalShortVolume += entry.Volume;
 			_lastSellPrice = entry.Price;
 
-			var diff = entry.Price - _bestAsk;
+			var diff = entry.Price - _currentPrice;
 			_sellProfit += CalculateProfit(diff, entry.Volume);
 			_sellPips += CalculatePips(diff);
 		}
@@ -603,9 +544,13 @@ public class BuildYourGridStrategy : Strategy
 
 	private bool ShouldCloseInProfit()
 	{
+		var entries = _buyOrders + _sellOrders;
+		if (entries <= 0)
+			return false;
+
 		return CloseTarget switch
 		{
-			CloseTargetModes.Pips => (_buyPips + _sellPips) >= PipsCloseInProfit,
+			CloseTargetModes.Pips => (_buyPips + _sellPips) / entries >= PipsCloseInProfit,
 			CloseTargetModes.Currency => (_buyProfit + _sellProfit) >= CurrencyCloseInProfit,
 			_ => false,
 		};
@@ -613,7 +558,11 @@ public class BuildYourGridStrategy : Strategy
 
 	private bool ShouldCloseInLoss()
 	{
-		return (_buyPips + _sellPips) <= -PipsForCloseInLoss;
+		var entries = _buyOrders + _sellOrders;
+		if (entries <= 0)
+			return false;
+
+		return (_buyPips + _sellPips) / entries <= -PipsForCloseInLoss;
 	}
 
 	private bool CloseAllPositions()
@@ -623,6 +572,7 @@ public class BuildYourGridStrategy : Strategy
 		if (_buyOrders > 0)
 		{
 			var volume = _totalLongVolume;
+			_longEntries.Clear();
 			if (volume > 0m)
 			{
 				SellMarket(volume);
@@ -633,6 +583,7 @@ public class BuildYourGridStrategy : Strategy
 		if (_sellOrders > 0)
 		{
 			var volume = _totalShortVolume;
+			_shortEntries.Clear();
 			if (volume > 0m)
 			{
 				BuyMarket(volume);
@@ -650,6 +601,7 @@ public class BuildYourGridStrategy : Strategy
 		if (_buyOrders > 0)
 		{
 			var volume = _longEntries[0].Volume;
+			_longEntries.RemoveAt(0);
 			if (volume > 0m)
 			{
 				SellMarket(volume);
@@ -660,6 +612,7 @@ public class BuildYourGridStrategy : Strategy
 		if (_sellOrders > 0)
 		{
 			var volume = _shortEntries[0].Volume;
+			_shortEntries.RemoveAt(0);
 			if (volume > 0m)
 			{
 				BuyMarket(volume);
@@ -699,6 +652,7 @@ public class BuildYourGridStrategy : Strategy
 			if (volume <= 0m)
 				return false;
 
+			_longEntries.Add(new PositionEntry(_currentPrice, volume));
 			BuyMarket(volume);
 			return true;
 		}
@@ -707,6 +661,7 @@ public class BuildYourGridStrategy : Strategy
 		if (sellVolume <= 0m)
 			return false;
 
+		_shortEntries.Add(new PositionEntry(_currentPrice, sellVolume));
 		SellMarket(sellVolume);
 		return true;
 	}
@@ -755,7 +710,7 @@ public class BuildYourGridStrategy : Strategy
 				if (allowBuy && _lastBuyPrice.HasValue && buyDistance > 0m)
 				{
 					var trigger = _lastBuyPrice.Value + buyDistance;
-					if (_bestAsk >= trigger)
+					if (_currentPrice >= trigger)
 					{
 						var volume = GetOrderVolume(Sides.Buy);
 						if (SendMarketOrder(Sides.Buy, volume))
@@ -766,7 +721,7 @@ public class BuildYourGridStrategy : Strategy
 				if (allowSell && _lastSellPrice.HasValue && sellDistance > 0m)
 				{
 					var trigger = _lastSellPrice.Value - sellDistance;
-					if (_bestBid <= trigger)
+					if (_currentPrice <= trigger)
 					{
 						var volume = GetOrderVolume(Sides.Sell);
 						if (SendMarketOrder(Sides.Sell, volume))
@@ -779,7 +734,7 @@ public class BuildYourGridStrategy : Strategy
 				if (allowBuy && _lastBuyPrice.HasValue && buyDistance > 0m)
 				{
 					var trigger = _lastBuyPrice.Value - buyDistance;
-					if (_bestAsk <= trigger)
+					if (_currentPrice <= trigger)
 					{
 						var volume = GetOrderVolume(Sides.Buy);
 						if (SendMarketOrder(Sides.Buy, volume))
@@ -790,7 +745,7 @@ public class BuildYourGridStrategy : Strategy
 				if (allowSell && _lastSellPrice.HasValue && sellDistance > 0m)
 				{
 					var trigger = _lastSellPrice.Value + sellDistance;
-					if (_bestBid >= trigger)
+					if (_currentPrice >= trigger)
 					{
 						var volume = GetOrderVolume(Sides.Sell);
 						if (SendMarketOrder(Sides.Sell, volume))
@@ -893,9 +848,15 @@ public class BuildYourGridStrategy : Strategy
 			return false;
 
 		if (side == Sides.Buy)
+		{
+			_longEntries.Add(new PositionEntry(_currentPrice, volume));
 			BuyMarket(volume);
+		}
 		else
+		{
+			_shortEntries.Add(new PositionEntry(_currentPrice, volume));
 			SellMarket(volume);
+		}
 
 		return true;
 	}
@@ -927,48 +888,5 @@ public class BuildYourGridStrategy : Strategy
 		return step > 0m ? step : 0.0001m;
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order == null || trade.Order.Security != Security)
-			return;
-
-		var volume = trade.Trade.Volume;
-		if (volume <= 0m)
-			return;
-
-		if (trade.Order.Side == Sides.Buy)
-		{
-			var remainder = ReduceEntries(_shortEntries, volume);
-			if (remainder > 0m)
-				_longEntries.Add(new PositionEntry(trade.Trade.Price, remainder));
-		}
-		else if (trade.Order.Side == Sides.Sell)
-		{
-			var remainder = ReduceEntries(_longEntries, volume);
-			if (remainder > 0m)
-				_shortEntries.Add(new PositionEntry(trade.Trade.Price, remainder));
-		}
-	}
-
-	private static decimal ReduceEntries(List<PositionEntry> entries, decimal volume)
-	{
-		var remaining = volume;
-
-		while (remaining > 0m && entries.Count > 0)
-		{
-			var entry = entries[0];
-			var used = Math.Min(entry.Volume, remaining);
-			entry.Volume -= used;
-			remaining -= used;
-
-			if (entry.Volume <= 0m)
-				entries.RemoveAt(0);
-		}
-
-		return remaining;
-	}
 }
 

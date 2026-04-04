@@ -16,24 +16,22 @@ using StockSharp.Algo;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Momentum strategy that opens trades when bid/ask jumps reach a configurable distance and manages exits with profit and drawdown filters.
+/// Momentum strategy that opens trades when candle price jumps reach a configurable distance and manages exits with profit and drawdown filters.
 /// </summary>
 public class LuckyCodeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _shiftPoints;
 	private readonly StrategyParam<int> _limitPoints;
 
-	private decimal? _previousAsk;
-	private decimal? _previousBid;
-	private decimal? _currentAsk;
-	private decimal? _currentBid;
-
+	private decimal? _previousClose;
 	private decimal _shiftThreshold;
 	private decimal _limitThreshold;
 	private decimal _entryPrice;
+	private bool _thresholdsReady;
+	private int _holdBars;
 
 	/// <summary>
-	/// Minimum bid/ask movement in points required before opening a new trade.
+	/// Minimum price movement in points required before opening a new trade.
 	/// </summary>
 	public int ShiftPoints
 	{
@@ -57,14 +55,14 @@ public class LuckyCodeStrategy : Strategy
 	{
 		_shiftPoints = Param(nameof(ShiftPoints), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Shift points", "Minimum bid/ask jump required to trigger entries", "Trading")
-			
+			.SetDisplay("Shift points", "Minimum price jump required to trigger entries", "Trading")
+
 			.SetOptimize(1, 20, 1);
 
 		_limitPoints = Param(nameof(LimitPoints), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Limit points", "Maximum number of points allowed against the position", "Risk management")
-			
+
 			.SetOptimize(5, 100, 5);
 	}
 
@@ -73,12 +71,12 @@ public class LuckyCodeStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_previousAsk = null;
-		_previousBid = null;
-		_currentAsk = null;
-		_currentBid = null;
+		_previousClose = null;
 		_shiftThreshold = 0m;
 		_limitThreshold = 0m;
+		_entryPrice = 0m;
+		_thresholdsReady = false;
+		_holdBars = 0;
 	}
 
 	/// <inheritdoc />
@@ -86,105 +84,76 @@ public class LuckyCodeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_shiftThreshold = CalculatePriceOffset(ShiftPoints);
-		_limitThreshold = CalculatePriceOffset(LimitPoints);
+		// Subscribe to candles and process each finished candle.
+		var tf = TimeSpan.FromMinutes(5).TimeFrame();
 
-		// Subscribe to Level 1 quotes once the price thresholds are prepared.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		SubscribeCandles(tf)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private decimal CalculatePriceOffset(int points)
+	private void EnsureThresholds(decimal price)
 	{
-		if (points <= 0)
-			return 0m;
-
-		var step = Security?.PriceStep ?? 0m;
-
-		if (step <= 0m)
-			return 0m;
-
-		return points * step;
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		// React to the latest best ask update.
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj))
-		{
-			var ask = (decimal)askObj;
-
-			if (_previousAsk is decimal previousAsk && _shiftThreshold > 0m && ask - previousAsk >= _shiftThreshold)
-			{
-				OpenShort(ask, "Sell triggered by fast ask growth");
-			}
-
-			_previousAsk = ask;
-			_currentAsk = ask;
-		}
-
-		// React to the latest best bid update.
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-		{
-			var bid = (decimal)bidObj;
-
-			if (_previousBid is decimal previousBid && _shiftThreshold > 0m && previousBid - bid >= _shiftThreshold)
-			{
-				OpenLong(bid, "Buy triggered by fast bid drop");
-			}
-
-			_previousBid = bid;
-			_currentBid = bid;
-		}
-
-		TryClosePosition();
-	}
-
-	private void OpenLong(decimal price, string reason)
-	{
-		// indicators formed check removed
-
-		var volume = CalculateOrderVolume(price);
-
-		if (volume <= 0m)
+		if (_thresholdsReady)
 			return;
 
-		BuyMarket();
-		_entryPrice = price;
-		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
-	}
-
-	private void OpenShort(decimal price, string reason)
-	{
-		// indicators formed check removed
-
-		var volume = CalculateOrderVolume(price);
-
-		if (volume <= 0m)
+		if (price <= 0m)
 			return;
 
-		SellMarket();
-		_entryPrice = price;
-		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
+		// Use percentage of price. ShiftPoints=3 means 3% shift, LimitPoints=18 means 18% limit.
+		_shiftThreshold = price * ShiftPoints * 0.01m;
+		_limitThreshold = price * LimitPoints * 0.01m;
+		_thresholdsReady = true;
 	}
 
-	private decimal CalculateOrderVolume(decimal price)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var baseVolume = Volume;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (Portfolio?.CurrentValue is decimal equity && equity > 0m && price > 0m)
+		var close = candle.ClosePrice;
+
+		EnsureThresholds(close);
+
+		if (!_thresholdsReady)
+			return;
+
+		// Count hold bars for position management.
+		if (Position != 0)
+			_holdBars++;
+
+		if (_previousClose is decimal prevClose)
 		{
-			var lots = Math.Round(equity / 10000m, 1, MidpointRounding.AwayFromZero);
+			var delta = close - prevClose;
 
-			if (lots > 0m)
-				baseVolume = Math.Max(baseVolume, lots);
+			// Only enter if flat.
+			if (Position == 0)
+			{
+				// Price dropped sharply -> buy on expected rebound.
+				if (-delta >= _shiftThreshold)
+				{
+					BuyMarket();
+					_entryPrice = close;
+					_holdBars = 0;
+					LogInfo($"Buy triggered by fast price drop. Price={close:0.#####}");
+				}
+				// Price rose sharply -> sell on expected reversal.
+				else if (delta >= _shiftThreshold)
+				{
+					SellMarket();
+					_entryPrice = close;
+					_holdBars = 0;
+					LogInfo($"Sell triggered by fast price rise. Price={close:0.#####}");
+				}
+			}
 		}
 
-		return baseVolume;
+		_previousClose = close;
+
+		TryClosePosition(close);
 	}
 
-	private void TryClosePosition()
+	private void TryClosePosition(decimal currentPrice)
 	{
 		if (Position == 0)
 			return;
@@ -194,34 +163,44 @@ public class LuckyCodeStrategy : Strategy
 		if (avgPrice <= 0m)
 			return;
 
+		// Minimum hold of 3 bars before checking exit.
+		if (_holdBars < 3)
+			return;
+
+		// Use half of shift threshold as profit target.
+		var profitTarget = _shiftThreshold * 0.5m;
+
 		if (Position > 0)
 		{
-			// Manage long exposure: grab profits quickly or cap the drawdown.
-			if (_currentBid is decimal bid && bid > avgPrice)
+			// Close long on profit target or drawdown limit.
+			if (currentPrice - avgPrice >= profitTarget)
 			{
 				SellMarket();
-				LogInfo($"Closed long on profit. Price={bid:0.#####}");
+				_holdBars = 0;
+				LogInfo($"Closed long on profit. Price={currentPrice:0.#####}");
 			}
-			else if (_limitThreshold > 0m && _currentAsk is decimal ask && avgPrice - ask >= _limitThreshold)
+			else if (_limitThreshold > 0m && avgPrice - currentPrice >= _limitThreshold)
 			{
 				SellMarket();
-				LogInfo($"Closed long on drawdown limit. Price={ask:0.#####}");
+				_holdBars = 0;
+				LogInfo($"Closed long on drawdown limit. Price={currentPrice:0.#####}");
 			}
 		}
 		else if (Position < 0)
 		{
-			// Manage short exposure with symmetric exit conditions.
-			if (_currentAsk is decimal ask && ask < avgPrice)
+			// Close short on profit target or drawdown limit.
+			if (avgPrice - currentPrice >= profitTarget)
 			{
 				BuyMarket();
-				LogInfo($"Closed short on profit. Price={ask:0.#####}");
+				_holdBars = 0;
+				LogInfo($"Closed short on profit. Price={currentPrice:0.#####}");
 			}
-			else if (_limitThreshold > 0m && _currentBid is decimal bid && bid - avgPrice >= _limitThreshold)
+			else if (_limitThreshold > 0m && currentPrice - avgPrice >= _limitThreshold)
 			{
 				BuyMarket();
-				LogInfo($"Closed short on drawdown limit. Price={bid:0.#####}");
+				_holdBars = 0;
+				LogInfo($"Closed short on drawdown limit. Price={currentPrice:0.#####}");
 			}
 		}
 	}
 }
-

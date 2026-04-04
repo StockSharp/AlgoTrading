@@ -265,7 +265,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
-		_enableTimeFilter = Param(nameof(EnableTimeFilter), true)
+		_enableTimeFilter = Param(nameof(EnableTimeFilter), false)
 			.SetDisplay("Enable Time Filter", "Restrict trading to session hours", "Session");
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -300,13 +300,13 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_sellClose = Param(nameof(SellCloseEnabled), true)
 			.SetDisplay("Enable Sell Close", "Allow closing short positions", "Signals");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Timeframe used for indicator", "Indicator");
 
-		_jmaLength = Param(nameof(JmaLength), 5)
+		_jmaLength = Param(nameof(JmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for Jurik moving average", "Indicator")
-			
+
 			.SetOptimize(3, 30, 1);
 
 		_jmaPhase = Param(nameof(JmaPhase), -100)
@@ -315,7 +315,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
-		_digitRounding = Param(nameof(DigitRounding), 2)
+		_digitRounding = Param(nameof(DigitRounding), 0)
 			.SetNotNegative()
 			.SetDisplay("Digit Rounding", "Rounding precision multiplier", "Indicator");
 
@@ -430,10 +430,10 @@ public class ColorJfatlDigitTmStrategy : Strategy
 
 		// No bound indicators, always allow trading.
 
-		var buyOpenSignal = BuyOpenEnabled && previousColor == 2 && currentColor < 2;
-		var sellCloseSignal = SellCloseEnabled && previousColor == 2;
-		var sellOpenSignal = SellOpenEnabled && previousColor == 0 && currentColor > 0;
-		var buyCloseSignal = BuyCloseEnabled && previousColor == 0;
+		var buyOpenSignal = BuyOpenEnabled && currentColor == 2 && previousColor != 2;
+		var sellCloseSignal = SellCloseEnabled && currentColor == 2;
+		var sellOpenSignal = SellOpenEnabled && currentColor == 0 && previousColor != 0;
+		var buyCloseSignal = BuyCloseEnabled && currentColor == 0;
 
 		if (buyCloseSignal && Position > 0)
 			SellMarket();

@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -20,6 +21,20 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorJfatlDigitTmPlusStrategy : Strategy
 {
+	private static readonly decimal[] FatlCoefficients =
+	[
+		0.4360409450m, 0.3658689069m, 0.2460452079m, 0.1104506886m,
+		-0.0054034585m, -0.0760367731m, -0.0933058722m, -0.0670110374m,
+		-0.0190795053m, 0.0259609206m, 0.0502044896m, 0.0477818607m,
+		0.0249252327m, -0.0047706151m, -0.0272432537m, -0.0338917071m,
+		-0.0244141482m, -0.0055774838m, 0.0128149838m, 0.0226522218m,
+		0.0208778257m, 0.0100299086m, -0.0036771622m, -0.0136744850m,
+		-0.0160483392m, -0.0108597376m, -0.0016060704m, 0.0069480557m,
+		0.0110573605m, 0.0095711419m, 0.0040444064m, -0.0023824623m,
+		-0.0067093714m, -0.0072003400m, -0.0047717710m, 0.0005541115m,
+		0.0007860160m, 0.0130129076m, 0.0040364019m,
+	];
+
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -32,13 +47,14 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<AppliedPrices> _appliedPrice;
-	private readonly StrategyParam<int> _roundingDigits;
+	private readonly StrategyParam<int> _digitRounding;
 	private readonly StrategyParam<int> _signalBar;
 
-	private ColorJfatlDigitIndicator _indicator;
+	private ExponentialMovingAverage _jma;
+	private readonly List<decimal> _priceBuffer = new();
 	private readonly List<int> _colorHistory = new();
 
-	private decimal? _entryPrice;
+	private decimal? _previousLine;
 	private DateTimeOffset? _entryTime;
 
 	/// <summary>
@@ -150,12 +166,12 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of rounding digits applied to the filter line.
+	/// Precision multiplier used for rounding indicator values.
 	/// </summary>
-	public int RoundingDigits
+	public int DigitRounding
 	{
-		get => _roundingDigits.Value;
-		set => _roundingDigits.Value = value;
+		get => _digitRounding.Value;
+		set => _digitRounding.Value = value;
 	}
 
 	/// <summary>
@@ -192,68 +208,70 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	public ColorJfatlDigitTmPlusStrategy()
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
+			.SetGreaterThanZero()
+			.SetDisplay("Volume", "Order volume", "Trading");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk");
+		_stopLossPoints = Param(nameof(StopLossPoints), 0)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop loss distance in price steps (0=disabled)", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take profit distance in price steps (0=disabled)", "Risk");
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
-		.SetDisplay("Enable Long Entry", "Allow opening long positions", "Signals");
+			.SetDisplay("Enable Long Entry", "Allow opening long positions", "Signals");
 
 		_enableSellEntries = Param(nameof(EnableSellEntries), true)
-		.SetDisplay("Enable Short Entry", "Allow opening short positions", "Signals");
+			.SetDisplay("Enable Short Entry", "Allow opening short positions", "Signals");
 
 		_enableBuyExits = Param(nameof(EnableBuyExits), true)
-		.SetDisplay("Enable Long Exit", "Allow closing long positions", "Signals");
+			.SetDisplay("Enable Long Exit", "Allow closing long positions", "Signals");
 
 		_enableSellExits = Param(nameof(EnableSellExits), true)
-		.SetDisplay("Enable Short Exit", "Allow closing short positions", "Signals");
+			.SetDisplay("Enable Short Exit", "Allow closing short positions", "Signals");
 
-		_useTimeExit = Param(nameof(UseTimeExit), true)
-		.SetDisplay("Use Time Exit", "Enable time based exit", "Exits");
+		_useTimeExit = Param(nameof(UseTimeExit), false)
+			.SetDisplay("Use Time Exit", "Enable time based exit", "Exits");
 
 		_holdingMinutes = Param(nameof(HoldingMinutes), 240)
-		.SetGreaterThanZero()
-		.SetDisplay("Holding Minutes", "Exit after holding for N minutes", "Exits");
+			.SetGreaterThanZero()
+			.SetDisplay("Holding Minutes", "Exit after holding for N minutes", "Exits");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Source candles", "General");
+			.SetDisplay("Candle Type", "Source candles", "General");
 
-		_jmaLength = Param(nameof(JmaLength), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("JMA Length", "Jurik smoothing length", "Indicator")
-		
-		.SetOptimize(3, 15, 1);
+		_jmaLength = Param(nameof(JmaLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("JMA Length", "Jurik smoothing length", "Indicator")
+			.SetOptimize(3, 30, 1);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
-		.SetDisplay("Applied Price", "Price source for the filter", "Indicator");
+			.SetDisplay("Applied Price", "Price source for the filter", "Indicator");
 
-		_roundingDigits = Param(nameof(RoundingDigits), 2)
-		.SetNotNegative()
-		.SetDisplay("Rounding Digits", "Digits for rounding the filter", "Indicator");
+		_digitRounding = Param(nameof(DigitRounding), 0)
+			.SetNotNegative()
+			.SetDisplay("Digit Rounding", "Rounding precision multiplier", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetNotNegative()
-		.SetDisplay("Signal Bar", "Number of finished bars used for signals", "Indicator");
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Bar", "Number of finished bars used for signals", "Indicator");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_jma = null;
+		_priceBuffer.Clear();
 		_colorHistory.Clear();
-		_entryPrice = null;
+		_previousLine = null;
 		_entryTime = null;
-		_indicator?.Reset();
 	}
 
 	/// <inheritdoc />
@@ -262,23 +280,22 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-
-		_indicator = new ColorJfatlDigitIndicator
-		{
-			AppliedPrices = AppliedPrice,
-			RoundingDigits = RoundingDigits,
-			JmaLength = JmaLength,
-		};
+		_jma = new ExponentialMovingAverage { Length = JmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var priceStep = Security?.PriceStep ?? 0m;
+		Unit takeProfitUnit = null;
+		Unit stopLossUnit = null;
+
+		if (TakeProfitPoints > 0 && priceStep > 0m)
+			takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
+
+		if (StopLossPoints > 0 && priceStep > 0m)
+			stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
+
+		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -286,261 +303,94 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var indicatorValue = (ColorJfatlDigitValue)_indicator.Process(candle);
-		if (!_indicator.IsFormed || indicatorValue.Color is null)
+		var price = GetAppliedPrice(candle);
+		_priceBuffer.Add(price);
+		if (_priceBuffer.Count > FatlCoefficients.Length)
+			_priceBuffer.RemoveAt(0);
+
+		if (_priceBuffer.Count < FatlCoefficients.Length)
 			return;
 
-		_colorHistory.Add(indicatorValue.Color.Value);
+		var fatl = 0m;
+		for (var i = 0; i < FatlCoefficients.Length; i++)
+			fatl += FatlCoefficients[i] * _priceBuffer[_priceBuffer.Count - 1 - i];
 
-		var maxHistory = Math.Max(SignalBar + 2, 2);
-		if (_colorHistory.Count > maxHistory)
-			_colorHistory.RemoveAt(0);
-
-		if (!TryGetColors(out var currentColor, out var previousColor))
+		var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, candle.OpenTime) { IsFinal = true });
+		if (!_jma.IsFormed)
 			return;
 
-		var buyOpen = false;
-		var sellOpen = false;
-		var buyClose = false;
-		var sellClose = false;
+		var roundedLine = RoundToStep(jmaValue.ToDecimal(), GetRoundingStep());
 
-		if (currentColor == 2)
+		var color = 1;
+		if (_previousLine.HasValue)
 		{
-			if (EnableBuyEntries && previousColor < 2)
-				buyOpen = true;
-
-			if (EnableSellExits)
-				sellClose = true;
-		}
-		else if (currentColor == 0)
-		{
-			if (EnableSellEntries && previousColor > 0)
-				sellOpen = true;
-
-			if (EnableBuyExits)
-				buyClose = true;
+			var diff = roundedLine - _previousLine.Value;
+			if (diff > 0m)
+				color = 2;
+			else if (diff < 0m)
+				color = 0;
+			else if (_colorHistory.Count > 0)
+				color = _colorHistory[0];
 		}
 
-		HandleTimeExit(candle);
-		if (HandleStops(candle))
+		_previousLine = roundedLine;
+		_colorHistory.Insert(0, color);
+		if (_colorHistory.Count > 100)
+			_colorHistory.RemoveAt(_colorHistory.Count - 1);
+
+		if (_colorHistory.Count <= SignalBar)
 			return;
 
-		if (buyClose && Position > 0)
+		var currentColor = _colorHistory[SignalBar - 1];
+		var previousColor = _colorHistory[SignalBar];
+
+		// Time-based exit
+		if (UseTimeExit && Position != 0 && _entryTime is not null && HoldingMinutes > 0)
 		{
-			SellMarket(Math.Abs(Position));
-			_entryPrice = null;
+			var elapsed = candle.CloseTime - _entryTime.Value;
+			if (elapsed >= TimeSpan.FromMinutes(HoldingMinutes))
+			{
+				if (Position > 0)
+					SellMarket();
+				else if (Position < 0)
+					BuyMarket();
+
+				_entryTime = null;
+			}
+		}
+
+		var buyOpenSignal = EnableBuyEntries && currentColor == 2 && previousColor != 2;
+		var sellCloseSignal = EnableSellExits && currentColor == 2;
+		var sellOpenSignal = EnableSellEntries && currentColor == 0 && previousColor != 0;
+		var buyCloseSignal = EnableBuyExits && currentColor == 0;
+
+		if (buyCloseSignal && Position > 0)
+		{
+			SellMarket();
 			_entryTime = null;
 		}
 
-		if (sellClose && Position < 0)
+		if (sellCloseSignal && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = null;
+			BuyMarket();
 			_entryTime = null;
 		}
 
-		if (buyOpen && Position == 0)
+		if (buyOpenSignal && Position == 0)
 		{
-			BuyMarket(Volume);
-			_entryPrice = candle.ClosePrice;
+			BuyMarket();
 			_entryTime = candle.CloseTime;
 		}
-		else if (sellOpen && Position == 0)
+
+		if (sellOpenSignal && Position == 0)
 		{
-			SellMarket(Volume);
-			_entryPrice = candle.ClosePrice;
+			SellMarket();
 			_entryTime = candle.CloseTime;
 		}
-
-		if (Position == 0)
-		{
-			_entryPrice = null;
-			_entryTime = null;
-		}
 	}
 
-	private bool TryGetColors(out int currentColor, out int previousColor)
-	{
-		currentColor = 0;
-		previousColor = 0;
-
-		var offset = Math.Max(SignalBar, 1);
-		if (_colorHistory.Count < offset + 1)
-			return false;
-
-		currentColor = _colorHistory[^offset];
-		previousColor = _colorHistory[^(offset + 1)];
-		return true;
-	}
-
-	private void HandleTimeExit(ICandleMessage candle)
-	{
-		if (!UseTimeExit || Position == 0 || _entryTime is null || HoldingMinutes <= 0)
-			return;
-
-		var elapsed = candle.CloseTime - _entryTime.Value;
-		if (elapsed < TimeSpan.FromMinutes(HoldingMinutes))
-			return;
-
-		if (Position > 0)
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		_entryPrice = null;
-		_entryTime = null;
-	}
-
-	private bool HandleStops(ICandleMessage candle)
-	{
-		if (Position == 0 || _entryPrice is null)
-			return false;
-
-		var step = Security?.PriceStep ?? 1m;
-		var stopOffset = StopLossPoints > 0 ? StopLossPoints * step : 0m;
-		var takeOffset = TakeProfitPoints > 0 ? TakeProfitPoints * step : 0m;
-
-		if (Position > 0)
-		{
-			if (stopOffset > 0m && candle.LowPrice <= _entryPrice.Value - stopOffset)
-			{
-				SellMarket(Math.Abs(Position));
-				_entryPrice = null;
-				_entryTime = null;
-				return true;
-			}
-
-			if (takeOffset > 0m && candle.HighPrice >= _entryPrice.Value + takeOffset)
-			{
-				SellMarket(Math.Abs(Position));
-				_entryPrice = null;
-				_entryTime = null;
-				return true;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (stopOffset > 0m && candle.HighPrice >= _entryPrice.Value + stopOffset)
-			{
-				BuyMarket(Math.Abs(Position));
-				_entryPrice = null;
-				_entryTime = null;
-				return true;
-			}
-
-			if (takeOffset > 0m && candle.LowPrice <= _entryPrice.Value - takeOffset)
-			{
-				BuyMarket(Math.Abs(Position));
-				_entryPrice = null;
-				_entryTime = null;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private sealed class ColorJfatlDigitIndicator : BaseIndicator
-	{
-		private static readonly decimal[] _coefficients =
-		{
-			0.4360409450m, 0.3658689069m, 0.2460452079m, 0.1104506886m,
-			-0.0054034585m, -0.0760367731m, -0.0933058722m, -0.0670110374m,
-			-0.0190795053m, 0.0259609206m, 0.0502044896m, 0.0477818607m,
-			0.0249252327m, -0.0047706151m, -0.0272432537m, -0.0338917071m,
-			-0.0244141482m, -0.0055774838m, 0.0128149838m, 0.0226522218m,
-			0.0208778257m, 0.0100299086m, -0.0036771622m, -0.0136744850m,
-			-0.0160483392m, -0.0108597376m, -0.0016060704m, 0.0069480557m,
-			0.0110573605m, 0.0095711419m, 0.0040444064m, -0.0023824623m,
-			-0.0067093714m, -0.0072003400m, -0.0047717710m, 0.0005541115m,
-			0.0007860160m, 0.0130129076m, 0.0040364019m,
-		};
-
-		private readonly decimal[] _buffer = new decimal[_coefficients.Length];
-		private int _bufferCount;
-		private int _bufferIndex;
-		private decimal? _previousLine;
-		private int? _previousColor;
-		private readonly JurikMovingAverage _jma = new();
-
-		public AppliedPrices AppliedPrices { get; set; } = AppliedPrices.Close;
-
-		public int RoundingDigits { get; set; } = 2;
-
-		public int JmaLength
-		{
-			get => _jma.Length;
-			set => _jma.Length = Math.Max(1, value);
-		}
-
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
-		{
-			var candle = input.GetValue<ICandleMessage>();
-			if (!input.IsFinal)
-				return new ColorJfatlDigitValue(this, null, null, false, input.Time);
-
-			var price = GetPrice(candle);
-			_buffer[_bufferIndex] = price;
-			_bufferIndex = (_bufferIndex + 1) % _buffer.Length;
-			if (_bufferCount < _buffer.Length)
-				_bufferCount++;
-
-			if (_bufferCount < _buffer.Length)
-			{
-				IsFormed = false;
-				return new ColorJfatlDigitValue(this, null, null, false, input.Time);
-			}
-
-			decimal fatl = 0m;
-			var index = _bufferIndex;
-			for (var i = 0; i < _coefficients.Length; i++)
-			{
-				index = (index - 1 + _buffer.Length) % _buffer.Length;
-				fatl += _coefficients[i] * _buffer[index];
-			}
-
-			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, input.Time) { IsFinal = true });
-			if (!_jma.IsFormed)
-			{
-				IsFormed = false;
-				return new ColorJfatlDigitValue(this, null, null, false, input.Time);
-			}
-
-			var smoothed = Math.Round(jmaValue.ToDecimal(), RoundingDigits, MidpointRounding.AwayFromZero);
-
-			var color = 1;
-			if (_previousLine is decimal prev)
-			{
-				var diff = smoothed - prev;
-				if (diff > 0m)
-					color = 2;
-				else if (diff < 0m)
-					color = 0;
-				else if (_previousColor.HasValue)
-					color = _previousColor.Value;
-			}
-
-			_previousLine = smoothed;
-			_previousColor = color;
-			IsFormed = true;
-
-			return new ColorJfatlDigitValue(this, smoothed, color, true, input.Time);
-		}
-
-		public override void Reset()
-		{
-			base.Reset();
-
-			Array.Clear(_buffer, 0, _buffer.Length);
-			_bufferCount = 0;
-			_bufferIndex = 0;
-			_previousLine = null;
-			_previousColor = null;
-			_jma.Reset();
-		}
-
-		private decimal GetPrice(ICandleMessage candle)
-		=> AppliedPrices switch
+	private decimal GetAppliedPrice(ICandleMessage candle)
+		=> AppliedPrice switch
 		{
 			AppliedPrices.Close => candle.ClosePrice,
 			AppliedPrices.Open => candle.OpenPrice,
@@ -551,39 +401,48 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
 			AppliedPrices.AverageOC => (candle.OpenPrice + candle.ClosePrice) / 2m,
 			AppliedPrices.AverageOHLC => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+				? candle.HighPrice
+				: candle.ClosePrice < candle.OpenPrice
+					? candle.LowPrice
+					: candle.ClosePrice,
+			AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice
+				? (candle.HighPrice + candle.ClosePrice) / 2m
+				: candle.ClosePrice < candle.OpenPrice
+					? (candle.LowPrice + candle.ClosePrice) / 2m
+					: candle.ClosePrice,
 			AppliedPrices.Demark => GetDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 
-		private static decimal GetDemarkPrice(ICandleMessage candle)
-		{
-			var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-			if (candle.ClosePrice < candle.OpenPrice)
-				res = (res + candle.LowPrice) / 2m;
-			else if (candle.ClosePrice > candle.OpenPrice)
-				res = (res + candle.HighPrice) / 2m;
-			else
-				res = (res + candle.ClosePrice) / 2m;
+	private static decimal GetDemarkPrice(ICandleMessage candle)
+	{
+		var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+		if (candle.ClosePrice < candle.OpenPrice)
+			res = (res + candle.LowPrice) / 2m;
+		else if (candle.ClosePrice > candle.OpenPrice)
+			res = (res + candle.HighPrice) / 2m;
+		else
+			res = (res + candle.ClosePrice) / 2m;
 
-			return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
-		}
+		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 	}
 
-	private sealed class ColorJfatlDigitValue : DecimalIndicatorValue
+	private decimal GetRoundingStep()
 	{
-		public ColorJfatlDigitValue(IIndicator indicator, decimal? line, int? color, bool isFormed, DateTime time)
-		: base(indicator, line ?? 0m, time)
-		{
-			Line = line;
-			Color = color;
-			IsFormed = isFormed;
-			IsFinal = true;
-		}
+		var step = Security?.PriceStep ?? 0m;
+		if (step <= 0m)
+			return 0m;
 
-		public decimal? Line { get; }
+		var multiplier = (decimal)Math.Pow(10, DigitRounding);
+		return step * multiplier;
+	}
 
-		public int? Color { get; }
+	private static decimal RoundToStep(decimal value, decimal step)
+	{
+		if (step <= 0m)
+			return value;
+
+		return Math.Round(value / step, MidpointRounding.AwayFromZero) * step;
 	}
 }

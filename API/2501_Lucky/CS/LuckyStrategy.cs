@@ -1,54 +1,57 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy that reacts to fast bid/ask shifts and closes trades on profit or adverse move limits.
+/// Breakout strategy that reacts to fast price shifts (candle-to-candle high/low jumps)
+/// and closes trades on profit target or adverse move (stop loss).
 /// </summary>
 public class LuckyStrategy : Strategy
 {
-	private readonly StrategyParam<int> _shiftPoints;
-	private readonly StrategyParam<int> _limitPoints;
+	private readonly StrategyParam<decimal> _shiftPct;
+	private readonly StrategyParam<decimal> _profitPct;
+	private readonly StrategyParam<decimal> _stopPct;
 	private readonly StrategyParam<bool> _reverse;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
-	private decimal? _previousAsk;
-	private decimal? _previousBid;
-	private decimal? _currentAsk;
-	private decimal? _currentBid;
-
-	private decimal _shiftThreshold;
-	private decimal _limitThreshold;
+	private decimal? _previousHigh;
+	private decimal? _previousLow;
+	private bool _isReady;
 
 	/// <summary>
-	/// Minimum number of points (pips) required for price acceleration.
+	/// Minimum percentage shift in high/low to trigger entry.
 	/// </summary>
-	public int ShiftPoints
+	public decimal ShiftPct
 	{
-		get => _shiftPoints.Value;
-		set => _shiftPoints.Value = value;
+		get => _shiftPct.Value;
+		set => _shiftPct.Value = value;
 	}
 
 	/// <summary>
-	/// Maximum adverse excursion in points before closing the position.
+	/// Profit target as percentage of entry price.
 	/// </summary>
-	public int LimitPoints
+	public decimal ProfitPct
 	{
-		get => _limitPoints.Value;
-		set => _limitPoints.Value = value;
+		get => _profitPct.Value;
+		set => _profitPct.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss as percentage of entry price.
+	/// </summary>
+	public decimal StopPct
+	{
+		get => _stopPct.Value;
+		set => _stopPct.Value = value;
 	}
 
 	/// <summary>
@@ -61,30 +64,42 @@ public class LuckyStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Candle type and timeframe.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes the strategy parameters.
 	/// </summary>
 	public LuckyStrategy()
 	{
-		_shiftPoints = Param(nameof(ShiftPoints), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Shift points", "Minimum pip movement required to trigger a trade", "Trading")
-			
-			.SetOptimize(1, 10, 1);
+		_shiftPct = Param(nameof(ShiftPct), 1.5m)
+			.SetDisplay("Shift %", "Minimum percentage shift in high/low to trigger entry", "Trading")
+			.SetOptimize(0.5m, 3.0m, 0.5m);
 
-		_limitPoints = Param(nameof(LimitPoints), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Limit points", "Maximum adverse pip movement before closing", "Risk management")
-			
-			.SetOptimize(5, 60, 5);
+		_profitPct = Param(nameof(ProfitPct), 2.0m)
+			.SetDisplay("Profit %", "Profit target as percentage of entry price", "Risk management")
+			.SetOptimize(1.0m, 5.0m, 0.5m);
+
+		_stopPct = Param(nameof(StopPct), 3.0m)
+			.SetDisplay("Stop %", "Stop loss as percentage of entry price", "Risk management")
+			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_reverse = Param(nameof(Reverse), false)
 			.SetDisplay("Reverse mode", "Invert the direction of new trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle timeframe", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Level1)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -92,13 +107,10 @@ public class LuckyStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_previousAsk = null;
-		_previousBid = null;
-		_currentAsk = null;
-		_currentBid = null;
+		_previousHigh = null;
+		_previousLow = null;
 		_entryPrice = 0m;
-		_shiftThreshold = 0m;
-		_limitThreshold = 0m;
+		_isReady = false;
 	}
 
 	/// <inheritdoc />
@@ -106,160 +118,89 @@ public class LuckyStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_shiftThreshold = CalculatePriceOffset(ShiftPoints);
-		_limitThreshold = CalculatePriceOffset(LimitPoints);
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private decimal CalculatePriceOffset(int points)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (points <= 0)
-			return 0m;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		var step = Security?.PriceStep ?? 0m;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
 
-		if (step <= 0m)
-			return 0m;
-
-		var multiplier = GetPipMultiplier(step);
-
-		return points * step * multiplier;
-	}
-
-	private static decimal GetPipMultiplier(decimal step)
-	{
-		var digits = 0;
-		var temp = step;
-
-		while (temp > 0m && temp < 1m && digits < 10)
+		if (!_isReady)
 		{
-			temp *= 10m;
-			digits++;
+			_previousHigh = high;
+			_previousLow = low;
+			_isReady = true;
+			return;
 		}
 
-		return digits == 3 || digits == 5 ? 10m : 1m;
-	}
+		// Try to close existing position first
+		TryClosePosition(close);
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj))
+		// Only open new positions if flat
+		if (Position == 0 && _previousHigh.HasValue && _previousLow.HasValue)
 		{
-			var ask = (decimal)askObj;
+			var prevH = _previousHigh.Value;
+			var prevL = _previousLow.Value;
 
-			if (_previousAsk.HasValue && _shiftThreshold > 0m && ask - _previousAsk.Value >= _shiftThreshold)
+			// Check for upward breakout: high moved up sharply relative to previous high
+			if (prevH > 0m && (high - prevH) / prevH * 100m >= ShiftPct)
 			{
 				if (Reverse)
-					OpenShort(ask, "Reverse sell triggered by ask breakout");
+					OpenShort(close);
 				else
-					OpenLong(ask, "Buy triggered by ask breakout");
+					OpenLong(close);
 			}
-
-			_previousAsk = ask;
-			_currentAsk = ask;
-		}
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-		{
-			var bid = (decimal)bidObj;
-
-			if (_previousBid.HasValue && _shiftThreshold > 0m && _previousBid.Value - bid >= _shiftThreshold)
+			// Check for downward breakdown: low moved down sharply relative to previous low
+			else if (prevL > 0m && (prevL - low) / prevL * 100m >= ShiftPct)
 			{
 				if (Reverse)
-					OpenLong(bid, "Reverse buy triggered by bid breakdown");
+					OpenLong(close);
 				else
-					OpenShort(bid, "Sell triggered by bid breakdown");
+					OpenShort(close);
 			}
-
-			_previousBid = bid;
-			_currentBid = bid;
 		}
 
-		TryClosePosition();
+		_previousHigh = high;
+		_previousLow = low;
 	}
 
-	private void OpenLong(decimal price, string reason)
+	private void OpenLong(decimal price)
 	{
-		if (!IsFormed)
-			return;
-
-		var volume = CalculateOrderVolume(price);
-
-		if (volume <= 0m)
-			return;
-
-		BuyMarket(volume);
+		BuyMarket(Volume);
 		_entryPrice = price;
-		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
-	private void OpenShort(decimal price, string reason)
+	private void OpenShort(decimal price)
 	{
-		if (!IsFormed)
-			return;
-
-		var volume = CalculateOrderVolume(price);
-
-		if (volume <= 0m)
-			return;
-
-		SellMarket(volume);
+		SellMarket(Volume);
 		_entryPrice = price;
-		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
-	private decimal CalculateOrderVolume(decimal price)
+	private void TryClosePosition(decimal currentPrice)
 	{
-		var baseVolume = Volume;
-
-		if (Portfolio?.CurrentValue is decimal equity && equity > 0m && price > 0m)
-		{
-			var lots = Math.Round(equity / 10000m, 1, MidpointRounding.AwayFromZero);
-
-			if (lots > 0m)
-				baseVolume = Math.Max(baseVolume, lots);
-		}
-
-		return baseVolume;
-	}
-
-	private void TryClosePosition()
-	{
-		if (Position == 0)
-			return;
-
-		var avgPrice = _entryPrice;
-
-		if (avgPrice <= 0m)
+		if (Position == 0 || _entryPrice <= 0m)
 			return;
 
 		if (Position > 0)
 		{
-			if (_currentBid is decimal bid && bid > avgPrice)
-			{
+			var pctChange = (currentPrice - _entryPrice) / _entryPrice * 100m;
+
+			if (pctChange >= ProfitPct || pctChange <= -StopPct)
 				SellMarket(Position);
-				LogInfo($"Closed long on profit. Price={bid:0.#####}");
-			}
-			else if (_limitThreshold > 0m && _currentAsk is decimal ask && avgPrice - ask >= _limitThreshold)
-			{
-				SellMarket(Position);
-				LogInfo($"Closed long on drawdown limit. Price={ask:0.#####}");
-			}
 		}
 		else if (Position < 0)
 		{
-			if (_currentAsk is decimal ask && ask < avgPrice)
-			{
+			var pctChange = (_entryPrice - currentPrice) / _entryPrice * 100m;
+
+			if (pctChange >= ProfitPct || pctChange <= -StopPct)
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Closed short on profit. Price={ask:0.#####}");
-			}
-			else if (_limitThreshold > 0m && _currentBid is decimal bid && bid - avgPrice >= _limitThreshold)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Closed short on drawdown limit. Price={bid:0.#####}");
-			}
 		}
 	}
 }

@@ -108,7 +108,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_allowLongExits = Param(nameof(AllowLongExits), true)
 			.SetDisplay("Allow Long Exits", "Enable closing long positions on opposite signals.", "Long");
 
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(2).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used by the long UltraFATL block.", "Long");
 
 		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
@@ -117,25 +117,25 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_longTrendMethod = Param(nameof(LongTrendMethod), SmoothMethods.Ema)
 			.SetDisplay("Long Trend Method", "Smoothing method for the long FATL ladder.", "Long");
 
-		_longStartLength = Param(nameof(LongStartLength), 3)
+		_longStartLength = Param(nameof(LongStartLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Start Length", "Initial smoothing length for the ladder.", "Long");
 
 		_longPhase = Param(nameof(LongPhase), 100)
 			.SetDisplay("Long Phase", "Phase parameter applied to Jurik-based smoothers.", "Long");
 
-		_longStep = Param(nameof(LongStep), 1)
+		_longStep = Param(nameof(LongStep), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Step", "Increment between ladder lengths.", "Long");
 
-		_longStepsTotal = Param(nameof(LongStepsTotal), 3)
+		_longStepsTotal = Param(nameof(LongStepsTotal), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Steps", "Number of smoothing steps for the ladder.", "Long");
 
 		_longSmoothMethod = Param(nameof(LongSmoothMethod), SmoothMethods.Ema)
 			.SetDisplay("Long Counter Method", "Method applied to the bullish/bearish counters.", "Long");
 
-		_longSmoothLength = Param(nameof(LongSmoothLength), 3)
+		_longSmoothLength = Param(nameof(LongSmoothLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Counter Length", "Length used when smoothing the counters.", "Long");
 
@@ -146,11 +146,11 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Closed-bar offset used when evaluating long signals.", "Long");
 
-		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000)
+		_longStopLossPoints = Param(nameof(LongStopLossPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Long Stop (pts)", "Protective stop distance in price steps for long trades.", "Long");
 
-		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000)
+		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Long Target (pts)", "Take-profit distance in price steps for long trades.", "Long");
 
@@ -164,7 +164,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_allowShortExits = Param(nameof(AllowShortExits), true)
 			.SetDisplay("Allow Short Exits", "Enable closing short positions on opposite signals.", "Short");
 
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(2).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used by the short UltraFATL block.", "Short");
 
 		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
@@ -173,25 +173,25 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_shortTrendMethod = Param(nameof(ShortTrendMethod), SmoothMethods.Ema)
 			.SetDisplay("Short Trend Method", "Smoothing method for the short FATL ladder.", "Short");
 
-		_shortStartLength = Param(nameof(ShortStartLength), 3)
+		_shortStartLength = Param(nameof(ShortStartLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Start Length", "Initial smoothing length for the short ladder.", "Short");
 
 		_shortPhase = Param(nameof(ShortPhase), 100)
 			.SetDisplay("Short Phase", "Phase parameter applied to the short Jurik-based smoothers.", "Short");
 
-		_shortStep = Param(nameof(ShortStep), 1)
+		_shortStep = Param(nameof(ShortStep), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Step", "Increment between smoothing lengths for the short ladder.", "Short");
 
-		_shortStepsTotal = Param(nameof(ShortStepsTotal), 3)
+		_shortStepsTotal = Param(nameof(ShortStepsTotal), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Steps", "Number of smoothing steps for the short ladder.", "Short");
 
 		_shortSmoothMethod = Param(nameof(ShortSmoothMethod), SmoothMethods.Ema)
 			.SetDisplay("Short Counter Method", "Method applied to the bearish counters.", "Short");
 
-		_shortSmoothLength = Param(nameof(ShortSmoothLength), 3)
+		_shortSmoothLength = Param(nameof(ShortSmoothLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Counter Length", "Length used when smoothing the short counters.", "Short");
 
@@ -202,11 +202,11 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Closed-bar offset used when evaluating short signals.", "Short");
 
-		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000)
+		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Short Stop (pts)", "Protective stop distance in price steps for short trades.", "Short");
 
-		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000)
+		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Short Target (pts)", "Take-profit distance in price steps for short trades.", "Short");
 	}

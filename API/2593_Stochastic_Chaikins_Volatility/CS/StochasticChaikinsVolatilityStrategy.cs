@@ -170,14 +170,14 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	/// </summary>
 	public StochasticChaikinsVolatilityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 		
 		_primaryMethod = Param(nameof(PrimaryMethod), SmoothMethods.Sma)
 		.SetDisplay("Primary Method", "Smoothing applied to high-low spread", "Indicator")
 		;
 		
-		_primaryLength = Param(nameof(PrimaryLength), 10)
+		_primaryLength = Param(nameof(PrimaryLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Primary Length", "Periods for primary smoothing", "Indicator")
 		;
@@ -186,12 +186,12 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		.SetDisplay("Secondary Method", "Smoothing applied to stochastic ratio", "Indicator")
 		;
 		
-		_secondaryLength = Param(nameof(SecondaryLength), 5)
+		_secondaryLength = Param(nameof(SecondaryLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Secondary Length", "Periods for secondary smoothing", "Indicator")
 		;
 		
-		_stochasticLength = Param(nameof(StochasticLength), 5)
+		_stochasticLength = Param(nameof(StochasticLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Length", "Lookback for highest-lowest range", "Indicator")
 		;
@@ -213,13 +213,13 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		_allowShortExit = Param(nameof(AllowShortExit), true)
 		.SetDisplay("Allow Short Exit", "Enable closing shorts on reversal", "Trading");
 		
-		_highLevel = Param(nameof(HighLevel), 300m)
+		_highLevel = Param(nameof(HighLevel), 70m)
 		.SetDisplay("High Level", "Upper visual threshold", "Visualization");
-		
+
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 		.SetDisplay("Middle Level", "Middle visual threshold", "Visualization");
-		
-		_lowLevel = Param(nameof(LowLevel), -300m)
+
+		_lowLevel = Param(nameof(LowLevel), 30m)
 		.SetDisplay("Low Level", "Lower visual threshold", "Visualization");
 	}
 	
@@ -233,6 +233,8 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_primarySmoother = null!;
+		_secondarySmoother = null!;
 		_volatilityWindow.Clear();
 		_mainHistory.Clear();
 	}
@@ -312,10 +314,10 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		var value1 = _mainHistory[idx + 1];
 		var value2 = _mainHistory[idx + 2];
 		
-		var buyClose = AllowLongExit && value1 < value2;
-		var sellClose = AllowShortExit && value1 > value2;
-		var buyOpen = AllowLongEntry && value1 > value2 && value0 <= value1;
-		var sellOpen = AllowShortEntry && value1 < value2 && value0 >= value1;
+		var buyClose = AllowLongExit && value1 > HighLevel && value1 < value2;
+		var sellClose = AllowShortExit && value1 < LowLevel && value1 > value2;
+		var buyOpen = AllowLongEntry && value1 < LowLevel && value1 > value2 && value0 <= value1;
+		var sellOpen = AllowShortEntry && value1 > HighLevel && value1 < value2 && value0 >= value1;
 		
 		// proceed with trading logic
 		

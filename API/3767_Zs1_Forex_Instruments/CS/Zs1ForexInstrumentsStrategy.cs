@@ -8,6 +8,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -20,18 +21,10 @@ using StockSharp.Messages;
 /// </summary>
 public class Zs1ForexInstrumentsStrategy : Strategy
 {
-
-	private static readonly decimal[] TunnelMultipliers =
-	{
-		1m, 3m, 6m, 12m, 24m, 48m, 96m, 192m, 384m, 768m, 1536m, 3072m,
-	};
-
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _ordersSpacePips;
 	private readonly StrategyParam<int> _pkPips;
-	private readonly StrategyParam<decimal> _initialVolume;
-	private readonly StrategyParam<decimal> _volumeTolerance;
 
-	private readonly Dictionary<Order, OrderIntents> _orderIntents = new();
 	private readonly List<Entry> _longEntries = new();
 	private readonly List<Entry> _shortEntries = new();
 
@@ -44,18 +37,8 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	private Sides? _firstOrderDirection;
 	private Sides? _lastOrderDirection;
 	private bool _isClosingAll;
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private bool _hasBestBid;
-	private bool _hasBestAsk;
-
-	private enum OrderIntents
-	{
-		OpenLong,
-		OpenShort,
-		CloseLong,
-		CloseShort,
-	}
+	private decimal _currentPrice;
+	private bool _hasPriceData;
 
 	private sealed class Entry
 	{
@@ -66,8 +49,16 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		}
 
 		public decimal Price { get; set; }
-
 		public decimal Volume { get; set; }
+	}
+
+	/// <summary>
+	/// Candle type used to drive the grid logic.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -89,51 +80,27 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Base volume for the initial hedge trade.
-	/// </summary>
-	public decimal InitialVolume
-	{
-		get => _initialVolume.Value;
-		set => _initialVolume.Value = value;
-	}
-	/// <summary>
-	/// Allowed difference used when comparing position volumes.
-	/// </summary>
-	public decimal VolumeTolerance
-	{
-		get => _volumeTolerance.Value;
-		set => _volumeTolerance.Value = value;
-	}
-
-	/// <summary>
 	/// Initializes a new instance of the <see cref="Zs1ForexInstrumentsStrategy"/> class.
 	/// </summary>
 	public Zs1ForexInstrumentsStrategy()
 	{
-		_ordersSpacePips = Param(nameof(OrdersSpacePips), 50m)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle timeframe for price sampling.", "General");
+
+		_ordersSpacePips = Param(nameof(OrdersSpacePips), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Space (pips)", "Distance between successive grid levels.", "Trading")
-			
-			.SetOptimize(10m, 150m, 10m);
+			.SetOptimize(100m, 2000m, 100m);
 
 		_pkPips = Param(nameof(PkPips), 10)
 			.SetNotNegative()
 			.SetDisplay("Zone Offset (pips)", "Additional offset applied when checking zone boundaries.", "Trading");
-
-		_initialVolume = Param(nameof(InitialVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Initial Volume", "Base volume for the hedge orders.", "Trading")
-			
-			.SetOptimize(0.01m, 1m, 0.01m);
-		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetDisplay("Volume tolerance", "Allowed difference when comparing cumulative volumes.", "Trading")
-			.SetNotNegative();
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Level1);
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -141,7 +108,6 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_orderIntents.Clear();
 		_longEntries.Clear();
 		_shortEntries.Clear();
 		_pipValue = 0m;
@@ -153,10 +119,8 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		_firstOrderDirection = null;
 		_lastOrderDirection = null;
 		_isClosingAll = false;
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_hasBestBid = false;
-		_hasBestAsk = false;
+		_currentPrice = 0m;
+		_hasPriceData = false;
 	}
 
 	/// <inheritdoc />
@@ -166,87 +130,20 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 		_pipValue = CalculatePipValue();
 
-		StartProtection(null, null);
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order is not { } order || !_orderIntents.TryGetValue(order, out var intent))
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volume = trade.Trade.Volume;
-		var price = trade.Trade.Price;
+		_currentPrice = candle.ClosePrice;
+		_hasPriceData = true;
 
-		switch (intent)
-		{
-			case OrderIntents.OpenLong:
-				_longEntries.Add(new Entry(price, volume));
-				_lastOrderDirection = Sides.Buy;
-				break;
-
-			case OrderIntents.OpenShort:
-				_shortEntries.Add(new Entry(price, volume));
-				_lastOrderDirection = Sides.Sell;
-				break;
-
-			case OrderIntents.CloseLong:
-				ReduceEntries(_longEntries, volume);
-				break;
-
-			case OrderIntents.CloseShort:
-				ReduceEntries(_shortEntries, volume);
-				break;
-		}
-
-		if (order.Balance <= 0m || IsOrderCompleted(order))
-		{
-			_orderIntents.Remove(order);
-		}
-
-		if (_firstStage == 1 && _firstPrice == 0m && _longEntries.Count > 0 && _shortEntries.Count > 0)
-		{
-			var longPrice = _longEntries[0].Price;
-			var shortPrice = _shortEntries[0].Price;
-			_firstPrice = (longPrice + shortPrice) / 2m;
-		}
-
-		if (!_longEntries.Any() && !_shortEntries.Any() && _isClosingAll)
-		{
-			ResetState();
-			_isClosingAll = false;
-		}
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			var bid = (decimal)bidValue;
-			if (bid > 0m)
-			{
-				_bestBid = bid;
-				_hasBestBid = true;
-			}
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
-		{
-			var ask = (decimal)askValue;
-			if (ask > 0m)
-			{
-				_bestAsk = ask;
-				_hasBestAsk = true;
-			}
-		}
-
-		if (!_hasBestBid || !_hasBestAsk)
+		if (!_hasPriceData || _currentPrice <= 0m)
 			return;
 
 		if (_isClosingAll)
@@ -271,6 +168,65 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		if (ordersTotal >= 3 && CalculateFloatingProfit() >= 0m)
 		{
 			CloseAllOrders();
+		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (trade?.Trade == null)
+			return;
+
+		var volume = trade.Trade.Volume;
+		var price = trade.Trade.Price;
+		var side = trade.Order?.Side;
+
+		if (side == null)
+			return;
+
+		// Determine intent based on position context
+		if (side == Sides.Buy)
+		{
+			if (Position < 0 || _isClosingAll)
+			{
+				// Closing short
+				ReduceEntries(_shortEntries, volume);
+			}
+			else
+			{
+				// Opening long
+				_longEntries.Add(new Entry(price, volume));
+				_lastOrderDirection = Sides.Buy;
+			}
+		}
+		else
+		{
+			if (Position > 0 || _isClosingAll)
+			{
+				// Closing long
+				ReduceEntries(_longEntries, volume);
+			}
+			else
+			{
+				// Opening short
+				_shortEntries.Add(new Entry(price, volume));
+				_lastOrderDirection = Sides.Sell;
+			}
+		}
+
+		if (_firstStage == 1 && _firstPrice == 0m && _longEntries.Count > 0 && _shortEntries.Count > 0)
+		{
+			var longPrice = _longEntries[0].Price;
+			var shortPrice = _shortEntries[0].Price;
+			_firstPrice = (longPrice + shortPrice) / 2m;
+		}
+
+		if (!_longEntries.Any() && !_shortEntries.Any() && _isClosingAll)
+		{
+			ResetState();
+			_isClosingAll = false;
 		}
 	}
 
@@ -390,44 +346,34 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 	private void OpenFirst()
 	{
-		var volume = InitialVolume;
-		ValidateVolume(volume);
-
-		var buyOrder = BuyMarket();
-		if (buyOrder != null)
-		{
-			_orderIntents[buyOrder] = OrderIntents.OpenLong;
-		}
-
-		var sellOrder = SellMarket();
-		if (sellOrder != null)
-		{
-			_orderIntents[sellOrder] = OrderIntents.OpenShort;
-		}
+		BuyMarket();
+		SellMarket();
 
 		_firstStage = 1;
 		_zone = 0;
 		_lastZone = 0;
 		_zoneChanged = false;
-		_firstPrice = GetMidPrice();
+		_firstPrice = _currentPrice;
 		_firstOrderDirection = null;
 		_lastOrderDirection = null;
 	}
 
 	private void CloseFirstOrders()
 	{
-		if (_longEntries.Count > 0 && _bestBid > _longEntries[0].Price)
+		if (_longEntries.Count > 0 && _currentPrice > _longEntries[0].Price)
 		{
-			CloseEntry(Sides.Buy, _longEntries[0].Volume);
+			// Long is profitable, close it, keep short
+			SellMarket();
 			_firstStage = 2;
 			_firstOrderDirection = Sides.Sell;
 			_lastOrderDirection = Sides.Sell;
 			return;
 		}
 
-		if (_shortEntries.Count > 0 && _bestAsk < _shortEntries[0].Price)
+		if (_shortEntries.Count > 0 && _currentPrice < _shortEntries[0].Price)
 		{
-			CloseEntry(Sides.Sell, _shortEntries[0].Volume);
+			// Short is profitable, close it, keep long
+			BuyMarket();
 			_firstStage = 2;
 			_firstOrderDirection = Sides.Buy;
 			_lastOrderDirection = Sides.Buy;
@@ -436,32 +382,12 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 	private void OpenBuyOrder()
 	{
-		var volume = CalculateOrderVolume();
-		if (volume <= 0m)
-			return;
-
-		ValidateVolume(volume);
-
-		var order = BuyMarket();
-		if (order != null)
-		{
-			_orderIntents[order] = OrderIntents.OpenLong;
-		}
+		BuyMarket();
 	}
 
 	private void OpenSellOrder()
 	{
-		var volume = CalculateOrderVolume();
-		if (volume <= 0m)
-			return;
-
-		ValidateVolume(volume);
-
-		var order = SellMarket();
-		if (order != null)
-		{
-			_orderIntents[order] = OrderIntents.OpenShort;
-		}
+		SellMarket();
 	}
 
 	private void OpenAnother()
@@ -492,8 +418,20 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		_zoneChanged = false;
 		_isClosingAll = true;
 
-		CloseSide(Sides.Buy);
-		CloseSide(Sides.Sell);
+		// Close by selling longs and buying back shorts
+		if (_longEntries.Any())
+		{
+			var totalLong = _longEntries.Sum(e => e.Volume);
+			if (totalLong > 0m)
+				SellMarket(totalLong);
+		}
+
+		if (_shortEntries.Any())
+		{
+			var totalShort = _shortEntries.Sum(e => e.Volume);
+			if (totalShort > 0m)
+				BuyMarket(totalShort);
+		}
 
 		if (!_longEntries.Any() && !_shortEntries.Any())
 		{
@@ -502,55 +440,10 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		}
 	}
 
-	private void CloseSide(Sides side)
-	{
-		var entries = side == Sides.Buy ? _longEntries : _shortEntries;
-		if (!entries.Any())
-			return;
-
-		var totalVolume = entries.Sum(e => e.Volume);
-		if (totalVolume <= 0m)
-			return;
-
-		Order order;
-
-		if (side == Sides.Buy)
-		{
-			order = SellMarket();
-			if (order != null)
-				_orderIntents[order] = OrderIntents.CloseLong;
-		}
-		else
-		{
-			order = BuyMarket();
-			if (order != null)
-				_orderIntents[order] = OrderIntents.CloseShort;
-		}
-	}
-
-	private void CloseEntry(Sides side, decimal volume)
-	{
-		if (volume <= 0m)
-			return;
-
-	Order order;
-
-		if (side == Sides.Buy)
-		{
-			order = SellMarket();
-			if (order != null)
-				_orderIntents[order] = OrderIntents.CloseLong;
-		}
-		else
-		{
-			order = BuyMarket();
-			if (order != null)
-				_orderIntents[order] = OrderIntents.CloseShort;
-		}
-	}
-
 	private void ResetState()
 	{
+		_longEntries.Clear();
+		_shortEntries.Clear();
 		_zone = 0;
 		_lastZone = 0;
 		_zoneChanged = false;
@@ -567,89 +460,25 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 			return;
 
 		var offset = PkPips * _pipValue;
+		var price = _currentPrice + offset;
 
-		if (_lastOrderDirection == Sides.Sell)
+		if (price >= _firstPrice + step * (_zone + 1))
 		{
-			var bid = _bestBid + offset;
-			if (bid >= _firstPrice + step * (_zone + 1))
-			{
-				_lastZone = _zone;
-				_zone++;
-				_zoneChanged = true;
-			}
-			else if (bid <= _firstPrice + step * (_zone - 1))
-			{
-				_lastZone = _zone;
-				_zone--;
-				_zoneChanged = true;
-			}
+			_lastZone = _zone;
+			_zone++;
+			_zoneChanged = true;
 		}
-		else if (_lastOrderDirection == Sides.Buy)
+		else if (price <= _firstPrice - step * (1 - _zone))
 		{
-			var ask = _bestAsk - offset;
-			if (ask >= _firstPrice + step * (_zone + 1))
-			{
-				_lastZone = _zone;
-				_zone++;
-				_zoneChanged = true;
-			}
-			else if (ask <= _firstPrice + step * (_zone - 1))
-			{
-				_lastZone = _zone;
-				_zone--;
-				_zoneChanged = true;
-			}
-		}
-		else
-		{
-			var price = GetMidPrice();
-			if (price >= _firstPrice + step * (_zone + 1))
-			{
-				_lastZone = _zone;
-				_zone++;
-				_zoneChanged = true;
-			}
-			else if (price <= _firstPrice + step * (_zone - 1))
-			{
-				_lastZone = _zone;
-				_zone--;
-				_zoneChanged = true;
-			}
+			_lastZone = _zone;
+			_zone--;
+			_zoneChanged = true;
 		}
 
 		if (_zoneChanged && _zone == _lastZone)
 		{
 			_zoneChanged = false;
 		}
-	}
-
-	private decimal CalculateOrderVolume()
-	{
-		var baseVolume = InitialVolume;
-		var ordersTotal = GetOrdersTotal();
-		var multiplier = 1m;
-
-		if ((_zone == 0 || _zone == -1) && ordersTotal >= 1 && _firstOrderDirection == Sides.Buy)
-		{
-			multiplier = GetTunnelMultiplier(ordersTotal);
-		}
-		else if ((_zone == 0 || _zone == 1) && ordersTotal >= 1 && _firstOrderDirection == Sides.Sell)
-		{
-			multiplier = GetTunnelMultiplier(ordersTotal);
-		}
-
-		return baseVolume * multiplier;
-	}
-
-	private static decimal GetTunnelMultiplier(int ordersTotal)
-	{
-		if (ordersTotal < 0)
-			return 1m;
-
-		if (ordersTotal >= TunnelMultipliers.Length)
-			return TunnelMultipliers[^1];
-
-		return TunnelMultipliers[ordersTotal];
 	}
 
 	private int GetOrdersTotal()
@@ -659,19 +488,19 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 	private decimal CalculateFloatingProfit()
 	{
-		if (!_hasBestBid || !_hasBestAsk)
+		if (!_hasPriceData)
 			return 0m;
 
 		decimal profit = 0m;
 
 		foreach (var entry in _longEntries)
 		{
-			profit += (_bestBid - entry.Price) * entry.Volume;
+			profit += (_currentPrice - entry.Price) * entry.Volume;
 		}
 
 		foreach (var entry in _shortEntries)
 		{
-			profit += (entry.Price - _bestAsk) * entry.Volume;
+			profit += (entry.Price - _currentPrice) * entry.Volume;
 		}
 
 		return profit;
@@ -684,7 +513,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		while (remaining > 0m && entries.Count > 0)
 		{
 			var current = entries[0];
-			if (current.Volume <= remaining + VolumeTolerance)
+			if (current.Volume <= remaining + 0.0001m)
 			{
 				remaining -= current.Volume;
 				entries.RemoveAt(0);
@@ -697,53 +526,12 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		}
 	}
 
-	private decimal GetMidPrice()
-	{
-		return (_bestBid + _bestAsk) / 2m;
-	}
-
-	private void ValidateVolume(decimal volume)
-	{
-		if (volume <= 0m || Security == null)
-			return;
-
-		if (Security.MinVolume is { } minVolume && volume < minVolume - VolumeTolerance)
-			throw new InvalidOperationException($"Volume {volume} is less than the minimal allowed {minVolume}.");
-
-		if (Security.MaxVolume is { } maxVolume && volume > maxVolume + VolumeTolerance)
-			throw new InvalidOperationException($"Volume {volume} is greater than the maximal allowed {maxVolume}.");
-
-		if (Security.VolumeStep is { } step && step > 0m)
-		{
-			var steps = Math.Round(volume / step);
-			var normalized = steps * step;
-			if (Math.Abs(normalized - volume) > VolumeTolerance)
-				throw new InvalidOperationException($"Volume {volume} is not a multiple of the minimal step {step}.");
-		}
-	}
-
 	private decimal CalculatePipValue()
 	{
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
 			return 1m;
 
-		var scaled = step;
-		var digits = 0;
-		while (scaled < 1m && digits < 10)
-		{
-			scaled *= 10m;
-			digits++;
-		}
-
-		var adjust = (digits == 3 || digits == 5) ? 10m : 1m;
-		return step * adjust;
-	}
-
-	private static bool IsOrderCompleted(Order order)
-	{
-		return order.State == OrderStates.Done
-			|| order.State == OrderStates.Failed;
+		return step;
 	}
 }
-

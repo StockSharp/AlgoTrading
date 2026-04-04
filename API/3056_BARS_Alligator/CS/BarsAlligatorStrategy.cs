@@ -18,8 +18,8 @@ public class BarsAlligatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _takeProfitPips;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
 
 	private readonly SmoothedMovingAverage _jaw = new() { Length = 13 };
 	private readonly SmoothedMovingAverage _teeth = new() { Length = 8 };
@@ -34,16 +34,16 @@ public class BarsAlligatorStrategy : Strategy
 
 	public BarsAlligatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_cooldownBars = Param(nameof(CooldownBars), 6).SetNotNegative().SetDisplay("Cooldown Bars", "Bars between completed trades", "Trading");
-		_stopLossPips = Param(nameof(StopLossPips), 150).SetNotNegative().SetDisplay("Stop Loss", "Stop distance in pips", "Risk");
-		_takeProfitPips = Param(nameof(TakeProfitPips), 150).SetNotNegative().SetDisplay("Take Profit", "Take-profit distance in pips", "Risk");
+		_stopLossPercent = Param(nameof(StopLossPercent), 3m).SetDisplay("Stop Loss %", "Stop distance as percentage of entry price", "Risk");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m).SetDisplay("Take Profit %", "Take-profit distance as percentage of entry price", "Risk");
 	}
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
-	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
@@ -68,28 +68,18 @@ public class BarsAlligatorStrategy : Strategy
 		OnReseted();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(_jaw, _teeth, _lips, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal jaw, decimal teeth, decimal lips)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (_cooldownLeft > 0)
 			_cooldownLeft--;
-
-		var price = (candle.HighPrice + candle.LowPrice) / 2m;
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, price, candle.OpenTime) { IsFinal = true });
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, price, candle.OpenTime) { IsFinal = true });
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, price, candle.OpenTime) { IsFinal = true });
-
-		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed || jawValue.IsEmpty || teethValue.IsEmpty || lipsValue.IsEmpty)
-			return;
-
-		var jaw = jawValue.ToDecimal();
-		var teeth = teethValue.ToDecimal();
-		var lips = lipsValue.ToDecimal();
 
 		if (Position != 0 && _entryPrice is null)
 			_entryPrice = candle.ClosePrice;
@@ -106,8 +96,9 @@ public class BarsAlligatorStrategy : Strategy
 			return;
 		}
 
-		var closeLong = lips < teeth && _previousLips >= _previousTeeth && Position > 0 && _entryPrice is decimal longEntry && candle.ClosePrice >= longEntry;
-		var closeShort = lips > teeth && _previousLips <= _previousTeeth && Position < 0 && _entryPrice is decimal shortEntry && candle.ClosePrice <= shortEntry;
+		// Exit conditions: lips crosses teeth against position
+		var closeLong = lips < teeth && _previousLips >= _previousTeeth && Position > 0;
+		var closeShort = lips > teeth && _previousLips <= _previousTeeth && Position < 0;
 
 		if (closeLong)
 		{
@@ -133,8 +124,9 @@ public class BarsAlligatorStrategy : Strategy
 			return;
 		}
 
-		var buySignal = lips > jaw && _previousLips <= _previousJaw && lips > teeth && teeth > jaw;
-		var sellSignal = lips < jaw && _previousLips >= _previousJaw && lips < teeth && teeth < jaw;
+		// Entry: lips crosses jaw with proper Alligator ordering
+		var buySignal = lips > jaw && _previousLips <= _previousJaw && lips > teeth;
+		var sellSignal = lips < jaw && _previousLips >= _previousJaw && lips < teeth;
 
 		if (buySignal && Position <= 0)
 		{
@@ -172,15 +164,11 @@ public class BarsAlligatorStrategy : Strategy
 
 	private bool TryExitByRisk(ICandleMessage candle)
 	{
-		if (_entryPrice is not decimal entryPrice || Position == 0)
+		if (_entryPrice is not decimal entryPrice || Position == 0 || entryPrice == 0)
 			return false;
 
-		var step = Security?.PriceStep ?? 1m;
-		if (step <= 0)
-			step = 1m;
-
-		var stopDistance = StopLossPips * step;
-		var takeDistance = TakeProfitPips * step;
+		var stopDistance = entryPrice * StopLossPercent / 100m;
+		var takeDistance = entryPrice * TakeProfitPercent / 100m;
 
 		if (Position > 0)
 		{

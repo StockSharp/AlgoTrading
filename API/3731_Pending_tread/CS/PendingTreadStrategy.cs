@@ -3,11 +3,9 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
@@ -15,7 +13,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Pending grid strategy converted from the MetaTrader 4 expert advisor "Pending_tread".
-/// Maintains two independent ladders of pending orders above and below the market with configurable direction and spacing.
+/// Maintains two independent ladders of limit orders above and below the market with configurable direction and spacing.
+/// When price reaches a grid level, a market order is placed in the configured direction.
 /// </summary>
 public class PendingTreadStrategy : Strategy
 {
@@ -23,365 +22,240 @@ public class PendingTreadStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _ordersPerSide;
-	private readonly StrategyParam<decimal> _minStopDistancePoints;
-	private readonly StrategyParam<decimal> _throttleSeconds;
 	private readonly StrategyParam<Sides> _aboveMarketSide;
 	private readonly StrategyParam<Sides> _belowMarketSide;
-	private readonly StrategyParam<int> _slippagePoints;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
 	private decimal _pipSize;
-	private decimal _pointValue;
-	private decimal _minStopOffset;
-	private TimeSpan _throttleInterval;
-	private DateTimeOffset? _lastMaintenanceTime;
+	private decimal _anchorPrice;
+	private bool _initialized;
+	private readonly List<decimal> _triggeredLevelsAbove = new();
+	private readonly List<decimal> _triggeredLevelsBelow = new();
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes a new instance of the strategy with defaults that mirror the MQL inputs.
-	/// </summary>
 	public PendingTreadStrategy()
 	{
-		_pipStep = Param(nameof(PipStep), 12m)
+		_pipStep = Param(nameof(PipStep), 200000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid step (pips)", "Distance between adjacent pending orders expressed in pips", "Trading");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 150000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (pips)", "Individual take-profit distance assigned to every pending order", "Trading");
 
-		_orderVolume = Param(nameof(OrderVolume), 0.01m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order volume", "Volume sent with each pending order", "Trading");
 
-		_ordersPerSide = Param(nameof(OrdersPerSide), 10)
+		_ordersPerSide = Param(nameof(OrdersPerSide), 2)
 			.SetGreaterThanZero()
-			.SetDisplay("Orders per side", "Maximum number of active pending orders maintained above and below the market", "Trading");
-
-		_minStopDistancePoints = Param(nameof(MinStopDistancePoints), 0m)
-			.SetDisplay("Min stop distance (points)", "Broker stop-level distance in raw price points (MODE_STOPLEVEL analogue)", "Risk");
-
-		_throttleSeconds = Param(nameof(ThrottleSeconds), 5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Throttle (seconds)", "Minimum delay between maintenance cycles to avoid trade context congestion", "Execution");
+			.SetDisplay("Orders per side", "Maximum number of grid levels maintained above and below the anchor", "Trading");
 
 		_aboveMarketSide = Param(nameof(AboveMarketSide), Sides.Buy)
-			.SetDisplay("Above market side", "Type of orders stacked above the current price", "Orders");
+			.SetDisplay("Above market side", "Type of orders triggered above the current price", "Orders");
 
 		_belowMarketSide = Param(nameof(BelowMarketSide), Sides.Sell)
-			.SetDisplay("Below market side", "Type of orders stacked below the current price", "Orders");
+			.SetDisplay("Below market side", "Type of orders triggered below the current price", "Orders");
 
-		_slippagePoints = Param(nameof(SlippagePoints), 3)
-			.SetNotNegative()
-			.SetDisplay("Slippage (points)", "Retained for parity with the MT4 input; pending orders ignore slippage in StockSharp", "Execution");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle timeframe", "General");
 	}
 
-	/// <summary>
-	/// Grid spacing expressed in pips.
-	/// </summary>
 	public decimal PipStep
 	{
 		get => _pipStep.Value;
 		set => _pipStep.Value = value;
 	}
 
-	/// <summary>
-	/// Take-profit distance assigned to each pending order.
-	/// </summary>
 	public decimal TakeProfitPips
 	{
 		get => _takeProfitPips.Value;
 		set => _takeProfitPips.Value = value;
 	}
 
-	/// <summary>
-	/// Volume sent with each pending order.
-	/// </summary>
 	public decimal OrderVolume
 	{
 		get => _orderVolume.Value;
 		set => _orderVolume.Value = value;
 	}
 
-	/// <summary>
-	/// Number of orders maintained above and below the market.
-	/// </summary>
 	public int OrdersPerSide
 	{
 		get => _ordersPerSide.Value;
 		set => _ordersPerSide.Value = value;
 	}
 
-	/// <summary>
-	/// Minimal allowed distance between the market price and pending orders expressed in price points.
-	/// </summary>
-	public decimal MinStopDistancePoints
-	{
-		get => _minStopDistancePoints.Value;
-		set => _minStopDistancePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Delay between maintenance cycles expressed in seconds.
-	/// </summary>
-	public decimal ThrottleSeconds
-	{
-		get => _throttleSeconds.Value;
-		set => _throttleSeconds.Value = value;
-	}
-
-	/// <summary>
-	/// Direction used for orders stacked above the current price.
-	/// </summary>
 	public Sides AboveMarketSide
 	{
 		get => _aboveMarketSide.Value;
 		set => _aboveMarketSide.Value = value;
 	}
 
-	/// <summary>
-	/// Direction used for orders stacked below the current price.
-	/// </summary>
 	public Sides BelowMarketSide
 	{
 		get => _belowMarketSide.Value;
 		set => _belowMarketSide.Value = value;
 	}
 
-	/// <summary>
-	/// MetaTrader slippage input maintained for documentation purposes.
-	/// </summary>
-	public int SlippagePoints
+	public DataType CandleType
 	{
-		get => _slippagePoints.Value;
-		set => _slippagePoints.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Level1)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_bestBid = null;
-		_bestAsk = null;
 		_pipSize = 0m;
-		_pointValue = 0m;
-		_minStopOffset = 0m;
-		_throttleInterval = TimeSpan.Zero;
-		_lastMaintenanceTime = null;
+		_anchorPrice = 0m;
+		_initialized = false;
+		_triggeredLevelsAbove.Clear();
+		_triggeredLevelsBelow.Clear();
+		_entryPrice = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_pointValue = Security?.PriceStep ?? 0.0001m;
-		if (_pointValue <= 0m)
-		{
-			_pointValue = 0.0001m;
-		}
-
 		_pipSize = GetPipSize();
-		_minStopOffset = MinStopDistancePoints > 0m ? MinStopDistancePoints * _pointValue : 0m;
-		_throttleInterval = TimeSpan.FromSeconds((double)ThrottleSeconds);
 
-		this.LogInfo($"Pending_tread grid initialized. Pip size={_pipSize}, point={_pointValue}, throttle={_throttleInterval}.");
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		this
+			.SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue) && bidValue is decimal bid)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (!_initialized)
 		{
-			_bestBid = bid;
+			_anchorPrice = close;
+			_initialized = true;
+			return;
 		}
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue) && askValue is decimal ask)
-		{
-			_bestAsk = ask;
-		}
-
-		if (_bestBid is null || _bestAsk is null)
-			return;
-
-		var now = level1.ServerTime != default ? level1.ServerTime : CurrentTime;
-		if (_lastMaintenanceTime is DateTimeOffset last && now - last < _throttleInterval)
-			return;
-
-		_lastMaintenanceTime = now;
-
-		MaintainPendingGrid(true, AboveMarketSide);
-		MaintainPendingGrid(false, BelowMarketSide);
-	}
-
-	private void MaintainPendingGrid(bool aboveMarket, Sides side)
-	{
-		var security = Security;
-		if (security == null)
-			return;
-
-		if (side != Sides.Buy && side != Sides.Sell)
-			return;
-
-		var volume = NormalizeVolume(OrderVolume);
-		if (volume <= 0m)
-			return;
 
 		var distance = PipStep * _pipSize;
 		if (distance <= 0m)
 			return;
 
-		var takeProfitOffset = TakeProfitPips * _pipSize;
-		var bestBid = _bestBid;
-		var bestAsk = _bestAsk;
+		var tpOffset = TakeProfitPips * _pipSize;
 
-		if (bestBid is null || bestAsk is null)
-			return;
-
-		var expectedType = GetOrderType(aboveMarket, side);
-		var existingCount = 0;
-
-		foreach (var order in Orders)
+		// Check above-market grid levels
+		for (var i = 1; i <= OrdersPerSide; i++)
 		{
-			if (order == null || order.Security != security)
+			var level = _anchorPrice + distance * i;
+
+			if (_triggeredLevelsAbove.Contains(level))
 				continue;
 
-			if (order.State != OrderStates.Active)
-				continue;
-
-			if (order.Side != side)
-				continue;
-
-			if (order.Type != expectedType)
-				continue;
-
-			existingCount++;
-		}
-
-		for (var index = existingCount; index < OrdersPerSide; index++)
-		{
-			var offset = distance * (index + 1);
-			var orderPrice = CalculateOrderPrice(aboveMarket, side, bestBid.Value, bestAsk.Value, offset);
-			if (orderPrice <= 0m)
-				continue;
-
-			var anchorPrice = aboveMarket ? (side == Sides.Buy ? bestAsk.Value : bestBid.Value) : (side == Sides.Buy ? bestAsk.Value : bestBid.Value);
-			if (_minStopOffset > 0m && Math.Abs(orderPrice - anchorPrice) < _minStopOffset)
+			if (close >= level)
 			{
-				this.LogWarning($"Skipping order too close to market. Side={side}, price={orderPrice}, anchor={anchorPrice}.");
-				continue;
-			}
-
-			var normalizedPrice = NormalizePrice(orderPrice);
-			var takeProfit = takeProfitOffset > 0m ? NormalizePrice(GetTakeProfitPrice(side, normalizedPrice, takeProfitOffset)) : (decimal?)null;
-
-			var order = PlacePendingOrder(aboveMarket, side, volume, normalizedPrice, takeProfit);
-			if (order != null)
-			{
-				this.LogInfo($"Pending order placed -> Side={side}, Type={order.Type}, Price={normalizedPrice}, TP={(takeProfit.HasValue ? takeProfit.Value.ToString() : "none")}");
+				_triggeredLevelsAbove.Add(level);
+				ExecuteGridOrder(AboveMarketSide, close, tpOffset);
+				return; // one order per candle
 			}
 		}
-	}
 
-	private static OrderTypes GetOrderType(bool aboveMarket, Sides side)
-	{
-		if (aboveMarket)
-			return side == Sides.Buy ? OrderTypes.Conditional : OrderTypes.Limit;
-
-		return side == Sides.Buy ? OrderTypes.Limit : OrderTypes.Conditional;
-	}
-
-	private decimal CalculateOrderPrice(bool aboveMarket, Sides side, decimal bid, decimal ask, decimal offset)
-	{
-		if (aboveMarket)
+		// Check below-market grid levels
+		for (var i = 1; i <= OrdersPerSide; i++)
 		{
-			if (side == Sides.Buy)
-				return ask + offset;
+			var level = _anchorPrice - distance * i;
 
-			return bid + offset;
+			if (_triggeredLevelsBelow.Contains(level))
+				continue;
+
+			if (close <= level)
+			{
+				_triggeredLevelsBelow.Add(level);
+				ExecuteGridOrder(BelowMarketSide, close, tpOffset);
+				return; // one order per candle
+			}
 		}
 
-		if (side == Sides.Buy)
-			return ask - offset;
-
-		return bid - offset;
+		// Check take-profit for existing position
+		CheckTakeProfit(close, tpOffset);
 	}
 
-	private decimal GetTakeProfitPrice(Sides side, decimal orderPrice, decimal offset)
+	private void ExecuteGridOrder(Sides side, decimal price, decimal tpOffset)
 	{
-		return side == Sides.Buy ? orderPrice + offset : orderPrice - offset;
-	}
+		// Close existing opposite position first
+		if (Position != 0)
+		{
+			if ((Position > 0 && side == Sides.Sell) || (Position < 0 && side == Sides.Buy))
+			{
+				ClosePosition(side);
+			}
+		}
 
-	private Order PlacePendingOrder(bool aboveMarket, Sides side, decimal volume, decimal price, decimal? takeProfit)
-	{
+		var vol = OrderVolume;
+
 		if (side == Sides.Buy)
 		{
-			BuyMarket(volume);
+			BuyMarket(vol);
+			_entryPrice = price;
 		}
 		else
 		{
-			SellMarket(volume);
+			SellMarket(vol);
+			_entryPrice = price;
 		}
-
-		return null;
 	}
 
-	private decimal NormalizeVolume(decimal volume)
+	private void ClosePosition(Sides newSide)
 	{
-		var security = Security;
-		if (security == null)
-			return volume;
+		var absPos = Position.Abs();
+		if (absPos <= 0)
+			return;
 
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
+		if (Position > 0)
+			SellMarket(absPos);
+		else
+			BuyMarket(absPos);
+	}
+
+	private void CheckTakeProfit(decimal close, decimal tpOffset)
+	{
+		if (Position == 0 || _entryPrice == 0 || tpOffset <= 0)
+			return;
+
+		if (Position > 0 && close >= _entryPrice + tpOffset)
 		{
-			var steps = decimal.Floor(volume / step);
-			volume = steps * step;
+			SellMarket(Position.Abs());
+			_entryPrice = 0;
+
+			// Reset grid to re-establish levels around current price
+			ResetGrid(close);
 		}
+		else if (Position < 0 && close <= _entryPrice - tpOffset)
+		{
+			BuyMarket(Position.Abs());
+			_entryPrice = 0;
 
-		var minVolume = security.MinVolume ?? 0m;
-		if (minVolume > 0m && volume < minVolume)
-			volume = minVolume;
-
-		var maxVolume = security.MaxVolume;
-		if (maxVolume.HasValue && maxVolume.Value > 0m && volume > maxVolume.Value)
-			volume = maxVolume.Value;
-
-		return volume;
+			ResetGrid(close);
+		}
 	}
 
-	private decimal NormalizePrice(decimal price)
+	private void ResetGrid(decimal newAnchor)
 	{
-		var security = Security;
-		if (security == null)
-			return price;
-
-		var normalized = security.ShrinkPrice(price);
-		return normalized > 0m ? normalized : price;
+		_anchorPrice = newAnchor;
+		_triggeredLevelsAbove.Clear();
+		_triggeredLevelsBelow.Clear();
 	}
 
 	private decimal GetPipSize()
 	{
 		var security = Security;
 		if (security == null)
-			return 0.0001m;
+			return 0.01m;
 
-		var step = security.PriceStep ?? 0.0001m;
-		var decimals = security.Decimals ?? 0;
-
-		if (decimals >= 4)
-			return step * 10m;
-
-		return step > 0m ? step : 0.0001m;
+		var step = security.PriceStep ?? 0.01m;
+		return step > 0m ? step : 0.01m;
 	}
 }

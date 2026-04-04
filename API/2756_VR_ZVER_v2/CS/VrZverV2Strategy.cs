@@ -58,28 +58,28 @@ public class VrZverV2Strategy : Strategy
 
 	public VrZverV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for signal generation", "General");
 
-		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
+		_fixedVolume = Param(nameof(FixedVolume), 1m)
 		.SetDisplay("Fixed Volume", "Use fixed volume when greater than zero", "Risk");
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 		.SetDisplay("Risk %", "Risk percentage used when fixed volume is zero", "Risk");
 
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
+		_stopLossPips = Param(nameof(StopLossPips), 10000m)
 		.SetDisplay("Stop Loss (pips)", "Full stop distance expressed in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 70m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 15000m)
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 8000m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
+		_trailingStepPips = Param(nameof(TrailingStepPips), 3000m)
 		.SetDisplay("Trailing Step (pips)", "Additional distance before trailing updates", "Risk");
 
-		_breakevenPips = Param(nameof(BreakevenPips), 20m)
+		_breakevenPips = Param(nameof(BreakevenPips), 5000m)
 		.SetDisplay("Breakeven (pips)", "Move stop to entry after this profit", "Risk");
 
 		_allowLongs = Param(nameof(AllowLongs), true)
@@ -447,7 +447,7 @@ public class VrZverV2Strategy : Strategy
 		_breakevenActivated = false;
 		_trailingStop = null;
 
-		var stopOffset = StopLossPips > 0m ? StopLossPips * _pipSize / 1.5m : 0m;
+		var stopOffset = StopLossPips > 0m ? StopLossPips * _pipSize : 0m;
 		var takeOffset = TakeProfitPips > 0m ? TakeProfitPips * _pipSize : 0m;
 
 		_stopPrice = stopOffset > 0m ? _entryPrice - stopOffset : null;
@@ -468,7 +468,7 @@ public class VrZverV2Strategy : Strategy
 		_breakevenActivated = false;
 		_trailingStop = null;
 
-		var stopOffset = StopLossPips > 0m ? StopLossPips * _pipSize / 1.5m : 0m;
+		var stopOffset = StopLossPips > 0m ? StopLossPips * _pipSize : 0m;
 		var takeOffset = TakeProfitPips > 0m ? TakeProfitPips * _pipSize : 0m;
 
 		_stopPrice = stopOffset > 0m ? _entryPrice + stopOffset : null;
@@ -624,7 +624,7 @@ public class VrZverV2Strategy : Strategy
 		if (FixedVolume > 0m)
 		return AdjustVolume(FixedVolume);
 
-		var stopOffset = StopLossPips > 0m ? StopLossPips * _pipSize / 1.5m : 0m;
+		var stopOffset = StopLossPips > 0m ? StopLossPips * _pipSize : 0m;
 		if (stopOffset <= 0m)
 		return AdjustVolume(Volume);
 
@@ -690,7 +690,9 @@ public class VrZverV2Strategy : Strategy
 		if (step <= 0m)
 		return 1m;
 
-		return step < 0.01m ? step * 10m : step;
+		// For crypto and large-price instruments, scale pip size
+		// so that pip-based parameters produce meaningful price offsets.
+		return step;
 	}
 
 	// Clear cached state values when no position is active.

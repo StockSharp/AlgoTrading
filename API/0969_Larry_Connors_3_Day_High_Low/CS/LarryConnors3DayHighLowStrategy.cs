@@ -85,11 +85,11 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 	/// </summary>
 	public LarryConnors3DayHighLowStrategy()
 	{
-		_longMaLength = Param(nameof(LongMaLength), 200)
+		_longMaLength = Param(nameof(LongMaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Length", "Period of the long moving average", "General")
-			
-			.SetOptimize(100, 300, 50);
+
+			.SetOptimize(20, 100, 10);
 
 		_shortMaLength = Param(nameof(ShortMaLength), 5)
 			.SetGreaterThanZero()
@@ -97,11 +97,11 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 			
 			.SetOptimize(3, 10, 1);
 
-		_maxEntries = Param(nameof(MaxEntries), 45)
+		_maxEntries = Param(nameof(MaxEntries), 35)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 12000)
+		_cooldownBars = Param(nameof(CooldownBars), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between orders", "Risk");
 
@@ -162,27 +162,27 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 
 		_barsSinceSignal++;
 
-		var canTrade = IsFormedAndOnlineAndAllowTrading();
-
-		if (canTrade && _longSma.IsFormed && _shortSma.IsFormed && _barCount >= 3)
+		if (_longSma.IsFormed && _shortSma.IsFormed && _barCount >= 3)
 		{
-			var condition1 = candle.ClosePrice > longMa;
-			var condition2 = candle.ClosePrice < shortMa;
-			var condition3 = _high2 < _high3 && _low2 < _low3;
-			var condition4 = _high1 < _high2 && _low1 < _low2;
-			var condition5 = candle.HighPrice < _high1 && candle.LowPrice < _low1;
-
-			if (_barsSinceSignal >= CooldownBars)
+			// Exit: close long when price crosses above short MA
+			if (candle.ClosePrice > shortMa && Position > 0)
 			{
-				if (condition1 && condition2 && condition3 && condition4 && condition5 && Position <= 0 && _entriesExecuted < MaxEntries)
+				SellMarket(Math.Abs(Position));
+				_barsSinceSignal = 0;
+			}
+			// Entry: buy after 3 consecutive lower highs/lows, close below short MA, above long MA
+			else if (_barsSinceSignal >= CooldownBars && Position <= 0 && _entriesExecuted < MaxEntries)
+			{
+				var aboveLongMa = candle.ClosePrice > longMa;
+				var belowShortMa = candle.ClosePrice < shortMa;
+				var lowerHighsLows3 = _high2 < _high3 && _low2 < _low3;
+				var lowerHighsLows2 = _high1 < _high2 && _low1 < _low2;
+				var lowerHighsLows1 = candle.HighPrice < _high1 && candle.LowPrice < _low1;
+
+				if (aboveLongMa && belowShortMa && lowerHighsLows3 && lowerHighsLows2 && lowerHighsLows1)
 				{
 					BuyMarket(Volume + Math.Abs(Position));
 					_entriesExecuted++;
-					_barsSinceSignal = 0;
-				}
-				else if (candle.ClosePrice > shortMa && Position > 0)
-				{
-					SellMarket(Math.Abs(Position));
 					_barsSinceSignal = 0;
 				}
 			}

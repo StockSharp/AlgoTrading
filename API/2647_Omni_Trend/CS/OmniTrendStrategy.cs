@@ -48,7 +48,7 @@ public class OmniTrendStrategy : Strategy
 
 	public OmniTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build Omni Trend signals", "General")
 			;
 
@@ -80,7 +80,7 @@ public class OmniTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			;
 
-		_signalBar = Param(nameof(SignalBar), 1)
+		_signalBar = Param(nameof(SignalBar), 0)
 			.SetDisplay("Signal Bar", "Delay in bars before acting on a signal", "Trading")
 			;
 
@@ -96,10 +96,10 @@ public class OmniTrendStrategy : Strategy
 		_enableSellClose = Param(nameof(EnableSellClose), true)
 			.SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
+		_stopLossPoints = Param(nameof(StopLossPoints), 0)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price steps", "Risk");
 
 		Volume = 1m;

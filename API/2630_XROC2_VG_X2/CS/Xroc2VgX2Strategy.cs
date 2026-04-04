@@ -89,7 +89,7 @@ public class Xroc2VgX2Strategy : Strategy
 		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Higher TF", "Higher timeframe candles", "General");
 
-		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Lower TF", "Lower timeframe candles", "General");
 
 		_higherSignalBar = Param(nameof(HigherSignalBar), 1)
@@ -134,28 +134,28 @@ public class Xroc2VgX2Strategy : Strategy
 		_lowerRocMode = Param(nameof(LowerRocMode), RocModes.Momentum)
 			.SetDisplay("Lower ROC Mode", "ROC calculation mode for entries", "Lower Timeframe");
 
-		_lowerFastPeriod = Param(nameof(LowerFastPeriod), 8)
+		_lowerFastPeriod = Param(nameof(LowerFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Fast ROC", "Fast ROC period for entries", "Lower Timeframe");
 
 		_lowerFastMethod = Param(nameof(LowerFastMethod), SmoothingMethods.Jurik)
 			.SetDisplay("Lower Fast Method", "Smoother for fast ROC", "Lower Timeframe");
 
-		_lowerFastLength = Param(nameof(LowerFastLength), 5)
+		_lowerFastLength = Param(nameof(LowerFastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Fast Length", "Length of fast smoother", "Lower Timeframe");
 
 		_lowerFastPhase = Param(nameof(LowerFastPhase), 15)
 			.SetDisplay("Lower Fast Phase", "Phase parameter for fast smoother", "Lower Timeframe");
 
-		_lowerSlowPeriod = Param(nameof(LowerSlowPeriod), 14)
+		_lowerSlowPeriod = Param(nameof(LowerSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Slow ROC", "Slow ROC period for entries", "Lower Timeframe");
 
 		_lowerSlowMethod = Param(nameof(LowerSlowMethod), SmoothingMethods.Jurik)
 			.SetDisplay("Lower Slow Method", "Smoother for slow ROC", "Lower Timeframe");
 
-		_lowerSlowLength = Param(nameof(LowerSlowLength), 5)
+		_lowerSlowLength = Param(nameof(LowerSlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Slow Length", "Length of slow smoother", "Lower Timeframe");
 
@@ -522,8 +522,8 @@ public class Xroc2VgX2Strategy : Strategy
 		//if (!IsFormedAndOnlineAndAllowTrading())
 		//	return;
 
-		var buyClose = CloseBuyOnLower && previous.up < previous.down;
-		var sellClose = CloseSellOnLower && previous.up > previous.down;
+		var buyClose = CloseBuyOnLower && current.up < current.down && previous.up >= previous.down;
+		var sellClose = CloseSellOnLower && current.up > current.down && previous.up <= previous.down;
 
 		if (_trend < 0 && CloseBuyOnTrendFlip)
 			buyClose = true;
@@ -531,8 +531,8 @@ public class Xroc2VgX2Strategy : Strategy
 		if (_trend > 0 && CloseSellOnTrendFlip)
 			sellClose = true;
 
-		var buyOpen = _trend > 0 && AllowBuyOpen && current.up <= current.down && previous.up > previous.down;
-		var sellOpen = _trend < 0 && AllowSellOpen && current.up >= current.down && previous.up < previous.down;
+		var buyOpen = _trend > 0 && AllowBuyOpen && current.up > current.down && previous.up <= previous.down;
+		var sellOpen = _trend < 0 && AllowSellOpen && current.up < current.down && previous.up >= previous.down;
 
 		ExecuteSignals(buyOpen, sellOpen, buyClose, sellClose);
 	}

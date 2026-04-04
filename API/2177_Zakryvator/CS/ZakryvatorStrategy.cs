@@ -14,113 +14,138 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Closes open positions when unrealized loss exceeds a volume-based threshold.
-/// Positions are expected to be opened externally; this strategy only protects them.
+/// Strategy that opens positions using SMA crossover and closes them
+/// when unrealized loss exceeds a volume-based threshold ("Zakryvator" = position closer on loss).
 /// </summary>
 public class ZakryvatorStrategy : Strategy
 {
 	private decimal _entryPrice;
+	private decimal _lastPrice;
+	private bool _prevShortAboveLong;
 
-	private readonly StrategyParam<decimal> _min001002;
-	private readonly StrategyParam<decimal> _min002005;
-	private readonly StrategyParam<decimal> _min00501;
-	private readonly StrategyParam<decimal> _min0103;
-	private readonly StrategyParam<decimal> _min0305;
-	private readonly StrategyParam<decimal> _min051;
-	private readonly StrategyParam<decimal> _minFrom1;
+	private readonly SimpleMovingAverage _smaShort = new() { Length = 50 };
+	private readonly SimpleMovingAverage _smaLong = new() { Length = 150 };
 
-	/// <summary>Maximum loss for positions with volume ≤ 0.02 lots.</summary>
-	public decimal Min001002 { get => _min001002.Value; set => _min001002.Value = value; }
+	private readonly StrategyParam<int> _shortPeriod;
+	private readonly StrategyParam<int> _longPeriod;
+	private readonly StrategyParam<decimal> _lossThreshold;
 
-	/// <summary>Maximum loss for positions with volume between 0.02 and 0.05 lots.</summary>
-	public decimal Min002005 { get => _min002005.Value; set => _min002005.Value = value; }
+	/// <summary>Short SMA period.</summary>
+	public int ShortPeriod { get => _shortPeriod.Value; set => _shortPeriod.Value = value; }
 
-	/// <summary>Maximum loss for positions with volume between 0.05 and 0.10 lots.</summary>
-	public decimal Min00501 { get => _min00501.Value; set => _min00501.Value = value; }
+	/// <summary>Long SMA period.</summary>
+	public int LongPeriod { get => _longPeriod.Value; set => _longPeriod.Value = value; }
 
-	/// <summary>Maximum loss for positions with volume between 0.10 and 0.30 lots.</summary>
-	public decimal Min0103 { get => _min0103.Value; set => _min0103.Value = value; }
-
-	/// <summary>Maximum loss for positions with volume between 0.30 and 0.50 lots.</summary>
-	public decimal Min0305 { get => _min0305.Value; set => _min0305.Value = value; }
-
-	/// <summary>Maximum loss for positions with volume between 0.50 and 1 lot.</summary>
-	public decimal Min051 { get => _min051.Value; set => _min051.Value = value; }
-
-	/// <summary>Maximum loss for positions with volume greater than 1 lot.</summary>
-	public decimal MinFrom1 { get => _minFrom1.Value; set => _minFrom1.Value = value; }
+	/// <summary>Maximum unrealized loss before closing position.</summary>
+	public decimal LossThreshold { get => _lossThreshold.Value; set => _lossThreshold.Value = value; }
 
 	/// <summary>Constructor.</summary>
 	public ZakryvatorStrategy()
 	{
-		_min001002 = Param(nameof(Min001002), 4m)
-			.SetDisplay("Loss ≤0.02", "Max loss for volume ≤0.02 lots", "Risk");
-		_min002005 = Param(nameof(Min002005), 8m)
-			.SetDisplay("Loss 0.02-0.05", "Max loss for volume 0.02-0.05 lots", "Risk");
-		_min00501 = Param(nameof(Min00501), 10m)
-			.SetDisplay("Loss 0.05-0.10", "Max loss for volume 0.05-0.10 lots", "Risk");
-		_min0103 = Param(nameof(Min0103), 15m)
-			.SetDisplay("Loss 0.10-0.30", "Max loss for volume 0.10-0.30 lots", "Risk");
-		_min0305 = Param(nameof(Min0305), 20m)
-			.SetDisplay("Loss 0.30-0.50", "Max loss for volume 0.30-0.50 lots", "Risk");
-		_min051 = Param(nameof(Min051), 25m)
-			.SetDisplay("Loss 0.50-1", "Max loss for volume 0.50-1 lots", "Risk");
-		_minFrom1 = Param(nameof(MinFrom1), 30m)
-			.SetDisplay("Loss >1", "Max loss for volume above 1 lot", "Risk");
+		_shortPeriod = Param(nameof(ShortPeriod), 50)
+			.SetDisplay("Short SMA", "Short SMA period for entry signal", "Entry");
+		_longPeriod = Param(nameof(LongPeriod), 150)
+			.SetDisplay("Long SMA", "Long SMA period for entry signal", "Entry");
+		_lossThreshold = Param(nameof(LossThreshold), 500m)
+			.SetDisplay("Loss Threshold", "Max unrealized loss before closing position", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Ticks)];
+		=> [(Security, TimeSpan.FromMinutes(5).TimeFrame())];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to trade ticks for real-time price updates.
-		SubscribeTicks().Bind(ProcessTrade).Start();
+		_smaShort.Length = ShortPeriod;
+		_smaLong.Length = LongPeriod;
+
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+
+		subscription
+			.Bind(_smaShort, _smaLong, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
+	private void ProcessCandle(ICandleMessage candle, decimal shortSma, decimal longSma)
 	{
-		// Only act when there is an open position.
-		if (Position == 0)
-		{
-			_entryPrice = 0m;
-			return;
-		}
-
-		var price = trade.Price;
-
-		if (_entryPrice == 0m)
-			_entryPrice = price;
-
-		// Calculate unrealized PnL based on current price and average entry price.
-		var openPnL = Position * (price - _entryPrice);
-
-		// Exit if there is no loss.
-		if (openPnL >= 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volume = Math.Abs(Position);
+		if (!_smaShort.IsFormed || !_smaLong.IsFormed)
+			return;
 
-		// Select threshold according to position volume.
-		var threshold = volume switch
-		{
-			<= 0.02m => Min001002,
-			<= 0.05m => Min002005,
-			<= 0.10m => Min00501,
-			<= 0.30m => Min0103,
-			<= 0.50m => Min0305,
-			<= 1m => Min051,
-			_ => MinFrom1,
-		};
+		_lastPrice = candle.ClosePrice;
 
-		// Close the position if loss exceeds the threshold.
-		if (openPnL <= -threshold)
+		var shortAboveLong = shortSma > longSma;
+
+		// Check loss threshold for open position
+		if (Position != 0 && _entryPrice != 0m)
 		{
-			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+			var openPnL = Position * (_lastPrice - _entryPrice);
+
+			if (openPnL <= -LossThreshold)
+			{
+				// Close on loss
+				if (Position > 0)
+					SellMarket();
+				else
+					BuyMarket();
+
+				_entryPrice = 0m;
+				_prevShortAboveLong = shortAboveLong;
+				return;
+			}
 		}
+
+		// SMA crossover entry/exit logic
+		var crossUp = shortAboveLong && !_prevShortAboveLong;
+		var crossDown = !shortAboveLong && _prevShortAboveLong;
+
+		if (crossUp)
+		{
+			if (Position < 0)
+			{
+				BuyMarket();
+				_entryPrice = 0m;
+			}
+
+			if (Position == 0)
+			{
+				BuyMarket();
+				_entryPrice = _lastPrice;
+			}
+		}
+		else if (crossDown)
+		{
+			if (Position > 0)
+			{
+				SellMarket();
+				_entryPrice = 0m;
+			}
+
+			if (Position == 0)
+			{
+				SellMarket();
+				_entryPrice = _lastPrice;
+			}
+		}
+
+		_prevShortAboveLong = shortAboveLong;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0m;
+		_lastPrice = 0m;
+		_prevShortAboveLong = false;
+
+		_smaShort.Reset();
+		_smaLong.Reset();
 	}
 }

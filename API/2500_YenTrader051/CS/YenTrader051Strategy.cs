@@ -111,21 +111,21 @@ public class YenTrader051Strategy : Strategy
 			.SetDisplay("Major Security", "Major currency pair used for confirmation", "Instruments");
 		_usdJpySecurity = Param(nameof(UsdJpySecurity), default(Security))
 			.SetDisplay("USDJPY Security", "USDJPY pair used for confirmation", "Instruments");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Signal Candles", "Primary timeframe for signals", "Data");
 		_majorDirection = Param(nameof(MajorDirection), YenTraderMajorDirections.Left)
 			.SetDisplay("Major Direction", "Alignment between major and cross", "Filters");
 		_entryMode = Param(nameof(EntryMode), YenTraderEntryModes.Both)
 			.SetDisplay("Entry Mode", "Control averaging or pyramiding behaviour", "Filters");
-		_priceReference = Param(nameof(PriceReference), YenTraderPriceReferences.HighLow)
+		_priceReference = Param(nameof(PriceReference), YenTraderPriceReferences.Close)
 			.SetDisplay("Price Reference", "Breakout reference for loop back bars", "Filters");
-		_loopBackBars = Param(nameof(LoopBackBars), 2)
+		_loopBackBars = Param(nameof(LoopBackBars), 40)
 			.SetDisplay("Loop Back Bars", "Number of historical bars for breakout logic", "Filters");
 		_useRsiFilter = Param(nameof(UseRsiFilter), true)
 			.SetDisplay("Use RSI", "Enable RSI confirmation filter", "Indicators");
-		_useCciFilter = Param(nameof(UseCciFilter), true)
+		_useCciFilter = Param(nameof(UseCciFilter), false)
 			.SetDisplay("Use CCI", "Enable CCI confirmation filter", "Indicators");
-		_useRviFilter = Param(nameof(UseRviFilter), true)
+		_useRviFilter = Param(nameof(UseRviFilter), false)
 			.SetDisplay("Use RVI", "Enable RVI confirmation filter", "Indicators");
 		_useMovingAverageFilter = Param(nameof(UseMovingAverageFilter), true)
 			.SetDisplay("Use Moving Average", "Enable moving average confirmation filter", "Indicators");
@@ -138,7 +138,7 @@ public class YenTrader051Strategy : Strategy
 			.SetDisplay("Fixed Volume", "Fixed volume per trade (0 = disabled)", "Risk");
 		_balancePercentLotSize = Param(nameof(BalancePercentLotSize), 1m)
 			.SetDisplay("Balance Percent Volume", "Portfolio percent used to size trades when fixed volume is disabled", "Risk");
-		_maxOpenPositions = Param(nameof(MaxOpenPositions), 10)
+		_maxOpenPositions = Param(nameof(MaxOpenPositions), 1)
 			.SetDisplay("Max Positions", "Maximum number of additive entries", "Risk");
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
@@ -493,19 +493,35 @@ public class YenTrader051Strategy : Strategy
 
 		InitializeIndicators();
 
+		var useSingleSecurity = MajorSecurity == null && UsdJpySecurity == null;
+
 		var tradingSubscription = SubscribeCandles(CandleType);
-		tradingSubscription.Bind(ProcessTradingCandle).Start();
 
-		if (MajorSecurity != null)
+		if (useSingleSecurity)
 		{
-			var majorSubscription = SubscribeCandles(CandleType, true, MajorSecurity);
-			majorSubscription.Bind(ProcessMajorCandle).Start();
+			// When no separate securities are configured, use the primary security data for all streams.
+			tradingSubscription.Bind(c =>
+			{
+				ProcessMajorCandle(c);
+				ProcessUsdJpyCandle(c);
+				ProcessTradingCandle(c);
+			}).Start();
 		}
-
-		if (UsdJpySecurity != null)
+		else
 		{
-			var usdJpySubscription = SubscribeCandles(CandleType, true, UsdJpySecurity);
-			usdJpySubscription.Bind(ProcessUsdJpyCandle).Start();
+			tradingSubscription.Bind(ProcessTradingCandle).Start();
+
+			if (MajorSecurity != null)
+			{
+				var majorSubscription = SubscribeCandles(CandleType, true, MajorSecurity);
+				majorSubscription.Bind(ProcessMajorCandle).Start();
+			}
+
+			if (UsdJpySecurity != null)
+			{
+				var usdJpySubscription = SubscribeCandles(CandleType, true, UsdJpySecurity);
+				usdJpySubscription.Bind(ProcessUsdJpyCandle).Start();
+			}
 		}
 
 		if (EnableAtrLevels)
@@ -565,7 +581,11 @@ public class YenTrader051Strategy : Strategy
 
 		var atrValue = _atr.Process(candle);
 		if (atrValue.IsFinal)
-			_atrValue = atrValue.ToDecimal();
+		{
+			var v = TryGetDecimal(atrValue);
+			if (v.HasValue)
+				_atrValue = v.Value;
+		}
 	}
 
 	private void ProcessTradingCandle(ICandleMessage candle)
@@ -726,6 +746,9 @@ public class YenTrader051Strategy : Strategy
 
 	private void TryEnterLong(ICandleMessage candle)
 	{
+		if (Position > 0 && MaxOpenPositions <= 1)
+			return;
+
 		if (!AllowHedging && Position < 0)
 			return;
 
@@ -746,6 +769,9 @@ public class YenTrader051Strategy : Strategy
 
 	private void TryEnterShort(ICandleMessage candle)
 	{
+		if (Position < 0 && MaxOpenPositions <= 1)
+			return;
+
 		if (!AllowHedging && Position > 0)
 			return;
 
@@ -1054,11 +1080,34 @@ public class YenTrader051Strategy : Strategy
 	{
 		var highVal = highest.Process(candle);
 		if (highVal.IsFinal)
-			highValue = highVal.ToDecimal();
+		{
+			var v = TryGetDecimal(highVal);
+			if (v.HasValue)
+				highValue = v.Value;
+		}
 
 		var lowVal = lowest.Process(candle);
 		if (lowVal.IsFinal)
-			lowValue = lowVal.ToDecimal();
+		{
+			var v = TryGetDecimal(lowVal);
+			if (v.HasValue)
+				lowValue = v.Value;
+		}
+	}
+
+	private static decimal? TryGetDecimal(IIndicatorValue value)
+	{
+		if (value == null || value.IsEmpty)
+			return null;
+
+		try
+		{
+			return value.ToDecimal();
+		}
+		catch
+		{
+			return null;
+		}
 	}
 
 	private static void UpdateOscillators(
@@ -1072,30 +1121,47 @@ public class YenTrader051Strategy : Strategy
 		ref decimal? rviMain,
 		ref decimal? rviSignalValue)
 	{
-		var rsiVal = rsi.Process(new DecimalIndicatorValue(rsi, candle.ClosePrice, candle.CloseTime));
+		var rsiInput = new DecimalIndicatorValue(rsi, candle.ClosePrice, candle.CloseTime) { IsFinal = true };
+		var rsiVal = rsi.Process(rsiInput);
 		if (rsiVal.IsFinal)
-			rsiValue = rsiVal.ToDecimal();
+		{
+			var v = TryGetDecimal(rsiVal);
+			if (v.HasValue)
+				rsiValue = v.Value;
+		}
 
 		var cciVal = cci.Process(candle);
 		if (cciVal.IsFinal)
-			cciValue = cciVal.ToDecimal();
+		{
+			var v = TryGetDecimal(cciVal);
+			if (v.HasValue)
+				cciValue = v.Value;
+		}
 
 		var rviVal = rvi.Process(candle);
 		if (rviVal.IsFinal)
 		{
-			var main = rviVal.ToDecimal();
-			rviMain = main;
+			var v = TryGetDecimal(rviVal);
+			if (v.HasValue)
+			{
+				rviMain = v.Value;
 
-			var signalVal = rviSignal.Process(new DecimalIndicatorValue(rviSignal, main, candle.CloseTime));
-			if (signalVal.IsFinal)
-				rviSignalValue = signalVal.ToDecimal();
+				var signalVal = rviSignal.Process(new DecimalIndicatorValue(rviSignal, v.Value, candle.CloseTime) { IsFinal = true });
+				if (signalVal.IsFinal)
+				{
+					var sv = TryGetDecimal(signalVal);
+					if (sv.HasValue)
+						rviSignalValue = sv.Value;
+				}
+			}
 		}
 	}
 
 	private static decimal? UpdateMovingAverage(IIndicator indicator, ICandleMessage candle)
 	{
-		var value = indicator.Process(new DecimalIndicatorValue(indicator, candle.ClosePrice, candle.CloseTime));
-		return value.IsFinal ? value.ToDecimal() : null;
+		var input = new DecimalIndicatorValue(indicator, candle.ClosePrice, candle.CloseTime) { IsFinal = true };
+		var value = indicator.Process(input);
+		return value.IsFinal ? TryGetDecimal(value) : null;
 	}
 
 	private static void UpdateLookbackQueue(Queue<decimal> queue, int loopBackBars, decimal close, ref decimal? lookback)

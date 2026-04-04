@@ -14,7 +14,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid strategy that places symmetric limit orders around the current price and pyramids positions when price approaches the latest order.
+/// Grid strategy that places symmetric market orders around grid levels and takes profit when equity target is reached.
+/// Based on Waddah Attar grid concept: define a grid step, enter in the direction of price movement
+/// when price crosses a grid level, and close all when profit target is met.
 /// </summary>
 public class WaddahAttarWinStrategy : Strategy
 {
@@ -23,17 +25,15 @@ public class WaddahAttarWinStrategy : Strategy
 	private readonly StrategyParam<decimal> _incrementVolume;
 	private readonly StrategyParam<decimal> _minProfit;
 
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-	private decimal _lastBuyLimitPrice;
-	private decimal _lastSellLimitPrice;
-	private decimal _lastBuyLimitVolume;
-	private decimal _lastSellLimitVolume;
-	private decimal _referenceBalance;
-	private bool _hasInitialOrders;
+	private decimal _gridOrigin;
+	private int _lastGridIndex;
+	private decimal _currentVolume;
+	private decimal _entryPrice;
+	private bool _initialized;
+	private int _totalOrders;
 
 	/// <summary>
-	/// Distance in points between the market price and new pending orders.
+	/// Distance in points between grid levels.
 	/// </summary>
 	public int StepPoints
 	{
@@ -42,7 +42,7 @@ public class WaddahAttarWinStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initial volume for the first pair of limit orders.
+	/// Initial volume for orders.
 	/// </summary>
 	public decimal FirstVolume
 	{
@@ -51,7 +51,7 @@ public class WaddahAttarWinStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume increment that is added when new orders are stacked.
+	/// Volume increment added on each new grid level entry.
 	/// </summary>
 	public decimal IncrementVolume
 	{
@@ -60,7 +60,7 @@ public class WaddahAttarWinStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Equity profit target that forces the strategy to close all trades.
+	/// Profit target in price points to close the position.
 	/// </summary>
 	public decimal MinProfit
 	{
@@ -73,22 +73,21 @@ public class WaddahAttarWinStrategy : Strategy
 	/// </summary>
 	public WaddahAttarWinStrategy()
 	{
-		_stepPoints = Param(nameof(StepPoints), 20)
+		_stepPoints = Param(nameof(StepPoints), 500)
 			.SetGreaterThanZero()
-			.SetDisplay("Step (Points)", "Distance from market price to pending orders in points", "General")
-			
-			.SetOptimize(5, 100, 5);
+			.SetDisplay("Step (Points)", "Distance between grid levels in price steps", "General")
+			.SetOptimize(100, 2000, 100);
 
-		_firstVolume = Param(nameof(FirstVolume), 0.1m)
+		_firstVolume = Param(nameof(FirstVolume), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("First Volume", "Volume for the initial pending orders", "General");
+			.SetDisplay("First Volume", "Volume for grid orders", "General");
 
 		_incrementVolume = Param(nameof(IncrementVolume), 0m)
-			.SetDisplay("Increment Volume", "Additional volume applied to subsequent grid orders", "General");
+			.SetDisplay("Increment Volume", "Additional volume on subsequent grid entries", "General");
 
-		_minProfit = Param(nameof(MinProfit), 910m)
+		_minProfit = Param(nameof(MinProfit), 200m)
 			.SetNotNegative()
-			.SetDisplay("Min Profit", "Required equity increase to close all trades", "Risk");
+			.SetDisplay("Min Profit", "Price movement profit target to close position", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -96,14 +95,12 @@ public class WaddahAttarWinStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_bestBid = null;
-		_bestAsk = null;
-		_lastBuyLimitPrice = 0m;
-		_lastSellLimitPrice = 0m;
-		_lastBuyLimitVolume = 0m;
-		_lastSellLimitVolume = 0m;
-		_referenceBalance = 0m;
-		_hasInitialOrders = false;
+		_gridOrigin = 0m;
+		_lastGridIndex = 0;
+		_currentVolume = 0m;
+		_entryPrice = 0m;
+		_initialized = false;
+		_totalOrders = 0;
 	}
 
 	/// <inheritdoc />
@@ -111,161 +108,125 @@ public class WaddahAttarWinStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_referenceBalance = Portfolio?.CurrentValue ?? 0m;
+		var tf = TimeSpan.FromMinutes(5).TimeFrame();
 
-		SubscribeOrderBook()
-			.Bind(ProcessOrderBook)
+		SubscribeCandles(tf)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessOrderBook(IOrderBookMessage depth)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var bestBid = depth.GetBestBid();
-		if (bestBid != null)
-			_bestBid = bestBid.Value.Price;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		var bestAsk = depth.GetBestAsk();
-		if (bestAsk != null)
-			_bestAsk = bestAsk.Value.Price;
-
-		ProcessTrading();
-	}
-
-	private void ProcessTrading()
-	{
 		if (!IsFormed)
 			return;
 
-		if (_bestBid is not decimal bid || _bestAsk is not decimal ask)
+		// cap total orders to avoid exceeding limits
+		if (_totalOrders >= 80)
 			return;
 
-		var equity = Portfolio?.CurrentValue ?? 0m;
-
-		if (MinProfit > 0m && equity >= _referenceBalance + MinProfit && (_hasInitialOrders || Position != 0))
-		{
-			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
-			ResetLastOrderInfo();
-			_hasInitialOrders = false;
-			_referenceBalance = equity;
-			return;
-		}
-
-		if (!_hasInitialOrders && Position == 0)
-		{
-			_referenceBalance = equity;
-			PlaceInitialOrders(bid, ask);
-			return;
-		}
-
-		if (!_hasInitialOrders)
-			return;
-
-		var priceStep = Security?.PriceStep ?? 0.0001m;
+		var close = candle.ClosePrice;
+		var priceStep = Security?.PriceStep ?? 0.01m;
 		if (priceStep <= 0m)
-			return;
+			priceStep = 0.01m;
 
 		var stepOffset = StepPoints * priceStep;
 		if (stepOffset <= 0m)
 			return;
 
-		var proximity = priceStep * 5m;
-
-		if (_lastBuyLimitPrice > 0m && ask - _lastBuyLimitPrice <= proximity)
-			PlaceAdditionalBuy(bid, stepOffset);
-
-		if (_lastSellLimitPrice > 0m && _lastSellLimitPrice - bid <= proximity)
-			PlaceAdditionalSell(ask, stepOffset);
-	}
-
-	private void PlaceInitialOrders(decimal bid, decimal ask)
-	{
-		if (FirstVolume <= 0m)
-			return;
-
-		var priceStep = Security?.PriceStep ?? 0.0001m;
-		if (priceStep <= 0m)
-			return;
-
-		var stepOffset = StepPoints * priceStep;
-		if (stepOffset <= 0m)
-			return;
-
-		var buyPrice = NormalizePrice(bid - stepOffset);
-		var sellPrice = NormalizePrice(ask + stepOffset);
-
-		var anyPlaced = false;
-
-		var buyOrder = BuyLimit(price: buyPrice, volume: FirstVolume);
-		if (buyOrder != null)
+		// initialize grid origin on first candle
+		if (!_initialized)
 		{
-			_lastBuyLimitPrice = buyPrice;
-			_lastBuyLimitVolume = FirstVolume;
-			anyPlaced = true;
+			_gridOrigin = close;
+			_lastGridIndex = 0;
+			_currentVolume = FirstVolume;
+			_initialized = true;
+			return;
 		}
 
-		var sellOrder = SellLimit(price: sellPrice, volume: FirstVolume);
-		if (sellOrder != null)
+		// calculate which grid index the price is at
+		var gridIndex = (int)Math.Floor((close - _gridOrigin) / stepOffset);
+
+		// check profit target: close position if in profit
+		if (Position != 0 && _entryPrice > 0m)
 		{
-			_lastSellLimitPrice = sellPrice;
-			_lastSellLimitVolume = FirstVolume;
-			anyPlaced = true;
+			var pnl = Position > 0
+				? close - _entryPrice
+				: _entryPrice - close;
+
+			if (pnl >= MinProfit * priceStep)
+			{
+				if (Position > 0)
+				{
+					SellMarket();
+					_totalOrders++;
+				}
+				else
+				{
+					BuyMarket();
+					_totalOrders++;
+				}
+
+				// reset grid around current price
+				_gridOrigin = close;
+				_lastGridIndex = 0;
+				_currentVolume = FirstVolume;
+				_entryPrice = 0m;
+				return;
+			}
 		}
 
-		if (anyPlaced)
-			_hasInitialOrders = true;
-	}
+		// price crossed to a new grid level
+		if (gridIndex != _lastGridIndex)
+		{
+			if (gridIndex > _lastGridIndex)
+			{
+				// price moved up - buy (or add to long / close short)
+				if (Position < 0)
+				{
+					// close short first
+					BuyMarket();
+					_totalOrders++;
+					_entryPrice = close;
+					_gridOrigin = close;
+					_lastGridIndex = 0;
+					_currentVolume = FirstVolume;
+				}
+				else
+				{
+					BuyMarket();
+					_totalOrders++;
+					if (Position <= 0)
+						_entryPrice = close;
+					_currentVolume += IncrementVolume;
+				}
+			}
+			else
+			{
+				// price moved down - sell (or add to short / close long)
+				if (Position > 0)
+				{
+					// close long first
+					SellMarket();
+					_totalOrders++;
+					_entryPrice = close;
+					_gridOrigin = close;
+					_lastGridIndex = 0;
+					_currentVolume = FirstVolume;
+				}
+				else
+				{
+					SellMarket();
+					_totalOrders++;
+					if (Position >= 0)
+						_entryPrice = close;
+					_currentVolume += IncrementVolume;
+				}
+			}
 
-	private void PlaceAdditionalBuy(decimal bid, decimal stepOffset)
-	{
-		var volume = _lastBuyLimitVolume + IncrementVolume;
-		if (volume <= 0m)
-			return;
-
-		var price = NormalizePrice(bid - stepOffset);
-		if (price <= 0m)
-			return;
-
-		var order = BuyLimit(price: price, volume: volume);
-		if (order == null)
-			return;
-
-		_lastBuyLimitPrice = price;
-		_lastBuyLimitVolume = volume;
-	}
-
-	private void PlaceAdditionalSell(decimal ask, decimal stepOffset)
-	{
-		var volume = _lastBuyLimitVolume + IncrementVolume;
-		if (volume <= 0m)
-			return;
-
-		var price = NormalizePrice(ask + stepOffset);
-		if (price <= 0m)
-			return;
-
-		var order = SellLimit(price: price, volume: volume);
-		if (order == null)
-			return;
-
-		_lastSellLimitPrice = price;
-		_lastSellLimitVolume = volume;
-	}
-
-	private void ResetLastOrderInfo()
-	{
-		_lastBuyLimitPrice = 0m;
-		_lastSellLimitPrice = 0m;
-		_lastBuyLimitVolume = 0m;
-		_lastSellLimitVolume = 0m;
-	}
-
-	private decimal NormalizePrice(decimal price)
-	{
-		var priceStep = Security?.PriceStep;
-		if (priceStep == null || priceStep == 0m)
-			return price;
-
-		var steps = Math.Round(price / priceStep.Value, MidpointRounding.AwayFromZero);
-		return steps * priceStep.Value;
+			_lastGridIndex = gridIndex;
+		}
 	}
 }

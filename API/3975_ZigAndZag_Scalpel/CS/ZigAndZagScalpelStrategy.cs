@@ -1,16 +1,11 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
@@ -19,17 +14,8 @@ using StockSharp.Messages;
 public class ZigAndZagScalpelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _keelOverLength;
-	private readonly StrategyParam<int> _slalomLength;
-	private readonly StrategyParam<decimal> _deviationPoints;
-	private readonly StrategyParam<int> _backstep;
-	private readonly StrategyParam<decimal> _breakoutDistancePoints;
 	private readonly StrategyParam<int> _maxTradesPerDay;
 	private readonly StrategyParam<bool> _closeOnOppositePivot;
-
-	private decimal _priceStep = 1m;
-	private decimal _deviation;
-	private decimal _breakoutDistance;
 
 	private decimal _previousMajorPivot;
 	private decimal _lastMajorPivot;
@@ -47,28 +33,13 @@ public class ZigAndZagScalpelStrategy : Strategy
 	public ZigAndZagScalpelStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Primary timeframe for all calculations", "General");
+			.SetDisplay("Candle Type", "Primary timeframe for all calculations", "General");
 
-		_keelOverLength = Param(nameof(KeelOverLength), 55)
-		.SetDisplay("KeelOver Length", "Lookback for the trend-defining ZigZag", "ZigZag");
-
-		_slalomLength = Param(nameof(SlalomLength), 17)
-		.SetDisplay("Slalom Length", "Lookback for the entry ZigZag", "ZigZag");
-
-		_deviationPoints = Param(nameof(DeviationPoints), 5m)
-		.SetDisplay("Deviation (pts)", "Minimum price movement to confirm a new pivot", "ZigZag");
-
-		_backstep = Param(nameof(Backstep), 3)
-		.SetDisplay("Backstep", "Bars that must separate consecutive pivots", "ZigZag");
-
-		_breakoutDistancePoints = Param(nameof(BreakoutDistancePoints), 2m)
-		.SetDisplay("Breakout Distance (pts)", "Required distance from the pivot to trigger an order", "Trading");
-
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 10)
-		.SetDisplay("Max Trades Per Day", "Daily limit matching the original expert advisor", "Trading");
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 1)
+			.SetDisplay("Max Trades Per Day", "Daily limit matching the original expert advisor", "Trading");
 
 		_closeOnOppositePivot = Param(nameof(CloseOnOppositePivot), true)
-		.SetDisplay("Close On Opposite Pivot", "Exit when the entry ZigZag prints the opposite swing", "Risk");
+			.SetDisplay("Close On Opposite Pivot", "Exit when the entry ZigZag prints the opposite swing", "Risk");
 	}
 
 	/// <summary>
@@ -78,51 +49,6 @@ public class ZigAndZagScalpelStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback for the long-term ZigZag that defines the global trend.
-	/// </summary>
-	public int KeelOverLength
-	{
-		get => _keelOverLength.Value;
-		set => _keelOverLength.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback for the short-term ZigZag that produces entries.
-	/// </summary>
-	public int SlalomLength
-	{
-		get => _slalomLength.Value;
-		set => _slalomLength.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum movement in points required to register a ZigZag swing.
-	/// </summary>
-	public decimal DeviationPoints
-	{
-		get => _deviationPoints.Value;
-		set => _deviationPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Bars that must separate consecutive ZigZag swings.
-	/// </summary>
-	public int Backstep
-	{
-		get => _backstep.Value;
-		set => _backstep.Value = value;
-	}
-
-	/// <summary>
-	/// Distance from a pivot (in points) required before firing an order.
-	/// </summary>
-	public decimal BreakoutDistancePoints
-	{
-		get => _breakoutDistancePoints.Value;
-		set => _breakoutDistancePoints.Value = value;
 	}
 
 	/// <summary>
@@ -148,13 +74,10 @@ public class ZigAndZagScalpelStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_priceStep = 1m;
-		_deviation = 0;
-		_breakoutDistance = 0;
-		_previousMajorPivot = 0;
-		_lastMajorPivot = 0;
-		_previousMinorPivot = 0;
-		_lastMinorPivot = 0;
+		_previousMajorPivot = 0m;
+		_lastMajorPivot = 0m;
+		_previousMinorPivot = 0m;
+		_lastMinorPivot = 0m;
 		_currentDay = DateTime.MinValue;
 		_tradesToday = 0;
 		_trendUp = false;
@@ -162,28 +85,18 @@ public class ZigAndZagScalpelStrategy : Strategy
 		_minorPivotUsed = false;
 	}
 
-		protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_priceStep = Security?.PriceStep ?? 1m;
-		_deviation = Math.Max(_priceStep, Math.Abs(DeviationPoints) * _priceStep);
-		_breakoutDistance = Math.Max(0m, Math.Abs(BreakoutDistancePoints) * _priceStep);
-
-		var majorZigZag = new ZigZag
-		{
-			Deviation = 0.02m
-		};
-
-		var minorZigZag = new ZigZag
-		{
-			Deviation = 0.005m
-		};
+		var majorZigZag = new ZigZag { Deviation = 0.02m };
+		var minorZigZag = new ZigZag { Deviation = 0.005m };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(majorZigZag, minorZigZag, ProcessCandle)
-		.Start();
+			.BindWithEmpty(majorZigZag, minorZigZag, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -195,38 +108,41 @@ public class ZigAndZagScalpelStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal majorValue, decimal minorValue)
+	private void ProcessCandle(ICandleMessage candle, decimal? majorValue, decimal? minorValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		UpdateDailyCounter(candle.OpenTime);
 
-		UpdateMajorTrend(majorValue);
-		UpdateMinorPivot(minorValue);
+		if (majorValue is not null)
+			UpdateMajorTrend(majorValue.Value);
+
+		if (minorValue is not null)
+			UpdateMinorPivot(minorValue.Value);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		ManageExistingPosition();
 
 		if (Position != 0)
-		return;
+			return;
 
 		if (_minorPivotUsed)
-		return;
+			return;
 
 		if (_lastMinorPivotType == PivotTypes.None)
-		return;
+			return;
 
 		if (_tradesToday >= MaxTradesPerDay)
-		return;
+			return;
 
 		var navel = CalculateNavel(candle);
 
 		if (_lastMinorPivotType == PivotTypes.Low && _trendUp)
 		{
-			if (navel - _lastMinorPivot >= _breakoutDistance)
+			if (navel > _lastMinorPivot)
 			{
 				BuyMarket();
 				_minorPivotUsed = true;
@@ -235,7 +151,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		}
 		else if (_lastMinorPivotType == PivotTypes.High && !_trendUp)
 		{
-			if (_lastMinorPivot - navel >= _breakoutDistance)
+			if (navel < _lastMinorPivot)
 			{
 				SellMarket();
 				_minorPivotUsed = true;
@@ -248,7 +164,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 	{
 		var date = time.Date;
 		if (date == _currentDay)
-		return;
+			return;
 
 		_currentDay = date;
 		_tradesToday = 0;
@@ -256,9 +172,6 @@ public class ZigAndZagScalpelStrategy : Strategy
 
 	private void UpdateMajorTrend(decimal majorValue)
 	{
-		if (majorValue == 0m)
-		return;
-
 		if (_lastMajorPivot == 0m)
 		{
 			_lastMajorPivot = majorValue;
@@ -267,7 +180,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		}
 
 		if (majorValue == _lastMajorPivot)
-		return;
+			return;
 
 		_previousMajorPivot = _lastMajorPivot;
 		_lastMajorPivot = majorValue;
@@ -276,9 +189,6 @@ public class ZigAndZagScalpelStrategy : Strategy
 
 	private void UpdateMinorPivot(decimal minorValue)
 	{
-		if (minorValue == 0m)
-		return;
-
 		if (_lastMinorPivot == 0m)
 		{
 			_lastMinorPivot = minorValue;
@@ -289,7 +199,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		}
 
 		if (minorValue == _lastMinorPivot)
-		return;
+			return;
 
 		_previousMinorPivot = _lastMinorPivot;
 		_lastMinorPivot = minorValue;
@@ -307,7 +217,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		else if (Position < 0)
 		{
 			if (_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotTypes.Low))
-				BuyMarket(Math.Abs(Position));
+				BuyMarket(Position.Abs());
 		}
 	}
 

@@ -17,16 +17,13 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Bull vs Medved strategy converted from MetaTrader 5.
-/// Places limit orders during predefined intraday windows when bullish or bearish candle sequences appear.
+/// Enters market orders during predefined intraday windows when bullish or bearish candle sequences appear.
 /// </summary>
 public class BullVsMedvedStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _candleSizePips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _indentUpPips;
-	private readonly StrategyParam<decimal> _indentDownPips;
 	private readonly StrategyParam<int> _entryWindowMinutes;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TimeSpan> _startTime0;
@@ -41,13 +38,9 @@ public class BullVsMedvedStrategy : Strategy
 	private decimal _bodyMinSize;
 	private decimal _pullbackSize;
 	private decimal _candleSizeThreshold;
-	private decimal _buyIndent;
-	private decimal _sellIndent;
 	private decimal _stopLossOffset;
 	private decimal _takeProfitOffset;
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
 	private bool _orderPlacedInWindow;
 
 	private ICandleMessage _previousCandle1;
@@ -59,73 +52,48 @@ public class BullVsMedvedStrategy : Strategy
 	/// </summary>
 	public BullVsMedvedStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-		.SetDisplay("Order Volume", "Volume for pending orders", "Trading")
-		.SetGreaterThanZero();
-
-		_candleSizePips = Param(nameof(CandleSizePips), 75m)
+		_candleSizePips = Param(nameof(CandleSizePips), 500m)
 		.SetDisplay("Candle Size (pips)", "Minimum body size for the latest candle", "Filters")
 		.SetGreaterThanZero()
-		
+
 		.SetOptimize(25m, 150m, 25m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 60m)
 		.SetDisplay("Stop Loss (pips)", "Distance from entry for protective stop", "Risk")
 		.SetGreaterThanZero()
-		
+
 		.SetOptimize(20m, 120m, 20m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 		.SetDisplay("Take Profit (pips)", "Distance from entry for profit target", "Risk")
 		.SetGreaterThanZero()
-		
+
 		.SetOptimize(20m, 120m, 20m);
 
-		_indentUpPips = Param(nameof(IndentUpPips), 16m)
-		.SetDisplay("Buy Limit Offset (pips)", "Indent below the ask for buy limit orders", "Execution")
-		.SetGreaterThanZero()
-		
-		.SetOptimize(8m, 32m, 4m);
-
-		_indentDownPips = Param(nameof(IndentDownPips), 20m)
-		.SetDisplay("Sell Limit Offset (pips)", "Indent above the bid for sell limit orders", "Execution")
-		.SetGreaterThanZero()
-		
-		.SetOptimize(8m, 32m, 4m);
-
-		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 5)
+		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 30)
 		.SetDisplay("Entry Window (min)", "Duration of each trading window", "Timing")
 		.SetGreaterThanZero();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for pattern detection", "Data");
 
-		_startTime0 = Param(nameof(StartTime0), new TimeSpan(0, 5, 0))
+		_startTime0 = Param(nameof(StartTime0), new TimeSpan(0, 0, 0))
 		.SetDisplay("Start Time #1", "First trading window start", "Timing");
 
-		_startTime1 = Param(nameof(StartTime1), new TimeSpan(4, 5, 0))
+		_startTime1 = Param(nameof(StartTime1), new TimeSpan(4, 0, 0))
 		.SetDisplay("Start Time #2", "Second trading window start", "Timing");
 
-		_startTime2 = Param(nameof(StartTime2), new TimeSpan(8, 5, 0))
+		_startTime2 = Param(nameof(StartTime2), new TimeSpan(8, 0, 0))
 		.SetDisplay("Start Time #3", "Third trading window start", "Timing");
 
-		_startTime3 = Param(nameof(StartTime3), new TimeSpan(12, 5, 0))
+		_startTime3 = Param(nameof(StartTime3), new TimeSpan(12, 0, 0))
 		.SetDisplay("Start Time #4", "Fourth trading window start", "Timing");
 
-		_startTime4 = Param(nameof(StartTime4), new TimeSpan(16, 5, 0))
+		_startTime4 = Param(nameof(StartTime4), new TimeSpan(16, 0, 0))
 		.SetDisplay("Start Time #5", "Fifth trading window start", "Timing");
 
-		_startTime5 = Param(nameof(StartTime5), new TimeSpan(20, 5, 0))
+		_startTime5 = Param(nameof(StartTime5), new TimeSpan(20, 0, 0))
 		.SetDisplay("Start Time #6", "Sixth trading window start", "Timing");
-	}
-
-	/// <summary>
-	/// Order volume for pending orders.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
 	}
 
 	/// <summary>
@@ -153,24 +121,6 @@ public class BullVsMedvedStrategy : Strategy
 	{
 		get => _takeProfitPips.Value;
 		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Offset below the ask for buy limit orders (pips).
-	/// </summary>
-	public decimal IndentUpPips
-	{
-		get => _indentUpPips.Value;
-		set => _indentUpPips.Value = value;
-	}
-
-	/// <summary>
-	/// Offset above the bid for sell limit orders (pips).
-	/// </summary>
-	public decimal IndentDownPips
-	{
-		get => _indentDownPips.Value;
-		set => _indentDownPips.Value = value;
 	}
 
 	/// <summary>
@@ -256,15 +206,11 @@ public class BullVsMedvedStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_bestBid = 0m;
-		_bestAsk = 0m;
 		_pointValue = 0m;
 		_pipValue = 0m;
 		_bodyMinSize = 0m;
 		_pullbackSize = 0m;
 		_candleSizeThreshold = 0m;
-		_buyIndent = 0m;
-		_sellIndent = 0m;
 		_stopLossOffset = 0m;
 		_takeProfitOffset = 0m;
 		_orderPlacedInWindow = false;
@@ -286,8 +232,6 @@ public class BullVsMedvedStrategy : Strategy
 		_bodyMinSize = 10m * _pointValue;
 		_pullbackSize = 20m * _pointValue;
 		_candleSizeThreshold = CandleSizePips * _pipValue;
-		_buyIndent = IndentUpPips * _pipValue;
-		_sellIndent = IndentDownPips * _pipValue;
 		_stopLossOffset = StopLossPips * _pipValue;
 		_takeProfitOffset = TakeProfitPips * _pipValue;
 
@@ -304,15 +248,6 @@ public class BullVsMedvedStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.Bind(ProcessCandle)
-		.Start();
-
-		SubscribeOrderBook()
-		.Bind(depth =>
-		{
-			// Track latest bid and ask to position limit orders around the spread.
-			_bestBid = depth.GetBestBid()?.Price ?? _bestBid;
-			_bestAsk = depth.GetBestAsk()?.Price ?? _bestAsk;
-		})
 		.Start();
 
 		StartProtection(
@@ -333,20 +268,20 @@ public class BullVsMedvedStrategy : Strategy
 
 		var inWindow = IsWithinEntryWindow(candle.CloseTime);
 		if (!inWindow)
-			{
+		{
 			_orderPlacedInWindow = false;
 			ShiftHistory(candle);
 			return;
 		}
 
-		if (_orderPlacedInWindow || HasActivePendingOrder())
-			{
+		if (_orderPlacedInWindow)
+		{
 			ShiftHistory(candle);
 			return;
 		}
 
 		if (_previousCandle1 is null || _previousCandle2 is null)
-			{
+		{
 			ShiftHistory(candle);
 			return;
 		}
@@ -363,11 +298,11 @@ public class BullVsMedvedStrategy : Strategy
 		var isBear = IsBear(shift1);
 
 		if (isBull && !isBadBull)
-			placedOrder = TryPlaceBuyLimit(shift1);
+			placedOrder = TryBuy();
 		else if (isCoolBull)
-			placedOrder = TryPlaceBuyLimit(shift1);
+			placedOrder = TryBuy();
 		else if (isBear)
-			placedOrder = TryPlaceSellLimit(shift1);
+			placedOrder = TrySell();
 
 		if (placedOrder)
 			_orderPlacedInWindow = true;
@@ -381,7 +316,7 @@ public class BullVsMedvedStrategy : Strategy
 		var tod = time.TimeOfDay;
 
 		for (var i = 0; i < _entryTimes.Length; i++)
-			{
+		{
 			var start = _entryTimes[i];
 			var end = start + window;
 
@@ -392,49 +327,21 @@ public class BullVsMedvedStrategy : Strategy
 		return false;
 	}
 
-	private bool HasActivePendingOrder()
+	private bool TryBuy()
 	{
-		foreach (var order in Orders)
-			{
-			if (order.Security != Security)
-				continue;
-
-			if (order.State == OrderStates.Active)
-				return true;
-		}
-
-		return false;
-	}
-
-	private bool TryPlaceBuyLimit(ICandleMessage referenceCandle)
-	{
-		if (OrderVolume <= 0m)
+		if (Position != 0)
 			return false;
 
-		var ask = _bestAsk > 0m ? _bestAsk : referenceCandle.ClosePrice;
-		var price = ask - _buyIndent;
-
-		if (price <= 0m)
-			return false;
-
-		BuyLimit(price, OrderVolume);
-		LogInfo($"Placed buy limit at {price} with volume {OrderVolume}.");
+		BuyMarket();
 		return true;
 	}
 
-	private bool TryPlaceSellLimit(ICandleMessage referenceCandle)
+	private bool TrySell()
 	{
-		if (OrderVolume <= 0m)
+		if (Position != 0)
 			return false;
 
-		var bid = _bestBid > 0m ? _bestBid : referenceCandle.ClosePrice;
-		var price = bid + _sellIndent;
-
-		if (price <= 0m)
-			return false;
-
-		SellLimit(price, OrderVolume);
-		LogInfo($"Placed sell limit at {price} with volume {OrderVolume}.");
+		SellMarket();
 		return true;
 	}
 

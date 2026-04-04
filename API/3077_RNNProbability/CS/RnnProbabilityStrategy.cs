@@ -231,7 +231,7 @@ public class RnnProbabilityStrategy : Strategy
 			.SetRange(0m, 100m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal generation.", "General");
 	}
 
@@ -246,6 +246,7 @@ public class RnnProbabilityStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_rsi = default;
 		_rsiHistory.Clear();
 		_pipSize = 0m;
 	}
@@ -327,9 +328,6 @@ public class RnnProbabilityStrategy : Strategy
 		_rsiHistory.Add(rsiValue);
 		TrimHistory(_rsiHistory, GetHistoryLimit());
 
-		if (!IsOnline)
-			return;
-
 		var lastIndex = _rsiHistory.Count - 1;
 		var delayedIndex = lastIndex - RsiPeriod;
 		var delayedTwiceIndex = lastIndex - (2 * RsiPeriod);
@@ -349,16 +347,23 @@ public class RnnProbabilityStrategy : Strategy
 		if (TradeVolume <= 0m)
 			return;
 
-		if (Position != 0m)
-			return;
-
 		if (signal < 0m)
 		{
-			BuyMarket(TradeVolume);
+			// want long
+			if (Position <= 0m)
+			{
+				var vol = Math.Abs(Position) + TradeVolume;
+				BuyMarket(vol);
+			}
 		}
 		else
 		{
-			SellMarket(TradeVolume);
+			// want short
+			if (Position >= 0m)
+			{
+				var vol = Position + TradeVolume;
+				SellMarket(vol);
+			}
 		}
 	}
 

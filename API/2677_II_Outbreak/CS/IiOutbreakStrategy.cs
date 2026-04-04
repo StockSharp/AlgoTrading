@@ -219,6 +219,7 @@ public class IiOutbreakStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_stdDev = null!;
 		_point = 0m;
 		_trailStopDistance = 0m;
 		_initialStopDistance = 0m;

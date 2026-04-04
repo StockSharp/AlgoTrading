@@ -97,27 +97,27 @@ public class ZScoreVolumeFilterStrategy : Strategy
 	/// </summary>
 	public ZScoreVolumeFilterStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 30)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 100)
 			.SetDisplay("Lookback Period", "Lookback period for price and volume statistics", "Parameters");
 
-		_zScoreThreshold = Param(nameof(ZScoreThreshold), 0.6m)
+		_zScoreThreshold = Param(nameof(ZScoreThreshold), 2.0m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Entry Z-Score", "Absolute Z-score required for entry", "Signals");
 
-		_exitThreshold = Param(nameof(ExitThreshold), 0.15m)
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
 			.SetRange(0m, 2m)
 			.SetDisplay("Exit Z-Score", "Absolute Z-score required for exit", "Signals");
 
-		_volumeFactor = Param(nameof(VolumeFactor), 0.5m)
-			.SetRange(0.5m, 3m)
+		_volumeFactor = Param(nameof(VolumeFactor), 1.2m)
+			.SetRange(0.1m, 3m)
 			.SetDisplay("Volume Factor", "Minimum multiple of average volume required for entry", "Signals");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 20)
+		_cooldownBars = Param(nameof(CooldownBars), 100)
 			.SetRange(1, 200)
 			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
 
@@ -172,7 +172,7 @@ public class ZScoreVolumeFilterStrategy : Strategy
 		}
 
 		StartProtection(
-			new Unit(0, UnitTypes.Absolute),
+			new Unit(StopLossPercent, UnitTypes.Percent),
 			new Unit(StopLossPercent, UnitTypes.Percent),
 			false);
 	}
@@ -182,9 +182,8 @@ public class ZScoreVolumeFilterStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeAverage = _volumeSma
-			.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime))
-			.ToDecimal();
+		var volInput = new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime) { IsFinal = true };
+		var volumeAverage = _volumeSma.Process(volInput).ToDecimal();
 
 		if (!_priceSma.IsFormed || !_priceStdDev.IsFormed || !_volumeSma.IsFormed)
 			return;

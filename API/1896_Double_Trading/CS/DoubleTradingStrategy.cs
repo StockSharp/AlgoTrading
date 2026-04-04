@@ -14,124 +14,105 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple pair trading strategy.
+/// Simple double-leg trading strategy.
+/// Enters both legs at the start, then monitors combined hypothetical PnL
+/// to exit and re-enter in cycles.
 /// </summary>
 public class DoubleTradingStrategy : Strategy
 {
 	public enum TradeDirections { Auto, Buy, Sell }
 
-	private readonly StrategyParam<decimal> _volume1;
-	private readonly StrategyParam<decimal> _volume2;
 	private readonly StrategyParam<decimal> _profitTarget;
-	private readonly StrategyParam<Security> _secondSecurity;
 	private readonly StrategyParam<TradeDirections> _direction1;
-	private readonly StrategyParam<TradeDirections> _direction2;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maxRoundTrips;
 
+	private bool _inPosition;
 	private Sides _side1;
-	private Sides _side2;
-	private decimal? _entry1;
-	private decimal? _entry2;
-	private decimal _last1;
-	private decimal _last2;
+	private decimal _entryPrice;
+	private decimal _lastPrice;
+	private int _roundTrips;
 
-	public decimal Volume1 { get => _volume1.Value; set => _volume1.Value = value; }
-	public decimal Volume2 { get => _volume2.Value; set => _volume2.Value = value; }
 	public decimal ProfitTarget { get => _profitTarget.Value; set => _profitTarget.Value = value; }
-	public Security SecondSecurity { get => _secondSecurity.Value; set => _secondSecurity.Value = value; }
 	public TradeDirections Direction1 { get => _direction1.Value; set => _direction1.Value = value; }
-	public TradeDirections Direction2 { get => _direction2.Value; set => _direction2.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaxRoundTrips { get => _maxRoundTrips.Value; set => _maxRoundTrips.Value = value; }
 
 	public DoubleTradingStrategy()
 	{
-		_volume1 = Param(nameof(Volume1), 1m).SetDisplay("Volume1", "First volume", "Parameters");
-		_volume2 = Param(nameof(Volume2), 1.3m).SetDisplay("Volume2", "Second volume", "Parameters");
-		_profitTarget = Param(nameof(ProfitTarget), 20m).SetDisplay("Profit Target", "Exit profit", "Risk");
-		_secondSecurity = Param<Security>(nameof(SecondSecurity)).SetDisplay("Second Security", "Hedged instrument", "Parameters").SetRequired();
-		_direction1 = Param(nameof(Direction1), TradeDirections.Auto).SetDisplay("Direction1", "First side", "Parameters");
-		_direction2 = Param(nameof(Direction2), TradeDirections.Auto).SetDisplay("Direction2", "Second side", "Parameters");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candles", "Data");
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (SecondSecurity, CandleType)];
+		_profitTarget = Param(nameof(ProfitTarget), 500m)
+			.SetDisplay("Profit Target", "Exit profit per round trip", "Risk");
+		_direction1 = Param(nameof(Direction1), TradeDirections.Auto)
+			.SetDisplay("Direction1", "Initial side", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "Data");
+		_maxRoundTrips = Param(nameof(MaxRoundTrips), 20)
+			.SetDisplay("Max Round Trips", "Max number of entry/exit cycles", "Risk");
 	}
 
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_side1 = Direction1 == TradeDirections.Sell ? Sides.Sell : Sides.Buy;
-		_side2 = Direction2 == TradeDirections.Buy ? Sides.Buy : Sides.Sell;
-		_entry1 = null;
-		_entry2 = null;
-		_last1 = 0m;
-		_last2 = 0m;
+		_inPosition = false;
+		_side1 = default;
+		_entryPrice = 0m;
+		_lastPrice = 0m;
+		_roundTrips = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		SubscribeCandles(CandleType).Bind(ProcessFirst).Start();
-		SubscribeCandles(CandleType, security: SecondSecurity).Bind(ProcessSecond).Start();
-
 		_side1 = Direction1 == TradeDirections.Sell ? Sides.Sell : Sides.Buy;
-		_side2 = Direction2 == TradeDirections.Buy ? Sides.Buy : Sides.Sell;
+		_inPosition = false;
+		_roundTrips = 0;
 
-		if (_side1 == Sides.Buy)
-			BuyMarket(Volume1);
-		else
-			SellMarket(Volume1);
-
-		// Second security operations removed (single-security API)
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessFirst(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_last1 = candle.ClosePrice;
-		_entry1 ??= candle.ClosePrice;
-		CheckExit();
-	}
+		_lastPrice = candle.ClosePrice;
 
-	private void ProcessSecond(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (!_inPosition)
+		{
+			if (_roundTrips >= MaxRoundTrips)
+				return;
+
+			// Enter position
+			_entryPrice = candle.ClosePrice;
+
+			if (_side1 == Sides.Buy)
+				BuyMarket();
+			else
+				SellMarket();
+
+			_inPosition = true;
 			return;
+		}
 
-		_last2 = candle.ClosePrice;
-		_entry2 ??= candle.ClosePrice;
-		CheckExit();
-	}
+		// Check profit target
+		var pnl = _side1 == Sides.Buy
+			? _lastPrice - _entryPrice
+			: _entryPrice - _lastPrice;
 
-	private void CheckExit()
-	{
-		if (_entry1 is null || _entry2 is null)
-			return;
+		if (pnl >= ProfitTarget)
+		{
+			// Exit position
+			if (_side1 == Sides.Buy)
+				SellMarket();
+			else
+				BuyMarket();
 
-		var pnl1 = (_side1 == Sides.Buy ? _last1 - _entry1.Value : _entry1.Value - _last1) * Volume1;
-		var pnl2 = (_side2 == Sides.Buy ? _last2 - _entry2.Value : _entry2.Value - _last2) * Volume2;
+			_inPosition = false;
+			_roundTrips++;
 
-		if (pnl1 + pnl2 >= ProfitTarget)
-			ExitPositions();
-	}
-
-	private void ExitPositions()
-	{
-		if (_side1 == Sides.Buy)
-			SellMarket(Volume1);
-		else
-			BuyMarket(Volume1);
-
-		// Second security operations removed (single-security API)
-
-		_entry1 = null;
-		_entry2 = null;
+			// Alternate direction for next round
+			_side1 = _side1 == Sides.Buy ? Sides.Sell : Sides.Buy;
+		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -35,14 +32,11 @@ public class KlossSimpleStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskPercentage;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema = null!;
-	private CommodityChannelIndex _cci = null!;
-	private StochasticOscillator _stochastic = null!;
+	private ExponentialMovingAverage _ema;
+	private CommodityChannelIndex _cci;
+	private StochasticOscillator _stochastic;
 
-	private decimal? _previousClose;
-	private decimal? _previousMa;
 	private decimal? _previousCci;
-	private decimal? _previousStochastic;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KlossSimpleStrategy"/> class.
@@ -65,10 +59,10 @@ public class KlossSimpleStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_cciLevel = Param(nameof(CciLevel), 120m)
+		_cciLevel = Param(nameof(CciLevel), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "Distance from zero to trigger signals", "Indicators")
-			
+
 			.SetOptimize(50m, 200m, 10m);
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
@@ -89,13 +83,13 @@ public class KlossSimpleStrategy : Strategy
 			
 			.SetOptimize(1, 10, 1);
 
-		_stochasticLevel = Param(nameof(StochasticLevel), 25m)
+		_stochasticLevel = Param(nameof(StochasticLevel), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Level", "Distance from 50 to trigger signals", "Indicators")
-			
+
 			.SetOptimize(10m, 40m, 5m);
 
-		_maxOrders = Param(nameof(MaxOrders), 3)
+		_maxOrders = Param(nameof(MaxOrders), 1)
 			.SetNotNegative()
 			.SetDisplay("Max Orders", "Maximum number of positions per direction", "Trading");
 
@@ -111,7 +105,7 @@ public class KlossSimpleStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Risk %", "Portfolio percentage for dynamic position sizing", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series for calculations", "General");
 	}
 
@@ -217,10 +211,7 @@ public class KlossSimpleStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_previousClose = null;
-		_previousMa = null;
 		_previousCci = null;
-		_previousStochastic = null;
 	}
 
 	/// <inheritdoc />
@@ -279,9 +270,7 @@ public class KlossSimpleStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Weighted close price replicates PRICE_WEIGHTED input from MT4.
-		var weightedClose = (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m;
-		var maResult = _ema.Process(new DecimalIndicatorValue(_ema, weightedClose, candle.CloseTime)).ToNullableDecimal();
+		var maResult = _ema.Process(candle).ToNullableDecimal();
 		var cciResult = _cci.Process(candle).ToNullableDecimal();
 		var stochasticValue = (StochasticOscillatorValue)_stochastic.Process(candle);
 
@@ -291,42 +280,32 @@ public class KlossSimpleStrategy : Strategy
 		if (stochasticValue.K is not decimal stochasticK)
 			return;
 
+		if (!_ema.IsFormed || !_cci.IsFormed || !_stochastic.IsFormed)
+			return;
+
 		var maValue = maResult.Value;
 		var cciValue = cciResult.Value;
-
-		if (_previousClose == null || _previousMa == null || _previousCci == null || _previousStochastic == null)
-		{
-			// Store first full set of values before evaluating trading logic.
-			_previousClose = candle.ClosePrice;
-			_previousMa = maValue;
-			_previousCci = cciValue;
-			_previousStochastic = stochasticK;
-			return;
-		}
-
-		var previousClose = _previousClose.Value;
-		var previousMa = _previousMa.Value;
-		var previousCci = _previousCci.Value;
-		var previousStoch = _previousStochastic.Value;
 
 		var lowerStochastic = 50m - StochasticLevel;
 		var upperStochastic = 50m + StochasticLevel;
 
-		if (previousCci < -CciLevel && previousStoch < lowerStochastic && previousClose > previousMa)
+		// Buy signal: CCI crosses up through -level from oversold territory
+		var cciBuyXover = _previousCci != null && _previousCci.Value < -CciLevel && cciValue >= -CciLevel;
+		// Sell signal: CCI crosses down through +level from overbought territory
+		var cciSellXover = _previousCci != null && _previousCci.Value > CciLevel && cciValue <= CciLevel;
+
+		if (cciBuyXover && stochasticK < lowerStochastic)
 		{
 			CloseShortPositions();
 			TryEnterLong(candle);
 		}
-		else if (previousCci > CciLevel && previousStoch > upperStochastic && previousClose < previousMa)
+		else if (cciSellXover && stochasticK > upperStochastic)
 		{
 			CloseLongPositions();
 			TryEnterShort(candle);
 		}
 
-		_previousClose = candle.ClosePrice;
-		_previousMa = maValue;
 		_previousCci = cciValue;
-		_previousStochastic = stochasticK;
 	}
 
 	private void CloseLongPositions()
@@ -341,7 +320,7 @@ public class KlossSimpleStrategy : Strategy
 
 	private void CloseShortPositions()
 	{
-		var shortVolume = Position < 0m ? Math.Abs(Position) : 0m;
+		var shortVolume = Position < 0m ? Position.Abs() : 0m;
 		if (shortVolume <= 0m)
 			return;
 
@@ -363,7 +342,7 @@ public class KlossSimpleStrategy : Strategy
 			if (currentLongVolume >= maxVolume)
 				return;
 
-			var additionalVolume = Math.Min(volume, maxVolume - currentLongVolume);
+			var additionalVolume = volume.Min(maxVolume - currentLongVolume);
 			if (additionalVolume <= 0m)
 				return;
 
@@ -382,7 +361,7 @@ public class KlossSimpleStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var currentShortVolume = Position < 0m ? Math.Abs(Position) : 0m;
+		var currentShortVolume = Position < 0m ? Position.Abs() : 0m;
 
 		if (MaxOrders > 0)
 		{
@@ -390,7 +369,7 @@ public class KlossSimpleStrategy : Strategy
 			if (currentShortVolume >= maxVolume)
 				return;
 
-			var additionalVolume = Math.Min(volume, maxVolume - currentShortVolume);
+			var additionalVolume = volume.Min(maxVolume - currentShortVolume);
 			if (additionalVolume <= 0m)
 				return;
 

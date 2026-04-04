@@ -1,44 +1,45 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// January barometer strategy that rotates between the primary instrument and a benchmark proxy based on the primary January return.
+/// January barometer strategy generalized to any month.
+/// Measures the return over the first N candles of each evaluation period,
+/// then goes long if bullish or short if bearish for the remainder.
+/// Re-evaluates at the start of each new period.
 /// </summary>
 public class JanuaryBarometerStrategy : Strategy
 {
-	private readonly StrategyParam<string> _security2Id;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _measureCandles;
+	private readonly StrategyParam<int> _periodCandles;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private decimal _januaryOpen;
-	private int _decisionYear;
+	private int _candleCount;
+	private decimal _periodOpen;
+	private decimal _measureClose;
+	private bool _measured;
 
 	/// <summary>
-	/// Benchmark proxy identifier.
+	/// Number of candles in the measurement (barometer) window.
 	/// </summary>
-	public string Security2Id
+	public int MeasureCandles
 	{
-		get => _security2Id.Value;
-		set => _security2Id.Value = value;
+		get => _measureCandles.Value;
+		set => _measureCandles.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Total candles per evaluation period before resetting.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int PeriodCandles
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _periodCandles.Value;
+		set => _periodCandles.Value = value;
 	}
 
 	/// <summary>
@@ -52,25 +53,16 @@ public class JanuaryBarometerStrategy : Strategy
 
 	public JanuaryBarometerStrategy()
 	{
-		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
-			.SetDisplay("Benchmark Security Id", "Defensive benchmark proxy", "General");
-
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
+		_measureCandles = Param(nameof(MeasureCandles), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Min trade USD", "Minimum order value", "Risk");
+			.SetDisplay("Measure Candles", "Number of candles for barometer measurement", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_periodCandles = Param(nameof(PeriodCandles), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("Period Candles", "Total candles per evaluation period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		if (Security != null)
-			yield return (Security, CandleType);
-
-		if (!Security2Id.IsEmpty())
-			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -78,9 +70,10 @@ public class JanuaryBarometerStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_latestPrices.Clear();
-		_januaryOpen = 0m;
-		_decisionYear = 0;
+		_candleCount = 0;
+		_periodOpen = 0m;
+		_measureClose = 0m;
+		_measured = false;
 	}
 
 	/// <inheritdoc />
@@ -88,80 +81,75 @@ public class JanuaryBarometerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Security == null)
-			throw new InvalidOperationException("Primary security is not specified.");
+		var subscription = SubscribeCandles(CandleType);
 
-		if (Security2Id.IsEmpty())
-			throw new InvalidOperationException("Benchmark security identifier is not specified.");
-
-		var primarySubscription = SubscribeCandles(CandleType, security: Security);
-
-		primarySubscription
-			.Bind(candle => ProcessCandle(candle, Security))
+		subscription
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, primarySubscription);
+			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_latestPrices[security] = candle.ClosePrice;
+		_candleCount++;
 
-		if (security != Security)
-			return;
-
-		var day = candle.OpenTime.Date;
-
-		if (day.Month == 1 && _januaryOpen == 0m)
-			_januaryOpen = candle.OpenPrice;
-
-		if (day.Month == 2 && _decisionYear != day.Year && _januaryOpen > 0m)
+		// Start of a new period
+		if (_candleCount == 1)
 		{
-			_decisionYear = day.Year;
-			var januaryReturn = (candle.ClosePrice - _januaryOpen) / _januaryOpen;
-			Rebalance(januaryReturn > 0m);
+			_periodOpen = candle.OpenPrice;
+			_measured = false;
 		}
-	}
 
-	private void Rebalance(bool bullish)
-	{
-		Move(Security, bullish ? 1m : -1m);
-	}
-
-	private void Move(Security security, decimal weight)
-	{
-		var price = GetLatestPrice(security);
-		if (price <= 0m)
-			return;
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var target = weight * portfolioValue / price;
-		var diff = target - GetPositionValue(security, Portfolio).GetValueOrDefault();
-
-		if (Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
+		// End of measurement window
+		if (_candleCount == MeasureCandles && !_measured)
 		{
-			Security = security,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "JanBar"
-		});
-	}
+			_measureClose = candle.ClosePrice;
+			_measured = true;
 
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+			if (_periodOpen > 0m)
+			{
+				var barometerReturn = (_measureClose - _periodOpen) / _periodOpen;
+				var bullish = barometerReturn > 0m;
+
+				// Enter position based on barometer reading
+				if (bullish && Position <= 0)
+				{
+					if (Position < 0)
+						BuyMarket();
+
+					BuyMarket();
+				}
+				else if (!bullish && Position >= 0)
+				{
+					if (Position > 0)
+						SellMarket();
+
+					SellMarket();
+				}
+			}
+		}
+
+		// End of period: close position and reset for next period
+		if (_candleCount >= PeriodCandles)
+		{
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
+
+			_candleCount = 0;
+			_periodOpen = 0m;
+			_measureClose = 0m;
+			_measured = false;
+		}
 	}
 }
