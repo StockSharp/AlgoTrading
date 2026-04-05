@@ -133,7 +133,7 @@ public class FrankUdMinimalStrategy : Strategy
 		base.OnStarted2(time);
 
 		var security = Security ?? throw new InvalidOperationException("Security is not assigned.");
-		var priceStep = security.PriceStep ?? throw new InvalidOperationException("Security.PriceStep is unknown.");
+		var priceStep = security.PriceStep ?? 0.01m;
 
 		_pointValue = priceStep;
 		_takeProfitThreshold = TakeProfitPips;

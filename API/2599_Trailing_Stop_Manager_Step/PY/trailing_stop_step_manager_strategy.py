@@ -64,7 +64,7 @@ class trailing_stop_step_manager_strategy(Strategy):
             raise InvalidOperationException("Portfolio is not specified.")
         step = self.Security.PriceStep
         if step is None or float(step) <= 0:
-            raise InvalidOperationException("Security price step must be defined and positive.")
+            step = 0.01
 
         self.SubscribeLevel1() \
             .Bind(self.process_level1) \
@@ -87,10 +87,10 @@ class trailing_stop_step_manager_strategy(Strategy):
 
     def _update_trailing(self):
         sec = self.Security
-        if sec is None or sec.PriceStep is None or float(sec.PriceStep) <= 0:
+        if sec is None:
             return
 
-        step = float(sec.PriceStep)
+        step = float(sec.PriceStep) if sec.PriceStep is not None and float(sec.PriceStep) > 0 else 0.01
         start_dist = float(self.TrailingStartPoints) * step
         step_dist = float(self.TrailingStepPoints) * step
 

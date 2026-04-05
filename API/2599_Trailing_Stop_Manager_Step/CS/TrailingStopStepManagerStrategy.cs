@@ -133,7 +133,7 @@ public class TrailingStopStepManagerStrategy : Strategy
 
 		var step = Security.PriceStep;
 		if (step == null || step <= 0m)
-			throw new InvalidOperationException("Security price step must be defined and positive.");
+			step = 0.01m;
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)
@@ -191,8 +191,9 @@ public class TrailingStopStepManagerStrategy : Strategy
 
 	private void UpdateTrailingStops()
 	{
-		if (Security?.PriceStep is not decimal step || step <= 0m)
-			return;
+		var step = Security?.PriceStep ?? 0m;
+		if (step <= 0m)
+			step = 0.01m;
 
 		var startDistance = TrailingStartPoints * step;
 		var stepDistance = TrailingStepPoints * step;
