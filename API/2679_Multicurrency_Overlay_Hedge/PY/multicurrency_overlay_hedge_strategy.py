@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, InvalidOperationException
 
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
@@ -95,15 +95,7 @@ class multicurrency_overlay_hedge_strategy(Strategy):
     def OnStarted2(self, time):
         super(multicurrency_overlay_hedge_strategy, self).OnStarted2(time)
 
-        self.LogWarning("MulticurrencyOverlayHedge requires multiple securities. Running in single-security mode with no trading logic.")
-
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._process_candle).Start()
-
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawOwnTrades(area)
+        raise InvalidOperationException("Universe must contain at least two securities.")
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:

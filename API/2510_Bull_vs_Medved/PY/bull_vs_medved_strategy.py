@@ -11,16 +11,12 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class bull_vs_medved_strategy(Strategy):
-    """Places limit orders during intraday windows when bullish or bearish candle sequences appear."""
+    """Enters market orders during intraday windows when bullish or bearish candle sequences appear."""
 
     def __init__(self):
         super(bull_vs_medved_strategy, self).__init__()
 
-        self._order_volume = self.Param("OrderVolume", 0.1) \
-            .SetDisplay("Order Volume", "Volume for pending orders", "Trading") \
-            .SetGreaterThanZero()
-
-        self._candle_size_pips = self.Param("CandleSizePips", 75.0) \
+        self._candle_size_pips = self.Param("CandleSizePips", 500.0) \
             .SetDisplay("Candle Size (pips)", "Minimum body size for the latest candle", "Filters") \
             .SetGreaterThanZero()
 
@@ -32,37 +28,29 @@ class bull_vs_medved_strategy(Strategy):
             .SetDisplay("Take Profit (pips)", "Distance from entry for profit target", "Risk") \
             .SetGreaterThanZero()
 
-        self._indent_up_pips = self.Param("IndentUpPips", 16.0) \
-            .SetDisplay("Buy Limit Offset (pips)", "Indent below the ask for buy limit orders", "Execution") \
-            .SetGreaterThanZero()
-
-        self._indent_down_pips = self.Param("IndentDownPips", 20.0) \
-            .SetDisplay("Sell Limit Offset (pips)", "Indent above the bid for sell limit orders", "Execution") \
-            .SetGreaterThanZero()
-
-        self._entry_window_minutes = self.Param("EntryWindowMinutes", 5) \
+        self._entry_window_minutes = self.Param("EntryWindowMinutes", 30) \
             .SetDisplay("Entry Window (min)", "Duration of each trading window", "Timing") \
             .SetGreaterThanZero()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Primary timeframe for pattern detection", "Data")
 
-        self._start_time0 = self.Param("StartTime0", TimeSpan(0, 5, 0)) \
+        self._start_time0 = self.Param("StartTime0", TimeSpan(0, 0, 0)) \
             .SetDisplay("Start Time #1", "First trading window start", "Timing")
 
-        self._start_time1 = self.Param("StartTime1", TimeSpan(4, 5, 0)) \
+        self._start_time1 = self.Param("StartTime1", TimeSpan(4, 0, 0)) \
             .SetDisplay("Start Time #2", "Second trading window start", "Timing")
 
-        self._start_time2 = self.Param("StartTime2", TimeSpan(8, 5, 0)) \
+        self._start_time2 = self.Param("StartTime2", TimeSpan(8, 0, 0)) \
             .SetDisplay("Start Time #3", "Third trading window start", "Timing")
 
-        self._start_time3 = self.Param("StartTime3", TimeSpan(12, 5, 0)) \
+        self._start_time3 = self.Param("StartTime3", TimeSpan(12, 0, 0)) \
             .SetDisplay("Start Time #4", "Fourth trading window start", "Timing")
 
-        self._start_time4 = self.Param("StartTime4", TimeSpan(16, 5, 0)) \
+        self._start_time4 = self.Param("StartTime4", TimeSpan(16, 0, 0)) \
             .SetDisplay("Start Time #5", "Fifth trading window start", "Timing")
 
-        self._start_time5 = self.Param("StartTime5", TimeSpan(20, 5, 0)) \
+        self._start_time5 = self.Param("StartTime5", TimeSpan(20, 0, 0)) \
             .SetDisplay("Start Time #6", "Sixth trading window start", "Timing")
 
         self._point_value = 0.0
@@ -70,20 +58,12 @@ class bull_vs_medved_strategy(Strategy):
         self._body_min_size = 0.0
         self._pullback_size = 0.0
         self._candle_size_threshold = 0.0
-        self._buy_indent = 0.0
-        self._sell_indent = 0.0
         self._stop_loss_offset = 0.0
         self._take_profit_offset = 0.0
-        self._best_bid = 0.0
-        self._best_ask = 0.0
         self._order_placed_in_window = False
         self._prev_candle1 = None
         self._prev_candle2 = None
         self._entry_times = []
-
-    @property
-    def OrderVolume(self):
-        return self._order_volume.Value
 
     @property
     def CandleSizePips(self):
@@ -96,14 +76,6 @@ class bull_vs_medved_strategy(Strategy):
     @property
     def TakeProfitPips(self):
         return self._take_profit_pips.Value
-
-    @property
-    def IndentUpPips(self):
-        return self._indent_up_pips.Value
-
-    @property
-    def IndentDownPips(self):
-        return self._indent_down_pips.Value
 
     @property
     def EntryWindowMinutes(self):
@@ -125,8 +97,6 @@ class bull_vs_medved_strategy(Strategy):
         self._body_min_size = 10.0 * self._point_value
         self._pullback_size = 20.0 * self._point_value
         self._candle_size_threshold = float(self.CandleSizePips) * self._pip_value
-        self._buy_indent = float(self.IndentUpPips) * self._pip_value
-        self._sell_indent = float(self.IndentDownPips) * self._pip_value
         self._stop_loss_offset = float(self.StopLossPips) * self._pip_value
         self._take_profit_offset = float(self.TakeProfitPips) * self._pip_value
 
@@ -144,21 +114,9 @@ class bull_vs_medved_strategy(Strategy):
             .Bind(self.process_candle) \
             .Start()
 
-        self.SubscribeOrderBook() \
-            .Bind(self._process_depth) \
-            .Start()
-
         sl_unit = Unit(self._stop_loss_offset, UnitTypes.Absolute) if self._stop_loss_offset > 0 else None
         tp_unit = Unit(self._take_profit_offset, UnitTypes.Absolute) if self._take_profit_offset > 0 else None
         self.StartProtection(sl_unit, tp_unit, True)
-
-    def _process_depth(self, depth):
-        bids = depth.Bids
-        if bids is not None and len(bids) > 0:
-            self._best_bid = float(bids[0].Price)
-        asks = depth.Asks
-        if asks is not None and len(asks) > 0:
-            self._best_ask = float(asks[0].Price)
 
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -174,7 +132,7 @@ class bull_vs_medved_strategy(Strategy):
             self._shift(candle)
             return
 
-        if self._order_placed_in_window or self._has_active_order():
+        if self._order_placed_in_window:
             self._shift(candle)
             return
 
@@ -194,11 +152,11 @@ class bull_vs_medved_strategy(Strategy):
         is_bear = self._is_bear(s1)
 
         if is_bull and not is_bad_bull:
-            placed = self._try_buy_limit(s1)
+            placed = self._try_buy()
         elif is_cool_bull:
-            placed = self._try_buy_limit(s1)
+            placed = self._try_buy()
         elif is_bear:
-            placed = self._try_sell_limit(s1)
+            placed = self._try_sell()
 
         if placed:
             self._order_placed_in_window = True
@@ -214,32 +172,16 @@ class bull_vs_medved_strategy(Strategy):
                 return True
         return False
 
-    def _has_active_order(self):
-        for order in self.Orders:
-            if order.Security != self.Security:
-                continue
-            if order.State == 1:  # OrderStates.Active
-                return True
-        return False
-
-    def _try_buy_limit(self, candle):
-        if float(self.OrderVolume) <= 0:
+    def _try_buy(self):
+        if self.Position != 0:
             return False
-        ask = self._best_ask if self._best_ask > 0 else float(candle.ClosePrice)
-        price = ask - self._buy_indent
-        if price <= 0:
-            return False
-        self.BuyLimit(price, float(self.OrderVolume))
+        self.BuyMarket()
         return True
 
-    def _try_sell_limit(self, candle):
-        if float(self.OrderVolume) <= 0:
+    def _try_sell(self):
+        if self.Position != 0:
             return False
-        bid = self._best_bid if self._best_bid > 0 else float(candle.ClosePrice)
-        price = bid + self._sell_indent
-        if price <= 0:
-            return False
-        self.SellLimit(price, float(self.OrderVolume))
+        self.SellMarket()
         return True
 
     def _is_bull(self, s3, s2, s1):
@@ -267,15 +209,11 @@ class bull_vs_medved_strategy(Strategy):
 
     def OnReseted(self):
         super(bull_vs_medved_strategy, self).OnReseted()
-        self._best_bid = 0.0
-        self._best_ask = 0.0
         self._point_value = 0.0
         self._pip_value = 0.0
         self._body_min_size = 0.0
         self._pullback_size = 0.0
         self._candle_size_threshold = 0.0
-        self._buy_indent = 0.0
-        self._sell_indent = 0.0
         self._stop_loss_offset = 0.0
         self._take_profit_offset = 0.0
         self._order_placed_in_window = False

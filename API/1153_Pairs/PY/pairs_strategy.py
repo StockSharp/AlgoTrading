@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, InvalidOperationException
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
@@ -37,6 +37,9 @@ class pairs_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(pairs_strategy, self).OnStarted2(time)
+
+        if self.reference_security is None:
+            raise InvalidOperationException("ReferenceSecurity must be specified.")
 
         self.StartProtection(None, None)
 

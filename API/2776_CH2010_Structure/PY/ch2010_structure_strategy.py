@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, InvalidOperationException
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
@@ -63,6 +63,8 @@ class ch2010_structure_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(ch2010_structure_strategy, self).OnStarted2(time)
+
+        raise InvalidOperationException("At least one security must be configured.")
 
         daily_sub = self.SubscribeCandles(self.DailyCandleType)
         daily_sub.Bind(self._process_daily_candle).Start()

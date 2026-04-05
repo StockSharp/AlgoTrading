@@ -10,7 +10,7 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
-    SimpleMovingAverage, RelativeStrengthIndex,
+    SmoothedMovingAverage, RelativeStrengthIndex,
     CommodityChannelIndex, DecimalIndicatorValue, CandleIndicatorValue
 )
 from collections import deque
@@ -22,16 +22,16 @@ class yen_trader051_strategy(Strategy):
     def __init__(self):
         super(yen_trader051_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Signal Candles", "Primary timeframe for signals", "Data")
 
-        self._loop_back_bars = self.Param("LoopBackBars", 2) \
+        self._loop_back_bars = self.Param("LoopBackBars", 40) \
             .SetDisplay("Loop Back Bars", "Number of historical bars for breakout logic", "Filters")
 
         self._use_rsi_filter = self.Param("UseRsiFilter", True) \
             .SetDisplay("Use RSI", "Enable RSI confirmation filter", "Indicators")
 
-        self._use_cci_filter = self.Param("UseCciFilter", True) \
+        self._use_cci_filter = self.Param("UseCciFilter", False) \
             .SetDisplay("Use CCI", "Enable CCI confirmation filter", "Indicators")
 
         self._use_ma_filter = self.Param("UseMovingAverageFilter", True) \
@@ -135,7 +135,7 @@ class yen_trader051_strategy(Strategy):
         self._cci = CommodityChannelIndex()
         self._cci.Length = 14
 
-        self._ma = SimpleMovingAverage()
+        self._ma = SmoothedMovingAverage()
         self._ma.Length = max(1, self.MaPeriod)
 
         subscription = self.SubscribeCandles(self.CandleType)
@@ -156,15 +156,21 @@ class yen_trader051_strategy(Strategy):
 
         close = float(candle.ClosePrice)
 
-        rsi_out = self._rsi.Process(DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.CloseTime))
+        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.CloseTime)
+        rsi_inp.IsFinal = True
+        rsi_out = self._rsi.Process(rsi_inp)
         if rsi_out.IsFinal:
             self._rsi_value = float(rsi_out)
 
-        cci_out = self._cci.Process(CandleIndicatorValue(self._cci, candle))
+        cci_inp = CandleIndicatorValue(self._cci, candle)
+        cci_inp.IsFinal = True
+        cci_out = self._cci.Process(cci_inp)
         if cci_out.IsFinal:
             self._cci_value = float(cci_out)
 
-        ma_out = self._ma.Process(DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.CloseTime))
+        ma_inp = DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.CloseTime)
+        ma_inp.IsFinal = True
+        ma_out = self._ma.Process(ma_inp)
         if ma_out.IsFinal:
             self._ma_value = float(ma_out)
 

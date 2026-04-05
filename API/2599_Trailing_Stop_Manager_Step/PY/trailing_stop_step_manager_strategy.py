@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, InvalidOperationException
 from StockSharp.Messages import DataType, Level1Fields
 from StockSharp.Algo.Strategies import Strategy
 
@@ -57,6 +57,14 @@ class trailing_stop_step_manager_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(trailing_stop_step_manager_strategy, self).OnStarted2(time)
+
+        if self.Security is None:
+            raise InvalidOperationException("Security is not specified.")
+        if self.Portfolio is None:
+            raise InvalidOperationException("Portfolio is not specified.")
+        step = self.Security.PriceStep
+        if step is None or float(step) <= 0:
+            raise InvalidOperationException("Security price step must be defined and positive.")
 
         self.SubscribeLevel1() \
             .Bind(self.process_level1) \
