@@ -38,7 +38,6 @@ class cointegration_pairs_strategy(Strategy):
 
         # Beta coefficient for calculation of residual.
         self._beta = self.Param("Beta", 1.0) \
-            .SetRange(0.01, 10.0) \
             .SetDisplay("Beta", "Coefficient of cointegration", "Parameters") \
             .SetCanOptimize(True) \
             .SetOptimize(0.5, 2.0, 0.1)
