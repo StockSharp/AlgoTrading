@@ -35,7 +35,16 @@ public class Ch2010StructureStrategy : Strategy
 	private readonly StrategyParam<DataType> _dailyCandleType;
 	private readonly StrategyParam<DataType> _intradayCandleType;
 	
-	private readonly List<InstrumentContext> _contexts;
+	private readonly List<InstrumentContext> _contexts = new();
+
+	private static readonly (string Alias, Func<Ch2010StructureStrategy, Security> Getter)[] _instrumentSlots =
+	[
+		("USDCHF", s => s.UsdChfSecurity),
+		("GBPUSD", s => s.GbpUsdSecurity),
+		("AUDUSD", s => s.AudUsdSecurity),
+		("USDJPY", s => s.UsdJpySecurity),
+		("EURGBP", s => s.EurGbpSecurity),
+	];
 	
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Ch2010StructureStrategy"/> class.
@@ -79,15 +88,6 @@ public class Ch2010StructureStrategy : Strategy
 		_dailyCandleType.SetDisplay("Daily Candle", "Time frame used for the daily bias", "Data");
 		_intradayCandleType = Param(nameof(IntradayCandleType), TimeSpan.FromMinutes(30).TimeFrame());
 		_intradayCandleType.SetDisplay("Intraday Candle", "Time frame used for intraday execution", "Data");
-		
-		_contexts = new List<InstrumentContext>
-		{
-			new InstrumentContext("USDCHF", () => UsdChfSecurity),
-			new InstrumentContext("GBPUSD", () => GbpUsdSecurity),
-			new InstrumentContext("AUDUSD", () => AudUsdSecurity),
-			new InstrumentContext("USDJPY", () => UsdJpySecurity),
-			new InstrumentContext("EURGBP", () => EurGbpSecurity)
-		};
 	}
 	
 	/// <summary>
@@ -218,60 +218,53 @@ public class Ch2010StructureStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		foreach (var context in _contexts)
+		foreach (var slot in _instrumentSlots)
 		{
-			var security = context.Security;
-			
+			var security = slot.Getter(this);
+
 			if (security == null)
-			{
 				continue;
-			}
-			
+
 			yield return (security, DailyCandleType);
 			yield return (security, IntradayCandleType);
 		}
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		foreach (var context in _contexts)
-		{
-			context.Reset();
-		}
+
+		_contexts.Clear();
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		var hasSecurity = false;
-		
-		foreach (var context in _contexts)
+
+		_contexts.Clear();
+
+		foreach (var slot in _instrumentSlots)
 		{
-			var security = context.Security;
-			
+			var security = slot.Getter(this);
+
 			if (security == null)
-			{
 				continue;
-			}
-			
-			hasSecurity = true;
-			
-			var localContext = context;
+
+			var context = new InstrumentContext(slot.Alias, security);
+			_contexts.Add(context);
+
 			var dailySubscription = SubscribeCandles(DailyCandleType, true, security);
-			dailySubscription.Bind(candle => ProcessDailyCandle(localContext, candle));
+			dailySubscription.Bind(candle => ProcessDailyCandle(context, candle));
 			dailySubscription.Start();
-			
+
 			var intradaySubscription = SubscribeCandles(IntradayCandleType, true, security);
-			intradaySubscription.Bind(candle => ProcessIntradayCandle(localContext, candle));
+			intradaySubscription.Bind(candle => ProcessIntradayCandle(context, candle));
 			intradaySubscription.Start();
 		}
-		
-		if (!hasSecurity)
+
+		if (_contexts.Count == 0)
 		{
 			throw new InvalidOperationException("At least one security must be configured.");
 		}
@@ -314,12 +307,7 @@ public class Ch2010StructureStrategy : Strategy
 		{
 			return;
 		}
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
-		
+
 		if (!context.HasLevels)
 		{
 			return;
@@ -581,18 +569,15 @@ public class Ch2010StructureStrategy : Strategy
 	
 	private sealed class InstrumentContext
 	{
-		private readonly Func<Security> _securityProvider;
-		
-		public InstrumentContext(string alias, Func<Security> securityProvider)
+		public InstrumentContext(string alias, Security security)
 		{
 			Alias = alias;
-			_securityProvider = securityProvider;
-			Reset();
+			Security = security;
 		}
-		
+
 		public string Alias { get; }
-		
-		public Security Security => _securityProvider();
+
+		public Security Security { get; }
 		
 		public DateTime? DailyDate { get; set; }
 		
