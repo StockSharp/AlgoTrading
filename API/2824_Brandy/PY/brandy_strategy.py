@@ -5,11 +5,11 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from StockSharp.Algo.Indicators import (ExponentialMovingAverage, DecimalIndicatorValue)
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math, Decimal
-
+from indicator_extensions import *
 
 class brandy_strategy(Strategy):
     def __init__(self):
@@ -74,12 +74,8 @@ class brandy_strategy(Strategy):
         open_source = float(candle.ClosePrice)
         close_source = float(candle.ClosePrice)
 
-        d1 = DecimalIndicatorValue(self._ma_open_indicator, Decimal(float(open_source)), candle.OpenTime)
-        d1.IsFinal = True
-        ma_open_result = self._ma_open_indicator.Process(d1)
-        d2 = DecimalIndicatorValue(self._ma_close_indicator, Decimal(float(close_source)), candle.OpenTime)
-        d2.IsFinal = True
-        ma_close_result = self._ma_close_indicator.Process(d2)
+        ma_open_result = process_float(self._ma_open_indicator, Decimal(float(open_source)), candle.OpenTime, True)
+        ma_close_result = process_float(self._ma_close_indicator, Decimal(float(close_source)), candle.OpenTime, True)
 
         if (ma_open_result.IsEmpty or ma_close_result.IsEmpty or
                 not self._ma_open_indicator.IsFormed or not self._ma_close_indicator.IsFormed):

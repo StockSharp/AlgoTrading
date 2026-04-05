@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, HurstExponent, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, HurstExponent
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class hurst_volatility_filter_strategy(Strategy):
     """
@@ -98,9 +98,7 @@ class hurst_volatility_filter_strategy(Strategy):
         atr_val = float(atr_value)
         hurst_val = float(hurst_value)
 
-        atr_avg_input = DecimalIndicatorValue(self._atr_average, Decimal(atr_val), candle.OpenTime)
-        atr_avg_input.IsFinal = True
-        atr_average_value = float(self._atr_average.Process(atr_avg_input))
+        atr_average_value = float(process_float(self._atr_average, Decimal(atr_val), candle.OpenTime, True))
 
         if not self._sma.IsFormed or not self._atr.IsFormed or not self._hurst_exponent.IsFormed or not self._atr_average.IsFormed:
             return

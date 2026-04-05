@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 import math
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class fisher_cyber_cycle_strategy(Strategy):
 
@@ -136,12 +136,8 @@ class fisher_cyber_cycle_strategy(Strategy):
 
         self._count += 1
 
-        hi = DecimalIndicatorValue(self._highest, self._cycle[0], t)
-        hi.IsFinal = True
-        hh_result = self._highest.Process(hi)
-        li = DecimalIndicatorValue(self._lowest, self._cycle[0], t)
-        li.IsFinal = True
-        ll_result = self._lowest.Process(li)
+        hh_result = process_float(self._highest, self._cycle[0], t, True)
+        ll_result = process_float(self._lowest, self._cycle[0], t, True)
 
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return

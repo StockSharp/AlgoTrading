@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class icai_strategy(Strategy):
     def __init__(self):
@@ -60,12 +60,8 @@ class icai_strategy(Strategy):
             return
         price = float(candle.ClosePrice)
         t = candle.OpenTime
-        d1 = DecimalIndicatorValue(self._ma, price, t)
-        d1.IsFinal = True
-        ma_result = self._ma.Process(d1)
-        d2 = DecimalIndicatorValue(self._std, price, t)
-        d2.IsFinal = True
-        std_result = self._std.Process(d2)
+        ma_result = process_float(self._ma, price, t, True)
+        std_result = process_float(self._std, price, t, True)
         if not self._ma.IsFormed or not self._std.IsFormed:
             return
         ma_val = float(ma_result)

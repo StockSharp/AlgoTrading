@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Ichimoku, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Ichimoku
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class ichimoku_oscillator_strategy(Strategy):
 
@@ -135,9 +135,7 @@ class ichimoku_oscillator_strategy(Strategy):
         osc = (chikou - span_b) - (tenkan - kijun)
 
         t = candle.OpenTime
-        ema_input = DecimalIndicatorValue(self._ema, osc, t)
-        ema_input.IsFinal = True
-        ema_result = self._ema.Process(ema_input)
+        ema_result = process_float(self._ema, osc, t, True)
         if not ema_result.IsFormed:
             return
 

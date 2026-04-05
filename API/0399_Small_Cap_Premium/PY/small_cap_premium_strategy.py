@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class small_cap_premium_strategy(Strategy):
     """Small-cap premium strategy that trades the primary stock when its synthetic size profile diverges from a benchmark stock."""
@@ -134,9 +134,7 @@ class small_cap_premium_strategy(Strategy):
         range_ratio = (float(candle.HighPrice) - float(candle.LowPrice)) / price_base
         size_proxy = 1.0 / price_base + (range_ratio * 0.5)
 
-        iv = DecimalIndicatorValue(average, size_proxy, candle.OpenTime)
-        iv.IsFinal = True
-        return float(average.Process(iv))
+        return float(process_float(average, size_proxy, candle.OpenTime, True))
 
     def _try_process_spread(self, time):
         if not self._primary_updated or not self._benchmark_updated:
@@ -147,13 +145,9 @@ class small_cap_premium_strategy(Strategy):
 
         spread = self._latest_primary_size - self._latest_benchmark_size
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, spread, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, spread, time, True))
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

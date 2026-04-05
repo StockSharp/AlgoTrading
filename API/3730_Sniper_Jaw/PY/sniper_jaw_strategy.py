@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class sniper_jaw_strategy(Strategy):
     """Alligator jaw/teeth/lips trend following with SL/TP."""
@@ -82,15 +83,9 @@ class sniper_jaw_strategy(Strategy):
 
         median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
 
-        jaw_input = DecimalIndicatorValue(self._jaw, median, candle.OpenTime)
-        jaw_input.IsFinal = True
-        jaw_result = self._jaw.Process(jaw_input)
-        teeth_input = DecimalIndicatorValue(self._teeth, median, candle.OpenTime)
-        teeth_input.IsFinal = True
-        teeth_result = self._teeth.Process(teeth_input)
-        lips_input = DecimalIndicatorValue(self._lips, median, candle.OpenTime)
-        lips_input.IsFinal = True
-        lips_result = self._lips.Process(lips_input)
+        jaw_result = process_float(self._jaw, median, candle.OpenTime, True)
+        teeth_result = process_float(self._teeth, median, candle.OpenTime, True)
+        lips_result = process_float(self._lips, median, candle.OpenTime, True)
 
         if not self._jaw.IsFormed or not self._teeth.IsFormed or not self._lips.IsFormed:
             return

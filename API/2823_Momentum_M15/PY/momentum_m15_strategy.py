@@ -5,12 +5,11 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from StockSharp.Algo.Indicators import (SmoothedMovingAverage, Momentum,
-    DecimalIndicatorValue)
+from StockSharp.Algo.Indicators import SmoothedMovingAverage, Momentum
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math, Decimal
-
+from indicator_extensions import *
 
 class momentum_m15_strategy(Strategy):
     def __init__(self):
@@ -87,9 +86,7 @@ class momentum_m15_strategy(Strategy):
 
     def _process_ma(self, candle):
         price = float(candle.LowPrice)
-        div = DecimalIndicatorValue(self._ma, Decimal(float(price)), candle.OpenTime)
-        div.IsFinal = True
-        value = self._ma.Process(div)
+        value = process_float(self._ma, Decimal(float(price)), candle.OpenTime, True)
 
         if value.IsEmpty or not self._ma.IsFormed:
             return None
@@ -109,9 +106,7 @@ class momentum_m15_strategy(Strategy):
 
     def _process_momentum(self, candle):
         price = float(candle.OpenPrice)
-        div2 = DecimalIndicatorValue(self._momentum, Decimal(float(price)), candle.OpenTime)
-        div2.IsFinal = True
-        value = self._momentum.Process(div2)
+        value = process_float(self._momentum, Decimal(float(price)), candle.OpenTime, True)
 
         if value.IsEmpty or not self._momentum.IsFormed:
             return None

@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import TripleExponentialMovingAverage, RateOfChange, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import TripleExponentialMovingAverage, RateOfChange, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_xtrix_histogram_strategy(Strategy):
     def __init__(self):
@@ -83,21 +83,15 @@ class color_xtrix_histogram_strategy(Strategy):
         if close_price <= 0:
             return
         log_close = math.log(close_price)
-        input_val = DecimalIndicatorValue(self._triple_ema, log_close, t)
-        input_val.IsFinal = True
-        ema_result = self._triple_ema.Process(input_val)
+        ema_result = process_float(self._triple_ema, log_close, t, True)
         if not self._triple_ema.IsFormed:
             return
         ema_val = float(ema_result)
-        input_roc = DecimalIndicatorValue(self._roc, ema_val, t)
-        input_roc.IsFinal = True
-        roc_result = self._roc.Process(input_roc)
+        roc_result = process_float(self._roc, ema_val, t, True)
         if not self._roc.IsFormed:
             return
         roc_val = float(roc_result)
-        input_smooth = DecimalIndicatorValue(self._smoother, roc_val, t)
-        input_smooth.IsFinal = True
-        smooth_result = self._smoother.Process(input_smooth)
+        smooth_result = process_float(self._smoother, roc_val, t, True)
         if not self._smoother.IsFormed:
             return
         trix = float(smooth_result)

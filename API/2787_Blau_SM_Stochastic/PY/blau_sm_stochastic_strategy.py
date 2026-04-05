@@ -8,11 +8,11 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
-    DecimalIndicatorValue, ExponentialMovingAverage,
+    ExponentialMovingAverage,
     SimpleMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class blau_sm_stochastic_strategy(Strategy):
     MODE_BREAKDOWN = 0
@@ -326,9 +326,7 @@ class blau_sm_stochastic_strategy(Strategy):
         return (main, sig, True)
 
     def _process_stage(self, indicator, value):
-        iv = DecimalIndicatorValue(indicator, Decimal(float(value)), self._candle_time)
-        iv.IsFinal = True
-        result = indicator.Process(iv)
+        result = process_float(indicator, Decimal(float(value)), self._candle_time, True)
         if not indicator.IsFormed:
             return None
         return float(result.Value)

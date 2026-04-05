@@ -13,9 +13,8 @@ from StockSharp.Algo.Indicators import (
     WeightedMovingAverage,
     ExponentialMovingAverage,
     MovingAverageConvergenceDivergence,
-    DecimalIndicatorValue,
 )
-
+from indicator_extensions import *
 
 class mam_acd_strategy(Strategy):
     """MAMACD: two LWMA filters on lows, EMA trigger on close, MACD confirmation."""
@@ -135,21 +134,13 @@ class mam_acd_strategy(Strategy):
         lo = candle.LowPrice
         close = candle.ClosePrice
 
-        iv1 = DecimalIndicatorValue(self._first_low_ma, lo, t)
-        iv1.IsFinal = True
-        first_low_val = self._first_low_ma.Process(iv1)
+        first_low_val = process_float(self._first_low_ma, lo, t, True)
 
-        iv2 = DecimalIndicatorValue(self._second_low_ma, lo, t)
-        iv2.IsFinal = True
-        second_low_val = self._second_low_ma.Process(iv2)
+        second_low_val = process_float(self._second_low_ma, lo, t, True)
 
-        iv3 = DecimalIndicatorValue(self._trigger_ema, close, t)
-        iv3.IsFinal = True
-        trigger_val = self._trigger_ema.Process(iv3)
+        trigger_val = process_float(self._trigger_ema, close, t, True)
 
-        iv4 = DecimalIndicatorValue(self._macd_ind, close, t)
-        iv4.IsFinal = True
-        macd_val = self._macd_ind.Process(iv4)
+        macd_val = process_float(self._macd_ind, close, t, True)
 
         if (not self._first_low_ma.IsFormed or not self._second_low_ma.IsFormed
                 or not self._trigger_ema.IsFormed or not self._macd_ind.IsFormed):

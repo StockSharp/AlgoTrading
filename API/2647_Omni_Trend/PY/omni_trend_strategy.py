@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class omni_trend_strategy(Strategy):
     """Trend-following strategy replicating the Omni Trend MetaTrader expert."""
@@ -134,9 +134,7 @@ class omni_trend_strategy(Strategy):
 
         atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
         applied_price = Decimal(float(candle.ClosePrice))
-        iv = DecimalIndicatorValue(self._ma, applied_price, candle.OpenTime)
-        iv.IsFinal = True
-        ma_result = self._ma.Process(iv)
+        ma_result = process_float(self._ma, applied_price, candle.OpenTime, True)
 
         if not atr_result.IsFinal or not ma_result.IsFinal:
             return

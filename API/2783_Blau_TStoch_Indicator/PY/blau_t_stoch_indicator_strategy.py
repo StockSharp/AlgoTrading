@@ -8,12 +8,12 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
-    DecimalIndicatorValue, ExponentialMovingAverage,
+    ExponentialMovingAverage,
     Highest, Lowest, SimpleMovingAverage,
     SmoothedMovingAverage, WeightedMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class blau_t_stoch_indicator_strategy(Strategy):
     MODE_BREAKDOWN = 0
@@ -296,15 +296,11 @@ class blau_t_stoch_indicator_strategy(Strategy):
         return 100.0 * s3 / r3 - 50.0
 
     def _process_stage_ind(self, indicator, value):
-        iv = DecimalIndicatorValue(indicator, Decimal(float(value)), self._candle_time)
-        iv.IsFinal = True
-        result = indicator.Process(iv)
+        result = process_float(indicator, Decimal(float(value)), self._candle_time, True)
         return float(result.Value)
 
     def _process_stage(self, indicator, value):
-        iv = DecimalIndicatorValue(indicator, Decimal(float(value)), self._candle_time)
-        iv.IsFinal = True
-        result = indicator.Process(iv)
+        result = process_float(indicator, Decimal(float(value)), self._candle_time, True)
         return float(result.Value)
 
     def _trim_history(self):

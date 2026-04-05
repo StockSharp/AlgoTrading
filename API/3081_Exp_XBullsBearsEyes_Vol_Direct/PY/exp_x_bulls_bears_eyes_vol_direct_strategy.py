@@ -9,11 +9,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import (
-    ExponentialMovingAverage, SimpleMovingAverage,
-    DecimalIndicatorValue
+    ExponentialMovingAverage, SimpleMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_x_bulls_bears_eyes_vol_direct_strategy(Strategy):
     def __init__(self):
@@ -152,9 +151,7 @@ class exp_x_bulls_bears_eyes_vol_direct_strategy(Strategy):
         if self._ema is None or self._histogram_smoother is None or self._volume_smoother is None:
             return
 
-        ema_iv = DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime)
-        ema_iv.IsFinal = True
-        ema_result = self._ema.Process(ema_iv)
+        ema_result = process_float(self._ema, candle.ClosePrice, candle.OpenTime, True)
         if not self._ema.IsFormed:
             return
         ema = float(ema_result)
@@ -200,12 +197,8 @@ class exp_x_bulls_bears_eyes_vol_direct_strategy(Strategy):
         scaled_histogram = histogram * volume
 
         from System import Decimal
-        hist_iv = DecimalIndicatorValue(self._histogram_smoother, Decimal(scaled_histogram), candle.OpenTime)
-        hist_iv.IsFinal = True
-        hist_result = self._histogram_smoother.Process(hist_iv)
-        vol_iv = DecimalIndicatorValue(self._volume_smoother, Decimal(volume), candle.OpenTime)
-        vol_iv.IsFinal = True
-        vol_result = self._volume_smoother.Process(vol_iv)
+        hist_result = process_float(self._histogram_smoother, Decimal(scaled_histogram), candle.OpenTime, True)
+        vol_result = process_float(self._volume_smoother, Decimal(volume), candle.OpenTime, True)
 
         if not self._histogram_smoother.IsFormed or not self._volume_smoother.IsFormed:
             return

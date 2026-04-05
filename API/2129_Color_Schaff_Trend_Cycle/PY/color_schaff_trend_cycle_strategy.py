@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_schaff_trend_cycle_strategy(Strategy):
     def __init__(self):
@@ -80,12 +80,8 @@ class color_schaff_trend_cycle_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         rsi_value = float(rsi_value)
-        fast_input = DecimalIndicatorValue(self._fast_ema, candle.ClosePrice, candle.OpenTime)
-        fast_input.IsFinal = True
-        fast_result = self._fast_ema.Process(fast_input)
-        slow_input = DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, candle.OpenTime)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ema.Process(slow_input)
+        fast_result = process_float(self._fast_ema, candle.ClosePrice, candle.OpenTime, True)
+        slow_result = process_float(self._slow_ema, candle.ClosePrice, candle.OpenTime, True)
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
         macd = float(fast_result) - float(slow_result)

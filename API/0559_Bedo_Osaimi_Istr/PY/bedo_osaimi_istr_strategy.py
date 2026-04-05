@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bedo_osaimi_istr_strategy(Strategy):
     def __init__(self):
@@ -61,9 +61,7 @@ class bedo_osaimi_istr_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        iv = DecimalIndicatorValue(self._open_ma, float(candle.OpenPrice), candle.ServerTime)
-        iv.IsFinal = True
-        open_ma_result = self._open_ma.Process(iv)
+        open_ma_result = process_float(self._open_ma, float(candle.OpenPrice), candle.ServerTime, True)
         if not open_ma_result.IsFormed:
             self._prev_close = float(close_ma_value)
             self._prev_open = None

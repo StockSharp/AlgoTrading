@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class mutanabby_ai_algo_pro_strategy(Strategy):
     def __init__(self):
@@ -82,9 +82,7 @@ class mutanabby_ai_algo_pro_strategy(Strategy):
         opn = float(candle.OpenPrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
-        rsi_input = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
-        rsi_input.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_input)
+        rsi_result = process_float(self._rsi, candle.ClosePrice, candle.OpenTime, True)
         if not self._rsi.IsFormed:
             self._prev_open = opn
             self._prev_close = close

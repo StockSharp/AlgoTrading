@@ -9,9 +9,9 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
-    SimpleMovingAverage, ExponentialMovingAverage, DecimalIndicatorValue
+    SimpleMovingAverage, ExponentialMovingAverage
 )
-
+from indicator_extensions import *
 
 class xroc2_vg_tm_strategy(Strategy):
     """XROC2 VG with time filter: dual smoothed ROC crossover strategy."""
@@ -156,8 +156,8 @@ class xroc2_vg_tm_strategy(Strategy):
         if fast_roc is None or slow_roc is None:
             return
 
-        fast_out = self._smooth_fast.Process(DecimalIndicatorValue(self._smooth_fast, fast_roc, candle.OpenTime))
-        slow_out = self._smooth_slow.Process(DecimalIndicatorValue(self._smooth_slow, slow_roc, candle.OpenTime))
+        fast_out = process_float(self._smooth_fast, fast_roc, candle.OpenTime, True)
+        slow_out = process_float(self._smooth_slow, slow_roc, candle.OpenTime, True)
 
         fast_val = float(fast_out)
         slow_val = float(slow_out)

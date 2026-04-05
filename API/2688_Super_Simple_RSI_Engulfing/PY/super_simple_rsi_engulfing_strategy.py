@@ -8,8 +8,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
-
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
+from indicator_extensions import *
 
 class super_simple_rsi_engulfing_strategy(Strategy):
     """RSI filter combined with engulfing candle pattern for reversals."""
@@ -111,9 +111,7 @@ class super_simple_rsi_engulfing_strategy(Strategy):
             return
 
         price = self._get_price(candle)
-        rsi_iv = DecimalIndicatorValue(self._rsi, Decimal(price), candle.ServerTime)
-        rsi_iv.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_iv)
+        rsi_result = process_float(self._rsi, Decimal(price), candle.ServerTime, True)
 
         if not self._rsi.IsFormed:
             self._update_history(candle)

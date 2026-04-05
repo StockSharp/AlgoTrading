@@ -9,10 +9,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from System import Decimal, ValueTuple
-from StockSharp.Algo.Indicators import Correlation, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, PairIndicatorValue
+from StockSharp.Algo.Indicators import Correlation, SimpleMovingAverage, StandardDeviation, PairIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class correlation_mean_reversion_strategy(Strategy):
     """
@@ -157,14 +157,10 @@ class correlation_mean_reversion_strategy(Strategy):
         corr_result = self._correlation.Process(pair_input)
         correlation_value = float(corr_result)
 
-        avg_input = DecimalIndicatorValue(self._correlation_sma, Decimal(correlation_value), time)
-        avg_input.IsFinal = True
-        avg_result = self._correlation_sma.Process(avg_input)
+        avg_result = process_float(self._correlation_sma, Decimal(correlation_value), time, True)
         average_correlation = float(avg_result)
 
-        std_input = DecimalIndicatorValue(self._correlation_std_dev, Decimal(correlation_value), time)
-        std_input.IsFinal = True
-        std_result = self._correlation_std_dev.Process(std_input)
+        std_result = process_float(self._correlation_std_dev, Decimal(correlation_value), time, True)
         std_correlation = float(std_result)
 
         primary_return = float(self._latest_price1 - self._previous_price1) / float(self._previous_price1)

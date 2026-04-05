@@ -11,10 +11,10 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
     SmoothedMovingAverage, RelativeStrengthIndex,
-    CommodityChannelIndex, DecimalIndicatorValue, CandleIndicatorValue
+    CommodityChannelIndex, CandleIndicatorValue
 )
+from indicator_extensions import *
 from collections import deque
-
 
 class yen_trader051_strategy(Strategy):
     """Multi-security JPY cross strategy with RSI/CCI/MA confirmation (simplified to single security)."""
@@ -156,9 +156,7 @@ class yen_trader051_strategy(Strategy):
 
         close = float(candle.ClosePrice)
 
-        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.CloseTime)
-        rsi_inp.IsFinal = True
-        rsi_out = self._rsi.Process(rsi_inp)
+        rsi_out = process_float(self._rsi, candle.ClosePrice, candle.CloseTime, True)
         if rsi_out.IsFinal:
             self._rsi_value = float(rsi_out)
 
@@ -168,9 +166,7 @@ class yen_trader051_strategy(Strategy):
         if cci_out.IsFinal:
             self._cci_value = float(cci_out)
 
-        ma_inp = DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.CloseTime)
-        ma_inp.IsFinal = True
-        ma_out = self._ma.Process(ma_inp)
+        ma_out = process_float(self._ma, candle.ClosePrice, candle.CloseTime, True)
         if ma_out.IsFinal:
             self._ma_value = float(ma_out)
 

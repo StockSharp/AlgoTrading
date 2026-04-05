@@ -8,14 +8,13 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from System import Decimal
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # Trend mode constants
 TREND_DIRECT = 0
 TREND_COUNTER = 1
-
 
 class fractal_weight_oscillator_strategy(Strategy):
     def __init__(self):
@@ -224,12 +223,8 @@ class fractal_weight_oscillator_strategy(Strategy):
         typical = (high + low + close) / 3.0
         volume = float(candle.TotalVolume)
 
-        rsi_input = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
-        rsi_input.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_input)
-        wpr_input = DecimalIndicatorValue(self._williams_rsi, candle.ClosePrice, candle.OpenTime)
-        wpr_input.IsFinal = True
-        wpr_result = self._williams_rsi.Process(wpr_input)
+        rsi_result = process_float(self._rsi, candle.ClosePrice, candle.OpenTime, True)
+        wpr_result = process_float(self._williams_rsi, candle.ClosePrice, candle.OpenTime, True)
 
         if not rsi_result.IsFinal or not wpr_result.IsFinal:
             return
@@ -363,12 +358,8 @@ class fractal_weight_oscillator_strategy(Strategy):
         self._previous_high = high
         self._previous_low = low
 
-        de_max_input = DecimalIndicatorValue(self._de_max_sma, Decimal(de_max), candle.OpenTime)
-        de_max_input.IsFinal = True
-        de_max_result = self._de_max_sma.Process(de_max_input)
-        de_min_input = DecimalIndicatorValue(self._de_min_sma, Decimal(de_min), candle.OpenTime)
-        de_min_input.IsFinal = True
-        de_min_result = self._de_min_sma.Process(de_min_input)
+        de_max_result = process_float(self._de_max_sma, Decimal(de_max), candle.OpenTime, True)
+        de_min_result = process_float(self._de_min_sma, Decimal(de_min), candle.OpenTime, True)
 
         if not de_max_result.IsFinal or not de_min_result.IsFinal:
             return None
@@ -466,9 +457,7 @@ class fractal_weight_oscillator_strategy(Strategy):
     def _apply_smoothing(self, value, time):
         if self._smoother is None:
             return value
-        sm_input = DecimalIndicatorValue(self._smoother, Decimal(value), time)
-        sm_input.IsFinal = True
-        result = self._smoother.Process(sm_input)
+        result = process_float(self._smoother, Decimal(value), time, True)
         if result.IsFinal:
             return float(result)
         return None

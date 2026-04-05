@@ -8,7 +8,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AwesomeOscillator, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AwesomeOscillator
+from indicator_extensions import *
 
 class ravi_iao_strategy(Strategy):
     def __init__(self):
@@ -86,9 +87,7 @@ class ravi_iao_strategy(Strategy):
         slow_value = float(slow_val)
         ao_value = float(ao_val)
 
-        ao_input = DecimalIndicatorValue(self._ao_average, ao_value, candle.OpenTime)
-        ao_input.IsFinal = True
-        ao_avg_result = self._ao_average.Process(ao_input)
+        ao_avg_result = process_float(self._ao_average, ao_value, candle.OpenTime, True)
         if ao_avg_result.IsEmpty:
             return
 

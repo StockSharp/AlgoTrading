@@ -9,9 +9,9 @@ from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
-    SimpleMovingAverage, AwesomeOscillator, DecimalIndicatorValue, CandleIndicatorValue
+    SimpleMovingAverage, AwesomeOscillator, CandleIndicatorValue
 )
-
+from indicator_extensions import *
 
 class chaos_trader_lite_strategy(Strategy):
     """Chaos Trader Lite: Bill Williams three wise men with divergent bars, AO and fractals."""
@@ -126,9 +126,7 @@ class chaos_trader_lite_strategy(Strategy):
         median = (h + lo) / 2.0
 
         # Lips
-        lips_iv = DecimalIndicatorValue(self._lips_sma, Decimal(median), candle.ServerTime)
-        lips_iv.IsFinal = True
-        lips_val = self._lips_sma.Process(lips_iv)
+        lips_val = process_float(self._lips_sma, Decimal(median), candle.ServerTime, True)
         if lips_val.IsFinal:
             lv = float(lips_val.Value)
             self._lips_queue.append(lv)
@@ -136,9 +134,7 @@ class chaos_trader_lite_strategy(Strategy):
                 self._lips0 = self._lips_queue.pop(0)
 
         # Teeth
-        teeth_iv = DecimalIndicatorValue(self._teeth_sma, Decimal(median), candle.ServerTime)
-        teeth_iv.IsFinal = True
-        teeth_val = self._teeth_sma.Process(teeth_iv)
+        teeth_val = process_float(self._teeth_sma, Decimal(median), candle.ServerTime, True)
         if teeth_val.IsFinal:
             tv = float(teeth_val.Value)
             self._teeth_queue.append(tv)

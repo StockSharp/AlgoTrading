@@ -14,9 +14,8 @@ from StockSharp.Algo.Indicators import (
     AverageDirectionalIndex,
     Lowest,
     Highest,
-    DecimalIndicatorValue,
 )
-
+from indicator_extensions import *
 
 class har_veste_r_strategy(Strategy):
     """Trend strategy combining MACD momentum, MA proximity, ADX filter with partial profit taking."""
@@ -159,15 +158,11 @@ class har_veste_r_strategy(Strategy):
             return
 
         # Update lowest/highest for stop calculation
-        low_iv = DecimalIndicatorValue(self._lowest_ind, candle.LowPrice, candle.ServerTime)
-        low_iv.IsFinal = True
-        low_val = self._lowest_ind.Process(low_iv)
+        low_val = process_float(self._lowest_ind, candle.LowPrice, candle.ServerTime, True)
         if low_val.IsFormed:
             self._last_lowest = float(low_val.Value)
 
-        high_iv = DecimalIndicatorValue(self._highest_ind, candle.HighPrice, candle.ServerTime)
-        high_iv.IsFinal = True
-        high_val = self._highest_ind.Process(high_iv)
+        high_val = process_float(self._highest_ind, candle.HighPrice, candle.ServerTime, True)
         if high_val.IsFormed:
             self._last_highest = float(high_val.Value)
 

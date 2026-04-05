@@ -12,9 +12,9 @@ from StockSharp.Algo.Indicators import (
     AverageDirectionalIndex,
     AverageTrueRange,
     SimpleMovingAverage,
-    DecimalIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class liquid_pulse_strategy(Strategy):
     """
@@ -134,9 +134,7 @@ class liquid_pulse_strategy(Strategy):
             self._daily_trades = 0
 
         # Volume spike detection
-        vol_input = DecimalIndicatorValue(self._vol_sma, candle.TotalVolume, candle.ServerTime)
-        vol_input.IsFinal = True
-        avg_vol_result = self._vol_sma.Process(vol_input)
+        avg_vol_result = process_float(self._vol_sma, candle.TotalVolume, candle.ServerTime, True)
         avg_vol = 0.0 if avg_vol_result.IsEmpty else float(avg_vol_result)
         high_vol = avg_vol > 0 and float(candle.TotalVolume) >= self._vol_threshold * avg_vol
 

@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class volume_ma_cross_strategy(Strategy):
     """
@@ -73,8 +74,8 @@ class volume_ma_cross_strategy(Strategy):
             return
 
         # Process volume through manual MAs
-        fast_result = self._fast_vol_ma.Process(DecimalIndicatorValue(self._fast_vol_ma, candle.TotalVolume, candle.ServerTime))
-        slow_result = self._slow_vol_ma.Process(DecimalIndicatorValue(self._slow_vol_ma, candle.TotalVolume, candle.ServerTime))
+        fast_result = process_float(self._fast_vol_ma, candle.TotalVolume, candle.ServerTime, True)
+        slow_result = process_float(self._slow_vol_ma, candle.TotalVolume, candle.ServerTime, True)
         fast_vol = float(fast_result)
         slow_vol = float(slow_result)
 

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class multi_factor_strategy(Strategy):
     def __init__(self):
@@ -65,12 +65,8 @@ class multi_factor_strategy(Strategy):
     def OnProcess(self, candle, dummy_value):
         if candle.State != CandleStates.Finished:
             return
-        candle_input = DecimalIndicatorValue(self._macd, candle.ClosePrice, candle.ServerTime)
-        candle_input.IsFinal = True
-        macd_result = self._macd.Process(candle_input)
-        sma_input = DecimalIndicatorValue(self._sma50, candle.ClosePrice, candle.ServerTime)
-        sma_input.IsFinal = True
-        sma50_result = self._sma50.Process(sma_input)
+        macd_result = process_float(self._macd, candle.ClosePrice, candle.ServerTime, True)
+        sma50_result = process_float(self._sma50, candle.ClosePrice, candle.ServerTime, True)
         if not self._macd.IsFormed or not self._sma50.IsFormed:
             return
         if self._cooldown_remaining > 0:

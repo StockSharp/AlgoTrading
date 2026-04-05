@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class auto_trailing_stop_strategy(Strategy):
     def __init__(self):
@@ -69,9 +69,7 @@ class auto_trailing_stop_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        slow_inp = DecimalIndicatorValue(self._slow_ma, candle.ClosePrice, candle.OpenTime)
-        slow_inp.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_inp)
+        slow_result = process_float(self._slow_ma, candle.ClosePrice, candle.OpenTime, True)
         if not slow_result.IsFormed:
             return
 

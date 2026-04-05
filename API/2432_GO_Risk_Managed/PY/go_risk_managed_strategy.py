@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class go_risk_managed_strategy(Strategy):
     """
@@ -57,9 +58,7 @@ class go_risk_managed_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        open_input = DecimalIndicatorValue(self._open_ma, candle.OpenPrice, candle.OpenTime)
-        open_input.IsFinal = True
-        open_result = self._open_ma.Process(open_input)
+        open_result = process_float(self._open_ma, candle.OpenPrice, candle.OpenTime, True)
         if not self._open_ma.IsFormed:
             return
 

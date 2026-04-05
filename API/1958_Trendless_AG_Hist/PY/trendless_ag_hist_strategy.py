@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class trendless_ag_hist_strategy(Strategy):
 
@@ -89,16 +89,12 @@ class trendless_ag_hist_strategy(Strategy):
     def _compute_trendless(self, candle):
         price = float(candle.ClosePrice)
 
-        fi = DecimalIndicatorValue(self._fast_ema, price, candle.OpenTime)
-        fi.IsFinal = True
-        fast_result = self._fast_ema.Process(fi)
+        fast_result = process_float(self._fast_ema, price, candle.OpenTime, True)
         fast_val = price if fast_result.IsEmpty else float(fast_result)
 
         diff = price - fast_val
 
-        si = DecimalIndicatorValue(self._slow_ema, diff, candle.OpenTime)
-        si.IsFinal = True
-        slow_result = self._slow_ema.Process(si)
+        slow_result = process_float(self._slow_ema, diff, candle.OpenTime, True)
         slow_val = diff if slow_result.IsEmpty else float(slow_result)
 
         return slow_val

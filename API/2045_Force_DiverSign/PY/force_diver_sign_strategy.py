@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class force_diver_sign_strategy(Strategy):
     """
@@ -84,12 +85,8 @@ class force_diver_sign_strategy(Strategy):
         force = (close - self._prev_close) * volume
         self._prev_close = close
 
-        f1_input = DecimalIndicatorValue(self._ma1, force, candle.OpenTime)
-        f1_input.IsFinal = True
-        f1v = self._ma1.Process(f1_input)
-        f2_input = DecimalIndicatorValue(self._ma2, force, candle.OpenTime)
-        f2_input.IsFinal = True
-        f2v = self._ma2.Process(f2_input)
+        f1v = process_float(self._ma1, force, candle.OpenTime, True)
+        f2v = process_float(self._ma2, force, candle.OpenTime, True)
 
         self._shift(self._opens, float(candle.OpenPrice))
         self._shift(self._closes, close)

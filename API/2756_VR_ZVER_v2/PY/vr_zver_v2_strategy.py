@@ -11,8 +11,6 @@ from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengt
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.Algo.Indicators import DecimalIndicatorValue
-
 
 class vr_zver_v2_strategy(Strategy):
     """Port of the VR-ZVER v2 expert advisor with triple EMA confirmation and stochastic/RSI filters."""
@@ -141,9 +139,7 @@ class vr_zver_v2_strategy(Strategy):
 
         rsi_val = Decimal(50)
         if self._use_rsi.Value and self._rsi is not None:
-            rsi_input = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.CloseTime)
-            rsi_input.IsFinal = True
-            rsi_result = self._rsi.Process(rsi_input)
+            rsi_result = process_float(self._rsi, candle.ClosePrice, candle.CloseTime, True)
             if rsi_result.IsFormed:
                 rsi_val = rsi_result.ToDecimal()
             else:

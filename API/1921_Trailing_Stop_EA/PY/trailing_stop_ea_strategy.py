@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class trailing_stop_ea_strategy(Strategy):
     """Fast/slow EMA crossover with StartProtection trailing stop."""
@@ -64,9 +65,7 @@ class trailing_stop_ea_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        inp = DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, candle.OpenTime)
-        inp.IsFinal = True
-        slow_result = self._slow_ema.Process(inp)
+        slow_result = process_float(self._slow_ema, candle.ClosePrice, candle.OpenTime, True)
         if not slow_result.IsFormed:
             return
         slow = float(slow_result)

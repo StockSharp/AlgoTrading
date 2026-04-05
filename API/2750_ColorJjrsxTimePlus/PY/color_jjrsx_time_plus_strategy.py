@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, JurikMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, JurikMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_jjrsx_time_plus_strategy(Strategy):
     def __init__(self):
@@ -130,9 +130,7 @@ class color_jjrsx_time_plus_strategy(Strategy):
             return
 
         rsi_v = float(rsi_value)
-        iv = DecimalIndicatorValue(self._smoother, Decimal(rsi_v), candle.ServerTime)
-        iv.IsFinal = True
-        smooth_val = self._smoother.Process(iv)
+        smooth_val = process_float(self._smoother, Decimal(rsi_v), candle.ServerTime, True)
 
         if not self._smoother.IsFormed:
             return

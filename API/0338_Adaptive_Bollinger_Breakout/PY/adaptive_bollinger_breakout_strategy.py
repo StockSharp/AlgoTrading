@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class adaptive_bollinger_breakout_strategy(Strategy):
     """
@@ -116,21 +116,13 @@ class adaptive_bollinger_breakout_strategy(Strategy):
         aiv.IsFinal = True
         atr_val = self._atr.Process(aiv)
 
-        fsv = DecimalIndicatorValue(self._fast_sma, candle.ClosePrice, candle.OpenTime)
-        fsv.IsFinal = True
-        fast_sma_val = self._fast_sma.Process(fsv)
+        fast_sma_val = process_float(self._fast_sma, candle.ClosePrice, candle.OpenTime, True)
 
-        ssv = DecimalIndicatorValue(self._slow_sma, candle.ClosePrice, candle.OpenTime)
-        ssv.IsFinal = True
-        slow_sma_val = self._slow_sma.Process(ssv)
+        slow_sma_val = process_float(self._slow_sma, candle.ClosePrice, candle.OpenTime, True)
 
-        fstv = DecimalIndicatorValue(self._fast_std, candle.ClosePrice, candle.OpenTime)
-        fstv.IsFinal = True
-        fast_std_val = self._fast_std.Process(fstv)
+        fast_std_val = process_float(self._fast_std, candle.ClosePrice, candle.OpenTime, True)
 
-        sstv = DecimalIndicatorValue(self._slow_std, candle.ClosePrice, candle.OpenTime)
-        sstv.IsFinal = True
-        slow_std_val = self._slow_std.Process(sstv)
+        slow_std_val = process_float(self._slow_std, candle.ClosePrice, candle.OpenTime, True)
 
         if not self._atr.IsFormed or not self._fast_sma.IsFormed or not self._slow_sma.IsFormed or \
            not self._fast_std.IsFormed or not self._slow_std.IsFormed:

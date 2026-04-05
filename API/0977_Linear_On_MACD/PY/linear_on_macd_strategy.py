@@ -13,10 +13,9 @@ from StockSharp.Algo.Indicators import (
     MovingAverageConvergenceDivergenceSignal,
     LinearRegression,
     ExponentialMovingAverage,
-    DecimalIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class linear_on_macd_strategy(Strategy):
     def __init__(self):
@@ -62,23 +61,12 @@ class linear_on_macd_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def _create_final_value(self, ind, value, time):
-        v = DecimalIndicatorValue(ind, value, time)
-        v.IsFinal = True
-        return v
-
     def OnProcess(self, candle, obv_value, dummy_value):
         if candle.State != CandleStates.Finished:
             return
-        obv_macd_result = self._obv_macd.Process(
-            self._create_final_value(self._obv_macd, obv_value, candle.ServerTime)
-        )
-        price_macd_result = self._price_macd.Process(
-            self._create_final_value(self._price_macd, float(candle.ClosePrice), candle.ServerTime)
-        )
-        reg_result = self._price_reg.Process(
-            self._create_final_value(self._price_reg, float(candle.ClosePrice), candle.ServerTime)
-        )
+        obv_macd_result = process_float(self._obv_macd, obv_value, candle.ServerTime, True)
+        price_macd_result = process_float(self._price_macd, float(candle.ClosePrice), candle.ServerTime, True)
+        reg_result = process_float(self._price_reg, float(candle.ClosePrice), candle.ServerTime, True)
         if not self._obv_macd.IsFormed or not self._price_macd.IsFormed or not self._price_reg.IsFormed:
             return
         obv_macd_val = obv_macd_result.Macd

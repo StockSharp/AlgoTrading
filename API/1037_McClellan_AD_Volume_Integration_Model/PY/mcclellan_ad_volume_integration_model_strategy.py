@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class mcclellan_ad_volume_integration_model_strategy(Strategy):
     def __init__(self):
@@ -72,8 +72,8 @@ class mcclellan_ad_volume_integration_model_strategy(Strategy):
         if vol == 0.0:
             vol = 1.0
         weighted_ad = ad_line * vol
-        short_res = self._ema_short.Process(DecimalIndicatorValue(self._ema_short, weighted_ad, candle.OpenTime))
-        long_res = self._ema_long.Process(DecimalIndicatorValue(self._ema_long, weighted_ad, candle.OpenTime))
+        short_res = process_float(self._ema_short, weighted_ad, candle.OpenTime, True)
+        long_res = process_float(self._ema_long, weighted_ad, candle.OpenTime, True)
         short_val = float(short_res)
         long_val = float(long_res)
         oscillator = short_val - long_val

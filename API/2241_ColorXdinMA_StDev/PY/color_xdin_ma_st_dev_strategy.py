@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_xdin_ma_st_dev_strategy(Strategy):
     def __init__(self):
@@ -82,9 +82,7 @@ class color_xdin_ma_st_dev_strategy(Strategy):
             return
         change = xdin - self._prev_xdin
         self._prev_xdin = xdin
-        input_val = DecimalIndicatorValue(self._std_dev, change, candle.ServerTime)
-        input_val.IsFinal = True
-        std_result = self._std_dev.Process(input_val)
+        std_result = process_float(self._std_dev, change, candle.ServerTime, True)
         if not self._std_dev.IsFormed:
             return
         st_dev = float(std_result)

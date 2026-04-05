@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import (
-    DecimalIndicatorValue, ExponentialMovingAverage, RelativeStrengthIndex
+    ExponentialMovingAverage, RelativeStrengthIndex
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class afl_winner_sign_strategy(Strategy):
 
@@ -92,14 +92,10 @@ class afl_winner_sign_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        ki = DecimalIndicatorValue(self._fast, float(momentum), candle.OpenTime)
-        ki.IsFinal = True
-        k_result = self._fast.Process(ki)
+        k_result = process_float(self._fast, float(momentum), candle.OpenTime, True)
         k = float(k_result)
 
-        di = DecimalIndicatorValue(self._slow, k, candle.OpenTime)
-        di.IsFinal = True
-        d_result = self._slow.Process(di)
+        d_result = process_float(self._slow, k, candle.OpenTime, True)
         d = float(d_result)
 
         if not self._fast.IsFormed or not self._slow.IsFormed:

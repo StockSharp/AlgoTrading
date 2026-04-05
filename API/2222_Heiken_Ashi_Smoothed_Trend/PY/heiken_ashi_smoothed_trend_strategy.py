@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class heiken_ashi_smoothed_trend_strategy(Strategy):
     def __init__(self):
@@ -71,18 +71,10 @@ class heiken_ashi_smoothed_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.OpenTime
-        d1 = DecimalIndicatorValue(self._open_ema, float(candle.OpenPrice), t)
-        d1.IsFinal = True
-        o_result = self._open_ema.Process(d1)
-        d2 = DecimalIndicatorValue(self._close_ema, float(candle.ClosePrice), t)
-        d2.IsFinal = True
-        c_result = self._close_ema.Process(d2)
-        d3 = DecimalIndicatorValue(self._high_ema, float(candle.HighPrice), t)
-        d3.IsFinal = True
-        h_result = self._high_ema.Process(d3)
-        d4 = DecimalIndicatorValue(self._low_ema, float(candle.LowPrice), t)
-        d4.IsFinal = True
-        l_result = self._low_ema.Process(d4)
+        o_result = process_float(self._open_ema, float(candle.OpenPrice), t, True)
+        c_result = process_float(self._close_ema, float(candle.ClosePrice), t, True)
+        h_result = process_float(self._high_ema, float(candle.HighPrice), t, True)
+        l_result = process_float(self._low_ema, float(candle.LowPrice), t, True)
         if not o_result.IsFormed or not c_result.IsFormed or not h_result.IsFormed or not l_result.IsFormed:
             return
         open_ema = float(o_result)

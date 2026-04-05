@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ParabolicSar, VolumeIndicator, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ParabolicSar, VolumeIndicator, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
@@ -94,7 +94,7 @@ class parabolic_sar_volume_strategy(Strategy):
 
     def ProcessIndicators(self, candle, sarValue, volumeValue):
         # Process volume average
-        avgResult = self._volumeAverage.Process(DecimalIndicatorValue(self._volumeAverage, volumeValue, candle.ServerTime))
+        avgResult = process_float(self._volumeAverage, volumeValue, candle.ServerTime, True)
         if avgResult is None:
             return
 

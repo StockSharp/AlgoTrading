@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class momentum_style_rotation_strategy(Strategy):
     """Momentum style rotation strategy that trades the primary instrument when its relative strength versus a benchmark style ETF rotates into or out of favor."""
@@ -171,19 +171,13 @@ class momentum_style_rotation_strategy(Strategy):
 
         relative_strength = self._latest_primary_momentum - self._latest_benchmark_momentum
 
-        rs_iv = DecimalIndicatorValue(self._relative_strength_average, relative_strength, time)
-        rs_iv.IsFinal = True
-        smoothed_strength = float(self._relative_strength_average.Process(rs_iv))
+        smoothed_strength = float(process_float(self._relative_strength_average, relative_strength, time, True))
 
         spread = relative_strength - smoothed_strength
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, spread, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, spread, time, True))
 
         if not self._relative_strength_average.IsFormed or not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

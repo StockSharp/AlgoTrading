@@ -9,9 +9,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class alligator_fractal_martingale_strategy(Strategy):
     def __init__(self):
@@ -205,21 +205,15 @@ class alligator_fractal_martingale_strategy(Strategy):
         median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
         is_final = candle.State == CandleStates.Finished
 
-        jaw_iv = DecimalIndicatorValue(self._jaw, Decimal(median), candle.ServerTime)
-        jaw_iv.IsFinal = is_final
-        jaw_result = self._jaw.Process(jaw_iv)
+        jaw_result = process_float(self._jaw, median, candle.ServerTime, is_final)
         if is_final:
             self._add_indicator_value(self._jaw_history, float(jaw_result))
 
-        teeth_iv = DecimalIndicatorValue(self._teeth, Decimal(median), candle.ServerTime)
-        teeth_iv.IsFinal = is_final
-        teeth_result = self._teeth.Process(teeth_iv)
+        teeth_result = process_float(self._teeth, median, candle.ServerTime, is_final)
         if is_final:
             self._add_indicator_value(self._teeth_history, float(teeth_result))
 
-        lips_iv = DecimalIndicatorValue(self._lips, Decimal(median), candle.ServerTime)
-        lips_iv.IsFinal = is_final
-        lips_result = self._lips.Process(lips_iv)
+        lips_result = process_float(self._lips, median, candle.ServerTime, is_final)
         if is_final:
             self._add_indicator_value(self._lips_history, float(lips_result))
 

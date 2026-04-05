@@ -9,9 +9,9 @@ from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (RelativeStrengthIndex, MoneyFlowIndex, WilliamsR, DeMarker,
     SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage,
-    WeightedMovingAverage, JurikMovingAverage, KaufmanAdaptiveMovingAverage,
-    DecimalIndicatorValue)
+    WeightedMovingAverage, JurikMovingAverage, KaufmanAdaptiveMovingAverage)
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 TREND_DIRECT = 0
 TREND_AGAINST = 1
@@ -22,7 +22,6 @@ SMOOTH_SMOOTHED = 2
 SMOOTH_WEIGHTED = 3
 SMOOTH_JURIK = 4
 SMOOTH_KAUFMAN = 5
-
 
 class weight_oscillator_direct_strategy(Strategy):
     def __init__(self):
@@ -280,9 +279,7 @@ class weight_oscillator_direct_strategy(Strategy):
 
         blended = (rsi_w * rsi_val + mfi_w * mfi_val + wpr_w * normalized_wpr + dm_w * normalized_dm) / total_weight
 
-        input_val = DecimalIndicatorValue(self._smoothing, Decimal(blended), candle.OpenTime)
-        input_val.IsFinal = True
-        smoothed_result = self._smoothing.Process(input_val)
+        smoothed_result = process_float(self._smoothing, Decimal(blended), candle.OpenTime, True)
         if not smoothed_result.IsFinal:
             return
 

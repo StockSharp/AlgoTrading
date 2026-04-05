@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
-from StockSharp.Algo.Indicators import ZeroLagExponentialMovingAverage, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ZeroLagExponentialMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class dealers_trade_zero_lag_macd_strategy(Strategy):
     """
@@ -125,9 +126,7 @@ class dealers_trade_zero_lag_macd_strategy(Strategy):
         slow_val = float(slow_val)
         macd = fast_val - slow_val
 
-        sig_input = DecimalIndicatorValue(self._signal_ema, macd, candle.CloseTime)
-        sig_input.IsFinal = True
-        self._signal_ema.Process(sig_input)
+        process_float(self._signal_ema, macd, candle.CloseTime, True)
 
         if not self._has_previous_macd:
             self._previous_macd = macd

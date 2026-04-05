@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, MovingAverageConvergenceDivergence, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, MovingAverageConvergenceDivergence
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class puria_strategy(Strategy):
 
@@ -119,9 +119,7 @@ class puria_strategy(Strategy):
 
         t = candle.OpenTime
 
-        macd_input = DecimalIndicatorValue(self._macd, candle.ClosePrice, t)
-        macd_input.IsFinal = True
-        macd_result = self._macd.Process(macd_input)
+        macd_result = process_float(self._macd, candle.ClosePrice, t, True)
         if not macd_result.IsFormed:
             return
 

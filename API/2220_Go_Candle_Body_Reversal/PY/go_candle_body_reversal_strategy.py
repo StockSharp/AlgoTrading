@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class go_candle_body_reversal_strategy(Strategy):
     def __init__(self):
@@ -52,9 +52,7 @@ class go_candle_body_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         body = float(candle.ClosePrice) - float(candle.OpenPrice)
-        div = DecimalIndicatorValue(self._body_sma, body, candle.OpenTime)
-        div.IsFinal = True
-        ma_result = self._body_sma.Process(div)
+        ma_result = process_float(self._body_sma, body, candle.OpenTime, True)
         if not ma_result.IsFormed:
             return
         value = float(ma_result)

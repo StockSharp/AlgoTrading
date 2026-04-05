@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class fed_model_strategy(Strategy):
     """Fed model strategy that trades the primary instrument when its synthetic earnings yield exceeds a synthetic bond yield benchmark."""
@@ -148,9 +148,7 @@ class fed_model_strategy(Strategy):
 
     def UpdateYieldGap(self, average, candle):
         yield_proxy = self.CalculateYieldProxy(candle)
-        iv = DecimalIndicatorValue(average, yield_proxy, candle.OpenTime)
-        iv.IsFinal = True
-        result = average.Process(iv)
+        result = process_float(average, yield_proxy, candle.OpenTime, True)
         return float(result)
 
     def CalculateYieldProxy(self, candle):
@@ -171,14 +169,10 @@ class fed_model_strategy(Strategy):
 
         gap = self._latest_primary_gap - self._latest_benchmark_gap
 
-        mean_iv = DecimalIndicatorValue(self._gap_average, gap, time)
-        mean_iv.IsFinal = True
-        mean_result = self._gap_average.Process(mean_iv)
+        mean_result = process_float(self._gap_average, gap, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._gap_deviation, gap, time)
-        dev_iv.IsFinal = True
-        dev_result = self._gap_deviation.Process(dev_iv)
+        dev_result = process_float(self._gap_deviation, gap, time, True)
         deviation = float(dev_result)
 
         if not self._gap_average.IsFormed or not self._gap_deviation.IsFormed or deviation <= 0:

@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from System import Decimal
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class five_eight_ma_cross_strategy(Strategy):
     def __init__(self):
@@ -121,12 +121,8 @@ class five_eight_ma_cross_strategy(Strategy):
         low = float(candle.LowPrice)
         open_price = float(candle.OpenPrice)
 
-        fast_input = DecimalIndicatorValue(self._fast_ma, candle.ClosePrice, candle.OpenTime)
-        fast_input.IsFinal = True
-        fast_result = self._fast_ma.Process(fast_input)
-        slow_input = DecimalIndicatorValue(self._slow_ma, candle.OpenPrice, candle.OpenTime)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_input)
+        fast_result = process_float(self._fast_ma, candle.ClosePrice, candle.OpenTime, True)
+        slow_result = process_float(self._slow_ma, candle.OpenPrice, candle.OpenTime, True)
 
         fast_val = fast_result.Value
         slow_val = slow_result.Value

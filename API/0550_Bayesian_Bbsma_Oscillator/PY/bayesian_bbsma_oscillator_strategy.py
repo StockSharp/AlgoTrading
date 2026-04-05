@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
-from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bayesian_bbsma_oscillator_strategy(Strategy):
     def __init__(self):
@@ -120,11 +120,6 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
             self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
-    def _make_iv(self, ind, val, t):
-        iv = DecimalIndicatorValue(ind, val, t)
-        iv.IsFinal = True
-        return iv
-
     def _process_candle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
@@ -144,10 +139,10 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
         close = float(candle.ClosePrice)
         median = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
 
-        sma_val = self._sma_close.Process(self._make_iv(self._sma_close, close, t))
-        ao_fast_val = self._ao_fast_sma.Process(self._make_iv(self._ao_fast_sma, median, t))
-        ao_slow_val = self._ao_slow_sma.Process(self._make_iv(self._ao_slow_sma, median, t))
-        jaw_val = self._jaw_sma.Process(self._make_iv(self._jaw_sma, close, t))
+        sma_val = process_float(self._sma_close, close, t, True)
+        ao_fast_val = process_float(self._ao_fast_sma, median, t, True)
+        ao_slow_val = process_float(self._ao_slow_sma, median, t, True)
+        jaw_val = process_float(self._jaw_sma, close, t, True)
 
         if not ao_slow_val.IsFormed or not sma_val.IsFormed:
             return
@@ -158,7 +153,7 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
         jaw = float(jaw_val)
 
         ao = ao_fast_v - ao_slow_v
-        ao_sma_value = self._ac_sma.Process(self._make_iv(self._ac_sma, ao, t))
+        ao_sma_value = process_float(self._ac_sma, ao, t, True)
         if not ao_sma_value.IsFormed:
             return
 
@@ -167,29 +162,17 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
         ac_is_blue = ac > self._prev_ac
         ao_is_green = ao > self._prev_ao
 
-        prob_bb_upper_up = float(self._bb_upper_up_sma.Process(
-            self._make_iv(self._bb_upper_up_sma, 1.0 if close > bb_upper else 0.0, t)
-        ))
+        prob_bb_upper_up = float(process_float(self._bb_upper_up_sma, 1.0 if close > bb_upper else 0.0, t, True))
 
-        prob_bb_upper_down = float(self._bb_upper_down_sma.Process(
-            self._make_iv(self._bb_upper_down_sma, 1.0 if close < bb_upper else 0.0, t)
-        ))
+        prob_bb_upper_down = float(process_float(self._bb_upper_down_sma, 1.0 if close < bb_upper else 0.0, t, True))
 
-        prob_bb_basis_up = float(self._bb_basis_up_sma.Process(
-            self._make_iv(self._bb_basis_up_sma, 1.0 if close > bb_basis else 0.0, t)
-        ))
+        prob_bb_basis_up = float(process_float(self._bb_basis_up_sma, 1.0 if close > bb_basis else 0.0, t, True))
 
-        prob_bb_basis_down = float(self._bb_basis_down_sma.Process(
-            self._make_iv(self._bb_basis_down_sma, 1.0 if close < bb_basis else 0.0, t)
-        ))
+        prob_bb_basis_down = float(process_float(self._bb_basis_down_sma, 1.0 if close < bb_basis else 0.0, t, True))
 
-        prob_sma_up = float(self._sma_up_sma.Process(
-            self._make_iv(self._sma_up_sma, 1.0 if close > sma_close else 0.0, t)
-        ))
+        prob_sma_up = float(process_float(self._sma_up_sma, 1.0 if close > sma_close else 0.0, t, True))
 
-        prob_sma_down = float(self._sma_down_sma.Process(
-            self._make_iv(self._sma_down_sma, 1.0 if close < sma_close else 0.0, t)
-        ))
+        prob_sma_down = float(process_float(self._sma_down_sma, 1.0 if close < sma_close else 0.0, t, True))
 
         if not self._bb_upper_up_sma.IsFormed:
             return

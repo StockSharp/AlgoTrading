@@ -12,9 +12,8 @@ from StockSharp.Algo.Indicators import (
     SmoothedMovingAverage,
     SimpleMovingAverage,
     StandardDeviation,
-    DecimalIndicatorValue,
 )
-
+from indicator_extensions import *
 
 class js_chaos_strategy(Strategy):
     """JS Chaos: Alligator + AO + AC + fractals with staged entries and trailing."""
@@ -228,28 +227,20 @@ class js_chaos_strategy(Strategy):
         self._update_alligator(median, t)
 
         # MA21
-        ma_iv = DecimalIndicatorValue(self._ma21_ind, Decimal(float(candle.ClosePrice)), t)
-        ma_iv.IsFinal = True
-        ma_val = self._ma21_ind.Process(ma_iv)
+        ma_val = process_float(self._ma21_ind, Decimal(float(candle.ClosePrice)), t, True)
         if ma_val.IsFormed:
             self._ma21_value = float(ma_val.Value)
 
         # AO
-        ao_s_iv = DecimalIndicatorValue(self._ao_short, Decimal(median), t)
-        ao_s_iv.IsFinal = True
-        ao_short_val = self._ao_short.Process(ao_s_iv)
+        ao_short_val = process_float(self._ao_short, Decimal(median), t, True)
 
-        ao_l_iv = DecimalIndicatorValue(self._ao_long, Decimal(median), t)
-        ao_l_iv.IsFinal = True
-        ao_long_val = self._ao_long.Process(ao_l_iv)
+        ao_long_val = process_float(self._ao_long, Decimal(median), t, True)
 
         if not self._ao_short.IsFormed or not self._ao_long.IsFormed:
             return
 
         ao = float(ao_short_val.Value) - float(ao_long_val.Value)
-        ao_sma_iv = DecimalIndicatorValue(self._ao_sma, Decimal(ao), t)
-        ao_sma_iv.IsFinal = True
-        ao_sma_val = self._ao_sma.Process(ao_sma_iv)
+        ao_sma_val = process_float(self._ao_sma, Decimal(ao), t, True)
         if not self._ao_sma.IsFormed:
             return
 
@@ -257,9 +248,7 @@ class js_chaos_strategy(Strategy):
         ac = ao - ao_sma
 
         # StdDev
-        std_iv = DecimalIndicatorValue(self._std_dev, Decimal(float(candle.ClosePrice)), t)
-        std_iv.IsFinal = True
-        std_val = self._std_dev.Process(std_iv)
+        std_val = process_float(self._std_dev, Decimal(float(candle.ClosePrice)), t, True)
         if not self._std_dev.IsFormed:
             return
 
@@ -307,25 +296,19 @@ class js_chaos_strategy(Strategy):
         self._prev_open = float(candle.OpenPrice)
 
     def _update_alligator(self, median, t):
-        jaw_iv = DecimalIndicatorValue(self._jaw_ind, Decimal(median), t)
-        jaw_iv.IsFinal = True
-        jaw_val = self._jaw_ind.Process(jaw_iv)
+        jaw_val = process_float(self._jaw_ind, Decimal(median), t, True)
         if jaw_val.IsFormed:
             self._jaw_queue.append(float(jaw_val.Value))
             if len(self._jaw_queue) > self.JawShift:
                 self._jaw_value = self._jaw_queue.pop(0)
 
-        teeth_iv = DecimalIndicatorValue(self._teeth_ind, Decimal(median), t)
-        teeth_iv.IsFinal = True
-        teeth_val = self._teeth_ind.Process(teeth_iv)
+        teeth_val = process_float(self._teeth_ind, Decimal(median), t, True)
         if teeth_val.IsFormed:
             self._teeth_queue.append(float(teeth_val.Value))
             if len(self._teeth_queue) > self.TeethShift:
                 self._teeth_value = self._teeth_queue.pop(0)
 
-        lips_iv = DecimalIndicatorValue(self._lips_ind, Decimal(median), t)
-        lips_iv.IsFinal = True
-        lips_val = self._lips_ind.Process(lips_iv)
+        lips_val = process_float(self._lips_ind, Decimal(median), t, True)
         if lips_val.IsFormed:
             self._lips_queue.append(float(lips_val.Value))
             if len(self._lips_queue) > self.LipsShift:

@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import BollingerBands, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 PRICE_CLOSE = 0
 PRICE_OPEN = 1
@@ -18,7 +19,6 @@ PRICE_MEDIAN = 4
 PRICE_TYPICAL = 5
 PRICE_WEIGHTED = 6
 PRICE_AVERAGE = 7
-
 
 class bollinger_breakout_dc2008_strategy(Strategy):
     def __init__(self):
@@ -99,9 +99,7 @@ class bollinger_breakout_dc2008_strategy(Strategy):
             return
 
         price_value = self._get_applied_price(candle)
-        inp = DecimalIndicatorValue(self._bollinger, price_value, candle.OpenTime)
-        inp.IsFinal = True
-        indicator_value = self._bollinger.Process(inp)
+        indicator_value = process_float(self._bollinger, price_value, candle.OpenTime, True)
 
         if not indicator_value.IsFinal:
             return

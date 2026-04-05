@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_rsioma_strategy(Strategy):
     def __init__(self):
@@ -74,9 +74,7 @@ class exp_rsioma_strategy(Strategy):
 
         rsi_val = float(rsi_value)
 
-        ema_input = DecimalIndicatorValue(self._rsi_ema, rsi_val, candle.OpenTime)
-        ema_input.IsFinal = True
-        ema_result = self._rsi_ema.Process(ema_input)
+        ema_result = process_float(self._rsi_ema, rsi_val, candle.OpenTime, True)
         if not self._rsi_ema.IsFormed:
             return
 

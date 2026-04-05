@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class mutual_fund_momentum_strategy(Strategy):
     """Mutual fund momentum strategy that trades the primary instrument when its medium-term momentum leadership diverges from a benchmark fund."""
@@ -187,13 +187,9 @@ class mutual_fund_momentum_strategy(Strategy):
 
         spread = self._latest_primary_momentum - self._latest_benchmark_momentum
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, candle.OpenTime)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, spread, candle.OpenTime, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, candle.OpenTime)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, spread, candle.OpenTime, True))
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

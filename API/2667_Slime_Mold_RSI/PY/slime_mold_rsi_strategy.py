@@ -8,8 +8,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
-
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
+from indicator_extensions import *
 
 class slime_mold_rsi_strategy(Strategy):
     """Slime Mold RSI perceptron: sums weighted RSI inputs for zero-crossing signals."""
@@ -72,21 +72,13 @@ class slime_mold_rsi_strategy(Strategy):
         mp = Decimal(float(median_price))
         t = candle.ServerTime
 
-        iv1 = DecimalIndicatorValue(self._rsi12, mp, t)
-        iv1.IsFinal = True
-        r12_val = self._rsi12.Process(iv1)
+        r12_val = process_float(self._rsi12, mp, t, True)
 
-        iv2 = DecimalIndicatorValue(self._rsi36, mp, t)
-        iv2.IsFinal = True
-        r36_val = self._rsi36.Process(iv2)
+        r36_val = process_float(self._rsi36, mp, t, True)
 
-        iv3 = DecimalIndicatorValue(self._rsi108, mp, t)
-        iv3.IsFinal = True
-        r108_val = self._rsi108.Process(iv3)
+        r108_val = process_float(self._rsi108, mp, t, True)
 
-        iv4 = DecimalIndicatorValue(self._rsi324, mp, t)
-        iv4.IsFinal = True
-        r324_val = self._rsi324.Process(iv4)
+        r324_val = process_float(self._rsi324, mp, t, True)
 
         if not self._rsi12.IsFormed or not self._rsi36.IsFormed or not self._rsi108.IsFormed or not self._rsi324.IsFormed:
             return

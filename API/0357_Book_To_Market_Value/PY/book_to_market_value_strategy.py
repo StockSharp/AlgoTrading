@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class book_to_market_value_strategy(Strategy):
     """Relative book-to-market factor strategy using dual securities."""
@@ -149,9 +149,7 @@ class book_to_market_value_strategy(Strategy):
 
     def UpdateRatio(self, average, candle):
         synthetic_book = self.CalculateSyntheticBookValue(candle)
-        iv = DecimalIndicatorValue(average, synthetic_book, candle.OpenTime)
-        iv.IsFinal = True
-        result = average.Process(iv)
+        result = process_float(average, synthetic_book, candle.OpenTime, True)
         smoothed_book = float(result)
 
         return smoothed_book / max(float(candle.ClosePrice), 1.0)
@@ -177,14 +175,10 @@ class book_to_market_value_strategy(Strategy):
 
         ratio_spread = self._latest_primary_ratio - self._latest_benchmark_ratio
 
-        mean_iv = DecimalIndicatorValue(self._ratio_spread_average, ratio_spread, time)
-        mean_iv.IsFinal = True
-        mean_result = self._ratio_spread_average.Process(mean_iv)
+        mean_result = process_float(self._ratio_spread_average, ratio_spread, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._ratio_spread_deviation, ratio_spread, time)
-        dev_iv.IsFinal = True
-        dev_result = self._ratio_spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._ratio_spread_deviation, ratio_spread, time, True)
         deviation = float(dev_result)
 
         if not self._ratio_spread_average.IsFormed or not self._ratio_spread_deviation.IsFormed or deviation <= 0:

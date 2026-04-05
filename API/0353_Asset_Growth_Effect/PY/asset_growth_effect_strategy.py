@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class asset_growth_effect_strategy(Strategy):
     """Relative asset-growth strategy using dual securities."""
@@ -155,9 +155,7 @@ class asset_growth_effect_strategy(Strategy):
 
     def UpdateGrowth(self, average, candle, previous_value):
         synthetic_assets = self.CalculateSyntheticAssets(candle)
-        iv = DecimalIndicatorValue(average, synthetic_assets, candle.OpenTime)
-        iv.IsFinal = True
-        result = average.Process(iv)
+        result = process_float(average, synthetic_assets, candle.OpenTime, True)
         asset_base = float(result)
 
         if previous_value == 0.0:
@@ -193,14 +191,10 @@ class asset_growth_effect_strategy(Strategy):
 
         growth_spread = self._latest_primary_growth - self._latest_secondary_growth
 
-        mean_iv = DecimalIndicatorValue(self._growth_spread_average, growth_spread, time)
-        mean_iv.IsFinal = True
-        mean_result = self._growth_spread_average.Process(mean_iv)
+        mean_result = process_float(self._growth_spread_average, growth_spread, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._growth_spread_deviation, growth_spread, time)
-        dev_iv.IsFinal = True
-        dev_result = self._growth_spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._growth_spread_deviation, growth_spread, time, True)
         deviation = float(dev_result)
 
         if not self._growth_spread_average.IsFormed or not self._growth_spread_deviation.IsFormed or deviation <= 0:

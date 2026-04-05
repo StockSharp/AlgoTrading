@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, CandleIndicatorValue, SimpleMovingAverage, WilliamsR
+from StockSharp.Algo.Indicators import CandleIndicatorValue, SimpleMovingAverage, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_xwpr_histogram_vol_strategy(Strategy):
     def __init__(self):
@@ -96,13 +96,9 @@ class exp_xwpr_histogram_vol_strategy(Strategy):
         volume = candle.TotalVolume if candle.TotalVolume > Decimal(0) else Decimal(1)
         hist_raw = (wpr + Decimal(50)) * volume
 
-        hist_input = DecimalIndicatorValue(self._hist_sma, hist_raw, candle.OpenTime)
-        hist_input.IsFinal = True
-        hist_smoothed = self._hist_sma.Process(hist_input)
+        hist_smoothed = process_float(self._hist_sma, hist_raw, candle.OpenTime, True)
 
-        vol_input = DecimalIndicatorValue(self._vol_sma, volume, candle.OpenTime)
-        vol_input.IsFinal = True
-        vol_smoothed = self._vol_sma.Process(vol_input)
+        vol_smoothed = process_float(self._vol_sma, volume, candle.OpenTime, True)
 
         if not hist_smoothed.IsFormed or not vol_smoothed.IsFormed:
             return

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import LinearRegression, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import LinearRegression
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class forecast_oscillator_strategy(Strategy):
 
@@ -114,9 +114,7 @@ class forecast_oscillator_strategy(Strategy):
         price = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        lr_input = DecimalIndicatorValue(self._lin_reg, price, t)
-        lr_input.IsFinal = True
-        lr_result = self._lin_reg.Process(lr_input)
+        lr_result = process_float(self._lin_reg, price, t, True)
         if not lr_result.IsFormed:
             return
 

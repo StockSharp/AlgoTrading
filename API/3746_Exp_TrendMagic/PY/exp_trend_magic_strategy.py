@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, CommodityChannelIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import AverageTrueRange, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_trend_magic_strategy(Strategy):
     """CCI + ATR TrendMagic strategy with color change signals and virtual SL/TP."""
@@ -151,9 +151,7 @@ class exp_trend_magic_strategy(Strategy):
             return
 
         price = self._get_applied_price(candle, self.CciPrice)
-        cci_input = DecimalIndicatorValue(cci, price, candle.OpenTime)
-        cci_input.IsFinal = True
-        cci_indicator_value = cci.Process(cci_input)
+        cci_indicator_value = process_float(cci, price, candle.OpenTime, True)
 
         if not cci.IsFormed or not atr.IsFormed:
             return

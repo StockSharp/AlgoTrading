@@ -8,12 +8,12 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import (
-    DecimalIndicatorValue, SimpleMovingAverage, ExponentialMovingAverage,
+    SimpleMovingAverage, ExponentialMovingAverage,
     DoubleExponentialMovingAverage, TripleExponentialMovingAverage,
     WeightedMovingAverage, VolumeWeightedMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # MA type constants
 MA_SMA = 0
@@ -30,7 +30,6 @@ PRICE_OPEN = 2
 PRICE_LOW = 3
 PRICE_TYPICAL = 4
 PRICE_CENTER = 5
-
 
 class simple_trading_system_strategy(Strategy):
 
@@ -231,9 +230,7 @@ class simple_trading_system_strategy(Strategy):
             return
 
         price = self._get_price(candle)
-        mi = DecimalIndicatorValue(self._ma, price, candle.OpenTime)
-        mi.IsFinal = True
-        ma_result = self._ma.Process(mi)
+        ma_result = process_float(self._ma, price, candle.OpenTime, True)
         ma_value = float(ma_result)
 
         if self._bars_since_trade < self.CooldownBars:

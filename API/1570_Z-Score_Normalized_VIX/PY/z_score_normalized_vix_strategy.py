@@ -10,10 +10,10 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage, StandardDeviation,
-    DecimalIndicatorValue, CandleIndicatorValue
+    CandleIndicatorValue
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class z_score_normalized_vix_strategy(Strategy):
     """Z-Score Normalized VIX strategy.
@@ -102,13 +102,9 @@ class z_score_normalized_vix_strategy(Strategy):
         vol_value = float(vol_result)
 
         # Feed volatility value into z-score components (SMA and StdDev of volatility)
-        mean_input = DecimalIndicatorValue(self._z_mean, vol_value, candle.OpenTime)
-        mean_input.IsFinal = True
-        mean_result = self._z_mean.Process(mean_input)
+        mean_result = process_float(self._z_mean, vol_value, candle.OpenTime, True)
 
-        std_input = DecimalIndicatorValue(self._z_std, vol_value, candle.OpenTime)
-        std_input.IsFinal = True
-        std_result = self._z_std.Process(std_input)
+        std_result = process_float(self._z_std, vol_value, candle.OpenTime, True)
 
         if not self._z_mean.IsFormed or not self._z_std.IsFormed:
             return

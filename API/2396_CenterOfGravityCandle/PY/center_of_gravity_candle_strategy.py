@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class center_of_gravity_candle_strategy(Strategy):
     """
@@ -113,9 +114,7 @@ class center_of_gravity_candle_strategy(Strategy):
         t = candle.OpenTime
 
         def _proc(ind, val):
-            inp = DecimalIndicatorValue(ind, val, t)
-            inp.IsFinal = True
-            return ind.Process(inp)
+            return process_float(ind, val, t, True)
 
         o_sma = _proc(self._open_sma, candle.OpenPrice)
         o_lwma = _proc(self._open_lwma, candle.OpenPrice)

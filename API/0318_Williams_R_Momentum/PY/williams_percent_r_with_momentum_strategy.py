@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import WilliamsR, Momentum, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import WilliamsR, Momentum, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class williams_percent_r_with_momentum_strategy(Strategy):
     """
@@ -69,8 +69,7 @@ class williams_percent_r_with_momentum_strategy(Strategy):
         )
 
     def _process_candle(self, candle, williams_r_value, momentum_value):
-        mom_avg_input = DecimalIndicatorValue(self._momentum_sma, Decimal(float(momentum_value)), candle.ServerTime)
-        momentum_avg = float(self._momentum_sma.Process(mom_avg_input))
+        momentum_avg = float(process_float(self._momentum_sma, Decimal(float(momentum_value)), candle.ServerTime, True))
 
         if candle.State != CandleStates.Finished:
             return

@@ -10,9 +10,9 @@ from System import TimeSpan, Decimal, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
-    CommodityChannelIndex, ExponentialMovingAverage, DecimalIndicatorValue
+    CommodityChannelIndex, ExponentialMovingAverage
 )
-
+from indicator_extensions import *
 
 class icci_ima_strategy(Strategy):
     """CCI and EMA crossover strategy: trades when CCI crosses its smoothed EMA."""
@@ -133,9 +133,7 @@ class icci_ima_strategy(Strategy):
         cci_val = Decimal(float(cci_value))
         cci_close_val = Decimal(float(cci_close_value))
 
-        div = DecimalIndicatorValue(self._cci_ma, cci_val, candle.OpenTime)
-        div.IsFinal = True
-        ma_result = self._cci_ma.Process(div)
+        ma_result = process_float(self._cci_ma, cci_val, candle.OpenTime, True)
         ma_val = Decimal(float(ma_result))
 
         if not self._cci.IsFormed or not self._cci_close.IsFormed or not self._cci_ma.IsFormed:

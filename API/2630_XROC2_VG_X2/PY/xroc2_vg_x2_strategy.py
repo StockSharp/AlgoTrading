@@ -10,8 +10,7 @@ from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
-from StockSharp.Algo.Indicators import DecimalIndicatorValue
-
+from indicator_extensions import *
 
 class _RocSmoother(object):
     """Computes ROC (momentum mode) then smooths with an indicator."""
@@ -32,9 +31,7 @@ class _RocSmoother(object):
         prev = self._window[0]
         roc = Decimal.Subtract(close, prev)
 
-        inp = DecimalIndicatorValue(self._smoother, roc, time)
-        inp.IsFinal = True
-        out = self._smoother.Process(inp)
+        out = process_float(self._smoother, roc, time, True)
 
         if out.IsFinal:
             try:
@@ -42,7 +39,6 @@ class _RocSmoother(object):
             except Exception:
                 pass
         return None
-
 
 class _Xroc2VgSeries(object):
     """Manages fast/slow ROC smoothers and their signal history."""
@@ -79,7 +75,6 @@ class _Xroc2VgSeries(object):
         if idx < 1 or idx >= len(self._history):
             return None, None
         return self._history[idx], self._history[idx - 1]
-
 
 class xroc2_vg_x2_strategy(Strategy):
     """Multi-timeframe XROC2 VG: higher TF for bias, lower TF for entries."""

@@ -6,11 +6,11 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import (SimpleMovingAverage, ExponentialMovingAverage,
-    SmoothedMovingAverage, WeightedMovingAverage, Highest, Lowest, DecimalIndicatorValue, CandleIndicatorValue)
+    SmoothedMovingAverage, WeightedMovingAverage, Highest, Lowest, CandleIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math, Decimal
-
+from indicator_extensions import *
 
 class blau_ts_stochastic_strategy(Strategy):
     def __init__(self):
@@ -106,35 +106,23 @@ class blau_ts_stochastic_strategy(Strategy):
         stoch_raw = price - low
         range_raw = high - low
 
-        div1 = DecimalIndicatorValue(self._stoch_s1, Decimal(float(stoch_raw)), t)
-        div1.IsFinal = True
-        s1 = self._stoch_s1.Process(div1)
+        s1 = process_float(self._stoch_s1, Decimal(float(stoch_raw)), t, True)
         if s1.IsEmpty:
             return
-        div2 = DecimalIndicatorValue(self._stoch_s2, Decimal(float(s1.Value)), t)
-        div2.IsFinal = True
-        s2 = self._stoch_s2.Process(div2)
+        s2 = process_float(self._stoch_s2, Decimal(float(s1.Value)), t, True)
         if s2.IsEmpty:
             return
-        div3 = DecimalIndicatorValue(self._stoch_s3, Decimal(float(s2.Value)), t)
-        div3.IsFinal = True
-        s3 = self._stoch_s3.Process(div3)
+        s3 = process_float(self._stoch_s3, Decimal(float(s2.Value)), t, True)
         if s3.IsEmpty:
             return
 
-        dir1 = DecimalIndicatorValue(self._range_s1, Decimal(float(range_raw)), t)
-        dir1.IsFinal = True
-        r1 = self._range_s1.Process(dir1)
+        r1 = process_float(self._range_s1, Decimal(float(range_raw)), t, True)
         if r1.IsEmpty:
             return
-        dir2 = DecimalIndicatorValue(self._range_s2, Decimal(float(r1.Value)), t)
-        dir2.IsFinal = True
-        r2 = self._range_s2.Process(dir2)
+        r2 = process_float(self._range_s2, Decimal(float(r1.Value)), t, True)
         if r2.IsEmpty:
             return
-        dir3 = DecimalIndicatorValue(self._range_s3, Decimal(float(r2.Value)), t)
-        dir3.IsFinal = True
-        r3 = self._range_s3.Process(dir3)
+        r3 = process_float(self._range_s3, Decimal(float(r2.Value)), t, True)
         if r3.IsEmpty:
             return
 
@@ -143,9 +131,7 @@ class blau_ts_stochastic_strategy(Strategy):
             return
 
         hist = 200.0 * float(s3.Value) / denom - 100.0
-        dsig = DecimalIndicatorValue(self._signal_smooth, Decimal(float(hist)), t)
-        dsig.IsFinal = True
-        sig_result = self._signal_smooth.Process(dsig)
+        sig_result = process_float(self._signal_smooth, Decimal(float(hist)), t, True)
         if sig_result.IsEmpty:
             return
         signal = float(sig_result.Value)

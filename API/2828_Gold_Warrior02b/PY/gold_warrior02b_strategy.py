@@ -5,11 +5,11 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from StockSharp.Algo.Indicators import CommodityChannelIndex, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import CommodityChannelIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math
-
+from indicator_extensions import *
 
 class gold_warrior02b_strategy(Strategy):
     def __init__(self):

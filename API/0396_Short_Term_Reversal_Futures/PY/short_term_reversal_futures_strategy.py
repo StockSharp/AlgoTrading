@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class short_term_reversal_futures_strategy(Strategy):
     """Short-term reversal strategy for futures that trades the primary contract when its recent return overshoots or undershoots a benchmark contract."""
@@ -150,13 +150,9 @@ class short_term_reversal_futures_strategy(Strategy):
 
         spread = self._latest_primary_return - self._latest_benchmark_return
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, spread, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, spread, time, True))
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

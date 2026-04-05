@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class q2ma_cross_strategy(Strategy):
     def __init__(self):
@@ -59,12 +59,8 @@ class q2ma_cross_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.ServerTime
-        input_close = DecimalIndicatorValue(self._close_ma, float(candle.ClosePrice), t)
-        input_close.IsFinal = True
-        up_result = self._close_ma.Process(input_close)
-        input_open = DecimalIndicatorValue(self._open_ma, float(candle.OpenPrice), t)
-        input_open.IsFinal = True
-        dn_result = self._open_ma.Process(input_open)
+        up_result = process_float(self._close_ma, float(candle.ClosePrice), t, True)
+        dn_result = process_float(self._open_ma, float(candle.OpenPrice), t, True)
         if not self._close_ma.IsFormed or not self._open_ma.IsFormed:
             return
         up = float(up_result)

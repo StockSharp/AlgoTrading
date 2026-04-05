@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, StochasticOscillator, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class trend_collector_strategy(Strategy):
     def __init__(self):
@@ -67,12 +67,8 @@ class trend_collector_strategy(Strategy):
     def process_candle(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        fast_inp = DecimalIndicatorValue(self._fast_ma, candle.ClosePrice, candle.OpenTime)
-        fast_inp.IsFinal = True
-        fast_result = self._fast_ma.Process(fast_inp)
-        slow_inp = DecimalIndicatorValue(self._slow_ma, candle.ClosePrice, candle.OpenTime)
-        slow_inp.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_inp)
+        fast_result = process_float(self._fast_ma, candle.ClosePrice, candle.OpenTime, True)
+        slow_result = process_float(self._slow_ma, candle.ClosePrice, candle.OpenTime, True)
         if not fast_result.IsFormed or not slow_result.IsFormed or not stoch_value.IsFormed:
             return
         fast = float(fast_result)

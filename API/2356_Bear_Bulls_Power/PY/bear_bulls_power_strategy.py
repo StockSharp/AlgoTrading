@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bear_bulls_power_strategy(Strategy):
     def __init__(self):
@@ -59,14 +59,10 @@ class bear_bulls_power_strategy(Strategy):
             return
 
         price = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
-        price_ma_input = DecimalIndicatorValue(self._price_ma, price, candle.OpenTime)
-        price_ma_input.IsFinal = True
-        price_ma_val = float(self._price_ma.Process(price_ma_input))
+        price_ma_val = float(process_float(self._price_ma, price, candle.OpenTime, True))
 
         diff = (float(candle.HighPrice) + float(candle.LowPrice) - 2.0 * price_ma_val) / 2.0
-        signal_input = DecimalIndicatorValue(self._signal_ma, diff, candle.OpenTime)
-        signal_input.IsFinal = True
-        signal = float(self._signal_ma.Process(signal_input))
+        signal = float(process_float(self._signal_ma, diff, candle.OpenTime, True))
 
         if not self._price_ma.IsFormed or not self._signal_ma.IsFormed or not self.IsFormedAndOnlineAndAllowTrading():
             self._prev_value = signal

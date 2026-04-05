@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class channels_envelope_cross_strategy(Strategy):
 
@@ -127,15 +127,9 @@ class channels_envelope_cross_strategy(Strategy):
             return
 
         t = candle.ServerTime
-        iv1 = DecimalIndicatorValue(self._ema_fast_close, Decimal(float(candle.ClosePrice)), t)
-        iv1.IsFinal = True
-        fc_val = self._ema_fast_close.Process(iv1)
-        iv2 = DecimalIndicatorValue(self._ema_fast_open, Decimal(float(candle.OpenPrice)), t)
-        iv2.IsFinal = True
-        fo_val = self._ema_fast_open.Process(iv2)
-        iv3 = DecimalIndicatorValue(self._ema_slow, Decimal(float(candle.ClosePrice)), t)
-        iv3.IsFinal = True
-        sl_val = self._ema_slow.Process(iv3)
+        fc_val = process_float(self._ema_fast_close, Decimal(float(candle.ClosePrice)), t, True)
+        fo_val = process_float(self._ema_fast_open, Decimal(float(candle.OpenPrice)), t, True)
+        sl_val = process_float(self._ema_slow, Decimal(float(candle.ClosePrice)), t, True)
 
         fast_close = float(fc_val.Value)
         fast_open = float(fo_val.Value)

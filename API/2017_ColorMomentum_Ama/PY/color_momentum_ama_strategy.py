@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Momentum, KaufmanAdaptiveMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Momentum, KaufmanAdaptiveMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_momentum_ama_strategy(Strategy):
 
@@ -116,9 +116,7 @@ class color_momentum_ama_strategy(Strategy):
             self._cooldown_remaining -= 1
 
         mom_val = float(momentum_value)
-        ama_input = DecimalIndicatorValue(self._ama, momentum_value, candle.OpenTime)
-        ama_input.IsFinal = True
-        ama_result = self._ama.Process(ama_input)
+        ama_result = process_float(self._ama, momentum_value, candle.OpenTime, True)
         if not self._ama.IsFormed or ama_result.IsEmpty:
             return
         ama_value = float(ama_result)

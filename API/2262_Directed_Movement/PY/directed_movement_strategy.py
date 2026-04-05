@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class directed_movement_strategy(Strategy):
     def __init__(self):
@@ -75,15 +75,11 @@ class directed_movement_strategy(Strategy):
             return
         rsi_value = float(rsi_value)
         t = candle.ServerTime
-        input_fast = DecimalIndicatorValue(self._fast_ma, rsi_value, t)
-        input_fast.IsFinal = True
-        fast_result = self._fast_ma.Process(input_fast)
+        fast_result = process_float(self._fast_ma, rsi_value, t, True)
         if not self._fast_ma.IsFormed:
             return
         fast = float(fast_result)
-        input_slow = DecimalIndicatorValue(self._slow_ma, fast, t)
-        input_slow.IsFinal = True
-        slow_result = self._slow_ma.Process(input_slow)
+        slow_result = process_float(self._slow_ma, fast, t, True)
         if not self._slow_ma.IsFormed:
             self._prev_fast = fast
             self._prev_slow = fast

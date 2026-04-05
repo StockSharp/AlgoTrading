@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class residual_momentum_factor_strategy(Strategy):
     """Residual momentum factor strategy that trades the primary instrument when its benchmark-adjusted momentum diverges from the market proxy."""
@@ -183,9 +183,7 @@ class residual_momentum_factor_strategy(Strategy):
             ret = (close_price - self._previous_benchmark_close) / self._previous_benchmark_close
             self._previous_benchmark_close = close_price
             abs_ret = abs(ret)
-            beta_iv = DecimalIndicatorValue(self._beta_average, abs_ret, candle.OpenTime)
-            beta_iv.IsFinal = True
-            self._latest_beta = float(self._beta_average.Process(beta_iv))
+            self._latest_beta = float(process_float(self._beta_average, abs_ret, candle.OpenTime, True))
         else:
             self._previous_benchmark_close = close_price
 
@@ -203,13 +201,9 @@ class residual_momentum_factor_strategy(Strategy):
         beta_adjusted_benchmark = self._latest_benchmark_momentum * max(self._latest_beta, 0.2)
         residual_momentum = self._latest_primary_momentum - beta_adjusted_benchmark
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, residual_momentum, time)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, residual_momentum, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, residual_momentum, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, residual_momentum, time, True))
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

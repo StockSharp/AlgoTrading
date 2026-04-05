@@ -5,11 +5,11 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math, Decimal
-
+from indicator_extensions import *
 
 class ema_wma_contrarian_strategy(Strategy):
     def __init__(self):
@@ -57,12 +57,8 @@ class ema_wma_contrarian_strategy(Strategy):
         self._manage_active_position(candle)
 
         open_price = float(candle.OpenPrice)
-        d_ema = DecimalIndicatorValue(self._ema, Decimal(float(open_price)), candle.OpenTime)
-        d_ema.IsFinal = True
-        ema_result = self._ema.Process(d_ema)
-        d_wma = DecimalIndicatorValue(self._wma, Decimal(float(open_price)), candle.OpenTime)
-        d_wma.IsFinal = True
-        wma_result = self._wma.Process(d_wma)
+        ema_result = process_float(self._ema, Decimal(float(open_price)), candle.OpenTime, True)
+        wma_result = process_float(self._wma, Decimal(float(open_price)), candle.OpenTime, True)
 
         if ema_result.IsEmpty or wma_result.IsEmpty or not self._ema.IsFormed or not self._wma.IsFormed:
             return

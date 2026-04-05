@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class vo_vix_devma_strategy(Strategy):
     def __init__(self):
@@ -92,15 +92,9 @@ class vo_vix_devma_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.OpenTime
-        price_input = DecimalIndicatorValue(self._fast_std, candle.ClosePrice, t)
-        price_input.IsFinal = True
-        fast_std_value = self._fast_std.Process(price_input)
-        slow_input = DecimalIndicatorValue(self._slow_std, candle.ClosePrice, t)
-        slow_input.IsFinal = True
-        slow_std_value = self._slow_std.Process(slow_input)
-        ema_input = DecimalIndicatorValue(self._ema, candle.ClosePrice, t)
-        ema_input.IsFinal = True
-        ema_value = self._ema.Process(ema_input)
+        fast_std_value = process_float(self._fast_std, candle.ClosePrice, t, True)
+        slow_std_value = process_float(self._slow_std, candle.ClosePrice, t, True)
+        ema_value = process_float(self._ema, candle.ClosePrice, t, True)
         if not fast_std_value.IsFinal or not slow_std_value.IsFinal or not ema_value.IsFinal:
             return
         if not self._fast_std.IsFormed or not self._slow_std.IsFormed or not self._ema.IsFormed:

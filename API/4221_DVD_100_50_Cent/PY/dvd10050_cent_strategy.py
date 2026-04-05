@@ -9,7 +9,8 @@ import math
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
+from indicator_extensions import *
 
 class dvd10050_cent_strategy(Strategy):
     def __init__(self):
@@ -190,12 +191,8 @@ class dvd10050_cent_strategy(Strategy):
         self._h1_finished.append((high, low, op))
         while len(self._h1_finished) > self.H1HistoryLength:
             self._h1_finished.pop(0)
-        iv = DecimalIndicatorValue(self._h1_fast, Decimal(op), candle.CloseTime)
-        iv.IsFinal = True
-        self._h1_fast.Process(iv)
-        iv2 = DecimalIndicatorValue(self._h1_slow, Decimal(op), candle.CloseTime)
-        iv2.IsFinal = True
-        self._h1_slow.Process(iv2)
+        process_float(self._h1_fast, Decimal(op), candle.CloseTime, True)
+        process_float(self._h1_slow, Decimal(op), candle.CloseTime, True)
         if not self._h1_fast.IsFormed or not self._h1_slow.IsFormed:
             return
         from StockSharp.Algo.Indicators import IndicatorHelper

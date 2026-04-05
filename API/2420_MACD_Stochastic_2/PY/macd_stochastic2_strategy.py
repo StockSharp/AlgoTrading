@@ -11,10 +11,9 @@ from StockSharp.Algo.Indicators import (
     RelativeStrengthIndex,
     MovingAverageConvergenceDivergence,
     ExponentialMovingAverage,
-    DecimalIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class macd_stochastic2_strategy(Strategy):
     def __init__(self):
@@ -134,9 +133,7 @@ class macd_stochastic2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        macd_input = DecimalIndicatorValue(self._macd_ind, candle.ClosePrice, candle.OpenTime)
-        macd_input.IsFinal = True
-        macd_result = self._macd_ind.Process(macd_input)
+        macd_result = process_float(self._macd_ind, candle.ClosePrice, candle.OpenTime, True)
         if not self._macd_ind.IsFormed:
             return
 

@@ -6,11 +6,11 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from StockSharp.Algo.Indicators import (ExponentialMovingAverage, SimpleMovingAverage,
-    SmoothedMovingAverage, WeightedMovingAverage, DecimalIndicatorValue)
+    SmoothedMovingAverage, WeightedMovingAverage)
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Messages import DataType, CandleStates
 from System import TimeSpan, Math, Decimal
-
+from indicator_extensions import *
 
 class poker_show_strategy(Strategy):
     def __init__(self):
@@ -52,9 +52,7 @@ class poker_show_strategy(Strategy):
             return
 
         price = float(candle.ClosePrice)
-        div = DecimalIndicatorValue(self._ma, Decimal(float(price)), candle.OpenTime)
-        div.IsFinal = True
-        ma_result = self._ma.Process(div)
+        ma_result = process_float(self._ma, Decimal(float(price)), candle.OpenTime, True)
 
         if ma_result.IsEmpty or not self._ma.IsFormed:
             return

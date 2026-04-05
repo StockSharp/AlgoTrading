@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import JurikMovingAverage, RateOfChange, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import JurikMovingAverage, RateOfChange
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class x_derivative_strategy(Strategy):
     def __init__(self):
@@ -72,9 +72,7 @@ class x_derivative_strategy(Strategy):
     def on_candle(self, candle, roc_value):
         if candle.State != CandleStates.Finished:
             return
-        div = DecimalIndicatorValue(self._jma, roc_value, candle.OpenTime)
-        div.IsFinal = True
-        jma_result = self._jma.Process(div)
+        jma_result = process_float(self._jma, roc_value, candle.OpenTime, True)
         if not jma_result.IsFormed:
             return
         value = float(jma_result)

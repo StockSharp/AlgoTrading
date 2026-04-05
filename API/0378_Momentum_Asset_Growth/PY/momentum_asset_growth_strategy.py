@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class momentum_asset_growth_strategy(Strategy):
     """Momentum plus asset-growth strategy that trades the primary instrument when its risk-adjusted momentum outperforms a benchmark while synthetic asset growth remains contained."""
@@ -187,9 +187,7 @@ class momentum_asset_growth_strategy(Strategy):
 
     def UpdateGrowth(self, average, candle, is_primary):
         asset_base = self.CalculateSyntheticAssetBase(candle)
-        ab_iv = DecimalIndicatorValue(average, asset_base, candle.OpenTime)
-        ab_iv.IsFinal = True
-        smoothed_base = float(average.Process(ab_iv))
+        smoothed_base = float(process_float(average, asset_base, candle.OpenTime, True))
 
         if is_primary:
             prev = self._previous_primary_asset_base
@@ -231,13 +229,9 @@ class momentum_asset_growth_strategy(Strategy):
         penalty = float(self._growth_penalty.Value)
         signal = (self._latest_primary_momentum - self._latest_benchmark_momentum) - (penalty * (self._latest_primary_growth - self._latest_benchmark_growth))
 
-        mean_iv = DecimalIndicatorValue(self._signal_average, signal, time)
-        mean_iv.IsFinal = True
-        mean = float(self._signal_average.Process(mean_iv))
+        mean = float(process_float(self._signal_average, signal, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._signal_deviation, signal, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._signal_deviation.Process(dev_iv))
+        deviation = float(process_float(self._signal_deviation, signal, time, True))
 
         if not self._signal_average.IsFormed or not self._signal_deviation.IsFormed or deviation <= 0:
             return

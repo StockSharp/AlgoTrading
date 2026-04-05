@@ -8,11 +8,11 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
-    DecimalIndicatorValue, ExponentialMovingAverage,
+    ExponentialMovingAverage,
     SimpleMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # MA method constants
 MA_SIMPLE = 0
@@ -24,7 +24,6 @@ MA_WEIGHTED = 3
 SIGNAL_NEUTRAL = 0
 SIGNAL_BAR_A = 1
 SIGNAL_BAR_B = 2
-
 
 class var_mov_avg_strategy(Strategy):
     """Variable Moving Average reversal strategy. Tracks adaptive VMA swings and
@@ -232,9 +231,7 @@ class var_mov_avg_strategy(Strategy):
 
     def _process_stop_ma(self, ma, value, time):
         """Process a decimal value through the stop MA indicator."""
-        inp = DecimalIndicatorValue(ma, value, time)
-        inp.IsFinal = True
-        result = ma.Process(inp)
+        result = process_float(ma, value, time, True)
         if result.IsEmpty:
             return None
         return float(result)

@@ -14,8 +14,8 @@ from StockSharp.Algo.Indicators import (
     RelativeStrengthIndex,
     SmoothedMovingAverage,
     SimpleMovingAverage,
-    DecimalIndicatorValue,
 )
+from indicator_extensions import *
 
 class fuzzy_logic_legacy_strategy(Strategy):
     def __init__(self):
@@ -116,21 +116,11 @@ class fuzzy_logic_legacy_strategy(Strategy):
 
         hl2 = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
 
-        jaw_input = DecimalIndicatorValue(self._jaw, hl2, candle.OpenTime)
-        jaw_input.IsFinal = True
-        jaw_value = self._jaw.Process(jaw_input)
-        teeth_input = DecimalIndicatorValue(self._teeth, hl2, candle.OpenTime)
-        teeth_input.IsFinal = True
-        teeth_value = self._teeth.Process(teeth_input)
-        lips_input = DecimalIndicatorValue(self._lips, hl2, candle.OpenTime)
-        lips_input.IsFinal = True
-        lips_value = self._lips.Process(lips_input)
-        ao_fast_input = DecimalIndicatorValue(self._ao_fast, hl2, candle.OpenTime)
-        ao_fast_input.IsFinal = True
-        ao_fast_value = self._ao_fast.Process(ao_fast_input)
-        ao_slow_input = DecimalIndicatorValue(self._ao_slow, hl2, candle.OpenTime)
-        ao_slow_input.IsFinal = True
-        ao_slow_value = self._ao_slow.Process(ao_slow_input)
+        jaw_value = process_float(self._jaw, hl2, candle.OpenTime, True)
+        teeth_value = process_float(self._teeth, hl2, candle.OpenTime, True)
+        lips_value = process_float(self._lips, hl2, candle.OpenTime, True)
+        ao_fast_value = process_float(self._ao_fast, hl2, candle.OpenTime, True)
+        ao_slow_value = process_float(self._ao_slow, hl2, candle.OpenTime, True)
 
         if (not jaw_value.IsFinal or not teeth_value.IsFinal or not lips_value.IsFinal
                 or not ao_fast_value.IsFinal or not ao_slow_value.IsFinal):
@@ -146,9 +136,7 @@ class fuzzy_logic_legacy_strategy(Strategy):
             return
 
         ao = float(ao_fast_value) - float(ao_slow_value)
-        ac_avg_input = DecimalIndicatorValue(self._ac_average, ao, candle.OpenTime)
-        ac_avg_input.IsFinal = True
-        ac_average_value = self._ac_average.Process(ac_avg_input)
+        ac_average_value = process_float(self._ac_average, ao, candle.OpenTime, True)
         if not ac_average_value.IsFinal:
             self._update_demarker(candle)
             return

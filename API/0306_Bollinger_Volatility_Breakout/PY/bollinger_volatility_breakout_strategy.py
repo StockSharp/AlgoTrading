@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bollinger_volatility_breakout_strategy(Strategy):
     """
@@ -110,13 +110,9 @@ class bollinger_volatility_breakout_strategy(Strategy):
         atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
         atr_value = float(atr_result)
 
-        atr_avg_input = DecimalIndicatorValue(self._atr_sma, Decimal(atr_value), candle.OpenTime)
-        atr_avg_input.IsFinal = True
-        atr_average_value = float(self._atr_sma.Process(atr_avg_input))
+        atr_average_value = float(process_float(self._atr_sma, Decimal(atr_value), candle.OpenTime, True))
 
-        atr_std_input = DecimalIndicatorValue(self._atr_std_dev, Decimal(atr_value), candle.OpenTime)
-        atr_std_input.IsFinal = True
-        atr_std_dev_value = float(self._atr_std_dev.Process(atr_std_input))
+        atr_std_dev_value = float(process_float(self._atr_std_dev, Decimal(atr_value), candle.OpenTime, True))
 
         if not self._bollinger_bands.IsFormed or not self._atr.IsFormed or not self._atr_sma.IsFormed or not self._atr_std_dev.IsFormed:
             return

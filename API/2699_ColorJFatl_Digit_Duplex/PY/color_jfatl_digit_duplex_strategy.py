@@ -9,8 +9,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import JurikMovingAverage, DecimalIndicatorValue
-
+from StockSharp.Algo.Indicators import JurikMovingAverage
+from indicator_extensions import *
 
 # FATL weights from the original C# indicator
 _FATL_WEIGHTS = [
@@ -26,7 +26,6 @@ _FATL_WEIGHTS = [
     0.0007860160, 0.0130129076, 0.0040364019,
 ]
 _MAX_FATL_PERIOD = len(_FATL_WEIGHTS)
-
 
 class _ColorJfatlDigitState(object):
     """Internal JFATL Digit indicator calculator."""
@@ -59,9 +58,7 @@ class _ColorJfatlDigitState(object):
             pi = len(self._price_buffer) - 1 - i
             fatl += _FATL_WEIGHTS[i] * self._price_buffer[pi]
 
-        jma_iv = DecimalIndicatorValue(self._jma, Decimal(fatl), candle.ServerTime)
-        jma_iv.IsFinal = True
-        jma_val = self._jma.Process(jma_iv)
+        jma_val = process_float(self._jma, Decimal(fatl), candle.ServerTime, True)
         base_value = float(jma_val.Value)
         adjusted = self._apply_phase(base_value)
         rounded = round(adjusted, max(0, self._digit))
@@ -122,7 +119,6 @@ class _ColorJfatlDigitState(object):
         if diff < 0:
             return 0
         return self._history[-1][1]
-
 
 class color_jfatl_digit_duplex_strategy(Strategy):
     """Duplex strategy using two Color JFATL Digit indicators for independent long/short logic."""

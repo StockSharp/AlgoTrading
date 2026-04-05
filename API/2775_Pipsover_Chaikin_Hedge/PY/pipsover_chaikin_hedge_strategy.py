@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AccumulationDistributionLine, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AccumulationDistributionLine
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
@@ -79,12 +79,8 @@ class pipsover_chaikin_hedge_strategy(Strategy):
             return
 
         t = candle.ServerTime
-        iv1 = DecimalIndicatorValue(self._ema_fast, Decimal(float(ad_val)), t)
-        iv1.IsFinal = True
-        fast_res = self._ema_fast.Process(iv1)
-        iv2 = DecimalIndicatorValue(self._ema_slow, Decimal(float(ad_val)), t)
-        iv2.IsFinal = True
-        slow_res = self._ema_slow.Process(iv2)
+        fast_res = process_float(self._ema_fast, Decimal(float(ad_val)), t, True)
+        slow_res = process_float(self._ema_slow, Decimal(float(ad_val)), t, True)
         chaikin = float(fast_res.Value) - float(slow_res.Value)
 
         if not self._ema_fast.IsFormed or not self._ema_slow.IsFormed:

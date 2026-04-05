@@ -8,11 +8,11 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
-    DecimalIndicatorValue, ExponentialMovingAverage,
+    ExponentialMovingAverage,
     SimpleMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # MA method constants
 MA_SIMPLE = 0
@@ -33,7 +33,6 @@ PRICE_WEIGHTED = 6
 DIR_NONE = 0
 DIR_LONG = 1
 DIR_SHORT = 2
-
 
 class universal_ma_cross_v4_strategy(Strategy):
     """Universal MA Cross EA v4. Trades crossover between configurable fast and slow
@@ -347,16 +346,12 @@ class universal_ma_cross_v4_strategy(Strategy):
         slow_price = self._get_price(candle, self.SlowPriceType)
         time = candle.OpenTime
 
-        fast_input = DecimalIndicatorValue(self._fast_ma, fast_price, time)
-        fast_input.IsFinal = True
-        fast_result = self._fast_ma.Process(fast_input)
+        fast_result = process_float(self._fast_ma, fast_price, time, True)
         if fast_result.IsEmpty:
             return
         fast_value = float(fast_result)
 
-        slow_input = DecimalIndicatorValue(self._slow_ma, slow_price, time)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_input)
+        slow_result = process_float(self._slow_ma, slow_price, time, True)
         if slow_result.IsEmpty:
             return
         slow_value = float(slow_result)

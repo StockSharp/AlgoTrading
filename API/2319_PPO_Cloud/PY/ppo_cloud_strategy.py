@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import PPO, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import PPO, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class ppo_cloud_strategy(Strategy):
     def __init__(self):
@@ -77,9 +77,7 @@ class ppo_cloud_strategy(Strategy):
         if not self._ppo.IsFormed:
             return
         ppo_value = float(ppo_value)
-        sig_input = DecimalIndicatorValue(self._signal_ema, ppo_value, candle.CloseTime)
-        sig_input.IsFinal = True
-        sig_result = self._signal_ema.Process(sig_input)
+        sig_result = process_float(self._signal_ema, ppo_value, candle.CloseTime, True)
         if not self._signal_ema.IsFormed:
             return
         signal_value = float(sig_result)

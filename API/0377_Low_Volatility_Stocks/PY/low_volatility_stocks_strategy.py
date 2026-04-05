@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StandardDeviation, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import StandardDeviation, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class low_volatility_stocks_strategy(Strategy):
     """Low volatility anomaly strategy that trades the primary instrument when its realized volatility diverges from a benchmark instrument."""
@@ -162,9 +162,7 @@ class low_volatility_stocks_strategy(Strategy):
         self._previous_primary_close = close_price
 
         abs_ret = abs(ret)
-        vol_iv = DecimalIndicatorValue(self._primary_volatility, abs_ret, candle.OpenTime)
-        vol_iv.IsFinal = True
-        vol_result = self._primary_volatility.Process(vol_iv)
+        vol_result = process_float(self._primary_volatility, abs_ret, candle.OpenTime, True)
         if not vol_result.IsEmpty and self._primary_volatility.IsFormed:
             self._latest_primary_volatility = float(vol_result)
             self._primary_updated = True
@@ -183,9 +181,7 @@ class low_volatility_stocks_strategy(Strategy):
         self._previous_benchmark_close = close_price
 
         abs_ret = abs(ret)
-        vol_iv = DecimalIndicatorValue(self._benchmark_volatility, abs_ret, candle.OpenTime)
-        vol_iv.IsFinal = True
-        vol_result = self._benchmark_volatility.Process(vol_iv)
+        vol_result = process_float(self._benchmark_volatility, abs_ret, candle.OpenTime, True)
         if not vol_result.IsEmpty and self._benchmark_volatility.IsFormed:
             self._latest_benchmark_volatility = float(vol_result)
             self._benchmark_updated = True
@@ -200,14 +196,10 @@ class low_volatility_stocks_strategy(Strategy):
 
         spread = self._latest_benchmark_volatility - self._latest_primary_volatility
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, candle.OpenTime)
-        mean_iv.IsFinal = True
-        mean_result = self._spread_average.Process(mean_iv)
+        mean_result = process_float(self._spread_average, spread, candle.OpenTime, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, candle.OpenTime)
-        dev_iv.IsFinal = True
-        dev_result = self._spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._spread_deviation, spread, candle.OpenTime, True)
         deviation = float(dev_result)
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:

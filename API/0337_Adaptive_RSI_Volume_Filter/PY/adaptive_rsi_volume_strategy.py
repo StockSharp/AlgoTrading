@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class adaptive_rsi_volume_strategy(Strategy):
     """
@@ -102,21 +102,15 @@ class adaptive_rsi_volume_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        frv = DecimalIndicatorValue(self._fast_rsi, candle.ClosePrice, candle.OpenTime)
-        frv.IsFinal = True
-        fast_rsi_val = self._fast_rsi.Process(frv)
+        fast_rsi_val = process_float(self._fast_rsi, candle.ClosePrice, candle.OpenTime, True)
 
-        srv = DecimalIndicatorValue(self._slow_rsi, candle.ClosePrice, candle.OpenTime)
-        srv.IsFinal = True
-        slow_rsi_val = self._slow_rsi.Process(srv)
+        slow_rsi_val = process_float(self._slow_rsi, candle.ClosePrice, candle.OpenTime, True)
 
         aiv = CandleIndicatorValue(self._atr, candle)
         aiv.IsFinal = True
         atr_val = self._atr.Process(aiv)
 
-        viv = DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.OpenTime)
-        viv.IsFinal = True
-        volume_val = self._volume_sma.Process(viv)
+        volume_val = process_float(self._volume_sma, candle.TotalVolume, candle.OpenTime, True)
 
         if not self._fast_rsi.IsFormed or not self._slow_rsi.IsFormed or not self._atr.IsFormed or not self._volume_sma.IsFormed:
             return

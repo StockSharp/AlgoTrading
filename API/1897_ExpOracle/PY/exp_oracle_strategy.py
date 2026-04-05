@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_oracle_strategy(Strategy):
     # Algorithm modes
@@ -98,9 +98,7 @@ class exp_oracle_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
-        rsi_inp.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_inp)
+        rsi_result = process_float(self._rsi, candle.ClosePrice, candle.OpenTime, True)
         cci_inp = CandleIndicatorValue(self._cci, candle)
         cci_result = self._cci.Process(cci_inp)
 
@@ -135,9 +133,7 @@ class exp_oracle_strategy(Strategy):
         oracle = max_val + min_val
 
         # smooth to get signal
-        sma_inp = DecimalIndicatorValue(self._sma, Decimal(oracle), candle.OpenTime)
-        sma_inp.IsFinal = True
-        signal_result = self._sma.Process(sma_inp)
+        signal_result = process_float(self._sma, Decimal(oracle), candle.OpenTime, True)
         if not signal_result.IsFormed:
             return
 

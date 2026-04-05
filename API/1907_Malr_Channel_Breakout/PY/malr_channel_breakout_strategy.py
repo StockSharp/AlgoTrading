@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from System import Decimal
-from StockSharp.Algo.Indicators import SimpleMovingAverage, WeightedMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, WeightedMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class malr_channel_breakout_strategy(Strategy):
     def __init__(self):
@@ -76,12 +76,8 @@ class malr_channel_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         close = float(candle.ClosePrice)
-        sma_inp = DecimalIndicatorValue(self._sma, candle.ClosePrice, candle.OpenTime)
-        sma_inp.IsFinal = True
-        sma_result = self._sma.Process(sma_inp)
-        lwma_inp = DecimalIndicatorValue(self._lwma, candle.ClosePrice, candle.OpenTime)
-        lwma_inp.IsFinal = True
-        lwma_result = self._lwma.Process(lwma_inp)
+        sma_result = process_float(self._sma, candle.ClosePrice, candle.OpenTime, True)
+        lwma_result = process_float(self._lwma, candle.ClosePrice, candle.OpenTime, True)
         if not sma_result.IsFormed or not lwma_result.IsFormed:
             self._prev_close = close
             return
@@ -89,9 +85,7 @@ class malr_channel_breakout_strategy(Strategy):
         lwma_val = float(lwma_result)
         ff = 3.0 * lwma_val - 2.0 * sma_val
         deviation = close - ff
-        std_inp = DecimalIndicatorValue(self._std_dev, Decimal(deviation), candle.OpenTime)
-        std_inp.IsFinal = True
-        std_result = self._std_dev.Process(std_inp)
+        std_result = process_float(self._std_dev, Decimal(deviation), candle.OpenTime, True)
         if not std_result.IsFormed:
             self._prev_close = close
             self._prev_upper = ff

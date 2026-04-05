@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class beta_adjusted_pairs_strategy(Strategy):
     """
@@ -142,14 +142,10 @@ class beta_adjusted_pairs_strategy(Strategy):
 
         spread = float(self._latest_price1) / beta1 - float(self._latest_price2) / beta2
 
-        avg_input = DecimalIndicatorValue(self._spread_average, Decimal(spread), time)
-        avg_input.IsFinal = True
-        avg_result = self._spread_average.Process(avg_input)
+        avg_result = process_float(self._spread_average, Decimal(spread), time, True)
         average_spread = float(avg_result)
 
-        std_input = DecimalIndicatorValue(self._spread_std_dev, Decimal(spread), time)
-        std_input.IsFinal = True
-        std_result = self._spread_std_dev.Process(std_input)
+        std_result = process_float(self._spread_std_dev, Decimal(spread), time, True)
         spread_std_dev = float(std_result)
 
         if not self._spread_average.IsFormed or not self._spread_std_dev.IsFormed:

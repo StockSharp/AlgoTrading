@@ -8,8 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 import math
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class fast2_crossover_strategy(Strategy):
     """
@@ -76,12 +77,8 @@ class fast2_crossover_strategy(Strategy):
         if self._has_prev_diff2:
             hist += self._prev_diff2 / math.sqrt(3)
 
-        fast_input = DecimalIndicatorValue(self._fast, hist, candle.OpenTime)
-        fast_input.IsFinal = True
-        fast_result = self._fast.Process(fast_input)
-        slow_input = DecimalIndicatorValue(self._slow, hist, candle.OpenTime)
-        slow_input.IsFinal = True
-        slow_result = self._slow.Process(slow_input)
+        fast_result = process_float(self._fast, hist, candle.OpenTime, True)
+        slow_result = process_float(self._slow, hist, candle.OpenTime, True)
 
         self._prev_diff2 = self._prev_diff1
         self._prev_diff1 = diff

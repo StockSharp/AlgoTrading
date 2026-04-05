@@ -10,11 +10,10 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import (
     ExponentialMovingAverage, SimpleMovingAverage,
-    SmoothedMovingAverage, WeightedMovingAverage,
-    DecimalIndicatorValue
+    SmoothedMovingAverage, WeightedMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
     def __init__(self):
@@ -193,9 +192,7 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
-        ema_iv = DecimalIndicatorValue(self._ema, candle.ClosePrice, candle.OpenTime)
-        ema_iv.IsFinal = True
-        ema_result = self._ema.Process(ema_iv)
+        ema_result = process_float(self._ema, candle.ClosePrice, candle.OpenTime, True)
         if not self._ema.IsFormed:
             return
         ema_val = float(ema_result)
@@ -239,12 +236,8 @@ class exp_x_bulls_bears_eyes_vol_strategy(Strategy):
         scaled = base_value * volume
 
         from System import Decimal
-        sv_iv = DecimalIndicatorValue(self._value_smoother, Decimal(scaled), candle.OpenTime)
-        sv_iv.IsFinal = True
-        sv_result = self._value_smoother.Process(sv_iv)
-        vv_iv = DecimalIndicatorValue(self._volume_smoother, Decimal(volume), candle.OpenTime)
-        vv_iv.IsFinal = True
-        vv_result = self._volume_smoother.Process(vv_iv)
+        sv_result = process_float(self._value_smoother, Decimal(scaled), candle.OpenTime, True)
+        vv_result = process_float(self._volume_smoother, Decimal(volume), candle.OpenTime, True)
 
         if not self._value_smoother.IsFormed or not self._volume_smoother.IsFormed:
             return

@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SmoothedMovingAverage, AverageDirectionalIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SmoothedMovingAverage, AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class adx_ma_crossover_strategy(Strategy):
     def __init__(self):
@@ -161,9 +161,7 @@ class adx_ma_crossover_strategy(Strategy):
         low = float(candle.LowPrice)
         median = (high + low) / 2.0
 
-        ma_input = DecimalIndicatorValue(self._ma, Decimal(median), candle.OpenTime)
-        ma_input.IsFinal = True
-        ma_result = self._ma.Process(ma_input)
+        ma_result = process_float(self._ma, Decimal(median), candle.OpenTime, True)
         if not ma_result.IsFinal:
             return
 

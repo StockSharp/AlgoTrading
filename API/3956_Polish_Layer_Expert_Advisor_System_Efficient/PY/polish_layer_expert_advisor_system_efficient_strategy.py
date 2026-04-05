@@ -15,9 +15,9 @@ from StockSharp.Algo.Indicators import (
     StochasticOscillator,
     DeMarker,
     WilliamsR,
-    DecimalIndicatorValue,
     CandleIndicatorValue,
 )
+from indicator_extensions import *
 
 class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
     def __init__(self):
@@ -169,12 +169,8 @@ class polish_layer_expert_advisor_system_efficient_strategy(Strategy):
         slow_price = float(slow_price)
         rsi_val = float(rsi)
 
-        fast_rsi_input = DecimalIndicatorValue(self._short_rsi_average, rsi, candle.OpenTime)
-        fast_rsi_input.IsFinal = True
-        fast_rsi_result = self._short_rsi_average.Process(fast_rsi_input)
-        slow_rsi_input = DecimalIndicatorValue(self._long_rsi_average, rsi, candle.OpenTime)
-        slow_rsi_input.IsFinal = True
-        slow_rsi_result = self._long_rsi_average.Process(slow_rsi_input)
+        fast_rsi_result = process_float(self._short_rsi_average, rsi, candle.OpenTime, True)
+        slow_rsi_result = process_float(self._long_rsi_average, rsi, candle.OpenTime, True)
 
         stoch_input = CandleIndicatorValue(self._stochastic, candle)
         stoch_input.IsFinal = True

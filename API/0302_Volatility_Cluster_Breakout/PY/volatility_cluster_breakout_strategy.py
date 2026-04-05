@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class volatility_cluster_breakout_strategy(Strategy):
     """
@@ -92,9 +92,7 @@ class volatility_cluster_breakout_strategy(Strategy):
             return
 
         av = float(atr_value)
-        atr_avg_input = DecimalIndicatorValue(self._atr_avg, Decimal(av), candle.OpenTime)
-        atr_avg_input.IsFinal = True
-        atr_avg_value = float(self._atr_avg.Process(atr_avg_input))
+        atr_avg_value = float(process_float(self._atr_avg, Decimal(av), candle.OpenTime, True))
 
         if not self._sma.IsFormed or not self._std_dev.IsFormed or not self._atr.IsFormed or not self._atr_avg.IsFormed:
             return

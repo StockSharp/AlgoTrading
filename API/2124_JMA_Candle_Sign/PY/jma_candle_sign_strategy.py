@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import JurikMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import JurikMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class jma_candle_sign_strategy(Strategy):
     def __init__(self):
@@ -61,12 +61,8 @@ class jma_candle_sign_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        open_input = DecimalIndicatorValue(self._jma_open, candle.OpenPrice, candle.OpenTime)
-        open_input.IsFinal = True
-        open_result = self._jma_open.Process(open_input)
-        close_input = DecimalIndicatorValue(self._jma_close, candle.ClosePrice, candle.OpenTime)
-        close_input.IsFinal = True
-        close_result = self._jma_close.Process(close_input)
+        open_result = process_float(self._jma_open, candle.OpenPrice, candle.OpenTime, True)
+        close_result = process_float(self._jma_close, candle.ClosePrice, candle.OpenTime, True)
         if not open_result.IsFormed or not close_result.IsFormed:
             return
         open_jma = float(open_result)

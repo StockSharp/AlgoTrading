@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class hvr_strategy(Strategy):
 
@@ -90,12 +90,8 @@ class hvr_strategy(Strategy):
 
         t = candle.OpenTime
 
-        short_input = DecimalIndicatorValue(self._short_sd, log_return, t)
-        short_input.IsFinal = True
-        short_result = self._short_sd.Process(short_input)
-        long_input = DecimalIndicatorValue(self._long_sd, log_return, t)
-        long_input.IsFinal = True
-        long_result = self._long_sd.Process(long_input)
+        short_result = process_float(self._short_sd, log_return, t, True)
+        long_result = process_float(self._long_sd, log_return, t, True)
 
         if not short_result.IsFormed or not long_result.IsFormed:
             return

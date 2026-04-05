@@ -7,14 +7,13 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # Mode constants
 MODE_IN = 0
 MODE_OUT = 1
-
 
 class n_ratio_sign_strategy(Strategy):
 
@@ -185,9 +184,7 @@ class n_ratio_sign_strategy(Strategy):
                 nrtr0 = min(h_price, self._nrtr)
 
         oscil = (100.0 * abs(price - nrtr0) / price) / kf
-        ei = DecimalIndicatorValue(self._ema, oscil, candle.OpenTime)
-        ei.IsFinal = True
-        x_oscil_value = self._ema.Process(ei)
+        x_oscil_value = process_float(self._ema, oscil, candle.OpenTime, True)
         x_oscil = oscil if x_oscil_value.IsEmpty else float(x_oscil_value)
 
         if not self._ema.IsFormed:

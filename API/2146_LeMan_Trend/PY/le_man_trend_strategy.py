@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class le_man_trend_strategy(Strategy):
     def __init__(self):
@@ -102,36 +102,20 @@ class le_man_trend_strategy(Strategy):
             return
         close_val = candle.ClosePrice
         t = candle.OpenTime
-        div1 = DecimalIndicatorValue(self._high_min, close_val, t)
-        div1.IsFinal = True
-        high_min_val = float(self._high_min.Process(div1))
-        div2 = DecimalIndicatorValue(self._high_midle, close_val, t)
-        div2.IsFinal = True
-        high_midle_val = float(self._high_midle.Process(div2))
-        div3 = DecimalIndicatorValue(self._high_max, close_val, t)
-        div3.IsFinal = True
-        high_max_val = float(self._high_max.Process(div3))
-        div4 = DecimalIndicatorValue(self._low_min, close_val, t)
-        div4.IsFinal = True
-        low_min_val = float(self._low_min.Process(div4))
-        div5 = DecimalIndicatorValue(self._low_midle, close_val, t)
-        div5.IsFinal = True
-        low_midle_val = float(self._low_midle.Process(div5))
-        div6 = DecimalIndicatorValue(self._low_max, close_val, t)
-        div6.IsFinal = True
-        low_max_val = float(self._low_max.Process(div6))
+        high_min_val = float(process_float(self._high_min, close_val, t, True))
+        high_midle_val = float(process_float(self._high_midle, close_val, t, True))
+        high_max_val = float(process_float(self._high_max, close_val, t, True))
+        low_min_val = float(process_float(self._low_min, close_val, t, True))
+        low_midle_val = float(process_float(self._low_midle, close_val, t, True))
+        low_max_val = float(process_float(self._low_max, close_val, t, True))
         if not self._high_max.IsFormed or not self._low_max.IsFormed:
             return
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         hh = (high - high_min_val) + (high - high_midle_val) + (high - high_max_val)
         ll = (low_min_val - low) + (low_midle_val - low) + (low_max_val - low)
-        div7 = DecimalIndicatorValue(self._bulls_ema, hh, t)
-        div7.IsFinal = True
-        bulls_val = float(self._bulls_ema.Process(div7))
-        div8 = DecimalIndicatorValue(self._bears_ema, ll, t)
-        div8.IsFinal = True
-        bears_val = float(self._bears_ema.Process(div8))
+        bulls_val = float(process_float(self._bulls_ema, hh, t, True))
+        bears_val = float(process_float(self._bears_ema, ll, t, True))
         if not self._bulls_ema.IsFormed or not self._bears_ema.IsFormed:
             return
         if not self.IsFormedAndOnlineAndAllowTrading():

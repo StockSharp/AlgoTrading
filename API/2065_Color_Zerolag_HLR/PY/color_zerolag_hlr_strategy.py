@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class color_zerolag_hlr_strategy(Strategy):
     """

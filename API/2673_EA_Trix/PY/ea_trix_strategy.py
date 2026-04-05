@@ -8,8 +8,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
-
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from indicator_extensions import *
 
 class ea_trix_strategy(Strategy):
     """TRIX cross strategy: signal line crosses above/below TRIX with SL/TP, break-even and trailing."""
@@ -239,9 +239,7 @@ class ea_trix_strategy(Strategy):
             self._clear_position_state()
 
     def _make_div(self, ind, val, t):
-        iv = DecimalIndicatorValue(ind, Decimal(val), t)
-        iv.IsFinal = True
-        return float(ind.Process(iv).Value)
+        return float(process_float(ind, Decimal(val), t, True).Value)
 
     def _try_calculate_indicators(self, candle):
         close = float(candle.ClosePrice)

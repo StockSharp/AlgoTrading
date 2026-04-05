@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class adx_with_volume_breakout_strategy(Strategy):
     """
@@ -81,7 +81,7 @@ class adx_with_volume_breakout_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        volume_avg_result = self._volume_sma.Process(DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.ServerTime))
+        volume_avg_result = process_float(self._volume_sma, candle.TotalVolume, candle.ServerTime, True)
 
         adx_typed = adx_value
 

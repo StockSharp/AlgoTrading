@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class accrual_anomaly_strategy(Strategy):
     """Cross-sectional accrual anomaly strategy using dual securities."""
@@ -149,9 +149,7 @@ class accrual_anomaly_strategy(Strategy):
 
     def UpdateAccrualAverage(self, average, candle):
         accrual_proxy = self.CalculateAccrualProxy(candle)
-        iv = DecimalIndicatorValue(average, accrual_proxy, candle.OpenTime)
-        iv.IsFinal = True
-        result = average.Process(iv)
+        result = process_float(average, accrual_proxy, candle.OpenTime, True)
         return float(result)
 
     def CalculateAccrualProxy(self, candle):
@@ -177,14 +175,10 @@ class accrual_anomaly_strategy(Strategy):
 
         spread = self._latest_primary_accrual - self._latest_secondary_accrual
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean_result = self._spread_average.Process(mean_iv)
+        mean_result = process_float(self._spread_average, spread, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        dev_result = self._spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._spread_deviation, spread, time, True)
         deviation = float(dev_result)
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:

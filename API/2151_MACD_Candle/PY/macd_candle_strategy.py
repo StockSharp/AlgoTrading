@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class macd_candle_strategy(Strategy):
     def __init__(self):
@@ -66,12 +66,8 @@ class macd_candle_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        open_input = DecimalIndicatorValue(self._macd_open, candle.OpenPrice, candle.OpenTime)
-        open_input.IsFinal = True
-        close_input = DecimalIndicatorValue(self._macd_close, candle.ClosePrice, candle.OpenTime)
-        close_input.IsFinal = True
-        open_value = self._macd_open.Process(open_input)
-        close_value = self._macd_close.Process(close_input)
+        open_value = process_float(self._macd_open, candle.OpenPrice, candle.OpenTime, True)
+        close_value = process_float(self._macd_close, candle.ClosePrice, candle.OpenTime, True)
         open_macd = open_value.Macd
         close_macd = close_value.Macd
         if open_macd is None or close_macd is None:

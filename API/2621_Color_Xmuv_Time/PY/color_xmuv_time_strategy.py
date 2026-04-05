@@ -9,14 +9,13 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
-
+from StockSharp.Algo.Indicators import SimpleMovingAverage
+from indicator_extensions import *
 
 # TrendColors: 0=Bearish, 1=Neutral, 2=Bullish
 BEARISH = 0
 NEUTRAL = 1
 BULLISH = 2
-
 
 class color_xmuv_time_strategy(Strategy):
     """Color XMUV trend-following strategy with session filter."""
@@ -152,9 +151,7 @@ class color_xmuv_time_strategy(Strategy):
             return
 
         price = self._calc_signal_price(candle)
-        ind_val = DecimalIndicatorValue(self._xma, price, candle.OpenTime)
-        ind_val.IsFinal = True
-        ind_out = self._xma.Process(ind_val)
+        ind_out = process_float(self._xma, price, candle.OpenTime, True)
 
         if not self._xma.IsFormed:
             self._previous_xmuv = float(ind_out)

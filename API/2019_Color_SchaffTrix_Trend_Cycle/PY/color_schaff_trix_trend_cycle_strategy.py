@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_schaff_trix_trend_cycle_strategy(Strategy):
 
@@ -226,11 +226,6 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
             takeProfit=Unit(self.TakeProfit, UnitTypes.Percent)
         )
 
-    def _make_input(self, indicator, value, time):
-        div = DecimalIndicatorValue(indicator, value, time)
-        div.IsFinal = True
-        return div
-
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
             return
@@ -243,8 +238,7 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         factor = float(self.Factor)
 
         # Calculate fast TRIX
-        inp = self._make_input(self._fast_ema1, close, t)
-        e1 = self._fast_ema1.Process(inp)
+        e1 = process_float(self._fast_ema1, close, t, True)
         e2 = self._fast_ema2.Process(e1)
         e3 = self._fast_ema3.Process(e2)
         fast_val = float(e3)
@@ -254,8 +248,7 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         self._fast_prev = fast_val
 
         # Calculate slow TRIX
-        inp2 = self._make_input(self._slow_ema1, close, t)
-        s1 = self._slow_ema1.Process(inp2)
+        s1 = process_float(self._slow_ema1, close, t, True)
         s2 = self._slow_ema2.Process(s1)
         s3 = self._slow_ema3.Process(s2)
         slow_val = float(s3)
@@ -267,8 +260,8 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         macd = fast_trix - slow_trix
 
         # STC calculation
-        mh_result = self._macd_high.Process(self._make_input(self._macd_high, macd, t))
-        ml_result = self._macd_low.Process(self._make_input(self._macd_low, macd, t))
+        mh_result = process_float(self._macd_high, macd, t, True)
+        ml_result = process_float(self._macd_low, macd, t, True)
         macd_high = float(mh_result)
         macd_low = float(ml_result)
 
@@ -282,8 +275,8 @@ class color_schaff_trix_trend_cycle_strategy(Strategy):
         self._st_prev = st
         self._st_pass = True
 
-        sh_result = self._st_high.Process(self._make_input(self._st_high, st, t))
-        sl_result = self._st_low.Process(self._make_input(self._st_low, st, t))
+        sh_result = process_float(self._st_high, st, t, True)
+        sl_result = process_float(self._st_low, st, t, True)
         st_high = float(sh_result)
         st_low = float(sl_result)
 

@@ -7,13 +7,13 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 TREND_NONE = 0
 TREND_BULLISH = 1
 TREND_BEARISH = 2
-
 
 class support_resist_trade_strategy(Strategy):
     def __init__(self):
@@ -104,12 +104,8 @@ class support_resist_trade_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        hv = DecimalIndicatorValue(self._highest, Decimal(float(candle.HighPrice)), candle.ServerTime)
-        hv.IsFinal = True
-        high_result = self._highest.Process(hv)
-        lv = DecimalIndicatorValue(self._lowest, Decimal(float(candle.LowPrice)), candle.ServerTime)
-        lv.IsFinal = True
-        low_result = self._lowest.Process(lv)
+        high_result = process_float(self._highest, Decimal(float(candle.HighPrice)), candle.ServerTime, True)
+        low_result = process_float(self._lowest, Decimal(float(candle.LowPrice)), candle.ServerTime, True)
 
         if not self._ema.IsFormed or not high_result.IsFormed or not low_result.IsFormed:
             return

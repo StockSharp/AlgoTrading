@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
-from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bb_breakout_momentum_squeeze_strategy(Strategy):
     def __init__(self):
@@ -53,11 +53,6 @@ class bb_breakout_momentum_squeeze_strategy(Strategy):
         super(bb_breakout_momentum_squeeze_strategy, self).OnReseted()
         self._prev_bull = None
         self._prev_bear = None
-
-    def _make_iv(self, ind, val, t):
-        iv = DecimalIndicatorValue(ind, val, t)
-        iv.IsFinal = True
-        return iv
 
     def OnStarted2(self, time):
         super(bb_breakout_momentum_squeeze_strategy, self).OnStarted2(time)
@@ -136,10 +131,10 @@ class bb_breakout_momentum_squeeze_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.ServerTime
 
-        bull_num_val = self._bull_num.Process(self._make_iv(self._bull_num, max(close - breakout_upper, 0.0), t))
-        bull_den_val = self._bull_den.Process(self._make_iv(self._bull_den, abs(close - breakout_upper), t))
-        bear_num_val = self._bear_num.Process(self._make_iv(self._bear_num, max(breakout_lower - close, 0.0), t))
-        bear_den_val = self._bear_den.Process(self._make_iv(self._bear_den, abs(breakout_lower - close), t))
+        bull_num_val = process_float(self._bull_num, max(close - breakout_upper, 0.0), t, True)
+        bull_den_val = process_float(self._bull_den, abs(close - breakout_upper), t, True)
+        bear_num_val = process_float(self._bear_num, max(breakout_lower - close, 0.0), t, True)
+        bear_den_val = process_float(self._bear_den, abs(breakout_lower - close), t, True)
 
         if not self._bull_num.IsFormed or not self._bull_den.IsFormed or \
            not self._bear_num.IsFormed or not self._bear_den.IsFormed:
@@ -162,8 +157,8 @@ class bb_breakout_momentum_squeeze_strategy(Strategy):
         self._prev_bear = bear
 
         atr_mult = float(self._atr_mult.Value)
-        upper_band_val = self._upper_band_ma.Process(self._make_iv(self._upper_band_ma, close + atr * atr_mult, t))
-        lower_band_val = self._lower_band_ma.Process(self._make_iv(self._lower_band_ma, close - atr * atr_mult, t))
+        upper_band_val = process_float(self._upper_band_ma, close + atr * atr_mult, t, True)
+        lower_band_val = process_float(self._lower_band_ma, close - atr * atr_mult, t, True)
 
         if not self._upper_band_ma.IsFormed or not self._lower_band_ma.IsFormed:
             return

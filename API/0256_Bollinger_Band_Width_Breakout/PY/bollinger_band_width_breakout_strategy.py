@@ -7,11 +7,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, AverageTrueRange, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-
 
 class bollinger_band_width_breakout_strategy(Strategy):
     """

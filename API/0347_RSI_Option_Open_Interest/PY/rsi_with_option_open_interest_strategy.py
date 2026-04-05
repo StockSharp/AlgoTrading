@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class rsi_with_option_open_interest_strategy(Strategy):
     """
@@ -126,21 +126,13 @@ class rsi_with_option_open_interest_strategy(Strategy):
 
         rsi_val = float(rsi)
 
-        call_sma_iv = DecimalIndicatorValue(self._call_oi_sma, self._current_call_oi, candle.OpenTime)
-        call_sma_iv.IsFinal = True
-        call_sma_result = self._call_oi_sma.Process(call_sma_iv)
+        call_sma_result = process_float(self._call_oi_sma, self._current_call_oi, candle.OpenTime, True)
 
-        put_sma_iv = DecimalIndicatorValue(self._put_oi_sma, self._current_put_oi, candle.OpenTime)
-        put_sma_iv.IsFinal = True
-        put_sma_result = self._put_oi_sma.Process(put_sma_iv)
+        put_sma_result = process_float(self._put_oi_sma, self._current_put_oi, candle.OpenTime, True)
 
-        call_std_iv = DecimalIndicatorValue(self._call_oi_std, self._current_call_oi, candle.OpenTime)
-        call_std_iv.IsFinal = True
-        call_std_result = self._call_oi_std.Process(call_std_iv)
+        call_std_result = process_float(self._call_oi_std, self._current_call_oi, candle.OpenTime, True)
 
-        put_std_iv = DecimalIndicatorValue(self._put_oi_std, self._current_put_oi, candle.OpenTime)
-        put_std_iv.IsFinal = True
-        put_std_result = self._put_oi_std.Process(put_std_iv)
+        put_std_result = process_float(self._put_oi_std, self._current_put_oi, candle.OpenTime, True)
 
         if not self._call_oi_sma.IsFormed or not self._put_oi_sma.IsFormed or \
            not self._call_oi_std.IsFormed or not self._put_oi_std.IsFormed or \

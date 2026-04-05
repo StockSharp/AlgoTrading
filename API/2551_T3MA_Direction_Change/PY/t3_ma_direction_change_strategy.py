@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class t3_ma_direction_change_strategy(Strategy):
     """Double-smoothed EMA slope direction change with signal delay and StartProtection."""
@@ -67,9 +68,7 @@ class t3_ma_direction_change_strategy(Strategy):
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
 
-        inp = DecimalIndicatorValue(self._ema_price, candle.ClosePrice, candle.OpenTime)
-        inp.IsFinal = True
-        ema_price_result = self._ema_price.Process(inp)
+        ema_price_result = process_float(self._ema_price, candle.ClosePrice, candle.OpenTime, True)
         ema_smooth_result = self._ema_smooth.Process(ema_price_result)
         if not ema_smooth_result.IsFormed:
             self._enqueue_signal(0)

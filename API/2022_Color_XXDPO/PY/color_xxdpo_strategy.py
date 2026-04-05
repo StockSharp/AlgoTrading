@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_xxdpo_strategy(Strategy):
 
@@ -88,18 +88,14 @@ class color_xxdpo_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        ma1_input = DecimalIndicatorValue(self._ma1, close, t)
-        ma1_input.IsFinal = True
-        ma1_result = self._ma1.Process(ma1_input)
+        ma1_result = process_float(self._ma1, close, t, True)
         if not self._ma1.IsFormed or ma1_result.IsEmpty:
             return
 
         ma1_val = float(ma1_result)
         dpo = close - ma1_val
 
-        ma2_input = DecimalIndicatorValue(self._ma2, dpo, t)
-        ma2_input.IsFinal = True
-        xxdpo_result = self._ma2.Process(ma2_input)
+        xxdpo_result = process_float(self._ma2, dpo, t, True)
         if not self._ma2.IsFormed or xxdpo_result.IsEmpty:
             return
 

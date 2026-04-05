@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ParabolicSar, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, ParabolicSar, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *

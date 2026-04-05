@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class trend_envelopes_strategy(Strategy):
     def __init__(self):
@@ -123,9 +123,7 @@ class trend_envelopes_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        div_ma = DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.OpenTime)
-        div_ma.IsFinal = True
-        ma_result = self._ma.Process(div_ma)
+        ma_result = process_float(self._ma, candle.ClosePrice, candle.OpenTime, True)
         div_atr = CandleIndicatorValue(self._atr, candle)
         div_atr.IsFinal = True
         atr_result = self._atr.Process(div_atr)

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit
-from StockSharp.Algo.Indicators import Ichimoku, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Ichimoku, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class ichimoku_volume_cluster_strategy(Strategy):
     """
@@ -84,11 +84,9 @@ class ichimoku_volume_cluster_strategy(Strategy):
 
         volume = candle.TotalVolume
 
-        vol_avg_input = DecimalIndicatorValue(self._volume_avg, volume, candle.ServerTime)
-        volume_avg_value = float(self._volume_avg.Process(vol_avg_input))
+        volume_avg_value = float(process_float(self._volume_avg, volume, candle.ServerTime, True))
 
-        vol_std_input = DecimalIndicatorValue(self._volume_std_dev, volume, candle.ServerTime)
-        volume_std_dev_value = float(self._volume_std_dev.Process(vol_std_input))
+        volume_std_dev_value = float(process_float(self._volume_std_dev, volume, candle.ServerTime, True))
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return

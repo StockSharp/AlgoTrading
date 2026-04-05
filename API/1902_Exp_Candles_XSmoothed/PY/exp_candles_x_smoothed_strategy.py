@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_candles_x_smoothed_strategy(Strategy):
     def __init__(self):
@@ -74,12 +74,8 @@ class exp_candles_x_smoothed_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        high_inp = DecimalIndicatorValue(self._high_ma, candle.HighPrice, candle.OpenTime)
-        high_inp.IsFinal = True
-        high_val = self._high_ma.Process(high_inp)
-        low_inp = DecimalIndicatorValue(self._low_ma, candle.LowPrice, candle.OpenTime)
-        low_inp.IsFinal = True
-        low_val = self._low_ma.Process(low_inp)
+        high_val = process_float(self._high_ma, candle.HighPrice, candle.OpenTime, True)
+        low_val = process_float(self._low_ma, candle.LowPrice, candle.OpenTime, True)
         if not high_val.IsFormed or not low_val.IsFormed:
             return
         step = self.Security.PriceStep if self.Security.PriceStep is not None else 1.0

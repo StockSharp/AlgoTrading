@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class earnings_announcements_with_buybacks_strategy(Strategy):
     """Strategy that buys the primary instrument before synthetic earnings events
@@ -97,9 +97,7 @@ class earnings_announcements_with_buybacks_strategy(Strategy):
             return
 
         buyback_signal = self.CalculateBuybackSignal(candle)
-        iv = DecimalIndicatorValue(self._buyback_proxy, buyback_signal, candle.OpenTime)
-        iv.IsFinal = True
-        result = self._buyback_proxy.Process(iv)
+        result = process_float(self._buyback_proxy, buyback_signal, candle.OpenTime, True)
         self._latest_buyback_value = float(result)
 
         if not self._buyback_proxy.IsFormed or not self.IsFormedAndOnlineAndAllowTrading():

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class xma_range_channel_strategy(Strategy):
     def __init__(self):
@@ -48,12 +48,8 @@ class xma_range_channel_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        high_input = DecimalIndicatorValue(self._high_ma, candle.HighPrice, candle.OpenTime)
-        high_input.IsFinal = True
-        upper_result = self._high_ma.Process(high_input)
-        low_input = DecimalIndicatorValue(self._low_ma, candle.LowPrice, candle.OpenTime)
-        low_input.IsFinal = True
-        lower_result = self._low_ma.Process(low_input)
+        upper_result = process_float(self._high_ma, candle.HighPrice, candle.OpenTime, True)
+        lower_result = process_float(self._low_ma, candle.LowPrice, candle.OpenTime, True)
         if not self._high_ma.IsFormed or not self._low_ma.IsFormed:
             return
         upper = float(upper_result)

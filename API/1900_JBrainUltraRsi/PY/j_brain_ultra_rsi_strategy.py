@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class j_brain_ultra_rsi_strategy(Strategy):
     # Algorithm modes
@@ -103,9 +103,7 @@ class j_brain_ultra_rsi_strategy(Strategy):
             return
 
         # process RSI manually
-        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
-        rsi_inp.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_inp)
+        rsi_result = process_float(self._rsi, candle.ClosePrice, candle.OpenTime, True)
         if not rsi_result.IsFormed:
             return
 

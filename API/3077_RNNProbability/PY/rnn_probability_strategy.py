@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class rnn_probability_strategy(Strategy):
     def __init__(self):
@@ -132,9 +132,7 @@ class rnn_probability_strategy(Strategy):
             return
 
         price = float(candle.OpenPrice)
-        div = DecimalIndicatorValue(self._rsi, price, candle.OpenTime)
-        div.IsFinal = True
-        rsi_ind_value = self._rsi.Process(div)
+        rsi_ind_value = process_float(self._rsi, price, candle.OpenTime, True)
 
         if not self._rsi.IsFormed or rsi_ind_value.IsEmpty:
             return

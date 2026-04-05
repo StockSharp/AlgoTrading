@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class market_slayer_strategy(Strategy):
     def __init__(self):
@@ -63,8 +63,8 @@ class market_slayer_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.ServerTime
-        high_result = self._trend_wma_high.Process(DecimalIndicatorValue(self._trend_wma_high, candle.HighPrice, t))
-        low_result = self._trend_wma_low.Process(DecimalIndicatorValue(self._trend_wma_low, candle.LowPrice, t))
+        high_result = process_float(self._trend_wma_high, candle.HighPrice, t, True)
+        low_result = process_float(self._trend_wma_low, candle.LowPrice, t, True)
         if self._trend_wma_high.IsFormed and self._trend_wma_low.IsFormed:
             high_v = float(high_result)
             low_v = float(low_result)

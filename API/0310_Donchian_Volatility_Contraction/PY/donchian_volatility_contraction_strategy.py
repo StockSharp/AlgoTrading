@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Highest, Lowest, AverageTrueRange, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class donchian_volatility_contraction_strategy(Strategy):
     """
@@ -97,13 +97,9 @@ class donchian_volatility_contraction_strategy(Strategy):
         )
 
     def _process_width(self, width, open_time):
-        avg_input = DecimalIndicatorValue(self._width_average, Decimal(width), open_time)
-        avg_input.IsFinal = True
-        self._width_average_value = float(self._width_average.Process(avg_input))
+        self._width_average_value = float(process_float(self._width_average, Decimal(width), open_time, True))
 
-        std_input = DecimalIndicatorValue(self._width_std_dev, Decimal(width), open_time)
-        std_input.IsFinal = True
-        self._width_std_dev_value = float(self._width_std_dev.Process(std_input))
+        self._width_std_dev_value = float(process_float(self._width_std_dev, Decimal(width), open_time, True))
 
     def _process_candle(self, candle, donchian_high_val, donchian_low_val, atr_value):
         if candle.State != CandleStates.Finished:

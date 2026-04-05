@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AccumulationDistributionLine, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, AccumulationDistributionLine
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class pipsover_strategy(Strategy):
     def __init__(self):
@@ -90,12 +91,8 @@ class pipsover_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_iv = DecimalIndicatorValue(self._ema_fast, Decimal(float(adl_val)), candle.ServerTime)
-        fast_iv.IsFinal = True
-        fast_res = self._ema_fast.Process(fast_iv)
-        slow_iv = DecimalIndicatorValue(self._ema_slow, Decimal(float(adl_val)), candle.ServerTime)
-        slow_iv.IsFinal = True
-        slow_res = self._ema_slow.Process(slow_iv)
+        fast_res = process_float(self._ema_fast, Decimal(float(adl_val)), candle.ServerTime, True)
+        slow_res = process_float(self._ema_slow, Decimal(float(adl_val)), candle.ServerTime, True)
         chaikin = float(fast_res) - float(slow_res)
 
         if not self._ema_fast.IsFormed or not self._ema_slow.IsFormed or not self._sma.IsFormed:

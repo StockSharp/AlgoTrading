@@ -10,10 +10,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class skewness_commodity_strategy(Strategy):
     """Skewness-based commodity strategy that trades the primary commodity when its return skewness diverges from a benchmark commodity."""
@@ -188,13 +188,9 @@ class skewness_commodity_strategy(Strategy):
 
         spread = self._latest_benchmark_skewness - self._latest_primary_skewness
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, spread, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, spread, time, True))
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

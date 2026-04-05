@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from System import Decimal
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class macd_signal_strategy(Strategy):
     def __init__(self):
@@ -124,9 +124,7 @@ class macd_signal_strategy(Strategy):
         slow_f = float(slow_val)
         delta_val = fast_f - slow_f
 
-        signal_input = DecimalIndicatorValue(self._signal_ema, Decimal(delta_val), candle.CloseTime)
-        signal_input.IsFinal = True
-        signal_result = self._signal_ema.Process(signal_input)
+        signal_result = process_float(self._signal_ema, Decimal(delta_val), candle.CloseTime, True)
         signal_f = float(signal_result)
 
         if not atr_result.IsFinal or not self._signal_ema.IsFormed:

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DeMarker, WeightedMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import DeMarker, WeightedMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class cronex_de_marker_crossover_strategy(Strategy):
     """Cronex DeMarker crossover strategy. Smooths the DeMarker oscillator with
@@ -90,16 +90,12 @@ class cronex_de_marker_crossover_strategy(Strategy):
             return
         dm_value = float(dm_result)
 
-        fast_input = DecimalIndicatorValue(self._fast_ma, dm_value, candle.OpenTime)
-        fast_input.IsFinal = True
-        fast_result = self._fast_ma.Process(fast_input)
+        fast_result = process_float(self._fast_ma, dm_value, candle.OpenTime, True)
         if fast_result.IsEmpty:
             return
         fast_value = float(fast_result)
 
-        slow_input = DecimalIndicatorValue(self._slow_ma, dm_value, candle.OpenTime)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_input)
+        slow_result = process_float(self._slow_ma, dm_value, candle.OpenTime, True)
         if slow_result.IsEmpty:
             return
         slow_value = float(slow_result)

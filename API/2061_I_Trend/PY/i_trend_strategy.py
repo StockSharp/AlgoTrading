@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, BollingerBands, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, BollingerBands
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class i_trend_strategy(Strategy):
     """
@@ -71,9 +72,7 @@ class i_trend_strategy(Strategy):
         if not bb_value.IsFormed:
             return
 
-        ma_input = DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.OpenTime)
-        ma_input.IsFinal = True
-        ma_result = self._ma.Process(ma_input)
+        ma_result = process_float(self._ma, candle.ClosePrice, candle.OpenTime, True)
         if not ma_result.IsFormed:
             return
 

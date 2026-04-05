@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal, ValueTuple
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Correlation, StandardDeviation, PairIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Correlation, StandardDeviation, PairIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class betting_against_beta_strategy(Strategy):
     """Betting-against-beta factor strategy using dual securities and rolling beta."""
@@ -167,14 +167,10 @@ class betting_against_beta_strategy(Strategy):
         corr_result = self._correlation.Process(pair_input)
         correlation = float(corr_result)
 
-        prim_dev_iv = DecimalIndicatorValue(self._primary_deviation, Decimal(primary_return), time)
-        prim_dev_iv.IsFinal = True
-        prim_dev_result = self._primary_deviation.Process(prim_dev_iv)
+        prim_dev_result = process_float(self._primary_deviation, Decimal(primary_return), time, True)
         primary_dev = float(prim_dev_result)
 
-        bench_dev_iv = DecimalIndicatorValue(self._benchmark_deviation, Decimal(benchmark_return), time)
-        bench_dev_iv.IsFinal = True
-        bench_dev_result = self._benchmark_deviation.Process(bench_dev_iv)
+        bench_dev_result = process_float(self._benchmark_deviation, Decimal(benchmark_return), time, True)
         benchmark_dev = float(bench_dev_result)
 
         if not self._correlation.IsFormed or not self._primary_deviation.IsFormed or not self._benchmark_deviation.IsFormed or benchmark_dev <= 0:

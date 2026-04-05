@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergence, SimpleMovingAverage, WilliamsR, RelativeStrengthIndex, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergence, SimpleMovingAverage, WilliamsR, RelativeStrengthIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class smart_ass_trade_v2_strategy(Strategy):
     def __init__(self):
@@ -68,17 +68,11 @@ class smart_ass_trade_v2_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        macd_inp = DecimalIndicatorValue(self._macd, candle.ClosePrice, candle.OpenTime)
-        macd_inp.IsFinal = True
-        macd_result = self._macd.Process(macd_inp)
-        ma_inp = DecimalIndicatorValue(self._ma, candle.ClosePrice, candle.OpenTime)
-        ma_inp.IsFinal = True
-        ma_result = self._ma.Process(ma_inp)
+        macd_result = process_float(self._macd, candle.ClosePrice, candle.OpenTime, True)
+        ma_result = process_float(self._ma, candle.ClosePrice, candle.OpenTime, True)
         wpr_inp = CandleIndicatorValue(self._wpr, candle)
         wpr_result = self._wpr.Process(wpr_inp)
-        rsi_inp = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
-        rsi_inp.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_inp)
+        rsi_result = process_float(self._rsi, candle.ClosePrice, candle.OpenTime, True)
         if not macd_result.IsFormed or not ma_result.IsFormed or not wpr_result.IsFormed or not rsi_result.IsFormed:
             return
         curr_macd = float(macd_result)

@@ -8,8 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class stochastic_three_periods_strategy(Strategy):
     """Fast/slow RSI alignment with StartProtection."""
@@ -56,9 +57,7 @@ class stochastic_three_periods_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        inp = DecimalIndicatorValue(self._slow_rsi, candle.ClosePrice, candle.OpenTime)
-        inp.IsFinal = True
-        slow_result = self._slow_rsi.Process(inp)
+        slow_result = process_float(self._slow_rsi, candle.ClosePrice, candle.OpenTime, True)
         if not self._slow_rsi.IsFormed or slow_result.IsEmpty:
             return
         slow_value = float(slow_result)

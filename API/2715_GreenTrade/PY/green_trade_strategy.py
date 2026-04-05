@@ -11,9 +11,8 @@ from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
     SmoothedMovingAverage,
     RelativeStrengthIndex,
-    DecimalIndicatorValue,
 )
-
+from indicator_extensions import *
 
 class green_trade_strategy(Strategy):
     """GreenTrade: smoothed MA slope filter with RSI momentum confirmation."""
@@ -157,13 +156,9 @@ class green_trade_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        ma_iv = DecimalIndicatorValue(self._smma, Decimal(median), candle.ServerTime)
-        ma_iv.IsFinal = True
-        ma_result = self._smma.Process(ma_iv)
+        ma_result = process_float(self._smma, Decimal(median), candle.ServerTime, True)
 
-        rsi_iv = DecimalIndicatorValue(self._rsi, Decimal(close), candle.ServerTime)
-        rsi_iv.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_iv)
+        rsi_result = process_float(self._rsi, Decimal(close), candle.ServerTime, True)
 
         if not self._smma.IsFormed or not self._rsi.IsFormed:
             self._ma_history.append(0.0)

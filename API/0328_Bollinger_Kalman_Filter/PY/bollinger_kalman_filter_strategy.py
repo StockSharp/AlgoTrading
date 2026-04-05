@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, KalmanFilter, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import BollingerBands, KalmanFilter, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bollinger_kalman_filter_strategy(Strategy):
     """
@@ -112,9 +112,7 @@ class bollinger_kalman_filter_strategy(Strategy):
         biv.IsFinal = True
         bollinger_val = self._bollinger.Process(biv)
 
-        kiv = DecimalIndicatorValue(self._kalman_filter, candle.ClosePrice, candle.OpenTime)
-        kiv.IsFinal = True
-        kalman_val = self._kalman_filter.Process(kiv)
+        kalman_val = process_float(self._kalman_filter, candle.ClosePrice, candle.OpenTime, True)
 
         if not bollinger_val.IsFinal or not kalman_val.IsFinal or not self._bollinger.IsFormed or not self._kalman_filter.IsFormed:
             return

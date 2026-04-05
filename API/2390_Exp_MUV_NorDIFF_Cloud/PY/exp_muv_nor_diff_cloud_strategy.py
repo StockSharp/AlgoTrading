@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal as NetDecimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA, ExponentialMovingAverage as EMA, Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA, ExponentialMovingAverage as EMA, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_muv_nor_diff_cloud_strategy(Strategy):
     def __init__(self):
@@ -69,18 +69,10 @@ class exp_muv_nor_diff_cloud_strategy(Strategy):
         sma_mom = sv - self._prev_sma
         ema_mom = ev - self._prev_ema
 
-        sh_input = DecimalIndicatorValue(self._sma_high, sma_mom, t)
-        sh_input.IsFinal = True
-        sma_max_r = self._sma_high.Process(sh_input)
-        sl_input = DecimalIndicatorValue(self._sma_low, sma_mom, t)
-        sl_input.IsFinal = True
-        sma_min_r = self._sma_low.Process(sl_input)
-        eh_input = DecimalIndicatorValue(self._ema_high, ema_mom, t)
-        eh_input.IsFinal = True
-        ema_max_r = self._ema_high.Process(eh_input)
-        el_input = DecimalIndicatorValue(self._ema_low, ema_mom, t)
-        el_input.IsFinal = True
-        ema_min_r = self._ema_low.Process(el_input)
+        sma_max_r = process_float(self._sma_high, sma_mom, t, True)
+        sma_min_r = process_float(self._sma_low, sma_mom, t, True)
+        ema_max_r = process_float(self._ema_high, ema_mom, t, True)
+        ema_min_r = process_float(self._ema_low, ema_mom, t, True)
 
         if not self._sma_high.IsFormed or not self._sma_low.IsFormed:
             self._prev_sma = sv

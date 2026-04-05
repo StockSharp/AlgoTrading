@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ParabolicSar, AverageTrueRange, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import ParabolicSar, AverageTrueRange, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class parabolic_sar_volatility_expansion_strategy(Strategy):
     """
@@ -95,13 +95,9 @@ class parabolic_sar_volatility_expansion_strategy(Strategy):
         atr_result = self._atr.Process(CandleIndicatorValue(self._atr, candle))
         atr_value = float(atr_result)
 
-        atr_avg_input = DecimalIndicatorValue(self._atr_sma, Decimal(atr_value), candle.OpenTime)
-        atr_avg_input.IsFinal = True
-        atr_sma_value = float(self._atr_sma.Process(atr_avg_input))
+        atr_sma_value = float(process_float(self._atr_sma, Decimal(atr_value), candle.OpenTime, True))
 
-        atr_std_input = DecimalIndicatorValue(self._atr_std_dev, Decimal(atr_value), candle.OpenTime)
-        atr_std_input.IsFinal = True
-        atr_std_dev_value = float(self._atr_std_dev.Process(atr_std_input))
+        atr_std_dev_value = float(process_float(self._atr_std_dev, Decimal(atr_value), candle.OpenTime, True))
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return

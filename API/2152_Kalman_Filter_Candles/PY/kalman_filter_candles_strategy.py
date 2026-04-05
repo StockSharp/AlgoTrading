@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import KalmanFilter, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import KalmanFilter
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class kalman_filter_candles_strategy(Strategy):
     def __init__(self):
@@ -58,12 +58,8 @@ class kalman_filter_candles_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        open_input = DecimalIndicatorValue(self._open_filter, candle.OpenPrice, candle.OpenTime)
-        open_input.IsFinal = True
-        close_input = DecimalIndicatorValue(self._close_filter, candle.ClosePrice, candle.OpenTime)
-        close_input.IsFinal = True
-        open_res = self._open_filter.Process(open_input)
-        close_res = self._close_filter.Process(close_input)
+        open_res = process_float(self._open_filter, candle.OpenPrice, candle.OpenTime, True)
+        close_res = process_float(self._close_filter, candle.ClosePrice, candle.OpenTime, True)
         open_val = float(open_res)
         close_val = float(close_res)
         if open_val < close_val:

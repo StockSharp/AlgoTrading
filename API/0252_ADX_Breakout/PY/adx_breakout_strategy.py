@@ -11,7 +11,6 @@ from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAver
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.Algo.Indicators import DecimalIndicatorValue
 
 class adx_breakout_strategy(Strategy):
     """
@@ -102,7 +101,6 @@ class adx_breakout_strategy(Strategy):
     def StopLoss(self, value):
         self._stop_loss.Value = value
 
-
     def OnReseted(self):
         """
         Resets internal state when strategy is reset.
@@ -114,7 +112,6 @@ class adx_breakout_strategy(Strategy):
     def OnStarted2(self, time):
         """Called when the strategy starts."""
         super(adx_breakout_strategy, self).OnStarted2(time)
-
 
         # Create indicators
         self._adx = AverageDirectionalIndex()
@@ -153,8 +150,7 @@ class adx_breakout_strategy(Strategy):
         currentAdx = float(adxValue.MovingAverage)
 
         # Process ADX through average indicator (no IsFinal, matching CS)
-        div = DecimalIndicatorValue(self._adx_average, currentAdx, candle.ServerTime)
-        currentAdxAvg = float(self._adx_average.Process(div))
+        currentAdxAvg = float(process_float(self._adx_average, currentAdx, candle.ServerTime, True))
 
         # For first values, just save and skip
         if self._prev_adx_value == 0:

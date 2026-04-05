@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest, WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class chaikin_volatility_stochastic_strategy(Strategy):
     def __init__(self):
@@ -82,18 +82,12 @@ class chaikin_volatility_stochastic_strategy(Strategy):
             return
         t = candle.ServerTime
         range_val = float(candle.HighPrice) - float(candle.LowPrice)
-        input_ema = DecimalIndicatorValue(self._range_ema, range_val, t)
-        input_ema.IsFinal = True
-        ema_result = self._range_ema.Process(input_ema)
+        ema_result = process_float(self._range_ema, range_val, t, True)
         if not self._range_ema.IsFormed:
             return
         ema_val = float(ema_result)
-        input_high = DecimalIndicatorValue(self._highest, ema_val, t)
-        input_high.IsFinal = True
-        high_result = self._highest.Process(input_high)
-        input_low = DecimalIndicatorValue(self._lowest, ema_val, t)
-        input_low.IsFinal = True
-        low_result = self._lowest.Process(input_low)
+        high_result = process_float(self._highest, ema_val, t, True)
+        low_result = process_float(self._lowest, ema_val, t, True)
         if not self._highest.IsFormed or not self._lowest.IsFormed:
             return
         hh = float(high_result)
@@ -101,9 +95,7 @@ class chaikin_volatility_stochastic_strategy(Strategy):
         if hh == ll:
             return
         percent = (ema_val - ll) / (hh - ll) * 100.0
-        input_wma = DecimalIndicatorValue(self._wma, percent, t)
-        input_wma.IsFinal = True
-        smooth_result = self._wma.Process(input_wma)
+        smooth_result = process_float(self._wma, percent, t, True)
         if not self._wma.IsFormed:
             return
         current = float(smooth_result)

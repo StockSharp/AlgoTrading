@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, ParabolicSar, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class trend_catcher_strategy(Strategy):
 
@@ -109,9 +109,7 @@ class trend_catcher_strategy(Strategy):
         close = float(candle.ClosePrice)
         t = candle.OpenTime
 
-        slow_input = DecimalIndicatorValue(self._slow_ma, close, t)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_input)
+        slow_result = process_float(self._slow_ma, close, t, True)
         if not slow_result.IsFormed:
             return
 

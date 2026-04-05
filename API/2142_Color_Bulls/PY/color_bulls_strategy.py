@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_bulls_strategy(Strategy):
     def __init__(self):
@@ -58,15 +58,11 @@ class color_bulls_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        high_input = DecimalIndicatorValue(self._high_ma, candle.HighPrice, candle.OpenTime)
-        high_input.IsFinal = True
-        ma_value = self._high_ma.Process(high_input)
+        ma_value = process_float(self._high_ma, candle.HighPrice, candle.OpenTime, True)
         if not self._high_ma.IsFormed:
             return
         bulls = float(candle.HighPrice) - float(ma_value)
-        bulls_input = DecimalIndicatorValue(self._bulls_ma, bulls, candle.OpenTime)
-        bulls_input.IsFinal = True
-        smooth = float(self._bulls_ma.Process(bulls_input))
+        smooth = float(process_float(self._bulls_ma, bulls, candle.OpenTime, True))
         if not self._bulls_ma.IsFormed:
             return
         if smooth > self._prev_value:

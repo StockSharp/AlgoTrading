@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Sides, Level1Fields
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, AverageTrueRange, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class revised_self_adaptive_ea_strategy(Strategy):
     def __init__(self):
@@ -202,7 +203,7 @@ class revised_self_adaptive_ea_strategy(Strategy):
 
     def _update_average_body(self, candle):
         body = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
-        value = self._body_average.Process(DecimalIndicatorValue(self._body_average, body, candle.OpenTime))
+        value = process_float(self._body_average, body, candle.OpenTime, True)
         if value.IsFinal:
             self._average_body_value = float(value.GetValue[float]())
 

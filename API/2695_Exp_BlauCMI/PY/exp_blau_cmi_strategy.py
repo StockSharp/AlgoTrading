@@ -13,9 +13,8 @@ from StockSharp.Algo.Indicators import (
     SimpleMovingAverage,
     SmoothedMovingAverage,
     WeightedMovingAverage,
-    DecimalIndicatorValue,
 )
-
+from indicator_extensions import *
 
 class exp_blau_cmi_strategy(Strategy):
     """Blau Candle Momentum Index: triple-smoothed momentum ratio with configurable price sources."""
@@ -207,9 +206,7 @@ class exp_blau_cmi_strategy(Strategy):
         t = candle.ServerTime
 
         def _proc(ind, val):
-            iv = DecimalIndicatorValue(ind, Decimal(val), t)
-            iv.IsFinal = True
-            return float(ind.Process(iv).Value)
+            return float(process_float(ind, Decimal(val), t, True).Value)
 
         s1 = _proc(self._m_stage1, momentum)
         a1 = _proc(self._a_stage1, abs_momentum)
@@ -217,13 +214,9 @@ class exp_blau_cmi_strategy(Strategy):
         s2 = _proc(self._m_stage2, s1)
         a2 = _proc(self._a_stage2, a1)
 
-        s3_iv = DecimalIndicatorValue(self._m_stage3, Decimal(s2), t)
-        s3_iv.IsFinal = True
-        s3_val = self._m_stage3.Process(s3_iv)
+        s3_val = process_float(self._m_stage3, Decimal(s2), t, True)
 
-        a3_iv = DecimalIndicatorValue(self._a_stage3, Decimal(a2), t)
-        a3_iv.IsFinal = True
-        a3_val = self._a_stage3.Process(a3_iv)
+        a3_val = process_float(self._a_stage3, Decimal(a2), t, True)
 
         if not s3_val.IsFormed or not a3_val.IsFormed:
             return

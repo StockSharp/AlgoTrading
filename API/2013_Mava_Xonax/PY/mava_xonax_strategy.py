@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class mava_xonax_strategy(Strategy):
     """
@@ -71,11 +72,6 @@ class mava_xonax_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._ema_close, self._process_candle).Start()
 
-    def _make_input(self, indicator, value, time):
-        div = DecimalIndicatorValue(indicator, value, time)
-        div.IsFinal = True
-        return div
-
     def _process_candle(self, candle, close_ema_val):
         if candle.State != CandleStates.Finished:
             return
@@ -83,9 +79,9 @@ class mava_xonax_strategy(Strategy):
             self._cooldown_remaining -= 1
         close_ema = float(close_ema_val)
 
-        open_result = self._ema_open.Process(self._make_input(self._ema_open, candle.OpenPrice, candle.ServerTime))
-        high_result = self._ema_high.Process(self._make_input(self._ema_high, candle.HighPrice, candle.ServerTime))
-        low_result = self._ema_low.Process(self._make_input(self._ema_low, candle.LowPrice, candle.ServerTime))
+        open_result = process_float(self._ema_open, candle.OpenPrice, candle.ServerTime, True)
+        high_result = process_float(self._ema_high, candle.HighPrice, candle.ServerTime, True)
+        low_result = process_float(self._ema_low, candle.LowPrice, candle.ServerTime, True)
 
         if not open_result.IsFinal or not high_result.IsFinal or not low_result.IsFinal:
             return

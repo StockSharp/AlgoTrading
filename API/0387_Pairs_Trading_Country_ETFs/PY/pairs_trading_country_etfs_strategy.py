@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Sides, OrderTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Order
-
+from indicator_extensions import *
 
 class pairs_trading_country_etfs_strategy(Strategy):
     """Mean-reversion pairs strategy for country ETFs that trades the primary instrument against a benchmark ETF using the ratio z-score."""
@@ -140,13 +140,9 @@ class pairs_trading_country_etfs_strategy(Strategy):
 
         ratio = self._latest_primary_close / self._latest_benchmark_close
 
-        mean_iv = DecimalIndicatorValue(self._ratio_average, ratio, time)
-        mean_iv.IsFinal = True
-        mean = float(self._ratio_average.Process(mean_iv))
+        mean = float(process_float(self._ratio_average, ratio, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._ratio_deviation, ratio, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._ratio_deviation.Process(dev_iv))
+        deviation = float(process_float(self._ratio_deviation, ratio, time, True))
 
         if not self._ratio_average.IsFormed or not self._ratio_deviation.IsFormed or deviation <= 0:
             return

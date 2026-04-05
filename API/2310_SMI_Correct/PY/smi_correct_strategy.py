@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class smi_correct_strategy(Strategy):
     def __init__(self):
@@ -78,9 +78,7 @@ class smi_correct_strategy(Strategy):
         if k is None:
             return
         k = float(k)
-        signal_input = DecimalIndicatorValue(self._signal, k, candle.OpenTime)
-        signal_input.IsFinal = True
-        signal_result = self._signal.Process(signal_input)
+        signal_result = process_float(self._signal, k, candle.OpenTime, True)
         if not self._signal.IsFormed:
             self._prev_smi = k
             return

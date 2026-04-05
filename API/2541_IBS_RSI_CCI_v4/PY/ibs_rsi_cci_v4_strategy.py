@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, CommodityChannelIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class ibs_rsi_cci_v4_strategy(Strategy):
     def __init__(self):
@@ -208,9 +208,7 @@ class ibs_rsi_cci_v4_strategy(Strategy):
             candle_range = step
 
         ibs_raw = (close - low) / candle_range
-        ibs_input = DecimalIndicatorValue(self._ibs_avg, Decimal(ibs_raw), candle.OpenTime)
-        ibs_input.IsFinal = True
-        ibs_result = self._ibs_avg.Process(ibs_input)
+        ibs_result = process_float(self._ibs_avg, Decimal(ibs_raw), candle.OpenTime, True)
         if not ibs_result.IsFinal:
             return
 

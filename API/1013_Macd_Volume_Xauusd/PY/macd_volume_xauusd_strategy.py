@@ -9,10 +9,10 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     ExponentialMovingAverage, MovingAverageConvergenceDivergence,
-    DecimalIndicatorValue, CandleIndicatorValue,
+    CandleIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class macd_volume_xauusd_strategy(Strategy):
     def __init__(self):
@@ -60,8 +60,8 @@ class macd_volume_xauusd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.ServerTime
-        self._short_vol_ema.Process(DecimalIndicatorValue(self._short_vol_ema, candle.TotalVolume, t))
-        self._long_vol_ema.Process(DecimalIndicatorValue(self._long_vol_ema, candle.TotalVolume, t))
+        process_float(self._short_vol_ema, candle.TotalVolume, t, True)
+        process_float(self._long_vol_ema, candle.TotalVolume, t, True)
         macd_result = self._macd.Process(CandleIndicatorValue(self._macd, candle))
         if not self._macd.IsFormed:
             return

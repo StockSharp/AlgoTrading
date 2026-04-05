@@ -11,10 +11,10 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage,
-    WeightedMovingAverage, JurikMovingAverage, DecimalIndicatorValue
+    WeightedMovingAverage, JurikMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_blau_csi_strategy(Strategy):
     def __init__(self):
@@ -273,7 +273,6 @@ class exp_blau_csi_strategy(Strategy):
     def CreateClone(self):
         return exp_blau_csi_strategy()
 
-
 class _BlauCsiCalc:
     def __init__(self, method, mom_len, s1_len, s2_len, s3_len, phase, price1, price2):
         self._mom_len = max(1, mom_len)
@@ -315,18 +314,18 @@ class _BlauCsiCalc:
         momentum = current_price - past_price
         t = candle.OpenTime
 
-        mr1 = self._m1.Process(DecimalIndicatorValue(self._m1, momentum, t))
-        rr1 = self._r1.Process(DecimalIndicatorValue(self._r1, rng, t))
+        mr1 = process_float(self._m1, momentum, t, True)
+        rr1 = process_float(self._r1, rng, t, True)
         m1v = float(mr1)
         r1v = float(rr1)
 
-        mr2 = self._m2.Process(DecimalIndicatorValue(self._m2, m1v, t))
-        rr2 = self._r2.Process(DecimalIndicatorValue(self._r2, r1v, t))
+        mr2 = process_float(self._m2, m1v, t, True)
+        rr2 = process_float(self._r2, r1v, t, True)
         m2v = float(mr2)
         r2v = float(rr2)
 
-        mr3 = self._m3.Process(DecimalIndicatorValue(self._m3, m2v, t))
-        rr3 = self._r3.Process(DecimalIndicatorValue(self._r3, r2v, t))
+        mr3 = process_float(self._m3, m2v, t, True)
+        rr3 = process_float(self._r3, r2v, t, True)
         m3v = float(mr3)
         r3v = float(rr3)
 

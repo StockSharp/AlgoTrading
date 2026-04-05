@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class rsi_dynamic_overbought_oversold_strategy(Strategy):
     """
@@ -89,13 +89,9 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
 
         rv = float(rsi_value)
 
-        avg_input = DecimalIndicatorValue(self._rsi_sma, Decimal(rv), candle.OpenTime)
-        avg_input.IsFinal = True
-        rsi_average_value = float(self._rsi_sma.Process(avg_input))
+        rsi_average_value = float(process_float(self._rsi_sma, Decimal(rv), candle.OpenTime, True))
 
-        std_input = DecimalIndicatorValue(self._rsi_std_dev, Decimal(rv), candle.OpenTime)
-        std_input.IsFinal = True
-        rsi_std_dev_value = float(self._rsi_std_dev.Process(std_input))
+        rsi_std_dev_value = float(process_float(self._rsi_std_dev, Decimal(rv), candle.OpenTime, True))
 
         if not self._rsi.IsFormed or not self._price_sma.IsFormed or not self._rsi_sma.IsFormed or not self._rsi_std_dev.IsFormed:
             return

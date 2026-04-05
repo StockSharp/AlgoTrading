@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class volume_weighted_ma_st_dev_strategy(Strategy):
     def __init__(self):
@@ -73,9 +73,7 @@ class volume_weighted_ma_st_dev_strategy(Strategy):
             self._prev_vwma = vwma_value
             return
         diff = vwma_value - self._prev_vwma
-        std_input = DecimalIndicatorValue(self._std_dev, diff, candle.ServerTime)
-        std_input.IsFinal = True
-        std_result = self._std_dev.Process(std_input)
+        std_result = process_float(self._std_dev, diff, candle.ServerTime, True)
         if not self._std_dev.IsFormed:
             self._prev_vwma = vwma_value
             return

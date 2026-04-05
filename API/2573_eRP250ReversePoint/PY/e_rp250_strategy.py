@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class e_rp250_strategy(Strategy):
     def __init__(self):
@@ -109,13 +109,9 @@ class e_rp250_strategy(Strategy):
         low = float(candle.LowPrice)
         close = float(candle.ClosePrice)
 
-        high_input = DecimalIndicatorValue(self._highest, candle.HighPrice, candle.OpenTime)
-        high_input.IsFinal = True
-        high_result = self._highest.Process(high_input)
+        high_result = process_float(self._highest, candle.HighPrice, candle.OpenTime, True)
 
-        low_input = DecimalIndicatorValue(self._lowest, candle.LowPrice, candle.OpenTime)
-        low_input.IsFinal = True
-        low_result = self._lowest.Process(low_input)
+        low_result = process_float(self._lowest, candle.LowPrice, candle.OpenTime, True)
 
         if high_result.IsEmpty or low_result.IsEmpty:
             return

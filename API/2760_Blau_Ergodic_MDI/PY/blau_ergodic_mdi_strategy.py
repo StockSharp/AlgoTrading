@@ -12,10 +12,9 @@ from StockSharp.Algo.Indicators import (
     ExponentialMovingAverage,
     SmoothedMovingAverage,
     WeightedMovingAverage,
-    DecimalIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class blau_ergodic_mdi_strategy(Strategy):
     MODE_BREAKDOWN = 0
@@ -156,30 +155,22 @@ class blau_ergodic_mdi_strategy(Strategy):
         price = self._select_price(candle)
         t = candle.ServerTime
 
-        iv1 = DecimalIndicatorValue(self._price_average, Decimal(float(price)), t)
-        iv1.IsFinal = True
-        base_val = self._price_average.Process(iv1)
+        base_val = process_float(self._price_average, Decimal(float(price)), t, True)
         if not self._price_average.IsFormed:
             return
         base_price = float(base_val.Value)
         momentum = (float(price) - base_price) / self._point_value if self._point_value != 0 else 0.0
 
-        iv2 = DecimalIndicatorValue(self._first_smoothing, Decimal(momentum), t)
-        iv2.IsFinal = True
-        first_val = self._first_smoothing.Process(iv2)
+        first_val = process_float(self._first_smoothing, Decimal(momentum), t, True)
         if not self._first_smoothing.IsFormed:
             return
 
-        iv3 = DecimalIndicatorValue(self._second_smoothing, Decimal(float(first_val.Value)), t)
-        iv3.IsFinal = True
-        second_val = self._second_smoothing.Process(iv3)
+        second_val = process_float(self._second_smoothing, Decimal(float(first_val.Value)), t, True)
         if not self._second_smoothing.IsFormed:
             return
         histogram = float(second_val.Value)
 
-        iv4 = DecimalIndicatorValue(self._signal_smoothing, Decimal(histogram), t)
-        iv4.IsFinal = True
-        signal_val = self._signal_smoothing.Process(iv4)
+        signal_val = process_float(self._signal_smoothing, Decimal(histogram), t, True)
         if not self._signal_smoothing.IsFormed:
             return
         signal = float(signal_val.Value)

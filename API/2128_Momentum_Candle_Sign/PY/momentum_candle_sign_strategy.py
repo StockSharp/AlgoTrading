@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Momentum, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Momentum
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class momentum_candle_sign_strategy(Strategy):
     def __init__(self):
@@ -61,12 +61,8 @@ class momentum_candle_sign_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        open_input = DecimalIndicatorValue(self._open_momentum, candle.OpenPrice, candle.OpenTime)
-        open_input.IsFinal = True
-        open_mom = float(self._open_momentum.Process(open_input))
-        close_input = DecimalIndicatorValue(self._close_momentum, candle.ClosePrice, candle.OpenTime)
-        close_input.IsFinal = True
-        close_mom = float(self._close_momentum.Process(close_input))
+        open_mom = float(process_float(self._open_momentum, candle.OpenPrice, candle.OpenTime, True))
+        close_mom = float(process_float(self._close_momentum, candle.ClosePrice, candle.OpenTime, True))
         if not self._is_formed:
             self._prev_open_momentum = open_mom
             self._prev_close_momentum = close_mom

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class seasonality_adjusted_momentum_strategy(Strategy):
     """
@@ -96,9 +96,7 @@ class seasonality_adjusted_momentum_strategy(Strategy):
 
         mv = float(momentum_value)
 
-        avg_input = DecimalIndicatorValue(self._momentum_average, Decimal(mv), candle.OpenTime)
-        avg_input.IsFinal = True
-        momentum_avg_val = float(self._momentum_average.Process(avg_input))
+        momentum_avg_val = float(process_float(self._momentum_average, Decimal(mv), candle.OpenTime, True))
 
         if not self._momentum.IsFormed or not self._momentum_average.IsFormed:
             return

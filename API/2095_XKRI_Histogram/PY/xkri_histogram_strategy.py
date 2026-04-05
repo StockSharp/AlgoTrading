@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class xkri_histogram_strategy(Strategy):
     def __init__(self):
@@ -79,9 +79,7 @@ class xkri_histogram_strategy(Strategy):
         if ma_value == 0:
             return
         kri = 100 * (candle.ClosePrice - ma_value) / ma_value
-        div = DecimalIndicatorValue(self._smooth, kri, candle.OpenTime)
-        div.IsFinal = True
-        smooth_result = self._smooth.Process(div)
+        smooth_result = process_float(self._smooth, kri, candle.OpenTime, True)
         if not smooth_result.IsFormed:
             return
         smooth = float(smooth_result)

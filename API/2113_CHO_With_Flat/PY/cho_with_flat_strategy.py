@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, BollingerBands, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, BollingerBands
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class cho_with_flat_strategy(Strategy):
     def __init__(self):
@@ -102,18 +102,12 @@ class cho_with_flat_strategy(Strategy):
         upper_band = float(bb_value.UpBand)
         lower_band = float(bb_value.LowBand)
         middle_band = float(bb_value.MovingAverage)
-        div_f = DecimalIndicatorValue(self._fast_ema, candle.ClosePrice, candle.OpenTime)
-        div_f.IsFinal = True
-        fast_result = self._fast_ema.Process(div_f)
-        div_s = DecimalIndicatorValue(self._slow_ema, candle.ClosePrice, candle.OpenTime)
-        div_s.IsFinal = True
-        slow_result = self._slow_ema.Process(div_s)
+        fast_result = process_float(self._fast_ema, candle.ClosePrice, candle.OpenTime, True)
+        slow_result = process_float(self._slow_ema, candle.ClosePrice, candle.OpenTime, True)
         if not fast_result.IsFormed or not slow_result.IsFormed:
             return
         osc_value = float(fast_result) - float(slow_result)
-        div_sig = DecimalIndicatorValue(self._signal_ema, osc_value, candle.OpenTime)
-        div_sig.IsFinal = True
-        sig_result = self._signal_ema.Process(div_sig)
+        sig_result = process_float(self._signal_ema, osc_value, candle.OpenTime, True)
         if not sig_result.IsFormed:
             return
         if not self.IsFormedAndOnlineAndAllowTrading():

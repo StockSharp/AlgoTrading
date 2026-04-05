@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class ema_barabashkakvn_edition_strategy(Strategy):
     def __init__(self):
@@ -126,12 +126,8 @@ class ema_barabashkakvn_edition_strategy(Strategy):
         close = float(candle.ClosePrice)
         median_price = (high + low) / 2.0
 
-        fast_val = DecimalIndicatorValue(self._fast_ema, median_price, candle.OpenTime)
-        fast_val.IsFinal = True
-        fast_result = self._fast_ema.Process(fast_val)
-        slow_val = DecimalIndicatorValue(self._slow_ema, median_price, candle.OpenTime)
-        slow_val.IsFinal = True
-        slow_result = self._slow_ema.Process(slow_val)
+        fast_result = process_float(self._fast_ema, median_price, candle.OpenTime, True)
+        slow_result = process_float(self._slow_ema, median_price, candle.OpenTime, True)
 
         if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
             self._prev_high = high

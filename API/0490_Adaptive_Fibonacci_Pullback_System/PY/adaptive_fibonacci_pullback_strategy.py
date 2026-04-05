@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (SuperTrend, ExponentialMovingAverage,
-                                         RelativeStrengthIndex, DecimalIndicatorValue,
+                                         RelativeStrengthIndex,
                                          IndicatorHelper, IIndicator)
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class adaptive_fibonacci_pullback_strategy(Strategy):
     """Adaptive Fibonacci Pullback Strategy."""
@@ -117,7 +117,7 @@ class adaptive_fibonacci_pullback_strategy(Strategy):
 
         avg = (st1_v + st2_v + st3_v) / 3.0
 
-        smooth_result = self._st_smooth.Process(DecimalIndicatorValue(self._st_smooth, avg, candle.ServerTime))
+        smooth_result = process_float(self._st_smooth, avg, candle.ServerTime, True)
         smooth = float(IndicatorHelper.ToDecimal(smooth_result))
 
         close = float(candle.ClosePrice)

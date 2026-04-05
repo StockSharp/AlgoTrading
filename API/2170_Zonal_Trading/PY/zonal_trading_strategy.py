@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AwesomeOscillator, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import AwesomeOscillator, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class zonal_trading_strategy(Strategy):
     def __init__(self):
@@ -62,9 +62,7 @@ class zonal_trading_strategy(Strategy):
             return
 
         ao_val = float(ao_value)
-        d = DecimalIndicatorValue(self._ao_ema, ao_val, candle.OpenTime)
-        d.IsFinal = True
-        sma_result = self._ao_ema.Process(d)
+        sma_result = process_float(self._ao_ema, ao_val, candle.OpenTime, True)
         if not self._ao_ema.IsFormed:
             self._ao_prev2 = self._ao_prev1
             self._ao_prev1 = ao_val

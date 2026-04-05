@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class v1n1_lonny_breakout_strategy(Strategy):
     def __init__(self):
@@ -102,9 +102,7 @@ class v1n1_lonny_breakout_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
-        rsi_input = DecimalIndicatorValue(self._rsi, candle.ClosePrice, candle.OpenTime)
-        rsi_input.IsFinal = True
-        rsi_result = self._rsi.Process(rsi_input)
+        rsi_result = process_float(self._rsi, candle.ClosePrice, candle.OpenTime, True)
 
         if not self._rsi.IsFormed or not self._ema.IsFormed:
             self._shift_ema(ema_val)

@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class fscore_reversal_strategy(Strategy):
     """F-Score reversal strategy that trades the primary instrument when a synthetic fundamental score aligns with relative short-term reversal versus a benchmark."""
@@ -147,9 +147,7 @@ class fscore_reversal_strategy(Strategy):
         reversal_value = self._primary_reversal.Process(civ)
 
         fscore_proxy = self.CalculateFScoreProxy(candle)
-        score_iv = DecimalIndicatorValue(self._primary_score, fscore_proxy, candle.OpenTime)
-        score_iv.IsFinal = True
-        score_value = self._primary_score.Process(score_iv)
+        score_value = process_float(self._primary_score, fscore_proxy, candle.OpenTime, True)
 
         if not reversal_value.IsEmpty and not score_value.IsEmpty and self._primary_reversal.IsFormed and self._primary_score.IsFormed:
             self._latest_primary_signal = float(score_value) - float(reversal_value)
@@ -165,9 +163,7 @@ class fscore_reversal_strategy(Strategy):
         reversal_value = self._benchmark_reversal.Process(civ)
 
         fscore_proxy = self.CalculateFScoreProxy(candle)
-        score_iv = DecimalIndicatorValue(self._benchmark_score, fscore_proxy, candle.OpenTime)
-        score_iv.IsFinal = True
-        score_value = self._benchmark_score.Process(score_iv)
+        score_value = process_float(self._benchmark_score, fscore_proxy, candle.OpenTime, True)
 
         if not reversal_value.IsEmpty and not score_value.IsEmpty and self._benchmark_reversal.IsFormed and self._benchmark_score.IsFormed:
             self._latest_benchmark_signal = float(score_value) - float(reversal_value)
@@ -192,14 +188,10 @@ class fscore_reversal_strategy(Strategy):
 
         spread = self._latest_primary_signal - self._latest_benchmark_signal
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean_result = self._spread_average.Process(mean_iv)
+        mean_result = process_float(self._spread_average, spread, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        dev_result = self._spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._spread_deviation, spread, time, True)
         deviation = float(dev_result)
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:

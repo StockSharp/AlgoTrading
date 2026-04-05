@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import WeightedMovingAverage, ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import WeightedMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class candles_smoothed_strategy(Strategy):
     def __init__(self):
@@ -52,9 +52,7 @@ class candles_smoothed_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         diff = float(candle.ClosePrice) - float(candle.OpenPrice)
-        div = DecimalIndicatorValue(self._ma, diff, candle.OpenTime)
-        div.IsFinal = True
-        ma_result = self._ma.Process(div)
+        ma_result = process_float(self._ma, diff, candle.OpenTime, True)
         if not ma_result.IsFormed:
             return
         smoothed = float(ma_result)

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class simple_ma_adx_ea_strategy(Strategy):
 
@@ -117,12 +117,8 @@ class simple_ma_adx_ea_strategy(Strategy):
             return
 
         close = candle.ClosePrice
-        ei = DecimalIndicatorValue(self._ema, close, candle.OpenTime)
-        ei.IsFinal = True
-        ema_val = float(self._ema.Process(ei))
-        ti = DecimalIndicatorValue(self._trend_ma, close, candle.OpenTime)
-        ti.IsFinal = True
-        trend_ma_val = float(self._trend_ma.Process(ti))
+        ema_val = float(process_float(self._ema, close, candle.OpenTime, True))
+        trend_ma_val = float(process_float(self._trend_ma, close, candle.OpenTime, True))
 
         if not self._ema.IsFormed or not self._trend_ma.IsFormed or trend_ma_val == 0.0:
             return

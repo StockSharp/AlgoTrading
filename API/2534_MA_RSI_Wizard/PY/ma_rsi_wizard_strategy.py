@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from System import Decimal
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # MA method constants
 MA_SIMPLE = 0
@@ -26,7 +26,6 @@ PRICE_LOW = 3
 PRICE_MEDIAN = 4
 PRICE_TYPICAL = 5
 PRICE_WEIGHTED = 6
-
 
 class ma_rsi_wizard_strategy(Strategy):
     def __init__(self):
@@ -240,17 +239,13 @@ class ma_rsi_wizard_strategy(Strategy):
 
         close = float(candle.ClosePrice)
         ma_price = self._select_price(candle, int(self.MaAppliedPrice))
-        ma_iv = DecimalIndicatorValue(self._ma_ind, Decimal(ma_price), candle.OpenTime)
-        ma_iv.IsFinal = True
-        ma_result = self._ma_ind.Process(ma_iv)
+        ma_result = process_float(self._ma_ind, Decimal(ma_price), candle.OpenTime, True)
         if not ma_result.IsFinal:
             return
         ma_val = float(ma_result)
 
         rsi_price = self._select_price(candle, int(self.RsiAppliedPrice))
-        rsi_iv = DecimalIndicatorValue(self._rsi_ind, Decimal(rsi_price), candle.OpenTime)
-        rsi_iv.IsFinal = True
-        rsi_result = self._rsi_ind.Process(rsi_iv)
+        rsi_result = process_float(self._rsi_ind, Decimal(rsi_price), candle.OpenTime, True)
         if not rsi_result.IsFinal:
             return
         rsi_val = float(rsi_result)

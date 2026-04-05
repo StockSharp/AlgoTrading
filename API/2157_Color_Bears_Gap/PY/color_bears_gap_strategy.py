@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_bears_gap_strategy(Strategy):
     def __init__(self):
@@ -77,20 +77,12 @@ class color_bears_gap_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         t = candle.OpenTime
-        d1 = DecimalIndicatorValue(self._sma_close, candle.ClosePrice, t)
-        d1.IsFinal = True
-        smooth_close = float(self._sma_close.Process(d1))
-        d2 = DecimalIndicatorValue(self._sma_open, candle.OpenPrice, t)
-        d2.IsFinal = True
-        smooth_open = float(self._sma_open.Process(d2))
+        smooth_close = float(process_float(self._sma_close, candle.ClosePrice, t, True))
+        smooth_open = float(process_float(self._sma_open, candle.OpenPrice, t, True))
         bulls_c = float(candle.HighPrice) - smooth_close
         bulls_o = float(candle.HighPrice) - smooth_open
-        d3 = DecimalIndicatorValue(self._sma_bulls_c, bulls_c, t)
-        d3.IsFinal = True
-        xbulls_c = float(self._sma_bulls_c.Process(d3))
-        d4 = DecimalIndicatorValue(self._sma_bulls_o, bulls_o, t)
-        d4.IsFinal = True
-        xbulls_o = float(self._sma_bulls_o.Process(d4))
+        xbulls_c = float(process_float(self._sma_bulls_c, bulls_c, t, True))
+        xbulls_o = float(process_float(self._sma_bulls_o, bulls_o, t, True))
         if self._is_first:
             self._prev_xbulls_c = xbulls_c
             self._is_first = False

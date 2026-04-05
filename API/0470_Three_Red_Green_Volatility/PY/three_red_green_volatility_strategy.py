@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue, IndicatorHelper
+from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage, IndicatorHelper
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class three_red_green_volatility_strategy(Strategy):
     """Three Red / Three Green Strategy with volatility filter."""
@@ -72,7 +72,7 @@ class three_red_green_volatility_strategy(Strategy):
 
         atr_v = float(atr_val)
 
-        atr_avg_result = self._atr_avg.Process(DecimalIndicatorValue(self._atr_avg, atr_val, candle.ServerTime))
+        atr_avg_result = process_float(self._atr_avg, atr_val, candle.ServerTime, True)
         atr_avg_val = float(IndicatorHelper.ToDecimal(atr_avg_result)) if self._atr_avg.IsFormed else atr_v
 
         is_red = candle.ClosePrice < candle.OpenPrice

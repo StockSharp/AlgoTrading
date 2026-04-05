@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class exp_extremum_strategy(Strategy):
 
@@ -112,12 +112,8 @@ class exp_extremum_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        mhi = DecimalIndicatorValue(self._min_high, candle.HighPrice, candle.OpenTime)
-        mhi.IsFinal = True
-        min_high_value = float(self._min_high.Process(mhi))
-        mli = DecimalIndicatorValue(self._max_low, candle.LowPrice, candle.OpenTime)
-        mli.IsFinal = True
-        max_low_value = float(self._max_low.Process(mli))
+        min_high_value = float(process_float(self._min_high, candle.HighPrice, candle.OpenTime, True))
+        max_low_value = float(process_float(self._max_low, candle.LowPrice, candle.OpenTime, True))
 
         if not self._min_high.IsFormed or not self._max_low.IsFormed:
             return

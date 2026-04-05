@@ -9,15 +9,13 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     CommodityChannelIndex, RelativeStrengthIndex, SimpleMovingAverage,
-    DecimalIndicatorValue,
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 # Signal mode constants
 MODE_TREND = 0
 MODE_FLAT = 1
-
 
 class gg_rsi_cci_strategy(Strategy):
 
@@ -153,10 +151,10 @@ class gg_rsi_cci_strategy(Strategy):
         rsi_val = float(rsi_value)
         cci_val = float(cci_value)
 
-        rsi_fast = float(self._rsi_fast.Process(DecimalIndicatorValue(self._rsi_fast, rsi_val, candle.OpenTime)))
-        rsi_slow = float(self._rsi_slow.Process(DecimalIndicatorValue(self._rsi_slow, rsi_val, candle.OpenTime)))
-        cci_fast = float(self._cci_fast.Process(DecimalIndicatorValue(self._cci_fast, cci_val, candle.OpenTime)))
-        cci_slow = float(self._cci_slow.Process(DecimalIndicatorValue(self._cci_slow, cci_val, candle.OpenTime)))
+        rsi_fast = float(process_float(self._rsi_fast, rsi_val, candle.OpenTime, True))
+        rsi_slow = float(process_float(self._rsi_slow, rsi_val, candle.OpenTime, True))
+        cci_fast = float(process_float(self._cci_fast, cci_val, candle.OpenTime, True))
+        cci_slow = float(process_float(self._cci_slow, cci_val, candle.OpenTime, True))
 
         if rsi_fast > rsi_slow and cci_fast > cci_slow and cci_val > 0.0:
             signal = 2

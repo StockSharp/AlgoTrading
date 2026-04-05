@@ -11,8 +11,6 @@ from StockSharp.Algo.Indicators import WilliamsR, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.Algo.Indicators import DecimalIndicatorValue
-
 
 class williams_r_breakout_strategy(Strategy):
     """
@@ -154,9 +152,7 @@ class williams_r_breakout_strategy(Strategy):
         wrVal = float(wrValue)
 
         # Feed WR value through SMA to get the average (must set IsFinal for buffer to accumulate)
-        avgInput = DecimalIndicatorValue(self._williamsRAverage, wrVal, candle.ServerTime)
-        avgInput.IsFinal = True
-        avgResult = self._williamsRAverage.Process(avgInput)
+        avgResult = process_float(self._williamsRAverage, wrVal, candle.ServerTime, True)
 
         if not self._williamsRAverage.IsFormed:
             return

@@ -9,8 +9,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 # Applied price constants
 PRICE_CLOSE = 1
@@ -40,7 +41,6 @@ _FATL_COEFF = [
 ]
 
 _FATL_LEN = len(_FATL_COEFF)
-
 
 class color_jfatl_digit_tm_plus_strategy(Strategy):
     def __init__(self):
@@ -190,9 +190,7 @@ class color_jfatl_digit_tm_plus_strategy(Strategy):
         for i in range(_FATL_LEN):
             fatl += _FATL_COEFF[i] * self._price_buffer[len(self._price_buffer) - 1 - i]
 
-        iv = DecimalIndicatorValue(self._jma, Decimal(fatl), candle.OpenTime)
-        iv.IsFinal = True
-        jma_result = self._jma.Process(iv)
+        jma_result = process_float(self._jma, Decimal(fatl), candle.OpenTime, True)
         if not self._jma.IsFormed:
             return
 

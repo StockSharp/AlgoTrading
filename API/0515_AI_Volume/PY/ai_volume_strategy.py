@@ -121,8 +121,8 @@ class ai_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        from StockSharp.Algo.Indicators import DecimalIndicatorValue
-        volume_result = self._volume_sma.Process(DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.ServerTime))
+        
+        volume_result = process_float(self._volume_sma, candle.TotalVolume, candle.ServerTime, True)
 
         # Time-based exit
         if self.Position != 0:

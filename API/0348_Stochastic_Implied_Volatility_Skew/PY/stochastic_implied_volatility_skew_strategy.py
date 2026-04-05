@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class stochastic_implied_volatility_skew_strategy(Strategy):
     """Stochastic strategy filtered by deterministic implied-volatility skew regime changes."""
@@ -104,9 +104,7 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
 
         self.SimulateIvSkew(candle)
 
-        iv_sma_iv = DecimalIndicatorValue(self._iv_skew_sma, self._current_iv_skew, candle.OpenTime)
-        iv_sma_iv.IsFinal = True
-        iv_sma_result = self._iv_skew_sma.Process(iv_sma_iv)
+        iv_sma_result = process_float(self._iv_skew_sma, self._current_iv_skew, candle.OpenTime, True)
         if not self._iv_skew_sma.IsFormed or iv_sma_result.IsEmpty:
             return
 

@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, ParabolicSar, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, ParabolicSar, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class forex_profit_strategy(Strategy):
     def __init__(self):
@@ -179,15 +179,9 @@ class forex_profit_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
-        ema10_input = DecimalIndicatorValue(self._ema_fast, Decimal(median), candle.CloseTime)
-        ema10_input.IsFinal = True
-        ema10_result = self._ema_fast.Process(ema10_input)
-        ema25_input = DecimalIndicatorValue(self._ema_medium, Decimal(median), candle.CloseTime)
-        ema25_input.IsFinal = True
-        ema25_result = self._ema_medium.Process(ema25_input)
-        ema50_input = DecimalIndicatorValue(self._ema_slow, Decimal(median), candle.CloseTime)
-        ema50_input.IsFinal = True
-        ema50_result = self._ema_slow.Process(ema50_input)
+        ema10_result = process_float(self._ema_fast, Decimal(median), candle.CloseTime, True)
+        ema25_result = process_float(self._ema_medium, Decimal(median), candle.CloseTime, True)
+        ema50_result = process_float(self._ema_slow, Decimal(median), candle.CloseTime, True)
         sar_result = self._sar.Process(CandleIndicatorValue(self._sar, candle))
 
         ema10_value = float(ema10_result)

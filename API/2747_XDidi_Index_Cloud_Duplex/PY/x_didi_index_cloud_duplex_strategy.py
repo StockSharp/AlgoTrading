@@ -11,10 +11,10 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage,
     WeightedMovingAverage, TripleExponentialMovingAverage,
-    KaufmanAdaptiveMovingAverage, DecimalIndicatorValue
+    KaufmanAdaptiveMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class x_didi_index_cloud_duplex_strategy(Strategy):
     def __init__(self):

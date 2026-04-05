@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class color_leman_trend_strategy(Strategy):
 
@@ -173,12 +173,8 @@ class color_leman_trend_strategy(Strategy):
 
         t = candle.OpenTime
 
-        bulls_input = DecimalIndicatorValue(self._bulls_ema, hh, t)
-        bulls_input.IsFinal = True
-        bulls_result = self._bulls_ema.Process(bulls_input)
-        bears_input = DecimalIndicatorValue(self._bears_ema, ll, t)
-        bears_input.IsFinal = True
-        bears_result = self._bears_ema.Process(bears_input)
+        bulls_result = process_float(self._bulls_ema, hh, t, True)
+        bears_result = process_float(self._bears_ema, ll, t, True)
 
         if bulls_result.IsEmpty or bears_result.IsEmpty:
             return

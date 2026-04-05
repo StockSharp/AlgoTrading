@@ -9,10 +9,11 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (
-    RelativeStrengthIndex, SimpleMovingAverage, DecimalIndicatorValue,
+    RelativeStrengthIndex, SimpleMovingAverage,
     ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage,
     Highest, Lowest)
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 IBS_MA_SIMPLE = 0
 IBS_MA_EXPONENTIAL = 1
@@ -26,7 +27,6 @@ APPLIED_LOW = 3
 APPLIED_MEDIAN = 4
 APPLIED_TYPICAL = 5
 APPLIED_WEIGHTED = 6
-
 
 class IbsRsiCciCalculator(object):
     def __init__(self, ibs_period, ibs_type, rsi_period, rsi_price, cci_period, cci_price,
@@ -107,16 +107,12 @@ class IbsRsiCciCalculator(object):
 
         ibs_raw = Decimal.Divide(Decimal.Subtract(c, l), bar_range)
 
-        di = DecimalIndicatorValue(self._ibs_ma, ibs_raw, open_time)
-        di.IsFinal = True
-        ibs_result = self._ibs_ma.Process(di)
+        ibs_result = process_float(self._ibs_ma, ibs_raw, open_time, True)
         if not ibs_result.IsFinal:
             return None
 
         rsi_input = self._get_price(candle, self._rsi_price)
-        di2 = DecimalIndicatorValue(self._rsi, rsi_input, open_time)
-        di2.IsFinal = True
-        rsi_result = self._rsi.Process(di2)
+        rsi_result = process_float(self._rsi, rsi_input, open_time, True)
         if not rsi_result.IsFinal:
             return None
 
@@ -153,24 +149,16 @@ class IbsRsiCciCalculator(object):
 
         self._previous_up = up
 
-        di3 = DecimalIndicatorValue(self._highest, up, open_time)
-        di3.IsFinal = True
-        highest_result = self._highest.Process(di3)
-        di4 = DecimalIndicatorValue(self._lowest, up, open_time)
-        di4.IsFinal = True
-        lowest_result = self._lowest.Process(di4)
+        highest_result = process_float(self._highest, up, open_time, True)
+        lowest_result = process_float(self._lowest, up, open_time, True)
         if not highest_result.IsFinal or not lowest_result.IsFinal:
             return None
 
         highest_val = Decimal(float(highest_result))
         lowest_val = Decimal(float(lowest_result))
 
-        di5 = DecimalIndicatorValue(self._range_high_ma, highest_val, open_time)
-        di5.IsFinal = True
-        high_smooth = self._range_high_ma.Process(di5)
-        di6 = DecimalIndicatorValue(self._range_low_ma, lowest_val, open_time)
-        di6.IsFinal = True
-        low_smooth = self._range_low_ma.Process(di6)
+        high_smooth = process_float(self._range_high_ma, highest_val, open_time, True)
+        low_smooth = process_float(self._range_low_ma, lowest_val, open_time, True)
         if not high_smooth.IsFinal or not low_smooth.IsFinal:
             return None
 
@@ -181,9 +169,7 @@ class IbsRsiCciCalculator(object):
         return (up, signal)
 
     def _process_cci(self, price, open_time):
-        di = DecimalIndicatorValue(self._cci_sma, price, open_time)
-        di.IsFinal = True
-        ma_result = self._cci_sma.Process(di)
+        ma_result = process_float(self._cci_sma, price, open_time, True)
         self._cci_buffer.append(price)
         if len(self._cci_buffer) > self._cci_period:
             self._cci_buffer.pop(0)
@@ -215,7 +201,6 @@ class IbsRsiCciCalculator(object):
         self._lowest.Reset()
         self._range_high_ma.Reset()
         self._range_low_ma.Reset()
-
 
 class ibs_rsi_cci_v4_x2_strategy(Strategy):
     def __init__(self):

@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class roa_effect_stocks_strategy(Strategy):
     """ROA effect strategy that trades the primary stock when its synthetic profitability proxy outperforms a benchmark stock."""
@@ -152,9 +152,7 @@ class roa_effect_stocks_strategy(Strategy):
         stability = 1.0 - min(0.2, (float(candle.HighPrice) - float(candle.LowPrice)) / price_base)
         profitability_proxy = body_ratio + stability
 
-        iv = DecimalIndicatorValue(average, profitability_proxy, candle.OpenTime)
-        iv.IsFinal = True
-        return float(average.Process(iv))
+        return float(process_float(average, profitability_proxy, candle.OpenTime, True))
 
     def TryProcessSpread(self, time):
         if not self._primary_updated or not self._benchmark_updated:
@@ -165,13 +163,9 @@ class roa_effect_stocks_strategy(Strategy):
 
         spread = self._latest_primary_score - self._latest_benchmark_score
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean = float(self._spread_average.Process(mean_iv))
+        mean = float(process_float(self._spread_average, spread, time, True))
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        deviation = float(self._spread_deviation.Process(dev_iv))
+        deviation = float(process_float(self._spread_deviation, spread, time, True))
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
             return

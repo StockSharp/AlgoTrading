@@ -7,8 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class macd_breakout_strategy(Strategy):
     """
@@ -73,11 +74,8 @@ class macd_breakout_strategy(Strategy):
             return
         macd_val = float(typed_val.Macd)
 
-        # Process using DecimalIndicatorValue like CS does (no IsFinal)
-        div_sma = DecimalIndicatorValue(self._macd_hist_sma, macd_val, candle.ServerTime)
-        div_std = DecimalIndicatorValue(self._macd_hist_stddev, macd_val, candle.ServerTime)
-        macd_hist_sma_value = float(self._macd_hist_sma.Process(div_sma))
-        macd_hist_stddev_value = float(self._macd_hist_stddev.Process(div_std))
+        macd_hist_sma_value = float(process_float(self._macd_hist_sma, macd_val, candle.ServerTime, True))
+        macd_hist_stddev_value = float(process_float(self._macd_hist_stddev, macd_val, candle.ServerTime, True))
 
         # Store previous values on first call
         if self._prev_macd_hist_value == 0.0 and self._prev_macd_hist_sma_value == 0.0:

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class macd_adaptive_histogram_strategy(Strategy):
     """
@@ -100,13 +100,9 @@ class macd_adaptive_histogram_strategy(Strategy):
         signal_f = float(signal_val)
         histogram = macd_f - signal_f
 
-        avg_input = DecimalIndicatorValue(self._hist_avg, Decimal(histogram), candle.OpenTime)
-        avg_input.IsFinal = True
-        histogram_average = float(self._hist_avg.Process(avg_input))
+        histogram_average = float(process_float(self._hist_avg, Decimal(histogram), candle.OpenTime, True))
 
-        std_input = DecimalIndicatorValue(self._hist_std_dev, Decimal(histogram), candle.OpenTime)
-        std_input.IsFinal = True
-        histogram_std_dev = float(self._hist_std_dev.Process(std_input))
+        histogram_std_dev = float(process_float(self._hist_std_dev, Decimal(histogram), candle.OpenTime, True))
 
         if not self._macd.IsFormed or not self._hist_avg.IsFormed or not self._hist_std_dev.IsFormed:
             return

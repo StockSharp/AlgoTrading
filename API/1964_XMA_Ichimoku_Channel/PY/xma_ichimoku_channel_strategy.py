@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from collections import deque
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class xma_ichimoku_channel_strategy(Strategy):
 
@@ -119,9 +119,7 @@ class xma_ichimoku_channel_strategy(Strategy):
         lowest = min(self._lows)
         mid_value = (highest + lowest) / 2.0
 
-        mi = DecimalIndicatorValue(self._sma, mid_value, candle.OpenTime)
-        mi.IsFinal = True
-        result = self._sma.Process(mi)
+        result = process_float(self._sma, mid_value, candle.OpenTime, True)
         middle = float(result)
 
         if not self._sma.IsFormed:

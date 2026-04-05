@@ -8,8 +8,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import StandardDeviation, DonchianChannels, DecimalIndicatorValue
-
+from StockSharp.Algo.Indicators import StandardDeviation, DonchianChannels
+from indicator_extensions import *
 
 class flat_channel_strategy(Strategy):
     """Flat channel breakout: detects consolidation via falling StdDev, then trades channel breakouts."""
@@ -97,9 +97,7 @@ class flat_channel_strategy(Strategy):
         lo = float(candle.LowPrice)
         median_price = (h + lo) / 2.0
 
-        sd_iv = DecimalIndicatorValue(self._std_dev, Decimal(median_price), candle.ServerTime)
-        sd_iv.IsFinal = True
-        std_dev_value = float(self._std_dev.Process(sd_iv).Value)
+        std_dev_value = float(process_float(self._std_dev, Decimal(median_price), candle.ServerTime, True).Value)
 
         if not self._std_dev.IsFormed:
             self._previous_std_dev = std_dev_value

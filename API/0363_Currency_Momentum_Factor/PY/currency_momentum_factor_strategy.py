@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class currency_momentum_factor_strategy(Strategy):
     """Currency momentum factor strategy that trades the primary instrument when its relative momentum versus a benchmark currency is strong or weak."""
@@ -165,14 +165,10 @@ class currency_momentum_factor_strategy(Strategy):
 
         spread = self._latest_primary_momentum - self._latest_benchmark_momentum
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean_result = self._spread_average.Process(mean_iv)
+        mean_result = process_float(self._spread_average, spread, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        dev_result = self._spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._spread_deviation, spread, time, True)
         deviation = float(dev_result)
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:

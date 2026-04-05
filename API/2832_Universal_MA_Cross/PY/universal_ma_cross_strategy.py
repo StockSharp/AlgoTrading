@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
@@ -95,13 +95,9 @@ class universal_ma_cross_strategy(Strategy):
                     self._reset_protection()
 
         # Process indicators manually
-        fast_input = DecimalIndicatorValue(self._fast_ma, close, candle.OpenTime)
-        fast_input.IsFinal = True
-        fast_result = self._fast_ma.Process(fast_input)
+        fast_result = process_float(self._fast_ma, close, candle.OpenTime, True)
 
-        slow_input = DecimalIndicatorValue(self._slow_ma, close, candle.OpenTime)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_input)
+        slow_result = process_float(self._slow_ma, close, candle.OpenTime, True)
 
         if fast_result.IsEmpty or slow_result.IsEmpty:
             return

@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import HullMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import HullMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class hull_ma_volume_spike_strategy(Strategy):
     """
@@ -91,13 +91,9 @@ class hull_ma_volume_spike_strategy(Strategy):
 
         volume = candle.TotalVolume
 
-        avg_input = DecimalIndicatorValue(self._volume_sma, volume, candle.OpenTime)
-        avg_input.IsFinal = True
-        volume_avg_value = float(self._volume_sma.Process(avg_input))
+        volume_avg_value = float(process_float(self._volume_sma, volume, candle.OpenTime, True))
 
-        std_input = DecimalIndicatorValue(self._volume_std_dev, volume, candle.OpenTime)
-        std_input.IsFinal = True
-        volume_std_dev_value = float(self._volume_std_dev.Process(std_input))
+        volume_std_dev_value = float(process_float(self._volume_std_dev, volume, candle.OpenTime, True))
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return

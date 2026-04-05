@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import RateOfChange, ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class overnight_sentiment_anomaly_strategy(Strategy):
     """Overnight sentiment anomaly strategy that trades the primary instrument when its opening gap diverges from benchmark sentiment."""
@@ -133,9 +133,7 @@ class overnight_sentiment_anomaly_strategy(Strategy):
             return
 
         gap = (float(candle.OpenPrice) - float(candle.LowPrice)) / max(float(candle.LowPrice), 1.0)
-        gap_iv = DecimalIndicatorValue(self._gap_average, gap, candle.OpenTime)
-        gap_iv.IsFinal = True
-        smoothed_gap = float(self._gap_average.Process(gap_iv))
+        smoothed_gap = float(process_float(self._gap_average, gap, candle.OpenTime, True))
 
         if not self._gap_average.IsFormed:
             return
@@ -167,13 +165,9 @@ class overnight_sentiment_anomaly_strategy(Strategy):
 
         signal = self._latest_benchmark_sentiment - (self._latest_gap * 10.0)
 
-        mean_iv = DecimalIndicatorValue(self._signal_average, signal, candle.OpenTime)
-        mean_iv.IsFinal = True
-        mean = float(self._signal_average.Process(mean_iv))
+        mean = float(process_float(self._signal_average, signal, candle.OpenTime, True))
 
-        dev_iv = DecimalIndicatorValue(self._signal_deviation, signal, candle.OpenTime)
-        dev_iv.IsFinal = True
-        deviation = float(self._signal_deviation.Process(dev_iv))
+        deviation = float(process_float(self._signal_deviation, signal, candle.OpenTime, True))
 
         if not self._signal_average.IsFormed or not self._signal_deviation.IsFormed or deviation <= 0:
             return

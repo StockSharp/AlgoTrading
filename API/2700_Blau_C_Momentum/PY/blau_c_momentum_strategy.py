@@ -11,10 +11,10 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage,
     WeightedMovingAverage, JurikMovingAverage, TripleExponentialMovingAverage,
-    KaufmanAdaptiveMovingAverage, DecimalIndicatorValue
+    KaufmanAdaptiveMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class blau_c_momentum_strategy(Strategy):
     def __init__(self):
@@ -235,7 +235,6 @@ class blau_c_momentum_strategy(Strategy):
     def CreateClone(self):
         return blau_c_momentum_strategy()
 
-
 class _BlauMomentumCalc:
     def __init__(self, method, mom_len, s1_len, s2_len, s3_len, phase, price1, price2):
         self._mom_len = max(1, mom_len)
@@ -258,23 +257,17 @@ class _BlauMomentumCalc:
         momentum = v1 - self._buf[0]
         t = candle.ServerTime
 
-        iv1 = DecimalIndicatorValue(self._ma1, Decimal(momentum), t)
-        iv1.IsFinal = True
-        r1 = self._ma1.Process(iv1)
+        r1 = process_float(self._ma1, Decimal(momentum), t, True)
         if not self._ma1.IsFormed:
             return None
         s1 = float(r1.Value)
 
-        iv2 = DecimalIndicatorValue(self._ma2, Decimal(s1), t)
-        iv2.IsFinal = True
-        r2 = self._ma2.Process(iv2)
+        r2 = process_float(self._ma2, Decimal(s1), t, True)
         if not self._ma2.IsFormed:
             return None
         s2 = float(r2.Value)
 
-        iv3 = DecimalIndicatorValue(self._ma3, Decimal(s2), t)
-        iv3.IsFinal = True
-        r3 = self._ma3.Process(iv3)
+        r3 = process_float(self._ma3, Decimal(s2), t, True)
         if not self._ma3.IsFormed:
             return None
         s3 = float(r3.Value)

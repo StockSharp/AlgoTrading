@@ -9,9 +9,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo import ProcessStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class zscore_volume_filter_strategy(Strategy):
     """
@@ -88,9 +88,7 @@ class zscore_volume_filter_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        vol_input = DecimalIndicatorValue(self._volume_sma, candle.TotalVolume, candle.OpenTime)
-        vol_input.IsFinal = True
-        volume_average = self._volume_sma.Process(vol_input).Value
+        volume_average = process_float(self._volume_sma, candle.TotalVolume, candle.OpenTime, True).Value
 
         if not self._price_sma.IsFormed or not self._price_std_dev.IsFormed or not self._volume_sma.IsFormed:
             return

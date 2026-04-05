@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class ride_alligator_williams_strategy(Strategy):
     def __init__(self):
@@ -69,17 +69,11 @@ class ride_alligator_williams_strategy(Strategy):
         median = (h + l) / 2.0
         is_final = candle.State == CandleStates.Finished
 
-        jaw_input = DecimalIndicatorValue(self._jaw, Decimal(median), candle.ServerTime)
-        jaw_input.IsFinal = is_final
-        jaw_result = self._jaw.Process(jaw_input)
+        jaw_result = process_float(self._jaw, median, candle.ServerTime, is_final)
 
-        teeth_input = DecimalIndicatorValue(self._teeth, Decimal(median), candle.ServerTime)
-        teeth_input.IsFinal = is_final
-        teeth_result = self._teeth.Process(teeth_input)
+        teeth_result = process_float(self._teeth, median, candle.ServerTime, is_final)
 
-        lips_input = DecimalIndicatorValue(self._lips, Decimal(median), candle.ServerTime)
-        lips_input.IsFinal = is_final
-        lips_result = self._lips.Process(lips_input)
+        lips_result = process_float(self._lips, median, candle.ServerTime, is_final)
 
         if not is_final:
             return

@@ -8,9 +8,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SmoothedMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SmoothedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class bill_williams_strategy(Strategy):
     def __init__(self):
@@ -95,17 +95,11 @@ class bill_williams_strategy(Strategy):
         median = (candle.HighPrice + candle.LowPrice) / 2
         t = candle.OpenTime
 
-        jaw_input = DecimalIndicatorValue(self._jaw, median, t)
-        jaw_input.IsFinal = True
-        jaw_val = self._jaw.Process(jaw_input)
+        jaw_val = process_float(self._jaw, median, t, True)
 
-        teeth_input = DecimalIndicatorValue(self._teeth, median, t)
-        teeth_input.IsFinal = True
-        teeth_val = self._teeth.Process(teeth_input)
+        teeth_val = process_float(self._teeth, median, t, True)
 
-        lips_input = DecimalIndicatorValue(self._lips, median, t)
-        lips_input.IsFinal = True
-        lips_val = self._lips.Process(lips_input)
+        lips_val = process_float(self._lips, median, t, True)
 
         if not jaw_val.IsFormed or not teeth_val.IsFormed or not lips_val.IsFormed:
             return

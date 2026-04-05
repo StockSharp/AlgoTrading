@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class escape_strategy(Strategy):
     def __init__(self):
@@ -117,12 +117,8 @@ class escape_strategy(Strategy):
             return
 
         t = candle.OpenTime
-        fast_input = DecimalIndicatorValue(self._fast_ma, candle.OpenPrice, t)
-        fast_input.IsFinal = True
-        fast_result = self._fast_ma.Process(fast_input)
-        slow_input = DecimalIndicatorValue(self._slow_ma, candle.OpenPrice, t)
-        slow_input.IsFinal = True
-        slow_result = self._slow_ma.Process(slow_input)
+        fast_result = process_float(self._fast_ma, candle.OpenPrice, t, True)
+        slow_result = process_float(self._slow_ma, candle.OpenPrice, t, True)
 
         if not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             return

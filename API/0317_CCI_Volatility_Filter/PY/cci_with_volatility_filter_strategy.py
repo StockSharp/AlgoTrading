@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange, SimpleMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
+from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange, SimpleMovingAverage, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class cci_with_volatility_filter_strategy(Strategy):
     """
@@ -89,9 +89,7 @@ class cci_with_volatility_filter_strategy(Strategy):
 
         atr_val = float(atr_result)
 
-        atr_avg_input = DecimalIndicatorValue(self._atr_sma, Decimal(atr_val), candle.ServerTime)
-        atr_avg_input.IsFinal = True
-        atr_avg_result = self._atr_sma.Process(atr_avg_input)
+        atr_avg_result = process_float(self._atr_sma, Decimal(atr_val), candle.ServerTime, True)
 
         if not atr_avg_result.IsFormed:
             return

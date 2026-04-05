@@ -11,10 +11,10 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import (
     SimpleMovingAverage, ExponentialMovingAverage, SmoothedMovingAverage,
     WeightedMovingAverage, JurikMovingAverage, ZeroLagExponentialMovingAverage,
-    KaufmanAdaptiveMovingAverage, DecimalIndicatorValue
+    KaufmanAdaptiveMovingAverage
 )
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 _FATL_COEFF = [
     0.4360409450, 0.3658689069, 0.2460452079, 0.1104506886,
@@ -48,7 +48,6 @@ _SATL_COEFF = [
     0.0068163569, 0.0062325477, 0.0056078229, 0.0049516078,
     0.0161380976,
 ]
-
 
 class x_fatl_x_satl_cloud_duplex_strategy(Strategy):
     def __init__(self):
@@ -128,8 +127,8 @@ class x_fatl_x_satl_cloud_duplex_strategy(Strategy):
         slow_raw = self._compute_filter(_SATL_COEFF)
 
         t = candle.OpenTime
-        fv = self._fast_smoother.Process(DecimalIndicatorValue(self._fast_smoother, fast_raw, t))
-        sv = self._slow_smoother.Process(DecimalIndicatorValue(self._slow_smoother, slow_raw, t))
+        fv = process_float(self._fast_smoother, fast_raw, t, True)
+        sv = process_float(self._slow_smoother, slow_raw, t, True)
         fast = float(fv)
         slow = float(sv)
 

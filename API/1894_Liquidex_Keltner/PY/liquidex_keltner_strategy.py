@@ -7,9 +7,9 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import SimpleMovingAverage, KeltnerChannels, RelativeStrengthIndex, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import SimpleMovingAverage, KeltnerChannels, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
+from indicator_extensions import *
 
 class liquidex_keltner_strategy(Strategy):
     def __init__(self):
@@ -114,9 +114,7 @@ class liquidex_keltner_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def _process_indicator(self, indicator, price, open_time):
-        inp = DecimalIndicatorValue(indicator, price, open_time)
-        inp.IsFinal = True
-        return indicator.Process(inp)
+        return process_float(indicator, price, open_time, True)
 
     def process_candle(self, candle, keltner_value):
         if candle.State != CandleStates.Finished:

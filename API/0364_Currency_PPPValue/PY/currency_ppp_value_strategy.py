@@ -8,10 +8,10 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation, DecimalIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
-
+from indicator_extensions import *
 
 class currency_ppp_value_strategy(Strategy):
     """Currency PPP value strategy that trades the primary instrument when its synthetic PPP deviation becomes extreme relative to a benchmark currency."""
@@ -148,9 +148,7 @@ class currency_ppp_value_strategy(Strategy):
 
     def UpdateDeviation(self, average, candle):
         synthetic_ppp = self.CalculateSyntheticPpp(candle)
-        iv = DecimalIndicatorValue(average, synthetic_ppp, candle.OpenTime)
-        iv.IsFinal = True
-        result = average.Process(iv)
+        result = process_float(average, synthetic_ppp, candle.OpenTime, True)
         ppp_anchor = float(result)
 
         return (float(candle.ClosePrice) - ppp_anchor) / max(ppp_anchor, 1.0)
@@ -173,14 +171,10 @@ class currency_ppp_value_strategy(Strategy):
 
         spread = self._latest_primary_deviation - self._latest_benchmark_deviation
 
-        mean_iv = DecimalIndicatorValue(self._spread_average, spread, time)
-        mean_iv.IsFinal = True
-        mean_result = self._spread_average.Process(mean_iv)
+        mean_result = process_float(self._spread_average, spread, time, True)
         mean = float(mean_result)
 
-        dev_iv = DecimalIndicatorValue(self._spread_deviation, spread, time)
-        dev_iv.IsFinal = True
-        dev_result = self._spread_deviation.Process(dev_iv)
+        dev_result = process_float(self._spread_deviation, spread, time, True)
         deviation = float(dev_result)
 
         if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
