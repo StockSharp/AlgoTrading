@@ -124,19 +124,19 @@ public class ProxyFinancialStressIndexStrategy : Strategy
 		_hygWeight = Param(nameof(HygWeight), 0.18m)
 		.SetDisplay("HYG Weight", "Weight for HYG component", "Weights");
 
-		_vixSecurity = Param(nameof(VixSecurity), new Security())
+		_vixSecurity = Param<Security>(nameof(VixSecurity))
 		.SetDisplay("VIX Security", "Security for VIX index", "Securities");
 
-		_us10ySecurity = Param(nameof(Us10ySecurity), new Security())
+		_us10ySecurity = Param<Security>(nameof(Us10ySecurity))
 		.SetDisplay("US10Y Security", "Security for US 10Y yield", "Securities");
 
-		_dxySecurity = Param(nameof(DxySecurity), new Security())
+		_dxySecurity = Param<Security>(nameof(DxySecurity))
 		.SetDisplay("DXY Security", "Security for Dollar Index", "Securities");
 
-		_eurusdSecurity = Param(nameof(EurusdSecurity), new Security())
+		_eurusdSecurity = Param<Security>(nameof(EurusdSecurity))
 		.SetDisplay("EURUSD Security", "Security for EUR/USD", "Securities");
 
-		_hygSecurity = Param(nameof(HygSecurity), new Security())
+		_hygSecurity = Param<Security>(nameof(HygSecurity))
 		.SetDisplay("HYG Security", "Security for HYG ETF", "Securities");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
