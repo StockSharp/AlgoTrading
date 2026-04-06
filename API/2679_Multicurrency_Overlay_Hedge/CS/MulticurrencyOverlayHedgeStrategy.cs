@@ -511,7 +511,7 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 
 		var spread = context.GetSpreadPoints();
 		if (spread == decimal.MaxValue)
-			return false;
+			return true;
 
 		return spread <= MaxSpread;
 	}
