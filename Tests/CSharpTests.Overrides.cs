@@ -21,12 +21,31 @@ partial class CSharpTests
 		});
 
 	[TestMethod]
+	public Task DispersionTrading()
+		=> RunStrategy<DispersionTradingStrategy>((s, sec2) => s.Constituents = new[] { sec2 });
+
+	[TestMethod]
 	public Task CointegrationPairs()
 		=> RunStrategy<CointegrationPairsStrategy>((s, sec2) => s.Asset2 = sec2);
 
 	[TestMethod]
 	public Task DeltaNeutralArbitrage()
 		=> RunStrategy<DeltaNeutralArbitrageStrategy>((s, sec2) => { s.Asset2Security = sec2; s.Asset2Portfolio = s.Portfolio; });
+
+	[TestMethod]
+	public Task MulticurrencyOverlayHedge()
+		=> RunStrategy<MulticurrencyOverlayHedgeStrategy>((s, sec2) =>
+		{
+			s.Universe = new[] { s.Security, sec2 };
+			s.CandleType = System.TimeSpan.FromMinutes(5).TimeFrame();
+			s.CorrelationThreshold = 0.01m;
+			s.CorrelationLookback = 50;
+			s.RangeLength = 20;
+			s.AtrLookback = 20;
+			s.MaxSpread = 100000m;
+			s.OverlayThreshold = 0.001m;
+			s.RecalculationHour = 0;
+		});
 
 	[TestMethod]
 	public Task ImproveMaRsiHedge()

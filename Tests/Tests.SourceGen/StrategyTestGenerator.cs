@@ -16,7 +16,9 @@ public class StrategyTestGenerator : IIncrementalGenerator
 	{
 		"Ch2010StructureStrategy",
 		"CointegrationPairsStrategy",
+		"MulticurrencyOverlayHedgeStrategy",
 		"DeltaNeutralArbitrageStrategy",
+		"DispersionTradingStrategy",
 		"ImproveMaRsiHedgeStrategy",
 		"PairsStrategy",
 		"PairsTradingStrategy",
