@@ -273,9 +273,6 @@ public class Spreader2Strategy : Strategy
 		if (!_contractsMatch)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (PrimaryVolume <= 0m)
 			return;
 
@@ -311,10 +308,11 @@ public class Spreader2Strategy : Strategy
 		var closeSecShift2 = _secondCloses[secondShiftIndex2];
 		var closeSecDay = _secondCloses[secondDayIndex];
 
-		var x1 = closeCur0 - closeCurShift;
-		var x2 = closeCurShift - closeCurShift2;
-		var y1 = closeSec0 - closeSecShift;
-		var y2 = closeSecShift - closeSecShift2;
+		// Use relative (percentage) moves so the ratio comparison works for instruments with different price scales.
+		var x1 = closeCurShift == 0m ? 0m : (closeCur0 - closeCurShift) / closeCurShift;
+		var x2 = closeCurShift2 == 0m ? 0m : (closeCurShift - closeCurShift2) / closeCurShift2;
+		var y1 = closeSecShift == 0m ? 0m : (closeSec0 - closeSecShift) / closeSecShift;
+		var y2 = closeSecShift2 == 0m ? 0m : (closeSecShift - closeSecShift2) / closeSecShift2;
 
 		if ((x1 * x2) > 0m)
 		{
@@ -356,8 +354,8 @@ public class Spreader2Strategy : Strategy
 			return;
 		}
 
-		var x3 = closeCur0 - closeCurDay;
-		var y3 = closeSec0 - closeSecDay;
+		var x3 = closeCurDay == 0m ? 0m : (closeCur0 - closeCurDay) / closeCurDay;
+		var y3 = closeSecDay == 0m ? 0m : (closeSec0 - closeSecDay) / closeSecDay;
 
 		var primarySide = x1 * b > y1 * a ? Sides.Buy : Sides.Sell;
 		var secondarySide = primarySide == Sides.Buy ? Sides.Sell : Sides.Buy;
@@ -394,9 +392,6 @@ public class Spreader2Strategy : Strategy
 
 		if (primaryPosition == 0m && hasSecondary)
 		{
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return false;
-
 			var requiredSide = _secondPosition > 0m ? Sides.Sell : Sides.Buy;
 			LogInfo("Primary position missing. Opening trade to balance spread.");
 			OpenPrimary(requiredSide, PrimaryVolume);

@@ -124,21 +124,19 @@ public class StatisticalArbitrageStrategy : Strategy
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
 
-		var secondSecurity = this.LookupById(SecondSecurity.Id) ?? SecondSecurity;
-		
 		// Initialize indicators
 		_firstMA = new() { Length = LookbackPeriod };
 		_secondMA = new() { Length = LookbackPeriod };
-		
+
 		// Create subscriptions for both securities
 		var firstSecuritySubscription = SubscribeCandles(CandleType);
-		var secondSecuritySubscription = SubscribeCandles(CandleType, security: secondSecurity);
-		
+		var secondSecuritySubscription = SubscribeCandles(CandleType, security: SecondSecurity);
+
 		// Bind to first security candles
 		firstSecuritySubscription
 			.Bind(_firstMA, ProcessFirstSecurityCandle)
 			.Start();
-		
+
 		// Bind to second security candles
 		secondSecuritySubscription
 			.Bind(ProcessSecondSecurityCandle)
@@ -165,18 +163,14 @@ public class StatisticalArbitrageStrategy : Strategy
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-			
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
+
 		// Store current price
 		_lastFirstPrice = candle.ClosePrice;
-		
+
 		// Skip if we don't have both prices or if indicators aren't formed
 		if (_lastSecondPrice == 0 || !_firstMA.IsFormed || !_secondMA.IsFormed)
 			return;
-		
+
 		// Get last second MA value stored earlier
 		decimal secondMAValue = _secondMAValue;
 		
@@ -240,12 +234,12 @@ public class StatisticalArbitrageStrategy : Strategy
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
+
 		// Store current price
 		_lastSecondPrice = candle.ClosePrice;
 	
 		// Process through MA indicator and store last value
-		var maValue = _secondMA.Process(new DecimalIndicatorValue(_secondMA, candle.ClosePrice, candle.ServerTime));
+		var maValue = _secondMA.Process(new DecimalIndicatorValue(_secondMA, candle.ClosePrice, candle.ServerTime) { IsFinal = true });
 		_secondMAValue = maValue.ToDecimal();
 	}
 }

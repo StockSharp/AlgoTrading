@@ -175,17 +175,13 @@ public class PairsTradingStrategy : Strategy
 		// Skip if we don't have price for the second security yet
 		if (_lastSecondPrice == 0)
 			return;
-			
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
+
 		// Calculate the spread: Asset1 - Asset2
 		_spread = candle.ClosePrice - _lastSecondPrice;
 		
 		// Process the spread through indicators
-		var maValue = _spreadMA.Process(new DecimalIndicatorValue(_spreadMA, _spread, candle.ServerTime));
-		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _spread, candle.ServerTime));
+		var maValue = _spreadMA.Process(new DecimalIndicatorValue(_spreadMA, _spread, candle.ServerTime) { IsFinal = true });
+		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _spread, candle.ServerTime) { IsFinal = true });
 		
 		// Skip until indicators are formed
 		if (!_spreadMA.IsFormed || !_spreadStdDev.IsFormed)

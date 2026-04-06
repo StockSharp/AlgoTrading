@@ -217,16 +217,12 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		if (_lastAsset1Price == 0 || _lastAsset2Price == 0)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Calculate the spread
 		_currentSpread = _lastAsset1Price - _lastAsset2Price;
 
 		// Process the spread with our indicators
-		var spreadValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, _currentSpread, candle.ServerTime));
-		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _currentSpread, candle.ServerTime));
+		var spreadValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, _currentSpread, candle.ServerTime) { IsFinal = true });
+		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _currentSpread, candle.ServerTime) { IsFinal = true });
 
 		// Check if indicators are formed
 		if (!_spreadSma.IsFormed || !_spreadStdDev.IsFormed)
