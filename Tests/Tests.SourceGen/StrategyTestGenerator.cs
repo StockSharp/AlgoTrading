@@ -33,9 +33,12 @@ public class StrategyTestGenerator : IIncrementalGenerator
 		"Ch2010Structure",
 		"CointegrationPairs",
 		"DeltaNeutralArbitrage",
+		"DispersionTrading",
+		"MulticurrencyOverlayHedge",
 		"Pairs",
 		"PairsTrading",
 		"SpotFuturesArbitrage",
+		"Spreader2",
 		"StatisticalArbitrage",
 	};
 
