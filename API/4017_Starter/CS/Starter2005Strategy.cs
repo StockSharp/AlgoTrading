@@ -297,14 +297,15 @@ public class Starter2005Strategy : Strategy
 			return;
 
 		// Process CCI manually
-		var cciValue = _cci.Process(candle);
-		var cci = cciValue.ToDecimal();
+		_cci.Process(candle);
 
 		if (!_ema.IsFormed || !_cci.IsFormed)
 		{
 			_previousMa = ma;
 			return;
 		}
+
+		var cci = _cci.GetCurrentValue<decimal>();
 
 		var laguerre = CalculateLaguerre(candle.ClosePrice);
 		if (!_laguerreFormed)
