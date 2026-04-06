@@ -8,7 +8,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import (Ichimoku, SimpleMovingAverage, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import (Ichimoku, SimpleMovingAverage, ExponentialMovingAverage,
     SmoothedMovingAverage, WeightedMovingAverage, JurikMovingAverage, KaufmanAdaptiveMovingAverage)
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
