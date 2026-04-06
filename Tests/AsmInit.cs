@@ -47,7 +47,7 @@ public static class AsmInit
 		var storageRegistry = new StorageRegistry { DefaultDrive = drive };
 
 		SecurityId[] secIds = [Paths.HistoryDefaultSecurity.ToSecurityId(), Paths.HistoryDefaultSecurity2.ToSecurityId()];
-		var dts = (await secIds.ToAsyncEnumerable().SelectMany(id => drive.GetAvailableDataTypesAsync(id, StorageFormats.Binary)).ToListAsync()).Where(dt => dt.IsTFCandles).ToArray();
+		var dts = (await secIds.ToAsyncEnumerable().SelectMany(id => drive.GetAvailableDataTypesAsync(id, StorageFormats.Binary)).ToListAsync()).Where(dt => dt.IsTFCandles || dt == DataType.Level1).ToArray();
 		var days = Paths.HistoryBeginDate.Range(Paths.HistoryEndDate, TimeSpan.FromDays(1)).ToArray();
 
 		foreach (var day in days)

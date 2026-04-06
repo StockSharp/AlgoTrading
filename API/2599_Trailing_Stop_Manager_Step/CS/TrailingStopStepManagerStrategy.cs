@@ -135,7 +135,9 @@ public class TrailingStopStepManagerStrategy : Strategy
 		if (step == null || step <= 0m)
 			step = 0.01m;
 
-		SubscribeLevel1()
+		var l1subscription = new Subscription(DataType.Level1, Security);
+		l1subscription.MarketData.BuildField = Level1Fields.BestBidPrice;
+		SubscribeLevel1(l1subscription)
 			.Bind(ProcessLevel1)
 			.Start();
 
