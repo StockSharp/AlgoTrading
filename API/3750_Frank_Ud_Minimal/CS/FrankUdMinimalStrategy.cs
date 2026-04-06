@@ -141,9 +141,9 @@ public class FrankUdMinimalStrategy : Strategy
 		_reEntryDistance = ReEntryPips * _pointValue;
 		_baseVolume = AdjustVolume(InitialVolume);
 
-		var l1subscription = new Subscription(DataType.Level1, Security);
-		l1subscription.MarketData.BuildField = Level1Fields.BestBidPrice;
-		SubscribeLevel1(l1subscription)
+		var l1sub = new Subscription(DataType.Level1, Security);
+		l1sub.MarketData.BuildField = Level1Fields.BestBidPrice;
+		SubscribeLevel1(l1sub)
 		.Bind(ProcessLevel1)
 		.Start();
 	}
