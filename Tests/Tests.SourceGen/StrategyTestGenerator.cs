@@ -11,6 +11,32 @@ namespace Tests.SourceGen;
 [Generator(LanguageNames.CSharp)]
 public class StrategyTestGenerator : IIncrementalGenerator
 {
+	// Strategies with manually-defined tests in CSharpTests.Overrides.cs (need multi-instrument setup)
+	private static readonly System.Collections.Generic.HashSet<string> _csOverrides = new(System.StringComparer.Ordinal)
+	{
+		"Ch2010StructureStrategy",
+		"CointegrationPairsStrategy",
+		"DeltaNeutralArbitrageStrategy",
+		"ImproveMaRsiHedgeStrategy",
+		"PairsStrategy",
+		"PairsTradingStrategy",
+		"SpotFuturesArbitrageStrategy",
+		"Spreader2Strategy",
+		"StatisticalArbitrageStrategy",
+	};
+
+	// Python test method names with manually-defined tests in PythonTests.Overrides.cs
+	private static readonly System.Collections.Generic.HashSet<string> _pyOverrides = new(System.StringComparer.Ordinal)
+	{
+		"Ch2010Structure",
+		"CointegrationPairs",
+		"DeltaNeutralArbitrage",
+		"Pairs",
+		"PairsTrading",
+		"SpotFuturesArbitrage",
+		"StatisticalArbitrage",
+	};
+
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		// C# tests: scan Strategy subclasses
@@ -57,6 +83,9 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 			foreach (var className in sorted)
 			{
+				if (_csOverrides.Contains(className))
+					continue;
+
 				var methodName = className.EndsWith("Strategy")
 					? className.Substring(0, className.Length - "Strategy".Length)
 					: className;
@@ -127,6 +156,9 @@ public class StrategyTestGenerator : IIncrementalGenerator
 				var i = 2;
 				while (!usedNames.Add(uniqueName))
 					uniqueName = methodName + i++;
+
+				if (_pyOverrides.Contains(uniqueName))
+					continue;
 
 				sb.AppendLine($"\t[TestMethod]");
 				sb.AppendLine($"\tpublic Task {uniqueName}()");
