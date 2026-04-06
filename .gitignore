@@ -175,6 +175,19 @@ TradingView_indicators/
 
 # Runner and temp files
 Runner*/
+PyRunner*/
 .claude/
 AGENTS.md
+AGENTS_COMPARE.md
 PLAN_RUNNER*.md
+PLAN_PYRUNNER*.md
+PLAN_NO_ORDERS_FIX.md
+PLAN_PYTHON_SYNC.md
+PLAN_PYTHON_UPDATE.md
+SKIPPED_STRATEGIES.md
+all_py_strategies.txt
+cs_skip.txt
+cs_deleted.txt
+CompareRunner*/
+PLAN_COMPARE*.md
+compare*.txt
