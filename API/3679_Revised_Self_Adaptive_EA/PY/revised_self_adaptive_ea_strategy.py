@@ -205,7 +205,7 @@ class revised_self_adaptive_ea_strategy(Strategy):
         body = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
         value = process_float(self._body_average, body, candle.OpenTime, True)
         if value.IsFinal:
-            self._average_body_value = float(value.GetValue[float]())
+            self._average_body_value = float(to_decimal(value))
 
     def _process_candle(self, candle, rsi_value, ma_value, atr_value):
         if candle.State != CandleStates.Finished:
