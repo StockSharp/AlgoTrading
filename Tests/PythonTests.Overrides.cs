@@ -63,6 +63,10 @@ partial class PythonTests
 		=> RunStrategy("0230_Delta_Neutral_Arbitrage/PY/delta_neutral_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Asset2Security", sec2); SetParam(s, "Asset2Portfolio", s.Portfolio); });
 
 	[TestMethod]
+	public Task ImproveMaRsiHedge()
+		=> RunStrategy("2798_Improve_MA_RSI_Hedge/PY/improve_ma_rsi_hedge_strategy.py");
+
+	[TestMethod]
 	public Task Pairs()
 		=> RunStrategy("1153_Pairs/PY/pairs_strategy.py", (s, sec2) => SetParam(s, "ReferenceSecurity", sec2));
 
