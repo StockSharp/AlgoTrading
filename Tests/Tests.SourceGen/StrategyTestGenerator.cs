@@ -222,7 +222,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 				continue;
 			}
 
-			sb.Append(upper ? char.ToUpperInvariant(c) : c);
+			sb.Append(upper ? char.ToUpperInvariant(c) : char.ToLowerInvariant(c));
 			upper = false;
 		}
 
