@@ -1,5 +1,5 @@
 # Bill Williams
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Bill Williams использует индикатор Alligator и пробои фракталов. Челюсть, зубы и губы должны расходиться, и пробой последнего фрактала формирует сделку.
 

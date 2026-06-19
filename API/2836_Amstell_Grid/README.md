@@ -1,5 +1,5 @@
 # Amstell Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Amstell Grid Strategy is a C# port of the MetaTrader 5 expert advisor `exp_Amstell.mq5`. It creates a symmetric buy/sell grid and applies a virtual take profit to individual entries. The conversion follows the StockSharp high-level API guidelines and replaces tick handling with candle processing while keeping the original idea intact.
 
@@ -47,6 +47,6 @@ All pip-based settings respect the security's price step and precision. For exam
 ## Files
 
 - `CS/AmstellGridStrategy.cs` – StockSharp strategy implementation with extensive inline comments.
-- `README.md`, `README_ru.md`, `README_cn.md` – Full documentation in English, Russian, and Chinese.
+- `README.md`, `README_ru.md`, `README_zh.md` – Full documentation in English, Russian, and Chinese.
 
 This port is ready for further customization (e.g., money management, risk limits) directly within the StockSharp ecosystem.

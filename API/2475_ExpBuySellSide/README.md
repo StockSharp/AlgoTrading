@@ -1,5 +1,5 @@
 # ExpBuySellSide Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy converts the MetaTrader Expert Advisor **ExpBuySellSide** to the StockSharp API. It merges an ATR-based stop system with a simplified Step Up/Down trend filter.
 

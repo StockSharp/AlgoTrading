@@ -1,5 +1,5 @@
 # Color PEMA Envelopes Digit System
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Color PEMA Envelopes Digit System** reproduces the logic of the MetaTrader expert
 `Exp_Color_PEMA_Envelopes_Digit_System.mq5`. The strategy evaluates the color codes

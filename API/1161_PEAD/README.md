@@ -1,5 +1,5 @@
 # PEAD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades post-earnings announcement drift after a positive EPS surprise and gap-up.
 It enters long on the day after earnings when price gaps up and recent performance is positive,

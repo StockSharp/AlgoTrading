@@ -1,5 +1,5 @@
 # Source Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Source Strategy enters long when the candle closes above its open and short when it closes below. Optional stop loss, take profit, and trailing stop percentages manage the open position.
 

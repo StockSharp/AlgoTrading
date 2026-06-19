@@ -1,5 +1,5 @@
 # Debug Console Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Demonstrates a simple console that collects messages during strategy execution and outputs them to the log.
 

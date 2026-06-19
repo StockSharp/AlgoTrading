@@ -1,5 +1,5 @@
 # Money Fixed Margin Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the MetaTrader "Money Fixed Margin" example using StockSharp's high-level API. It showcases how to size positions by risking a fixed percentage of the portfolio while converting stop-loss distance expressed in pips to an absolute price offset. The strategy only trades long positions and focuses on demonstrating the money management logic rather than a predictive entry signal.
 

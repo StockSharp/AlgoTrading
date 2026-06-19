@@ -1,5 +1,5 @@
 # VWAP Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 VWAP Breakout looks for price to cross the Volume Weighted Average Price from the opposite side. A breakout above VWAP signals bullish pressure, while a drop below VWAP signals bearish sentiment.
 

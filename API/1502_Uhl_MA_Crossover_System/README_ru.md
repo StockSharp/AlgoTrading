@@ -1,5 +1,5 @@
 # Система Uhl MA Crossover
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Система Uhl MA Crossover строит две адаптивные линии (CTS и CMA), используя дисперсию для регулировки сглаживания. Длинная позиция открывается при пересечении CTS выше CMA, короткая — при пересечении ниже.
 

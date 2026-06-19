@@ -52,6 +52,6 @@ Signals are scheduled through a FIFO queue. When `SignalBar` is zero they are ex
 ## Files
 
 - `CS/OmniTrendStrategy.cs` — C# implementation of the strategy.
-- `README.md`, `README_ru.md`, `README_cn.md` — documentation in English, Russian, and Chinese.
+- `README.md`, `README_ru.md`, `README_zh.md` — documentation in English, Russian, and Chinese.
 
 Python support is intentionally omitted as requested.

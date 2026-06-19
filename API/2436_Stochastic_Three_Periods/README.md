@@ -1,5 +1,5 @@
 # Stochastic Three Periods
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Stochastic Three Periods** strategy aligns fast stochastic signals with confirmation from two higher timeframes. Trades are opened when the fast oscillator crosses while both higher timeframes agree.
 

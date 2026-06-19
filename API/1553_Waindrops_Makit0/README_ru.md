@@ -1,5 +1,5 @@
 # Waindrops Makit0
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Упрощённая стратегия, сравнивающая VWAP двух половин заданного периода.
 

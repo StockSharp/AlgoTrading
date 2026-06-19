@@ -39,5 +39,5 @@ StellarLite ICT EA is a discretionary-style algorithm that translates the "Stell
 ## Files
 - `CS/StellarLiteIctEaStrategy.cs` – implementation of the StockSharp strategy.
 - `README.md` – English documentation.
-- `README_cn.md` – Simplified Chinese documentation.
+- `README_zh.md` – Simplified Chinese documentation.
 - `README_ru.md` – Russian documentation.

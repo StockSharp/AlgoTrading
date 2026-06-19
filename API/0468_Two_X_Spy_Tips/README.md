@@ -1,5 +1,5 @@
 # Two X SPY TIPS
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy allocates capital into the traded asset when both S&P 500 and TIPS prices are above their 200-period moving averages at the turn of a new month.
 

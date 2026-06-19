@@ -1,5 +1,5 @@
 # Refined MA + Engulfing (M5 + Confirmed Structure Break)
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Refined MA + Engulfing combines two simple moving averages, engulfing candles, and structure break confirmation. A trade is placed when at least two confluence factors align and a cooldown has passed.
 

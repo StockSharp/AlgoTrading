@@ -1,5 +1,5 @@
 # OBVious MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy enters a long position when OBV crosses above its long entry moving average and exits when OBV crosses below the long exit average. Short positions are entered when OBV crosses below its short entry average and exited when it crosses above the short exit average. A direction filter allows enabling only long or short trades.
 

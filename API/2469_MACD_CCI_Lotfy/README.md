@@ -1,5 +1,5 @@
 # Macd Cci Lotfy Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining Moving Average Convergence Divergence (MACD) and Commodity Channel Index (CCI) with a scaling factor.
 A position is opened when both indicators cross extreme thresholds in the same direction.

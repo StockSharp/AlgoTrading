@@ -1,5 +1,5 @@
 # Стратегия Internal Bar Strength IBS Mean Reversion
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Шортовая стратегия возврата к среднему, использующая показатель Internal Bar Strength (IBS). Продаёт, когда IBS высок и цена пробивает предыдущий максимум, и выходит, когда IBS опускается ниже нижнего порога.
 

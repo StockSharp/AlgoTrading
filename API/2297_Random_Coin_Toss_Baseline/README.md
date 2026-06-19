@@ -1,5 +1,5 @@
 # Random Coin Toss Baseline Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the classic GuruTrader example where trade direction is determined by a coin toss.
 On each finished candle, if no position is open, a pseudo random number is generated and treated as a coin flip.

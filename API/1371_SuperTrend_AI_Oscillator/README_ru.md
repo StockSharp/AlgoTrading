@@ -1,5 +1,5 @@
 # Стратегия SuperTrend AI Oscillator
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 SuperTrend AI Oscillator объединяет трейлинг-стоп SuperTrend с фильтром из нестандартного осциллятора.
 Стратегия входит при развороте SuperTrend, подтверждённом осциллятором.

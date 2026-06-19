@@ -1,5 +1,5 @@
 # Syndicate Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp translation of the original MetaTrader script **Syndicate_Trader_v_1_04.mq4** from folder `MQL/12351`.
 

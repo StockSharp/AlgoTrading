@@ -1,5 +1,5 @@
 # Vegas Tunnel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses four EMAs to define a tunnel and optional ATR based stops.
 Opens long when price and fast EMA are above slow and tunnel EMAs, short when below.

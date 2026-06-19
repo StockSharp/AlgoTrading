@@ -1,5 +1,5 @@
 # Session Breakout Scalper Trading Bot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Session Breakout Scalper trades breakouts of the price range formed during a predefined session.
 

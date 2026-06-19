@@ -1,5 +1,5 @@
 # Стратегия BBTrend SuperTrend Decision
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия вычисляет значение **BBTrend** на основе двух полос Боллинджера с различными периодами
 и передаёт его в расчёт SuperTrend. Полученное направление SuperTrend определяет открытие длинных

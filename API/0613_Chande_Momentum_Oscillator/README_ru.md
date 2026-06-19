@@ -1,5 +1,5 @@
 # Стратегия Chande Momentum Oscillator
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия покупает, когда индикатор Chande Momentum Oscillator опускается ниже заданного порога, и закрывает позицию, когда он поднимается выше верхнего порога или по истечении фиксированного числа баров.
 

@@ -1,5 +1,5 @@
 # StepMA NRTR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy based on the StepMA NRTR indicator. The indicator combines a step moving average with a Nick Rar Trend reversal mechanism and generates buy or sell signals when the trend changes.
 

@@ -1,5 +1,5 @@
 # Keltner Channel Golden Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts of Keltner Channels confirmed by a golden cross of two moving averages.
 

@@ -1,5 +1,5 @@
 # Процентный импульс
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на процентном изменении ценового импульса.
 

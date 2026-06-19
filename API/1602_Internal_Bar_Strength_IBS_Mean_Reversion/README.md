@@ -1,5 +1,5 @@
 # Internal Bar Strength IBS Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Short-only mean reversion strategy using Internal Bar Strength (IBS). Shorts when IBS is high and price breaks above the previous high, exits when IBS falls below a lower threshold.
 

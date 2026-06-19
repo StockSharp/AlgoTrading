@@ -1,5 +1,5 @@
 # Asset Class Momentum Rotational
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This rotational model allocates capital to the asset classes exhibiting the strongest recent momentum. Each period the system ranks asset ETFs and holds the leaders while avoiding laggards.
 

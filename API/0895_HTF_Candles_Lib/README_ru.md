@@ -1,5 +1,5 @@
 # HTF Candles Lib
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **HTF Candles Lib** — утилитарная стратегия, восстанавливающая свечи старшего таймфрейма по данным младшего и записывающая их структуру.
 

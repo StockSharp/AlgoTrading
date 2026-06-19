@@ -1,5 +1,5 @@
 # High Low Breakout Statistical Analysis Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades breakouts of selected timeframe high or low levels. The strategy can enter long or short based on configured option and closes position after a fixed number of bars.
 

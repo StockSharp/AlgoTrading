@@ -1,5 +1,5 @@
 # Time Range Statistics Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Collects simple statistics between selected bar indices.
 Logs mean price, normalized range, percent change, average volume and gap count.

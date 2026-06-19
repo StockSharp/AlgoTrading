@@ -1,5 +1,5 @@
 # Стратегия Pin Bar Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Использует свечи pin bar с фильтром тренда и целями по ATR. Бычий pin bar выше SMA открывает длинную позицию, медвежий ниже SMA — короткую. Вход пропускается при низкой волатильности.
 

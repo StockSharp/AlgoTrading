@@ -1,5 +1,5 @@
 # ICAi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the ICAi adaptive moving average indicator. The indicator smooths price and adapts its slope using standard deviation. Long positions are opened when the indicator turns upward, short positions when it turns downward.
 

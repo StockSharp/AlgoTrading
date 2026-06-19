@@ -1,5 +1,5 @@
 # Weighted Ichimoku Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combines Ichimoku signals into a weighted score.
 It buys when the score exceeds the buy threshold and exits when the score drops below the sell threshold.

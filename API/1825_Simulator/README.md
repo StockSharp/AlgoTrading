@@ -1,5 +1,5 @@
 # Simulator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy trading EMA crossovers with optional stop loss and take profit. It buys when the fast EMA crosses above the slow EMA and sells when the fast EMA crosses below the slow EMA. Opposite signals or price targets close positions.
 

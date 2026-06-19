@@ -1,5 +1,5 @@
 # Smart Money Pivot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts of pivot highs and lows. A long position opens when price breaks above the latest pivot high, while a short position opens when price drops below the latest pivot low. Each trade uses its own stop-loss and take-profit percentages.
 

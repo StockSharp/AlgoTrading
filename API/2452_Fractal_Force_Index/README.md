@@ -1,5 +1,5 @@
 # Fractal Force Index Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on a smoothed Force Index crossing user-defined levels. When the indicator rises above the high level or falls below the low level, the strategy opens or closes positions depending on the selected trading mode. The Force Index is calculated from the price change and volume and smoothed with an EMA.
 

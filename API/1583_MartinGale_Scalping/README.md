@@ -1,5 +1,5 @@
 # MartinGale Scalping Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 SMA(3) crossing SMA(8) triggers entries with martingale-style pyramiding. Additional orders are added each bar until stop or take-profit is reached.
 

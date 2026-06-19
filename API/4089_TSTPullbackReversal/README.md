@@ -1,5 +1,5 @@
 # TST Pullback Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The **TST Pullback Reversal Strategy** watches for aggressive intrabar reversals. It was converted from the original MetaTrader 4 expert advisor `TST.mq4` and rebuilt using the high-level StockSharp API. The method looks for candles where price has pulled sharply away from the candle open after setting an intraday extreme, then fades that move expecting mean reversion. The strategy trades both long and short and uses static stop-loss and take-profit levels measured in price steps.

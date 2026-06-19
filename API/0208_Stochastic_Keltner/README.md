@@ -1,5 +1,5 @@
 # Stochastic Keltner Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This strategy uses Stochastic Keltner indicators to generate signals.
 Long entry occurs when Stoch %K < 20 && Price < Keltner lower band (oversold at lower band). Short entry occurs when Stoch %K > 80 && Price > Keltner upper band (overbought at upper band).

@@ -1,5 +1,5 @@
 # Donchian Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Donchian Volume uses Donchian channel breakouts confirmed by rising volume to initiate trades.
 A move outside the channel on strong volume suggests the start of a new trend.

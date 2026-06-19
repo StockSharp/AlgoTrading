@@ -1,5 +1,5 @@
 # Ichimoku by FarmerBTC Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Ichimoku by FarmerBTC enters long positions when price trades above the Ichimoku cloud, the cloud is bullish, a higher-timeframe SMA confirms the uptrend, and volume exceeds its moving average multiplied by a factor. It exits when price falls below the cloud.
 

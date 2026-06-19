@@ -1,5 +1,5 @@
 # Basic RSI EA Template Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Basic RSI EA Template Strategy** replicates the MetaTrader 4 expert advisor "Basic Rsi EA Template.mq4" (MQL/26750). It watches the Relative Strength Index (RSI) on the selected candle series and reacts when momentum stretches into configurable overbought or oversold zones. The StockSharp conversion keeps the simple one-position workflow and the protective stop/take logic of the original robot while adopting the high-level subscription API.
 

@@ -1,5 +1,5 @@
 # Grover Llorens Activator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive trailing strategy based on ATR that switches direction when price crosses the internal activator line.
 

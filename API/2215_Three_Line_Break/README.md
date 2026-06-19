@@ -1,5 +1,5 @@
 # Three Line Break Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades reversals detected by the Three Line Break indicator.
 The indicator compares the current high and low against the highest high and lowest low of the previous N completed candles.

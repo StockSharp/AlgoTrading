@@ -1,5 +1,5 @@
 # Auto Stop-Loss and Take-Profit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This utility strategy automatically attaches protective stop-loss and take-profit orders to every open position on the configured instrument. It mirrors the behaviour of the original MetaTrader "AutoSet SL TP" expert by monitoring the active position list and enforcing broker distance restrictions before registering protective orders.
 

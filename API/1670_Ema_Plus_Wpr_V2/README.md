@@ -1,5 +1,5 @@
 # EMA plus WPR v2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining Williams %R oscillator with EMA trend filter. Trades when WPR reaches extreme levels after a retracement. Includes optional WPR-based exits, trailing stops and bar-based exit.
 

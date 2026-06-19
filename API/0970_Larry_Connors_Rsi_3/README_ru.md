@@ -1,5 +1,5 @@
 # Larry Connors RSI 3
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия возврата к среднему на основе правил RSI Ларри Коннорса.
 

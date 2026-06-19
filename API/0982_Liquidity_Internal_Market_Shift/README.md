@@ -1,5 +1,5 @@
 # Liquidity Internal Market Shift Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects internal market structure shifts that coincide with liquidity sweeps at recent highs or lows. A trade is opened when price touches a liquidity line and then shifts structure in the opposite direction. Trading can be limited to bullish or bearish setups only, or both.
 

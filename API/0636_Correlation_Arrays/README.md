@@ -1,5 +1,5 @@
 # Correlation Arrays Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy computes a rolling correlation matrix for up to six securities. It logs correlation levels using configurable thresholds to help evaluate relationships between assets. The strategy is analysis-only and does not place trades.
 

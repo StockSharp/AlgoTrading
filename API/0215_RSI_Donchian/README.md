@@ -1,5 +1,5 @@
 # RSI Donchian Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The RSI Donchian strategy looks for momentum extremes that coincide with breakouts of the Donchian Channel. The relative strength index gauges overbought and oversold conditions while the channel defines recent price highs and lows.
 

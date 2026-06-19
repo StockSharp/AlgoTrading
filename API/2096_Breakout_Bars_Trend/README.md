@@ -1,5 +1,5 @@
 # Breakout Bars Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects trend reversals using the Parabolic SAR indicator. It waits for a configurable number of negative reversals before entering in the new trend direction. Distances for stop-loss and take-profit are measured either in pips or as a percentage of the entry price.
 

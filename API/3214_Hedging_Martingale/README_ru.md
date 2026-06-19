@@ -32,5 +32,5 @@
 ## Файлы
 - `CS/HedgingMartingaleStrategy.cs` – реализация стратегии (C#).
 - `README.md` – описание на английском.
-- `README_cn.md` – описание на китайском.
+- `README_zh.md` – описание на китайском.
 - `README_ru.md` – описание на русском.

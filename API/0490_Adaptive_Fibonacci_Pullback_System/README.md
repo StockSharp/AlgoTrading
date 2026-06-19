@@ -1,5 +1,5 @@
 # Adaptive Fibonacci Pullback Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy averages three SuperTrend lines built with Fibonacci multipliers (0.618, 1.618, 2.618) and smooths the result with an EMA. Trades follow pullbacks to this adaptive trend while an AMA-based midline and optional RSI filter confirm direction.
 

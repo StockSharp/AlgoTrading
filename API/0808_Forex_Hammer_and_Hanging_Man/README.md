@@ -1,5 +1,5 @@
 # Forex Hammer and Hanging Man
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades classic candlestick reversal patterns: the bullish hammer and the bearish hanging man. It goes long after a hammer and short after a hanging man, holding the position for a fixed number of bars.
 

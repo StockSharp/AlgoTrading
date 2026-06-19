@@ -1,5 +1,5 @@
 # Supply Demand Order Block
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пробоя уровней поддержки/сопротивления Donchian с фильтром тренда EMA и подтверждением всплеском объёма. Позиции защищаются стоп-лоссом и трейлинг-стопом.
 

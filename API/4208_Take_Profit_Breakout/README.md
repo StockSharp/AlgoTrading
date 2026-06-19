@@ -1,5 +1,5 @@
 # Take Profit Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the MetaTrader "take-profit" expert by looking for four consecutive candles with strictly monotonic highs and opens. When the current candle completes with rising highs and opens the algorithm treats the sequence as bullish momentum and submits a market buy. A mirrored condition with falling highs and opens produces a market sell. Orders are managed with an account-level profit target, a trailing stop that can partially close exposure, and an optional fixed stop-loss defined in price steps.
 

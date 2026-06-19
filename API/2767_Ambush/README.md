@@ -1,5 +1,5 @@
 # Ambush Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Ambush strategy continuously surrounds the market with a pair of buy-stop and sell-stop orders. The pending orders are placed
 at a configurable indentation above the best ask and below the best bid, with a dynamic override that enforces a minimal distance

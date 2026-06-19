@@ -45,5 +45,5 @@
 
 - `CS/TcpFloorPivotBreakoutStrategy.cs` — реализация стратегии на C#.
 - `README.md` — документация на английском языке.
-- `README_cn.md` — описание на китайском.
+- `README_zh.md` — описание на китайском.
 - `README_ru.md` — русская версия (этот файл).

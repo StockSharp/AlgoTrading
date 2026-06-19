@@ -1,5 +1,5 @@
 # Стратегия «Keltner Channel Golden Cross»
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия открывает сделки при пробое каналов Келтнера, подтверждённом «золотым крестом» двух EMA.
 

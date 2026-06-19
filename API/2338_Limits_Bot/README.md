@@ -1,5 +1,5 @@
 # Limits Bot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Places symmetric limit orders around each candle's open price and protects positions with stop-loss, take-profit and optional trailing.
 

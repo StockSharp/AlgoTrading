@@ -1,5 +1,5 @@
 # Fisher Cyber Cycle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy applies the Fisher Transform to Ehlers' Cyber Cycle indicator. A long position is opened when the Fisher line crosses above its trigger line, while a short position is opened on a downward cross. Positions are closed or reversed on the opposite cross.
 

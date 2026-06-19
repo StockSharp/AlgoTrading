@@ -37,5 +37,5 @@ Ensure the securities expose meaningful `PriceStep`, `StepPrice`, `VolumeStep`, 
 
 - `CS/TwoPairCorrelationStrategy.cs` – strategy implementation built on the high-level API.
 - `README.md` – this documentation (English).
-- `README_cn.md` – documentation in Chinese.
+- `README_zh.md` – documentation in Chinese.
 - `README_ru.md` – documentation in Russian.

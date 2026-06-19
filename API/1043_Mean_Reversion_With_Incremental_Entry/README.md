@@ -1,5 +1,5 @@
 # Mean Reversion with Incremental Entry Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters trades when price deviates from a simple moving average by a defined percentage. Additional orders are placed incrementally as price moves further away from the average.
 

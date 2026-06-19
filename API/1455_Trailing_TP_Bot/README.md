@@ -1,5 +1,5 @@
 # Trailing TP Bot
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades SMA crossovers on both long and short sides. Each position defines a fixed take profit and stop loss. After the profit target is hit the stop can trail to protect gains.
 

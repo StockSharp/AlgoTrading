@@ -1,5 +1,5 @@
 # TSI MACD Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implements a crossover system based on the True Strength Index (TSI) and its exponential moving average signal line.
 

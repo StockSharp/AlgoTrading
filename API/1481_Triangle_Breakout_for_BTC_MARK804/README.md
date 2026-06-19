@@ -1,5 +1,5 @@
 # Triangle Breakout Strategy for BTC
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades breakouts of simple moving average triangle when volume spikes and manages positions with ATR-based stops.
 

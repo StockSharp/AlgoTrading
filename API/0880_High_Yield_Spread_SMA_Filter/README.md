@@ -1,5 +1,5 @@
 # High Yield Spread Strategy with SMA Filter
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on the level of the high yield credit spread or the VIX index. When the selected spread moves beyond a threshold and price is on the proper side of a simple moving average, the strategy opens a position in the chosen direction.
 

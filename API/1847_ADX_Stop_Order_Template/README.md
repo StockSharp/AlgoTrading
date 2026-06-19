@@ -1,5 +1,5 @@
 # ADX Stop Order Template Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy demonstrates how to place pending stop orders using the Average Directional Index (ADX) and its Directional Movement components. It recreates the core logic of a classic MQL template: when the market shows a strong trend and the +DI and -DI lines cross, the system places a buy stop or sell stop at a fixed distance. Protective stop-loss and take-profit levels are managed automatically.
 

@@ -1,5 +1,5 @@
 # Volume by Session Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simplified strategy derived from the TradingView **"Volume by Session"** indicator. The trading day is divided into four sessions, each with its own average volume. When current volume within a session deviates from its average, the strategy enters trades accordingly.
 

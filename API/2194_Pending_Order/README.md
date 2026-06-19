@@ -1,5 +1,5 @@
 # Pending Order
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that places four pending orders around the current bid and ask during specified hours. It continuously maintains buy limit, sell limit, buy stop, and sell stop orders at a configurable distance from market price. Each pending order uses fixed stop-loss and take-profit offsets.
 

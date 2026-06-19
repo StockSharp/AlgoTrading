@@ -1,5 +1,5 @@
 # Fine-Tune Inputs Fourier Smoothed Hybrid Volume Spread Analysis
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines smoothed volume with EMA of open and close prices to analyze volume spread. It enters long when both the volume spread and its moving average are positive, and short when both are negative. An optional parameter allows closing positions when no signal is present.
 

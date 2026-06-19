@@ -1,5 +1,5 @@
 # Стратегия Session Breakout Scalper Trading Bot
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Session Breakout Scalper торгует пробой ценового диапазона, сформированного в заданной сессии.
 

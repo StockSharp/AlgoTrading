@@ -1,5 +1,5 @@
 # OSF Countertrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy reproduces the Open Source Forex "Overbought/Oversold" countertrend expert.
 It approximates the original oscillator by averaging several RSI readings and interprets

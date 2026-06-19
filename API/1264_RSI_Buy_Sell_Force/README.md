@@ -1,5 +1,5 @@
 # RSI Buy Sell Force Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy calculates RSI on the incoming candles and smooths it with an EMA.
 It derives two lines, `cc` and `bb`, representing buying and selling pressure.

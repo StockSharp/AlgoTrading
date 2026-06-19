@@ -1,5 +1,5 @@
 # RSI Pro+ Bear Market Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys when the RSI crosses above a specified level and exits at a fixed percentage from the entry price. It is designed for bearish market conditions expecting quick rebounds.
 

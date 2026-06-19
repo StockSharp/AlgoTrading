@@ -49,4 +49,4 @@
 
 ## Состав пакета
 - `CS/StochLevelsStrategy.cs` — реализация стратегии.
-- `README.md`, `README_cn.md`, `README_ru.md` — документация на разных языках.
+- `README.md`, `README_zh.md`, `README_ru.md` — документация на разных языках.

@@ -1,5 +1,5 @@
 # Стратегия ARD Order Management
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует индикатор DeMarker и открывает позиции при пересечении уровня 0.5.
 

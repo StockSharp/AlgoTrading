@@ -1,5 +1,5 @@
 # Стратегия 20 Pips Opposite Last N Hour Trend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия повторяет логику советника MetaTrader **"20 Pips Opposite Last N Hour
 Trend"**, используя высокоуровневый API StockSharp. На каждом часовом баре

@@ -29,6 +29,6 @@
 ## Файлы
 - `CS/ManualTradingLightweightUtilityPanelStrategy.cs` — исходный код стратегии.
 - `README.md` — документация на английском.
-- `README_cn.md` — документация на китайском.
+- `README_zh.md` — документация на китайском.
 - `README_ru.md` — документация на русском (данный файл).
 

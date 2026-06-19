@@ -1,5 +1,5 @@
 # Stop Loss Take Profit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This port replicates the MetaTrader "Stop Loss Take Profit" expert advisor. The strategy flips a coin whenever the account is flat and opens a market order in the chosen direction. Each position immediately receives pip-based stop-loss and take-profit orders. If the stop is hit the next trade doubles its size (capped by the security's volume limits). A take-profit resets the volume back to the initial amount. The behaviour mirrors the original martingale-style position sizing while using StockSharp's high-level API.
 

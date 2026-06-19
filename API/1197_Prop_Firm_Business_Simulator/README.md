@@ -1,5 +1,5 @@
 # Prop Firm Business Simulator
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that simulates prop firm risk management using Keltner Channel breakouts with position sizing based on risk per trade.
 

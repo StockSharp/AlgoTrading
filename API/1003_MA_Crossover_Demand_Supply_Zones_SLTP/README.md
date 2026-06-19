@@ -1,5 +1,5 @@
 # MA Crossover Demand Supply Zones SLTP Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines a short/long simple moving average crossover with demand and supply zone detection. The system looks for crossovers occurring near recently confirmed demand or supply zones, then enters in the direction of the crossover and manages the position with fixed-percent stop loss and take profit.
 

@@ -1,5 +1,5 @@
 # Double ZigZag Alignment Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp port of the MQL5 expert "Double ZigZag". It recreates the dual-ZigZag confirmation logic by
 combining two swing detectors with different lookbacks. A trade is triggered only when both detectors agree on three consecutive

@@ -1,5 +1,5 @@
 # HSI First 30m Candle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy captures the high and low of the first 30 minutes after the Hong Kong session opens and trades breakouts on a 5-minute chart. Only one trade is allowed per day.
 

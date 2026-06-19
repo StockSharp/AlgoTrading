@@ -1,5 +1,5 @@
 # Opening and Closing on Time Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A simple time-based strategy that opens a market position at a specified time of day and closes it at another predefined time. The direction (buy or sell) and order volume are configurable. This example demonstrates scheduled trade execution without using indicators or additional filters.
 

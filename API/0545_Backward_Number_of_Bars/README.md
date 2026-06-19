@@ -1,5 +1,5 @@
 # Backward Number of Bars Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy keeps a long position only during the most recent bars counted back from the current time. It demonstrates how to restrict trading to a moving historical window.
 

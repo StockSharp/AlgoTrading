@@ -1,5 +1,5 @@
 # Bykov Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the classic MetaTrader system "Bykov Trend" using the StockSharp high-level API. The original indicator combines the Williams %R oscillator with a simple trend detection mechanism. When the trend flips from bearish to bullish, a long position is opened. When the trend turns from bullish to bearish, a short position is opened.
 

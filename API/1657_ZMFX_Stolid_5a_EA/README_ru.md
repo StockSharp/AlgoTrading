@@ -1,5 +1,5 @@
 # Стратегия ZMFX Stolid 5a EA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Мультифреймовая трендовая стратегия, входящая на откатах, подтвержденных RSI и Stochastic.
 Система определяет основной тренд по 4-часовому Stochastic и 1-часовым сглаженным средним.

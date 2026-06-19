@@ -1,5 +1,5 @@
 # MaDelta Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MaDelta strategy measures the difference between a fast and a slow moving average. The difference is scaled by a multiplier and raised to the third power, producing an oscillating value `px`. Two dynamic thresholds separated by `Delta` (in pips) track the recent high and low of this value. When `px` breaks above the upper threshold, the strategy switches to a long bias; when `px` falls below the lower threshold, it switches to a short bias. Existing positions opposite to the new bias are closed and a new trade is opened in the direction of the signal.
 

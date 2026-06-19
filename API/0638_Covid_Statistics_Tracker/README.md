@@ -1,5 +1,5 @@
 # Covid Statistics Tracker Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy trading on the growth ratio of confirmed COVID-19 cases.
 The strategy sells when case growth accelerates and buys when growth slows.

@@ -1,5 +1,5 @@
 # Profitable SuperTrend + MA + Stoch Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия, сочетающая SuperTrend, пересечение EMA и осциллятор Stochastic.
 

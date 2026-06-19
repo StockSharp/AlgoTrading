@@ -1,5 +1,5 @@
 # Стратегия Gap Momentum System
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Реализует систему Gap Momentum от Перри Кауфмана. Стратегия сравнивает накопленные гэпы вверх и вниз и торгует при росте или падении сигнала.
 

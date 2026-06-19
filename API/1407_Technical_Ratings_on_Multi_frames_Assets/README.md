@@ -1,5 +1,5 @@
 # Technical Ratings on Multi-frames Assets Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy aggregates technical ratings from multiple time frames.
 It compares price against a moving average and RSI thresholds on 1h, 4h, and daily candles.

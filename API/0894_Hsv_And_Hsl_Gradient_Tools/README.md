@@ -1,5 +1,5 @@
 # HSV and HSL Gradient Tools
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Library of color utilities converted from a TradingView script. Provides helpers for HSV and HSL conversions, color inversion and gradient generation.
 

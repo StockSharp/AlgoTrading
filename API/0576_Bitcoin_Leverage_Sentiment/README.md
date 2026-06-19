@@ -1,5 +1,5 @@
 # Bitcoin Leverage Sentiment Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy analyzes the Z-Score of the ratio between Bitcoin long and short positions. A long trade is opened when the Z-Score crosses above a configurable threshold and closed when it crosses below the long exit level. Short trades use mirrored thresholds. Trading direction can be limited to long, short, or both sides.
 

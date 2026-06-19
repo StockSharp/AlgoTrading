@@ -69,6 +69,6 @@
 ## Содержимое папки
 
 - `CS/WavePowerEAStrategy.cs` — реализация логики Wave Power EA на StockSharp.
-- `README.md` / `README_ru.md` / `README_cn.md` — документация на английском, русском и китайском языках.
+- `README.md` / `README_ru.md` / `README_zh.md` — документация на английском, русском и китайском языках.
 
 Версия на Python специально не создавалась, как требовалось в задании.

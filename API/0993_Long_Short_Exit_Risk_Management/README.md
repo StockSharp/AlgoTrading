@@ -1,5 +1,5 @@
 # Long Short Exit Risk Management Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Template strategy showing how to handle long and short positions with percentage-based risk controls. It uses basic price equality triggers and optional time exits.
 

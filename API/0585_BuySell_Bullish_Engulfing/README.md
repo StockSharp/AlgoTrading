@@ -1,5 +1,5 @@
 # Buy & Sell Bullish Engulfing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long when a bullish candle fully engulfs the previous bearish bar and optional trend conditions are met. Position size is a percentage of current equity, while take profit and stop loss close trades automatically.
 

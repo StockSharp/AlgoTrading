@@ -1,5 +1,5 @@
 # Forex Fraus 4 For M1s Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Conversion of MQL4 strategy #13643. The original expert advisor enters trades when the Williams %R indicator touches extreme levels and then crosses back. This C# version uses the high-level API of StockSharp.
 

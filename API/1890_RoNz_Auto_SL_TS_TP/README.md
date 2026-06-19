@@ -1,5 +1,5 @@
 # RoNz Auto SL TS TP Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that opens positions on EMA crossover and automatically manages stop-loss and take-profit levels.  
 After entry it sets initial stop and target, then optionally locks profit and activates a trailing stop.

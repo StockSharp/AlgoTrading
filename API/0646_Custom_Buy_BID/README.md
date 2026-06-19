@@ -1,5 +1,5 @@
 # Custom Buy BID Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Custom Buy BID strategy uses the Supertrend indicator to identify bullish reversals. It opens a long position when price crosses above the Supertrend line and applies configurable profit and loss targets for risk management.
 

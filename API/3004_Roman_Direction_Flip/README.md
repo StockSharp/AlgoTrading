@@ -1,5 +1,5 @@
 # Roman Direction Flip
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy recreates the original MQL expert advisor that was published as `roman.mq5`. It always keeps a position open and alternates the trade direction only after the previous trade is closed. While the position remains profitable it repeats the same direction; after a stop-loss the strategy flips to the opposite side. The StockSharp version works with level 1 data and uses best bid/ask quotes to emulate the pip-based exits from MetaTrader.
 

@@ -1,5 +1,5 @@
 # Стратегия Heiken Ashi Supertrend ATR-SL
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает свечи Heiken Ashi с фильтром направления Supertrend. Входы требуют свечей без теней и позволяют использовать стоп‑лосс по ATR и перевод в безубыток.
 

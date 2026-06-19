@@ -1,5 +1,5 @@
 # Volatility Arbitrage Spread Oscillator Model (VASOM)
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Longs the front month VIX future when the RSI of the spread between the first and second month contracts drops below a threshold. The position is closed when the RSI rises above an exit level.
 

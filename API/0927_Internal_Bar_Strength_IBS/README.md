@@ -1,5 +1,5 @@
 # Internal Bar Strength IBS Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long when the internal bar strength (IBS) is below a lower threshold and exits when IBS rises above an upper threshold within a specified time window.
 

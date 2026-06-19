@@ -1,5 +1,5 @@
 # Стратегия Gold Trade Setup
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на адаптивной скользящей средней Кауфмана и индикаторе SuperTrend.
 Продаёт, когда AMA растёт и SuperTrend переключается в восходящий тренд.

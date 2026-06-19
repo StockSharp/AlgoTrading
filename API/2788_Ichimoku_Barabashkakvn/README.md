@@ -1,5 +1,5 @@
 # Ichimoku Barabashkakvn Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy recreates Vladimir Karputov's Ichimoku expert advisor (barabashkakvn edition) on top of the StockSharp high-level API. It blends the classic Tenkan/Kijun crossover with confirmation from the Kumo cloud and adds detailed risk management identical to the MetaTrader original.
 

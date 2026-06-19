@@ -1,5 +1,5 @@
 # Double MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Double MACD использует два индикатора MACD с разной скоростью. Сделка открывается только когда оба индикатора показывают одно направление.
 

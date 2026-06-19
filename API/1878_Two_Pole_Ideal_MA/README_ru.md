@@ -1,5 +1,5 @@
 # Стратегия Two-Pole Ideal MA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия приближает советник "2pb Ideal MA", сравнивая быструю EMA и медленную тройную EMA.
 

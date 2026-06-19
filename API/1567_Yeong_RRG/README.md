@@ -1,5 +1,5 @@
 # Yeong RRG
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on normalized relative strength and momentum ratio (RRG).
 

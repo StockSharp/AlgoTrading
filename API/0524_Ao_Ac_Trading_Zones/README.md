@@ -1,5 +1,5 @@
 # AO AC Trading Zones Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the "AO/AC Trading Zones" concept. It combines the Awesome Oscillator (AO), Acceleration/Deceleration (AC), and Bill Williams fractals to build a pyramid of long positions when momentum accelerates above the Alligator teeth line.
 

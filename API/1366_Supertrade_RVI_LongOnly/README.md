@@ -1,5 +1,5 @@
 # Supertrade RVI Long-Only Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses Relative Volatility Index crossing above 20 to open long trades. Stop loss and take profit are set from risk percent and reward ratio.
 

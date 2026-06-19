@@ -1,5 +1,5 @@
 # Resampling Reverse Engineering Bands
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Resampling Reverse Engineering Bands строит уровни цен RSI на основе ресэмплинга. Стратегия покупает, когда цена опускается ниже нижней полосы, и продаёт, когда цена поднимается выше верхней полосы.
 

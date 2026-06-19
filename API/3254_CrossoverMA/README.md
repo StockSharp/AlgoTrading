@@ -38,7 +38,7 @@ All parameters are available for optimisation in StockSharp Designer or Runner.
 
 - `CS/CrossoverMaStrategy.cs` – C# implementation of the converted strategy.
 - `README.md` – English documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.
 
 ## Porting Differences

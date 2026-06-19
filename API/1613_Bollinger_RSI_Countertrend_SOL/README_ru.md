@@ -1,5 +1,5 @@
 # Стратегия Bollinger RSI Countertrend SOL
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Контртрендовая система для SOL: покупает при пробое ценой нижней полосы Боллинджера и низком RSI, продаёт при пробое верхней полосы и высоком RSI. Работает только по будням.
 

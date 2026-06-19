@@ -1,5 +1,5 @@
 # Reflex Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses John Ehlers' Reflex Oscillator. It enters long when the oscillator crosses above an upper threshold and enters short when it crosses below a lower threshold. Positions are closed when the oscillator returns to the zero line.
 

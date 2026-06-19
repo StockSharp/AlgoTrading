@@ -58,7 +58,7 @@ Port of the MetaTrader expert **20pipsOnceADayOppositeLastNHourTrend** implement
 
 - `CS/TwentyPipsOnceADayStrategy.cs` – main C# implementation.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.
 
 Python ports are intentionally omitted for this conversion.

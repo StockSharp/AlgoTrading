@@ -1,5 +1,5 @@
 # Instantaneous Trend Filter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses John Ehlers' Instantaneous Trendline and a trigger line to generate signals on any timeframe. The trigger is computed as `2 * ITrend - ITrend[2]`, forming a fast line that crosses the slower trendline. A downward crossover closes short positions and opens a long, while an upward crossover closes longs and opens a short. The smoothing factor `Alpha` controls responsiveness: lower values produce smoother lines, higher values react faster.
 

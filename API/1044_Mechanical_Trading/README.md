@@ -1,5 +1,5 @@
 # Mechanical Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A time-based mechanical strategy that executes one trade at a specified hour each day. The position direction can be configured to go long or short. The trade is automatically protected with percent-based take profit and stop loss levels.
 

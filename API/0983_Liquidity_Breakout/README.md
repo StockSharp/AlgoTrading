@@ -1,5 +1,5 @@
 # Liquidity Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts from a recent price range defined by pivot highs and lows. A position is opened when price closes beyond the previous range extremes. Optional stop loss can use a SuperTrend line or fixed percentage.
 

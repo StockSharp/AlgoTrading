@@ -1,5 +1,5 @@
 # Rate of Change Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses the Rate of Change indicator to detect bubble conditions and trade zero-line crossovers with dynamic position sizing.
 

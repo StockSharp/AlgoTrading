@@ -1,5 +1,5 @@
 # EMA Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades the crossover of two exponential moving averages (EMAs).
 A long position is opened when the fast EMA crosses above the slow EMA, while a short position is opened when the fast EMA crosses below the slow EMA.

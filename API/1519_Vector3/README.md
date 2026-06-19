@@ -1,5 +1,5 @@
 # Vector3 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades based on alignment of three moving averages.
 Goes long when fast > middle > slow and short when fast < middle < slow.

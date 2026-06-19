@@ -1,5 +1,5 @@
 # NY ORB CP Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 NY opening range breakout strategy with retest confirmation. Trades breakouts of the 9:30-9:45 NY range when price retests and resumes the breakout direction.
 

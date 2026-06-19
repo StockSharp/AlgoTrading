@@ -1,5 +1,5 @@
 # Linear Correlation Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Linear Correlation Oscillator strategy measures the correlation between price and time over a rolling window. The strategy goes long when the oscillator crosses above zero and goes short when it crosses below zero.
 

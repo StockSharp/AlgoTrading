@@ -1,5 +1,5 @@
 # Adaptive Oscillator Threshold Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive Oscillator Threshold uses RSI with a dynamic threshold based on Bufi's Adaptive Threshold (BAT). It buys when the RSI falls below either a fixed level or an adaptive threshold.
 

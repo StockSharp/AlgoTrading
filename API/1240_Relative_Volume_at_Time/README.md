@@ -1,5 +1,5 @@
 # Relative Volume at Time
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that compares volume at a specific time of day to the average volume of recent candles.
 

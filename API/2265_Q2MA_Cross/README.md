@@ -1,5 +1,5 @@
 # Q2MA Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Q2MA Cross Strategy trades based on the crossover of smoothed moving averages built on candle close and open prices. A long position is opened when the close average falls below the open average after being above, while a short position is opened on the opposite crossover. Positions are closed when an opposite trend appears. The strategy also applies stop loss and take profit levels measured in ticks.
 

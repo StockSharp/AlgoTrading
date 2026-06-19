@@ -1,5 +1,5 @@
 # Liquidity Swings Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Liquidity Swings strategy tracks recent pivot highs and lows to define resistance and support. A long trade occurs when the low crosses above support while the close remains below resistance. A short trade triggers when the high crosses below resistance while the close stays above support. Risk management uses a stop loss below/above the level with a buffer and a take profit at twice that distance, yielding a 1:2 risk-reward.
 

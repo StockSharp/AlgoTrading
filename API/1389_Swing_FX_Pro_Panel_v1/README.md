@@ -1,5 +1,5 @@
 # Swing FX Pro Panel v1
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Demonstration strategy using an EMA crossover with basic performance statistics. Fast EMA crossing above the slow EMA opens a long position, while a cross below opens a short. Each trade uses fixed profit and loss targets.
 

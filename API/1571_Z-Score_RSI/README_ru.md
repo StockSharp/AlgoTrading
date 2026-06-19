@@ -1,5 +1,5 @@
 # Стратегия Z-Score RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия вычисляет RSI от z-score цены и использует EMA от RSI для сигналов. Длинная позиция открывается при пересечении RSI выше своей EMA, короткая — при обратном пересечении.
 

@@ -1,5 +1,5 @@
 # LeMan Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The LeMan Trend strategy derives bullish and bearish pressure from recent highs and lows. It calculates the distance between the current candle and the highest highs and lowest lows over three different lookback periods. These distances are smoothed with an exponential moving average (EMA) to form two lines: bulls and bears. A crossover between these lines signals potential trend changes.
 

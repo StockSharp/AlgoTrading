@@ -1,5 +1,5 @@
 # Стратегия Turn of the Month Honestcowboy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Календарная стратегия, открывающая длинные позиции в конце месяца и закрывающая их через несколько дней нового месяца с поправкой на выходные.
 

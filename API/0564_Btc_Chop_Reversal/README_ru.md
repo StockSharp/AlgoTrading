@@ -1,5 +1,5 @@
 # Стратегия BTC Chop Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия торгует краткосрочные развороты по BTC, когда цена тестирует ATR-диапазоны и меняется импульс. Используются EMA, ATR, RSI, гистограмма MACD и фильтр всплесков объема.
 

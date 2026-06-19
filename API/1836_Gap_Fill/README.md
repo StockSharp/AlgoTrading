@@ -1,5 +1,5 @@
 # Gap Fill
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Gap Fill strategy exploits price gaps between consecutive 15-minute candles.
 When a new candle opens above the previous candle's high by more than a configurable threshold, the strategy sells and places a buy limit at the prior high, aiming for the gap to close.

@@ -1,5 +1,5 @@
 # Function Simple Markov Chain Monte Carlo Simulation
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Demonstrates a basic Markov Chain Monte Carlo (MCMC) simulation that generates a random walk path.
 

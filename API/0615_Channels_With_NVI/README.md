@@ -1,5 +1,5 @@
 # Channels with NVI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses Bollinger Bands or Keltner Channels combined with the Negative Volume Index (NVI). A long position opens when price closes below the lower band while NVI is above its EMA. The position closes when NVI falls below its EMA. Optional stop-loss and take-profit percentages are available.
 

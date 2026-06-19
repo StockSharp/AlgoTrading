@@ -1,5 +1,5 @@
 # Стратегия Color J Variation
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия повторяет советник ColorJVariation на основе Jurik Moving Average. Отслеживает направление JMA и входит при смене тренда. Поддерживает абсолютные стоп‑лосс и тейк‑профит.
 

@@ -1,5 +1,5 @@
 # Стратегия Dig Variation
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на примере MQL5 *DigVariation*. Индикатор аппроксимирован простым скользящим средним (SMA). Сделки открываются, когда направление SMA меняется.
 

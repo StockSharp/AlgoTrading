@@ -1,5 +1,5 @@
 # Elder Impulse System Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the Elder Impulse System that combines the direction of an Exponential Moving Average (EMA) with the momentum of the MACD histogram. It opens trades when the bullish or bearish impulse fades on higher timeframe candles.
 

@@ -1,5 +1,5 @@
 # Tuga Supertrend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Tuga Supertrend is a long-only strategy based on the SuperTrend indicator. It enters a long position when the SuperTrend direction flips downward and exits when the direction turns upward.
 

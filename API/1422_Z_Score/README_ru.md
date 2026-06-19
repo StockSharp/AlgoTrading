@@ -1,5 +1,5 @@
 # Стратегия The Z-Score
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия вычисляет z-score EMA на базе свечей Heikin-Ashi и торгует по пересечениям динамических уровней, рассчитанных из последнего диапазона значений.
 

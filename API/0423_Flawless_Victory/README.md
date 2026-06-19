@@ -1,5 +1,5 @@
 # Flawless Victory Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Flawless Victory is a modular momentum system that blends oscillators with Bollinger Bands. Depending on the selected version it can operate with simple RSI signals, apply fixed take-profit and stop-loss targets, or demand confirmation from the Money Flow Index. The goal is to exploit exhaustion at the edges of volatility bands and ride mean-reversion swings.
 

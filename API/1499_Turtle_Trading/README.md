@@ -1,5 +1,5 @@
 # Turtle Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Classic Turtle Trading system using Donchian breakouts and ATR-based risk management.
 

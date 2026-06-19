@@ -1,5 +1,5 @@
 # ColorSchaff JJRSX Trend Cycle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy applies the Schaff Trend Cycle oscillator based on JJRSX averages. It opens long or short positions when the oscillator crosses user-defined levels.
 

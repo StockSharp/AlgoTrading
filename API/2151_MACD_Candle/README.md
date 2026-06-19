@@ -1,5 +1,5 @@
 # MACD Candle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader expert "Exp_MACDCandle". It converts the color output of a MACD-based candle indicator into trading signals using the StockSharp high-level API.
 

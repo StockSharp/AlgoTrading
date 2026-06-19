@@ -1,5 +1,5 @@
 # Opening Range Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy defines an opening range and trades breakouts above or below it. After the opening range window closes, if the width exceeds a percentage of the close price, stop orders are prepared at the range boundaries. Positions use a stop loss and profit target based on the range size. Optionally only one trade per day is taken, and losing trades may reverse. All positions are closed at the end of the session.
 

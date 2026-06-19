@@ -1,5 +1,5 @@
 # Lucky Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Lucky strategy is a breakout scalper that monitors rapid changes between the best bid and ask prices. It buys when the ask price jumps upward by a configurable number of pips and sells when the bid falls by the same amount. Positions are closed immediately once they become profitable or if price moves adversely beyond a protective threshold.
 

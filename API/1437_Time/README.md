@@ -1,5 +1,5 @@
 # Time
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy illustrates timing utilities. It buys when the high exceeds the open by a number of ticks for a specified duration.
 

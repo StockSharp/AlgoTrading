@@ -1,5 +1,5 @@
 # MADH Moving Average Difference, Hann Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implements the MADH indicator described by John Ehlers. Strategy goes long when the indicator is above zero and short when below.
 

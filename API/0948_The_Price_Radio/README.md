@@ -1,5 +1,5 @@
 # The Price Radio Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements John Ehlers' Price Radio indicator. It enters long when the price derivative exceeds both amplitude and frequency thresholds, and enters short when it falls below their negative values.
 

@@ -1,5 +1,5 @@
 # Flash Strategy Minervini Qualifier Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines EMA crossover, SuperTrend and momentum RSI with Minervini stage analysis to qualify trades.
 

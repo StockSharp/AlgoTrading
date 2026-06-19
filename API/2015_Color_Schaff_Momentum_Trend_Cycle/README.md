@@ -1,5 +1,5 @@
 # Color Schaff Momentum Trend Cycle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy uses the Color Schaff Momentum Trend Cycle (STC) to detect trend reversals when the indicator leaves overbought or oversold zones.
 

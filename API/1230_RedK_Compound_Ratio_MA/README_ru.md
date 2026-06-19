@@ -1,5 +1,5 @@
 # Стратегия Redk Compound Ratio MA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Открывает длинные позиции, когда скользящая средняя CoRa Wave растёт, и короткие, когда она падает.
 

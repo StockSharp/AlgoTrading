@@ -1,5 +1,5 @@
 # Morse Code Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The Morse Code Strategy replicates the original MetaTrader 5 expert that treats every finished candle as either a "dash" or a "dot". A bullish candle (close price greater than or equal to the open) is encoded as `1`, while a bearish candle (close price less than or equal to the open) is encoded as `0`. The strategy scans the latest sequence of completed candles and compares it to a user-selected binary mask. When the last candles match the configured sequence exactly, the strategy opens a position in the chosen direction and immediately attaches both a take-profit and a stop-loss order expressed in pips.

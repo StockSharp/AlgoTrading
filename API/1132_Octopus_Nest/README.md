@@ -1,5 +1,5 @@
 # Octopus Nest Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy seeks squeeze breakouts using Bollinger Bands and Keltner Channels. Direction is confirmed with EMA and Parabolic SAR. Stops are placed at recent highs/lows with configurable risk reward.
 

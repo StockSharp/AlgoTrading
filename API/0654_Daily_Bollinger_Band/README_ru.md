@@ -1,5 +1,5 @@
 # Daily Bollinger Band Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует пробои дневных полос Боллинджера, используя трендовый фильтр и расчёт объёма на основе ATR.
 

@@ -68,4 +68,4 @@ Color JFATL Digit Duplex — это конвертация эксперта Meta
 
 ## Состав репозитория
 - `CS/ColorJfatlDigitDuplexStrategy.cs` — код стратегии и индикатора.
-- `README.md` / `README_cn.md` / `README_ru.md` — документация на английском, китайском и русском языках.
+- `README.md` / `README_zh.md` / `README_ru.md` — документация на английском, китайском и русском языках.

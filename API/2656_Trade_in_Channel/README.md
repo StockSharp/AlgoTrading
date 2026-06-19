@@ -1,5 +1,5 @@
 # Trade in Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Contrarian channel strategy that fades Donchian channel extremes when the band width stays unchanged. The system compares the
 latest high/low against the previous channel boundaries and a pivot computed from the prior close to decide whether to fade the

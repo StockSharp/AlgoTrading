@@ -1,5 +1,5 @@
 # Get Value From N Years Ago
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Shows how to retrieve the time components of a candle from N years in the past. No trades are executed.
 

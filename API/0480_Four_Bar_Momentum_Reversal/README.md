@@ -1,5 +1,5 @@
 # Four Bar Momentum Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Four Bar Momentum Reversal strategy enters long when the close has been below the close from `Lookback` bars ago for at least `BuyThreshold` consecutive candles within the selected time window. The position is closed once price breaks above the previous candle high.
 

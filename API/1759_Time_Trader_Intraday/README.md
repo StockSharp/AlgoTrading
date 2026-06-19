@@ -1,5 +1,5 @@
 # Time Trader Intraday Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy opens long and/or short positions at a specific time of day with predefined stop loss and take profit distances. It is useful for testing time-based entries without any indicator confirmation.
 

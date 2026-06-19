@@ -1,5 +1,5 @@
 # Linear Cross Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy calculates a linear regression of price based on volume to produce a predicted price. A long position is opened when the predicted price crosses above its weighted moving average and the MACD line is rising above its signal. A short position is opened when the MACD line falls below its signal and recent lows are declining.
 

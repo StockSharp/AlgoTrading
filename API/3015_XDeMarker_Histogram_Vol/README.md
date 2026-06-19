@@ -1,5 +1,5 @@
 # XDeMarker Histogram Vol Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the original MetaTrader expert advisor **Exp_XDeMarker_Histogram_Vol** on top of the StockSharp high-level API. It transforms the DeMarker oscillator into a volume-weighted histogram, smooths both the oscillator and volume with configurable moving averages, and reacts to regime changes when the histogram crosses predefined bands.
 

@@ -82,5 +82,5 @@ All orders are placed using StockSharp high-level helpers (`BuyMarket`/`SellMark
 - `CS/ZoneRecoveryAreaStrategy.cs` — implementation of the strategy.
 - `README.md` — English documentation (this file).
 - `README_ru.md` — Russian documentation.
-- `README_cn.md` — Chinese documentation.
+- `README_zh.md` — Chinese documentation.
 

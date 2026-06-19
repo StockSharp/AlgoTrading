@@ -1,5 +1,5 @@
 # Lux Clara EMA + VWAP Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Lux Clara EMA + VWAP strategy trades the crossover of a fast and slow EMA, filtered by VWAP and a time window. A long position is opened when the fast EMA crosses above the slow EMA while the slow EMA is above the VWAP during the session. A short position is opened on the opposite conditions. Positions are closed when the EMAs cross in the opposite direction.
 

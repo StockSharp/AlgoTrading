@@ -1,5 +1,5 @@
 # Random Coin Toss Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This experimental strategy flips a coin every N bars and enters long or short based on the result. Risk is managed through ATR-based stop-loss and take-profit levels.
 

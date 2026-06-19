@@ -1,5 +1,5 @@
 # Scalping 15m EMA MACD RSI ATR
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Scalping strategy combining a 50-period EMA trend filter, MACD histogram momentum and RSI levels. Risk management uses ATR-based stop loss and take profit.
 

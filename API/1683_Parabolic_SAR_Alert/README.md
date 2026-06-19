@@ -1,5 +1,5 @@
 # Parabolic SAR Alert Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy monitors the Parabolic SAR (Stop and Reverse) indicator to detect potential trend reversals. When the SAR value flips from above the price to below, the algorithm interprets it as a bullish signal and opens a long position. When the SAR moves from below the price to above, a short position is opened.
 

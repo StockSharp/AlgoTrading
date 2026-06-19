@@ -1,5 +1,5 @@
 # Bollinger Adx Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy combining Bollinger Bands and ADX indicators. Looks for breakouts with strong trend confirmation.
 

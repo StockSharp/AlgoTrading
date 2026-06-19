@@ -1,5 +1,5 @@
 # Exp CyclePeriod Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the CyclePeriod indicator to detect market cycle turns. It opens long positions when the indicator rises and short positions when it falls, closing opposite positions accordingly.
 

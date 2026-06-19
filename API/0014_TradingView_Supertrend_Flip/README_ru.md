@@ -1,5 +1,5 @@
 # Переключение Supertrend из TradingView
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на смене цвета индикатора Supertrend с подтверждением объёма.
 

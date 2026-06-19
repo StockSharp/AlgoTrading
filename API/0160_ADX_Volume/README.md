@@ -1,5 +1,5 @@
 # Adx Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Implementation of strategy - ADX + Volume. Enter trades when ADX is above threshold with above average volume. Direction determined by DI+ and DI- comparison.
 

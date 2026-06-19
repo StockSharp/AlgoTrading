@@ -1,5 +1,5 @@
 # Lorenzo SuperScalp Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This scalping strategy combines RSI, Bollinger Bands and MACD. It buys when RSI is below 45, price is near the lower band and MACD crosses up. It sells when RSI is above 55, price is near the upper band and MACD crosses down. A minimum number of bars between trades prevents rapid re-entry.
 

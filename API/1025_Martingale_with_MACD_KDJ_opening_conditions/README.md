@@ -1,5 +1,5 @@
 # Martingale with MACD and KDJ Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters trades when both the MACD line and the KDJ %K line cross their signal lines in the same direction. It pyramids positions using a martingale approach, adding when price moves against the trade by a configured percent and then rebounds.
 

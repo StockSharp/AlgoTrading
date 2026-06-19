@@ -48,4 +48,4 @@
 
 ## Файлы
 - `CS/MySystemStrategy.cs` — реализация стратегии на высокоуровневом API StockSharp.
-- `README.md`, `README_cn.md`, `README_ru.md` — документация на трёх языках.
+- `README.md`, `README_zh.md`, `README_ru.md` — документация на трёх языках.

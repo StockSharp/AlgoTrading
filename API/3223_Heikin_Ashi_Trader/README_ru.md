@@ -1,5 +1,5 @@
 # Стратегия Heikin Ashi Trader
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переносит советник MetaTrader 4 «Heikin Ashi Trader» в StockSharp. Логика подтверждения сигналов несколькими индикаторами сохранена и реализована через высокоуровневый API подписки на свечи, поэтому решения принимаются только по закрытым барам.
 

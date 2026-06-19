@@ -1,5 +1,5 @@
 # Стратегия Random Trailing Stop
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Random Trailing Stop открывает случайные сделки с уклоном по простой скользящей средней и управляет ими с помощью трейлинг-стопа.
 

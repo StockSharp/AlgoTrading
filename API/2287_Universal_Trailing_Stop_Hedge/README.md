@@ -1,5 +1,5 @@
 # Universal Trailing Stop Hedge Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy demonstrating different trailing stop techniques to protect open positions.
 It offers ATR-, Parabolic SAR-, moving average-, percentage- and fixed-pip based trailing stops.

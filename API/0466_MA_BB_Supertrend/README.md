@@ -1,5 +1,5 @@
 # MA + BB + SuperTrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy combines a moving average crossover with SuperTrend confirmation
 and uses Bollinger Bands for exits. A long position is opened when the signal

@@ -1,5 +1,5 @@
 # Yuri Garcia Smart Money Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This smart money concept strategy searches for price reactions inside high volume zones and four-hour support/resistance areas. It confirms entries with cumulative delta and wick pullbacks, aiming to follow institutional order flow.
 

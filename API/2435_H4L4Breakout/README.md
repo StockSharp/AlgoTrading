@@ -1,5 +1,5 @@
 # H4L4 Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Daily breakout strategy that calculates H4 and L4 levels from the previous day's high, low, and close.
 A sell limit is placed at H4 and a buy limit at L4 at the start of each day.

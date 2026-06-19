@@ -1,5 +1,5 @@
 # Bollinger Bands Enhanced Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Buys when price dips below the lower Bollinger Band while the market stays above a 200-period EMA.  
 A stop loss is placed at `entry - ATR * stop`, and after price rises `ATR * trail` above entry, the middle band becomes a trailing target.

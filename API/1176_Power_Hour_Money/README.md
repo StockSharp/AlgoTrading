@@ -1,5 +1,5 @@
 # Power Hour Money Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades during selected New York sessions and opens positions when all major time frames agree.
 A long position is taken when month, week, day and hour candles close higher than they open.

@@ -1,5 +1,5 @@
 # Стратегия Hammer + EMA с тиковой SL/TP
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Сочетает свечные паттерны молот и перевёрнутый молот с трендовым фильтром EMA и тиковой защитой.
 

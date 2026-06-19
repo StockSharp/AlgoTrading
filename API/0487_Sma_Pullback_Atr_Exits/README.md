@@ -1,5 +1,5 @@
 # SMA Pullback + ATR Exits Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters on pullbacks when a short-term moving average is above or below
 a longer-term trend average. Long positions are opened when price dips below the fast SMA while it remains above the slow SMA. Short positions are opened when price rallies above the fast SMA while it stays below the slow SMA. Exits use Average True Range multiples from the entry price.

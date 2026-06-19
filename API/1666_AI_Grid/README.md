@@ -1,5 +1,5 @@
 # AI Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 AI Grid Strategy places layered buy and sell orders around the current price. The strategy supports breakout (stop) and counter-trend (limit) approaches. After an order is filled, a take-profit order is automatically placed.
 

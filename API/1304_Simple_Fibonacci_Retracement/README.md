@@ -1,5 +1,5 @@
 # Simple Fibonacci Retracement Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses Fibonacci retracement levels derived from the highest high and lowest low over a lookback window. When price crosses a selected Fibonacci level, the strategy enters a position and places fixed pip-based take profit and stop loss orders.
 

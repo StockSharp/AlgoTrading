@@ -1,5 +1,5 @@
 # Supertrend Nitin
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Supertrend strategy by Nitin on 5-minute candles.
 

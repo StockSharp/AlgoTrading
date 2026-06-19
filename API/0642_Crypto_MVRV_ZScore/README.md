@@ -1,5 +1,5 @@
 # Crypto MVRV ZScore Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy applies the MVRV Z-Score concept to detect extremes between market value and realized value.
 Positions are opened when the spread z-score crosses predefined thresholds and closed on opposite crossovers.

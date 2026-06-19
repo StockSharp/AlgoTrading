@@ -1,5 +1,5 @@
 # Test Bot: Bearish Buy / Bullish Sell
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия покупает при первом медвежьем баре и закрывает позицию при первом бычьем баре.
 

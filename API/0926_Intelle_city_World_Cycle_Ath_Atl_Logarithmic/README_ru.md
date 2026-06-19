@@ -1,5 +1,5 @@
 # Intelle city World Cycle Ath Atl Logarithmic Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует масштабированные скользящие средние для определения сигналов на исторических максимумах (ATH) и минимумах (ATL) по концепции Pi Cycle.
 

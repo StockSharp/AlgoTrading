@@ -1,5 +1,5 @@
 # Session Input Parser
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Session Input Parser demonstrates how to parse TradingView session strings into start/end times and weekdays.
 

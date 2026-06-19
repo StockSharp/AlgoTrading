@@ -1,5 +1,5 @@
 # Bollinger Bands SMA 20-2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses Bollinger Bands built from a 20-period simple moving average with a 2 standard deviation multiplier. It goes long when price crosses above the lower band and goes short when price crosses below the upper band. Positions reverse on opposite signals without explicit stop-losses.
 

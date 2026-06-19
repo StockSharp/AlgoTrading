@@ -1,5 +1,5 @@
 # Smart Fib Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using a simple moving average breakout for entries and ATR-based Fibonacci bands for exits.
 

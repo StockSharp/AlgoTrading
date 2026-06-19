@@ -1,5 +1,5 @@
 # Negative Spread Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Negative Spread strategy exploits rare moments when the best ask price falls below the best bid price, creating a negative spread.
 When this mispricing appears, the strategy sells at market and attempts to capture the abnormal spread.

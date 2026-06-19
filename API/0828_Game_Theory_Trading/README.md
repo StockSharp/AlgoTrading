@@ -1,5 +1,5 @@
 # Game Theory Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Game Theory Trading Strategy blends herd behavior analysis, liquidity trap detection, institutional flow and Nash equilibrium zones to trade contrarian and momentum moves.
 

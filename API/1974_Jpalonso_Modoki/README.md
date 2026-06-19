@@ -1,5 +1,5 @@
 # Jpalonso Modoki Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Jpalonso Modoki strategy trades a price channel built from a simple moving average.
 Upper and lower envelopes are calculated by applying a percentage deviation to the moving average.

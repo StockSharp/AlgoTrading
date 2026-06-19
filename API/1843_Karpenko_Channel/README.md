@@ -1,5 +1,5 @@
 # Karpenko Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Karpenko Channel strategy builds a dynamic price channel using two moving averages. The base line is an average of closing prices, while the upper and lower bounds are derived from the average high-low range scaled by the golden ratio 1.618. The channel expands until it envelopes the current bar.
 

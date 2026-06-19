@@ -1,5 +1,5 @@
 # MFI Strategy with Oversold Zone Exit and Averaging
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy waits for the Money Flow Index (MFI) to enter the oversold zone. Once MFI rises above the oversold level, it places a limit buy order a fixed percentage below the current close. If the order is not filled within a specified number of bars, it is canceled. Stop-loss and take-profit are applied via StartProtection.
 

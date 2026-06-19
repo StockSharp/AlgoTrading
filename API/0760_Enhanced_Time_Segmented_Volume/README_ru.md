@@ -1,5 +1,5 @@
 # Усиленный Time Segmented Volume
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Enhanced Time Segmented Volume отслеживает изменение цены с учётом объёма. Когда TSV выше своей скользящей средней и положительный, открывается длинная позиция. Если TSV ниже средней и отрицательный, открывается короткая.
 

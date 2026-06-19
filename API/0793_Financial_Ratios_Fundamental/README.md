@@ -1,5 +1,5 @@
 # Financial Ratios Fundamental Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy analyzes quarterly financial ratios to gauge a company's fundamentals. It looks at the current ratio, interest coverage, payable turnover and gross margin, entering long positions when any of these ratios improve compared to the previous period.
 

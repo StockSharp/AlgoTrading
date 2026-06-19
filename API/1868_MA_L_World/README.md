@@ -1,5 +1,5 @@
 # MA L World Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Weighted moving average crossover strategy with trailing stop based on EMA.
 

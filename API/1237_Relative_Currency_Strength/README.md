@@ -1,5 +1,5 @@
 # Relative Currency Strength
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Relative Currency Strength compares a currency pair to a basket of major currencies.
 It buys when the traded pair outperforms the average of other majors and sells when it underperforms.

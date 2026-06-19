@@ -1,5 +1,5 @@
 # Breakthrough Volatility Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakthrough Volatility Strategy searches for short bursts in intrabar volatility. It waits for a candle whose range expands beyond the previous candle but only by a narrow band (two pip-equivalents after digit normalization). When such a candle closes bullish, the strategy buys; when it closes bearish, it sells. Protective stops, an optional trailing stop, and an automatic reverse-on-loss sequence manage risk and attempt to recover from adverse moves.
 

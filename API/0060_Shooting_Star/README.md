@@ -1,5 +1,5 @@
 # Shooting Star Pattern
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The shooting star candlestick often appears after an advance and warns of a reversal. This strategy looks for a long upper shadow relative to the body with little lower shadow.
 

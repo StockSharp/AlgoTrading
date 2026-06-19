@@ -1,5 +1,5 @@
 # Macd Momentum Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует гистограмму MACD для поиска разворота момента.
 Продаёт, когда бычья свеча увеличивается, а гистограмма MACD снижается.

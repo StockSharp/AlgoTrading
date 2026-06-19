@@ -1,5 +1,5 @@
 # Bot for Spot Market - Custom Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Bot for Spot Market - Custom Grid strategy buys an initial position and adds new orders when price drops by a specified percentage below the last entry. It closes all positions when price rises above the average entry price by the profit target.
 

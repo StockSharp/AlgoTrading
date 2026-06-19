@@ -1,5 +1,5 @@
 # Стратегия Hammer & Shooting Star
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует свечные модели Hammer и Shooting Star.
 Длинная позиция открывается после появления Hammer на предыдущей свече,

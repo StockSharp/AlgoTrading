@@ -1,5 +1,5 @@
 # Стратегия AI SuperTrend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия AI SuperTrend комбинирует индикатор SuperTrend с взвешенными скользящими средними цены и линии SuperTrend. Длинная позиция открывается, когда SuperTrend разворачивается вверх и WMA цены выше WMA SuperTrend. Короткая позиция открывается при обратных условиях. Позиции защищаются плавающим стопом на основе ATR.
 

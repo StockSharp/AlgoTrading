@@ -1,5 +1,5 @@
 # Bollinger Bands Automated
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that places buy limit orders at the lower Bollinger Band and sell limit orders at the upper band. Positions close when the price touches the middle band. Pending orders are refreshed at the start of each candle.
 

@@ -1,5 +1,5 @@
 # Bollinger Winner Pro
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Bollinger Winner Pro expands on the Lite version by adding modular filters and
 risk controls. It still looks for price closing outside the Bollinger Bands, but

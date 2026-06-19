@@ -1,5 +1,5 @@
 # Risk Management and Positionsize - MACD example
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Risk Management and Positionsize - MACD example** strategy demonstrates dynamic position sizing based on current equity. It relies on MACD crossovers from a higher timeframe combined with a moving average trend filter.
 

@@ -1,5 +1,5 @@
 # High-Low Breakout ATR Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts of the first 30-minute session range. Once price crosses the initial high or low, a position opens with an ATR-based trailing stop. All positions close at a specified intraday time.
 

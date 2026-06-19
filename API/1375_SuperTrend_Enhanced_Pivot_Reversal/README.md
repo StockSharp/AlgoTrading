@@ -1,5 +1,5 @@
 # SuperTrend Enhanced Pivot Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines SuperTrend direction with pivot high/low breakouts. A long stop is placed above a recent pivot high when the SuperTrend is bearish. A short stop is placed below a pivot low when the SuperTrend is bullish. Positions are protected with a percentage stop-loss from the pivot.
 

@@ -1,5 +1,5 @@
 # Function Adf
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Function Adf** module implements the Augmented Dickey-Fuller test to check time series stationarity.
 

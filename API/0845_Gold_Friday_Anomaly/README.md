@@ -1,5 +1,5 @@
 # Gold Friday Anomaly Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys at the first Friday candle within a specified date range and exits after holding a fixed number of bars.
 

@@ -1,5 +1,5 @@
 # HOD/LOD/PMH/PML/PDH/PDL Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts of premarket and previous day levels.
 Long entries occur when price crosses above the premarket or previous day high.

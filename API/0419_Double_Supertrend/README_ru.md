@@ -1,5 +1,5 @@
 # Double Supertrend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Double Supertrend** использует две скользящие на основе ATR с разными периодами и
 множителями. Первая линия задаёт направление сделки, вторая служит целью или

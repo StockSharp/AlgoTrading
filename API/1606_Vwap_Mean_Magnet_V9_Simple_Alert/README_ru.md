@@ -1,5 +1,5 @@
 # Стратегия VWAP Mean Magnet v9 (Simple Alert)
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Упрощённая версия стратегии VWAP Mean Magnet использует только VWAP и RSI без фильтра по объёму. Сделки открываются, когда цена отклоняется от VWAP и RSI достигает экстремальных уровней. Позиции закрываются при возврате цены к VWAP.
 

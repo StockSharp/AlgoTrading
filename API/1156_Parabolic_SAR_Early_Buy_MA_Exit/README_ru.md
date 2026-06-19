@@ -1,5 +1,5 @@
 # Стратегия Parabolic SAR Early Buy MA Exit
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует развороты Parabolic SAR и преждевременно закрывает лонги, когда SAR оказывается выше цены, а закрытие ниже скользящей средней с периодом `MaPeriod`.
 

@@ -1,5 +1,5 @@
 # Donchian HL Width Cycle Information
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades based on Donchian channel width and cycle changes.
 

@@ -1,5 +1,5 @@
 # OHLC Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Momentum-following strategy that uses the classic %K/%D stochastic oscillator on OHLC candles.
 The algorithm reacts to crossovers in oversold/overbought zones and protects open trades with a configurable trailing stop measured in price steps.

@@ -1,5 +1,5 @@
 # MH Hull Moving Average Based Trading
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Hull Moving Average based breakout strategy.
 

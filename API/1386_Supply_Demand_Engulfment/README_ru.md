@@ -1,5 +1,5 @@
 # Supply Demand Engulfment
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует паттерны бычьего и медвежьего поглощения около зон поддержки и сопротивления Donchian.
 

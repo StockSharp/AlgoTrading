@@ -1,5 +1,5 @@
 # ZScore
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on Z-Score indicator for mean reversion trading
 

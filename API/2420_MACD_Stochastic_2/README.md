@@ -1,5 +1,5 @@
 # MACD Stochastic 2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader "MACD Stochastic 2" expert logic with StockSharp's high-level API. It combines a three-bar MACD swing filter with a stochastic oscillator to look for momentum reversals near oversold and overbought regions. Risk is controlled through direction-specific stops, take-profits, and an optional trailing stop that operates in pip units.
 

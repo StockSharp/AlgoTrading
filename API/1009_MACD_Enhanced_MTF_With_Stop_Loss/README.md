@@ -1,5 +1,5 @@
 # MACD Enhanced Strategy MTF with Stop Loss
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Multi-timeframe strategy using MACD-based scoring and an ATR-derived trailing stop line.
 

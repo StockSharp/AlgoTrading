@@ -1,5 +1,5 @@
 # Up3x1 Investor Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Up3x1 Investor strategy ports the classic MetaTrader expert advisor that reacts to strong expansion candles. It watches the latest completed bar on the configured timeframe and opens a new position on the following bar if the previous range and body were wide enough in the direction of the close.
 

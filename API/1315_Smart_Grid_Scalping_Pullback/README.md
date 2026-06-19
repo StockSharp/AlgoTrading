@@ -1,5 +1,5 @@
 # Smart Grid Scalping Pullback Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grid-based scalping strategy that expands ATR-driven price levels from a base price twenty bars back. Pullbacks are filtered with RSI before entries. Positions use a profit target and an ATR trailing stop.
 

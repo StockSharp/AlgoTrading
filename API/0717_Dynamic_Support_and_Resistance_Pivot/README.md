@@ -1,5 +1,5 @@
 # Dynamic Support and Resistance Pivot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy derives dynamic support and resistance levels from recent pivot highs and lows. It enters long when price crosses above support near the level and enters short when price crosses below resistance. Risk management uses fixed percentage stop-loss and take-profit levels.
 

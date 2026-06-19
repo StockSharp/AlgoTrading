@@ -1,5 +1,5 @@
 # AIS1 EURUSD Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the original AIS1 "A System: EURUSD Daily Metrics" expert advisor using StockSharp's high-level API. It trades EURUSD breakouts by comparing the current price action to the previous day's range and manages trades with adaptive position sizing plus a four-hour trailing stop.
 

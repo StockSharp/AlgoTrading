@@ -1,5 +1,5 @@
 # MMA Breakout Volume I Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts when the close price crosses a long-term Smoothed Moving Average (SMMA).
 A long position is opened when the price rises above the SMMA and a short position is opened when it falls below.

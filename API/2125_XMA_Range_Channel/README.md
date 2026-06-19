@@ -1,5 +1,5 @@
 # XMA Range Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that builds an upper and lower channel from moving averages of the high and low prices. A breakout above the upper band triggers a long entry, while a breakout below the lower band triggers a short entry. The model mirrors the behaviour of the original MQL "XMA Range Channel" expert.
 

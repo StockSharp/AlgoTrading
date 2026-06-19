@@ -1,5 +1,5 @@
 # Gold ORB Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy captures the high and low of the Asia session and trades breakouts during the following hours. Stops and targets are derived from the range size with a reward multiplier.
 

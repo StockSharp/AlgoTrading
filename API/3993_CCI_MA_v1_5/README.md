@@ -1,5 +1,5 @@
 # CCI MA v1.5 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy recreates the MetaTrader "CCI_MA v1.5" expert advisor inside the StockSharp high-level API. The original robot waits for the Commodity Channel Index (CCI) to cross a simple moving average calculated on the CCI values themselves and uses a secondary CCI to supervise exits around the ±100 thresholds. The StockSharp port keeps the same signal ordering, optional money management, and point-based stop/target distances while adapting everything to candle subscriptions and indicator bindings.
 

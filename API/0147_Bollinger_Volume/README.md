@@ -1,5 +1,5 @@
 # Bollinger Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy that uses Bollinger Bands breakouts with volume confirmation.
 Enters positions when price breaks above/below Bollinger Bands with increased volume.

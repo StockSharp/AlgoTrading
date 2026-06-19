@@ -1,5 +1,5 @@
 # Bayesian BBSMA Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy estimates the probability of the next candle breaking up or down using a Bayesian model built from Bollinger Bands and a simple moving average. Optional confirmation from Bill Williams' Accelerator and Alligator indicators can filter signals. When the probability of an upward break rises above the threshold, a long trade is opened. A high probability of a downward break triggers a short.
 

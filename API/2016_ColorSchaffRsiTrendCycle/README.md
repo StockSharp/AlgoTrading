@@ -1,5 +1,5 @@
 # Color Schaff RSI Trend Cycle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following system based on the Color Schaff RSI Trend Cycle (STC) oscillator. The strategy reacts to color transitions of the STC indicator to enter and exit both long and short positions.
 

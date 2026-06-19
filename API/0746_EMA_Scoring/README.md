@@ -1,5 +1,5 @@
 # EMA Scoring Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy evaluates market direction using three EMA lines and trades when a score threshold is crossed.
 

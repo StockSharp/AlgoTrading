@@ -1,5 +1,5 @@
 # Стратегия Most Powerful TQQQ EMA Crossover
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия входит в лонг при пересечении быстрой EMA выше медленной. Тейк-профит и стоп-лосс задаются как множители от цены входа.
 

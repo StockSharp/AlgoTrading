@@ -1,5 +1,5 @@
 # BBTrend SuperTrend Decision Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy derives the **BBTrend** value from two Bollinger Bands with different lengths and
 feeds it into a SuperTrend calculation. The resulting SuperTrend direction decides whether to

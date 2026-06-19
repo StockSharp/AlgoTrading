@@ -1,5 +1,5 @@
 # DoubleUp2 CCI MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 DoubleUp2 is a martingale-style strategy combining the Commodity Channel Index (CCI) and MACD.
 It opens short positions when both indicators show extreme positive values and long positions when both are extremely negative.

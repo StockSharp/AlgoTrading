@@ -1,5 +1,5 @@
 # DeMarker Gaining Position Volume 2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader 5 expert advisor **"DeMarker gaining position volume 2"** using StockSharp's high-level API. It analyses a configurable candle series with the DeMarker oscillator and reacts when the value enters extreme zones. The implementation keeps the original money-management flavour with fixed lot sizing, optional reversal of signals, built-in stop-loss/take-profit handling and an optional trading-session filter.
 

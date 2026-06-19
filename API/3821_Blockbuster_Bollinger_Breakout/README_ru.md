@@ -1,5 +1,5 @@
 # Стратегия Blockbuster Bollinger Breakout
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Blockbuster Bollinger Breakout — это перенос эксперт-советника MetaTrader 4 «BLOCKBUSTER EA» в инфраструктуру StockSharp. Оригинальная версия искала агрессивные развороты после рывка цены за пределы полос Боллинджера с дополнительным отступом. Переписанная стратегия сохраняет ключевые параметры и правила сопровождения сделок, но использует высокоуровневый API StockSharp.
 

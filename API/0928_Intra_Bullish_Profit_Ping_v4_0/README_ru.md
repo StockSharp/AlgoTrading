@@ -1,5 +1,5 @@
 # Стратегия Intra Bullish Strategy - Profit Ping v4.0
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Лонговая система, входящая при пересечении EMA вверх с подтверждением по MACD и RSI.
 

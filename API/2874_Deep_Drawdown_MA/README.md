@@ -42,4 +42,4 @@ The Deep Drawdown MA Strategy is a direct conversion of the MetaTrader 5 expert 
 
 ## Files
 - `CS/DeepDrawdownMaStrategy.cs` – C# implementation using the StockSharp high-level API.
-- `README.md`, `README_ru.md`, `README_cn.md` – Multilingual documentation of strategy behaviour and parameters.
+- `README.md`, `README_ru.md`, `README_zh.md` – Multilingual documentation of strategy behaviour and parameters.

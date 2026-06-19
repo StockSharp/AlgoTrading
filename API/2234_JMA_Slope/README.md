@@ -1,5 +1,5 @@
 # JMA Slope Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy monitors the slope of the Jurik Moving Average (JMA). A position is opened when the slope crosses zero or when its direction changes depending on the selected mode.
 

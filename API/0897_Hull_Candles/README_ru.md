@@ -1,5 +1,5 @@
 # Hull Candles
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Hull Candles** — простая трендовая стратегия, использующая Hull Moving Average, рассчитанную по среднему значению OHLC каждой свечи. При росте HMA и закрытии выше её SMA стратегия открывает лонг; при падении HMA и закрытии ниже SMA — шорт.
 

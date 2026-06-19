@@ -1,5 +1,5 @@
 # Color HMA Reversal
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Hull Moving Average slope changes. It closes positions against the new direction and opens positions along the trend when the Hull MA reverses.
 

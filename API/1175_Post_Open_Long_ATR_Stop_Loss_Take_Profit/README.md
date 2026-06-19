@@ -1,5 +1,5 @@
 # Post Open Long ATR Stop Loss Take Profit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy enters a long position during market open after a breakout from resistance while price stays near the Bollinger basis. It uses EMA, RSI, ADX and ATR filters and exits via ATR-based stop loss and take profit.
 

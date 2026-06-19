@@ -1,5 +1,5 @@
 # Ha MaZi
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines Heikin Ashi candles, an EMA filter, and ZigZag pivot confirmation. A long trade is opened when a bullish Heikin Ashi candle forms at a new ZigZag low above the EMA. Shorts appear on a bearish candle at a new ZigZag high below the EMA. Positions are closed by fixed stop loss or take profit.
 

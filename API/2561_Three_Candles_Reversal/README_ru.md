@@ -1,5 +1,5 @@
 # Стратегия «Three Candles Reversal»
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Данная стратегия является переносом советника `Exp_ThreeCandles` из MQL5 в инфраструктуру StockSharp. Она ищет классический разворот из трёх свечей:
 

@@ -1,5 +1,5 @@
 # SPY TLT Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy buys the main security when the TLT price crosses above its SMA and exits when TLT closes below the SMA. Trading is allowed only within the specified time window.
 

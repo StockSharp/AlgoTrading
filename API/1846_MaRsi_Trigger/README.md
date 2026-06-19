@@ -1,5 +1,5 @@
 # MaRsi Trigger Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines fast and slow exponential moving averages (EMA) with RSI to detect trend reversals.
 When the fast EMA and fast RSI are both above their slow counterparts, it treats the market as bullish and opens a long position.

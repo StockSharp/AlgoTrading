@@ -1,5 +1,5 @@
 # Zig Zag Aroon Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combines simple ZigZag pivot detection with the Aroon indicator. It buys when Aroon Up crosses above Aroon Down and the latest pivot is a high. Short positions are opened when Aroon Down crosses above Aroon Up and the last pivot is a low.
 

@@ -1,5 +1,5 @@
 # Стратегия TrendGuard Flag Finder
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 TrendGuard Flag Finder ищет бычьи и медвежьи флаги с подтверждением SuperTrend.
 Покупает при пробое бычьего флага и продаёт при пробое медвежьего флага.

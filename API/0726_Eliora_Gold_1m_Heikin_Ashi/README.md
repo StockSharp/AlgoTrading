@@ -1,5 +1,5 @@
 # Eliora Gold 1m Heikin Ashi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses Heikin Ashi candles on a one-minute timeframe. It enters on strong trend-aligned candles when the market is not consolidating and enforces a cooldown between trades. Exits are handled by an ATR-based trailing stop.
 

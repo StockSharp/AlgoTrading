@@ -1,5 +1,5 @@
 # Golden Ratio Cubes Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Golden Ratio Cubes strategy uses Fibonacci mathematics to detect breakouts. It tracks the highest high and lowest low over a lookback window and computes extensions based on the golden ratio (φ ≈ 1.618). When price closes beyond these extensions, the strategy enters in the breakout direction.
 

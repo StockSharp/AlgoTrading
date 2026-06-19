@@ -1,5 +1,5 @@
 # Random Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Random Trailing Stop Strategy opens random trades biased by a simple moving average and manages them using a trailing stop.
 

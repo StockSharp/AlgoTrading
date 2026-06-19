@@ -1,5 +1,5 @@
 # Lucky Shift Limit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Lucky Shift Limit** strategy is a direct conversion of the MetaTrader 4 expert advisor `Lucky_acnl6p6j89zn91fa.mq4`. It watches the best bid/ask quotes in real time and reacts to sudden jumps measured in MetaTrader "points" (pips). When the ask price accelerates upward by the configured shift distance the strategy fades the move by selling, while a sharp drop in the bid prompts a contrarian buy. All open trades are constantly monitored and closed either once they become profitable or when the floating loss exceeds a safety threshold identical to the original MQ4 logic.
 

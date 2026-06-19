@@ -1,5 +1,5 @@
 # Стратегия Z-Strike Recovery
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Открывает длинную позицию, когда z-score изменения цены превышает порог, и закрывает её через заданное число баров.
 

@@ -1,5 +1,5 @@
 # Black-Scholes Option Pricing
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Calculates theoretical option prices using the Black-Scholes model.
 Provides call or put price depending on the selected type.

@@ -1,5 +1,5 @@
 # Currency Momentum Factor Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This factor strategy ranks currencies by medium‑term momentum and builds a long/short portfolio. Currencies with the strongest performance over the lookback window are bought, while the weakest are shorted in equal sizes.
 

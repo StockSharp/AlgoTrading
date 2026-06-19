@@ -1,5 +1,5 @@
 # Supply Demand Engulfment
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades bullish and bearish engulfing patterns near Donchian support and resistance zones.
 

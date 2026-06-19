@@ -1,5 +1,5 @@
 # Color Stochastic NR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades using a Stochastic oscillator with several selectable modes. Each mode defines how the %K and %D lines are interpreted to generate buy and sell signals.
 

@@ -1,5 +1,5 @@
 # Parabolic Sar Rsi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy that combines Parabolic SAR for trend direction and RSI for entry confirmation with oversold/overbought conditions.
 

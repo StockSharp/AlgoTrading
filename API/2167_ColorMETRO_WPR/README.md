@@ -1,5 +1,5 @@
 # ColorMETRO WPR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the ColorMETRO Williams %R indicator, which builds fast and slow step lines around the Williams %R oscillator.
 The fast line reacts quickly to price changes, while the slow line smooths out noise. Trading decisions are made when these lines

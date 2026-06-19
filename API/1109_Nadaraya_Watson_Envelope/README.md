@@ -1,5 +1,5 @@
 # Nadaraya-Watson Envelope Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Builds Nadaraya-Watson kernel regression envelopes in log scale. Goes long when price crosses above the lower envelope and optionally goes short when price crosses below the upper envelope.
 

@@ -1,5 +1,5 @@
 # Стратегия Moving Average Rainbow (Stormer)
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия строит радугу из двенадцати скользящих средних. Сделки открываются, когда тренд подтверждён и цена касается одной из средних.
 

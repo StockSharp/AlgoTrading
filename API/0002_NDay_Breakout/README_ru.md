@@ -1,5 +1,5 @@
 # Прорыв N-дневного диапазона
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия прорыва максимумов и минимумов за N дней.
 

@@ -1,5 +1,5 @@
 # Safa Bot Alert Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Safa Bot Alert strategy uses a short SMA with an ADX filter to trade price crossovers. It enters long when price crosses above the SMA with strong trend strength and enters short on crosses below. Fixed take profit, stop loss and a trailing stop manage positions, and all trades close at a specified session time.
 

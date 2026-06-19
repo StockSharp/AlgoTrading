@@ -1,5 +1,5 @@
 # Breakout 04 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades breakouts of the previous day's range.
 Buys when price moves above the prior daily high and sells when price falls below the prior daily low.

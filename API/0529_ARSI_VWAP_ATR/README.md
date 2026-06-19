@@ -1,5 +1,5 @@
 # Arsi Vwap Atr Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive RSI strategy where overbought and oversold levels expand or contract based on ATR or the deviation from VWAP. Positions are opened on RSI crossovers of the adaptive levels and closed when RSI returns to the mid-zone.
 

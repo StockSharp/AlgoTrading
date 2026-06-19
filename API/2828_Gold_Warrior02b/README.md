@@ -1,5 +1,5 @@
 # GoldWarrior02b Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Algorithmic strategy converted from the MetaTrader expert advisor *GoldWarrior02b*.
 It combines an impulse gauge, Commodity Channel Index (CCI) and a simple ZigZag swing detector

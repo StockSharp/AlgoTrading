@@ -1,5 +1,5 @@
 # Aver4 Stoch Post ZigZag
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines four Stochastic oscillators across multiple time horizons and a simple ZigZag pivot detector. The average Stochastic guides overbought/oversold levels while the ZigZag confirms swing highs and lows. Buys occur when the averaged Stochastic falls below the oversold level and a new ZigZag low forms. Sells occur when the averaged Stochastic rises above the overbought level and a new ZigZag high forms. Existing opposite positions are closed on signal reversal.
 

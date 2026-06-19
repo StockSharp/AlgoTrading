@@ -1,5 +1,5 @@
 # 3Commas HA & MA
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses Heikin Ashi candles and a pair of exponential moving averages. A long trade occurs when a bearish HA candle is followed by a bullish one while the fast MA is above the slow MA. Shorts follow the opposite setup. Positions are closed when price crosses the slow MA or hits the swing stop.
 

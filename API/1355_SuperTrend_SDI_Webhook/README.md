@@ -1,5 +1,5 @@
 # SuperTrend SDI Webhook Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on SuperTrend and Smoothed Directional Indicator (SDI). It enters long when +DI is above -DI and SuperTrend indicates an uptrend. Short positions open when -DI is above +DI and SuperTrend points down. The strategy applies percent take profit, stop loss and trailing stop.
 

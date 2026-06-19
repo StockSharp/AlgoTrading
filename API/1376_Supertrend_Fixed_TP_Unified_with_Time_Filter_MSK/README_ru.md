@@ -1,5 +1,5 @@
 # Стратегия Supertrend Fixed Tp Unified With Time Filter Msk
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на основе индикатора Supertrend с фиксированным тейк-профитом, ценовым фильтром и временным фильтром по московскому времени.
 

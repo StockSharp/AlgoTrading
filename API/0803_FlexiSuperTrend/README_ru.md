@@ -1,5 +1,5 @@
 # Стратегия FlexiSuperTrend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает фильтр SuperTrend и сглаженный осциллятор отклонения.
 Позиция открывается, когда цена совпадает с направлением SuperTrend и

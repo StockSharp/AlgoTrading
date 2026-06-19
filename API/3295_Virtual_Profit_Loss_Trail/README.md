@@ -45,5 +45,5 @@ All distances are measured in pip units. The strategy automatically derives the 
 
 - `CS/VirtualProfitLossTrailStrategy.cs` – C# implementation of the strategy.
 - `README.md` – this documentation.
-- `README_cn.md` – Simplified Chinese translation.
+- `README_zh.md` – Simplified Chinese translation.
 - `README_ru.md` – Russian translation.

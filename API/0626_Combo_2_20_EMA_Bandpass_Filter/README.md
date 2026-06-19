@@ -1,5 +1,5 @@
 # Combo 2/20 EMA Bandpass Filter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines a fast and slow EMA crossover with a bandpass filter. Long positions are opened when the fast EMA is above the slow EMA and the bandpass value breaks above the sell zone. Short positions are opened when the fast EMA is below the slow EMA and the bandpass value falls below the buy zone. Positions are closed if signals disappear or before the start date.
 

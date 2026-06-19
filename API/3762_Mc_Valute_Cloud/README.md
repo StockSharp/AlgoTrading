@@ -55,5 +55,5 @@ to a single exposure in each direction so that the logic fits naturally into the
 - `CS/McValuteCloudStrategy.cs` – C# implementation using the high-level Strategy API with indicator bindings and detailed
   comments.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Simplified Chinese translation.
+- `README_zh.md` – Simplified Chinese translation.
 - `README_ru.md` – Russian translation.

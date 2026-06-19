@@ -1,5 +1,5 @@
 # Trendless AG Histogram Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades reversals detected by the **Trendless AG Histogram** indicator. The indicator measures the distance between price and a smoothed moving average and then smooths the result again, forming a histogram around zero. Local minima indicate potential upward reversals while local maxima suggest downward reversals.
 

@@ -1,5 +1,5 @@
 # BBands Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the BBands Stop indicator derived from Bollinger Bands to follow market trends. When the stop line flips upward, it closes any short position and opens a long one. A downward flip closes long positions and opens short. Parameters control Bollinger period, deviation, risk offset and permissions for entering or exiting longs and shorts.
 

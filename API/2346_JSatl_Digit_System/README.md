@@ -1,5 +1,5 @@
 # JSatl Digit System
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The JSatl Digit System uses a Jurik Moving Average (JMA) to determine trend direction.
 The strategy measures the slope of the JMA and opens a position when price confirms the slope direction.

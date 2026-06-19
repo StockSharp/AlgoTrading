@@ -1,5 +1,5 @@
 # Improved EMA & CDC Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines EMA trend filter, MACD confirmation and an ATR-based CDC trailing stop.
 

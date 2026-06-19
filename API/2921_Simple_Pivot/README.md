@@ -1,5 +1,5 @@
 # Simple Pivot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the "SimplePivot" MetaTrader 5 expert advisor. It continuously evaluates the relationship between the
 current bar open and the prior bar's pivot level, always maintaining a single directional position. When the bias flips, the

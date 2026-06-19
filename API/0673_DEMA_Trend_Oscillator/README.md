@@ -1,5 +1,5 @@
 # DEMA Trend Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy normalizes the Double Exponential Moving Average (DEMA) with a moving average and standard deviation. Goes long when the normalized value exceeds the long threshold and price stays above the upper band; goes short when below the short threshold and price stays under the lower band. Uses ATR based trailing stop, band stop-loss and risk-reward take profit.
 

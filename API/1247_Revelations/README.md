@@ -1,5 +1,5 @@
 # Revelations Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A volatility breakout strategy that enters on strong ATR spikes confirmed by local extrema and a regime index. Position size adapts to spike strength.
 

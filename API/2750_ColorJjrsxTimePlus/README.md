@@ -1,5 +1,5 @@
 # Color JJRSX Time Plus Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Converted from the MetaTrader5 expert `Exp_ColorJJRSX_Tm_Plus`. The strategy trades trend reversals detected with a Jurik-smoothed RSI oscillator and includes optional time-based exits, mimicking the original money-management toggles.
 

@@ -1,5 +1,5 @@
 # Function Adf
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Модуль **Function Adf** реализует тест Дики—Фуллера (ADF) для проверки стационарности временного ряда.
 

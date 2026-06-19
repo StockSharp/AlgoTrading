@@ -1,5 +1,5 @@
 # Grid TLong V1 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grid-based strategy that continuously maintains a position. It re-enters positions when profit or loss reaches a fixed percent step.
 

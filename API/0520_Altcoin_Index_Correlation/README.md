@@ -1,5 +1,5 @@
 # Altcoin Index Correlation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy compares EMA trends on the traded instrument and a reference index. It opens long when both fast EMAs are above their slow EMAs, and short when both are below. Optional inverse logic allows trading against the index trend or skipping the index completely.
 

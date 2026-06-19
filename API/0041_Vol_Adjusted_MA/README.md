@@ -1,5 +1,5 @@
 # Volatility Adjusted Moving Average
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This technique modifies a moving average band by a multiple of ATR. When price moves beyond the adjusted band, it indicates an accelerated trend.
 

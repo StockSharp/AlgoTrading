@@ -57,7 +57,7 @@ All distances expressed in pips are converted to absolute prices using the instr
 
 - `CS/EasiestRsiStrategy.cs` – Strategy implementation.
 - `README.md` – This document.
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.
 - `README_ru.md` – Russian translation.
 
 Python implementation is intentionally omitted as requested.

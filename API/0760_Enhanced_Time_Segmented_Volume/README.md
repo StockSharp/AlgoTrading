@@ -1,5 +1,5 @@
 # Enhanced Time Segmented Volume
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Enhanced Time Segmented Volume monitors volume‑weighted price changes. When the TSV is above its moving average and positive, the strategy buys. When the TSV is below the average and negative, it sells short.
 

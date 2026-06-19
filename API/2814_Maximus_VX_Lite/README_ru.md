@@ -1,5 +1,5 @@
 # Стратегия Maximus vX Lite
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Конверсия советника MetaTrader 5 «maximus_vX lite» на высокоуровневый API StockSharp.
 Стратегия ищет зоны консолидации выше и ниже текущей цены и ждёт, пока цена не уйдёт на заданное число пунктов

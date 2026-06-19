@@ -1,5 +1,5 @@
 # Linear On MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия объединяет сигналы MACD по цене и объёму с линейной регрессией.
 

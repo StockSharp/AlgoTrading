@@ -1,5 +1,5 @@
 # Moving Average Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Buys when the short SMA crosses above the long SMA and sells when it crosses below. Positions reverse on opposite signals.
 

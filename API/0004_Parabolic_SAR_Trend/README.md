@@ -1,5 +1,5 @@
 # Parabolic SAR Trend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on Parabolic SAR indicator Parabolic SAR Trend follows the dots of the Parabolic SAR indicator. A flip of price from one side of the SAR to the other marks a potential trend change. If price crosses back, the trade is closed.
 

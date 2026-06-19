@@ -40,5 +40,5 @@ The FX-CHAOS scalp strategy replicates the MT5 expert advisor that combines the 
 
 ## Files
 - `CS/FxChaosScalpStrategy.cs` – strategy implementation with the ZigZag tracker, Awesome Oscillator filter, and order logic.
-- `README_cn.md` – documentation in Simplified Chinese.
+- `README_zh.md` – documentation in Simplified Chinese.
 - `README_ru.md` – documentation in Russian.

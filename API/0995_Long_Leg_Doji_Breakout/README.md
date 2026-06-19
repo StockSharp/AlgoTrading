@@ -1,5 +1,5 @@
 # Long-Leg Doji Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Long-Leg Doji Breakout strategy identifies long-legged doji candles and trades breakouts above or below the doji range. An optional ATR filter ensures wicks are sufficiently long.
 

@@ -1,5 +1,5 @@
 # Channel Trailing Stop
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using Donchian channel breakout entries and trailing stop management.
 

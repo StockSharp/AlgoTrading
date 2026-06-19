@@ -1,5 +1,5 @@
 # Magic Wand STSM Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A trend-following system using the Supertrend indicator with a 200-period SMA filter. It trades in the direction of the Supertrend and uses the line as a stop, targeting a configurable risk–reward take profit.
 

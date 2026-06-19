@@ -1,5 +1,5 @@
 # Big Runner Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Big Runner strategy trades when the closing price and a fast SMA both cross in the direction of a slower SMA, indicating strong momentum. Position size is derived from a percentage of portfolio value multiplied by leverage. Optional stop-loss and take-profit levels manage risk.
 

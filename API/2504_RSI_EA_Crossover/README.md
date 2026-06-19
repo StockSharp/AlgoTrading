@@ -1,5 +1,5 @@
 # RSI EA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The RSI EA strategy replicates the MetaTrader 5 "RSI EA" expert advisor. It watches the Relative Strength Index (RSI) on the selected candle series and reacts when momentum crosses configurable oversold or overbought levels. The conversion keeps the stop-loss, take-profit, trailing-stop, and automatic money-management ideas of the original system while adapting them to the StockSharp high-level strategy API.
 

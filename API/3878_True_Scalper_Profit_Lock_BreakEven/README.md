@@ -42,6 +42,6 @@ The True Scalper Profit Lock strategy is a conversion of the MetaTrader 4 expert
 ## Files
 
 - `CS/TrueScalperProfitLockBreakEvenStrategy.cs` – C# implementation of the strategy.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.
 

@@ -1,5 +1,5 @@
 # Стратегия TSI DeMarker
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия рассчитывает индикатор True Strength Index на основе осциллятора DeMarker.
 Длинная позиция открывается, когда TSI пересекает снизу вверх свою сигнальную скользящую среднюю.

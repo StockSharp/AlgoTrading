@@ -1,5 +1,5 @@
 # Linear Mean Reversion Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Linear Mean Reversion Strategy** — стратегия возврата к среднему, основанная на z-скор (число стандартных отклонений цены от среднего). Использует фиксированный стоп-лосс в пунктах.
 

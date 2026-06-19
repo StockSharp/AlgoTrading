@@ -1,5 +1,5 @@
 # OBV Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 On-Balance Volume (OBV) tracks buying and selling pressure by accumulating volume. This strategy looks for OBV to break above a high or below a low over the lookback window while price confirms the move.
 

@@ -1,5 +1,5 @@
 # Fibonacci Auto Trend Scouter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses two rolling extremes based on Fibonacci numbers to scout emerging trends. The short window (8) tracks recent highs and lows while the long window (21) provides context. A long position is opened when the short-term high exceeds the long-term high. A short position opens when the short-term low falls below the long-term low.
 

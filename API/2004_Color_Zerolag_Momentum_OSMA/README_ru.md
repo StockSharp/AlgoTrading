@@ -1,5 +1,5 @@
 # Стратегия Color Zerolag Momentum OSMA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия строит пользовательский осциллятор zero-lag momentum OSMA на основе пяти индикаторов Momentum.
 Если значение осциллятора два бара назад ниже значения три бара назад, считается, что тренд направлен вверх.

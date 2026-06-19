@@ -1,5 +1,5 @@
 # Mateo's Time of Day Analysis LE
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Открывает длинную позицию в заданном внутридневном окне и закрывает её позже в течение дня.
 

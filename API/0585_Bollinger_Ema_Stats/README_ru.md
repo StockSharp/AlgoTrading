@@ -1,5 +1,5 @@
 # Стратегия Bollinger EMA Stats
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия использует два набора полос Боллинджера для определения зон входа и стопов и EMA в качестве цели выхода.
 

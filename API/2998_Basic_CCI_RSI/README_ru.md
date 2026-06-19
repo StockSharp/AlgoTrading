@@ -1,5 +1,5 @@
 # Стратегия Basic CCI RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Basic CCI RSI повторяет оригинального советника MetaTrader, который ожидает подтверждения импульса от индикаторов Commodity Channel Index (CCI) и Relative Strength Index (RSI) на двух подряд закрытых свечах перед открытием сделки. В версии для StockSharp сохранены все правила управления рисками в пунктах, расстояния автоматически переводятся в шаги цены, а логика трейлинг-стопа полностью повторяет функцию `Trailing()` из MQL5.
 

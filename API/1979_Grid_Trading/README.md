@@ -1,5 +1,5 @@
 # Grid Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements a basic grid trading system. It places buy stop and sell stop orders at fixed price intervals defined by `GridStep`. Each executed order uses a fixed take profit distance. A global profit target closes all positions and resets the grid. Optionally, the volume of new orders increases following a martingale scheme.
 

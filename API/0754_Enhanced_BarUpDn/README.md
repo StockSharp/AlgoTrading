@@ -1,5 +1,5 @@
 # Enhanced BarUpDn Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy looks for bullish or bearish bars combined with Bollinger Bands and trend confirmation. It enters long on bullish gaps in uptrends and short on bearish gaps in downtrends. Exits use ATR-based stop-loss and take-profit levels.
 

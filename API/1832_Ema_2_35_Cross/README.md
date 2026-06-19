@@ -1,5 +1,5 @@
 # EMA 2-35 Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy follows a simple crossover between two Exponential Moving Averages. The fast EMA with length 2 reacts quickly to price changes, while the slow EMA with length 35 represents the longer-term trend. A position is opened when the fast EMA crosses the slow EMA; positions are reversed when the opposite crossover occurs.
 

@@ -1,5 +1,5 @@
 # Market Trend Levels Non-Repainting
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 EMA crossover strategy that optionally filters trades using RSI. Long positions open when the fast EMA crosses above the slow EMA, while short trades trigger on the opposite cross. When `ApplyExitFilters` is enabled and the RSI filter is active, positions close if the RSI leaves the allowed zone.
 

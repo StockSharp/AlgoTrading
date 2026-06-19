@@ -1,5 +1,5 @@
 # Стратегия The Weekly Factor
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Реализует паттерн Weekly Factor, описанный Андреа Унгером. Стратегия торгует пробои максимума или минимума сессии при сжатии пятидневного диапазона.
 

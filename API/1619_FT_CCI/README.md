@@ -1,5 +1,5 @@
 # FT CCI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor "FT_CCI (barabashkakvn's edition)". It uses the Commodity Channel Index (CCI) to capture sharp reversals once the oscillator stretches far away from its mean. The system mirrors the original logic: when CCI pierces the lower band it flips long, and when it pierces the upper band it flips short. Optional stop-loss and take-profit values are entered in pips and automatically converted into price offsets.
 

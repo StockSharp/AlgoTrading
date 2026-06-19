@@ -1,5 +1,5 @@
 # Стратегия Simplistic Automatic Growth Models
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия строит полосы из накопительных средних максимумов и минимумов и входит в сделки при их пробое.
 

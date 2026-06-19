@@ -1,5 +1,5 @@
 # SuperTrend AI Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 SuperTrend AI Oscillator combines a SuperTrend trailing stop with a custom oscillator filter.
 The strategy trades on SuperTrend reversals confirmed by the oscillator.

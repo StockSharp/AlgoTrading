@@ -1,5 +1,5 @@
 # Liquidity Engulfment Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects bullish and bearish engulfing patterns that occur after price touches recent liquidity highs or lows. Trades are filtered by mode and include fixed stop loss and optional take profit defined in pips.
 

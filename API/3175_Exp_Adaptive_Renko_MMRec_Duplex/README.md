@@ -32,4 +32,4 @@ This strategy ports the MetaTrader 5 expert advisor **Exp_AdaptiveRenko_MMRec_Du
 - `CS/ExpAdaptiveRenkoMmrecDuplexStrategy.cs` – strategy implementation with the Adaptive Renko processor and MMRec module.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.

@@ -1,5 +1,5 @@
 # Nasdaq Day and Night Breakdown
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Compares pre-market and regular session movements of Nasdaq futures and the Nasdaq index.
 Calculates differences before and after market open and shows intraday swings.

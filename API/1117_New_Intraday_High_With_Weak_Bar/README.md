@@ -1,5 +1,5 @@
 # New Intraday High With Weak Bar Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Enters long on a new `HighestLength`-bar high when the candle closes near its low. Exits when price closes above the prior bar's high.
 

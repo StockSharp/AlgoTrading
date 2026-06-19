@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Turtle Trader follows the classic Turtle breakout system using Donchian channels and ATR based money management. It buys when price breaks above recent highs and sells when it falls below recent lows. Pyramiding adds to winning positions as price moves in favor.
 

@@ -1,5 +1,5 @@
 # RPoint 250 Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **RPoint 250 Reversal Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `e_RPoint_250`. The original robot
 relies on a custom indicator called *RPoint* that highlights the most recent swing high and swing low. Because that indicator is

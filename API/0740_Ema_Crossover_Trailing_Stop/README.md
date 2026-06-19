@@ -1,5 +1,5 @@
 # EMA Crossover Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **EMA Crossover Trailing Stop Strategy** opens a long position when the short EMA crosses above the long EMA and opens a short position when it crosses below. A trailing stop based on the highest or lowest price after entry closes the position when price reverses by a set percentage.
 

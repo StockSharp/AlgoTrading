@@ -1,5 +1,5 @@
 # Modified OBV with Divergence Detection
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy smooths On-Balance Volume (OBV) with a selectable moving average and generates a signal line. Trades occur when the smoothed OBV crosses the signal. Additionally, the strategy logs regular and hidden divergences between price and OBV using fractal detection.
 

@@ -1,5 +1,5 @@
 # R Based Strategy Template
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на основе RSI с управлением риском и несколькими типами стопов.
 

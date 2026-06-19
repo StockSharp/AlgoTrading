@@ -1,5 +1,5 @@
 # Bollinger Divergence
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Bollinger Divergence hunts for extremes where price pierces a band yet the
 opposite band begins to contract.  This divergence between price momentum and

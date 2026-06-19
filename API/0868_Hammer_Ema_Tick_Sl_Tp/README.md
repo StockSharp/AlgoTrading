@@ -1,5 +1,5 @@
 # Hammer + EMA Strategy with Tick-based SL/TP
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines hammer and inverted hammer candlestick patterns with an EMA trend filter and tick-based risk management.
 

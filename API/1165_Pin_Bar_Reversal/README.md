@@ -1,5 +1,5 @@
 # Pin Bar Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses pin bar candles with a trend filter and ATR-based stops and targets. A bullish pin bar above the SMA opens a long position, while a bearish one below it opens a short. Entries are skipped when volatility is too low.
 

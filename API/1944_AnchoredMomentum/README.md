@@ -1,5 +1,5 @@
 # Anchored Momentum
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Anchored Momentum strategy calculates the ratio between EMA and SMA of candle closing prices. When momentum rises above an upper threshold it opens long positions, and when it falls below a lower threshold it opens short positions. Opposite signals close current positions.
 

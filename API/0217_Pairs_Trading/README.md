@@ -1,5 +1,5 @@
 # Pairs Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This pairs trading strategy monitors the price spread between two correlated instruments. By comparing the spread to its historical mean and standard deviation, the system attempts to exploit temporary divergences that eventually revert.
 

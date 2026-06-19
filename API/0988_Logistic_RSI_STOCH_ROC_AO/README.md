@@ -1,5 +1,5 @@
 # Logistic RSI STOCH ROC AO
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy applies a logistic map to a selected indicator (AO, ROC, RSI, Stochastic) and trades when the signed standard deviation crosses zero.
 

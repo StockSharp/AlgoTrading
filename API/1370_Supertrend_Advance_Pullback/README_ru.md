@@ -1,5 +1,5 @@
 # Стратегия Supertrend Advance Pullback
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Supertrend Advance Pullback сочетает Supertrend с входами по откату или смене тренда. Дополнительные фильтры EMA, RSI, MACD и CCI уточняют сигналы.
 

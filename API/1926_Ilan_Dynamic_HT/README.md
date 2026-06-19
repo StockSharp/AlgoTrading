@@ -1,5 +1,5 @@
 # Ilan Dynamic HT Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grid-based martingale strategy that opens positions based on RSI signals and expands the position using a dynamic price range. Each additional trade increases volume by a multiplier and shares the same take profit and stop loss.
 

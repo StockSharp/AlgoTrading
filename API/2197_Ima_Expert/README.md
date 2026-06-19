@@ -1,5 +1,5 @@
 # IMA Expert Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy trading on the relative speed of price against its moving average.
 The ratio `Close / SMA - 1` is compared between two consecutive candles. A strong increase opens a long position, while a strong decrease opens a short position.

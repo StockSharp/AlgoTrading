@@ -1,5 +1,5 @@
 # Fractal ZigZag Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a direct port of the MetaTrader 4 expert advisor **Fractal ZigZag Expert.mq4**. It rebuilds the Bill Williams
 fractal sequence and interprets the most recent confirmed extremum as the active market leg. When the latest valid fractal is a

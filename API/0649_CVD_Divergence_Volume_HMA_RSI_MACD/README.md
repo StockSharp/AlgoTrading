@@ -1,5 +1,5 @@
 # CVD Divergence Volume HMA RSI MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines Hull Moving Averages, RSI, MACD, volume filter, and cumulative volume delta (CVD) divergence to identify trend opportunities.
 

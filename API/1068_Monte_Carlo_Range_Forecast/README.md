@@ -1,5 +1,5 @@
 # Monte Carlo Range Forecast
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Monte Carlo Range Forecast uses Monte Carlo simulations with ATR-based volatility to project future price range. The strategy enters long when the average simulated price exceeds the current price and enters short when it falls below.
 

@@ -1,5 +1,5 @@
 # Hybrid RSI Breakout Dashboard
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combines RSI mean reversion with breakout entries filtered by ADX and a 200 EMA.
 

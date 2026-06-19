@@ -72,6 +72,6 @@ All parameters are configured through `StrategyParam<T>` so they can be optimize
 ## Files
 
 - `CS/DealersTradeV751RivotStrategy.cs` – Main C# implementation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.
 

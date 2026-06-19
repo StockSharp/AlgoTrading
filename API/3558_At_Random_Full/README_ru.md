@@ -1,5 +1,5 @@
 # Стратегия At Random Full
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 ## Обзор
 **At Random Full** — это аккуратный перенос советника MetaTrader 5 «At random Full». В конверсии сохранены случайный выбор 

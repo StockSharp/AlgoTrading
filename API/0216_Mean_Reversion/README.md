@@ -1,5 +1,5 @@
 # Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This statistical approach looks for short-term extremes in price relative to its recent average. The strategy uses a moving average to define fair value and measures the deviation from that mean through a standard deviation calculation.
 

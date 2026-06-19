@@ -1,5 +1,5 @@
 # Ultimate Balance Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Ultimate Balance Strategy blends ROC, RSI, CCI, Williams %R and ADX into a weighted oscillator. A moving average of this oscillator generates signals: crossing above an oversold level triggers a long, while crossing below an overbought level closes or reverses.
 

@@ -1,5 +1,5 @@
 # Стратегия VR Steals 2
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Конвертация советника MetaTrader 5 «VR---STEALS-2» для платформы StockSharp. Стратегия открывает одну длинную позицию и управляет ею фиксированными уровнями без использования индикаторов.
 

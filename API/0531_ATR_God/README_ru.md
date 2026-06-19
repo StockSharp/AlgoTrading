@@ -1,5 +1,5 @@
 # ATR GOD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует индикатор Supertrend для входа и ATR для выставления стоп-лосса и тейк-профита.
 

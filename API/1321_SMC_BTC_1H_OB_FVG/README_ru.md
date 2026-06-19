@@ -1,5 +1,5 @@
 # SMC Strategy BTC 1H OB FVG
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Smart Money Concepts для Биткоина на часовом таймфрейме. После бычьего пробоя структуры система покупает при возврате цены в область ордерного блока или fair value gap. Стоп‑лосс рассчитывается по ATR, тейк‑профит по соотношению риск/прибыль.
 

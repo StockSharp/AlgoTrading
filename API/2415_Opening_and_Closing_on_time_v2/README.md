@@ -1,5 +1,5 @@
 # Opening and Closing on Time v2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A time-based strategy that opens trades at a specific time and closes them later in the day. Trade direction is confirmed by comparing a fast and a slow exponential moving average. Stop-loss and take-profit levels are expressed in ticks.
 

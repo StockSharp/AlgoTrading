@@ -1,5 +1,5 @@
 # Adx Cci Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on ADX and CCI indicators. Enters long when ADX > 25 and CCI is oversold (< -100) Enters short when ADX > 25 and CCI is overbought (> 100)
 

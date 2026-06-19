@@ -1,5 +1,5 @@
 # Стратегия Syndicate Trader
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия представляет собой перевод оригинального скрипта MetaTrader **Syndicate_Trader_v_1_04.mq4** из папки `MQL/12351` на платформу StockSharp.
 

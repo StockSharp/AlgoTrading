@@ -1,5 +1,5 @@
 # Ozymandias Trend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Ozymandias indicator. The indicator combines ATR with moving averages of highs and lows to build a dynamic channel. When direction switches from bearish to bullish, the strategy buys and closes short positions. A switch to bearish sells and closes longs. Optional take profit and stop loss parameters manage risk.
 

@@ -1,5 +1,5 @@
 # SMC Order Block Zones Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy identifies swing highs and lows to define premium and discount zones. A simple moving average acts as a trend filter and recent order blocks confirm entries. Trades are executed when price moves from one zone toward equilibrium with order block confirmation, using a percentage stop loss for protection.
 

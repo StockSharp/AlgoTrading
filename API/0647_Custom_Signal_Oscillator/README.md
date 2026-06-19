@@ -1,5 +1,5 @@
 # Custom Signal Oscillator
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using the difference between two price signals. It goes long when the oscillator crosses above zero and short when it crosses below zero. When long-only mode is enabled, negative crossings close the position.
 

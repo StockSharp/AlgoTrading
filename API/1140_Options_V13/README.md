@@ -1,5 +1,5 @@
 # Options Strategy V1.3
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 An EMA crossover strategy with RSI, ATR-based stop and take-profit, and volume filter. The system can optionally require a breakout of the opening range and closes positions at 15:55 New York time. Trading is blocked during predefined sessions and a user-specified no-trade interval.
 

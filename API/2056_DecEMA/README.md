@@ -1,5 +1,5 @@
 # DecEMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using the DecEMA indicator to follow trend direction. The indicator applies ten consecutive exponential smoothings and combines them to create a low-lag moving average. The strategy compares the last three DecEMA values. If the line turns upward and the latest value exceeds the previous one, it buys and closes any short position. If the line turns downward and the latest value is below the previous one, it sells and closes any long position.
 

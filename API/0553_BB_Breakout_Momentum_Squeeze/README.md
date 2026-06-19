@@ -1,5 +1,5 @@
 # BB Breakout Momentum Squeeze Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The BB Breakout Momentum Squeeze strategy combines a Bollinger Breakout oscillator with a volatility squeeze filter. The squeeze is detected when Bollinger Bands move outside Keltner Channels, signaling potential expansion. A long trade occurs when the bullish breakout oscillator crosses above the threshold during this expansion, while a short trade uses the bearish crossing. Stops are based on an ATR band and a risk‑reward target completes the exit logic.
 

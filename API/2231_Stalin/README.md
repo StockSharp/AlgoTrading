@@ -1,5 +1,5 @@
 # Stalin Indicator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the "Stalin" indicator logic from MQL5.
 It uses a pair of exponential moving averages (EMAs) and an optional RSI filter.

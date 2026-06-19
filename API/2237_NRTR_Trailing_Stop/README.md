@@ -1,5 +1,5 @@
 # NRTR Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy follows market trends using the **NRTR (Nick R's Trend Reverse)** indicator. The algorithm calculates a trailing stop level derived from the average range of recent candles. When price breaks the trailing level, the position reverses in the direction of the breakout. The system works on both long and short sides and includes optional stop-loss and take-profit protections.
 

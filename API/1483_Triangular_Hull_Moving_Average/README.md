@@ -1,5 +1,5 @@
 # Triangular Hull Moving Average
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Hull Moving Average cross with a two-bar lag.
 

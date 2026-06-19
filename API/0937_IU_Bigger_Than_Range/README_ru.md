@@ -1,5 +1,5 @@
 # Стратегия "IU Bigger Than Range"
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пробоя, открывающая сделки, когда тело свечи больше предыдущего диапазона за заданный период.
 

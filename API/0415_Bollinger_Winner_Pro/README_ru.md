@@ -1,5 +1,5 @@
 # Bollinger Winner Pro
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Bollinger Winner Pro** дополняет версию Lite модульными фильтрами и управлением
 риском. Стратегия по‑прежнему реагирует на закрытие цены за пределами полос

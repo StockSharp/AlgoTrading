@@ -1,5 +1,5 @@
 # Statistical Arbitrage Spread Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades the spread between two correlated instruments. A long position in the first security is opened when the spread falls below its mean by a multiple of the spread's standard deviation. The position is closed once the spread returns to the mean.
 

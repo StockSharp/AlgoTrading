@@ -1,5 +1,5 @@
 # Optimized Heikin-Ashi Strategy with Buy/Sell Options
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Heikin-Ashi candles smooth price data and highlight trend direction. This strategy trades a single direction at a time: either longs on green candles or shorts on red ones within a user-defined date range. Optional stop-loss and take-profit levels provide risk control.
 

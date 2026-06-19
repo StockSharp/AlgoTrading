@@ -1,5 +1,5 @@
 # Candle Body Shapes Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades based on where a candle opens and closes within its range.
 Enters long when the candle opens near its low and closes near its high, showing strong bullish pressure.

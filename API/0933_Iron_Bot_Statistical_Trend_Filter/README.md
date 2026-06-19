@@ -1,5 +1,5 @@
 # Iron Bot Statistical Trend Filter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades breakouts based on statistical trend levels computed from Fibonacci ranges and Z-score.
 

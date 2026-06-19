@@ -1,5 +1,5 @@
 # Стратегия Murrey Math с Bollinger и Stochastic
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия торгует развороты у крайних уровней Murrey Math, используя полосы Боллинджера и стохастик как фильтры.
 

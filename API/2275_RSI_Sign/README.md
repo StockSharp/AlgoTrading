@@ -1,5 +1,5 @@
 # RSI Sign Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy converts the original **iRSISign** expert advisor from MQL5 into the StockSharp high level API. It combines the Relative Strength Index (RSI) with the Average True Range (ATR) to generate entry and exit signals.
 

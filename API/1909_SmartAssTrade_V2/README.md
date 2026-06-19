@@ -1,5 +1,5 @@
 # SmartAssTrade V2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 SmartAssTrade V2 Strategy uses MACD histogram and 20-period moving averages across multiple timeframes (1m, 5m, 15m, 30m, 60m) combined with Williams %R and RSI filters to capture trend momentum. Optional trailing stop protects profits.
 

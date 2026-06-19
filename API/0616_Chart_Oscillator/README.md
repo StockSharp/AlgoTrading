@@ -1,5 +1,5 @@
 # Chart Oscillator
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades using a selectable oscillator. Choose between Stochastic, RSI, or MFI. It buys when the oscillator signals oversold conditions and sells when overbought. For the Stochastic option, signals use %K and %D crossovers.
 

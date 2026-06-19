@@ -1,5 +1,5 @@
 # Relative Volume at Time
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сравнивает объём в конкретное время дня со средним объёмом недавних свечей.
 

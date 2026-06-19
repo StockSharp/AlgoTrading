@@ -1,5 +1,5 @@
 # Advanced Supertrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Advanced Supertrend strategy enhances the classic Supertrend indicator with optional RSI, moving average, and trend-strength filters. It enters long when Supertrend flips to bullish and enters short when it turns bearish. Optional stop loss and take profit are derived from ATR multiples.
 

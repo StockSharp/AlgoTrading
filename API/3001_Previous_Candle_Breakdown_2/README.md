@@ -1,5 +1,5 @@
 # Previous Candle Breakdown 2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy that mirrors the MetaTrader expert "Previous Candle Breakdown 2". The algorithm watches the most recently
 completed candle on a configurable timeframe and triggers trades when price pierces its high or low by a user-defined pip offset.

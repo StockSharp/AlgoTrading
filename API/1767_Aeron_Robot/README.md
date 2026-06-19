@@ -1,5 +1,5 @@
 # Aeron Robot Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements a grid-based hedging system inspired by the AeronRobot expert advisor. It places buy and sell orders at predefined price intervals and increases position volume after each new order. The approach seeks to capture small price oscillations while controlling risk through configurable take-profit, stop-loss and trade limits.
 

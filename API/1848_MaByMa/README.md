@@ -1,5 +1,5 @@
 # MA by MA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements a double smoothed moving average crossover.
 The price series is smoothed by a fast exponential moving average (EMA).

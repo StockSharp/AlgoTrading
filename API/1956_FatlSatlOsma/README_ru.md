@@ -1,5 +1,5 @@
 # Стратегия FatlSatlOsma
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Пример реализует логику советника MetaTrader **Exp_FatlSatlOsma** на высокоуровневом API StockSharp.  
 Исходная система использует осциллятор Fatl/Satl (аналог MACD).

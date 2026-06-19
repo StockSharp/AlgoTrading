@@ -1,5 +1,5 @@
 # Starter Edge Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses a ZLEMA-based MACD with an EMA 100 trend filter and RSI confirmation.
 

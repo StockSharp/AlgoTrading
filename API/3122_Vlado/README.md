@@ -1,5 +1,5 @@
 # Vlado Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Momentum reversal strategy based on the classic Larry Williams %R oscillator. The system waits for the oscillator to reach deep
  oversold or overbought readings and then reverses the position at the next completed bar. The StockSharp port keeps the discreti

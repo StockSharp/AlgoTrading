@@ -1,5 +1,5 @@
 # Max Profit Min Loss Options Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines fast and slow moving averages with RSI, MACD and a volume filter. It enters long when trend and momentum conditions align and uses a stop loss and trailing profit for exits.
 

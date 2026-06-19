@@ -1,5 +1,5 @@
 # TCPivot Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts through the daily pivot line. It calculates classical floor-trader pivot levels from the previous day's high, low and close. A long position is opened when the closing price crosses above the pivot. A short position is opened when the closing price crosses below the pivot.
 

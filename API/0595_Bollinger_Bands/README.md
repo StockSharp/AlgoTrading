@@ -1,5 +1,5 @@
 # Bollinger Bands Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy trading Bollinger Bands breakouts. Buys when the price closes above the upper band and sells when it closes below the lower band. Exits on a simple moving average cross or when a stop loss is hit.
 

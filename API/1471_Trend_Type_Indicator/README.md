@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend Type Indicator detects market regime using ATR and ADX.
 It goes long during uptrends, short during downtrends and exits when conditions turn sideways.

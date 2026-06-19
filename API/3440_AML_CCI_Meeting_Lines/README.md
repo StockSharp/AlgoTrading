@@ -1,5 +1,5 @@
 # AML CCI Meeting Lines Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader 5 expert "Expert_AML_CCI" inside the StockSharp high-level framework. The original robot
 combines the Japanese candlestick pattern "Meeting Lines" with a Commodity Channel Index (CCI) filter and uses the Expert Advisor

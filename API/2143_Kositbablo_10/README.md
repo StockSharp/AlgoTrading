@@ -1,5 +1,5 @@
 # Kositbablo 10
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Multi-timeframe EURUSD strategy using RSI and EMA signals.
 It checks daily and hourly indicators and opens market orders when both trend filters align.

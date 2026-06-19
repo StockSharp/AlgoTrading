@@ -1,5 +1,5 @@
 # Momentum Alligator 4h Bitcoin Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Momentum Alligator 4h Bitcoin strategy combines the Awesome Oscillator with the Bill Williams Alligator on the daily timeframe. A long position is opened when the oscillator crosses above its 5-period SMA and price trades above all three daily Alligator lines. A dynamic stop-loss uses the greater of a percentage drop from entry and the Alligator jaw line. After a profitable exit the strategy skips the next two signals.
 

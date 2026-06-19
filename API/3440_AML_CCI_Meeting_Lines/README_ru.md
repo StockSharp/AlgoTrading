@@ -1,5 +1,5 @@
 # Стратегия AML CCI Meeting Lines
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия переносит советник MetaTrader 5 "Expert_AML_CCI" в высокоуровневый фреймворк StockSharp. Исходный робот объединяет
 японскую свечную модель «Meeting Lines» с фильтром Commodity Channel Index (CCI) и использует механизм Expert Advisor для

@@ -1,5 +1,5 @@
 # Back to the Future Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This momentum strategy compares the current closing price with the price from a specified number of minutes ago. When the price advances beyond a defined threshold relative to the historical price, the system opens a long position. Conversely, when the price falls below the negative threshold, it opens a short position. The approach assumes that strong moves away from the past price indicate emerging trends.
 

@@ -1,5 +1,5 @@
 # Robot Danu
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сравнивает быстрый и медленный уровни ZigZag,
 рассчитанные по максимумам и минимумам свечей.

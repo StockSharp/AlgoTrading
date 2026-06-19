@@ -1,5 +1,5 @@
 # SuperTrade ST1 Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия только на покупку, объединяющая индикатор Supertrend с фильтром EMA и управлением риском на основе ATR.
 

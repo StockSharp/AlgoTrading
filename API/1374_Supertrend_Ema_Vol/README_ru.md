@@ -1,5 +1,5 @@
 # Стратегия Supertrend Ema Vol
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает Supertrend с подтверждением тренда по EMA и фильтром объёма. Входит при смене направления Supertrend, когда цена находится выше или ниже EMA и объём превышает свою EMA. Использует стоп-лосс на основе ATR.
 

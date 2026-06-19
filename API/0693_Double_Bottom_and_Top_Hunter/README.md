@@ -1,5 +1,5 @@
 # Double Bottom and Top Hunter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy searches for double bottom and double top patterns by comparing recent lows and highs. A double bottom occurs when the lowest low is reached twice within a wider lookback window, while a double top uses the highest high. Long and short positions are opened accordingly and closed when price breaks the opposite extreme after a new extreme is formed.
 

@@ -1,5 +1,5 @@
 # Стратегия Divergence Trader
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Данная стратегия сравнивает две простые скользящие средние (SMA) и торгует на основе дивергенции между ними.
 

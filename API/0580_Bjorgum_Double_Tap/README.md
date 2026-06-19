@@ -1,5 +1,5 @@
 # Bjorgum Double Tap Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy searches for double top and double bottom patterns. A short trade is opened when price breaks below the neckline of a double top, and a long trade is opened when price breaks above the neckline of a double bottom. Target and stop levels are calculated as Fibonacci extensions of the pattern height.
 

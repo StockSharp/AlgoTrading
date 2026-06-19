@@ -1,5 +1,5 @@
 # MA PSAR ATR Trend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия MA PSAR ATR Trend сочетает пересечение скользящих средних с фильтром по дневному Parabolic SAR. Сделки открываются только если цена согласована с обеими средними, а PSAR указывает то же направление. Риск контролируется стопом на основе ATR.
 

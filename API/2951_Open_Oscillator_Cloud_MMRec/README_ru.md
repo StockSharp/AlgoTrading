@@ -1,5 +1,5 @@
 # Open Oscillator Cloud MMRec — стратегия
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переносит советник MetaTrader **Exp_Open_Oscillator_Cloud_MMRec** на высокоуровневый API StockSharp. Торговая логика использует пересечение индикатора Open Oscillator Cloud: текущая цена открытия сравнивается с ценами открытия максимумов и минимумов в скользящем окне и значения сглаживаются выбранным типом скользящей средней.
 

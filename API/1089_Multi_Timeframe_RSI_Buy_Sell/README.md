@@ -1,5 +1,5 @@
 # Multi Timeframe RSI Buy Sell Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses RSI values from three different timeframes. A long position is opened when all enabled RSI values are below the buy threshold. A short position is opened when all enabled RSI values are above the sell threshold. A cooldown period prevents consecutive signals.
 

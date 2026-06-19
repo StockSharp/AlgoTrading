@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The I4 DRF v2 strategy applies the custom i4_DRF_v2 indicator that counts the number of up and down closes over a sliding window.
 Depending on the TrendModes parameter it can work in contrarian (Direct) or trend-following (NotDirect) mode.

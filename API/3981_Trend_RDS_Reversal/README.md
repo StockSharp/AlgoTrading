@@ -38,5 +38,5 @@ Trend RDS is a session-based reversal strategy originally written for MetaTrader
 
 ## Files
 - `CS/TrendRdsStrategy.cs` – StockSharp C# implementation of the strategy.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.

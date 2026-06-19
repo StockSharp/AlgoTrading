@@ -1,5 +1,5 @@
 # Hammer & Shooting Star Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades hammer and shooting star candlestick patterns.
 A long position is opened when the previous candle is a hammer,

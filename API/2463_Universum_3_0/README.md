@@ -1,5 +1,5 @@
 # Universum 3.0 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 DeMarker oscillator based strategy that opens positions on each completed bar and adjusts volume using a martingale scheme.
 

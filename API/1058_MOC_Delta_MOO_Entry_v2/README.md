@@ -1,5 +1,5 @@
 # MOC Delta MOO Entry v2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy records buy and sell volume during the afternoon session and uses the resulting MOC delta to trade the next day's open.
 

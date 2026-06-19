@@ -1,5 +1,5 @@
 # Стратегия ASCTrendND
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия основана на эксперте ASCTrendND из MQL5. Она использует простое скользящее среднее для основного сигнала, фильтр RSI для подтверждения силы и трейлинг-стоп на основе ATR для выхода из позиций. Подход упрощенно повторяет логику ASCTrend + NRTR + TrendStrength на высокоуровневом API StockSharp.
 

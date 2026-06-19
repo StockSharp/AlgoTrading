@@ -1,5 +1,5 @@
 # Livermore Seykota Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout system combining Livermore pivot points with Seykota trend filter and ATR-based exits.
 

@@ -1,5 +1,5 @@
 # Стратегия Distance to Demand Vector
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на индикаторе Distance to Demand Vector. Она сравнивает расстояния до длинного и короткого вектора спроса и торгует при их пересечении.
 

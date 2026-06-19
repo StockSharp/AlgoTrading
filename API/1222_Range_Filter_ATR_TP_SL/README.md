@@ -1,5 +1,5 @@
 # Range Filter Strategy with ATR TP/SL
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that enters when price crosses the range filter bands and exits using ATR-based take-profit and stop-loss levels.
 

@@ -1,5 +1,5 @@
 # Customizable BTC Seasonality Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy exploits intraday seasonality in Bitcoin by entering and exiting at user-defined UTC hours.
 A long position is opened at the entry hour and closed at the exit hour.

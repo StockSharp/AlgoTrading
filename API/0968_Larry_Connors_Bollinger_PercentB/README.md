@@ -1,5 +1,5 @@
 # Larry Connors Percent B Bollinger
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy follows the Larry Connors %B approach. It buys when price is in an uptrend above the 200-period SMA and the Bollinger %B value stays below a threshold for three consecutive candles. Positions are closed when %B rises above an upper threshold.
 

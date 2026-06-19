@@ -1,5 +1,5 @@
 # Стратегия XDeMarker Histogram Vol Direct
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переносит советник MetaTrader 5 **Exp_XDeMarker_Histogram_Vol_Direct** на инфраструктуру StockSharp. Она умножает
 осциллятор DeMarker на выбранный поток объёма, сглаживает и сам осциллятор, и объём одним и тем же методом усреднения, после чего

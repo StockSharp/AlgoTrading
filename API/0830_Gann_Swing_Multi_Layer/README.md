@@ -1,5 +1,5 @@
 # Gann Swing Multi Layer
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using simplified multi-layer Gann swing analysis.
 Trades when three consecutive swing directions align.

@@ -1,5 +1,5 @@
 # EMA WMA Contrarian Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Contrarian crossover system that compares an exponential moving average (EMA) and a weighted moving average (WMA) built on candle open prices. When the fast EMA slips below the WMA the strategy buys, betting on a snap-back. When the EMA climbs back above the WMA it enters short. Trade size is derived from the configured risk percentage and the distance to the protective stop, while optional stop-loss, take-profit, and trailing stop levels keep exposure under control.
 

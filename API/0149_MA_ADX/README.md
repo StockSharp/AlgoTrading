@@ -1,5 +1,5 @@
 # Ma Adx Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on MA and ADX indicators. Enters position when price crosses MA with strong trend.
 

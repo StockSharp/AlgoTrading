@@ -1,5 +1,5 @@
 # Стратегия Daily Supertrend Ema Crossover Rsi Filter
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует пересечения EMA только в направлении Supertrend и при благоприятном значении RSI. Используются уровни стоп-лосса и тейк-профита на основе ATR.
 

@@ -1,5 +1,5 @@
 # Close Positions Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Closes open positions based on profit, loss or time rules. No new orders are opened by this strategy.
 

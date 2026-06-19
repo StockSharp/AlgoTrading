@@ -1,5 +1,5 @@
 # Volume Confirmation For A Trend System Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Trend Thrust Indicator (TTI), Volume Price Confirmation Indicator (VPCI) and ADX to confirm long trends.
 

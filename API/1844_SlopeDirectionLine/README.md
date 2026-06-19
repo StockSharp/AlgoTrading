@@ -1,5 +1,5 @@
 # Slope Direction Line Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the behavior of the *Slope Direction Line* Expert Advisor. It analyzes the slope of a linear regression line built on closing prices. A long position is opened when the regression slope turns positive after being negative, while a short position is opened when it turns negative after being positive. Opposite positions are closed on every change of direction. Optional stop-loss and take-profit percentages protect positions via the built-in `StartProtection` mechanism.
 

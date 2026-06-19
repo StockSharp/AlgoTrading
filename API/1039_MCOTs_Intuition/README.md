@@ -1,5 +1,5 @@
 # MCOTs Intuition Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on RSI momentum relative to its standard deviation. It buys when upward momentum is strong but fading and sells on the opposite. Fixed profit target and stop loss are placed in ticks.
 

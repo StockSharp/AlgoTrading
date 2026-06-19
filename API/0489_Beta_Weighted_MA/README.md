@@ -1,5 +1,5 @@
 # Beta Weighted MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Beta Weighted MA (BWMA) strategy uses a Beta distribution to weight recent prices, producing a moving average whose lag and smoothness can be tuned with alpha and beta parameters. The strategy enters a long position when price crosses above the BWMA and a short position when price crosses below it.
 

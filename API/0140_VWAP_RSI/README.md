@@ -1,5 +1,5 @@
 # VWAP RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 VWAP RSI uses the volume-weighted average price to gauge fair value during the session while RSI shows momentum extremes.
 Trades are taken when price stretches away from VWAP and RSI reaches overbought or oversold levels.

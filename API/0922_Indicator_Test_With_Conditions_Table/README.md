@@ -1,5 +1,5 @@
 # Indicator Test with Conditions Table Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy compares the latest closing price with user-defined levels and executes market orders when the conditions are met. Each side (long and short) has separate entry and exit rules controlled by parameters.
 

@@ -1,5 +1,5 @@
 # Linear On MACD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining MACD signals on price and volume with linear regression.
 

@@ -1,5 +1,5 @@
 # Liquidity Sweep Filter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This trend-following strategy uses Bollinger bands to detect market direction and monitors volume for potential liquidity sweeps. A position is opened when the trend flips bullish or bearish depending on the selected trade mode.
 

@@ -1,5 +1,5 @@
 # X Trader V3 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades crossovers between two median price moving averages. The first moving average is longer and shifted, while the second is short. A long position is opened when the first moving average crosses below the second and remains below for two bars after being above two bars ago. A short position is opened on the opposite crossover. Positions can be closed on reverse signals. Trading is limited to a specified intraday time window. Optional protective stops are available.
 

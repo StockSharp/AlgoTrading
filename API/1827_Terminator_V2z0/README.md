@@ -1,5 +1,5 @@
 # Terminator V2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Moving Average Convergence Divergence (MACD) oscillator to trade in both directions. A long position is opened when the MACD line crosses above its signal line. A short position is opened when the MACD line crosses below its signal line. Positions are protected by fixed stop-loss and take-profit levels, while an optional trailing stop can lock in profits during strong trends.
 

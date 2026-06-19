@@ -1,5 +1,5 @@
 # Full Candle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Full Candle setup enters when a candle closes beyond its EMA and leaves only a small wick on the breakout side. The intent is to trade momentum candles that show decisive action without much rejection. Optional percentage based take-profit and stop-loss exits manage the trade once it is open.
 

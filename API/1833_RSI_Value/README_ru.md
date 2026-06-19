@@ -1,5 +1,5 @@
 # RSI Value
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует по сигналам индикатора RSI при пересечении средней линии.
 

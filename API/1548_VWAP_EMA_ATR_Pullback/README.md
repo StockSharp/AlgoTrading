@@ -1,5 +1,5 @@
 # VWAP EMA ATR Pullback
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy using EMAs, VWAP, and ATR.
 

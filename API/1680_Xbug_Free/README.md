@@ -1,5 +1,5 @@
 # Xbug Free Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Contrarian moving average strategy that buys when price crosses below its moving average and sells when price crosses above. Uses symmetric take-profit and stop-loss distances.
 

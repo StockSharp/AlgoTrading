@@ -1,5 +1,5 @@
 # Arpeet MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Arpeet MACD strategy trades MACD crossovers with a zero-line filter. A long signal appears when the MACD line crosses above the signal line while remaining below zero. A short signal occurs when the MACD crosses below the signal line above zero.
 

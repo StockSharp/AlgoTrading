@@ -1,5 +1,5 @@
 # Стратегия RSI Sign
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Данная стратегия является конвертацией советника **iRSISign** из MQL5 в высокоуровневый API StockSharp. Она использует комбинацию индикаторов RSI и ATR для генерации торговых сигналов.
 

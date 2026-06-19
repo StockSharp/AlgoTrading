@@ -1,5 +1,5 @@
 # Average Candle Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy recreates the "Average candle cross" MetaTrader expert. It waits for a completed bar where the previous candle closed across a moving average while two additional moving-average filters already confirm the prevailing trend. Only one position can be active at a time. Immediately after opening a trade the algorithm attaches a stop-loss and a take-profit whose distance is derived from the specified pip-based stop. This makes the behaviour identical to the original block logic that fires once per bar.
 

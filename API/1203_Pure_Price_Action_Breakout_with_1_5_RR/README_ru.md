@@ -1,5 +1,5 @@
 # Стратегия Pure Price Action Breakout with 1:5 RR
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Pure Price Action Breakout with 1:5 RR использует пересечение двух EMA с подтверждением RSI и объёма. Стоп‑лосс рассчитывается по ATR, а тейк‑профит в пять раз больше риска.
 

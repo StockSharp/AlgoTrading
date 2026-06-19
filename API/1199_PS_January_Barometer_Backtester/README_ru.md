@@ -1,5 +1,5 @@
 # Стратегия PS January Barometer Backtester
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Реализует индикатор January Barometer: длинная позиция открывается, когда закрытие в феврале–июне превышает максимум января. Дополнительные фильтры требуют положительного результата Santa Claus Rally и/или первых пяти дней года.
 

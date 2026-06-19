@@ -1,5 +1,5 @@
 # Sunil BB Blast Heikin Ashi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines Bollinger Bands breakout with Heikin Ashi candle confirmation.
 

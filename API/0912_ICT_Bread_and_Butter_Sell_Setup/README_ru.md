@@ -1,5 +1,5 @@
 # Стратегия ICT Bread and Butter Sell-Setup
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия отслеживает максимумы и минимумы сессий Лондона, Нью-Йорка и Азии и торгует заранее определённые сетапы.
 

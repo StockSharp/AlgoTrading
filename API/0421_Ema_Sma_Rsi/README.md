@@ -1,5 +1,5 @@
 # EMA/SMA + RSI Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy tracks three exponential moving averages (fast, medium, and slow) along with an RSI filter to participate in emerging trends. A trade is triggered when the fast average crosses the medium one in the direction of the prevailing slow average, indicating that momentum is accelerating. Only candles that close in the direction of the crossover are considered to avoid whipsaws.
 

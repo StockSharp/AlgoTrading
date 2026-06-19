@@ -1,5 +1,5 @@
 # MA Price Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MA Price Cross strategy is a direct conversion of the MetaTrader 4 expert advisor "MA Price Cross" to the StockSharp high-level API. It waits for the selected moving average to cross the current price while trading is allowed within a configurable time window. When the crossing happens from below, the algorithm opens a long position; when the crossing happens from above, it opens a short position. Protective stop-loss and take-profit distances are defined in MetaTrader points and automatically translated to absolute price offsets using the instrument's `PriceStep`.
 

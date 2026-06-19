@@ -1,5 +1,5 @@
 # Fractals & Alligator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the MetaTrader "Fractals & Alligator" expert by combining Bill Williams Alligator alignment with fractal breakouts, a momentum confirmation layer, and range filters. It processes finished candles on a higher timeframe to emulate the original multi-timeframe logic.
 

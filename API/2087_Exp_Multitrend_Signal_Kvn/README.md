@@ -1,5 +1,5 @@
 # Exp Multitrend Signal KVN Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements the MultiTrend Signal KVN concept. It builds an adaptive price channel using the Average Directional Index (ADX) to determine the lookback window. When price closes above the channel, the strategy opens a long position. When price closes below the channel, it opens a short position.
 

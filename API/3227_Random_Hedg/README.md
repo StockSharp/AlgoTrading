@@ -35,4 +35,4 @@ The **Random Hedg Strategy** is a StockSharp high-level port of the MetaTrader e
 - `CS/RandomHedgStrategy.cs` – main C# implementation with detailed English inline comments.
 - `README.md` – this documentation (English).
 - `README_ru.md` – Russian translation.
-- `README_cn.md` – Simplified Chinese translation.
+- `README_zh.md` – Simplified Chinese translation.

@@ -1,5 +1,5 @@
 # ADX Volume Multiplier Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The ADX Volume Multiplier strategy combines trend strength from the Average Directional Index with a volume surge filter. It enters trades only when the ADX exceeds a threshold, the dominant directional line points to the trend direction, and the current volume surpasses a moving average multiplied by a user-defined factor.
 

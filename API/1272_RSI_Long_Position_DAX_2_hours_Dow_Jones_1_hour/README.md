@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 RSI Long Position buys when RSI crosses above an oversold level and closes when RSI exceeds a take profit level or drops below a stop level.
 

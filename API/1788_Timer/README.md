@@ -1,5 +1,5 @@
 # Timer Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Timer strategy recalculates breakout levels at fixed time intervals and trades when price crosses these dynamic thresholds. The levels are positioned using Average True Range (ATR) and an optional additional pip distance. The approach seeks to capture short-term breakouts in either direction.
 

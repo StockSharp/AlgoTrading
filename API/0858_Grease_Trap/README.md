@@ -1,5 +1,5 @@
 # Grease Trap
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grease Trap uses two Fibonacci-length moving averages and trades on their crossovers with profit targets.
 

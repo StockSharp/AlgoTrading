@@ -1,5 +1,5 @@
 # Time of day / day of week Sigma Spike Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses return z-score to highlight large moves by hour and optional day filters.
 Buys on spikes and exits when volatility normalizes.

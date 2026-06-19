@@ -1,5 +1,5 @@
 # ADX CCI MA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает ADX, CCI и настраиваемую скользящую среднюю для торговли сильных трендов.
 

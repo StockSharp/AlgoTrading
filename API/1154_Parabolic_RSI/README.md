@@ -1,5 +1,5 @@
 # Parabolic RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy applying Parabolic SAR to RSI for trend shifts. The strategy enters when the SAR flips relative to the RSI line and can filter trades by RSI thresholds.
 

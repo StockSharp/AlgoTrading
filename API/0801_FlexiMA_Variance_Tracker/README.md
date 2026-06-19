@@ -1,5 +1,5 @@
 # FlexiMA Variance Tracker Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Tracks price deviation around a moving average and opens trades when the deviation exceeds a volatility threshold while SuperTrend direction confirms.
 

@@ -1,5 +1,5 @@
 # Linear Continuation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This example converts the TradingView "Linear Continuation" study to StockSharp. The strategy calculates three moving averages and logs their linear continuation projection. It is intended as an indicator showcase and does not include trading logic.
 

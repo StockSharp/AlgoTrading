@@ -1,5 +1,5 @@
 # Fancy Bollinger Bands
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades Bollinger Band breakouts. It buys when the close price crosses above the upper band and sells when the close price crosses below the lower band.
 

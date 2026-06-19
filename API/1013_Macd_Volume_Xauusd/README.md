@@ -1,5 +1,5 @@
 # MACD Volume XAUUSD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 15-minute strategy for XAUUSD combining MACD zero-line cross with a volume oscillator filter and fixed risk parameters.
 

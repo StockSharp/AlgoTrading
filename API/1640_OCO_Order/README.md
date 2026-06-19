@@ -1,5 +1,5 @@
 # OCO Order Execution Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates an "One Cancels the Other" order ticket originally written for MetaTrader. It allows the trader to define up to four independent price triggers:
 

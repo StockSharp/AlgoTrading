@@ -1,5 +1,5 @@
 # Time Candles Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Displays RSI candles built from a custom time frame and its moving average. Intended for visualization only.
 

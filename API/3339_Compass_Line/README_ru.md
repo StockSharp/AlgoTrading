@@ -1,5 +1,5 @@
 # Compass Line Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия воспроизводит советник CompassLine, объединяя два фильтра:
 

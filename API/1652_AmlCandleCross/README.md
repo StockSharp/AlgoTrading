@@ -1,5 +1,5 @@
 # AML Candle Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on the Adaptive Market Level (AML) indicator.
 A trade is opened when the AML value lies inside the current candle body:

@@ -1,5 +1,5 @@
 # Game Theory Trading Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Game Theory Trading Strategy объединяет анализ стадного поведения, поиск ликвидностных ловушек, институциональные потоки и зоны равновесия Нэша для контр-трендовых и импульсных сделок.
 

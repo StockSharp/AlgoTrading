@@ -1,5 +1,5 @@
 # Varanormal Mac N Cheez Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на пересечении SMA с трейлинг-стопом и дневной целью прибыли.
 

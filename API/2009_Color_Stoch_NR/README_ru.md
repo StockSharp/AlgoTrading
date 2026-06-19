@@ -1,5 +1,5 @@
 # Color Stochastic NR Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует стохастический осциллятор и несколько режимов сигналов. Каждый режим по-своему интерпретирует линии %K и %D для формирования сделок.
 

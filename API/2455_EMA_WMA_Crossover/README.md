@@ -1,5 +1,5 @@
 # EMA WMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on crossover between exponential moving average (EMA) and weighted moving average (WMA) calculated on candle open prices.
 Enters long when EMA crosses below WMA and short when EMA crosses above WMA.

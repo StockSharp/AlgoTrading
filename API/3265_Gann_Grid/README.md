@@ -57,4 +57,4 @@ All offsets are absolute price distances. Adjust them to match the symbol’s ti
 - `CS/GannGridStrategy.cs` – strategy implementation.
 - `README.md` – this documentation.
 - `README_ru.md` – Russian description.
-- `README_cn.md` – Chinese description.
+- `README_zh.md` – Chinese description.

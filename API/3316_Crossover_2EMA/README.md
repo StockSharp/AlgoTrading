@@ -1,5 +1,5 @@
 # Crossover 2 EMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy replicates the MetaTrader "Crossover_2EMA" expert advisor by trading the relationship between a fast and a slow exponential moving average (EMA) calculated from close prices. When the fast EMA rises above the slow EMA, the algorithm goes long. When it falls back below, the algorithm reverses into a short position. The approach always keeps the position aligned with the current fast/slow trend state and therefore works as a fully reversible system.
 

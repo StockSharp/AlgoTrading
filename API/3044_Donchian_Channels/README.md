@@ -1,5 +1,5 @@
 # Donchian Channels Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the classic "Donchian Channels" expert advisor to the StockSharp high level API. It combines a multi-timeframe Donchian breakout with weighted moving averages, momentum confirmation, MACD trend filtering, and extensive risk controls (stop loss, take profit, break-even, trailing stop and equity-based emergency exit).
 

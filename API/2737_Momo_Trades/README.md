@@ -1,5 +1,5 @@
 # Momo Trades Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Conversion of the original MetaTrader "Momo_trades" expert advisor that trades momentum breakouts filtered by a moving average and MACD structure.
 

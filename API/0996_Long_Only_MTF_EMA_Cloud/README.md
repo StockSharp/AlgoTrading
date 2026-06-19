@@ -1,5 +1,5 @@
 # Long-Only MTF EMA Cloud
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 EMA cloud crossover strategy that trades long when the short EMA crosses above the long EMA. Uses fixed percentage stop loss and take profit.
 

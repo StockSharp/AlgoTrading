@@ -1,5 +1,5 @@
 # Multi Regression Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades when price crosses a regression line and manages risk with volatility-based bounds. Optional stop loss and take profit levels are derived from a selected risk measure.
 

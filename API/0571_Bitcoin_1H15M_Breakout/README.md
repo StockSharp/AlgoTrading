@@ -1,5 +1,5 @@
 # Bitcoin 1H-15M Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy tracks the high and low of the previous 1-hour candle and enters trades when a 15-minute candle closes outside this range. Risk is managed with a fixed stop-loss buffer and a take-profit derived from a configurable risk-reward ratio.
 

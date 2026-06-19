@@ -1,5 +1,5 @@
 # Liquid Pulse Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Detects high volume spikes confirmed by MACD and ADX. ATR defines stop and take profit with daily trade limit.
 

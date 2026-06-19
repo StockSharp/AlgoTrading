@@ -1,5 +1,5 @@
 # Three Candle Bullish Engulfing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy looks for a three-candle bullish or bearish engulfing pattern. It supports optional RSI breakout entries and a trailing stop with time-based exits.
 

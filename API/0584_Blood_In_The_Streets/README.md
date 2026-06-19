@@ -1,5 +1,5 @@
 # Blood In The Streets Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy buys when the current drawdown from the recent highest high falls below a standard deviation threshold. The position is closed after a fixed number of bars.
 

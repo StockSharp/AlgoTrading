@@ -1,5 +1,5 @@
 # Pullback Pro Dow Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses Dow Theory pivots to define trend direction and enters on EMA pullbacks when trend strength is confirmed by ADX. The system scales out at two risk-reward targets.
 

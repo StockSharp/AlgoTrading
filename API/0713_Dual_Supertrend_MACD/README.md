@@ -1,5 +1,5 @@
 # Dual Supertrend MACD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Dual Supertrend MACD combines two Supertrend indicators with a MACD filter.
 A long position is opened when price trades above both Supertrend lines and the MACD histogram is positive.

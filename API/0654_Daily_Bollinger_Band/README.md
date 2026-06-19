@@ -1,5 +1,5 @@
 # Daily Bollinger Band Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades daily Bollinger Band breakouts using a trend filter and ATR-based position sizing.
 

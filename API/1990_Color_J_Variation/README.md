@@ -1,5 +1,5 @@
 # Color J Variation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy replicating the ColorJVariation Expert Advisor using Jurik Moving Average. It tracks the JMA slope and enters when the direction changes. The strategy supports absolute stop loss and take profit levels.
 

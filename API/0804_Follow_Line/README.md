@@ -1,5 +1,5 @@
 # Follow Line Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy tracks a follow line derived from Bollinger Bands breakouts with optional ATR offset. Entries occur when the line flips direction, optionally confirmed by a higher timeframe trend.
 

@@ -1,5 +1,5 @@
 # Ride Alligator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implementation of the Ride Alligator strategy. The method uses three moving averages known as the Alligator indicator. A long position is opened when the Lips line crosses above the Jaws line while the Teeth line is below the Jaws. A short position is opened when the Lips cross below the Jaws and the Teeth line is above the Jaws. The open position is protected by a stop at the Jaws line which trails as the line moves.
 

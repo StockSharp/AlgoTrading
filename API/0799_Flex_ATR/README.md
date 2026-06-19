@@ -1,5 +1,5 @@
 # Flex ATR
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Flex ATR dynamically selects EMA, RSI, and ATR periods based on the current timeframe. A long trade opens when the fast EMA crosses above the slow EMA and RSI exceeds 50. A short trade triggers on the opposite crossover with RSI below 50. Exits use ATR-based stops or an optional trailing stop.
 

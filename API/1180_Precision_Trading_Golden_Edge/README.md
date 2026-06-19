@@ -1,5 +1,5 @@
 # Precision Trading Strategy: Golden Edge
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This scalping strategy for Gold aligns a fast EMA and slow EMA crossover with the direction of a Hull Moving Average. Trades occur only when RSI confirms momentum and volatility is adequate.
 

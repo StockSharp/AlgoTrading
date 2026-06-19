@@ -1,5 +1,5 @@
 # Gann Laplace Smoothed Hybrid VSA
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines a Gann-style trend filter with Laplace-smoothed volume spread analysis (VSA). The VSA value is calculated as the price spread divided by the candle range and multiplied by volume, then smoothed with an EMA. Trades are taken when the smoothed VSA aligns with the price relative to the trend moving average.
 

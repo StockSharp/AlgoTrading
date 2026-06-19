@@ -1,5 +1,5 @@
 # Vela Superada Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Vela Superada strategy trades a two-candle reversal pattern. A bullish setup occurs when a bearish candle is immediately followed by a bullish candle that closes above the prior open. Trades are filtered with a short-term EMA, RSI and MACD trend to avoid counter-trend signals. Both long and short sides can be enabled.
 

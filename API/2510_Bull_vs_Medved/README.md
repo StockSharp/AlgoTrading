@@ -1,5 +1,5 @@
 # Bull vs Medved Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Bull vs Medved is a limit-order breakout strategy originally published for MetaTrader 5. It watches the last three completed candles and only allows trades during six five-minute windows spread evenly through the day. When a specific bullish or bearish candle sequence appears, the strategy places a pending limit order offset from the current spread and protects the position with symmetrical stop-loss and take-profit targets.
 

@@ -1,5 +1,5 @@
 # Ichimoku Daily Candle X Hull MA X MACD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines Ichimoku lead lines, daily candle direction, Hull Moving Average trend and an HMA-based MACD. Long positions are opened when all components align bullish; shorts occur when all conditions turn bearish.
 

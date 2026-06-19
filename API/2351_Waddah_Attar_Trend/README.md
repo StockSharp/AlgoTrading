@@ -1,5 +1,5 @@
 # Waddah Attar Trend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy converts the original MQL expert "Exp_Waddah_Attar_Trend" into the StockSharp high-level API. It uses the Waddah Attar Trend indicator, which multiplies the difference between two exponential moving averages (fast and slow) by an additional smoothing moving average. The indicator outputs a color state: green when the trend value rises and magenta when it falls. A change of this color triggers trades.
 

@@ -1,5 +1,5 @@
 # Double Bottom Pattern
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This pattern-based strategy scans for two consecutive lows at roughly the same price separated by a set distance. After the second bottom forms, a bullish candle confirms the reversal.
 

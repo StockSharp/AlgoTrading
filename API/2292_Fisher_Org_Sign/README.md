@@ -1,5 +1,5 @@
 # Fisher Org Signal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Fisher Transform indicator with predefined upper and lower levels. A long position is opened when the Fisher value crosses above the lower level. A short position is opened when the Fisher value crosses below the upper level.
 

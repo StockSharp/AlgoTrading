@@ -1,5 +1,5 @@
 # Bollinger Williams R Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on Bollinger Bands and Williams %R indicators. Enters long when price is at lower band and Williams %R is oversold (< -80) Enters short when price is at upper band and Williams %R is overbought (> -20)
 

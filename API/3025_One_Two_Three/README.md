@@ -1,5 +1,5 @@
 # One Two Three Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The One Two Three strategy trades breakouts of the Chaikin oscillator after an extended period of flat accumulation. It emulates the original MetaTrader 5 expert by combining an accumulation/distribution line with two EMAs, validating that market pressure has stayed neutral for several bars, and then entering on a strong surge of Chaikin momentum. The StockSharp port keeps the lot sizing, stop management, and trailing logic configurable through strategy parameters.
 

@@ -56,4 +56,4 @@ All distances are defined in instrument price steps to ensure compatibility with
 - `CS/AscvStrategy.cs` – the C# implementation of the strategy.
 - `README.md` – this documentation.
 - `README_ru.md` – Russian translation.
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.

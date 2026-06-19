@@ -1,5 +1,5 @@
 # Dskyz (DAFE) GENESIS Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simplified version of the Dskyz (DAFE) GENESIS strategy. The system trades when short-term momentum aligns with a trend filter and RSI.
 

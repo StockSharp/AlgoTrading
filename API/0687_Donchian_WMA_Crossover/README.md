@@ -1,5 +1,5 @@
 # Donchian WMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Donchian channel low crossing above a weighted moving average triggers long entries only during calendar year 2025. Positions are closed when a take profit level is reached, the crossover reverses with a falling WMA, or the date exits 2025.
 

@@ -1,5 +1,5 @@
 # Стратегия Sigma Spike Filtered Binned OPR
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Sigma Spike Filtered Binned OPR собирает распределение показателя OPR и открывает сделки, когда значение OPR достигает экстремальных бинов после сигма-спайка доходности.
 

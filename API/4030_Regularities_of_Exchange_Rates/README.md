@@ -1,5 +1,5 @@
 # Regularities of Exchange Rates Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This StockSharp strategy is a faithful C# conversion of the MetaTrader 4 expert advisor **Strategy_of_Regularities_of_Exchange_Rates.mq4**. The system was designed as a daily breakout straddle: it brackets the market with stop orders when a specific hour arrives and keeps those orders active until the nightly closing hour. Any filled position is supervised by both a broker-side stop-loss and an intraday take-profit watchdog so that trades do not linger beyond the defined trading session.
 

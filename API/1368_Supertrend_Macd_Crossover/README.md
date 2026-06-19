@@ -1,5 +1,5 @@
 # Supertrend + MACD Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines the Supertrend indicator with a MACD crossover to identify bullish entries.
 A long position is opened when price is above the Supertrend line and the MACD line crosses above its signal line.

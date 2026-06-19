@@ -1,5 +1,5 @@
 # Renko Trend Reversal Strategy V2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Renko Trend Reversal Strategy V2 trades when renko open crosses renko close. It uses ATR-based renko bricks and applies stop-loss and take-profit levels. Shorts can be disabled.
 

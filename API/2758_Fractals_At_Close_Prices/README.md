@@ -1,5 +1,5 @@
 # Fractals at Close Prices Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor **"Fractals at Close prices"** by Vladimir Karputov. It analyses five consecutive closing prices to detect Bill Williams style fractals that are built strictly on closes instead of highs or lows. The most recent two bullish and bearish fractals are compared to determine the active trend. When the latest bullish fractal prints above the previous one, the strategy opens a long position. When the latest bearish fractal forms below the previous one, it opens a short position. Opposite positions are always closed before entering a new trade, so the strategy stays in at most one direction at a time.

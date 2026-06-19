@@ -1,5 +1,5 @@
 # Line Order Dual Level Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is an adaptation of the MetaTrader expert advisor "MyLineOrder" for the StockSharp API. It allows a trader to define horizontal price levels that trigger automatic market orders when touched. Optional stop loss, take profit and trailing stop distances are expressed in pips, and the trade volume can be configured.
 

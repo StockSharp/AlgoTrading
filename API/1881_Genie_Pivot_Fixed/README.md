@@ -1,5 +1,5 @@
 # Genie Pivot Fixed Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements the "Genie" pivot point reversal scalping system originally written in MQL4. It scans the last eight candles to detect sudden reversals at pivot points. A long trade is triggered when seven consecutive lows decrease and the current candle makes a higher low while closing above the previous high. A short trade is triggered when seven consecutive highs increase and the current candle makes a lower high while closing below the previous low.
 

@@ -1,5 +1,5 @@
 # Lossless MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades crossovers between a fast and a slow Simple Moving Average (SMA).
 It optionally avoids realizing losses by moving losing positions to break-even when the opposite signal appears.

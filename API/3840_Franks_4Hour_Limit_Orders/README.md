@@ -35,7 +35,7 @@ The **Franks 4 Hour Limit Orders Strategy** ports the MetaTrader 4 expert adviso
 - `CS/Franks4HourLimitOrdersStrategy.cs` – Main C# implementation with detailed English comments.
 - `README.md` – This English description of the algorithm.
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 
 ## Implementation Notes
 - The strategy relies solely on the high-level API (`SubscribeCandles`, indicator bindings, and convenience order helpers).

@@ -1,5 +1,5 @@
 # VWAP EMA ATR Pullback
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Трендовая стратегия, использующая EMA, VWAP и ATR.
 

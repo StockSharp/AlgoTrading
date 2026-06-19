@@ -1,5 +1,5 @@
 # Breakeven Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that demonstrates how to move the stop-loss to breakeven and then trail it as price advances.
 The strategy enters a long position and manages it in two phases:

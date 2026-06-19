@@ -1,5 +1,5 @@
 # Coppock Histogram Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades reversals of the Coppock Histogram. The indicator sums two Rate of Change values and smooths the result with a moving average. When momentum turns upward the strategy opens long positions and closes shorts. A downward turn closes longs and enters shorts. Signals are evaluated on completed candles only.
 

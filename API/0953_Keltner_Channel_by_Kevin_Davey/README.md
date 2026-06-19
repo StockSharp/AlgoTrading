@@ -1,5 +1,5 @@
 # Keltner Channel Strategy by Kevin Davey
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A simple volatility channel system. It buys when the close falls below the lower Keltner band and sells short when the close rises above the upper band. The channel is built from an EMA and an ATR multiple.
 

@@ -1,5 +1,5 @@
 # Phase Cross Strategy with Zone
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This sample strategy enters long when a smoothed SMA with positive offset crosses above an EMA with negative offset. The position is closed when the opposite crossover occurs.
 

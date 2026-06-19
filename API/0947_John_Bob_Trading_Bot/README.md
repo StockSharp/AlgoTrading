@@ -1,5 +1,5 @@
 # John Bob Trading Bot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy combining 50-bar high/low levels with simple fair value gap detection. Opens five scaled orders with ATR-based stop-loss and multiple take-profit levels.
 

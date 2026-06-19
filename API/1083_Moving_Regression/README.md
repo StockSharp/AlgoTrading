@@ -1,5 +1,5 @@
 # Moving Regression
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that applies polynomial moving regression to predict the next price. A long position opens when the forecast is above the current value and a short position when below.
 

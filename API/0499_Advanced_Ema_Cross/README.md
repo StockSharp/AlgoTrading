@@ -1,5 +1,5 @@
 # Advanced EMA Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy goes long when a short-term EMA crosses above a long-term EMA while filtering signals with normalized ATR, ADX trend strength and a SuperTrend direction check. Stop-loss and take-profit levels adapt based on USD strength inferred from a 50-period EMA.
 

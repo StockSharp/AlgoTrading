@@ -1,5 +1,5 @@
 # AK47 A1
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Port of the "AK47_A1" MetaTrader expert. The strategy combines Bill Williams' Alligator, DeMarker oscillator, Williams %R filter and fractal triggers to trade breakouts only when the market leaves ranging conditions.
 

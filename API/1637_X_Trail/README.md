@@ -1,5 +1,5 @@
 # X Trail Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy generates trades when a fast and a slow simple moving average
 built on median price cross each other. The logic mirrors the original MQL

@@ -1,5 +1,5 @@
 # Monthly Purchase Strategy with Dynamic Contract Size
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Buys a dynamic number of contracts on a chosen day each month using a fixed percentage of account equity. Drawdown is tracked for informational purposes.
 

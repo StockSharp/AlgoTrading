@@ -1,5 +1,5 @@
 # XAUUSD Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades XAUUSD using EMA crossovers, RSI extremes and Bollinger Bands.
 A long position is opened when the fast EMA crosses above the slow EMA, RSI is below the oversold level and price closes above the upper Bollinger Band.

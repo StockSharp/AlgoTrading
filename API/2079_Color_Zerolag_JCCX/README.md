@@ -1,5 +1,5 @@
 # Color Zerolag JCCX Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy inspired by the ColorZerolagJCCX indicator from MetaTrader. It approximates the original oscillator using two simple moving averages.
 The strategy goes long when the fast average crosses below the slow average and goes short when the fast average crosses above the slow average.

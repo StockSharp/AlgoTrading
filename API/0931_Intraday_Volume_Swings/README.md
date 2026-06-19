@@ -1,5 +1,5 @@
 # Intraday Volume Swings Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades when price enters volume-defined swing regions from the current or previous day.
 

@@ -1,5 +1,5 @@
 # Binary Wave StdDev Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that sums signals from MA, MACD, CCI, Momentum, RSI and ADX using configurable weights.
 Trades in direction of cumulative score when volatility measured by standard deviation exceeds a threshold.

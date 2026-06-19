@@ -1,5 +1,5 @@
 # Charles Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy based on daily high and low levels. It looks for price moving beyond the previous day's range with an RSI and EMA trend filter. The strategy calculates the daily high and low, offsets them by a configurable delta, and enters long above the upper level or short below the lower level when trend conditions are confirmed.
 

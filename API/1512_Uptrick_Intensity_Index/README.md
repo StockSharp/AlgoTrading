@@ -1,5 +1,5 @@
 # Uptrick Intensity Index Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy computes the Trend Intensity Index from three moving averages and trades on crossovers of TII and its own moving average.
 

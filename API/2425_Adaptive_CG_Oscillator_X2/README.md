@@ -1,5 +1,5 @@
 # Adaptive CG Oscillator X2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses the Adaptive CG Oscillator on two different timeframes.
 The higher timeframe defines the prevailing trend while the lower timeframe

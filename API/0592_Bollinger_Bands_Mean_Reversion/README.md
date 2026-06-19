@@ -1,5 +1,5 @@
 # Bollinger Bands Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys when price closes below the lower Bollinger Band and exits when price closes above the upper band.
 

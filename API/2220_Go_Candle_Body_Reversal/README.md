@@ -1,5 +1,5 @@
 # Go Candle Body Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the Go indicator that averages candle body size. It opens a long position when the smoothed candle body crosses below zero after being positive and opens a short position on the opposite cross. Existing positions are closed on opposite signals.
 

@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy rebuilds the Center of Gravity channel used by the original MQL4 expert by solving a polynomial regression on the most recent candles. The regression center is computed from the intercept of the least squares fit, while the band width is derived from the standard deviation of close prices over the same lookback horizon. The lower band equals the regression center minus the scaled deviation, reproducing the `stdl` buffer accessed in the source robot.
 

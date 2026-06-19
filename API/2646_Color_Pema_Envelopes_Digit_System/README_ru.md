@@ -1,5 +1,5 @@
 # Color PEMA Envelopes Digit System
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Color PEMA Envelopes Digit System** — это перенос на StockSharp эксперта
 `Exp_Color_PEMA_Envelopes_Digit_System.mq5`. Стратегия анализирует цветовые коды

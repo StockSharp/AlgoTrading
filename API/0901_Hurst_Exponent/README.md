@@ -1,5 +1,5 @@
 # Hurst Exponent
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simple strategy that trades based on a smoothed Hurst exponent.  
 The Hurst value is smoothed with an EMA and compared to a threshold to determine market regime.

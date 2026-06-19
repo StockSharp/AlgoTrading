@@ -1,5 +1,5 @@
 # Universal Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the core idea of the original MQL4 script `cm_universal_trailing_stop.mq4`. It does not generate entry signals; instead it manages an existing position by moving the stop-loss in the direction of profit.
 

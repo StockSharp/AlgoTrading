@@ -1,5 +1,5 @@
 # Macd Pattern Trader All v0.01
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy replicates the "MacdPatternTraderAll v0.01" MetaTrader expert advisor. It runs six independent MACD-based entry patterns on the same candle stream, manages risk with adaptive stop-loss and take-profit levels, performs staged profit taking, and optionally applies a slow martingale sizing rule after losing cycles.
 

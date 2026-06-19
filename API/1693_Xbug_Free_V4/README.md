@@ -1,5 +1,5 @@
 # Xbug Free V4 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy opens positions when a moving average of the median price crosses the median price itself. A symmetric take profit and stop loss are placed at a fixed distance from the entry price.
 

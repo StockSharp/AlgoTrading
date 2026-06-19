@@ -1,5 +1,5 @@
 # inwCoin Martingale Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements a simple martingale approach for long positions on Bitcoin.
 It supports three optional entry signals: MACD histogram crossing above zero,

@@ -1,5 +1,5 @@
 # Вход по Bollinger Bands и Heikin Ashi
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует свечи Heikin Ashi и полосы Боллинджера.
 

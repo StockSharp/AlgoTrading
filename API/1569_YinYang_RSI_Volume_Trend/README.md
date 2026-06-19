@@ -1,5 +1,5 @@
 # YinYang RSI Volume Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 YinYang RSI Volume Trend Strategy uses volume-weighted price zones and an RSI filter to detect trend reversals. The strategy buys when price exits the lower zone and sells when it exits the upper zone. Optional stop-loss and take-profit levels are based on dynamic zones.
 

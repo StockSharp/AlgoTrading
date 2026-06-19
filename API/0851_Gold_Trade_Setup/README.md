@@ -1,5 +1,5 @@
 # Gold Trade Setup Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Kaufman Adaptive Moving Average and SuperTrend.
 It sells when AMA is rising and SuperTrend switches to uptrend.

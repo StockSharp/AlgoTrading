@@ -1,5 +1,5 @@
 # Стратегия Stochastic-Dynamic Volatility Band Model
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Использует волатильностные полосы по типу Боллинджера для торговли на пересечениях и закрывает позицию через фиксированное количество свечей.
 

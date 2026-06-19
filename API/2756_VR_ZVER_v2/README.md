@@ -1,5 +1,5 @@
 # VR-ZVER v2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The VR-ZVER v2 strategy is a StockSharp port of the classic MetaTrader expert advisor. It keeps the triple confirmation idea of the original script: every trade must be supported by moving averages, the stochastic oscillator, and RSI. Only when all enabled filters agree does the strategy place a market order.
 

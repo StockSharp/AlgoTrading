@@ -1,5 +1,5 @@
 # Aroon Horn Sign
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Aroon Horn Sign** strategy looks for trend reversals using the Aroon indicator.
 It monitors the Aroon Up and Down lines on higher timeframe candles. When the

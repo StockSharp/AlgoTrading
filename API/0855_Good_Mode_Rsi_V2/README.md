@@ -1,5 +1,5 @@
 # Good Mode RSI v2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades RSI extremes with custom take-profit and trailing stop thresholds. It sells when RSI surpasses a high level and closes when RSI falls to a profit-taking value. It buys when RSI dips to a low level and closes when RSI rises to a profit target. In both cases, a trailing stop follows the most favorable price to protect gains.
 

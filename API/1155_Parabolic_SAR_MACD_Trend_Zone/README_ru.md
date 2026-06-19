@@ -1,5 +1,5 @@
 # Parabolic SAR с подтверждением MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает индикатор Parabolic SAR с подтверждением MACD. Сделка открывается, когда цена пересекает SAR в направлении, подтверждённом MACD, что позволяет ловить развороты тренда.
 

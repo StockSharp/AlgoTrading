@@ -66,5 +66,5 @@ Dealers Trade v7.51 — это советник MetaTrader 4 (`Dealers_Trade_v_7
 
 - `CS/DealersTradeV751RivotStrategy.cs` — C#-реализация стратегии.
 - `README.md` — подробное описание на английском языке.
-- `README_cn.md` — документация на китайском языке.
+- `README_zh.md` — документация на китайском языке.
 

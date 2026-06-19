@@ -36,4 +36,4 @@ The **Zone Recovery Formula Strategy** is a port of the MetaTrader 4 "Zone Recov
 - `CS/ZoneRecoveryFormulaStrategy.cs` – C# implementation of the strategy.
 - `README.md` – This documentation file in English.
 - `README_ru.md` – Documentation in Russian.
-- `README_cn.md` – Documentation in Chinese.
+- `README_zh.md` – Documentation in Chinese.

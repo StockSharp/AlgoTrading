@@ -1,5 +1,5 @@
 # Zero-Lag TEMA Crosses Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на пересечении нулелаговых TEMA. Используются последние максимумы и минимумы для стопов и цели по соотношению риск/прибыль.
 

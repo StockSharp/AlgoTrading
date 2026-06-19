@@ -1,5 +1,5 @@
 # Стратегия Supertrend & CCI Strategy Scalp
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует две линии Supertrend и сглаженный CCI для поиска краткосрочных разворотов.
 Покупка выполняется, когда первая линия Supertrend выше цены, вторая ниже цены, а сглаженный CCI опускается ниже -100. Логика шорта зеркальна.

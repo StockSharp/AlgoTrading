@@ -1,5 +1,5 @@
 # MA2CCI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines a fast and slow Simple Moving Average (SMA) crossover with the Commodity Channel Index (CCI) as a confirmation filter. A position is opened only when both the moving averages and CCI cross their levels in the same direction. The Average True Range (ATR) defines the initial stop-loss distance.
 

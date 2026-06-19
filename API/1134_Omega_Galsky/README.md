@@ -1,5 +1,5 @@
 # Omega Galsky
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 EMA crossover strategy with break-even stop logic.
 

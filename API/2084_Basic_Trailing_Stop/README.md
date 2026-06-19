@@ -1,5 +1,5 @@
 # Basic Trailing Stop
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Basic Trailing Stop strategy combines Commodity Channel Index (CCI) and Relative Strength Index (RSI) filters with a simple trailing stop. When both indicators signal oversold or overbought conditions, the strategy opens a market position and immediately places a trailing stop measured in pips. As price moves favorably, the stop level follows the trend to lock in profits.
 

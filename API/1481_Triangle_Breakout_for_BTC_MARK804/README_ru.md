@@ -1,5 +1,5 @@
 # Стратегия Triangle Breakout для BTC
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Открывает позиции при пробое треугольника на простых скользящих средних при всплеске объёма и управляет сделками через ATR-стопы.
 

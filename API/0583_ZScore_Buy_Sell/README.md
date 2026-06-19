@@ -1,5 +1,5 @@
 # Z-Score Buy Sell Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy uses Z-score to detect extreme deviations from the moving average.
 A position is opened when the z-score crosses above or below a threshold and a cooldown prevents repeated signals.

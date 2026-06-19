@@ -1,5 +1,5 @@
 # Daytrading ES Wick Length Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters a long position when the total wick length of a candle exceeds its moving average plus an offset and exits after holding the position for a fixed number of bars.
 

@@ -1,5 +1,5 @@
 # Close Orders Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This utility strategy immediately closes existing positions and cancels pending orders according to user-defined filters. It can operate on the attached security only or on all portfolio securities. Optional time window and price range restrictions allow precise control over which orders are affected.
 

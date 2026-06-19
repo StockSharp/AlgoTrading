@@ -1,5 +1,5 @@
 # 5Mins Envelopes
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **5Mins Envelopes** strategy reproduces the MetaTrader expert that trades five-minute candles around a linear weighted moving average envelope.
 It looks for price spikes that stretch well beyond the bands and then enters in the mean-reversion direction.

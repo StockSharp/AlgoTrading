@@ -1,5 +1,5 @@
 # News Trading EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Time-based straddle strategy designed for trading around economic news releases. At a scheduled time the strategy places symmetric buy stop and sell stop orders at a fixed distance from the current price. Orders are updated every candle during the activation window to follow market price. If a position is opened the opposite pending order is canceled and optional take-profit and stop-loss levels manage exits.
 

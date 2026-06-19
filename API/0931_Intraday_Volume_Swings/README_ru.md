@@ -1,5 +1,5 @@
 # Стратегия Intraday Volume Swings
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует, когда цена входит в области объёма свингов текущего или предыдущего дня.
 

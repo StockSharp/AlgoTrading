@@ -1,5 +1,5 @@
 # Fracture
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Fracture combines fractal breakouts with smoothed moving averages and ADX to trade both ranging and trending markets.
 

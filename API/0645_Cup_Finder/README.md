@@ -1,5 +1,5 @@
 # Cup Finder Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This pattern-based strategy searches for rounded "cup" formations in price data. When price breaks out from a completed cup, it enters long or short depending on the direction.
 

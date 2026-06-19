@@ -1,5 +1,5 @@
 # RSI + EMA Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This system pairs a classic Relative Strength Index (RSI) oscillator with a dual moving-average trend filter. The RSI provides short-term overbought and oversold readings while the two exponential moving averages (EMAs) define the broader trend. The strategy only takes trades in the direction of the fast EMA relative to the slow EMA, helping avoid counter‑trend setups during strong directional moves.
 

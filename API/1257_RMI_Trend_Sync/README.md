@@ -1,5 +1,5 @@
 # RMI Trend Sync
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 RMI Trend Sync blends RSI and MFI momentum signals with a SuperTrend trailing stop. A long trade opens when average momentum crosses above a threshold with rising EMA slope, while a short trade triggers on a downward break. SuperTrend provides the exit trail.
 

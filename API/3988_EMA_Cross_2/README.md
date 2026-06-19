@@ -55,5 +55,5 @@ The strategy operates on completed candles supplied by the configurable candle d
 ## Files
 - `CS/EmaCross2Strategy.cs` – StockSharp implementation of the trading logic.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.
 - `README_ru.md` – Russian translation.

@@ -1,5 +1,5 @@
 # Grim Slash
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grim Slash is a simple price action strategy that buys when the current candle's low tests the previous close and exits when the high reaches the previous high. Risk is managed with fixed percentage take profit and stop loss.
 

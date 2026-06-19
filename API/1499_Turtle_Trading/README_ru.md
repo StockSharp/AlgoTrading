@@ -1,5 +1,5 @@
 # Стратегия Turtle Trading
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Классическая система Turtle Trading с прорывом каналов Дончиана и управлением риском на основе ATR.
 

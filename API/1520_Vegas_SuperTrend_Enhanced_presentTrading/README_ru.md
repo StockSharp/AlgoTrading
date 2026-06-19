@@ -1,5 +1,5 @@
 # Стратегия Vegas SuperTrend Enhanced
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Сочетает канал Vegas и модифицированный SuperTrend.
 Вход при смене направления SuperTrend с учётом волатильности.

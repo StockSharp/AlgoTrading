@@ -1,5 +1,5 @@
 # EMA Crossover Strategy with Filters
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses multiple exponential moving averages (EMAs) to trade crossovers with additional trend filters.
 

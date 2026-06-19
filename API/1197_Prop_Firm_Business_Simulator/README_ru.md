@@ -1,5 +1,5 @@
 # Prop Firm Business Simulator
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия имитирует управление риском проп-фирмы, используя прорыв канала Келтнера и вычисление объёма по проценту риска.
 

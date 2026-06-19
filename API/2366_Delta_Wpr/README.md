@@ -1,5 +1,5 @@
 # Delta WPR
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Delta WPR compares a fast and a slow Williams %R oscillator to capture momentum shifts. When the fast value exceeds the slow one and the slow oscillator stays above a threshold level, the strategy opens a long position and closes any short exposure. The opposite configuration – fast below slow with the slow oscillator below the level – triggers a short entry. Every new candle is processed only after completion to avoid noise.
 

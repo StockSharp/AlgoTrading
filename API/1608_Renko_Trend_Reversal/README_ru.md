@@ -1,5 +1,5 @@
 # Стратегия Renko Trend Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Renko Trend Reversal входит, когда открытие ренко пересекает закрытие. Стоп-лосс и тейк-профит можно включить. Используются кирпичи ренко на основе ATR.
 

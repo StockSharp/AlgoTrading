@@ -1,5 +1,5 @@
 # Gold & EUR/USD Liquidity Grab Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects liquidity grabs at supply and demand zones on Gold and EUR/USD using RSI, SMA, Stochastic Oscillator and ATR-based fair value gaps.
 

@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the **1 MINUTE SCALPER** MetaTrader 4 expert advisor into the StockSharp high-level API. It keeps the multi-layer trend confirmation, multi-timeframe momentum, and long-term MACD filter of the original robot while adapting risk controls to StockSharp's position-centric model.
 

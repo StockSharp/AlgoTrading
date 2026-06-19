@@ -1,4 +1,4 @@
 # Стратегия Williams %R Zone Scalper
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Скальпирующая стратегия на основе осциллятора Williams %R. Покупает при выходе индикатора из зоны перепроданности и продаёт при выходе из зоны перекупленности.

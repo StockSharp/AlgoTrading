@@ -1,5 +1,5 @@
 # PPO Cloud Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This momentum strategy trades crossovers between the Percentage Price Oscillator (PPO) and its signal line. A long position opens when the PPO crosses above its signal line, while a short position opens on the opposite crossover. Existing positions can optionally be closed on the contrary signal. The strategy operates on a single timeframe.
 

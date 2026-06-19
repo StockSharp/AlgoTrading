@@ -40,5 +40,5 @@ All parameters can be optimised via the StockSharp parameter UI.
 ## Files
 - `CS/AhHmRsiStrategy.cs` – Strategy implementation.
 - `README.md` – English documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.

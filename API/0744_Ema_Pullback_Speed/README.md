@@ -1,5 +1,5 @@
 # EMA Pullback Speed Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The EMA Pullback Speed strategy uses a dynamic EMA that adapts to price acceleration. A long position opens when price returns to the dynamic EMA during an uptrend with a bullish reversal and sufficient upward speed. A short position opens on the opposite conditions. Exits use ATR-based stop loss and a fixed percentage take profit.
 

@@ -1,5 +1,5 @@
 # OBV ATR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy tracks On-Balance Volume (OBV) and enters trades when OBV breaks its recent high or low. It maintains a dynamic channel similar to an ATR breakout, switching between bull and bear modes.
 

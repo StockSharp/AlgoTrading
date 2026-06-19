@@ -1,5 +1,5 @@
 # AntiFragile EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grid strategy placing layered limit orders above and below current price with increasing volume.
 Positions are protected by an initial stop and trailed as price moves favorably.

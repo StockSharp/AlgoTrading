@@ -1,5 +1,5 @@
 # MelBar EuroSwiss Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MelBar EuroSwiss strategy reproduces the logic of the "MelBar EuroSwiss M30 500 1.85x 2Y" expert advisor. It combines Bollinger Band breakout entries with an exit filter based on the Relative Vigor Index (RVI). The default template is tuned for the EUR/CHF pair on the M30 timeframe, but the parameters can be optimized for other symbols.
 

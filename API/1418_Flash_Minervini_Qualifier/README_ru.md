@@ -1,5 +1,5 @@
 # Стратегия Flash Strategy Minervini Qualifier
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Сочетает пересечение EMA, направление SuperTrend и импульсный RSI с фильтром стадий Минервини.
 

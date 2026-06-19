@@ -1,5 +1,5 @@
 # Strategy Base Template
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This folder provides a minimal scaffold for building custom trading ideas. The
 strategy only calculates a single exponential moving average and exposes a wide

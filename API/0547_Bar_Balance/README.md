@@ -1,5 +1,5 @@
 # Bar Balance Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy measures the balance between upward and downward moves inside each candle. A positive balance suggests buyers dominate the bar, while a negative balance points to selling pressure.
 

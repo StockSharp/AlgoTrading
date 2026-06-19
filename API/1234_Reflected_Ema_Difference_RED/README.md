@@ -1,5 +1,5 @@
 # Reflected EMA Difference RED Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reflects the distance between two Hull Moving Averages and tracks a smoothed value. When the smoothed reflection reverses by a specified percentage, it enters long or short positions accordingly.
 

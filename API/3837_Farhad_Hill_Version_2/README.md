@@ -74,4 +74,4 @@ changed from the UI. Key groups:
 - `CS/FarhadHillVersion2Strategy.cs` – C# implementation of the strategy.
 - `README.md` – This document.
 - `README_ru.md` – Russian translation.
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.

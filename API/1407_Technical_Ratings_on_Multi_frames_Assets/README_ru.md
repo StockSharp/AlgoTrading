@@ -1,5 +1,5 @@
 # Стратегия Technical Ratings on Multi-frames Assets
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия агрегирует технические рейтинги из нескольких таймфреймов.
 Цена сравнивается с простой скользящей средней и уровнями RSI на свечах 1ч, 4ч и 1д.

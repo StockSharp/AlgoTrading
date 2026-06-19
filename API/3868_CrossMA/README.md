@@ -1,5 +1,5 @@
 # Cross MA ATR Notification Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 "CrossMA" expert advisor. It trades the crossover between two simple moving averages and protects each trade with an Average True Range (ATR) based stop loss. In addition to the original logic, the strategy records detailed information messages instead of sending e-mails.

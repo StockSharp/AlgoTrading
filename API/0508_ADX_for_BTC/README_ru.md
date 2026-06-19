@@ -1,5 +1,5 @@
 # ADX for BTC
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует индекс среднего направленного движения (ADX) с необязательным фильтром SMA для поиска сильных движений в Bitcoin.
 

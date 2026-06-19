@@ -1,5 +1,5 @@
 # Martin For Small Deposits
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 This strategy reproduces the "Martin for small deposits" averaging expert in StockSharp. It looks at 15 completed candles and opens a position only when the newest close is below (for longs) or above (for shorts) the close recorded 14 bars earlier. All trades are executed at market using the high-level strategy API, and the logic is applied once per finished candle.

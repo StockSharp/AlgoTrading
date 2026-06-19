@@ -1,5 +1,5 @@
 # IU Gap Fill Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 IU Gap Fill Strategy enters trades when the price gaps away from the previous session close and then fills that gap. A long position opens after a gap up that dips below the prior close and closes back above it. A short position opens after a gap down that rallies above the prior close and closes back below. An ATR-based trailing stop manages exits.
 

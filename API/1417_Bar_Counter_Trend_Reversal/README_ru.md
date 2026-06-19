@@ -1,5 +1,5 @@
 # Стратегия Bar Counter Trend Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Ищет несколько подряд растущих или падающих баров и открывает контртрендовые сделки, когда цена достигает границ канала.
 

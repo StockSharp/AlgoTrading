@@ -1,5 +1,5 @@
 # Most Powerful TQQQ EMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy enters long when a fast EMA crosses above a slow EMA. A take-profit and stop-loss are set as multipliers of the entry price.
 

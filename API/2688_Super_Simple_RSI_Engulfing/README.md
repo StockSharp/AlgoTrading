@@ -1,5 +1,5 @@
 # Super Simple RSI Engulfing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the original SSEATwRSI MetaTrader expert advisor in StockSharp. It monitors finished candles and calculates a 7-period RSI on the candle high. A trade is triggered only when the RSI reaches an extreme and the previous two bars form a clean engulfing reversal.
 

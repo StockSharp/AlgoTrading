@@ -1,5 +1,5 @@
 # RSI 30-70 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This simple momentum strategy uses the Relative Strength Index (RSI) to identify oversold and overbought zones. When RSI dips below the oversold level, a long position is opened. The trade is closed once RSI rises above the overbought threshold. The system operates on a single timeframe and does not take short trades.
 

@@ -1,5 +1,5 @@
 # Parabolic SAR Early Buy MA Exit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades Parabolic SAR reversals and exits long positions early when SAR flips above price and the close is below an N-period moving average.
 

@@ -1,5 +1,5 @@
 # Multi Indicator Trend Following Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 EMA crossover strategy with RSI and volume confirmation. Uses ATR-based stop loss and take profit.
 

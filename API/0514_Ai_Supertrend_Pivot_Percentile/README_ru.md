@@ -1,5 +1,5 @@
 # Стратегия AI Supertrend Pivot Percentile
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает два индикатора Supertrend с фильтром ADX и фильтром Williams %R по пивотным перцентилям. Длинная позиция открывается, когда цена выше обоих Supertrend, ADX подтверждает сильный тренд и Williams %R выше -50. Для короткой позиции применяются обратные условия.
 

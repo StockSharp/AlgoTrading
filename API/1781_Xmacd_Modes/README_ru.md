@@ -1,5 +1,5 @@
 # Стратегия XMACD с режимами
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на индикаторе MACD и поддерживает четыре режима входа:
 

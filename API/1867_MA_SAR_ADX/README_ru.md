@@ -1,5 +1,5 @@
 # Стратегия MA SAR ADX
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает скользящую среднюю, Parabolic SAR и индикатор Average Directional Index (ADX).
 Покупает, когда цена находится выше скользящей средней и SAR, а +DI выше -DI.

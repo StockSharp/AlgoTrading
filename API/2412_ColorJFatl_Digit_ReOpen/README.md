@@ -1,5 +1,5 @@
 # ColorJFatl Digit ReOpen Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses a Jurik Moving Average (JMA) to identify trend direction. A long position opens when the JMA turns upward and all short positions are closed. A short position opens when the JMA turns downward and all long positions are closed. Additional positions are added every time price moves a fixed number of points in the trade direction, up to a maximum count.
 

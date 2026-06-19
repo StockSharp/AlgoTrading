@@ -1,5 +1,5 @@
 # MA PSAR ATR Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MA PSAR ATR Trend strategy combines a moving-average crossover with a daily Parabolic SAR filter. Trades are taken only when price aligns above or below both averages and the PSAR agrees. An ATR-based stop controls risk.
 

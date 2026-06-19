@@ -1,5 +1,5 @@
 # CorrTime Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The CorrTime strategy is a single-symbol system that replicates the MetaTrader expert advisor of the same name. It analyses the correlation between closing prices and their chronological order to detect acceleration or reversal of momentum. The algorithm operates on completed candles and combines three layers of confirmation:
 

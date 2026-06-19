@@ -1,5 +1,5 @@
 # EMA Cross Contest Hedged Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader expert advisor **EMA_CROSS_CONTEST_HEDGED** inside StockSharp. The robot looks for a bullish/bearish crossover between a fast and a slow exponential moving average (EMA) and optionally checks the MACD histogram as a trend confirmation. When a signal appears, the strategy immediately opens a market position and places a ladder of stop orders that hedge the trade by adding more exposure if price keeps trending.
 

@@ -52,7 +52,7 @@
 API/3924/
 ├── CS/Up3x1ShiftedSmaStrategy.cs
 ├── README.md
-├── README_cn.md
+├── README_zh.md
 └── README_ru.md
 ```
 

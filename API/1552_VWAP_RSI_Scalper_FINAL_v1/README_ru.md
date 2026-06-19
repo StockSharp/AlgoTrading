@@ -1,5 +1,5 @@
 # VWAP RSI Scalper FINAL v1
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Скальпинговая стратегия, сочетающая VWAP и RSI, с выходами по ATR и дневным лимитом сделок.
 

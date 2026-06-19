@@ -1,5 +1,5 @@
 # Supertrend Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Supertrend + Stochastic strategy. Strategy enters trades when Supertrend indicates trend direction and Stochastic confirms with oversold/overbought conditions.
 

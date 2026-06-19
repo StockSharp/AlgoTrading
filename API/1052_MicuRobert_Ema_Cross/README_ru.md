@@ -1,5 +1,5 @@
 # MicuRobert EMA Cross Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует две ZLEMA для торговли по пересечениям. Можно ограничить торговлю сессией и включить трейлинг-стоп.
 

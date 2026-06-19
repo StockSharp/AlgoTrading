@@ -1,5 +1,5 @@
 # Yesterday Today Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Yesterday Today Strategy reproduces the classic MetaTrader breakout where today's price is compared with yesterday's high and low. The strategy keeps track of the last completed daily candle, then watches intraday candles to react quickly when price escapes yesterday's range. Before reversing, it always closes any opposite exposure, delivering a clean one-position workflow.
 

@@ -1,5 +1,5 @@
 # RSI Value
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades based on the Relative Strength Index (RSI) crossing a middle value.
 

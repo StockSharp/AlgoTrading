@@ -1,5 +1,5 @@
 # EUR/USD Multi-Layer Statistical Regression Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that uses multiple linear regression layers to estimate trend direction on EUR/USD. It calculates short, medium and long regressions, validates them by R² and slope thresholds and trades in the direction of the weighted ensemble.
 

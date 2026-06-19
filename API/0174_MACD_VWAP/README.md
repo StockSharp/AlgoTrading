@@ -1,5 +1,5 @@
 # Macd Vwap Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on MACD and VWAP indicators. Enters long when MACD > Signal and price > VWAP Enters short when MACD < Signal and price < VWAP
 

@@ -1,5 +1,5 @@
 # MFI Histogram Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MFI Histogram Strategy uses the Money Flow Index (MFI) to detect overbought and oversold conditions via configurable thresholds. The MFI combines price and volume to measure the intensity of capital inflow and outflow. When the indicator crosses above the high level from below, the strategy interprets this as rising buying pressure and enters a long position while closing any existing short. Conversely, a cross below the low level triggers a short entry and closes existing longs. Stop-loss and take-profit values are managed in ticks through the built-in protection mechanism.
 

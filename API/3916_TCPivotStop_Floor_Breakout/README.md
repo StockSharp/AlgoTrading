@@ -46,5 +46,5 @@ Only one position can be active at a time. Optional session management allows fl
 
 - `CS/TcpFloorPivotBreakoutStrategy.cs` – C# implementation of the trading logic.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Simplified Chinese translation.
+- `README_zh.md` – Simplified Chinese translation.
 - `README_ru.md` – Russian translation.

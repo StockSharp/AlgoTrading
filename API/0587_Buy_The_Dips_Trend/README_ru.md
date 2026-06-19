@@ -1,5 +1,5 @@
 # Buy The Dips Trend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пересечения EMA с фиксированными тейк-профитом и стоп-лоссом.
 

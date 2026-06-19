@@ -1,5 +1,5 @@
 # Buying Selling Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses buying and selling volume distribution to detect pressure.
 A long position is opened when buying volume dominates and the volume metric

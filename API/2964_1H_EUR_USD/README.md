@@ -1,5 +1,5 @@
 # 1H EUR/USD MACD Swing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the "1H EUR_USD" MetaTrader expert advisor into the StockSharp high-level API. It trades the EUR/USD pair on hourly candles using dual moving averages and MACD swing detection. Entries require both a trend filter (fast MA above/below slow MA) and a MACD double-bottom/double-top pattern combined with a breakout of recent highs or lows. Risk is controlled with pip-based stop loss, take profit, and an incremental trailing stop that mirrors the original EA logic.
 

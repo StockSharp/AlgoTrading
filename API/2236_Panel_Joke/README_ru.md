@@ -1,5 +1,5 @@
 # Стратегия Panel Joke
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия является конверсией оригинальной системы *panel-joke* из MetaTrader в StockSharp. Она сравнивает текущую свечу с предыдущей по семи ценовым параметрам (open, high, low, среднее high и low, close, среднее high/low/close и взвешенное среднее high/low/close). Каждый параметр, который вырос, увеличивает счетчик покупок; падение увеличивает счетчик продаж.
 

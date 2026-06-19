@@ -1,5 +1,5 @@
 # Hoffman Heiken Bias Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Hoffman Heiken Bias combines a group of moving averages with a Heikin Ashi net volume model to gauge trend direction. A long position is opened when the fast SMA rises above the fast EMA while all longer-term averages stay below it and the net volume regression is positive. Shorts trigger on the opposite conditions.
 

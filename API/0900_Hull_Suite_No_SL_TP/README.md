@@ -1,5 +1,5 @@
 # Hull Suite No SL/TP
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Hull Suite No SL/TP is a trend-following strategy based on Hull Moving Average variations. It flips position when the hull line changes direction compared to two candles ago.
 

@@ -1,5 +1,5 @@
 # Стратегия Crunchsters Normalised Trend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия нормализует доходности и применяет Hull Moving Average к накопленной нормализованной цене.
 Длинная позиция открывается при пересечении `nPrice` выше HMA, короткая — при пересечении ниже.

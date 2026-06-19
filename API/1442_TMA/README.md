@@ -1,5 +1,5 @@
 # TMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 TMA Strategy uses multiple smoothed moving averages and candlestick patterns to trade in the direction of the 200-period trend. It combines 3-line strike and engulfing signals with a session filter.
 

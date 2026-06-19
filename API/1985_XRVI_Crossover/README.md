@@ -1,5 +1,5 @@
 # XRVI Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The XRVI Crossover strategy is based on the Extended Relative Vigor Index (XRVI).
 XRVI is calculated by smoothing the Relative Vigor Index and then applying a second moving average to produce a signal line.

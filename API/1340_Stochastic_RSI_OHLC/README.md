@@ -1,5 +1,5 @@
 # Stochastic RSI OHLC Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy builds OHLC bars from the Stochastic RSI indicator and trades on momentum shifts. It calculates RSI for high, low and close prices and applies a stochastic oscillator to each series. A long position opens when Stochastic RSI rises from a pivot and crosses above the long entry level. A short position opens when it falls from a pivot and crosses below the short entry level.
 

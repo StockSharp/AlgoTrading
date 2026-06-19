@@ -1,5 +1,5 @@
 # Candlestick Stochastic Confirmation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader Expert Advisor **Expert_CP_Stoch** inside StockSharp's high-level API. It blends Japanese candlestick reversal patterns with a %D stochastic oscillator filter to confirm entries and time exits. The system scans each completed candle, looks back three bars to detect bullish or bearish formations, and requires the stochastic signal line to be in an oversold or overbought zone before opening trades. Positions are closed whenever the opposite pattern appears or when the stochastic line crosses a configurable exit boundary.
 

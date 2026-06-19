@@ -1,5 +1,5 @@
 # Candels High Open Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades when a candle opens exactly at its high or low.
 A long position is opened if the candle's open equals its low, anticipating upward movement.

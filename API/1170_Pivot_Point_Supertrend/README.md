@@ -1,5 +1,5 @@
 # Pivot Point Supertrend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining pivot points with an ATR-based Supertrend to capture trend reversals.
 

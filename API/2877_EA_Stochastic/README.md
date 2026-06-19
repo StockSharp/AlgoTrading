@@ -1,5 +1,5 @@
 # EA Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 High level StockSharp port of the MetaTrader "EA Stochastic" expert advisor. The strategy subscribes to one candle series, reads
 stochastic oscillator values, and keeps at most a single net position. Entries occur when the main stochastic line has stayed on the

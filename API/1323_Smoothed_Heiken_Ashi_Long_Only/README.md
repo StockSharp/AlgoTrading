@@ -1,5 +1,5 @@
 # Smoothed Heiken Ashi Strategy Long Only
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Long-only strategy using smoothed Heikin-Ashi candles. Buys when the smoothed candle changes from red to green and exits when it turns red.
 

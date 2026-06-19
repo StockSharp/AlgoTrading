@@ -1,5 +1,5 @@
 # VWAP Pro V21
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combines fast and slow EMA with VWAP and ATR-based risk management. A higher timeframe EMA filter (1h, length 50) confirms the trend. Trades open when price aligns with the trend and close at ATR-based take profit or stop loss levels.
 

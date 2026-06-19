@@ -1,5 +1,5 @@
 # Stepped Trailing Strategy Example
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A sample strategy demonstrating three-step trade management with optional trailing stop.
 

@@ -1,5 +1,5 @@
 # Larry Conners Vix Reversal II Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades based on the RSI of the VIX index. A long position is opened when the VIX RSI crosses above the overbought level. A short position is opened when the RSI crosses below the oversold level. Positions are closed after being held for a minimum number of days.
 

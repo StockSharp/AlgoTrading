@@ -1,5 +1,5 @@
 # Стратегия Color Momentum AMA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия является конверсией советника MetaTrader *Exp_ColorMomentum_AMA* в StockSharp.
 Вычисляется ценовой моментум за заданный период и сглаживается адаптивной скользящей средней Кауфмана (AMA).

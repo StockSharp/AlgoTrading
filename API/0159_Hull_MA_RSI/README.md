@@ -1,5 +1,5 @@
 # Hull Ma Rsi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Implementation of strategy - Hull Moving Average + RSI. Buy when HMA is rising and RSI is below 30 (oversold). Sell when HMA is falling and RSI is above 70 (overbought).
 

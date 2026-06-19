@@ -1,4 +1,4 @@
 # Стратегия RSI Divergence
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Использует бычьи и медвежьи расхождения между RSI и ценой, определяемые по пивотам индикатора и цены.

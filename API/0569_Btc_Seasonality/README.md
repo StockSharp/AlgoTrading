@@ -1,5 +1,5 @@
 # BTC Seasonality Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy opens a position based on predefined day-of-week and hour rules using Eastern Standard Time (EST). The user chooses the entry day and hour, the exit day and hour, and whether to trade long or short. The position is opened at the specified entry moment and closed at the specified exit moment.
 

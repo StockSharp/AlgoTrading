@@ -1,5 +1,5 @@
 # Falcon Liquidity Grab Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades liquidity grabs during major market sessions using a simple moving average to define trend. It enters when price wicks beyond recent swing levels and reverses with the trend. Each trade uses fixed stop loss and take profit measured in ticks.
 

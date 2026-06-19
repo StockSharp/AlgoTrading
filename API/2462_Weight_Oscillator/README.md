@@ -1,5 +1,5 @@
 # Weight Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines RSI, Money Flow Index, Williams %R and DeMarker into a weighted oscillator smoothed by a simple moving average. Positions are opened or reversed when the oscillator crosses configurable high or low levels. The trend mode determines whether trades follow or fade the oscillator signals.
 

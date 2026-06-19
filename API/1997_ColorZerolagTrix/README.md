@@ -1,5 +1,5 @@
 # Color Zerolag TRIX Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy aggregates five TRIX indicators with different periods and weights to produce a fast and a smoothed slow line. Trades are triggered when the fast line crosses the slow line.
 

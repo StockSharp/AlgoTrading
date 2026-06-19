@@ -1,5 +1,5 @@
 # Скальпинг на Williams R, MACD и SMA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия скальпинга, использующая индикаторы Williams %R, гистограмму MACD и простую скользящую среднюю на минутных свечах.
 

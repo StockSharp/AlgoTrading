@@ -1,5 +1,5 @@
 # Panel Joke Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy converts the original MetaTrader *panel-joke* system into StockSharp. It compares the current candle with the previous one across seven price metrics (open, high, low, average of high and low, close, average of high/low/close, and weighted average of high/low/close). Each metric that increased counts toward a potential long setup; each decrease counts toward a short setup.
 

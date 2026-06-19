@@ -63,4 +63,4 @@ The strategy subscribes to two candle streams: the trading timeframe and the hig
 - `CS/StochasticMomentumFilterStrategy.cs` – StockSharp implementation of the strategy logic.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.

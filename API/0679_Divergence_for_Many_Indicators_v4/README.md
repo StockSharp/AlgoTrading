@@ -1,5 +1,5 @@
 # Divergence for Many Indicators v4 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects divergences between price and multiple momentum indicators (MACD, RSI, Stochastic, CCI, Momentum, OBV, MFI).
 A position is opened when at least a specified number of indicators show divergence in the same direction.

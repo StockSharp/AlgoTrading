@@ -1,5 +1,5 @@
 # Парсер сессий
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Парсер сессий показывает, как разбирать строки сессий TradingView на время начала/окончания и дни недели.
 

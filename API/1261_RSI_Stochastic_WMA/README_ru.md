@@ -1,5 +1,5 @@
 # Стратегия Rsi Stochastic Wma
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает RSI, Stochastic Oscillator и взвешенную скользящую среднюю (WMA).
 Покупает при перепроданности RSI, пересечении %K выше %D и цене выше WMA.

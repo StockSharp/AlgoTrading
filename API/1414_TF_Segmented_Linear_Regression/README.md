@@ -1,5 +1,5 @@
 # TF Segmented Linear Regression
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy applies a linear regression channel within each time segment. A long position opens when price crosses above the upper band and a short when it crosses below the lower band.
 

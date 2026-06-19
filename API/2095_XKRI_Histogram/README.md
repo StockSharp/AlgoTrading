@@ -1,5 +1,5 @@
 # XKRI Histogram Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the Kairi Relative Index (KRI) smoothed by an exponential moving average. The system looks for local minima and maxima of the smoothed oscillator and enters long or short positions when a reversal pattern appears.
 

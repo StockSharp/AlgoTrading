@@ -1,5 +1,5 @@
 # Dow Theory Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Dow Theory Trend Strategy uses pivot highs and lows to determine trend direction. The strategy enters long when both higher highs and higher lows appear, and enters short when both lower highs and lower lows form.
 

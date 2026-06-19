@@ -1,5 +1,5 @@
 # AnyRange Cloud Tail System Tm Plus Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the behaviour of the **Exp_i-AnyRangeCldTail_System_Tm_Plus.mq5** expert using StockSharp's high level API. It builds a custom intraday range between two user-defined times, waits for breakouts beyond that range, and schedules orders a configurable number of bars after the breakout so that signals are aligned with the original MQL timing logic.
 

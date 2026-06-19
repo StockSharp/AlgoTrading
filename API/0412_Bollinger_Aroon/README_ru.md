@@ -1,5 +1,5 @@
 # Bollinger Aroon
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Bollinger Aroon** ищет откаты внутри сильного восходящего тренда.  
 Когда цена уходит ниже нижней полосы Боллинджера, но значение Aroon Up остаётся

@@ -1,5 +1,5 @@
 # Стратегия Vector3
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Торговля основана на согласованности трёх скользящих средних.
 Покупка при fast > middle > slow и продажа при fast < middle < slow.

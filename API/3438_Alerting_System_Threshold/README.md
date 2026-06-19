@@ -50,4 +50,4 @@ Alerts are written with `AddInfoLog` and include the current bid/ask values and 
 * `CS/AlertingSystemStrategy.cs` – C# strategy implementation.
 * `README.md` – English documentation (this file).
 * `README_ru.md` – Russian translation with additional explanation.
-* `README_cn.md` – Simplified Chinese translation.
+* `README_zh.md` – Simplified Chinese translation.

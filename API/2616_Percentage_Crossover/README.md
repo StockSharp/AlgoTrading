@@ -1,5 +1,5 @@
 # Percentage Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy replicates the behaviour of the original MetaTrader expert `Exp_PercentageCrossover`. It trades the direction of the Percentage Crossover indicator, which draws a trailing price line that can only move within a fixed percentage band around the current close. The slope of this line defines the state of the market and triggers trades.
 

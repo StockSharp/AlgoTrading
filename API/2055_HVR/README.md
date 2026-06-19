@@ -1,5 +1,5 @@
 # Historical Volatility Ratio Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the Historical Volatility Ratio (HVR). It compares short-term volatility over 6 bars to long-term volatility over 100 bars using log returns. When the ratio rises above the threshold, the system goes long expecting volatility expansion. When it falls below the threshold, the system goes short.
 

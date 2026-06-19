@@ -1,5 +1,5 @@
 # Doji Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy replicates the core logic of the classic **Doji Trader** expert advisor.
 It monitors completed candles for compact-bodied doji patterns and waits for a breakout

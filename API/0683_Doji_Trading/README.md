@@ -1,5 +1,5 @@
 # Doji Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy looks for Doji candles appearing above an exponential moving average. When such a pattern occurs, it enters a long position. The stop loss is set to the lowest low of recent bars and a trailing stop protects profit after the price moves enough in favor.
 

@@ -1,5 +1,5 @@
 # Big Candle RSI Divergence
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Identifies unusually large candles relative to the prior five bars and compares fast and slow RSI values. Trades follow the candle direction and use a delayed trailing stop that activates only after price moves a set number of ticks in profit.
 

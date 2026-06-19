@@ -1,5 +1,5 @@
 # Стратегия Trend Impulse Tester
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Trend Impulse Tester входит в сделки, когда сильный тренд подтверждён EMA и ADX, и появляется импульс RSI.
 Покупает при бычьем импульсе в восходящем тренде и продаёт при медвежьем импульсе в нисходящем тренде.

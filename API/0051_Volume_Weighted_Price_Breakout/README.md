@@ -1,5 +1,5 @@
 # Volume Weighted Price Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This strategy combines a moving average with a volume‑weighted moving average (VWMA). When price trades above the VWMA, it suggests buyers are dominant. A breakout occurs when price crosses the VWMA from the opposite side.
 

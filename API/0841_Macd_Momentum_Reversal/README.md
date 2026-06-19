@@ -1,5 +1,5 @@
 # Macd Momentum Reversal
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses MACD histogram to detect momentum reversals.
 Shorts when bullish candle grows but MACD histogram declines.

@@ -1,5 +1,5 @@
 # Random Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Opens a long or short position randomly when no position is open. Each trade uses fixed take profit and stop loss values measured in price units.
 

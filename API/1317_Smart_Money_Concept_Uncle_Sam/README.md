@@ -1,5 +1,5 @@
 # Smart Money Concept Strategy - Uncle Sam
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This breakout strategy monitors recent swing highs and lows. A long trade is opened when price closes above the latest pivot high, while a short trade is opened when price closes below the latest pivot low. An optional moving average filter can be enabled to trade only with the prevailing trend.
 

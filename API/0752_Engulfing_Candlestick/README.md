@@ -1,5 +1,5 @@
 # Engulfing Candlestick Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades on a selected engulfing pattern. Choose either bullish or bearish engulfing and a trade side to open when the pattern appears. The position is held for a fixed number of bars before being closed.
 

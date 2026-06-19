@@ -43,5 +43,5 @@
 
 - `CS/TrueScalperProfitLockBreakEvenStrategy.cs` – реализация стратегии на C#.
 - `README.md` – документация на английском языке.
-- `README_cn.md` – документация на китайском языке.
+- `README_zh.md` – документация на китайском языке.
 

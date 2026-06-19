@@ -1,5 +1,5 @@
 # Bezier ReOpen Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Bezier ReOpen Strategy** applies a custom Bezier curve indicator to follow trend direction.
 When the indicator turns upward and the latest value is above the previous one, the strategy can open a long position.

@@ -1,5 +1,5 @@
 # Bollinger Band Two MA ZigZag Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Hybrid trend-following system that combines Bollinger Band reversals, two higher-timeframe moving averages, and swing points from a ZigZag detector. It opens two positions on every signal: one with a calculated take-profit target and a second "runner" that relies on trailing and break-even logic.
 

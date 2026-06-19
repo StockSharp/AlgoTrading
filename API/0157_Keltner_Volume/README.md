@@ -1,5 +1,5 @@
 # Keltner Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Implementation of strategy - Keltner Channels + Volume. Buy when price breaks above upper Keltner Channel with above average volume. Sell when price breaks below lower Keltner Channel with above average volume.
 

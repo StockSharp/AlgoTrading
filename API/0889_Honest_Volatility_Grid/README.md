@@ -1,5 +1,5 @@
 # Honest Volatility Grid
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on multiple Keltner Channel levels to build a volatility grid. It scales into long and short positions across predefined bands and exits via opposite levels or a raw stop.
 

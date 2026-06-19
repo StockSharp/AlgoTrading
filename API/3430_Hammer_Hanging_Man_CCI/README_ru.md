@@ -1,5 +1,5 @@
 # Стратегия Hammer & Hanging Man с фильтром CCI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переносит советник MetaTrader «AH HM CCI» на StockSharp. Она отслеживает свечные паттерны «молот» и «висячий человек»,
 а вход подтверждает индикатор Commodity Channel Index (CCI). Дополнительная проверка отсекает слабые паттерны и помогает

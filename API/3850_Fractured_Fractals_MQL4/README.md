@@ -1,5 +1,5 @@
 # Fractured Fractals (MT4) Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Detailed C# port of the classic MetaTrader 4 expert advisor `MQL/7696/Fractured_fractals.mq4`. The strategy watches for newly confirmed
 Williams fractal levels, queues breakout stop orders, and trails risk using the previous fractal swings. Position sizing follows the

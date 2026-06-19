@@ -1,5 +1,5 @@
 # Constituents EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the **Constituents EA** from `MQL/22595` into the StockSharp high-level API. It recreates the original
 logic of placing two pending orders around the most recent range at a specific hour while keeping the workflow compatible with

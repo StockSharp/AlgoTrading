@@ -1,5 +1,5 @@
 # Two-Pole Ideal MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Crossover system approximating the "2pb Ideal MA" expert by comparing a fast EMA with a slow TEMA.
 

@@ -1,5 +1,5 @@
 # Exp Martin V2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Exp Martin V2 strategy implements an exponential martingale approach. It always keeps a single open position and after each trade decides the next direction and volume based on the profit of the last deal.
 

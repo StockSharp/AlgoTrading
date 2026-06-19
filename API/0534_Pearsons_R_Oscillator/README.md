@@ -1,5 +1,5 @@
 # Pearson's R Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Pearson's R Oscillator strategy dynamically searches for the period where price best fits a linear regression channel using the Pearson correlation coefficient. When the correlation reaches the specified positive or negative threshold, the strategy forms a regression channel and trades breakouts.
 

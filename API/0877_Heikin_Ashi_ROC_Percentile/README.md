@@ -1,5 +1,5 @@
 # Heikin Ashi ROC Percentile Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy converts candles to Heikin Ashi, smooths the close with an SMA and measures its Rate of Change. Percentile bands of recent ROC highs and lows form breakout levels. A cross above the lower band opens or reverses long, while crossing below the upper band flips short.
 

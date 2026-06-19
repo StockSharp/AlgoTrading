@@ -1,5 +1,5 @@
 # Hull Ma Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy that uses Hull Moving Average for trend direction and volume confirmation for trade entries.
 

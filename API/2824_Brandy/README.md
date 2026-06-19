@@ -1,5 +1,5 @@
 # Brandy Strategy (C#)
-[中文](README_cn.md) | [Русский](README_ru.md)
+[中文](README_zh.md) | [Русский](README_ru.md)
 
 ## Overview
 The Brandy strategy is a direct port of the MetaTrader 5 Expert Advisor *Brandy (barabashkakvn's edition)*. It combines two configurable moving averages and evaluates their relative positions on closed candles to decide whether to open a long or short position. The original logic also enforces optional stop loss, take profit and trailing stop controls expressed in pips. This C# version faithfully reproduces those behaviours on top of the StockSharp high-level strategy API.

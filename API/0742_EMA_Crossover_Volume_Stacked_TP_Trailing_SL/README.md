@@ -1,5 +1,5 @@
 # EMA Crossover with Volume + Stacked TP & Trailing SL Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades EMA crossovers filtered by volume. It sets two ATR-based profit targets and trails the remaining position once price moves favorably.
 

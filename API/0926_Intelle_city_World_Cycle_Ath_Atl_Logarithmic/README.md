@@ -1,5 +1,5 @@
 # Intelle city World Cycle Ath Atl Logarithmic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses scaled moving averages to mark all-time-high (ATH) and all-time-low (ATL) signals based on the Pi Cycle concept.
 

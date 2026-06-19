@@ -1,5 +1,5 @@
 # Renko Chart Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 RenkoChartStrategy is a direct conversion of the original **RenkoChart.mq5** expert. Instead of placing orders, the

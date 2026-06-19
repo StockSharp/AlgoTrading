@@ -1,5 +1,5 @@
 # Uptrick X PineIndicators: Z-Score Flow Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Трендовая стратегия, использующая z-score, EMA и RSI для фильтрации сигналов.
 

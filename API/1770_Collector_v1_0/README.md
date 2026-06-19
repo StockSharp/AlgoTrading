@@ -1,5 +1,5 @@
 # Collector v1.0 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy opens market orders when price reaches dynamic buy or sell levels spaced by a fixed distance. Volume increases after a specified number of trades. All positions are closed once cumulative profit exceeds a threshold.
 

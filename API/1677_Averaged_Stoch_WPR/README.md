@@ -1,5 +1,5 @@
 # Averaged Stoch & WPR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines the Stochastic oscillator with Williams %R to detect extreme market conditions.
 A long position is opened when the Stochastic value drops below 0.1 and Williams %R is under -90, signaling deep oversold pressure.

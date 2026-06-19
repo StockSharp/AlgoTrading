@@ -1,5 +1,5 @@
 # Стратегия High Low Breakout Statistical Analysis
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Торгует пробои уровней High или Low выбранного таймфрейма. Вход в лонг или шорт определяется параметром, позиция закрывается после фиксированного числа баров.
 

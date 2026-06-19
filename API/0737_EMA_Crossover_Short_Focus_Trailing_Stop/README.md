@@ -1,5 +1,5 @@
 # EMA Crossover Short Focus Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy goes long when the 13 EMA is above the 33 EMA and no short position exists. It goes short when the 13 EMA is below the 33 EMA and no long position is open. Positions exit when the 13 EMA crosses the opposite EMA and a trailing stop follows recent extremes.
 

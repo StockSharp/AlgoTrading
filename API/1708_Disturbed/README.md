@@ -1,5 +1,5 @@
 # Disturbed Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This hedging strategy opens simultaneous long and short market orders and manages them based on the current spread. Once price moves by one spread against either side, that position is closed. The remaining position then targets a profit or loss equal to a configurable multiple of the spread.
 

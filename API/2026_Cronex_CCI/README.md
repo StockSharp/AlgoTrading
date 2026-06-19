@@ -1,5 +1,5 @@
 # Cronex CCI
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Cronex Commodity Channel Index crossover. The indicator smooths the CCI through two exponential moving averages to create a fast and a slow line.
 

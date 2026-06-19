@@ -1,5 +1,5 @@
 # Lego EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Lego EA Strategy** is a direct port of the MetaTrader "Lego EA" expert advisor. It uses a configurable combination of technical filters—Commodity Channel Index, dual moving averages, stochastic oscillator, Accelerator Oscillator, DeMarker and Awesome Oscillator—to validate entries and exits. Each filter can be toggled on or off independently for entries and exits, allowing you to rebuild the original "Lego" block-by-block or experiment with custom setups.
 

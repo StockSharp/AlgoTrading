@@ -1,5 +1,5 @@
 # Liquidity Grab Volume Trap Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy waits for a bearish liquidity grab on flat volume that forms a fair value gap. When price closes above the gap top while volume stays near its moving average, it places a limit buy at the gap bottom with a symmetrical stop loss and take profit.
 

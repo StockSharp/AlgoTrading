@@ -1,5 +1,5 @@
 # 20/200 Expert Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy opens trades based on the difference between the opening prices of two past bars. It enters long when the open at shift2 minus the open at shift1 exceeds a threshold and enters short on the opposite condition. Positions are opened only at a specified hour and closed by take profit, stop loss or after a maximum holding time.
 

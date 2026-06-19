@@ -1,5 +1,5 @@
 # Squeeze Pro Overlays Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Squeeze Pro Overlays strategy detects volatility contraction when Bollinger Bands are completely inside multiple Keltner Channels. Once the squeeze releases, the slope of a linear regression on closing prices determines trade direction.
 

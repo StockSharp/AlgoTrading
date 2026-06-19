@@ -1,5 +1,5 @@
 # AddOn Trailing Stop
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Port of the MetaTrader expert **AddOn_TrailingStop**. The strategy does not open positions on its own and only adjusts trailing stops for an existing net position.
 

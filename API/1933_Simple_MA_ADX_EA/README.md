@@ -1,5 +1,5 @@
 # Simple MA ADX EA
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining an EMA with the Average Directional Index to confirm trend strength.
 

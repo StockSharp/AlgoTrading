@@ -1,5 +1,5 @@
 # Chande Momentum Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy buys when the Chande Momentum Oscillator drops below a lower threshold and closes the position when it rises above an upper threshold or after a fixed number of bars.
 

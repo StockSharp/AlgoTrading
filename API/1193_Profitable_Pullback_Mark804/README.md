@@ -1,5 +1,5 @@
 # Profitable Pullback Strategy Mark804
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A trend-following pullback strategy using a ribbon of exponential moving averages. The system looks for price retracements to the signal EMA within a confirmed trend. When price closes back in the trend direction after a pullback, the strategy opens a position and protects it with percentage-based take profit and stop loss levels.
 

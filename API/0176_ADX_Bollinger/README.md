@@ -1,5 +1,5 @@
 # Adx Bollinger Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on ADX and Bollinger Bands indicators. Enters long when ADX > 25 and price breaks above upper Bollinger band Enters short when ADX > 25 and price breaks below lower Bollinger band
 

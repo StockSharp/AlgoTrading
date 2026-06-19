@@ -1,5 +1,5 @@
 # Dig Variation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is inspired by the MQL5 *DigVariation* example. It approximates the indicator using a simple moving average (SMA) and opens trades when the SMA trend changes direction.
 

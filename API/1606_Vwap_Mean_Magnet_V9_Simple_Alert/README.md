@@ -1,5 +1,5 @@
 # VWAP Mean Magnet v9 (Simple Alert) Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This simplified version of the VWAP Mean Magnet strategy uses VWAP and RSI without volume filtering. Trades open when price deviates from VWAP and RSI reaches extreme levels. Positions are closed when price reverts back to VWAP.
 

@@ -61,7 +61,7 @@
 API/2512_Up3x1/
 ├── CS/Up3x1DynamicSizingStrategy.cs      # Converted C# strategy
 ├── README.md                # English documentation (this file)
-├── README_cn.md             # Chinese translation
+├── README_zh.md             # Chinese translation
 └── README_ru.md             # Russian translation
 ```
 

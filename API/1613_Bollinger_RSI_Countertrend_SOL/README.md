@@ -1,5 +1,5 @@
 # Bollinger RSI Countertrend SOL Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Countertrend system for SOL that buys when price crosses above the lower Bollinger Band with low RSI and sells when price crosses below the upper band with high RSI. Weekdays only.
 

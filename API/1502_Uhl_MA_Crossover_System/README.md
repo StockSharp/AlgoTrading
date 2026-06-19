@@ -1,5 +1,5 @@
 # Uhl MA Crossover System
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Uhl MA Crossover System builds two adaptive lines (CTS and CMA) using variance to adjust smoothing. A long position is opened when CTS crosses above CMA and a short when it crosses below.
 

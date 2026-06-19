@@ -1,5 +1,5 @@
 # RSI Adaptive T3
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy based on an RSI-adaptive Tillson T3 moving average. It goes long when the T3 crosses above its two-bar lag and exits on the opposite cross.
 

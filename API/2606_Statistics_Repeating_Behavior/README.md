@@ -1,5 +1,5 @@
 # Statistics Repeating Behavior Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Intraday strategy that studies how candles behaved at the same time of day during the last N trading sessions. For every new bar it compares the accumulated bullish and bearish body sizes from previous days. If bullish pressure dominates it opens a long position at the bar open, otherwise it goes short. Positions are closed on the next bar and a fixed pip stop loss mimics the original MetaTrader logic. Position size follows a golden-ratio martingale by growing after losses and resetting after wins.
 

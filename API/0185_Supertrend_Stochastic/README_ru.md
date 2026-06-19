@@ -1,5 +1,5 @@
 # Supertrend Stochastic Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Supertrend + Stochastic. Стратегия входит в сделки, когда Supertrend указывает направление тренда и Stochastic подтверждает условия перепроданности/перекупленности.
 

@@ -1,5 +1,5 @@
 # TTM Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 TTM Grid Strategy builds buy and sell grids based on a simple TTM state derived from EMA of highs and lows. The grid resets when the state changes, and orders are placed whenever price touches a grid level.
 

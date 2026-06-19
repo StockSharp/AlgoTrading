@@ -1,5 +1,5 @@
 # Simple Forecast - Keltner Worms Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy builds a dynamic Keltner channel and trades when price moves outside the band.
 

@@ -1,5 +1,5 @@
 # Стратегия Exp Fisher CG Oscillator
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переносит советник **Exp_FisherCGOscillator** из MetaTrader 5 в высокоуровневый API StockSharp. Она восстанавливает вычисления осциллятора Fisher Center of Gravity, оценивает сигналы на настраиваемой исторической свече и повторяет механику стопов/тейков исходного робота с помощью ордеров StockSharp.
 

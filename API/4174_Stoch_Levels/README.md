@@ -49,4 +49,4 @@ All parameters are configured via `Param()` to support optimization and UI bindi
 
 ## Files
 - `CS/StochLevelsStrategy.cs` – main strategy implementation.
-- `README.md`, `README_cn.md`, `README_ru.md` – multilingual documentation for the converted strategy.
+- `README.md`, `README_zh.md`, `README_ru.md` – multilingual documentation for the converted strategy.

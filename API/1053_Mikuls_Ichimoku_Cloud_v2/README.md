@@ -1,5 +1,5 @@
 # Mikul's Ichimoku Cloud v2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy using Ichimoku Cloud with an optional moving average filter. Positions are managed by a trailing stop (ATR, percent, or Ichimoku rules) and optional take profit.
 

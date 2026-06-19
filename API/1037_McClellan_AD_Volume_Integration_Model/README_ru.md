@@ -1,5 +1,5 @@
 # Модель интеграции объёма McClellan A-D
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия строит взвешенную линию A-D, умножая ценовой диапазон бара на его объём. Две EMA от этой линии формируют осциллятор McClellan.
 

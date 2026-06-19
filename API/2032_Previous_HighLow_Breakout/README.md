@@ -1,5 +1,5 @@
 # Previous High Low Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy that monitors the previous candle's high and low on a chosen timeframe. A long position is opened when the new candle closes above the prior high, while a short position is opened when the close falls below the prior low. A trailing stop and fixed take profit manage risk and lock in gains.
 

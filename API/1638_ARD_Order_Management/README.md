@@ -1,5 +1,5 @@
 # ARD Order Management Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using the DeMarker indicator crossing a 0.5 threshold to open positions.
 

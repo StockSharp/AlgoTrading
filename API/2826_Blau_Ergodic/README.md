@@ -1,5 +1,5 @@
 # Blau Ergodic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the **Exp_BlauErgodic** expert advisor from MQL5 to StockSharp. It rebuilds the Blau Ergodic oscillator by
 triple-smoothing the momentum and its absolute value with EMA filters, generates a normalized oscillator and a signal line, and

@@ -1,5 +1,5 @@
 # Bollinger Winner Lite
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Bollinger Winner Lite is a stripped‑down reversal system that reacts to price
 stretching beyond the Bollinger Bands.  It watches for large candles closing

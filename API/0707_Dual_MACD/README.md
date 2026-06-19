@@ -1,5 +1,5 @@
 # Dual MACD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that combines two MACD indicators. The slower MACD crossing zero enters trades when the faster MACD histogram aligns. The position closes when the fast MACD turns against it or the stop/take profit triggers.
 

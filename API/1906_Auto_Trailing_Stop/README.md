@@ -1,5 +1,5 @@
 # Auto Trailing Stop
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Automatically attaches stop-loss and take-profit orders to existing positions and trails the stop as price moves in favor.
 

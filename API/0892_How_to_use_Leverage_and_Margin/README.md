@@ -1,5 +1,5 @@
 # How to Use Leverage and Margin Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A Stochastic oscillator crossover system. The strategy buys when the %K line crosses above %D below the 80 level and sells short when %K crosses below %D above 20. Positions are protected by a take‑profit measured in ticks.
 

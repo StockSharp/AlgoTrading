@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Supertrend & CCI Strategy Scalp uses two Supertrend lines and a smoothed CCI to capture short-term reversals.
 It buys when the first Supertrend is above price, the second is below price, and the smoothed CCI is below -100. The short logic mirrors this setup.

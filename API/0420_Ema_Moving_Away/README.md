@@ -1,5 +1,5 @@
 # EMA Moving Away
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 EMA Moving Away tracks how far price drifts from an exponential moving average.
 When a sequence of candles pushes a set percentage away from the EMA, the

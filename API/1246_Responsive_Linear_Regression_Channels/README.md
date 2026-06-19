@@ -1,5 +1,5 @@
 # Responsive Linear Regression Channels
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive linear regression channel that adjusts lookback to timeframe and trades pullbacks.
 

@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Turtle Trader SAR converts the original MQL5 Turtle system with an optional Parabolic SAR trail into StockSharp C#.
 The strategy trades breakouts of Donchian channels, sizes positions by ATR based risk and can pyramid winning trades.

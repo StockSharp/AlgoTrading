@@ -1,5 +1,5 @@
 # Open Oscillator Cloud MMRec Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the MetaTrader expert advisor **Exp_Open_Oscillator_Cloud_MMRec** to the StockSharp high level API. The system trades the crossover of the Open Oscillator Cloud indicator, which compares the current open price with the opens of the highest and lowest bars inside a rolling window and smooths the result with a configurable moving average.
 

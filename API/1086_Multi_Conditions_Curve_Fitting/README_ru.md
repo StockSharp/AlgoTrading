@@ -1,5 +1,5 @@
 # Стратегия Multi Conditions Curve Fitting
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Комбинирует пересечение EMA, RSI и стохастический осциллятор для входа при совпадении нескольких сигналов.
 

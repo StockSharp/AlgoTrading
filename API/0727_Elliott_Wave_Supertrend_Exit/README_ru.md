@@ -1,5 +1,5 @@
 # Стратегия Elliott Wave Supertrend Exit
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия открывает позиции при локальных разворотах и закрывает их при смене направления Supertrend с фиксированным стоп-лоссом в процентах.
 

@@ -1,5 +1,5 @@
 # Martin 1 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Conversion of the MetaTrader 5 expert advisor "Martin 1" into the StockSharp high level strategy API. The algorithm continuously maintains exposure and uses hedging-style martingale steps to recover drawdowns while pyramiding into profitable trends.
 

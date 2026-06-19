@@ -1,5 +1,5 @@
 # Random Bias Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Random Bias Trader Strategy emulates the MetaTrader "random trader" expert advisor using StockSharp's high-level API.
 At every finished candle the strategy flips a virtual coin and opens a position in that direction when no trade is active.

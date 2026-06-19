@@ -1,5 +1,5 @@
 # Zonal Trading Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Zonal Trading strategy replicates Bill Williams' classic "zone" concept. It monitors the color of the Awesome Oscillator (AO) and the Accelerator Oscillator (AC). A green bar means the oscillator value increased compared to the previous bar, while a red bar means it decreased. When both oscillators turn green the strategy opens a long position. When both turn red it opens a short position. Any opposite color closes existing positions.
 

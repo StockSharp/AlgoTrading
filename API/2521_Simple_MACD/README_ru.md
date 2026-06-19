@@ -1,5 +1,5 @@
 # Simple MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Simple MACD — это перенос советника MQL5 `Simple_MACD.mq5` в инфраструктуру StockSharp. Алгоритм отслеживает наклон основной линии MACD на закрытых свечах и накапливает позицию в направлении текущего тренда.
 
@@ -66,5 +66,5 @@
 ## Состав папки
 
 - `CS/SimpleMacdStrategy.cs` — реализация стратегии на C#.
-- `README.md`, `README_ru.md`, `README_cn.md` — документация на трёх языках.
+- `README.md`, `README_ru.md`, `README_zh.md` — документация на трёх языках.
 

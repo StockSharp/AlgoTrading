@@ -1,5 +1,5 @@
 # CCI Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on CCI (Commodity Channel Index) breakout
 

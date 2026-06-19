@@ -1,5 +1,5 @@
 # Divergence Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy compares two simple moving averages (SMA) and trades based on the divergence between them.
 

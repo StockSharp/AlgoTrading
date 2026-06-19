@@ -1,5 +1,5 @@
 # SuperTrade ST1 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Long-only strategy combining Supertrend with EMA filter and ATR-based risk management.
 

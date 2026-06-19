@@ -1,5 +1,5 @@
 # ICT Indicator with Paper Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy stores order block highs and lows and goes long when the close crosses above the latest order block high. The long position is closed when the stored order block low crosses above price.
 

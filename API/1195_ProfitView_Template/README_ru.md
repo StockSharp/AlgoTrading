@@ -1,5 +1,5 @@
 # Шаблон стратегии ProfitView
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Базовая стратегия пересечения скользящих средних с настраиваемыми типами сглаживания.
 

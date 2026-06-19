@@ -1,5 +1,5 @@
 # Parabolic SAR Limit
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Parabolic SAR Limit is a direct port of the MT4 expert advisor **ytg_Parabolic_exp.mq4**. The system continuously keeps buy and sell limit orders glued to the Parabolic SAR value and lets the market pull the order into a trade. Once filled, the strategy supervises the open position and performs stop-loss or take-profit exits using candle extremes, mirroring the original MQL behaviour.
 

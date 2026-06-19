@@ -1,5 +1,5 @@
 # IU Range Trading Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The IU Range Trading Strategy identifies consolidation zones where the price range over a lookback period stays within an ATR multiplier. Breakout trades trigger when price exceeds the range boundaries. Positions are protected by an ATR-based trailing stop that moves with favorable price action.
 

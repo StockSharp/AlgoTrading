@@ -1,5 +1,5 @@
 # Trailing Stop EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy manages an existing position by applying a trailing stop. It listens to tick trades and shifts the stop level as price moves in a favorable direction. When the market reverses and hits the trailing level, the strategy exits the position.
 

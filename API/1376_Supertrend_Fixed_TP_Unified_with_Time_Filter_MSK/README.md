@@ -1,5 +1,5 @@
 # Supertrend Fixed Tp Unified With Time Filter Msk Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Supertrend indicator with fixed percentage take profit, optional price filter and time filter in Moscow timezone.
 

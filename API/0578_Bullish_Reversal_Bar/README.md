@@ -1,5 +1,5 @@
 # Bullish Reversal Bar Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implementation of strategy - Bullish Reversal Bar. Enters long when a bullish reversal bar forms below Alligator lines and price breaks above the bar high. Optional filters can enable Awesome Oscillator and Market Facilitation Index squat bars.
 

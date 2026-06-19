@@ -1,5 +1,5 @@
 # VWMA Cross
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The Volume Weighted Moving Average (VWMA) emphasizes price levels with higher trading volume. This strategy trades crossovers between price and the VWMA.
 

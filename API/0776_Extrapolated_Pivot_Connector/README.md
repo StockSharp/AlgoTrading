@@ -1,5 +1,5 @@
 # Extrapolated Pivot Connector Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Connects recent pivot highs and lows to build support and resistance lines. A long signal occurs when price closes above the resistance line, while a short signal fires when price drops below the support line.
 

@@ -1,5 +1,5 @@
 # Fibonacci ATR Fusion Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines buying pressure ratios across multiple Fibonacci periods with ATR and uses threshold crosses for entries and exits. Optional ATR-based layered take profit.
 

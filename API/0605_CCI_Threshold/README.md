@@ -1,5 +1,5 @@
 # Cci Threshold Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that buys when CCI drops below a threshold and exits when the close price exceeds the previous close.
 Optional stop loss and take profit in absolute points.

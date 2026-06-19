@@ -1,5 +1,5 @@
 # ADX Donchian Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This strategy uses ADX Donchian indicators to generate signals.
 Long entry occurs when ADX > AdxThreshold && Price >= upperBorder (strong trend with breakout up). Short entry occurs when ADX > AdxThreshold && Price <= lowerBorder (strong trend with breakout down).

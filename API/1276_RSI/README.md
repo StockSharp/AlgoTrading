@@ -1,5 +1,5 @@
 # RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simple strategy based on the Relative Strength Index. Buys when RSI crosses above the oversold level and sells when it crosses below the overbought level.
 

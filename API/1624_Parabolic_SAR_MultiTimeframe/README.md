@@ -1,5 +1,5 @@
 # Parabolic SAR MultiTimeframe
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Parabolic SAR MultiTimeframe uses four different Parabolic SAR indicators from higher timeframes
 to confirm a trend before entering a trade. The strategy processes 15-minute candles and checks the

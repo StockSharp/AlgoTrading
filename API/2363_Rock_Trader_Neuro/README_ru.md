@@ -1,5 +1,5 @@
 # Rock Trader Neuro Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует с помощью полос Боллинджера и простого нейрона.
 Ширина полос за последние семь свечей нормализуется в диапазон [-1,1]

@@ -1,5 +1,5 @@
 # Donchian Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Donchian Channel + Stochastic strategy. Strategy enters the market when the price breaks out of Donchian Channel with Stochastic confirming oversold/overbought conditions.
 

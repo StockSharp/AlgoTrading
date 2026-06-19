@@ -1,5 +1,5 @@
 # Price Convergence Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy estimates the probability of price rising or falling by comparing the sum of OHLC4 values for bullish and bearish candles. A long position is opened when the probability of rising exceeds 50%, and a short position when the probability of falling exceeds 50%.
 

@@ -1,5 +1,5 @@
 # Time Series Momentum
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This approach goes long or short each asset based on its own past returns. If the trailing return is positive the model buys; if negative it sells, forming a diversified trend‑following portfolio.
 

@@ -1,5 +1,5 @@
 # Khaled Tamim's Avellaneda-Stoikov Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implements the Avellaneda-Stoikov market making model. The strategy computes bid and ask quotes from the last two closes and places market orders when price deviates beyond configurable margins.
 

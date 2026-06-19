@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **ASC++ Williams Breakout strategy** ports the legacy MQL4 "ASC++.mq4" expert to StockSharp's high-level API. The logic hunts for narrow trading ranges confirmed by the Williams %R oscillator and then places stop orders slightly beyond the candle extremes. Once triggered, built-in risk management keeps the position protected with automatic take profit, stop loss, and optional trailing behaviour.
 

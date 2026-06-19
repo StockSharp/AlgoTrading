@@ -1,5 +1,5 @@
 # MACD Zero Cross
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This system trades momentum shifts when the Moving Average Convergence Divergence (MACD) histogram approaches the zero line. A rising MACD below zero or falling MACD above zero signals a potential reversal.
 

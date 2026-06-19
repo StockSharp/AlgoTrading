@@ -1,5 +1,5 @@
 # Price Impulse Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Price Impulse strategy scans raw Level1 quotes and reacts to sudden changes between the best bid and best ask. It mirrors the original MetaTrader 5 expert advisor by watching price jumps over a configurable number of ticks and entering the market when the move exceeds a point-based threshold. Protective stop loss and take profit offsets are applied automatically through the high level `StartProtection` helper.
 

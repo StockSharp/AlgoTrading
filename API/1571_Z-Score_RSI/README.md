@@ -1,5 +1,5 @@
 # Z-Score RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Z-Score RSI Strategy calculates RSI on price z-score and uses an EMA of RSI for signals. A long position is opened when RSI crosses above its EMA and a short position when it crosses below.
 

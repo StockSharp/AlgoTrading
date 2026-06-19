@@ -1,5 +1,5 @@
 # Jupiter M Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grid-based strategy translated from the MetaTrader expert "Jupiter M. 4.1.1".
 The algorithm builds a basket of orders using a configurable step and adapts

@@ -1,5 +1,5 @@
 # Стратегия Four Bar Momentum Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Four Bar Momentum Reversal открывает длинную позицию, когда закрытие было ниже значения `Lookback` баров назад не менее `BuyThreshold` подряд свечей в указанном временном окне. Позиция закрывается, когда цена закрытия превышает максимум предыдущей свечи.
 

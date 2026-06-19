@@ -1,5 +1,5 @@
 # UP3x1 Premium Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The UP3x1 Premium Strategy is a C# port of the MetaTrader expert advisor *up3x1_premium_v2M*. It blends fast/slow EMA crossovers with wide-range candle filters and a daily context filter to capture momentum breakouts while keeping risk managed through fixed targets and trailing stops.
 

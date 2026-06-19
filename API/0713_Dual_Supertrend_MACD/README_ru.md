@@ -1,5 +1,5 @@
 # Dual Supertrend MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Dual Supertrend MACD** сочетает два индикатора Supertrend и фильтр MACD.
 Длинная позиция открывается, когда цена выше обеих линий Supertrend и гистограмма MACD положительная.

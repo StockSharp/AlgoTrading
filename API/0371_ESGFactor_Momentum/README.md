@@ -1,5 +1,5 @@
 # ESG Factor Momentum Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy rotates among a universe of securities scored on environmental, social, and governance metrics. At the start of each month it ranks every symbol by its trailing return and holds only the strongest performer. The premise is that assets attracting ESG capital tend to sustain momentum. To avoid excessive turnover, the algorithm only trades when the position value exceeds a minimum dollar threshold.
 

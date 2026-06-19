@@ -1,5 +1,5 @@
 # Triple EMA + QQE Trend Following Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy combining two TEMA lines with a QQE filter.
 It opens long positions when price is above both TEMA lines and QQE gives a bullish signal.

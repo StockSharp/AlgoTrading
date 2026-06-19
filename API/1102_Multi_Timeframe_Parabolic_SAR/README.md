@@ -1,5 +1,5 @@
 # Multi-Timeframe Parabolic SAR
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines Parabolic SAR signals from multiple timeframes. Long trades trigger when price stays above the SAR levels selected by the parameters. Short trades appear when price falls below the chosen SARs. Optional stop loss, trailing stop and take profit are available.
 

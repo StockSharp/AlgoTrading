@@ -1,5 +1,5 @@
 # Стратегия LSMA Fast And Simple Alternative Calculation
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует быструю аппроксимацию скользящей средней наименьших квадратов (LSMA), вычисляемую как `3 × WMA − 2 × SMA`. Длинная позиция открывается при пересечении цены выше LSMA, короткая — при пересечении ниже.
 

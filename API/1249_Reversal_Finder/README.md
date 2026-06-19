@@ -1,5 +1,5 @@
 # Reversal Finder Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Reversal Finder looks for large range candles making new extremes and closing back toward the other side of the bar.
 It buys when price washes out to a new low but finishes near the high, and sells when price spikes to a new high but closes near the low.

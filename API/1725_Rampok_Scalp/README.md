@@ -1,5 +1,5 @@
 # Rampok Scalp Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Scalping system that trades when price breaks moving average envelopes.
 The strategy enters long when price crosses above the lower band and

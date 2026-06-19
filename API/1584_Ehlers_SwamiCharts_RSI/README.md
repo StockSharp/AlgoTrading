@@ -1,5 +1,5 @@
 # Ehlers SwamiCharts RSI
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Averages RSI values from periods 2–48 to build a color map. Long when average color is green, short when red.
 

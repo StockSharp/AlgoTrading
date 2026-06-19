@@ -1,5 +1,5 @@
 # Historical Volatility Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This breakout method uses historical volatility to set dynamic thresholds. When price moves beyond a reference level by more than the current volatility, it indicates a potential trend.
 

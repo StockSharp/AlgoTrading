@@ -1,5 +1,5 @@
 # iCCI iMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the MetaTrader "iCCI iMA" expert advisor. It trades Commodity Channel Index (CCI) crossovers against an exponential moving average (EMA) that is applied directly to the CCI stream. A secondary CCI, calculated with its own period, supervises overbought/oversold reversals around the ±100 bands. Orders are sized in lots, optionally scaled by account balance, and each trade is protected by configurable stop-loss and take-profit levels expressed in pips.
 

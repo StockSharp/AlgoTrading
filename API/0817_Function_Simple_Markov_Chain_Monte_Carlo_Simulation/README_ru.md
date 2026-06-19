@@ -1,5 +1,5 @@
 # Function Simple Markov Chain Monte Carlo Simulation
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Демонстрирует простую симуляцию Марковской цепи Монте‑Карло (MCMC), генерирующую случайный путь.
 

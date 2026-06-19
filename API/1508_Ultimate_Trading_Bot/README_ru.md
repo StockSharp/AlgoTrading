@@ -1,5 +1,5 @@
 # Ultimate Trading Bot
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия только для длинных позиций, комбинирующая пересечения RSI, скользящей средней, MACD и стохастика для определения входа и выхода.
 

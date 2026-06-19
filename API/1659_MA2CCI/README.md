@@ -1,5 +1,5 @@
 # MA2CCI
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Moving average crossover strategy confirmed by CCI. Uses ATR for stop-loss.
 

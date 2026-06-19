@@ -1,5 +1,5 @@
 # Trend Catcher Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Trend Catcher** strategy combines Parabolic SAR with multiple simple moving averages to capture directional moves. It waits for price to cross the Parabolic SAR in the direction of the prevailing fast averages and then manages the position using dynamic stop-loss and trailing rules.
 

@@ -1,5 +1,5 @@
 # Стратегия Color NonLag Dot MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует индикатор MACD с несколькими режимами определения сигналов. Подход перенесён из советника MQL "Exp_ColorNonLagDotMACD".
 

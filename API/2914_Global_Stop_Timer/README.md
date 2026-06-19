@@ -1,5 +1,5 @@
 # Global Stop Timer Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Global Stop Timer Strategy is a risk-management overlay converted from the MetaTrader expert `Exp_GStop_Tm`.
 It continuously watches the portfolio value on every finished candle and halts trading once a global profit target

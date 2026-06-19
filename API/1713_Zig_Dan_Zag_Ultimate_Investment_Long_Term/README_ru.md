@@ -1,5 +1,5 @@
 # Zig Dan Zag Ultimate Investment Long Term
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Долгосрочная инвестиционная стратегия, совмещающая пивоты ZigZag с медленным SMA фильтром тренда. Позиция открывается при формировании нового минимума ZigZag выше SMA, а выход происходит при противоположном пивоте ниже SMA.
 

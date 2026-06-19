@@ -1,5 +1,5 @@
 # Стратегия Cycle Biologique
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Cycle Biologique торгует на основе синусоидального цикла. Вход в лонг выполняется при пересечении циклом нуля снизу вверх, выход — при пересечении сверху вниз.
 

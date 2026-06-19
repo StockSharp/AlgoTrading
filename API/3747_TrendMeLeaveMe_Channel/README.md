@@ -1,5 +1,5 @@
 # TrendMeLeaveMe Pending Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This StockSharp implementation recreates the original MetaTrader "TrendMeLeaveMe" expert advisor. The idea is to manually follow a dynamic trend channel and use pending stop orders to catch breakouts whenever price hugs the trend line. Because StockSharp does not work with user-drawn chart objects, the strategy rebuilds the channel center automatically with a linear regression indicator and then reproduces the same offset logic that the MQL version applied to the upper and lower guide lines.
 

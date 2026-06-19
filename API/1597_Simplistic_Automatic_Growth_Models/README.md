@@ -1,5 +1,5 @@
 # Simplistic Automatic Growth Models Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy forms cumulative average high and low bands and trades when price breaks those levels.
 

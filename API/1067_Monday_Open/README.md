@@ -1,5 +1,5 @@
 # Monday Open Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys at the beginning of the week and closes the position on Tuesday's close within a specified year range.
 

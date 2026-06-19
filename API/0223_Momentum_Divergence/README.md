@@ -1,5 +1,5 @@
 # Momentum Divergence Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The Momentum Divergence strategy compares momentum readings with price direction to spot early signs of a reversal. Divergences occur when price makes a new extreme yet the momentum indicator fails to confirm, hinting at weakening strength.
 

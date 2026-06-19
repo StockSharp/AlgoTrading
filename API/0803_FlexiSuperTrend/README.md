@@ -1,5 +1,5 @@
 # FlexiSuperTrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy combines a SuperTrend filter with a smoothed deviation oscillator.
 A position is opened when price agrees with the SuperTrend direction and the

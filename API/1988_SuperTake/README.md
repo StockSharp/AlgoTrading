@@ -1,5 +1,5 @@
 # Super Take Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy alternates between long and short positions and increases the take profit after each losing trade using a martingale multiplier. The stop loss is fixed while the take profit resets to the base value after a winning trade. By always flipping direction and adjusting targets after losses, the strategy attempts to recover previous drawdowns.
 

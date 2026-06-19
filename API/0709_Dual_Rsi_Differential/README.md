@@ -1,5 +1,5 @@
 # Dual RSI Differential
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Dual RSI Differential compares two RSI periods and trades when their difference crosses a threshold. This dual-length approach seeks to capture divergences between short-term and long-term momentum.
 

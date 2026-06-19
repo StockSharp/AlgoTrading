@@ -1,5 +1,5 @@
 # Autostop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Utility strategy that automatically sets take-profit and stop-loss for open positions.
 It does not generate trade signals. Any positions opened externally are protected using fixed distances.

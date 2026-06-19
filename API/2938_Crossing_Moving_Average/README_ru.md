@@ -57,6 +57,6 @@
 API/2938_Crossing_Moving_Average/
 ├── CS/CrossingMovingAverageStrategy.cs
 ├── README.md
-├── README_cn.md
+├── README_zh.md
 └── README_ru.md
 ```

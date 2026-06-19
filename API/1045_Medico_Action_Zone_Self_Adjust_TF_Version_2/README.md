@@ -1,5 +1,5 @@
 # Medico Action Zone Self Adjust TF Version 2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 EMA crossover strategy with higher timeframe confirmation. A position opens when the fast EMA crosses the slow EMA and the higher timeframe close is above the fast EMA. The position reverses on the opposite signal.
 

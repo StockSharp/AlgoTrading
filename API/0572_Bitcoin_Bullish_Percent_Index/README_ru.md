@@ -1,5 +1,5 @@
 # Стратегия Bitcoin Bullish Percent Index
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия использует индикатор RSI для приближенной оценки индекса Bitcoin Bullish Percent. Открывает длинную позицию, когда RSI поднимается выше уровня перепроданности, и короткую, когда RSI опускается ниже уровня перекупленности.
 

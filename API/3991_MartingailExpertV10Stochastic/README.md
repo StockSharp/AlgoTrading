@@ -84,7 +84,7 @@ API/3991/
 ├── CS/
 │   └── MartingailExpertV10StochasticStrategy.cs
 ├── README.md
-├── README_cn.md
+├── README_zh.md
 └── README_ru.md
 ```
 

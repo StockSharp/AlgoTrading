@@ -1,5 +1,5 @@
 # Fibo Candles Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the custom **Fibo Candles** technique to determine trend direction.
 The indicator paints each candle in one of two colors based on a Fibonacci ratio comparison

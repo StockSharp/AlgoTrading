@@ -1,5 +1,5 @@
 # AddOn Trailing Stop
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Порт советника MetaTrader **AddOn_TrailingStop**. Стратегия не открывает сделки самостоятельно и лишь сопровождает трейлинг-стоп для уже существующей позиции.
 

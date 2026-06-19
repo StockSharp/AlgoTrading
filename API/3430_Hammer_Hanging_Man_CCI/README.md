@@ -1,5 +1,5 @@
 # Hammer & Hanging Man with CCI Confirmation
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reimplements the MetaTrader "AH HM CCI" expert in StockSharp. It watches for hammer and hanging man candlestick
 patterns and requires confirmation from the Commodity Channel Index (CCI) before entering a trade. The extra confirmation filters

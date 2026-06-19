@@ -1,5 +1,5 @@
 # Стратегия Quadratic Regression
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия строит линию квадратичной регрессии по последним `Length` барам и торгует на пересечениях цены с этой линией.
 

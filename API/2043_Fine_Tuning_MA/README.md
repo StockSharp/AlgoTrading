@@ -1,5 +1,5 @@
 # Fine Tuning MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy monitors the slope of a simple moving average. After two consecutive bars in one direction, a reversal of the moving average triggers an entry. A rising turn after a decline opens a long position while a falling turn after an ascent opens a short. Opposite signals close existing trades.
 

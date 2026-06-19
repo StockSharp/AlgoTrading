@@ -49,4 +49,4 @@ This interpretation recreates the intent of the MT4 conditions with StockSharp's
 ## Files
 - `CS/MultiTimeframeEmaAlignmentStrategy.cs` – main C# strategy implementation.
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.

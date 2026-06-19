@@ -1,5 +1,5 @@
 # ColorXADX
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the crossing of +DI and -DI lines confirmed by ADX strength.
 

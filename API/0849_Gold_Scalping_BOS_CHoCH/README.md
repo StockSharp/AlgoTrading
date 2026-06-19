@@ -1,5 +1,5 @@
 # Gold Scalping BOS & CHoCH Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades break of structure (BOS) and change of character (CHoCH) patterns on gold. It derives short-term support and resistance levels and enters when a BOS is followed by an immediate CHoCH, using dynamic stop loss and take profit targets.
 

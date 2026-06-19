@@ -1,5 +1,5 @@
 # Daily Supertrend Ema Crossover Rsi Filter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy trading EMA crossovers only when Supertrend confirms the direction and RSI is favorable. Uses ATR-based stop loss and take profit levels.
 

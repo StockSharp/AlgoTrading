@@ -1,5 +1,5 @@
 # Monthly Performance Table Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades when ADX lies between +DI and -DI and both differences from ADX exceed configurable thresholds.
 

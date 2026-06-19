@@ -1,5 +1,5 @@
 # Fxscalper Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Bollinger Band breakout scalping strategy translated from the MQL4 "fxscalper" expert.
 The strategy subscribes to candle data and Bollinger Bands. When the closing price breaks above the upper band it opens a long position; when the closing price breaks below the lower band it opens a short position. Positions are protected by stop-loss and take-profit levels.

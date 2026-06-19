@@ -1,5 +1,5 @@
 # Hybrid RSI Breakout Dashboard
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает среднее значение RSI и пробои, фильтруемые ADX и 200 EMA.
 

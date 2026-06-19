@@ -1,5 +1,5 @@
 # Monthly Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades breakouts of the current month's high or low only during selected calendar months. The direction is chosen via `EntryOption`, and positions are closed after a fixed number of bars.
 

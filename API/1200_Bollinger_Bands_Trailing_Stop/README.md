@@ -1,5 +1,5 @@
 # Bollinger Bands with Trailing Stop
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Enters long when price closes above the upper Bollinger Band. 
 Exits when price falls below the lower band or a trailing stop based on ATR is triggered.

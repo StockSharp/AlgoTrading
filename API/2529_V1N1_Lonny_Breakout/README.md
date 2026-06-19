@@ -44,5 +44,5 @@ A configurable risk model allows position sizing by fixed volume or as a percent
 ## Files
 - `CS/V1n1LonnyBreakoutStrategy.cs` – Strategy implementation in C# for StockSharp.
 - `README.md` – This description in English.
-- `README_cn.md` – 中文简介。
+- `README_zh.md` – 中文简介。
 - `README_ru.md` – Русское описание.

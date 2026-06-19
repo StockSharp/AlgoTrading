@@ -1,5 +1,5 @@
 # Levels With Revolve Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy opens trades when the market price crosses a user defined level. A buy order is placed when price rises through the level and a sell order when price falls through it. The system can optionally reverse an existing position if the opposite signal appears. It also supports optional stop loss and take profit distances measured in price units.
 

@@ -1,5 +1,5 @@
 # Exp X2MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Exp X2MA Strategy trades turning points of a double smoothed moving average.
 Price is first smoothed with a simple moving average and then with a Jurik moving average.

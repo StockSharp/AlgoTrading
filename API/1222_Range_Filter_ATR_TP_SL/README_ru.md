@@ -1,5 +1,5 @@
 # Стратегия Range Filter с ATR TP/SL
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия открывает сделки при пересечении ценой диапазона фильтра и выходит по уровням тейк-профита и стоп-лосса на основе ATR.
 

@@ -1,5 +1,5 @@
 # Стратегия Ichimoku RSI MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Трендовая стратегия, комбинирующая облако Ишимоку, RSI и сигналы пересечения MACD.
 

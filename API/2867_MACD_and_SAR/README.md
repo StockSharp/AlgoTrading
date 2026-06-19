@@ -1,5 +1,5 @@
 # MACD and SAR
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the original MetaTrader "MACD and SAR" expert advisor. It evaluates the relationship between the MACD main and signal lines together with the Parabolic SAR level on every completed candle. Configurable switches allow you to invert each comparison so that the same template can be used for counter-trend or trend-following setups. Multiple entries are allowed as long as the configured maximum number of stacked positions is not exceeded.
 

@@ -1,4 +1,4 @@
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Turtle Trader SAR — это конвертация оригинальной MQL5 стратегии Turtle с возможностью трейлинг-стопа по Parabolic SAR в StockSharp.
 Стратегия торгует пробои каналов Дончиана, рассчитывает размер позиции на основе риска по ATR и наращивает прибыльные позиции.

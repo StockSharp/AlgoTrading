@@ -1,5 +1,5 @@
 # AI SuperTrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The AI SuperTrend strategy blends the SuperTrend indicator with weighted moving averages of price and the SuperTrend line. A long trade is opened when the SuperTrend turns upward and the price WMA moves above the WMA of the SuperTrend. A short trade is opened on the opposite conditions. Positions are protected with an ATR-based trailing stop.
 

@@ -1,5 +1,5 @@
 # Стратегия Fibonacci Bands
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Расширяет каналы Кельтнера коэффициентами Фибоначчи и открывает сделки при пробое внешних границ с подтверждением RSI.
 

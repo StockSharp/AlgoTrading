@@ -1,5 +1,5 @@
 # Bar Range Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Bar Range strategy enters long when the current bar's range is among the highest of recent bars and the candle closes below its open. The position is closed after a fixed number of bars.
 

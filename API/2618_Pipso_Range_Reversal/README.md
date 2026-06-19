@@ -1,5 +1,5 @@
 # Pipso Range Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp port of the Pipso MQL5 expert advisor. It acts as a mean-reversion system that sells into bullish breakouts and buys into bearish breakouts of a recent high/low range while limiting activity to a configurable trading session.
 

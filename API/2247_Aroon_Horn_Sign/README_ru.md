@@ -1,5 +1,5 @@
 # Aroon Horn Sign
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Aroon Horn Sign** ищет развороты тренда с помощью индикатора Aroon.
 Она анализирует линии Aroon Up и Aroon Down на свечах крупного таймфрейма. Когда

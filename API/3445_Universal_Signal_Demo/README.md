@@ -1,5 +1,5 @@
 # Universal Signal Demo
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the MetaTrader 5 "Universal Signal" expert using StockSharp high-level APIs. It evaluates eight weighted market patterns and aggregates them into a single composite score. When the score crosses configurable thresholds the strategy opens or closes long and short positions, optionally using pending limit orders that expire after a set number of bars.
 

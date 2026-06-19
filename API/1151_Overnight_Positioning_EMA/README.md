@@ -1,5 +1,5 @@
 # Overnight Positioning with EMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Enters a long position shortly before the selected market closes and exits after the market opens. An optional EMA filter confirms entries. The strategy supports US, Asian, and European sessions and closes any open position before the weekend.
 

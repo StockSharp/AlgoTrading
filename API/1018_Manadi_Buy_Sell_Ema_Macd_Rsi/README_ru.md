@@ -1,5 +1,5 @@
 # Стратегия Manadi Buy Sell EMA MACD RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пересечения EMA с подтверждением MACD и фильтром RSI. Входы по рынку и выход по фиксированным процентным стоп-лоссу и тейк-профиту.
 

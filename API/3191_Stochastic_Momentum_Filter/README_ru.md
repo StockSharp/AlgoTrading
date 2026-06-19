@@ -63,4 +63,4 @@
 - `CS/StochasticMomentumFilterStrategy.cs` — реализация стратегии.
 - `README.md` — описание на английском языке.
 - `README_ru.md` — описание на русском (этот файл).
-- `README_cn.md` — описание на китайском языке.
+- `README_zh.md` — описание на китайском языке.

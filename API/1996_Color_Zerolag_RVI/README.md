@@ -1,5 +1,5 @@
 # Color Zerolag RVI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Relative Vigor Index and its signal line.
 It buys when the main RVI line crosses below the signal line and sells when the main line crosses above the signal line.

@@ -1,5 +1,5 @@
 # Average Force Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Average Force strategy uses an oscillator that measures where the close lies within the highest high and lowest low of a lookback period and smooths the result with a moving average. Positive values signal upward pressure while negative values show downward force.
 

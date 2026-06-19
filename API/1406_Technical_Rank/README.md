@@ -1,5 +1,5 @@
 # Technical Rank
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy computes a composite technical rank from moving averages, rate of change, PPO slope and RSI. Long positions open when the rank exceeds an upper threshold, shorts when it falls below a lower threshold.
 

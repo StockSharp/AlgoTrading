@@ -1,5 +1,5 @@
 # Volume Spike Trend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Volume Spike Trend monitors sudden surges in traded volume. When current volume exceeds the recent average by a set multiplier, it signals strong participation.
 

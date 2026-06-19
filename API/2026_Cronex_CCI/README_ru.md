@@ -1,5 +1,5 @@
 # Cronex CCI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на основе пересечения индикатора Cronex CCI. Индикатор сглаживает CCI двумя экспоненциальными средними, формируя быструю и медленную линии.
 

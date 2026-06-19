@@ -1,5 +1,5 @@
 # Machine Learning SuperTrend TP SL
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on SuperTrend indicator with trailing take profit and stop loss.
 

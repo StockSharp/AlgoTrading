@@ -1,5 +1,5 @@
 # ChopFlow ATR Scalp
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ChopFlow ATR Scalp enters when the market leaves choppy conditions and OBV crosses its EMA. Exits use symmetric ATR-based stops and targets.
 

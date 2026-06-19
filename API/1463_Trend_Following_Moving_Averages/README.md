@@ -1,5 +1,5 @@
 # Trend Following Moving Averages Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Calculates a moving average and measures its trend inside a dynamic price channel.
 Long positions are taken when the trend score is positive and short positions when it is negative.

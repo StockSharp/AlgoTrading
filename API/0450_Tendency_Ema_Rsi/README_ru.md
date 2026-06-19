@@ -1,5 +1,5 @@
 # Стратегия Tendency EMA + RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает пересечение быстрой и средней EMA с более медленной
 трендовой EMA и фильтром RSI. Для входа в лонг быстрая EMA должна пересечь

@@ -1,5 +1,5 @@
 # Currency PPP Value Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Currency PPP Value strategy looks for mispricing relative to purchasing power parity (PPP). Currencies that trade below their PPP value are bought, while those trading above their PPP value are shorted. The portfolio is rebalanced monthly to maintain the long/short exposure.
 

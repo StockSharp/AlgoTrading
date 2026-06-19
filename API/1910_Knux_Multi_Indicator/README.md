@@ -1,5 +1,5 @@
 # Knux Multi-Indicator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy blends trend strength and momentum oscillators to trade breakouts. It waits for a bullish or bearish crossover of two moving averages while the Average Directional Index (ADX) signals a strong trend. The Relative Vigor Index (RVI), Commodity Channel Index (CCI) and Williams %R act as filters to ensure momentum confirms the move and that the market is not overextended.
 

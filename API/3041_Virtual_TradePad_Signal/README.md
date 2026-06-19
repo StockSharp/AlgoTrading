@@ -1,5 +1,5 @@
 # Virtual TradePad Signal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy recreates the multi-indicator dashboard logic from the MetaTrader VirtualTradePad tool. It tracks twelve signals –
 trend, momentum and channel based – and only trades when a configurable number of indicators agree. The goal is to mimic the

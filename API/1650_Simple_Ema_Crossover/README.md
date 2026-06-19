@@ -1,5 +1,5 @@
 # Simple EMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses a crossover of two exponential moving averages with built-in stop-loss and take-profit.
 

@@ -1,5 +1,5 @@
 # Стратегия KumoTrade Ichimoku
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на индикаторах Ichimoku Cloud и Stochastic Oscillator.
 Длинная позиция открывается при откате выше линии Kijun, при отсутствии облака впереди и перепроданном Stochastic.

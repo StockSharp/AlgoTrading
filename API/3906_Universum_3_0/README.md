@@ -1,5 +1,5 @@
 # Universum 3.0 Original Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the original **Universum_3_0** MQL4 expert advisor using the StockSharp high-level API.
 It combines a simple DeMarker threshold entry model with a martingale-like position sizing rule that adapts

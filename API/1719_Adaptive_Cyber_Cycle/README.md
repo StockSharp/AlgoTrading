@@ -1,5 +1,5 @@
 # Adaptive Cyber Cycle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy utilizes the Adaptive Cyber Cycle oscillator by John Ehlers. It calculates a smoothed price cycle and uses the previous value as a trigger line. A long position is opened when the cycle crosses above the trigger, and a short position is opened on a downward cross.
 

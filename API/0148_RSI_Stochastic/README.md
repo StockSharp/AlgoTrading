@@ -1,5 +1,5 @@
 # Rsi Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy that combines RSI and Stochastic Oscillator for double confirmation of oversold and overbought conditions.
 

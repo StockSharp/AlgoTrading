@@ -1,5 +1,5 @@
 # Chandel Exit Re-Entry Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the MetaTrader expert "Exp_ChandelExitSign_ReOpen" to the StockSharp high-level API. It trades breakouts using the Chandelier Exit bands and automatically re-opens positions when the trend continues. The system reacts to indicator signals computed on a configurable higher timeframe while managing risk with ATR-based stops and optional take-profit levels.
 

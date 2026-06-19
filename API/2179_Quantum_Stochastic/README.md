@@ -1,5 +1,5 @@
 # Quantum Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades using the Stochastic oscillator. When %K leaves the oversold zone by crossing above `LowLevel`, it opens a long position. When %K falls out of the overbought zone crossing below `HighLevel`, it opens a short position. Positions are closed at extreme thresholds to capture profits.
 

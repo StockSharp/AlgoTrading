@@ -1,5 +1,5 @@
 # MA Parabolic SAR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The MA Parabolic SAR strategy attempts to capture sustained trends while using a trailing stop for risk control. A simple moving average determines the prevailing direction and the Parabolic SAR dots provide entry timing and stop placement. When both indicators align, the system assumes momentum is strong enough to follow.
 

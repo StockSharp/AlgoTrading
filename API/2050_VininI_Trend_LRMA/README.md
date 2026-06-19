@@ -1,5 +1,5 @@
 # VininI Trend LRMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 VininI Trend LRMA Strategy uses a Linear Regression Moving Average (LRMA) to track market direction. The strategy supports two entry modes:
 - **Breakdown**: trades when LRMA crosses fixed upper or lower levels.

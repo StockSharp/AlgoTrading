@@ -1,5 +1,5 @@
 # MA With Logistic
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 MA With Logistic is a moving average strategy that uses a fast and slow moving average for entries and supports percent or logistic-based exits.
 

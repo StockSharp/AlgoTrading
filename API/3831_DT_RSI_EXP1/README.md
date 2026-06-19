@@ -1,5 +1,5 @@
 # DT RSI EXP1 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This port replicates the MT4 expert advisor **DT-RSI-EXP1**. The strategy scans 15-minute RSI swings to detect double-tops or double-bottoms around the 60/40 levels. A long trade is taken when the recent RSI peaks pull back without printing any troughs below 40, while the 4-hour trend filter points down. Shorts mirror the logic with troughs above 60 and a rising trend filter. A fixed stop-loss and take-profit are attached to every position, and an optional trailing stop protects profits. Positions are force-closed when RSI stretches to extreme 70/30 levels, copying the original exit behaviour.
 

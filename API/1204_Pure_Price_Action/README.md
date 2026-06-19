@@ -1,5 +1,5 @@
 # Pure Price Action Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simplified price action strategy detecting Break of Structure (BOS) and Market Structure Shift (MSS) from recent highs and lows.
 

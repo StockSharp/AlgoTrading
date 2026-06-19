@@ -1,5 +1,5 @@
 # Hardcore FX Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptation of the MetaTrader "HardcoreFX" expert. The strategy tracks ZigZag pivot highs and lows and opens positions when price breaks beyond them. It applies fixed stop loss and take profit levels and also trails the position to protect accrued gains.
 

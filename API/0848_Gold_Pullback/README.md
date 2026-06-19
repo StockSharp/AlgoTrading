@@ -1,5 +1,5 @@
 # Gold Pullback Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Gold Pullback Strategy combines EMA trend direction with MACD and TDI filters. Long trades trigger when price touches the 21‑period EMA during an uptrend and both MACD and TDI are bullish. Short trades occur on pullbacks to the EMA21 in downtrends with bearish MACD and TDI. Each position uses a 1:1 take profit and stop loss based on the signal candle plus an offset.
 

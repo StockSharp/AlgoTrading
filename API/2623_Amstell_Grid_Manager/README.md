@@ -1,5 +1,5 @@
 # Amstell Grid Manager Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 High-level port of the MetaTrader expert "exp_Amstell-SL" that runs a bi-directional averaging grid. The strategy keeps track of the most recent fill price on each side and issues additional market orders when price drifts far enough away, while liquidating the open batch once a fixed take-profit or stop-loss distance is reached. The implementation uses StockSharp's candle subscriptions and high-level order helpers, so it can be plugged into any environment that provides candle data for a single security.
 

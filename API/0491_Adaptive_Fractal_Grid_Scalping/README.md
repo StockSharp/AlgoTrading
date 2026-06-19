@@ -1,5 +1,5 @@
 # Adaptive Fractal Grid Scalping
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive Fractal Grid Scalping places limit orders around recent fractal pivots using ATR for distance. The trend is defined by a simple moving average. When volatility exceeds a threshold, buy limits are set below fractal lows in uptrends and sell limits above fractal highs in downtrends. Exits occur at the opposite grid level or on a trailing stop based on ATR.
 

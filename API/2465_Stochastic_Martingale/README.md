@@ -1,5 +1,5 @@
 # Stochastic Martingale Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines a classic Stochastic oscillator entry with a martingale style averaging.
 It opens a position when the %K line crosses the %D line and the oscillator is above/below configurable zones.

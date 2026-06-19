@@ -1,5 +1,5 @@
 # Gauge Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy mirrors the TradingView gauge library by measuring price position
 between a user defined minimum and maximum. When the percentage crosses the

@@ -1,5 +1,5 @@
 # Mean Reversion Pro Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Mean Reversion Pro is a mean reversion system built for major indices. It uses two moving averages and intrabar range levels to detect pullbacks. Long trades are preferred as indices tend to move upward.
 

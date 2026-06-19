@@ -1,5 +1,5 @@
 # Eugene Candle Pattern Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades a candlestick pattern described by "Eugene". The algorithm analyses the last four candles, checks for insider bars and special "bird" formations, and calculates breakout levels. Positions are opened on breakouts of the previous candle extremes when additional confirmation conditions are met. Optional stop loss and take profit levels are expressed in price steps.
 

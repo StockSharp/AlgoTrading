@@ -1,5 +1,5 @@
 # Close At Profit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy monitors the realized profit and loss of all trades executed by the strategy. When the accumulated profit exceeds a user defined threshold, it immediately closes any open position and optionally cancels active orders. The same behavior can be enabled for drawdown by setting a loss limit.
 

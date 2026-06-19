@@ -1,5 +1,5 @@
 # Strategy1
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Converted from TradingView script "strategy1". The strategy trades Bollinger channel rebounds. It enters long after the price falls below the lower band and then closes above it. Exits are triggered by crossing above the middle band, touching the upper band, or stop-loss below the channel.
 

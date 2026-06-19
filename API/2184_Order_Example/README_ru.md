@@ -1,5 +1,5 @@
 # Стратегия Order Example
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пробоя, основанная на примере MQL5 `OrderExample.mq5`.
 Она входит в позицию, когда цена пробивает недавние максимумы или минимумы.

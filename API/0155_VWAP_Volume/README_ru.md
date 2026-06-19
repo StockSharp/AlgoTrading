@@ -1,5 +1,5 @@
 # Стратегия VWAP Volume
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает индикаторы VWAP и объём. Покупки и продажи совершаются при пробоях VWAP, подтверждённых объёмом выше среднего.
 

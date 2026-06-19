@@ -1,5 +1,5 @@
 # Larry Connors RSI 3
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Mean reversion strategy based on Larry Connors' RSI rules.
 

@@ -1,5 +1,5 @@
 # Boll Trade Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the original **BollTrade** expert advisor by trading Bollinger Band breakouts with a configurable
 pip buffer and optional balance-based position sizing. Orders are opened only on completed candles and are managed with
@@ -55,6 +55,6 @@ static stop-loss and take-profit levels.
 - `CS/BollTradeStrategy.cs` – C# implementation of the strategy.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 
 No Python translation is provided yet, as requested.

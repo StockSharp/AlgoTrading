@@ -1,5 +1,5 @@
 # The Weekly Factor Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implements the Weekly Factor pattern described by Andrea Unger. The strategy trades breakouts of the session high or low when the five-day range shows compression.
 

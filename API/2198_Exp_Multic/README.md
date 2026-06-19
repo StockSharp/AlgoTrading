@@ -1,5 +1,5 @@
 # Exp Multic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Multi-currency strategy that trades a fixed set of major Forex pairs without technical indicators.
 For each pair the algorithm maintains a direction and volume. After each profitable move the volume is increased, after a loss the direction is flipped. Trading stops and all positions are closed once overall profit or loss exceeds specified thresholds.

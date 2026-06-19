@@ -1,5 +1,5 @@
 # Nifty Options Trendy Markets with TSL Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пробоя на основе полос Боллинджера с фильтрами ADX и Supertrend. Входы требуют всплеска объёма. Позиции закрываются при пересечении MACD, ослаблении ADX или трейлинг-стопе на основе ATR.
 

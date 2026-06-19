@@ -1,5 +1,5 @@
 # ColorX2MA Digit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a port of the MQL5 expert **Exp_ColorX2MA_Digit**.
 The original algorithm paints a double smoothed moving average in different colors depending on its slope and uses these colors to generate trading signals.

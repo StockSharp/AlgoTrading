@@ -1,5 +1,5 @@
 # Crossing of Two iMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the classic **“Crossing of two iMA”** MetaTrader 5 expert advisor into the StockSharp high-level API. It trades when two configurable moving averages cross and can optionally require confirmation from a third moving average that acts as a directional filter. The implementation keeps the original flexibility by supporting manual or risk-based position sizing, pending-entry style offsets and a trailing stop with user-defined step.
 

@@ -1,5 +1,5 @@
 # Color RSI MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades signals from a MACD indicator that can be analysed in four different modes:
 

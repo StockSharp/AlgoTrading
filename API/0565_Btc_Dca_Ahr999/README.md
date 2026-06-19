@@ -1,5 +1,5 @@
 # BTC DCA AHR999 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys Bitcoin each Monday between the configured start and end
 dates. The amount invested depends on the AHR999 index which combines a

@@ -1,5 +1,5 @@
 # Price Based Z-Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades based on the price Z-score relative to an EMA. Enters when the Z-score crosses user-defined thresholds and supports long, short, or both directions.
 

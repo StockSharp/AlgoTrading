@@ -1,5 +1,5 @@
 # RSI Strategy with Adjustable RSI and Stop-Loss
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Buys when the RSI value drops below a threshold and closes the long position when the price breaks above the previous candle's high. A percent-based stop loss protects each trade.
 

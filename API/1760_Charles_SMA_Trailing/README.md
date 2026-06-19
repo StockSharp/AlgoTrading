@@ -1,5 +1,5 @@
 # Charles SMA Trailing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades using a crossover of two Simple Moving Averages and optional trailing stop management. When the fast SMA crosses above the slow SMA a long position is opened. A short position is opened when the fast SMA crosses below the slow SMA. The strategy supports fixed stop-loss, take-profit, and a trailing stop that activates after a predefined profit threshold.
 

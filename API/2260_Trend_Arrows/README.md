@@ -1,5 +1,5 @@
 # Trend Arrows Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts when the closing price moves beyond recent extremes.
 It calculates the highest and lowest closing prices over a configurable period.

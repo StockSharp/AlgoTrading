@@ -1,5 +1,5 @@
 # Color HMA StDev
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на основе Hull Moving Average с динамическим фильтром стандартного отклонения.
 

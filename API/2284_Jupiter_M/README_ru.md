@@ -1,5 +1,5 @@
 # Стратегия Jupiter M
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Сеточная стратегия, переведённая из советника MetaTrader «Jupiter M. 4.1.1».
 Алгоритм строит корзину ордеров с настраиваемым шагом и изменяет тейк-профит

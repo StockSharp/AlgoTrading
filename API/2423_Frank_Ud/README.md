@@ -31,4 +31,4 @@ The **Frank Ud Hedging Grid Strategy** is a direct port of the MetaTrader expert
 - `CS/FrankUdStrategy.cs` – main strategy implementation with English inline comments explaining each block.
 - `README.md` – this document.
 - `README_ru.md` – Russian translation.
-- `README_cn.md` – Simplified Chinese translation.
+- `README_zh.md` – Simplified Chinese translation.

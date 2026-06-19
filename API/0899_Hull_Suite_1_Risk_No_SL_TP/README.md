@@ -1,5 +1,5 @@
 # Hull Suite Strategy – 1% Risk, No SL/TP
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Hull Suite strategy opens long positions when the selected Hull moving average rises compared to two bars ago and opens short positions when it falls. No stop loss or take profit is used.
 

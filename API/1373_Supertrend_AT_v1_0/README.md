@@ -1,5 +1,5 @@
 # Supertrend AT v1.0 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A Supertrend-based strategy that enters a long position when the Supertrend flips from down to up and a short position when it flips from up to down. Position size is calculated from risk per trade, and exits use stop-loss and take-profit levels derived from the previous Supertrend.
 

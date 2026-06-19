@@ -1,5 +1,5 @@
 # Rsi Stochastic Wma Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining RSI, Stochastic Oscillator and a Weighted Moving Average (WMA).
 Buys when RSI is oversold, %K crosses above %D and price is above WMA.

@@ -32,5 +32,5 @@ This strategy is a StockSharp port of the MetaTrader expert advisor "Hedging Mar
 ## Files
 - `CS/HedgingMartingaleStrategy.cs` – implementation of the converted strategy (C#).
 - `README.md` – this documentation (English).
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.
 - `README_ru.md` – Russian translation.

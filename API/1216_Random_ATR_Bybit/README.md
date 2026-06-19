@@ -1,5 +1,5 @@
 # Random ATR Strategy - Bybit
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy generates a deterministic random signal based on recent price ranges and the current date. It enters long when the signal is 1 and short when it is 0. Risk management uses ATR-based stop loss and take profit levels.
 

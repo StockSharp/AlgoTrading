@@ -1,5 +1,5 @@
 # Donchian Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A breakout system using Donchian Channels with volatility and volume filters.
 

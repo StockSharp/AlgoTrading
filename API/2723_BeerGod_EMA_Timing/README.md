@@ -1,5 +1,5 @@
 # BeerGod EMA Timing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the BeerGodEA MetaTrader expert advisor inside StockSharp. It trades mean-reversion setups on a single
 symbol by monitoring a 60-period exponential moving average (EMA) and comparing the current price action with the previous bar.

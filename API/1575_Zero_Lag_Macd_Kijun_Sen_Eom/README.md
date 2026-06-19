@@ -1,5 +1,5 @@
 # Zero Lag MACD + Kijun-sen + EOM Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining Zero Lag MACD with Kijun-sen baseline and Ease of Movement filter. Uses ATR-based stop and take profit.
 

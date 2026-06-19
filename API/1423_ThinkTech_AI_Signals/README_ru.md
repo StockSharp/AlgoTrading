@@ -1,5 +1,5 @@
 # Стратегия ThinkTech AI Signals
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия торгует пробои первой 15-минутной свечи с ATR-стопами и тейк-профитами. При желании можно включить фильтры тренда и RSI.
 

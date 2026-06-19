@@ -1,5 +1,5 @@
 # Color Schaff DeMarker Trend Cycle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Color Schaff DeMarker Trend Cycle Strategy** uses a custom oscillator derived from fast and slow DeMarker values. The indicator applies two stochastic steps to create a cycle value that oscillates between -100 and +100. Colors are assigned based on the level and slope of the oscillator, which are then used to generate trading signals.
 

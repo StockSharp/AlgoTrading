@@ -1,5 +1,5 @@
 # Trendline Breaks with Multi Fibonacci Supertrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy averages three SuperTrend calculations that use Fibonacci multipliers (0.618, 1.618, 2.618) and smooths the result with an EMA. Dynamic trendlines are built from swing highs and lows with slopes derived from ATR. A long trade is opened when price breaks above the upper trendline, the smoothed SuperTrend is rising and the +DI value exceeds −DI. Short trades mirror these rules.
 

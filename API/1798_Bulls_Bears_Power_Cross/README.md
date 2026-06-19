@@ -1,5 +1,5 @@
 # Bulls & Bears Power Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on the crossover of the Bulls Power and Bears Power indicators on a four-hour timeframe. The Bulls Power measures buying pressure above an average price, while Bears Power shows selling pressure below it. When buying strength overtakes selling strength, the system opens a long position. When selling strength becomes dominant, it opens a short.
 

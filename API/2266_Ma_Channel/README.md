@@ -1,5 +1,5 @@
 # Ma Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Ma Channel strategy trades breakouts of a moving average channel built from the
 high and low prices. A position is opened when price leaves the channel in the

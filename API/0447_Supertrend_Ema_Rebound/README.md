@@ -1,5 +1,5 @@
 # SuperTrend + EMA Rebound Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The system trades in the direction of SuperTrend and looks for pullbacks to an
 exponential moving average. A position is opened either when the SuperTrend line

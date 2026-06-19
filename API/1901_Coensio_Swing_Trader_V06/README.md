@@ -1,5 +1,5 @@
 # Coensio Swing Trader V06 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the breakout logic of the original Coensio Swing Trader. It uses the Donchian Channel to define dynamic support and resistance. A trade is opened when price breaks above the upper band or below the lower band by a configurable threshold.
 

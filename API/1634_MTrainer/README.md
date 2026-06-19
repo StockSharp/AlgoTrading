@@ -1,5 +1,5 @@
 # MTrainer Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 MTrainer Strategy replicates the MT4 MTrainer script. It opens a position when price reaches a predefined entry line and manages it with stop-loss, take-profit and optional partial close lines. The strategy is designed for manual practice in the visual tester.
 

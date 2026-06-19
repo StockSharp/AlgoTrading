@@ -1,5 +1,5 @@
 # 4H Bollinger Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The 4H Bollinger Breakout strategy trades Bollinger Band breakouts on the four-hour chart. Long positions are opened when price crosses above the lower band with volume and trend confirmation. Short positions are taken when price crosses below the upper band and RSI is below a threshold.
 

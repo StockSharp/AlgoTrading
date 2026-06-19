@@ -1,5 +1,5 @@
 # Night Scalper Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades around the evening session using Bollinger Bands. It opens positions only after a specified start hour when the band width is narrow and price breaks outside the bands.
 

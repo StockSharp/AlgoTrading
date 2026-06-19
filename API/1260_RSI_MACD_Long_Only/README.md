@@ -1,5 +1,5 @@
 # RSI + MACD Long-Only Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy enters long when RSI crosses above midline with MACD bullish confirmation or when MACD crosses above its signal line while RSI stays above the midline. Exits occur when RSI falls below the midline or MACD crosses below the signal with a non-positive histogram. Optional EMA trend filter and oversold context can refine entries.
 

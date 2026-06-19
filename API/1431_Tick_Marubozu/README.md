@@ -1,5 +1,5 @@
 # Tick Marubozu Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Identifies Marubozu candles on tick data and confirms them with high volume. Buys bullish Marubozu and sells bearish ones.
 

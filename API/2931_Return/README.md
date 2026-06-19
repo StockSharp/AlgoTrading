@@ -1,5 +1,5 @@
 # Return Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the classic "Return Strategy" expert advisor. It prepares a grid of paired buy-limit and sell-limit orders at the start of a configured trading window. The grid is symmetric around the market price, uses fixed spacing in pips, and can be sized either by a fixed volume or a percentage risk model. Once orders are filled the strategy supervises the position with static and trailing stop-loss logic, monitors cumulative open profit, and forces a full flattening at the daily cut-off time or every Friday.
 

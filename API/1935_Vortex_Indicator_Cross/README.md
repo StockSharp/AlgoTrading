@@ -1,5 +1,5 @@
 # Vortex Indicator Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades the crossing of positive (VI+) and negative (VI-) lines of the Vortex indicator.
 When VI+ crosses above VI- the strategy goes long; when VI- crosses above VI+ it goes short.

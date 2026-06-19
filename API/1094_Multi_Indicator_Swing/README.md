@@ -1,5 +1,5 @@
 # Multi Indicator Swing
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Swing strategy combining Parabolic SAR, SuperTrend, ADX and volume delta confirmation.
 

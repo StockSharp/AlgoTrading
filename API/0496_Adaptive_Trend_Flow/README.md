@@ -1,5 +1,5 @@
 # Adaptive Trend Flow Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Adaptive Trend Flow strategy builds a volatility-based channel from fast and slow EMAs of the typical price. When price crosses the channel boundaries the internal trend flips. Long positions are opened when the trend turns upward and optional SMA and MACD filters agree. Positions are closed when the trend reverses downward.
 

@@ -1,5 +1,5 @@
 # Стратегия Autonomous 5-Minute Robot
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Autonomous 5-Minute Robot торгует на таймфрейме 5 минут.
 Она открывает длинную позицию, когда цена находится в восходящем тренде и покупочный объём превышает продающий,

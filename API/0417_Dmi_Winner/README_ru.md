@@ -1,5 +1,5 @@
 # DMI Winner
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **DMI Winner** — трендовая стратегия на основе индекса направленного движения
 (DMI). Сделки открываются при пересечении линий `+DI` и `-DI`, когда ADX

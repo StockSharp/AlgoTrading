@@ -63,5 +63,5 @@ that multiplies the trade volume after every losing cycle while an optional cool
 
 - `CS/FractalsMartingaleStrategy.cs` – C# implementation using the high-level Strategy API.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Simplified Chinese translation.
+- `README_zh.md` – Simplified Chinese translation.
 - `README_ru.md` – Russian translation.

@@ -1,5 +1,5 @@
 # Bar Counter Trend Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Looks for several consecutive rising or falling bars and takes counter-trend trades when price reaches channel extremes.
 

@@ -1,5 +1,5 @@
 # Exp Iin MA Signal MMRec Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A StockSharp port of the MetaTrader expert "Exp_Iin_MA_Signal_MMRec". The strategy listens to the crossover signals produced by a pair of configurable moving averages (the original Iin_MA_Signal indicator) and applies an adaptive position sizing scheme with loss-based reduction.
 

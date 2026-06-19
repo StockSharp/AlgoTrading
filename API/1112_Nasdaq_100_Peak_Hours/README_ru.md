@@ -1,5 +1,5 @@
 # Стратегия NASDAQ 100 Peak Hours
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует NASDAQ 100 только в первые два и последние часы сессии. Использует подтверждение тренда EMA, индикаторы RSI, ATR и VWAP с трейлинг-стопом и переводом в безубыток по ATR.
 

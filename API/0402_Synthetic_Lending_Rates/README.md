@@ -1,5 +1,5 @@
 # Synthetic Lending Rates
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy exploits differences between synthetic lending rates derived from derivative markets and on‑chain lending yields. By borrowing where rates are low and lending where rates are high, it captures the spread between them.
 

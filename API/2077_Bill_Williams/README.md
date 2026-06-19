@@ -1,5 +1,5 @@
 # Bill Williams
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Bill Williams combines the Alligator indicator with fractal breakouts. The jaws, teeth and lips must diverge before a breakout of the most recent fractal triggers an order.
 

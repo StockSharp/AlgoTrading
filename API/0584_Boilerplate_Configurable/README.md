@@ -1,5 +1,5 @@
 # Boilerplate Configurable Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Boilerplate Configurable strategy can switch between two modes: a simple moving average crossover or a Bollinger squeeze breakout. It features trading day and session filters, a date range, a news window, and risk management using ATR or static risk/reward.
 

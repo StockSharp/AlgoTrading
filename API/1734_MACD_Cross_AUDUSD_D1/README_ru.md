@@ -1,5 +1,5 @@
 # MACD Cross AUDUSD D1
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует парой AUDUSD на дневном таймфрейме, используя пересечения линий MACD.
 

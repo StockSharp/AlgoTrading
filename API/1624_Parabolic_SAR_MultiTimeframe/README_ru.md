@@ -1,5 +1,5 @@
 # Parabolic SAR MultiTimeframe
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Parabolic SAR MultiTimeframe использует четыре индикатора Parabolic SAR с более высоких таймфреймов,
 чтобы подтвердить направление тренда перед входом в сделку. Анализируются свечи 15 минут и учитываются значения SAR

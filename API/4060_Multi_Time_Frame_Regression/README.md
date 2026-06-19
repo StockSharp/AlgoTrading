@@ -1,5 +1,5 @@
 # Multi Time-Frame Regression Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A multi-timeframe strategy that combines linear regression channels on M1, M5, and H1 candles. The regression slope from the H1 channel defines the dominant trend, while the M5 and M1 channels provide precise entry locations near support and resistance.
 

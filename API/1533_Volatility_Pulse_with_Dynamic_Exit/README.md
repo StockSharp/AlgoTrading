@@ -1,5 +1,5 @@
 # Volatility Pulse with Dynamic Exit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Momentum-based strategy detecting volatility expansion. Enters in the direction of momentum when ATR rises above its average and exits using ATR-based stop and take-profit after a holding period.
 

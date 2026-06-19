@@ -1,5 +1,5 @@
 # Стратегия Momo Trades
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Конверсия оригинального советника MetaTrader "Momo_trades", торгующего пробои импульса с фильтрами по скользящей средней и структуре MACD.
 

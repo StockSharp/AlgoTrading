@@ -1,5 +1,5 @@
 # Long EMA Advanced Exit
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Long EMA Advanced Exit is a long-only strategy that enters when a short moving average crosses above a medium one and price is above a long moving average. Exits can be triggered by MACD cross down, price closing below a selected moving average, MA cross down, trailing stop, or an ATR-based volatility filter.
 

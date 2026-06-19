@@ -1,5 +1,5 @@
 # The Z-Score Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy calculates the z-score of a Heikin-Ashi EMA and trades based on crossings of dynamic thresholds derived from recent ranges.
 

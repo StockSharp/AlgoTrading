@@ -1,5 +1,5 @@
 # Long and Short with Multi Indicators Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses RSI, Rate of Change and a selectable moving average to generate long and short signals. It applies an ATR-based trailing stop for exits.
 

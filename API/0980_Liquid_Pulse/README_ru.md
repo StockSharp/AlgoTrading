@@ -1,5 +1,5 @@
 # Liquid Pulse Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия ищет всплески объёма, подтверждённые MACD и ADX. ATR задаёт стоп и тейк-профит, ограничение сделок в день.
 

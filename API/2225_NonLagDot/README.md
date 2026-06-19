@@ -1,5 +1,5 @@
 # NonLagDot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy inspired by the NonLagDot indicator. The indicator approximates price trend using a smooth moving average and color-coded dots.
 The strategy opens a long position when the indicator turns upward and a short position when it turns downward.

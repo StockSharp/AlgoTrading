@@ -1,5 +1,5 @@
 # ProfitView Strategy Template Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A basic moving average crossover strategy with configurable smoothing types, derived from the ProfitView template.
 

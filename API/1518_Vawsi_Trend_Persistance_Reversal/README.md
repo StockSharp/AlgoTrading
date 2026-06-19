@@ -1,5 +1,5 @@
 # VAWSI and Trend Persistence Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Reversal strategy combining VAWSI, trend persistence and ATR to build a dynamic threshold on Heikin-Ashi candles.
 

@@ -1,5 +1,5 @@
 # RSI Threshold Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Converts the MetaTrader *Exp_RSI* expert into StockSharp. The strategy opens and closes positions when the Relative Strength Index (RSI) crosses predefined overbought and oversold levels.
 

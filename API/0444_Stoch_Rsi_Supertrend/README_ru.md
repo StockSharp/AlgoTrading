@@ -1,5 +1,5 @@
 # Стратегия Stochastic RSI SuperTrend
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает быстрый осциллятор Stochastic RSI с трендовым фильтром и
 упрощённой моделью SuperTrend. Осциллятор показывает краткосрочные экстремумы

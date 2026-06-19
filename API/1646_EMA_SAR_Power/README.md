@@ -1,5 +1,5 @@
 # EMA SAR Power Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This intraday strategy combines fast and slow exponential moving averages with Parabolic SAR and Bulls/Bears Power indicators. It trades only during active market hours and requires sufficient free margin before entering any position.
 

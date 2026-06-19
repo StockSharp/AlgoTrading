@@ -1,5 +1,5 @@
 # Trend Following Stocks
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades individual equities using a simple trend filter. Stocks trading above a moving average are bought, while those below are avoided or shorted.
 

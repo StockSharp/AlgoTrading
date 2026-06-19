@@ -1,5 +1,5 @@
 # Nifty 50 5mint Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Nifty 50 5mint Strategy** trades breakouts on the Nifty 50 index using DEMA, VWAP and Bollinger Bands confirmation.
 

@@ -1,5 +1,5 @@
 # Dual RSI Differential
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Dual RSI Differential** сравнивает два периода RSI и открывает сделки,
 когда разница между ними превышает порог. Такой подход позволяет видеть

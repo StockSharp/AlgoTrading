@@ -1,5 +1,5 @@
 # Laguerre ADX Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy applies a Laguerre filter to the +DI and -DI components of the Average Directional Index (ADX) indicator. The smoothing reduces noise in directional movement and highlights sudden shifts in dominance between buyers and sellers. When the Laguerre-smoothed +DI crosses below the smoothed -DI, the system enters a long position, expecting a bullish reversal. Conversely, when the smoothed +DI crosses above the smoothed -DI, the system opens a short position.
 

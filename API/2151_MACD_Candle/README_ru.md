@@ -1,5 +1,5 @@
 # Стратегия MACD Candle
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Данная стратегия является конверсией советника MetaTrader «Exp_MACDCandle». Она преобразует цвет свечей индикатора MACD Candle в торговые сигналы с использованием высокоуровневого API StockSharp.
 

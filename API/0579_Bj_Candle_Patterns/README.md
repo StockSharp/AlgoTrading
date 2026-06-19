@@ -1,5 +1,5 @@
 # Bj Candle Patterns Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy looks for Dragonfly Doji and Gravestone Doji candlestick patterns. A Dragonfly Doji with a long lower wick can signal bullish reversal, while a Gravestone Doji with a long upper wick may indicate bearish reversal. The strategy buys after a Dragonfly Doji and sells after a Gravestone Doji.
 

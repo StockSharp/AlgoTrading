@@ -1,5 +1,5 @@
 # Momentum Long + Short Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This momentum strategy trades both long and short positions on a 3-hour timeframe. Long setups require price to stay above the 100 and 500 period moving averages and can be filtered by RSI, ADX, ATR and trend alignment. Short entries look for price breaking below the lower Bollinger Band while remaining under both averages, with optional ATR confirmation and the ability to block shorts during strong uptrends.
 

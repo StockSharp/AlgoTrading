@@ -1,5 +1,5 @@
 # Exponential MA Rounding Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy rounds a moving average to a fixed tick step and builds an ATR-based channel around it. When the previous candle closes above the upper band, the strategy opens a long position. When the previous candle closes below the lower band, it opens a short position. Opposite signals close existing positions. Stop loss and take profit are defined in ticks and managed automatically.
 

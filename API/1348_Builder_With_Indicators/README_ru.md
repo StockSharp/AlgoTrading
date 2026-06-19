@@ -1,4 +1,4 @@
 # Стратегия Builder With Indicators
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия объединяет фильтр тренда EMA и триггер RSI. Длинные позиции открываются, когда цена выше EMA и RSI в зоне перепроданности, короткие — когда цена ниже EMA и RSI в зоне перекупленности.

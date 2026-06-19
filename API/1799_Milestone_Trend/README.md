@@ -1,5 +1,5 @@
 # Milestone Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp port of the Milestone 22.5 expert advisor. It trades pullbacks within a trend by combining two smoothed moving averages with a volatility and spike filter. When a candle breaks the previous bar's extreme and the fast average supports the move, a position is opened in the direction of the dominant trend. ATR prevents trading in quiet markets and large candle bodies are treated as spikes.
 

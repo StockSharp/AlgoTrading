@@ -1,5 +1,5 @@
 # Volatility Capture RSI-Bollinger
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия объединяет динамические полосы Боллинджера и необязательный фильтр RSI для захвата всплесков волатильности.
 

@@ -58,7 +58,7 @@
 API/3924/
 ├── CS/Up3x1ShiftedSmaStrategy.cs  # Converted C# strategy with English comments
 ├── README.md                      # English documentation (this file)
-├── README_cn.md                   # Chinese translation
+├── README_zh.md                   # Chinese translation
 └── README_ru.md                   # Russian translation
 ```
 

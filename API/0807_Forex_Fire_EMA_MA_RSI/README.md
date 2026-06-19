@@ -1,5 +1,5 @@
 # Forex Fire EMA MA RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Multi-timeframe trend strategy using EMA, MA and RSI confirmation. Uses 4h candles for confluence and 15m candles for entries.
 

@@ -42,4 +42,4 @@ Deep Drawdown MA — это портирована версия советник
 
 ## Состав папки
 - `CS/DeepDrawdownMaStrategy.cs` — реализация стратегии на C#.
-- `README.md`, `README_ru.md`, `README_cn.md` — подробная документация на трёх языках.
+- `README.md`, `README_ru.md`, `README_zh.md` — подробная документация на трёх языках.

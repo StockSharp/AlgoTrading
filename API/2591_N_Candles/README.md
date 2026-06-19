@@ -1,5 +1,5 @@
 # N Candles Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The N Candles strategy replicates the MQL expert advisor that enters a trade when a configurable number of consecutive candles share the same direction. Once the most recent `N` finished candles are all bullish, the strategy sends a market buy order. When all are bearish, it sends a market sell order. No exit logic is included; the position must be managed externally or by additional strategies.
 

@@ -1,5 +1,5 @@
 # McClellan A-D Volume Integration Model Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy builds a weighted advance-decline line by multiplying the price spread of the bar by its volume. Two EMAs of this weighted line form a McClellan-style oscillator.
 

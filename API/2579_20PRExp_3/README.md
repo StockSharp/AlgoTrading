@@ -1,5 +1,5 @@
 # 20PRExp-3 Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The 20PRExp-3 strategy is a breakout system that compares the current trading session with the previous day's price extremes. It rebuilds the daily channel on every completed five-minute candle, confirms momentum with a 30-minute tick volume expansion, and enters only when price breaks beyond the updated session high or low. Once in the market, it mirrors the original MetaTrader 5 expert by using Parabolic SAR exits, dynamic trailing stops, and fixed risk sizing based on the distance to the protective stop.
 

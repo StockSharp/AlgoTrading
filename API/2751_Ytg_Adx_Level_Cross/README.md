@@ -1,5 +1,5 @@
 # YTG ADX Level Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports Yuriy Tokman's `_ADX.mq5` expert advisor to the StockSharp high-level API. It monitors the Average Directional Index and reacts when the +DI or -DI components surge through configurable thresholds. Orders are opened only once at a time, mirroring the original MQL logic, and protective stop-loss and take-profit levels expressed in price points are applied automatically.
 

@@ -1,5 +1,5 @@
 # MA SAR ADX Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining Moving Average, Parabolic SAR and Average Directional Index (ADX).
 Buys when the price is above both the moving average and SAR while +DI is above -DI.

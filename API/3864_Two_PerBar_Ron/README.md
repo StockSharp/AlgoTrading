@@ -1,5 +1,5 @@
 # TwoPerBar Ron Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The original MetaTrader expert "TwoPerBar" by Ron Thompson opens **two market orders at the start of every new bar**—one long and one short. Whenever a leg reaches a fixed cash target (`ProfitMade * Point` in the MQL code) it is closed, and at the opening of the next bar any remaining exposure is liquidated before a fresh hedged pair is created. If the previous bar ended with open positions, the lot size is doubled up to a safety cap (`LotLimit`). The StockSharp port reproduces this behaviour using the high-level strategy API, Level 1 quotes for bid/ask monitoring, and explicit tracking of the two hedged legs.

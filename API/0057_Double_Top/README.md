@@ -1,5 +1,5 @@
 # Double Top Pattern
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Double Top identifies two peaks separated by a number of bars with similar prices. After the second peak forms, a bearish candle confirms the reversal.
 

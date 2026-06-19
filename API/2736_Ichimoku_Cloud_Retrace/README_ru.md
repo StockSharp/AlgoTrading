@@ -1,5 +1,5 @@
 # Стратегия Ichimoku Cloud Retrace
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия представляет собой перенос эксперта MetaTrader «ichimok2005» на платформу StockSharp. Логика основана на откатах внутрь облака Ichimoku с входом в сторону текущего наклона кума. Сигналы рассчитываются только по завершённым свечам.
 

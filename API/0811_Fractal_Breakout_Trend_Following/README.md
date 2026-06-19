@@ -1,5 +1,5 @@
 # Fractal Breakout Trend Following
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Fractal Breakout Trend Following enters on a buy stop above an activated bullish fractal when volatility is low.
 

@@ -1,5 +1,5 @@
 # Ichimoku Cloud Breakout Only Long
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия открывает длинные позиции при пробое цены выше облака Ишимоку и закрывает их, когда цена опускается ниже облака. Торгуются только лонги.
 

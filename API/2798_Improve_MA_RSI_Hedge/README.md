@@ -1,5 +1,5 @@
 # Improve MA & RSI Hedge Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the original MetaTrader "Improve" expert to StockSharp using the high-level API. It simultaneously trades two instruments: the main symbol selected for the strategy and a hedge symbol. Trade direction is defined by the relationship between two smoothed moving averages on the main instrument and the relative strength index (RSI). The hedge leg mirrors the direction of the main leg, creating a paired exposure that seeks to profit from synchronized momentum moves while limiting single-instrument risk.
 

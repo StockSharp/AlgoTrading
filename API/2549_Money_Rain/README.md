@@ -49,7 +49,7 @@
 
 ## Files
 - `CS/MoneyRainStrategy.cs` – strategy implementation.
-- `README.md` / `README_ru.md` / `README_cn.md` – multilingual documentation.
+- `README.md` / `README_ru.md` / `README_zh.md` – multilingual documentation.
 
 ## Differences from the MQL Version
 - Broker-side protective orders are replaced with market exits based on candle ranges.

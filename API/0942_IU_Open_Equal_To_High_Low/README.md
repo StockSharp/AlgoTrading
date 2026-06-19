@@ -1,5 +1,5 @@
 # IU Open Equal to High Low Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Enters long on the first candle of the day when its open equals its low and enters short when the open equals the high. Stop loss uses the prior candle and take profit is based on the `RiskReward` ratio.
 

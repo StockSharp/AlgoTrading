@@ -1,5 +1,5 @@
 # WPR Slowdown Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The WPR Slowdown strategy utilizes the Williams %R oscillator to detect reversals when momentum stalls near extreme levels. A slowdown occurs when the current Williams %R value differs from the previous value by less than one point. When such a slowdown appears above the upper threshold, the strategy closes short positions and optionally opens a long position. A slowdown below the lower threshold closes long positions and optionally opens a short position.
 

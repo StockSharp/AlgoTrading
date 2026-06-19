@@ -1,5 +1,5 @@
 # X2MA JJRSX Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that combines a dual moving average trend filter with an RSI based entry trigger.
 The trend is defined on a higher timeframe by comparing a fast and slow moving average.

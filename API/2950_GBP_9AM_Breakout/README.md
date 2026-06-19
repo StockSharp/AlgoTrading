@@ -51,6 +51,6 @@ All pip distances automatically adapt to 3- or 5-digit FX quotes by multiplying 
 - `CS/Gbp9AmBreakoutStrategy.cs` – C# implementation using the StockSharp high-level API.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 
 Python implementation is intentionally omitted per project requirements.

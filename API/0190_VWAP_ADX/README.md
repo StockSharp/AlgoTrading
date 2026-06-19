@@ -1,5 +1,5 @@
 # Vwap Adx Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on VWAP and ADX indicators. Enters long when price is above VWAP and ADX > 25. Enters short when price is below VWAP and ADX > 25. Exits when ADX < 20.
 

@@ -1,5 +1,5 @@
 # Stochastic RSI SuperTrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This system blends the fast oscillations of the Stochastic RSI with a trend
 filter and a simplified SuperTrend model. The oscillator highlights short term

@@ -1,5 +1,5 @@
 # Стратегия Bollinger ADX
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает полосы Боллинджера и индикатор ADX. Она ищет пробои с подтверждением сильного тренда.
 

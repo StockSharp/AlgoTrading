@@ -1,5 +1,5 @@
 # Fibo iSAR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines fast and slow Parabolic SAR indicators with Fibonacci retracement levels. When the fast SAR lies above the slow SAR and below the price, the strategy expects an uptrend and places a buy limit order at the 50% Fibonacci retracement of the recent range. The stop loss is placed below the swing low and the take profit at the 161% extension. For a downtrend the logic is mirrored with sell limit orders.
 

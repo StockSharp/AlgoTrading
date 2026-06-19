@@ -1,5 +1,5 @@
 # Nifty Options Trendy Markets with TSL Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy using Bollinger Bands with ADX and Supertrend filters. Entries require a volume spike. Positions close on MACD crossovers, ADX weakening or an ATR based trailing stop.
 

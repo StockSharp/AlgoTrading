@@ -45,6 +45,6 @@ The **Bullish & Bearish Harami Stochastic Strategy** is the StockSharp port of t
 - `CS/BullishBearishHaramiStochasticStrategy.cs` — high-level StockSharp implementation of the strategy.
 - `README.md` — English documentation (this file).
 - `README_ru.md` — Russian documentation.
-- `README_cn.md` — Chinese documentation.
+- `README_zh.md` — Chinese documentation.
 
 > **Note:** The Python version is not included per the conversion instructions.

@@ -1,5 +1,5 @@
 # Stochastic CG Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the **Exp_StochasticCGOscillator** MetaTrader 5 expert advisor to StockSharp. The conversion keeps the original logic of the Stochastic Center of Gravity oscillator, rebuilds the trigger line smoothing, and executes trades using StockSharp's high-level strategy API.
 

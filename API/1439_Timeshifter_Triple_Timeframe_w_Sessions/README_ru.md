@@ -1,5 +1,5 @@
 # Стратегия Timeshifter Triple Timeframe
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия, работающая на трёх таймфреймах с дополнительным подтверждением ADX и фильтром по торговым сессиям.
 

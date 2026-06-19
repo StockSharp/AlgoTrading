@@ -1,5 +1,5 @@
 # Distance to Demand Vector Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the Distance to Demand Vector indicator. It compares the distances to long and short demand vectors and trades on their crossover.
 

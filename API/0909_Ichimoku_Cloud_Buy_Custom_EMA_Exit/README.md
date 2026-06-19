@@ -1,5 +1,5 @@
 # Ichimoku Cloud Buy Custom EMA Exit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Implementation of strategy - Ichimoku Cloud Buy with custom EMA exit and volume filter. The strategy buys when price is above the cloud and volume exceeds its average. Optionally it requires price to stay above the EMA. The position is closed once price falls below the EMA or when the stop-loss is hit.
 

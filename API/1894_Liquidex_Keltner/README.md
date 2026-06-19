@@ -1,5 +1,5 @@
 # Liquidex Keltner
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Liquidex Keltner** strategy trades breakouts of Keltner Channels with a moving average trend filter.
 Trades are allowed only during specified hours and can optionally be confirmed by RSI direction.

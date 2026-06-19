@@ -1,5 +1,5 @@
 # How To Set Backtest Time Ranges
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy demonstrates restricting trading to specific date and intraday time windows. It enters long when a fast SMA crosses above a slow SMA and exits on the opposite crossover.
 

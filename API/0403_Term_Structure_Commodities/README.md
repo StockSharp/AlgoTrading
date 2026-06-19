@@ -1,5 +1,5 @@
 # Term Structure Commodities
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades the slope of commodity futures curves. It buys contracts in backwardation and sells those in contango, betting on mean reversion in the term structure.
 

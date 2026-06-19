@@ -1,5 +1,5 @@
 # Consecutive Bars Above Below EMA Buy The Dip
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy buys after several consecutive closes below a moving average and exits when price closes above the previous high.
 

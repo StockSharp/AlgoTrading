@@ -1,5 +1,5 @@
 # BTC Chop Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades short-term reversals on BTC when price tests ATR bands and momentum shifts, combining EMA, ATR, RSI, MACD histogram, and a volume spike filter.
 

@@ -1,5 +1,5 @@
 # MACD EMA SAR Bollinger BullBear Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines MACD, EMA crossover, Parabolic SAR, Bollinger Bands, and Bulls/Bears Power indicators. Trades only during active hours.
 

@@ -1,5 +1,5 @@
 # Multi-Band Comparison
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Multi-Band Comparison uses SMA, standard deviation and price quantile bands. The strategy goes long when price closes above the upper quantile minus standard deviation for a defined number of bars and exits when price falls below that level for a set number of bars.
 

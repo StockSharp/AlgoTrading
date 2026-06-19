@@ -1,5 +1,5 @@
 # Dubic EMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on the position of the close relative to exponential moving averages calculated over highs and lows. Trading is avoided during narrow ranges and low volatility periods. Positions are protected with ATR-based stops, take-profit levels and optional Parabolic SAR trailing stop.
 

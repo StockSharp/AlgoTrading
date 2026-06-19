@@ -1,5 +1,5 @@
 # Стратегия SuperTrend + EMA Rebound
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Система торгует по направлению SuperTrend и ищет откаты к экспоненциальной
 скользящей средней. Вход происходит либо при смене направления линии

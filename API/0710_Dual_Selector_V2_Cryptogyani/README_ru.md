@@ -1,5 +1,5 @@
 # Dual Strategy Selector V2 - Cryptogyani
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переключает два подхода на основе SMA и работает только в лонг.
 

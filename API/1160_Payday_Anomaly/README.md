@@ -1,5 +1,5 @@
 # Payday Anomaly Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy opens a long position on selected paydays (1st, 2nd, 16th, 31st of each month) and closes the position on the following day.
 

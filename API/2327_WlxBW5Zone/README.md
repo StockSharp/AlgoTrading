@@ -1,5 +1,5 @@
 # Wlx BW5 Zone Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses Bill Williams' Awesome Oscillator (AO) and Accelerator Oscillator (AC) to identify strong momentum sequences. A buy (sell) signal appears when both oscillators move higher (lower) for five consecutive bars. The system reverses or opens positions accordingly.
 

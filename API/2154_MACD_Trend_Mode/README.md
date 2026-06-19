@@ -1,5 +1,5 @@
 # MACD Trend Mode Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades using the MACD indicator with three selectable trend detection modes: histogram slope, cloud crossover, or zero line cross.
 

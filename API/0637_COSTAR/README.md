@@ -1,5 +1,5 @@
 # COSTAR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The COSTAR strategy builds a linear regression of closing prices and measures the standard deviation of residuals. Upper and lower bands are created by adding and subtracting the deviation multiplied by a factor. Trades attempt to fade extreme deviations and exit when price returns to the regression line.
 

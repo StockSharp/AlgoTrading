@@ -1,5 +1,5 @@
 # Стратегия Iron Bot Statistical Trend Filter
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия торгует пробои уровней, рассчитанных на основе уровней Фибоначчи и Z-Score.
 

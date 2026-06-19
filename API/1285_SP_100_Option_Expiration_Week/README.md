@@ -1,5 +1,5 @@
 # S&P 100 Option Expiration Week Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys at the beginning of the option expiration week (the week containing the third Friday of the month) and closes the position on that third Friday.
 

@@ -1,5 +1,5 @@
 # DCA Simulation for CryptoCommunity Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy simulates dollar cost averaging with optional safety orders and a trailing take-profit. It starts with a base order and can periodically invest additional capital or average down after price drops.
 

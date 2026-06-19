@@ -1,5 +1,5 @@
 # Vortex MTF Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy calculates the Vortex indicator on a configurable timeframe.
 Long positions are opened when the positive Vortex line crosses above the negative line.

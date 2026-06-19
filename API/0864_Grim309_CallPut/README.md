@@ -1,5 +1,5 @@
 # GRIM309 CallPut Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 GRIM309 CallPut Strategy trades based on multiple EMA trend alignment with a warning system. Long positions enter when short-term EMAs confirm an uptrend and EMA5 is rising above EMA10. Short positions enter on the opposite conditions. A cooldown period prevents immediate re-entry after a close. An additional warning triggers early exits when the EMA5-EMA10 spread contracts rapidly.
 

@@ -1,5 +1,5 @@
 # Futures Engulfing Candle Size Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades once per day when a candle's range exceeds a tick threshold within a selected time window. Direction follows the candle body and exits via take profit and stop loss.
 

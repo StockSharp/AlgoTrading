@@ -1,5 +1,5 @@
 # Advanced Multi-Seasonality Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades based on predefined seasonal periods. Up to four periods can be configured with individual entry date, holding days and direction.
 

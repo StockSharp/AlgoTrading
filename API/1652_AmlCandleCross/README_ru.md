@@ -1,5 +1,5 @@
 # Стратегия AML Candle Cross
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует по индикатору Adaptive Market Level (AML).
 Сделка открывается, когда значение AML попадает внутрь тела текущей

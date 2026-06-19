@@ -1,5 +1,5 @@
 # Color NonLag Dot MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using MACD indicator with several signal detection modes. The approach is ported from the MQL "Exp_ColorNonLagDotMACD" expert advisor.
 

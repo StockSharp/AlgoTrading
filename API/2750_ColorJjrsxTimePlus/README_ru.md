@@ -1,5 +1,5 @@
 # Стратегия Color JJRSX Time Plus
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Конвертированная версия эксперта MetaTrader5 `Exp_ColorJJRSX_Tm_Plus`. Стратегия анализирует развороты индикатора Color JJRSX (воспроизведённого через RSI с фильтром Jurik) и дополнительно контролирует время нахождения в позиции, как и оригинальный робот.
 

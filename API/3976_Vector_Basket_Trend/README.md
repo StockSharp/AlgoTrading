@@ -42,4 +42,4 @@ This folder contains the StockSharp high-level API port of the MetaTrader 4 expe
 ## Files
 
 - `CS/VectorStrategy.cs` – C# implementation following the StockSharp high-level guidelines.
-- `README.md`, `README_ru.md`, `README_cn.md` – strategy documentation in English, Russian, and Chinese.
+- `README.md`, `README_ru.md`, `README_zh.md` – strategy documentation in English, Russian, and Chinese.

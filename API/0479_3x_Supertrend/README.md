@@ -1,5 +1,5 @@
 # 3x Supertrend
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **3x Supertrend** strategy uses three ATR-based bands with different periods and multipliers.
 A long position is opened when price rises above all three bands and the fast band switches to

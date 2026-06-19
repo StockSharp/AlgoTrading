@@ -1,5 +1,5 @@
 # Support Resistance MTF Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Utility strategy that calculates support and resistance zones on a higher timeframe. The highest and lowest prices over a configurable period are logged as resistance and support levels.
 

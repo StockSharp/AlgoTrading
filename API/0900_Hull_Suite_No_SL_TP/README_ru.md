@@ -1,5 +1,5 @@
 # Hull Suite No SL/TP
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Hull Suite No SL/TP** — трендовая стратегия на основе вариантов Hull Moving Average. Позиция разворачивается при смене направления линии Hull относительно значения два бара назад.
 

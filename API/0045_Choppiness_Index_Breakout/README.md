@@ -1,5 +1,5 @@
 # Choppiness Index Breakout
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The Choppiness Index gauges whether the market is trending or ranging. When the indicator drops below a threshold, it signals the start of a trend from a choppy environment.
 

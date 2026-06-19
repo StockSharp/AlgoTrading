@@ -1,5 +1,5 @@
 # Стратегия Divergence for Many Indicators v4
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия ищет дивергенции между ценой и несколькими индикаторами импульса (MACD, RSI, Stochastic, CCI, Momentum, OBV, MFI).
 Сделка открывается, когда заданное число индикаторов показывает дивергенцию в одном направлении.

@@ -1,5 +1,5 @@
 # Berlin Candles Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using custom Berlin candles derived from smoothed Heikin Ashi values. A long position is opened when a bullish Berlin candle closes above the Donchian baseline. A short position is opened when a bearish Berlin candle closes below the baseline.
 

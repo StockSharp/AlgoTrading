@@ -1,5 +1,5 @@
 # Стратегия Volatility Momentum Breakout
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия объединяет уровни пробоя на основе ATR с фильтром тренда EMA и импульсом RSI для захвата сильных движений.
 

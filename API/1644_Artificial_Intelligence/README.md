@@ -1,5 +1,5 @@
 # Artificial Intelligence Perceptron Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Artificial Intelligence strategy uses a simple perceptron to combine multiple Accelerator Oscillator (AC) readings at different time shifts. The weighted sum of the current AC value and three lagged values (7, 14, 21 bars back) determines the direction of the trade. When the perceptron output is positive the strategy opens or maintains a long position; when negative it opens or maintains a short position.
 

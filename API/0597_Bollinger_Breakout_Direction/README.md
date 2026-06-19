@@ -1,5 +1,5 @@
 # Bollinger Breakout Direction
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades Bollinger Band breakouts filtered by RSI. Direction can be long, short, or both. Uses fixed stop loss and take profit based on risk/reward ratio.
 

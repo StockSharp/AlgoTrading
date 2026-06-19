@@ -1,5 +1,5 @@
 # ADX DMI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses the Directional Movement Index (DMI) to trade crossovers between the +DI and -DI lines. When -DI moves above +DI and then drops below it, the strategy opens a long position. When +DI rises above -DI and then falls back below, it opens a short position. Opposite signals can optionally close existing positions.
 

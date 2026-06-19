@@ -1,5 +1,5 @@
 # Non-Repainting Renko Emulation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Emulates Renko bricks using closing prices and trades on pattern transitions without repainting.
 

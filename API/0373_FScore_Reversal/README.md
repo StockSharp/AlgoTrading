@@ -1,5 +1,5 @@
 # F-Score Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy blends Piotroski F-Score fundamentals with short-term price reversal. Each month it buys the worst-performing stock among those with strong F-Scores and optionally shorts the best performer with weak F-Scores. The premise is that fundamentally sound firms snap back after temporary declines while weak firms revert after rallies.
 

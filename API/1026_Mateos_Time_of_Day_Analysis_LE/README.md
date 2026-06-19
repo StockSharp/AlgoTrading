@@ -1,5 +1,5 @@
 # Mateo's Time of Day Analysis LE
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Opens a long position during a specified intraday window and closes it later in the day.
 

@@ -1,5 +1,5 @@
 # Heiken Ashi Supertrend ATR-SL Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining Heikin Ashi candles with a Supertrend direction filter. Entries require candles without wicks and can enable ATR based stop loss and break even.
 

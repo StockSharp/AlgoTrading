@@ -1,5 +1,5 @@
 # Precision Trading Strategy: Golden Edge
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Скальперская стратегия для золота, совмещающая пересечение быстрых и медленных EMA с направлением Hull Moving Average. Сделки открываются только при подтверждении импульса RSI и достаточной волатильности.
 

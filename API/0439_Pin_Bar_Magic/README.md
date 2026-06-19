@@ -1,5 +1,5 @@
 # Pin Bar Magic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Detects bullish and bearish pin bars within a trend defined by a trio of moving averages. Orders are placed at the candle extremes and cancelled after a few bars if not filled. Position size is calculated from an equity risk percentage and ATR-based stop distance.
 

@@ -1,5 +1,5 @@
 # RD Trend Trigger Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The RD Trend Trigger strategy uses the RD-TrendTrigger oscillator to capture trend reversals or level breakouts depending on the selected mode. In twist mode, trades follow changes in oscillator direction; in disposition mode, trades occur when the oscillator crosses predefined levels.
 

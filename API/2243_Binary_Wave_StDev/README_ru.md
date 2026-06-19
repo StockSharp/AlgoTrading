@@ -1,5 +1,5 @@
 # Стратегия Binary Wave StdDev
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия суммирует сигналы от MA, MACD, CCI, Momentum, RSI и ADX с настраиваемыми весами.
 Сделки открываются по направлению итогового балла, если волатильность (стандартное отклонение) превышает порог.

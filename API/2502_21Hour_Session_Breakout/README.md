@@ -1,5 +1,5 @@
 # 21-Hour Session Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader "21hour" expert advisor inside StockSharp. It operates during two configurable trading windows and uses pending stop orders to capture breakouts at the top and bottom of the range. At the end of each window the strategy liquidates any open exposure and removes the working orders, ensuring that every trading day starts clean.
 

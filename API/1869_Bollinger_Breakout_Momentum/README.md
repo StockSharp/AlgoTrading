@@ -1,5 +1,5 @@
 # Bollinger Breakout Momentum Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Converted from the original MQL strategy. Trades Bollinger Band breakouts confirmed by EMA, MACD, and RSI. The strategy enters only once per volatility expansion and trails the stop along the middle band while using a fixed take profit in pips.
 

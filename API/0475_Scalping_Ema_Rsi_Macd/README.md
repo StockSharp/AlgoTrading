@@ -1,5 +1,5 @@
 # Scalping EMA RSI MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 30-minute scalping strategy combining fast/slow EMA crossover, trend EMA, RSI and MACD filters with a volume condition. Stop-loss is based on ATR, and take profit uses a fixed risk-to-reward ratio.
 

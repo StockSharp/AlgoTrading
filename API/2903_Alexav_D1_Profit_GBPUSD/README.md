@@ -1,5 +1,5 @@
 # Alexav D1 Profit GBPUSD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Daily breakout system for GBPUSD that combines an EMA calculated on highs, RSI filters, MACD momentum confirmation and ATR-based risk management. The script reproduces the four-layer profit taking and breakeven behaviour of the original MetaTrader version.
 

@@ -1,5 +1,5 @@
 # Стратегия FVG Positioning Average with 200EMA Auto Trading
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия усредняет уровни бычьих и медвежьих разрывов справедливой стоимости (FVG) и сочетает их с EMA периодом 200. Сделка открывается, когда цена пересекает эти средние в направлении тренда.
 

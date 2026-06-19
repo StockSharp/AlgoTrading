@@ -1,5 +1,5 @@
 # Volatility Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 The Volatility Breakout strategy seeks strong directional moves when price escapes from its average range. By measuring the distance from a simple moving average using the Average True Range, the algorithm defines breakout thresholds that scale with volatility.
 

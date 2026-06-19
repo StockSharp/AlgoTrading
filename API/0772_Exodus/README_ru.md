@@ -1,5 +1,5 @@
 # Стратегия Exodus
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Упрощённая адаптация скрипта TradingView **EXODUS** для StockSharp. Стратегия использует объёмно-взвешенный импульс VWMO и индикатор ADX для поиска сильных направленных движений.
 

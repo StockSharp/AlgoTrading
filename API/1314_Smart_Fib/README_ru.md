@@ -1,5 +1,5 @@
 # Smart Fib Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует пробой простой скользящей средней для входа и ATR-основанные полосы Фибоначчи для выхода.
 

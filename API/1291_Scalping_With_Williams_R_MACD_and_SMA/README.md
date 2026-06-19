@@ -1,5 +1,5 @@
 # Scalping With Williams R MACD and SMA
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Scalping strategy using Williams %R, MACD histogram and a simple moving average on one-minute candles.
 

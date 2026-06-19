@@ -1,5 +1,5 @@
 # Стратегия Calculation Position Size Based on Risk
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Демонстрирует расчет объема позиции исходя из риска счёта и процента стоп-лосса. Входы случайные, чтобы показать логику расчёта.
 

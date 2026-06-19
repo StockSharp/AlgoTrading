@@ -1,5 +1,5 @@
 # Simple MA ADX EA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия, которая сочетает EMA и индекс направленного движения (ADX) для подтверждения тренда.
 

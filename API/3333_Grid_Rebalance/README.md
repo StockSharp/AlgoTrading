@@ -1,5 +1,5 @@
 # Grid Rebalance Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Grid Rebalance Strategy is a high-level StockSharp port of the Mission Automate "Grid" expert advisor. The strategy alternates between long and short grid cycles and always keeps a ladder of limit orders in the active direction. Once the aggregate position reaches a common take-profit level the cycle is closed, all pending orders are removed, and the next cycle starts in the opposite direction.
 

@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy replicates the Firebird v0.60 envelope reversion expert. It measures a simple moving average and offsets it by a percentage to form upper and lower envelopes. When price pierces the upper band the strategy sells, and when the lower band breaks it buys. Additional positions are averaged in only if price moves at least one configurable pip step beyond the previous entry. The total stop loss is shared among all entries, preventing runaway trends from repeatedly re-entering in the same direction.
 

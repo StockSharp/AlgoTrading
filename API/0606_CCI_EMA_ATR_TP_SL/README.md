@@ -1,5 +1,5 @@
 # CCI + EMA Strategy with Percentage or ATR TP/SL
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines the Commodity Channel Index (CCI) with an optional EMA trend filter and RSI confirmation.
 Positions are opened when CCI exits extreme zones and optional filters allow trading.

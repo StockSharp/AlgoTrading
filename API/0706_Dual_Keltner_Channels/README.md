@@ -1,5 +1,5 @@
 # Dual Keltner Channels
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Dual Keltner Channels** strategy uses two Keltner Channels with different multipliers to detect breakouts.
 A trade is opened when price pierces the outer band and then returns through the inner band.

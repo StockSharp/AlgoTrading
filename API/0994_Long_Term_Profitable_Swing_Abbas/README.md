@@ -1,5 +1,5 @@
 # Long Term Profitable Swing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long when a fast EMA crosses above a slow EMA and the RSI is above a specified threshold. Exits occur when price hits ATR-based stop loss or take profit levels.
 

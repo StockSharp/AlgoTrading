@@ -1,5 +1,5 @@
 # Стратегия MACD Volume XAUUSD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия для XAUUSD на 15‑минутных свечах сочетает пересечение MACD через нулевую линию с фильтром по объёмам и фиксированными уровнями риска.
 

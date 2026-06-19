@@ -1,5 +1,5 @@
 # Morning Evening Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the MetaTrader 5 expert advisor **Expert_AMS_ES_Stoch** (Morning/Evening Star with Stochastic confirmation) into StockSharp. The implementation keeps the original candlestick pattern recognition and stochastic confirmation rules while using the high-level candle subscription API so every decision is made on finished bars.
 

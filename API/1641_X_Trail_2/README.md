@@ -1,5 +1,5 @@
 # X Trail 2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on the crossover of two configurable moving averages calculated from a chosen price type.
 

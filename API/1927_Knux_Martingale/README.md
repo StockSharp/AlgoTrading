@@ -1,5 +1,5 @@
 # Knux Martingale Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Martingale strategy that increases trade volume after a losing position. The method filters entries by Average Directional Index (ADX) to trade only in trending markets. Bullish candles open long positions, bearish candles open short positions.
 

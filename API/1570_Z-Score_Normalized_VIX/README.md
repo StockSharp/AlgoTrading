@@ -1,5 +1,5 @@
 # Z-Score Normalized VIX Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that averages z-scores of several VIX indices and enters long when combined value drops below a negative threshold.
 

@@ -1,5 +1,5 @@
 # Стратегия Renko Line Break vs RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия повторяет логику советника «RenkoLineBreak vs RSI» из MetaTrader с использованием высокоуровневого API StockSharp. Для определения направления используется поток кирпичей Renko, фильтрация входов выполняется по RSI, а заявки выставляются в виде отложенных стопов на основе структуры из трёх свечей.
 

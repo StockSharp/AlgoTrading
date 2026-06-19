@@ -1,5 +1,5 @@
 # Supertrend Hombrok Bot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Supertrend strategy using volume, body size and RSI filters with ATR-based stop and take profit.
 

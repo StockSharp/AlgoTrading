@@ -1,5 +1,5 @@
 # Ichimoku Cloud Breakout Only Long
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy enters long positions when price breaks above the Ichimoku cloud and exits when price falls back below it. Only long trades are taken.
 

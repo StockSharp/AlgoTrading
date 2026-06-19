@@ -1,5 +1,5 @@
 # 800BB Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy reproduces the MetaTrader 4 "800BB" expert advisor using StockSharp's high-level API. It enters mean-reversion trades when price pierces a very long Bollinger Band and immediately re-enters the channel on the next bar. Risk is controlled via ATR-based stop and take-profit distances combined with dynamic position sizing based on the configured risk percentage.
 

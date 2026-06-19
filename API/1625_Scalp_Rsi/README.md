@@ -1,5 +1,5 @@
 # Scalp RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Scalping strategy using rapid RSI changes. Converted from MetaTrader script `scalpen_rsi.mq4`.
 The strategy opens trades when the RSI drops or rises sharply and applies fixed take-profit and stop-loss levels.

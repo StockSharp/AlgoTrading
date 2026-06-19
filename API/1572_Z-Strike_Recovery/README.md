@@ -1,5 +1,5 @@
 # Z-Strike Recovery Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Enters long when the z-score of price change exceeds a threshold and exits after a fixed number of bars.
 

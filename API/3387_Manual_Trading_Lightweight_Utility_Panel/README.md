@@ -29,6 +29,6 @@ The strategy is designed for discretionary trading. Orders are triggered manuall
 ## Files
 - `CS/ManualTradingLightweightUtilityPanelStrategy.cs` – C# implementation of the strategy.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Simplified Chinese documentation.
+- `README_zh.md` – Simplified Chinese documentation.
 - `README_ru.md` – Russian documentation.
 

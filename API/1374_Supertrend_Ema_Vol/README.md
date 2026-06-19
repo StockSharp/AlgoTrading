@@ -1,5 +1,5 @@
 # Supertrend Ema Vol Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining Supertrend with EMA trend confirmation and volume filter. Enters on Supertrend reversals when price is above or below the EMA and volume exceeds its EMA. Implements ATR-based stop loss.
 

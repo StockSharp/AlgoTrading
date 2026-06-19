@@ -1,5 +1,5 @@
 # Previous Day High Low Long Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy goes long when price breaks above the previous day's high or low during a specified session and ADX indicates strengthening upward momentum.
 

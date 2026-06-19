@@ -1,5 +1,5 @@
 # Function Matrix Library
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Demonstrates multiple linear regression using basic matrix algebra. The strategy computes coefficients for two explanatory variables without generating trades.
 

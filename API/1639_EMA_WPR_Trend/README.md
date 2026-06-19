@@ -1,5 +1,5 @@
 # EMA WPR Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining an EMA trend filter with Williams %R signals. Buys at oversold levels and sells at overbought levels. A retracement threshold prevents consecutive entries. Optional exits close trades on opposite Williams %R extremes or after several unprofitable bars.
 

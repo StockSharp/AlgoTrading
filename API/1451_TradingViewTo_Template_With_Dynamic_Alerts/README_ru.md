@@ -1,5 +1,5 @@
 # TradingViewTo Strategy Template With Dynamic Alerts
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Шаблонная стратегия, открывающая позиции по уровням RSI и управляющая ими с помощью процентного стоп-лосса и тейк-профита.
 

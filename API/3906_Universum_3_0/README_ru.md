@@ -1,5 +1,5 @@
 # Стратегия Universum 3.0 Original
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия полностью повторяет советник **Universum_3_0** из MQL4, используя высокоуровневый API StockSharp.
 Она объединяет простую логику порогов по индикатору DeMarker и адаптивное управление объёмом на основе мартингейла.

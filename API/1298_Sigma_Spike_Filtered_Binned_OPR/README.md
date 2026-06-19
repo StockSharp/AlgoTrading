@@ -1,5 +1,5 @@
 # Sigma Spike Filtered Binned OPR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Sigma Spike Filtered Binned OPR collects the open-position ratio (OPR) distribution and trades when OPR reaches extreme bins after a sigma spike in returns.
 

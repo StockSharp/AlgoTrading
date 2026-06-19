@@ -1,5 +1,5 @@
 # Hammer Hanging Stochastic
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the MetaTrader expert "Expert_AH_HM_Stoch" to the StockSharp high-level API. It combines hammer and hanging man candlestick patterns with stochastic oscillator confirmation to capture reversal setups after extended moves.
 

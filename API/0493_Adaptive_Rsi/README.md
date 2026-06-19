@@ -1,5 +1,5 @@
 # Adaptive RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Adaptive RSI strategy derives a smoothing coefficient from the Relative Strength Index. When RSI deviates from the neutral 50 level, the coefficient increases, making the adaptive RSI follow price more closely. Near 50, the coefficient shrinks and the curve smooths. A long position is opened when the adaptive RSI turns up, while a short position is opened when it turns down.
 

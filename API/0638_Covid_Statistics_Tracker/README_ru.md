@@ -1,5 +1,5 @@
 # Стратегия Covid Statistics Tracker
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует на основании коэффициента роста подтверждённых случаев COVID-19.
 Продаёт при ускорении роста и покупает при замедлении.

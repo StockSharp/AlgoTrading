@@ -1,5 +1,5 @@
 # Buy Dip Multiple Positions Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Buy Dip Multiple Positions strategy adds long positions when a price dip occurs alongside high volume and a price surge condition. Each trade risks 2% of equity and shares common trailing stop and target levels. A new position is opened only if the previous closed trade was profitable.
 

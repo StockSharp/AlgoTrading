@@ -1,5 +1,5 @@
 # Separated Moving Average
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Builds separate moving averages for bullish and bearish closes. A long position opens when the bullish average rises above the bearish one, and a short position opens on the reverse cross. The strategy supports SMA, EMA, or HMA and can operate on Heikin Ashi prices.
 

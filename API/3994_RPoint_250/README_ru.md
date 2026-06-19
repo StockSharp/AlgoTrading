@@ -1,5 +1,5 @@
 # Стратегия RPoint 250 Reversal
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **RPoint 250 Reversal** — портирование эксперта MetaTrader 4 `e_RPoint_250` на платформу StockSharp. В оригинале советник
 использует пользовательский индикатор *RPoint*, который отмечает последние экстремумы цены. В StockSharp такого индикатора нет,

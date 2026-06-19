@@ -1,5 +1,5 @@
 # Awesome Oscillator Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Awesome Oscillator Trader strategy is a direct conversion of the MetaTrader "AwesomeOscTrader" expert advisor. It combines Bill Williams' Awesome Oscillator with Bollinger Band width and Stochastic oscillator filters to time breakouts after deep momentum contractions. The system is designed for single-symbol, hourly trading on highly liquid FX pairs such as EURUSD, mirroring the original recommendation.
 

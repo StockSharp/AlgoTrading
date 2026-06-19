@@ -1,5 +1,5 @@
 # Williams VIX Fix Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Williams VIX Fix strategy adapts Larry Williams’ volatility indicator to instruments that lack a published VIX. It computes a synthetic VIX value using the distance between the highest close over a lookback period and the current low. When this value rises above a Bollinger Band threshold or the price closes below the lower Bollinger Band, the strategy considers it an oversold opportunity. An inverted calculation gauges overbought extremes.
 

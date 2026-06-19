@@ -1,5 +1,5 @@
 # Стратегия CMO Duplex
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия представляет собой портирование советника MetaTrader 5 `Exp_CMO_Duplex.mq5` на StockSharp. Логика разделена на две
 независимые «ноги» (длинную и короткую), которые реагируют на пересечения нулевой линии индикатора Chande Momentum Oscillator

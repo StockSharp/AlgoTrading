@@ -1,5 +1,5 @@
 # Long-Only Opening Range Breakout (ORB) with Pivot Points
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy buys when price breaks above the opening range high and the first resistance (R1) from daily pivot points sits above that high. A trailing stop follows pivot levels.
 

@@ -1,5 +1,5 @@
 # Стратегия Enhanced Bollinger Bands SL TP
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия торгует отскоки от полос Боллинджера, размещая лимитные заявки и фиксированные стоп-лосс и тейк-профит в пунктах.
 

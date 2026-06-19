@@ -1,5 +1,5 @@
 # BONK Long Volatility
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This long-only strategy enters on strong bullish conditions combining moving averages, volatility and volume filters. It buys when the market is trending up, volatility expands and momentum indicators confirm strength. Exits use fixed take-profit, stop-loss and an ATR-based trailing stop.
 

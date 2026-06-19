@@ -1,5 +1,5 @@
 # Volatility Momentum Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines ATR-based breakout levels with EMA trend filter and RSI momentum to capture strong moves.
 

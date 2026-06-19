@@ -1,5 +1,5 @@
 # Stopreversal Trailing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Stopreversal Trailing Strategy reproduces the MT5 expert `Exp_Stopreversal.mq5`. It uses the Stopreversal custom indicator to build a dynamic trailing stop line around the selected candle price. When the price pierces this trailing line upward the strategy treats it as a bullish reversal, optionally closes short exposure, and opens a new long position. A downside pierce produces the symmetric bearish action. Signals can be delayed by a configurable number of closed bars to match the original expert advisor behaviour.
 

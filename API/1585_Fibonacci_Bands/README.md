@@ -1,5 +1,5 @@
 # Fibonacci Bands Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Expands a Keltner Channel by Fibonacci ratios and trades when price breaks the outer band with RSI confirmation.
 

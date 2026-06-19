@@ -1,5 +1,5 @@
 # Стратегия Reflected EMA Difference RED
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия вычисляет отражённую разницу между двумя Hull Moving Average и отслеживает сглаженное значение. При развороте сглаженной линии на заданный процент выполняются покупки или продажи.
 

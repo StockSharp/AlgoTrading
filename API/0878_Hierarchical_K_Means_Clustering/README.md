@@ -1,5 +1,5 @@
 # Hierarchical + K-Means Clustering Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy applies volatility clustering to a SuperTrend system. Average True Range (ATR) values are grouped into three clusters to determine market regime, while the SuperTrend direction triggers entries. An optional moving average and ADX filter confirm trend strength. Positions can be closed early when the bull/bear volume ratio moves toward balance.
 

@@ -1,5 +1,5 @@
 # Стратегия Monthly Performance Table
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Торгует, когда ADX находится между +DI и -DI, а оба отклонения от ADX превышают настраиваемые пороги.
 

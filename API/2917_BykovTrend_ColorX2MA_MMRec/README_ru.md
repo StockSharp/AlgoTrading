@@ -1,5 +1,5 @@
 # Стратегия BykovTrend + ColorX2MA MMRec
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Данная стратегия StockSharp повторяет логику MQL5-советника `Exp_BykovTrend_ColorX2MA_MMRec`. Она объединяет два независимых
 модуля: BykovTrend, который окрашивает свечи с помощью фильтра Williams %R, и ColorX2MA, анализирующий наклон двойного сглаженно-

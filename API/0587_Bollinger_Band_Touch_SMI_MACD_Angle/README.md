@@ -1,5 +1,5 @@
 # Bollinger Band Touch with SMI and MACD Angle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy buys when price touches the lower Bollinger Band and both SMI and MACD angles point upward. The position is closed once price reaches the upper Bollinger Band.
 

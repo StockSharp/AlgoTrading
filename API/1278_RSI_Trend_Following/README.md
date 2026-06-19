@@ -1,5 +1,5 @@
 # RSI Trend Following Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The RSI Trend Following strategy goes long when momentum is confirmed by RSI, Stochastic, MACD and price staying above a long-term EMA. A trailing stop activates after a favorable ATR move and follows a shorter EMA.
 

@@ -1,5 +1,5 @@
 # Artificial Intelligence Perceptron Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Accelerator Oscillator (AC) values as inputs to a simple linear perceptron. Four AC readings spaced seven bars apart are weighted by user-defined coefficients. A positive perceptron output opens a long position, and a negative output opens a short.
 

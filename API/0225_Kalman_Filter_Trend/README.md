@@ -1,5 +1,5 @@
 # Kalman Filter Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This trend-following method uses a Kalman filter to smooth price fluctuations and estimate the underlying direction. The filter dynamically adapts to market noise, offering a refined view of trend strength compared to standard moving averages.
 

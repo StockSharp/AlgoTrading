@@ -1,5 +1,5 @@
 # Geo Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that buys when candle high/low ratio is close to the golden ratio.
 

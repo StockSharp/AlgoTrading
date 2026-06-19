@@ -1,5 +1,5 @@
 # Ultimate Oscillator Trading
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys when the Ultimate Oscillator falls below a threshold and exits when price closes above the prior high.
 

@@ -1,5 +1,5 @@
 # Gordago EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A port of the historical "Gordago EA" MetaTrader 5 expert advisor. The strategy trades the base timeframe (default M3) while reading MACD signals from a higher intraday chart and a stochastic filter from an hourly chart. It preserves the original stop/take parameters and trailing logic, but uses the StockSharp high-level API for data subscriptions and order management.
 

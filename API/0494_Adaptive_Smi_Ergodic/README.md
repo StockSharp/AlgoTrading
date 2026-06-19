@@ -1,5 +1,5 @@
 # Adaptive SMI Ergodic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Adaptive SMI Ergodic strategy uses the True Strength Index (TSI) oscillator with an EMA signal line to detect reversals from overbought or oversold extremes. A long position is opened when TSI crosses above the oversold threshold while staying above its signal line. A short position is opened when TSI crosses below the overbought threshold and is below the signal line.
 

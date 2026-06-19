@@ -1,5 +1,5 @@
 # Finish Renaming Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Utility strategy that renames all `.txt` files in a directory by adding sequential four-digit prefixes. It exposes parameters for the starting number and the directory to process.
 

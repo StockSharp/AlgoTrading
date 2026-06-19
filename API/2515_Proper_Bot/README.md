@@ -57,6 +57,6 @@ The **Proper Bot Strategy** is a grid-based trading system converted from the or
 ## Files
 - `CS/ProperBotStrategy.cs` – strategy implementation.
 - `README.md` – English description (this document).
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.
 - `README_ru.md` – Russian translation.
 

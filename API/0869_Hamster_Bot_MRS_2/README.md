@@ -1,5 +1,5 @@
 # Hamster Bot MRS 2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simplified strategy based on a single moving average level.
 

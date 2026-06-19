@@ -1,5 +1,5 @@
 # Heatmap MACD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This system uses a heatmap of MACD histograms from five timeframes. When all histograms switch above or below zero, it enters in the corresponding direction and exits once the alignment breaks or risk limits trigger.
 

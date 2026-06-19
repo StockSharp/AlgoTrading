@@ -1,5 +1,5 @@
 # Trend RDS
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend RDS searches for clear directional sequences in price action. When three completed candles form strictly higher lows it treats the structure as a bullish trend leg. Three strictly lower highs mark a bearish setup. A protection rule blocks entries when the same three bars simultaneously create both higher lows and lower highs, which usually indicates a contracting triangle instead of a directional move. The strategy can optionally invert the direction through the `Reverse` parameter.
 

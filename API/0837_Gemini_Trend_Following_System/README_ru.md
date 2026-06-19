@@ -1,5 +1,5 @@
 # Gemini Trend Following System
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Трендовая стратегия, покупающая откаты к 50-дневной SMA в рамках сильного восходящего тренда, подтверждённого 200-дневной SMA и годовым фильтром Rate of Change.
 

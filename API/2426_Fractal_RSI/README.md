@@ -1,5 +1,5 @@
 # Fractal RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive strategy based on the Fractal RSI indicator.
 Fractal RSI adjusts the length of the RSI calculation using the fractal dimension of price movement,

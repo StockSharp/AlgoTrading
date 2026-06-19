@@ -1,5 +1,5 @@
 # Donchian CCI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This strategy uses Donchian CCI indicators to generate signals.
 Long entry occurs when Price > Donchian Upper && CCI < -100 (breakout up with oversold conditions). Short entry occurs when Price < Donchian Lower && CCI > 100 (breakout down with overbought conditions).

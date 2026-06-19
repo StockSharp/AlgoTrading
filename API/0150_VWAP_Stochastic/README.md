@@ -1,5 +1,5 @@
 # Vwap Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy combining VWAP and Stochastic indicators. Buys when price is below VWAP and Stochastic is oversold. Sells when price is above VWAP and Stochastic is overbought.
 

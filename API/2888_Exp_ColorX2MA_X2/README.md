@@ -1,5 +1,5 @@
 # Exp ColorX2MA X2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy recreates the dual timeframe "Exp_ColorX2MA_X2" expert for StockSharp. It layers two ColorX2MA filters: a higher timeframe trend map and a lower timeframe entry trigger. Both ColorX2MA values are built by cascading two configurable moving averages and then coloring the result according to the current slope. Trading decisions are performed when the lower timeframe color changes in the direction of the higher timeframe trend.
 

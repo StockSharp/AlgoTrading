@@ -1,5 +1,5 @@
 # Intra Bullish Strategy - Profit Ping v4.0 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Long-only system using an EMA crossover confirmed by MACD histogram and RSI strength.
 

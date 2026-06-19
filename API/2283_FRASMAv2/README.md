@@ -1,5 +1,5 @@
 # FRASMAv2
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on Fractal Adaptive Simple Moving Average (FRASMAv2).
 

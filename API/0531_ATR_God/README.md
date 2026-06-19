@@ -1,5 +1,5 @@
 # ATR GOD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that combines a Supertrend entry with ATR-based stop loss and take profit.
 

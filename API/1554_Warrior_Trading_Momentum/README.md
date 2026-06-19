@@ -1,5 +1,5 @@
 # Warrior Trading Momentum Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Momentum strategy inspired by Warrior Trading combining gap detection, VWAP and red-to-green setups.
 

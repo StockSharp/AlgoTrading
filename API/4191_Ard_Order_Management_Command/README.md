@@ -1,5 +1,5 @@
 # ARD Order Management Command Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Strategy overview
 The **ARD Order Management** strategy ports the MetaTrader 4 expert advisor `ARD_ORDER_MANAGEMENT_.mq4` to StockSharp's high-level strategy framework. The original script exposed a set of manual commands—buy, sell, close, and modify—that could be triggered from external scripts or UI buttons. Every command recalculated the trade volume from available free margin, opened or reversed market positions, and attached protective stop-loss and take-profit levels at fixed point distances.

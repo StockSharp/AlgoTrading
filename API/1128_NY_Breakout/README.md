@@ -1,5 +1,5 @@
 # NY Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades breakouts of the range formed between 13:00 and 13:30 UTC. After the window closes, the strategy enters when price breaks the session high or low, targeting twice the range and placing a stop on the opposite side.
 

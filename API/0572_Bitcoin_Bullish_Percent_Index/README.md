@@ -1,5 +1,5 @@
 # Bitcoin Bullish Percent Index Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Relative Strength Index (RSI) to approximate the Bitcoin Bullish Percent Index. It enters long when RSI rises above an oversold threshold and enters short when RSI falls below an overbought threshold.
 

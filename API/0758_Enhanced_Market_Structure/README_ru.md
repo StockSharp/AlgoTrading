@@ -1,5 +1,5 @@
 # Стратегия Enhanced Market Structure
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Enhanced Market Structure сочетает анализ локальных максимумов и минимумов с фильтрами ATR, RSI, объёма, MACD и EMA. Стратегия входит при пробое или ложном пробое уровня, когда фильтры подтверждают импульс.
 

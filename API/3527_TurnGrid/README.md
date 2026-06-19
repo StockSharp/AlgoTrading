@@ -37,5 +37,5 @@ The conversion uses StockSharp's high-level API: candle subscriptions drive the 
 
 - `CS/TurnGridStrategy.cs` – C# implementation of the strategy using StockSharp high-level constructs.
 - `README.md` – English documentation (this file).
-- `README_cn.md` – Simplified Chinese documentation.
+- `README_zh.md` – Simplified Chinese documentation.
 - `README_ru.md` – Russian documentation.

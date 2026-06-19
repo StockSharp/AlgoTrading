@@ -1,5 +1,5 @@
 # Стратегия BullBear Volume Percentile TP
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует индикатор Bull/Bear Power, нормализованный через Z-Score.
 Длинные позиции открываются, когда Z-Score пересекает порог снизу вверх,

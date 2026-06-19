@@ -1,5 +1,5 @@
 # Стратегия Forex Fire EMA MA RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Многофреймовая трендовая стратегия, использующая EMA, MA и RSI. Свечи 4h применяются для подтверждения, вход осуществляется на 15m.
 

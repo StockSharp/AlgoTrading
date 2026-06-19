@@ -1,5 +1,5 @@
 # ATR на основе трендовых линий
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия строит трендовые линии на основе ATR от pivot-точек и торгует их пробои.
 

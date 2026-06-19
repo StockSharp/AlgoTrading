@@ -1,5 +1,5 @@
 # SOXL Trend Surge Profit-Only Runner Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long trades when price trends above the 200 EMA and SuperTrend is bullish. It requires rising ATR, volume above average, a session filter, and price to stay outside a small EMA buffer. The system takes partial profit at an ATR-based target and trails the remaining position with an ATR stop.
 

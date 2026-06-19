@@ -1,5 +1,5 @@
 # 200 SMA Buffer Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The 200 SMA Buffer strategy trades based on the price's distance from a long-term Simple Moving Average. It buys when the close rises a certain percentage above the SMA and exits when the price falls a defined percentage below it. The approach aims to capture long-term momentum while allowing a buffer around the moving average.
 

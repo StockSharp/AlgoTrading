@@ -1,5 +1,5 @@
 # Trend Following Candles Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy follows the trend using a moving average and simple candlestick signals.
 It buys when price is above the moving average with a bullish candle breaking pivot resistance, and sells when price is below the moving average with a bearish candle breaking pivot support.

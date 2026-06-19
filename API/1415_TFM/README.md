@@ -1,5 +1,5 @@
 # TFM
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Timeframe-multiplier breakout strategy. Uses a higher timeframe formed by multiplying the base timeframe. Long when price breaks above the previous high and optional short or exit when price falls below the previous low.
 

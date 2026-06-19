@@ -1,5 +1,5 @@
 # OsHMA Breakdown Twist
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на основе осциллятора OsHMA (разность быстрой и медленной Hull Moving Average). Работает в двух режимах:
 

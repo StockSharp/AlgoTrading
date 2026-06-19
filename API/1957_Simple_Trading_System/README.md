@@ -1,5 +1,5 @@
 # Simple Trading System Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the Simple Trading System from MetaTrader. It uses a moving average shifted by several bars and compares the current close with prior closes to detect short-term trend reversals. A buy signal occurs when the moving average is below its value `MaShift` bars ago and the close is between the closes `MaShift` and `MaPeriod + MaShift` bars ago while the candle is bearish. A sell signal is the mirror opposite. Depending on parameters, the strategy can open and/or close long or short positions when signals appear. Optional stop-loss and take-profit levels can be configured.
 

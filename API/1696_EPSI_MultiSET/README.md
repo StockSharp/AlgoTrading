@@ -1,5 +1,5 @@
 # EPSI Multi SET Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy converted from the original MQL4 expert *e-PSI@MultiSET*.
 It watches each candle and enters when price moves a specified distance from the open.

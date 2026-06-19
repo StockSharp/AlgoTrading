@@ -1,5 +1,5 @@
 # Tendency EMA + RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy layers a fast/medium EMA crossover on top of a slower trend EMA
 and an RSI filter. Long trades require the fast EMA to cross above the medium

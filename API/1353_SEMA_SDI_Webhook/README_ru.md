@@ -1,5 +1,5 @@
 # Strategy Sema Sdi Webhook Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия основана на сглаженном пересечении EMA и подтверждении через сглаженный индикатор направленного движения.
 Покупает при условиях +DI > -DI и быстрая EMA > медленной. Продаёт при -DI > +DI и быстрая EMA < медленной.

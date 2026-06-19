@@ -53,6 +53,6 @@ All numeric parameters expose `SetCanOptimize()` (where meaningful) so they can 
 
 - `CS/Ais2TradingRobot20005Strategy.cs` – Strategy implementation using StockSharp high-level API.
 - `README.md` – English description (this file).
-- `README_cn.md` – Chinese translation.
+- `README_zh.md` – Chinese translation.
 - `README_ru.md` – Russian translation.
 

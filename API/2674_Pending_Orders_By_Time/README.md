@@ -1,5 +1,5 @@
 # Pending Orders By Time Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy recreates the classic “Pending orders by time” MetaTrader expert for StockSharp. It runs on a discrete schedule: every day it places symmetric stop orders around the market when a new session hour begins, and it clears all orders plus open positions at a specified closing hour. The implementation keeps the original pip-based inputs, converts them to native price units, and uses the high-level API to manage risk.
 

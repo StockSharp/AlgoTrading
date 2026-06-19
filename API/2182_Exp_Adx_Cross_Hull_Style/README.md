@@ -1,5 +1,5 @@
 # Exp ADX Cross Hull Style Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines Average Directional Index (ADX) cross signals with a Hull Moving Average (HMA) filter. Entries occur when the +DI line crosses above the -DI line for longs or below for shorts. Exits are handled by a pair of Hull moving averages: the fast average crossing the slow average closes positions. The strategy operates on the 4-hour timeframe by default.
 

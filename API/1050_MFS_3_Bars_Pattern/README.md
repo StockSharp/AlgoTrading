@@ -1,5 +1,5 @@
 # MFS 3 Bars Pattern Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects a three-bar bullish reversal sequence inside a downtrend. It looks for a large green "ignite" bar, a small red pullback, and a bullish confirmation bar closing above the pullback high. The trend filter requires long SMA > medium SMA > short SMA and the ignite close below the short SMA.
 

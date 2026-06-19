@@ -1,5 +1,5 @@
 # VQZL Z-Score
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using z-score relative to a smoothed average.
 

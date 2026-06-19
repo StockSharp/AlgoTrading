@@ -1,5 +1,5 @@
 # Buy And Hold Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters a single long position at the specified start date and holds it until the end date, implementing a simple buy and hold approach.
 

@@ -1,5 +1,5 @@
 # Heikin Ashi V2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This second version of the Heikin Ashi system adds an EMA filter. Trades occur only when the direction of the Heikin Ashi candle agrees with the trend defined by the EMA. The filter helps avoid counter-trend signals that the pure HA approach might generate.
 

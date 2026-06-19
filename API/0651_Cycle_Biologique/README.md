@@ -1,5 +1,5 @@
 # Cycle Biologique Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Cycle Biologique strategy trades a sine-based cycle. It goes long when the cycle crosses above zero and exits when the cycle crosses below zero.
 

@@ -1,5 +1,5 @@
 # Previous Candle Breakdown 2
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пробоя, повторяющая логику советника MetaTrader «Previous Candle Breakdown 2». Алгоритм отслеживает последнюю
 закрытую свечу на настраиваемом таймфрейме и открывает сделки, когда цена пробивает её максимум или минимум на указанное

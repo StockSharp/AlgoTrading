@@ -1,5 +1,5 @@
 # Fearzone Panel
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия, основанная на панели FearZone из книги «Framgångsrik Aktiehandel». Ищет экстремальные распродажи, когда рынок движим страхом.
 

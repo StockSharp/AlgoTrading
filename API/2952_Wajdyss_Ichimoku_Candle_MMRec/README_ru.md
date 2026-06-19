@@ -1,5 +1,5 @@
 # Стратегия Wajdyss Ichimoku Candle MMRec
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 ## Обзор
 Стратегия представляет собой перенос советника *Exp_wajdyss_Ichimoku_Candle_MMRec* с платформы MetaTrader. В StockSharp она заново

@@ -82,6 +82,6 @@ The **Starter V6 Mod** strategy is a StockSharp high-level API conversion of the
 
 * `CS/StarterV6ModStrategy.cs` – StockSharp strategy implementation.
 * `README.md` – English documentation (this file).
-* `README_cn.md` – Simplified Chinese documentation.
+* `README_zh.md` – Simplified Chinese documentation.
 * `README_ru.md` – Russian documentation.
 

@@ -1,5 +1,5 @@
 # VWAP Mean Magnet v2 (Volume Filter) Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy combines a VWAP mean-reversion concept with RSI and a volume filter. Trades are taken when price deviates from VWAP and RSI reaches extreme levels, provided the current volume is above a moving average multiplied by a factor.
 

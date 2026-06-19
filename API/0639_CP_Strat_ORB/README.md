@@ -1,5 +1,5 @@
 # CP Strat ORB
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts of the New York opening range (9:30-9:45) with a retest. It enters long after price breaks above the range high and closes back above it, and enters short after price breaks below the range low and closes back below it. Exits use fixed stop-loss and take-profit levels.
 

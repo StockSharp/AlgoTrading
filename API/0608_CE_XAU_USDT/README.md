@@ -1,5 +1,5 @@
 # CE XAU/USDT Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy goes long when the close price crosses above its SMA and goes short when the close crosses below the SMA.
 

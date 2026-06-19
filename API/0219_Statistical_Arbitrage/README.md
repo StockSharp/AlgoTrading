@@ -1,5 +1,5 @@
 # Statistical Arbitrage Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This statistical arbitrage approach trades a pair of related securities based on their relative positioning around moving averages. By comparing each asset to its own average, the strategy seeks to exploit short-term dislocations that should converge over time.
 

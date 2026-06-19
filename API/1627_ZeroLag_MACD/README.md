@@ -1,5 +1,5 @@
 # ZeroLag MACD Cross Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades based on a crossover between the MACD line and its signal line. It was converted from the MetaTrader expert advisor **ZeroLagEA-AIP v0.0.4**. The strategy operates only during the configured session hours and can optionally require that the crossover happens on the current bar.
 

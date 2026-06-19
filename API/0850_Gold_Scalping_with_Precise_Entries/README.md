@@ -1,5 +1,5 @@
 # Gold Scalping Strategy with Precise Entries
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Scalping strategy for gold using EMA trend filter, RSI range and engulfing patterns.
 

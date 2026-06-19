@@ -36,5 +36,5 @@ All parameters are exposed through `StrategyParam<T>` so they can be optimized d
 ## Files
 - `CS/ParabolicSarCrossoverAlertStrategy.cs` – C# implementation of the strategy.
 - `README.md` – This documentation in English.
-- `README_cn.md` – Chinese translation of the documentation.
+- `README_zh.md` – Chinese translation of the documentation.
 - `README_ru.md` – Russian translation of the documentation.

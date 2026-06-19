@@ -1,5 +1,5 @@
 # Bober XM Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Bober XM strategy uses a dual-channel approach based on a custom Keltner calculation. Breakout entries are confirmed by a Weighted Moving Average and overall trend strength from ADX. Exits rely on On-Balance Volume crossing its moving average while ADX remains strong.
 

@@ -1,5 +1,5 @@
 # Стратегия Parabolic SAR RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает индикатор Parabolic SAR для определения направления тренда и RSI для подтверждения входа на уровнях перепроданности или перекупленности.
 

@@ -1,5 +1,5 @@
 # My Line Order
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy triggers market orders when price crosses predefined horizontal levels. The user specifies separate levels for long and short entries and risk parameters in pips. After opening a position the strategy tracks stop loss, take profit and optional trailing stop.
 

@@ -1,5 +1,5 @@
 # ROC2 VG Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Recreates the **Exp_ROC2_VG** MetaTrader expert in StockSharp.  
 Two rate of change lines with configurable periods and calculation types are compared.  

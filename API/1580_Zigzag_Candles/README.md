@@ -1,5 +1,5 @@
 # Zigzag Candles
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simple strategy that reacts to ZigZag pivot points. A long position is opened when a new low pivot forms, while a short position is taken at new high pivots.
 

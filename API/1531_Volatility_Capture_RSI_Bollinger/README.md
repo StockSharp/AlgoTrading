@@ -1,5 +1,5 @@
 # Volatility Capture RSI-Bollinger
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combines dynamic Bollinger bands with an optional RSI filter to catch volatility swings.
 

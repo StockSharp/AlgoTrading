@@ -1,5 +1,5 @@
 # Relative Strength Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy computes a weighted relative strength measure from multiple moving averages.
 Bollinger bands on the strength signal overbought and oversold zones.

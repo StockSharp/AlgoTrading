@@ -1,5 +1,5 @@
 # Double Bollinger Bands Signals Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses two sets of Bollinger Bands. It buys when price crosses above the lower 3 standard deviation band and sells when price crosses below the upper 3 standard deviation band. Positions are closed on opposite 2 standard deviation bands.
 

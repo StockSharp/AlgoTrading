@@ -1,5 +1,5 @@
 # Стратегия VIDYA Auto-Trading (Reversal Logic)
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует скользящую VIDYA и широкие полосы ATR.
 Покупка совершается при пробое верхней полосы, продажа — при пробое нижней.

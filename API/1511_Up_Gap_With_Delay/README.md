@@ -1,5 +1,5 @@
 # Up Gap Strategy With Delay
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long when the session opens with an up gap exceeding a threshold and a specified number of bars has passed since the previous entry. The position is held for a fixed number of bars.
 

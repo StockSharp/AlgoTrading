@@ -1,5 +1,5 @@
 # Стратегия Supertrend Hombrok Bot
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Supertrend с фильтрами по объёму, размеру тела свечи и RSI, использующая ATR для стопа и тейк-профита.
 

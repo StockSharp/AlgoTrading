@@ -1,5 +1,5 @@
 # Стратегия Tri-Monthly BTC Swing
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Tri-Monthly BTC Swing использует EMA200, пересечение MACD и фильтр RSI.
 Стратегия допускает только одну сделку каждые 90 дней.

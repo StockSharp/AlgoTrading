@@ -1,5 +1,5 @@
 # Vinicius Setup ATR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines SuperTrend direction, RSI, and volume to identify strong momentum candles. A long signal occurs when price is above the SuperTrend, the candle body exceeds an ATR-based threshold, volume is higher than average, and RSI remains below 70. A short signal triggers under the opposite conditions with RSI above 30.
 

@@ -1,5 +1,5 @@
 # Supertrend Long-Only for QQQ
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Long-only strategy based on Supertrend indicator and a date range filter.
 

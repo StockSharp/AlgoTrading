@@ -47,5 +47,5 @@ Moving Average Position System — это порт MetaTrader 4 советник
 - `CS/MovingAveragePositionSystemStrategy.cs` — реализация стратегии на C#.
 - `README.md` — документация на английском языке.
 - `README_ru.md` — документация на русском языке (этот файл).
-- `README_cn.md` — документация на китайском языке.
+- `README_zh.md` — документация на китайском языке.
 

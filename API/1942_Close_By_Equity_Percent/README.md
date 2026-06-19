@@ -1,5 +1,5 @@
 # Close By Equity Percent Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This risk management strategy monitors portfolio equity and closes any open position when equity grows above the current balance by a user-defined multiplier. It is designed to lock in profits once the account value reaches a desired percentage over the baseline.
 

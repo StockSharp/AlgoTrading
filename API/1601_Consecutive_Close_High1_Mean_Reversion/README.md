@@ -1,5 +1,5 @@
 # Consecutive Close High1 Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Short-only strategy that counts consecutive closes above the prior high and sells once the count reaches a threshold. Position exits when price falls below the prior low. Optional 200 EMA filter confirms the downtrend.
 

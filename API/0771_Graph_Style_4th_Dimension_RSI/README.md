@@ -1,5 +1,5 @@
 # Graph Style 4th Dimension RSI
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining price change with RSI levels.
 

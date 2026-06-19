@@ -1,5 +1,5 @@
 # Bollinger EMA Stats Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses two Bollinger Band sets to define entry and stop zones and an EMA as the exit target.
 

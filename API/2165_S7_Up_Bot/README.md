@@ -1,5 +1,5 @@
 # S7 Up Bot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout system that looks for nearly equal highs or lows followed by a sharp price move.
 When two consecutive lows are almost equal and price rises by `Span Price`, the bot enters long.

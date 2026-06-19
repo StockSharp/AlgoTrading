@@ -1,5 +1,5 @@
 # IU Bigger Than Range Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy that opens trades when the candle body is larger than the previous range of recent candles.
 

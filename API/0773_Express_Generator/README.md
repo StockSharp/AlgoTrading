@@ -1,5 +1,5 @@
 # Express Generator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades a moving average crossover confirmed by RSI and MACD signals. Position size uses an ATR-based volatility factor and a fixed risk percentage. A trailing stop in pips manages exits.
 

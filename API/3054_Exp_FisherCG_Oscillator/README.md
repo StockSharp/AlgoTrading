@@ -1,5 +1,5 @@
 # Exp Fisher CG Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the **Exp_FisherCGOscillator** MetaTrader 5 expert advisor to StockSharp's high-level API. It recreates the Fisher Center of Gravity oscillator and its trigger line, evaluates signals on a configurable historical bar, and reproduces the original stop/take workflow with StockSharp orders and risk helpers.
 

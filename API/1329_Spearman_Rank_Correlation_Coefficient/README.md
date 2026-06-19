@@ -1,5 +1,5 @@
 # Spearman Rank Correlation Coefficient Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This pair trading strategy measures the Spearman rank correlation between two securities. When the correlation exceeds a positive threshold the strategy goes short the first security and long the second. When it drops below the negative threshold it takes the opposite position. Positions are closed when the correlation returns toward zero.
 

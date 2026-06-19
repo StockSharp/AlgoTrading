@@ -1,5 +1,5 @@
 # Bias And Sentiment Strength Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy aggregates multiple momentum and volume indicators (MACD, RSI, Stochastic, Awesome Oscillator, Alligator averages and volume bias) into a single bias value. A long position is opened when the combined bias is above zero and a short position when it is below zero.
 

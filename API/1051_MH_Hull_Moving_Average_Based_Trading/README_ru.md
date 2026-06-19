@@ -1,5 +1,5 @@
 # MH Hull Moving Average Based Trading
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия прорыва на основе Hull Moving Average.
 

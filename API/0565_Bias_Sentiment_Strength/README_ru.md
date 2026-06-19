@@ -1,5 +1,5 @@
 # Стратегия Bias And Sentiment Strength
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия объединяет несколько индикаторов импульса и объёма (MACD, RSI, Stochastic, Awesome Oscillator, усреднения Alligator и объёмный перекос) в единый показатель. Длинная позиция открывается при положительном значении, короткая — при отрицательном.
 

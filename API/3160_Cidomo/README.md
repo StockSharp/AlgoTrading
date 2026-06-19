@@ -1,5 +1,5 @@
 # Cidomo Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout system converted from the MetaTrader 5 expert advisor "Cidomo". The strategy waits for a new candle on the configured timeframe, measures the recent trading range, and places paired stop orders above and below that range. It manages risk with classic stop-loss/take-profit levels, an optional trailing stop, and two money-management modes (fixed volume or percentage risk).
 

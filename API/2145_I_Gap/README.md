@@ -1,5 +1,5 @@
 # I Gap Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **I Gap Strategy** replicates the MetaTrader "i-GAP" expert advisor. It monitors the price gap between the previous candle's close and the current candle's open. A downward opening gap exceeding a specified number of price steps can trigger a long entry and optionally close existing short positions. An upward gap works the same way for shorts.
 

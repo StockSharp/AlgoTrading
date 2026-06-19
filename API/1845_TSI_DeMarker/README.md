@@ -1,5 +1,5 @@
 # TSI DeMarker Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that calculates the True Strength Index on top of the DeMarker oscillator.
 A long position is opened when the TSI crosses above its moving average signal line.

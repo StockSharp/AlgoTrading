@@ -1,5 +1,5 @@
 # Donchian Rsi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy combining Donchian Channels and RSI indicators. Buys on Donchian breakouts when RSI confirms trend is not overextended.
 

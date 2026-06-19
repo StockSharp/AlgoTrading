@@ -1,5 +1,5 @@
 # Simple Levels Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Opens trades when the price crosses user defined trend lines. Each line can trigger long, short or both directions. Stop loss and take profit are set in price steps.
 

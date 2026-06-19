@@ -1,5 +1,5 @@
 # TrailingTakeProfit Example
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Описание стратегии на русском языке с объяснением торговой логики.
 

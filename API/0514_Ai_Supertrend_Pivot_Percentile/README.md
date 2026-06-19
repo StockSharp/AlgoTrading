@@ -1,5 +1,5 @@
 # AI Supertrend Pivot Percentile Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines two Supertrend indicators with an ADX filter and a Williams %R pivot percentile filter. A long position is opened when price is above both Supertrends, ADX confirms a strong trend and Williams %R is above -50. Short positions use the opposite conditions.
 

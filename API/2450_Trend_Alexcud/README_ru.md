@@ -1,5 +1,5 @@
 # Trend Alexcud
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Trend Alexcud ищет сильное направленное движение, согласуя набор простых скользящих средних и индикатор Accelerator Oscillator на трёх таймфреймах. Она сконвертирована из оригинального эксперта MQL5 "TREND_alexcud v_2".
 

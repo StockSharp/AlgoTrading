@@ -1,5 +1,5 @@
 # Sunil BB Blast Heikin Ashi Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Комбинирует пробой полос Боллинджера с подтверждением свечами Хейкина Аши.
 

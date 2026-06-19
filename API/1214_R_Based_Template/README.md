@@ -1,5 +1,5 @@
 # R Based Strategy Template
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 RSI-based strategy with risk-managed position sizing and configurable stop types.
 

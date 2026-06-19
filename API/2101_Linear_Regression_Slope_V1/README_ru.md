@@ -1,5 +1,5 @@
 # Linear Regression Slope V1
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Использует наклон линейной регрессии и её сдвинутую копию для поиска смены тренда.
 

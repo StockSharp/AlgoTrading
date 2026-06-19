@@ -1,5 +1,5 @@
 # Forex Line Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Forex Line strategy is a trend-following system derived from the MetaTrader indicator "ForexLine". It applies two stages of weighted moving averages to the price to build fast and slow lines. Crossovers between these double-smoothed lines are used to determine entry signals.
 

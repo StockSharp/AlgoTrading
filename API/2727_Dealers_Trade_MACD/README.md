@@ -1,5 +1,5 @@
 # Dealers Trade MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Dealers Trade MACD strategy is a pyramiding system that was ported from the original MQL5 "Dealers Trade v7.74" expert advisor. It follows the slope of the MACD main line to decide when to accumulate positions in the trend direction. The logic is designed for swing trading on H4 and D1 charts where momentum shifts are less noisy.
 

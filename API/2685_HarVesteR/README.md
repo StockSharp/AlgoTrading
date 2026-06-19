@@ -1,5 +1,5 @@
 # HarVesteR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The HarVesteR strategy blends MACD momentum with two simple moving averages and an optional ADX strength filter.
 It looks for situations where price hugs the moving averages while MACD has recently crossed the zero line, signalling a potential breakout from consolidation.

@@ -1,5 +1,5 @@
 # Supertrend Target Stop
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that buys when price crosses above the Supertrend line and sells when it crosses below. A fixed percentage target and stop loss close positions.
 

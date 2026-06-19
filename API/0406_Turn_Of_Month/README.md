@@ -1,5 +1,5 @@
 # Turn Of Month
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This seasonal pattern buys equity indices a few days before month‑end and exits shortly after the new month begins, aiming to capture the "turn‑of‑the‑month" effect.
 

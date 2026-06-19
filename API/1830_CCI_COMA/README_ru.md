@@ -1,5 +1,5 @@
 # CCI COMA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Использует индикатор CCI и скользящие средние нескольких таймфреймов для следования текущему тренду.
 

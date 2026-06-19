@@ -1,5 +1,5 @@
 # PowerZone Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy identifies "PowerZone" order blocks created by a bearish candle followed by consecutive bullish candles (and vice versa). A breakout above the bull zone triggers a long trade, while a breakdown below the bear zone opens a short. Targets and stops are based on the zone's range.
 

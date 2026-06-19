@@ -1,5 +1,5 @@
 # Time Bomb Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Time Bomb replicates the MetaTrader expert advisor that fires a single order whenever price explodes in one direction within a
 short, configurable window. The strategy watches real-time best bid/ask quotes and measures the number of pips covered between

@@ -1,5 +1,5 @@
 # Adaptive Squeeze Momentum Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Adaptive Squeeze Momentum strategy detects volatility contractions when Bollinger Bands fall inside Keltner Channels and waits for a breakout accompanied by strong momentum. Momentum strength is assessed using a standard deviation based threshold. Optional RSI and EMA trend filters refine entries. ATR can be used to set dynamic stop-loss and take-profit levels, and positions are closed after a time-based holding period.
 

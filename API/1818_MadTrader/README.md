@@ -1,5 +1,5 @@
 # Mad Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Mad Trader is a trend-following strategy converted from the original MQL expert "madtrader-8.7". It combines ATR and RSI indicators to identify low-volatility pullbacks during an emerging trend. The system waits for ATR to be below a specified threshold but still rising and for RSI to increase within an overall bullish or bearish trend. When these conditions align and the candle body is within defined limits, the strategy opens a market order in the direction suggested by RSI. Positions are protected by a trailing stop and a basket-profit mechanism that closes all trades once the account equity reaches target growth.
 

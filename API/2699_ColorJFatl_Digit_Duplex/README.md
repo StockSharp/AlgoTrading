@@ -68,4 +68,4 @@ Disabling the stop or take by setting the distance to zero leaves the trade unma
 
 ## Files
 - `CS/ColorJfatlDigitDuplexStrategy.cs` – strategy implementation with the custom indicator.
-- `README.md` / `README_cn.md` / `README_ru.md` – documentation in English, Chinese, and Russian.
+- `README.md` / `README_zh.md` / `README_ru.md` – documentation in English, Chinese, and Russian.

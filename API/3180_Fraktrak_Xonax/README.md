@@ -42,4 +42,4 @@ This strategy is a C# conversion of the MetaTrader 5 expert advisor **Fraktrak x
 - `CS/FraktrakXonaxAdvancedStrategy.cs` – implementation of the strategy.
 - `README.md` – current document.
 - `README_ru.md` – Russian description.
-- `README_cn.md` – Chinese description.
+- `README_zh.md` – Chinese description.

@@ -1,5 +1,5 @@
 # Multi-Step FlexiSuperTrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A SuperTrend filter combined with a smoothed deviation oscillator.
 The strategy includes three configurable take-profit levels.

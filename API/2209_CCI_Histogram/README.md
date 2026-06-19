@@ -1,5 +1,5 @@
 # CCI Histogram Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses the Commodity Channel Index (CCI) to detect reversals when the indicator leaves extreme zones. A long position is opened when CCI falls back below the upper level after being above it. A short position is opened when CCI rises above the lower level after being below it. Optional stop loss and take profit levels in points can protect open positions.
 

@@ -1,5 +1,5 @@
 # Стратегия FlexiMA Variance Tracker
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Отслеживает отклонение цены от скользящей средней и открывает позиции, когда отклонение превышает порог волатильности и направление SuperTrend подтверждает.
 

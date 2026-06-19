@@ -50,4 +50,4 @@ The optimisation requires at least `OptimizationDepth + OptimizationEnd + 2` com
 - `CS/KarakaticaStrategy.cs` – StockSharp implementation of the strategy.
 - `README.md` – English description (this file).
 - `README_ru.md` – Russian description.
-- `README_cn.md` – Chinese description.
+- `README_zh.md` – Chinese description.

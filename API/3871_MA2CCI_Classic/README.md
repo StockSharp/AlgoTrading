@@ -1,5 +1,5 @@
 # MA2CCI Classic Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MA2CCI strategy ports the classic MetaTrader expert advisor built around the interaction of two simple moving averages (SMA) and the Commodity Channel Index (CCI). It filters trades using the CCI zero line and applies protective stops derived from the Average True Range (ATR). The system is designed for trend-following entries with fast reaction to reversals.
 

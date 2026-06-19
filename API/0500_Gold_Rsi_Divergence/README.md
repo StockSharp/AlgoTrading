@@ -1,5 +1,5 @@
 # Gold RSI Divergence Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Gold RSI Divergence strategy scalps gold by identifying bullish and bearish divergences between price and the Relative Strength Index (RSI).
 When price makes a new low but RSI prints a higher low, the strategy looks to buy.

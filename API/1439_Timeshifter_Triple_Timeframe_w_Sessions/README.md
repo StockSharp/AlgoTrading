@@ -1,5 +1,5 @@
 # Timeshifter Triple Timeframe Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy trading across three timeframes with optional ADX confirmation and session filters.
 

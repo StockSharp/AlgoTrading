@@ -1,5 +1,5 @@
 # LANZ Strategy 5.0
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The LANZ Strategy 5.0 trades in the direction of a 200-period EMA and requires three consecutive candles of the same color. It limits trades by daily count, New York time window, and minimum distance between entries.
 

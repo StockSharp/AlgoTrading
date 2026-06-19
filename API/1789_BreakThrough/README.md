@@ -1,5 +1,5 @@
 # BreakThrough Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The BreakThrough strategy executes trades when price crosses user-defined trendline levels.
 Two main levels are used:

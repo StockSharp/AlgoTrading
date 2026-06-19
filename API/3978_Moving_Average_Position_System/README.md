@@ -47,5 +47,5 @@ The Moving Average Position System is a direct port of the MetaTrader 4 expert a
 - `CS/MovingAveragePositionSystemStrategy.cs` – C# implementation of the trading logic using the StockSharp high-level strategy API.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.
 

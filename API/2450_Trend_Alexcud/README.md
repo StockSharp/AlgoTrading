@@ -1,5 +1,5 @@
 # Trend Alexcud
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Trend Alexcud strategy searches for strong directional movement by aligning multiple simple moving averages and the Accelerator Oscillator across three timeframes. It was converted from the original MQL5 expert "TREND_alexcud v_2".
 

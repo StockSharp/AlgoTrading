@@ -1,5 +1,5 @@
 # Color XXDPO Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using a double smoothed Detrended Price Oscillator to capture slope reversals.
 

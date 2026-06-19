@@ -1,5 +1,5 @@
 # MAVA Xonax Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses exponential moving averages of open and close prices to detect direction changes. Stop loss and take profit distances are derived from high and low EMAs, ensuring trades have predefined risk and reward levels.
 

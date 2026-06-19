@@ -1,5 +1,5 @@
 # Trade Channel ATR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Trade Channel strategy replicates the original MetaTrader expert advisor that traded price channels with ATR-based stops. It waits for channel boundaries to remain unchanged and for the latest candle to touch or reject those levels. When the setup appears, the strategy opens a position in the opposite direction of the touch and applies an adaptive trailing stop measured in points.
 

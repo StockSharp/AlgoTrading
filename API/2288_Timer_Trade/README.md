@@ -1,5 +1,5 @@
 # Timer Trade
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Timer Trade alternates between long and short positions at fixed time intervals. A timer triggers market orders, and each position is automatically protected with stop-loss and take-profit.
 

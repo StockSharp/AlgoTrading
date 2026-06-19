@@ -1,5 +1,5 @@
 # Reversal Trading Bot Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Reversal Trading Bot Strategy uses RSI divergence with optional volume, ADX, Bollinger Bands, and RSI crossover filters to catch market reversals. Positions are protected with fixed percent stop-loss and take-profit.
 

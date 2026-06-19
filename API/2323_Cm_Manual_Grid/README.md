@@ -1,5 +1,5 @@
 # Cm Manual Grid
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Cm Manual Grid places a configurable grid of stop and limit orders around the current price. Each new order increases volume by a fixed increment. The strategy can close long or short positions separately when profit targets are reached and includes a trailing profit mechanism.
 

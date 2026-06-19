@@ -1,5 +1,5 @@
 # Bollinger Aroon
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Bollinger Aroon strategy searches for pullbacks inside a strong uptrend.  
 When price stretches beneath the lower Bollinger Band but the Aroon Up value

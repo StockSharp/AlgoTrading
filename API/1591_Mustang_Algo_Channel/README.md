@@ -1,5 +1,5 @@
 # Mustang Algo Channel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using an RSI-based global sentiment oscillator smoothed with WMA to trade channel crossovers.
 

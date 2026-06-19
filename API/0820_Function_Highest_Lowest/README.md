@@ -1,5 +1,5 @@
 # Function Highest Lowest
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This example demonstrates custom highest and lowest functions with alternating lookback periods. No trades are generated.
 

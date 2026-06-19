@@ -1,5 +1,5 @@
 # One-Two-Three Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The One-Two-Three Reversal strategy looks for a bullish 1-2-3 pattern in price action. A long position is opened when today's low is below yesterday's, yesterday's low is below the low three bars ago, the low two bars ago is below the low four bars ago, and the high two bars ago is below the high three bars ago. The trade is closed after a defined number of bars or when price closes above a moving average.
 

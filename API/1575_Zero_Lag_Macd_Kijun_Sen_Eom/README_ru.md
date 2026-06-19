@@ -1,5 +1,5 @@
 # Zero Lag MACD + Kijun-sen + EOM Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия объединяет Zero Lag MACD, линию Киджун-сен и индикатор Ease of Movement. Использует стоп и тейк по ATR.
 

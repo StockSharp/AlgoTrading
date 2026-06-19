@@ -1,5 +1,5 @@
 # Linear Regression Channel
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades pullbacks when price moves outside a linear regression channel and reverts toward the mean.
 

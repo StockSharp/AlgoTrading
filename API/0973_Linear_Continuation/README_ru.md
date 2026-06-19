@@ -1,5 +1,5 @@
 # Стратегия Linear Continuation
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Этот пример переносит индикатор TradingView "Linear Continuation" на StockSharp. Стратегия рассчитывает три скользящие средние и выводит их линейную проекцию. Торговая логика отсутствует, пример предназначен для демонстрации индикаторов.
 

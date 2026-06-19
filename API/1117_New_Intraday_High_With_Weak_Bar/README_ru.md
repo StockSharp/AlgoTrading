@@ -1,5 +1,5 @@
 # Стратегия New Intraday High With Weak Bar
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Открывает длинную позицию, когда формируется новый максимум за `HighestLength` свечей и свеча закрывается близко к минимуму. Позиция закрывается при закрытии выше максимума предыдущей свечи.
 

@@ -1,5 +1,5 @@
 # ADX Simple Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The **ADX Simple Trend Strategy** is a direct port of the classic MetaTrader expert advisor "ADX Simple". It follows the direction of the Average Directional Index (ADX) by comparing the positive and negative directional movement indicators (DI+ and DI-) and requiring the ADX main line to rise before opening any trade. The StockSharp version keeps the minimalist nature of the original system while adapting it to high-level API patterns and risk controls.

@@ -43,4 +43,4 @@ The Hercules strategy is a StockSharp port of the MetaTrader expert **Hercules v
 * `CS/HerculesStrategy.cs` – C# implementation of the Hercules strategy.
 * `README.md` – this document.
 * `README_ru.md` – Russian description.
-* `README_cn.md` – Chinese description.
+* `README_zh.md` – Chinese description.

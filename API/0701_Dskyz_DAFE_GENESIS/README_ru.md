@@ -1,5 +1,5 @@
 # Стратегия Dskyz (DAFE) GENESIS
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Упрощённая версия стратегии Dskyz (DAFE) GENESIS. Система торгует, когда краткосрочный импульс согласуется с трендом и RSI.
 

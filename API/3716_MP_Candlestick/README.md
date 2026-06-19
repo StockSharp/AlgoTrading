@@ -42,5 +42,5 @@ The **MP Candlestick Strategy** is a conversion of the MetaTrader 5 Expert Advis
 ## Files
 - `CS/MpCandlestickStrategy.cs` — main C# strategy implementation.
 - `README.md` — English documentation (this file).
-- `README_cn.md` — Chinese translation.
+- `README_zh.md` — Chinese translation.
 - `README_ru.md` — Russian translation.

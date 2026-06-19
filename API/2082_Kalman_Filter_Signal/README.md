@@ -1,5 +1,5 @@
 # Kalman Filter Signal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses Kalman Filter indicator to detect direction changes. The filter output is compared either with price or its slope depending on selected signal mode. When the signal turns bullish, the strategy opens a long position; when bearish, opens a short. Positions are reversed on opposite signals. Stop loss and take profit are applied using absolute distances.
 

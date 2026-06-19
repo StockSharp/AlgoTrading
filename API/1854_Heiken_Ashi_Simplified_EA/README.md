@@ -1,5 +1,5 @@
 # Heiken Ashi Simplified EA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A pattern-based system built on Heikin Ashi candles. The strategy watches a sequence of prior Heikin Ashi opens and closes. When three consecutive closes rise (or fall) above their respective opens while the opens form a decelerating pullback, the next candle can trigger a breakout trade once price moves away from the last Heikin Ashi open by a minimum distance. The algorithm scales into positions up to a defined limit.
 

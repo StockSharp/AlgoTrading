@@ -1,5 +1,5 @@
 # Macd Volume Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy combining MACD (Moving Average Convergence Divergence) with volume confirmation. Enters positions when MACD line crosses the Signal line and confirms with increased volume.
 

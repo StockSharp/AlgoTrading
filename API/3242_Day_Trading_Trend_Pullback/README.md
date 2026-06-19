@@ -45,4 +45,4 @@ The strategy operates on a single instrument and a configurable candle type. It 
 ## Files
 - `CS/DayTradingStrategy.cs` – StockSharp implementation.
 - `README_ru.md` – Russian description.
-- `README_cn.md` – Chinese description.
+- `README_zh.md` – Chinese description.

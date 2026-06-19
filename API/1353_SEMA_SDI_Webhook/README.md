@@ -1,5 +1,5 @@
 # Strategy Sema Sdi Webhook Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on smoothed EMA crossover and smoothed directional index confirmation.
 Buys when +DI > -DI and fast EMA > slow EMA. Sells when -DI > +DI and fast EMA < slow EMA.

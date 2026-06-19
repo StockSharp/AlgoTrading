@@ -1,5 +1,5 @@
 # Moving Average Crossover Swing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades when a fast exponential moving average crosses a medium one with optional confirmation from a slow MA and MACD histogram. Uses ATR-based stop loss and take profit and can exit on a secondary MA cross.
 

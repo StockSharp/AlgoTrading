@@ -1,5 +1,5 @@
 # Stochastic RSI Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This method converts the classic Relative Strength Index into a Stochastic RSI, then smooths the result into %K and %D lines. When %K crosses %D inside carefully chosen zones, the move implies a short term shift in momentum. The algorithm trades only when a three layer EMA structure confirms the direction of the broader trend, helping to filter whipsaws.
 

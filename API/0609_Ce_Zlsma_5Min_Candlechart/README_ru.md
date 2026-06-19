@@ -1,5 +1,5 @@
 # Стратегия CE ZLSMA 5MIN Candlechart
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Трендовая система на основе Zero Lag LSMA и свечей Heikin Ashi с фильтром Chandelier Exit. Покупает при смене направления вверх и закрытии свечи выше ZLSMA.
 

@@ -1,5 +1,5 @@
 # Combo Strategy 123 Reversal & Fractal Chaos Bands Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining a 123 reversal pattern with Fractal Chaos Bands breakout.
 Long trades occur when a bullish 123 reversal forms and price closes above the upper fractal band.

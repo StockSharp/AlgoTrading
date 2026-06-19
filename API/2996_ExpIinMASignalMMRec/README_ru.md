@@ -1,5 +1,5 @@
 # Exp Iin MA Signal MMRec Стратегия
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Порт StockSharp эксперта MetaTrader «Exp_Iin_MA_Signal_MMRec». Стратегия отслеживает сигналы пересечения пары настраиваемых скользящих средних (оригинального индикатора Iin_MA_Signal) и применяет адаптивное управление объёмом с понижением после серии убытков.
 

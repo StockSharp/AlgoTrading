@@ -1,5 +1,5 @@
 # Stop Loss Take Profit Money Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy enters long when a short-term SMA crosses above a long-term SMA and shorts on the opposite crossover. Positions are closed once profit or loss reaches predefined money amounts.
 

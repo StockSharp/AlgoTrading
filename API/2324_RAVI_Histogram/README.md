@@ -1,5 +1,5 @@
 # RAVI Histogram Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy converts the MetaTrader RAVI Histogram expert to StockSharp. It measures trend strength as the percentage difference between a fast and a slow EMA. The result is compared with upper and lower levels to decide when to trade.
 

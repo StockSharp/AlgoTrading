@@ -1,5 +1,5 @@
 # Mean Deviation Index Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy uses the Mean Deviation Index (MDX) to trade deviations from an ATR-filtered EMA.
 A long position is opened when the MDX rises above the specified level,

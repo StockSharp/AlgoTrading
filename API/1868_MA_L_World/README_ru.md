@@ -1,5 +1,5 @@
 # Стратегия MA L World
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия пересечения взвешенных скользящих средних с трейлингом на основе EMA.
 

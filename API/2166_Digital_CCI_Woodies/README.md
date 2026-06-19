@@ -1,4 +1,4 @@
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades on the crossover of two Commodity Channel Index (CCI) indicators. A fast CCI reacts quickly to price changes while a slow CCI smooths market noise. Signals are generated when the fast line crosses the slow one.
 

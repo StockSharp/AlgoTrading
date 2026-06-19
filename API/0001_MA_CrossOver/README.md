@@ -1,5 +1,5 @@
 # HMA Seasonal Divergence Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 This strategy combines the Hull Moving Average (HMA) with seasonal open interest clustering to find divergences between price and market positioning. It assumes that when price temporarily moves against the direction of rising open interest, a trend continuation is likely. The system is designed to trade both long and short, using the HMA slope to gauge momentum and the seasonal open interest data to measure participation levels.
 

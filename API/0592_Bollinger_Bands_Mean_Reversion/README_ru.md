@@ -1,5 +1,5 @@
 # Стратегия Bollinger Bands Mean Reversion
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия покупает, когда цена закрывается ниже нижней полосы Боллинджера, и выходит при закрытии выше верхней полосы.
 

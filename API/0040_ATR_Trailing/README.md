@@ -1,5 +1,5 @@
 # ATR Trailing Stops
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 ATR Trailing uses an average true range multiple to trail stops behind open positions. Entries occur when price crosses a moving average, and the trailing stop adjusts with volatility.
 

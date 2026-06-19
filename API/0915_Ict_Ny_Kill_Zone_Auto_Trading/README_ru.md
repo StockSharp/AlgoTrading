@@ -1,5 +1,5 @@
 # ICT NY Kill Zone Auto Trading
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия, торгующая в нью-йоркской kill zone, используя fair value gap и order block.
 

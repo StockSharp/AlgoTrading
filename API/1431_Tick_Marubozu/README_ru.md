@@ -1,5 +1,5 @@
 # Стратегия Tick Marubozu
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Определяет свечи типа Marubozu на тиковых данных и подтверждает их повышенным объёмом. Покупает бычьи Marubozu и продаёт медвежьи.
 

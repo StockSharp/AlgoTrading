@@ -1,5 +1,5 @@
 # Escort Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Escort Trend Strategy combines a fast and slow Weighted Moving Average (WMA) with MACD and CCI confirmation. A long position is opened when the fast WMA is above the slow WMA, MACD main line crosses above the signal line, and CCI exceeds a positive threshold. A short position triggers on the opposite conditions. The strategy optionally uses fixed stop loss, take profit, and trailing stop.
 

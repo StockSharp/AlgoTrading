@@ -1,5 +1,5 @@
 # MelBar Take325 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The MelBar Take325 strategy is a direct conversion of the Expert Advisor Studio system "MelBar™Take325%™ 5.5Y NZD-USD". It trades both directions on NZD/USD using a combination of tick volume breakouts, a swing filter based on a 12-period simple moving average, and a 14-period RSI exit filter. The StockSharp port keeps the original risk parameters of a 16-pip stop loss and a 45-pip take profit, expressed in pip distances from the entry price.
 

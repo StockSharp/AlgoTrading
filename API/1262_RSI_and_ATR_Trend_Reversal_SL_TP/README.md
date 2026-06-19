@@ -1,5 +1,5 @@
 # RSI and ATR Trend Reversal SL TP
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy using RSI and ATR to detect trend reversals with dynamic stop-loss and take-profit levels.
 

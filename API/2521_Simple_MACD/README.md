@@ -1,5 +1,5 @@
 # Simple MACD
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Simple MACD replicates the logic of the MQL5 advisor `Simple_MACD.mq5` in StockSharp. The strategy follows the slope of the MACD main line calculated on completed candles and keeps adding to the position whenever the slope remains in the same direction.
 
@@ -64,5 +64,5 @@ All parameters are exposed as strategy parameters and marked as optimizable wher
 ## Files
 
 - `CS/SimpleMacdStrategy.cs` – StockSharp implementation of the strategy logic.
-- `README.md`, `README_ru.md`, `README_cn.md` – detailed documentation in three languages.
+- `README.md`, `README_ru.md`, `README_zh.md` – detailed documentation in three languages.
 

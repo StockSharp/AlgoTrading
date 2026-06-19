@@ -1,5 +1,5 @@
 # Gartley 222 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades long when a bullish Gartley 222 harmonic pattern forms.
 The pattern is detected using pivot highs and lows validated by Fibonacci ratios.

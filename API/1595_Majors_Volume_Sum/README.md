@@ -1,5 +1,5 @@
 # Majors Volume Sum Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy sums signed volume over recent candles and trades when the short-term sum exceeds a fraction of its historical maximum.
 

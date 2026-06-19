@@ -1,5 +1,5 @@
 # Range Filter DW Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements an ATR-based range filter similar to Donovan Wall's Range Filter. The filter ignores minor price movements by moving only when price exceeds a volatility-based range. A long position is opened when the close is above the upper band, while a short position is opened when the close is below the lower band.
 

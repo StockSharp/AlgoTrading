@@ -1,5 +1,5 @@
 # ADX for BTC
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy uses Average Directional Index (ADX) with optional SMA trend filter to catch strong moves in Bitcoin.
 

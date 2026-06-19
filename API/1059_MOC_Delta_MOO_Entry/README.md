@@ -1,5 +1,5 @@
 # MOC Delta MOO Entry Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy computes buy and sell volume delta during the 14:50–14:55 session and trades at 08:30 if the delta percentage exceeds a threshold relative to the day's volume. It uses SMA filters on the open price and attaches tick-based stop loss and take profit.
 

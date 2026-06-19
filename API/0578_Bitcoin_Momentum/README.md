@@ -1,5 +1,5 @@
 # Bitcoin Momentum
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Momentum strategy for Bitcoin that trades only when price is above a higher timeframe EMA and avoids caution conditions. An ATR-based trailing stop protects gains.
 

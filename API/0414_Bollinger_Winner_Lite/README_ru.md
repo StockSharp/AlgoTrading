@@ -1,5 +1,5 @@
 # Bollinger Winner Lite
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Bollinger Winner Lite** — упрощённая разворотная система, реагирующая на выход
 цены за пределы полос Боллинджера. Она отслеживает крупные свечи, закрывающиеся

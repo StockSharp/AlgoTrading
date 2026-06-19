@@ -1,5 +1,5 @@
 # US Index First 30m Candle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Captures breakout of the first 30-minute range in the US session with one trade per day.
 

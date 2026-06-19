@@ -1,5 +1,5 @@
 # Engulfing Momentum Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the **ENGULFING** MetaTrader expert advisor to the StockSharp high-level API. It combines a bullish/bearish engulfing pattern on the working timeframe with higher-timeframe momentum confirmation and a monthly MACD trend filter. Risk management reproduces the original break-even and trailing behaviour using stop distances measured in instrument steps.
 

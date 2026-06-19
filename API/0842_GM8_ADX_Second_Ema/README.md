@@ -1,5 +1,5 @@
 # GM-8 and ADX Strategy with Second EMA
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters trades when price crosses a GM-8 SMA and aligns with a second EMA while ADX confirms a strong trend.
 

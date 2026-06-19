@@ -1,5 +1,5 @@
 # Supertrend Advance Pullback Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Supertrend Advance Pullback combines Supertrend with pullback or trend change entries. Optional EMA, RSI, MACD and CCI filters refine signals.
 

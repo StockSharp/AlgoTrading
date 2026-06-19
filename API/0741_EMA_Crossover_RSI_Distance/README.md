@@ -1,5 +1,5 @@
 # EMA Crossover with RSI and Distance Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses multiple EMAs and RSI to generate long and short signals, checking the distance between fast EMAs to confirm trend strength.
 

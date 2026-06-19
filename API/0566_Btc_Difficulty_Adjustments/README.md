@@ -1,5 +1,5 @@
 # BTC Difficulty Adjustments Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The BTC Difficulty Adjustments strategy trades based on changes in Bitcoin mining difficulty. When threshold mode is enabled, trades are opened only if the percentage change exceeds the specified threshold. A long position is opened on positive difficulty adjustments, while a short position is opened on negative adjustments.
 

@@ -1,5 +1,5 @@
 # Bollinger Bands Long Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy buys when the price closes below the lower Bollinger Band and the RSI is oversold. It exits the long position once price returns to the middle band.
 

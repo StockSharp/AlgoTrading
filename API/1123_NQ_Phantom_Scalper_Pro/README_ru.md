@@ -1,5 +1,5 @@
 # Стратегия NQ Phantom Scalper Pro
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия прорыва полос VWAP с дополнительными фильтрами по объёму и тренду.
 

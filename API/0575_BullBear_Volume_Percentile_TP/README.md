@@ -1,5 +1,5 @@
 # BullBear Volume Percentile TP Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy uses Bull/Bear Power normalized by a Z-Score.
 Long positions are opened when the Z-Score crosses above the threshold,

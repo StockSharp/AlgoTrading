@@ -1,5 +1,5 @@
 # Grid Tendence V1 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Grid trading strategy that reopens or reverses positions based on profit percentage steps.
 

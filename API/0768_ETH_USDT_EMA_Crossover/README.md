@@ -1,5 +1,5 @@
 # ETH/USDT EMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades ETH/USDT using an EMA crossover with additional filters.
 

@@ -1,5 +1,5 @@
 # Multi-Factor Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Multi-Factor Strategy combines MACD, RSI, and two moving averages to trade with trend confirmation. Long trades occur when MACD line is above its signal, RSI is below 70, price above the 50-period SMA, and the 50 SMA is above the 200 SMA. Short trades use opposite conditions.
 

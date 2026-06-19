@@ -1,5 +1,5 @@
 # Smoothed MA Directional Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp high-level API port of the MetaTrader 4 expert `oc08_vy_m0moqesu15` from the `MQL/8615` folder. The original expert aligns its position with a single smoothed moving average (SMMA) and attaches fixed stop-loss and take-profit levels to every order. The C# version keeps the same directional behaviour while adopting idiomatic StockSharp components.
 

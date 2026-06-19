@@ -1,5 +1,5 @@
 # Charles EMA RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy emulates the Charles expert advisor by combining exponential moving averages (EMA) with an RSI filter and a trailing stop. It trades both directions and dynamically protects positions.
 

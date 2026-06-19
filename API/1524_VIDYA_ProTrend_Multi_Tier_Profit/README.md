@@ -1,5 +1,5 @@
 # VIDYA ProTrend Multi-Tier Profit Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy using fast and slow VIDYA averages with a Bollinger Band filter.
 Optional multi-step take profit orders are placed using ATR multiples and percentage targets.

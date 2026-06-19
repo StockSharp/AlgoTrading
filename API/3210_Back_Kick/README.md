@@ -46,4 +46,4 @@ This behaviour mirrors the original expert, which constantly re-enters in both d
 - `CS/BackKickStrategy.cs` – Strategy implementation using the high-level StockSharp API.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
-- `README_cn.md` – Chinese documentation.
+- `README_zh.md` – Chinese documentation.

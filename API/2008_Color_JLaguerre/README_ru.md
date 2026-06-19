@@ -1,5 +1,5 @@
 # Color JLaguerre
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия на основе цветного осциллятора Laguerre.
 

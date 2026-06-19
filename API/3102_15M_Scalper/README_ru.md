@@ -1,5 +1,5 @@
 # Стратегия Fifteen Minute Scalper
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия переносит советник **15M Scalper** из MetaTrader на высокоуровневый API StockSharp. Реализована та же комбинация
 фильтров (взвешенные средние, стохастик, Parabolic SAR, многофреймовый Momentum и месячный MACD) и полный набор защит

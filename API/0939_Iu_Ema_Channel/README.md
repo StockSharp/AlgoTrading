@@ -1,5 +1,5 @@
 # IU EMA Channel
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Converted from TradingView script "IU EMA Channel Strategy". The strategy trades when price crosses EMA channels built from highs and lows. Stop-loss is set at the previous candle extreme and take-profit is calculated using a risk-to-reward ratio.
 

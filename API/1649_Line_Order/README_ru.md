@@ -1,5 +1,5 @@
 # Стратегия Line Order
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 **Line Order Strategy** выполняет рыночную заявку при пересечении ценой заранее установленной горизонтальной линии. Стратегия является упрощённой версией исходного MQL-скрипта *LineOrder.mq4*, реализованной с использованием высокоуровневого API StockSharp.
 

@@ -1,5 +1,5 @@
 # 2:45 AM Candle Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This intraday strategy monitors the 2:45 AM candle and trades breakouts of its high or low within the next few bars. When price exceeds the candle's high, it enters a long position; when price falls below the candle's low, it opens a short position. Positions are closed at the end of the observation window if no opposite breakout occurs.
 

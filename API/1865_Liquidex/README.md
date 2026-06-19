@@ -1,5 +1,5 @@
 # Liquidex Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy that enters when price moves outside Keltner Channel bands and manages risk with stop loss, take profit, break-even and trailing stop.
 

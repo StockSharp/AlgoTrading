@@ -1,5 +1,5 @@
 # Break the Range Bound Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy detects quiet market phases where three moving averages converge within a narrow band. When price finally breaks out above or below this range, the strategy enters in the direction of the breakout and aims to capture the emerging trend.
 

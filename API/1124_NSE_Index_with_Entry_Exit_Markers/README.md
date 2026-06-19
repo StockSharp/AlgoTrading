@@ -1,5 +1,5 @@
 # NSE Index Strategy with Entry Exit Markers
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy goes long when price is above a trend SMA and the RSI crosses above an oversold level. An ATR-based stop loss and take profit manage the position.
 

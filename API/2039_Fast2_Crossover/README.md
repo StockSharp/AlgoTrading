@@ -1,5 +1,5 @@
 # Fast2 Crossover Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the Fast2 histogram. The histogram combines the body of the last three candles with square‑root weights and applies two weighted moving averages. A long position is opened when the fast average crosses below the slow one, and a short position when it crosses above.
 

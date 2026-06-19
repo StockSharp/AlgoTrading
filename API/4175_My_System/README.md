@@ -48,4 +48,4 @@ All parameters are declared via `Param()` to support UI binding and optimization
 
 ## Files
 - `CS/MySystemStrategy.cs` – strategy implementation using StockSharp's high-level API.
-- `README.md`, `README_cn.md`, `README_ru.md` – multilingual documentation for the converted expert advisor.
+- `README.md`, `README_zh.md`, `README_ru.md` – multilingual documentation for the converted expert advisor.

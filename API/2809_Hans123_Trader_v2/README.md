@@ -1,5 +1,5 @@
 # Hans123 Trader v2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Hans123 Trader v2 is a breakout strategy that places pending stop orders around the recent trading range. It mirrors the MetaTrader implementation by Vladimir Karputov and is adapted to the StockSharp high-level API. The system focuses on capturing momentum when price escapes the most recent 80-bar range while managing protective exits and a trailing stop.
 

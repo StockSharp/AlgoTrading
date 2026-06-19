@@ -1,5 +1,5 @@
 # Стратегия Renko Level EA
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 ## Обзор
 - Конвертация советника MetaTrader **Renko Level EA.mq5** на платформу StockSharp.

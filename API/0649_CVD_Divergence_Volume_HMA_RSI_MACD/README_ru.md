@@ -1,5 +1,5 @@
 # Стратегия CVD Divergence Volume HMA RSI MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Эта стратегия объединяет Hull Moving Average, RSI, MACD, фильтр по объему и дивергенцию кумулятивного дельта-объема (CVD) для поиска трендовых возможностей.
 

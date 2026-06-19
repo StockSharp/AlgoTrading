@@ -1,5 +1,5 @@
 # EMA Shift Parallel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades when a shifted fast EMA crosses a slow EMA. Long and short sides can be enabled separately. Each side supports optional stop-loss and trailing stop based on percentage levels.
 

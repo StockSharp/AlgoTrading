@@ -1,5 +1,5 @@
 # Genie RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades overbought and oversold reversals using the Relative Strength Index (RSI). When RSI rises above 80 the strategy opens a short position; when RSI falls below 20 it opens a long position. Optional take profit and trailing stop levels manage risk after entry.
 

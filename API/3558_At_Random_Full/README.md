@@ -1,5 +1,5 @@
 # At Random Full Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The **At Random Full Strategy** is a faithful conversion of the MetaTrader 5 expert advisor "At random Full". It keeps the 

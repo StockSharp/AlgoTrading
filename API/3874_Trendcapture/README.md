@@ -46,5 +46,5 @@ This port keeps the behaviour intact while relying on StockSharp's order helpers
 ## Files
 
 - `CS/TrendcaptureStrategy.cs` – high-level StockSharp implementation of the Trendcapture EA.
-- `README_cn.md` – Chinese translation of this document.
+- `README_zh.md` – Chinese translation of this document.
 - `README_ru.md` – Russian translation of this document.

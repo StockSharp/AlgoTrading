@@ -1,5 +1,5 @@
 # Simple RSI Stock Strategy 1D
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This system goes long when RSI drops below an oversold level while price stays above the 200-day SMA. The position uses an ATR-based stop and three profit targets.
 

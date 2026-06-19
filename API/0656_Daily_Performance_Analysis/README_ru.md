@@ -1,5 +1,5 @@
 # Стратегия Daily Performance Analysis
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Отслеживает результативность по дням недели и дням месяца, торгуя смену направления SuperTrend.
 

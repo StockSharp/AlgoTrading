@@ -1,5 +1,5 @@
 # Supertrend Rsi Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Implementation of strategy - Supertrend + RSI. Buy when price is above Supertrend and RSI is below 30 (oversold). Sell when price is below Supertrend and RSI is above 70 (overbought).
 

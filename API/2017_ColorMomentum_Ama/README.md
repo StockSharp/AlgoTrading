@@ -1,5 +1,5 @@
 # Color Momentum AMA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy converts the MetaTrader Expert Advisor *Exp_ColorMomentum_AMA* to StockSharp.
 It calculates price momentum over a configurable period and smooths it with the Kaufman Adaptive Moving Average (AMA).

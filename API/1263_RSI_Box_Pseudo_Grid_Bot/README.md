@@ -1,5 +1,5 @@
 # RSI Box (Pseudo Grid Bot)
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A grid-based strategy that derives price levels from RSI overbought and oversold signals. When RSI crosses an extreme, dynamic grid lines are recalculated from recent highs and lows. Trades occur when price breaks above or below the next grid level. Optional shorts are supported.
 

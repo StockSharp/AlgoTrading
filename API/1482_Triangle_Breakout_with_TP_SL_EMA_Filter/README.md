@@ -1,5 +1,5 @@
 # Triangle Breakout Strategy with TP SL and EMA Filter
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Detects triangle patterns from pivot highs and lows. Enters long on breakout above the triangle, optionally requiring price above EMA20 and EMA50, and uses percentage-based take-profit and stop-loss.
 

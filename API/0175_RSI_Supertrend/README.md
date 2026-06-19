@@ -1,5 +1,5 @@
 # Rsi Supertrend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on RSI and Supertrend indicators. Enters long when RSI is oversold (< 30) and price is above Supertrend Enters short when RSI is overbought (> 70) and price is below Supertrend
 

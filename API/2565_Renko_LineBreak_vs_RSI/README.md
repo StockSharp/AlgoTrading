@@ -1,5 +1,5 @@
 # Renko Line Break vs RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy recreates the "RenkoLineBreak vs RSI" MetaTrader expert using the StockSharp high level API. It combines Renko trend detection with an RSI pullback filter and executes trades through pending stop orders located around a three-candle price structure.
 

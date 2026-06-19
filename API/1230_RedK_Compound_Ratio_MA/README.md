@@ -1,5 +1,5 @@
 # Redk Compound Ratio MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades long when the compound ratio moving average (CoRa Wave) rises and short when it falls.
 

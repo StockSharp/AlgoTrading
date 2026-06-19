@@ -40,4 +40,4 @@ All parameters support optimisation thanks to StockSharp `StrategyParam` helpers
 
 ## Files
 - `CS/VirtualTrailingStopLevel1Strategy.cs` – strategy implementation.
-- `README.md`, `README_cn.md`, `README_ru.md` – multilingual documentation for the strategy.
+- `README.md`, `README_zh.md`, `README_ru.md` – multilingual documentation for the strategy.

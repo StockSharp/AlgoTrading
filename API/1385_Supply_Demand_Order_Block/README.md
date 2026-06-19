@@ -1,5 +1,5 @@
 # Supply Demand Order Block
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Breakout strategy using Donchian support and resistance levels with EMA trend filter and volume spike confirmation. Positions are protected by stop loss and trailing stop.
 

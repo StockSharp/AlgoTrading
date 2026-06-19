@@ -1,5 +1,5 @@
 # Dual SuperTrend w VIX Filter Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines two SuperTrend indicators with a VIX-based volatility filter. A long position opens when both SuperTrends are bullish and the VIX index is above its mean. A short position opens when both SuperTrends are bearish and the VIX is rising above its average plus a standard-deviation buffer. Positions are closed when either SuperTrend flips direction.
 

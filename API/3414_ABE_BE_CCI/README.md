@@ -1,5 +1,5 @@
 # ABE BE CCI Engulfing Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This StockSharp strategy ports the MetaTrader 5 expert advisor **Expert_ABE_BE_CCI** (folder `MQL/306`). The original EA combines Bullish/Bearish Engulfing candlestick patterns with a Commodity Channel Index (CCI) confirmation module and fixed-lot money management. The C# implementation keeps the same decision logic while leveraging the high-level subscription and indicator bindings provided by StockSharp.
 

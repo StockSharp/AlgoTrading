@@ -1,5 +1,5 @@
 # F2a AO Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the original MetaTrader expert advisor "F2a_AO". It filters the Awesome Oscillator with a short SMA and opens trades only in the direction of a reference candle on a higher timeframe.
 

@@ -1,5 +1,5 @@
 # Contrarian Trade MA Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 A weekly contrarian system that evaluates prior highs, lows and a moving average to open trades at the end of each week. The position is held for one week regardless of direction.
 

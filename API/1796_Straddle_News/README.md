@@ -1,5 +1,5 @@
 # Straddle News Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy designed for high-volatility news releases. It places symmetric stop orders on both sides of the current price to catch breakouts. Once one order triggers, the opposite pending order is cancelled and a trailing stop protects the open position.
 

@@ -1,5 +1,5 @@
 # Rubberbands Safety Net Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 StockSharp port of the RUBBERBANDS 1.6 MetaTrader expert advisor. The original system keeps a hedged pair of buy and sell tickets, reinjects the closed side after each profit, and activates a safety net when the running loss exceeds predefined cash thresholds. The conversion keeps the alternating cycle but adapts the mechanics to StockSharp's net-position model by averaging in the direction of the current exposure instead of holding independent hedge orders.
 

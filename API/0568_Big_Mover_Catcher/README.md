@@ -1,5 +1,5 @@
 # Big Mover Catcher Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long when the price closes above the upper Bollinger Band and all enabled filters confirm the move. It can also go short when the price closes below the lower band. Filters include RSI, ADX, ATR, EMA trend direction and MACD. A fixed percent stop loss is applied, positions are closed when price returns to the middle band, and an optional force take profit exits on unusually large candles.
 

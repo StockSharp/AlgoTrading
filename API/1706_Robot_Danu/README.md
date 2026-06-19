@@ -1,5 +1,5 @@
 # Robot Danu
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that compares fast and slow ZigZag levels derived from candle highs and lows.
 A short position is opened when the fast ZigZag level is above the slow one.

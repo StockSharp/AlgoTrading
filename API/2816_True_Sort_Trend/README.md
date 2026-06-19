@@ -1,5 +1,5 @@
 # True Sort Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy replicates the classic "True Sort" template from MetaTrader by waiting for five exponential moving averages to align in strict order. When both the current and previous completed candles respect the same bullish or bearish sorting and the Average Directional Index (ADX) confirms momentum, the strategy opens a position in the direction of the trend. Risk is controlled through optional absolute stop-loss and take-profit distances together with a trailing stop that only activates after price moves far enough in favour of the trade.
 

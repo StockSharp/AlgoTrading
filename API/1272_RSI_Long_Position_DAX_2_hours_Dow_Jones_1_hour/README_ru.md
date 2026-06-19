@@ -1,5 +1,5 @@
 # Стратегия RSI Long Position
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 RSI Long Position покупает, когда RSI пересекает снизу уровень перепроданности, и закрывает позицию, когда RSI превышает уровень фиксации прибыли или опускается ниже уровня выхода.
 

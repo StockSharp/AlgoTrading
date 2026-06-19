@@ -1,5 +1,5 @@
 # MACFibo Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy implements the MACFibo trading system. It waits for a crossover between the 5-period EMA and the 20-period SMA. After the cross, the algorithm measures the swing from the close of the cross bar (point A) to the most recent extreme (point B) and builds Fibonacci expansion levels. Positions are opened at market price with take profit and stop loss derived from these levels. An optional exit closes losing trades when the fast EMA crosses the mid SMA in the opposite direction.
 

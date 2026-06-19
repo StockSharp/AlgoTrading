@@ -1,5 +1,5 @@
 # Wajdyss Ichimoku Candle MMRec Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 This strategy is a direct port of the MetaTrader expert *Exp_wajdyss_Ichimoku_Candle_MMRec*. It recreates the "wajdyss Ichimoku candle"

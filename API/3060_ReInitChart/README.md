@@ -1,5 +1,5 @@
 # ReInitChart Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy ports the MetaTrader **ReInitChart** utility to StockSharp. The original script created a button on every chart that temporarily switched the timeframe to force indicators to recompute. The StockSharp version keeps the same spirit by exposing a manual refresh toggle and optional automatic timer that reset the internal SMA indicator and log the refresh event. A simple SMA trend-following rule is applied to demonstrate trading once the indicator is rebuilt.
 

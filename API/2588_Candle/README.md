@@ -1,5 +1,5 @@
 # Candle Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The **Candle Strategy** is a direct port of the classic MT5 expert "Candle.mq5". It evaluates the color of every finished candle on the selected timeframe and keeps the position aligned with the most recent close. Bullish candles drive the strategy long, bearish candles drive it short, and flat candles leave the position untouched. Risk is controlled by pip-based take-profit and trailing-stop distances that are converted to absolute prices through the instrument tick size.

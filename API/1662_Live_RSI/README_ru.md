@@ -1,5 +1,5 @@
 # Стратегия Live RSI
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Использует несколько расчётов RSI (close, weighted, typical, median, open) и Parabolic SAR для обнаружения смены тренда. Входит в лонг при бычьем порядке RSI и цене выше SAR, открывает шорт при медвежьем порядке и цене ниже SAR. Значение SAR выступает в роли трейлинг-стопа.
 

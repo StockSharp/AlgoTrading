@@ -1,5 +1,5 @@
 # Executor Candles Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a direct conversion of the MetaTrader "Executor Candles" expert. It reacts to a rich set of bullish and bearish candlestick reversal patterns and can optionally confirm trades with a higher timeframe trend candle. All trade management logic – stop losses, take profits, and trailing stops – mirrors the original expert's behaviour measured in pips (price steps).
 

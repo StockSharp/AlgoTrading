@@ -1,5 +1,5 @@
 # Gemini Trend Following System
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy that buys pullbacks to the 50-day SMA within a strong uptrend confirmed by the 200-day SMA and annual Rate of Change filter.
 

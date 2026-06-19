@@ -1,5 +1,5 @@
 # Linear Regression Slope V1
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Uses the slope of a linear regression and its shifted copy to detect trend changes.
 

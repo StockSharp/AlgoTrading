@@ -1,5 +1,5 @@
 # Kaufman Trend Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The **Kaufman Trend Strategy** uses a Kalman filter to estimate price and momentum. Trend strength is derived from the filter's velocity component and normalized over a recent window. Entries occur when strong trend conditions align with price being above or below the filtered value. Stops are based on recent swings plus ATR and profits are taken in stages as momentum weakens.
 

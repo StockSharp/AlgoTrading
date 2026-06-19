@@ -1,5 +1,5 @@
 # Built-in Kelly Ratio
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Channel breakout strategy using a moving average and ATR bands with position sizing based on the Kelly ratio.
 

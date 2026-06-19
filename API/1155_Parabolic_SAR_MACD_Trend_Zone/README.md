@@ -1,5 +1,5 @@
 # Parabolic SAR with MACD Confirmation
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy combines the Parabolic SAR indicator with MACD confirmation. A position is opened when price crosses the SAR in a direction supported by MACD, aiming to capture trend reversals.
 

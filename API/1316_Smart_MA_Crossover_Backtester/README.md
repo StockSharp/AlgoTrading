@@ -1,4 +1,4 @@
 # Smart MA Crossover Backtester
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Moving average crossover strategy with a 200-period trend filter and ATR-based stop-loss and take-profit.

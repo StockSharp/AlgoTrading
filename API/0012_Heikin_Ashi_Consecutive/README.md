@@ -1,5 +1,5 @@
 # Heikin Ashi Consecutive
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
  
 Strategy based on consecutive Heikin Ashi candles
 

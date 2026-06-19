@@ -1,5 +1,5 @@
 # Times Direction Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This time-based strategy opens a single long or short position during a predefined window and closes it during another window. The entry direction is configurable and the system monitors optional stop-loss and take-profit levels. The approach relies solely on finished candles without using indicators.
 

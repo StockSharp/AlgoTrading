@@ -1,5 +1,5 @@
 # Multi-timeframe EMA + BB + RSI Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Combines two exponential moving averages, Bollinger Bands and RSI to trade bounces. Long trades occur when price closes above the fast EMA after touching the lower band. Short trades trigger when price closes below the fast EMA after piercing the upper band and RSI is above 50.
 

@@ -1,5 +1,5 @@
 # Time Session Filter - MACD example
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy demonstrates using a time session filter with MACD and trend EMA. Trades only during the configured hours.
 

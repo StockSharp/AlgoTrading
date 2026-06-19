@@ -1,5 +1,5 @@
 # Hawaiian Tsunami Surfer
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy looks for sudden momentum spikes and trades against them. It calculates the percentage change of the closing price over one bar using a Momentum indicator. When the percentage change exceeds a tiny threshold, the move is considered a "tsunami". The strategy sells after a strong upward spike and buys after a strong downward spike. Protective stop-loss and take-profit are applied in price steps through StartProtection.
 

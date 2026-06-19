@@ -1,5 +1,5 @@
 # Bitcoin CME-Spot Spread
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades the spread between CME Bitcoin futures and Bitfinex BTCUSD spot using Bollinger Bands.
 Long when the spread drops below the lower band, short when it rises above the upper band.

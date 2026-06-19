@@ -1,5 +1,5 @@
 # Lucky Jump Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The Lucky Jump strategy is a short-term mean reversion system that reacts to sudden price jumps on the best bid and ask. When the ask price jumps upward by a specified number of points compared to the previous quote, the strategy opens a short position expecting a pullback. Conversely, when the bid price drops by the same amount, it enters long. Positions are closed either at the first favorable tick or when the loss exceeds a predefined limit.
 

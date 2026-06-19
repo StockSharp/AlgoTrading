@@ -1,5 +1,5 @@
 # Hurst Future Lines of Demarcation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy uses a smoothed Future Line of Demarcation (FLD) and three cycle lengths (signal, trade, trend). It enters when price crosses the signal FLD in specific trend states and exits on a cross between selected values.
 

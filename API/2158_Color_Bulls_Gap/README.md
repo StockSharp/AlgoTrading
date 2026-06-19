@@ -1,5 +1,5 @@
 # Color Bulls Gap Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that recreates the ColorBullsGap indicator by comparing smoothed gaps between the high price and averages of open and close.
 Enters long when a bullish color two bars ago turns neutral or bearish on the last bar, closing any short positions.

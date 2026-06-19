@@ -1,5 +1,5 @@
 # Earnings, Splits, Dividends
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Demonstrates how to receive earnings, split and dividend information from the news feed.
 

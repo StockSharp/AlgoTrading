@@ -1,5 +1,5 @@
 # Стратегия Trend Following Parabolic Buy Sell
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Комбинирует Parabolic SAR и пересечение скользящих средних.
 Длинная позиция открывается, когда цена выше долгосрочной SMA, быстрая EMA пересекает медленную снизу вверх и SAR указывает вверх.

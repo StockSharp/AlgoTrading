@@ -1,5 +1,5 @@
 # Стратегия MACD Volume
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия совмещает индикатор MACD (Moving Average Convergence Divergence) с подтверждением объёмом. Вход выполняется, когда линия MACD пересекает сигнальную линию и это подтверждается ростом объёма.
 

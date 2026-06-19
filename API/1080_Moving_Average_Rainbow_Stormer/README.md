@@ -1,5 +1,5 @@
 # Moving Average Rainbow (Stormer) Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy plots a rainbow of twelve moving averages. Trades are opened when the trend is confirmed and price touches one of the averages.
 

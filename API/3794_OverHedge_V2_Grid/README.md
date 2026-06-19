@@ -1,5 +1,5 @@
 # OverHedge V2 Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 OverHedge V2 is a hedged grid system that alternates long and short positions while increasing trade size after each fill. The strategy analyses the relationship between a fast and a slow exponential moving average (EMA) to decide the dominant direction for the next cycle. Once a cycle starts, the algorithm places market orders whenever price reaches predefined tunnel levels around the starting quote. The grid expands symmetrically so that every new leg offsets the floating loss of the previous one. The cycle ends when the aggregate open profit exceeds a configurable target or when the trader manually requests a shutdown.
 

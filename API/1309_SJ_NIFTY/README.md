@@ -1,5 +1,5 @@
 # SJ NIFTY Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy using SuperTrend, VWAP, RSI and EMA200. Keltner Channel basis acts as optional trend filter. Position size is calculated from risk percent of capital with stop-loss and risk-reward take-profit.
 

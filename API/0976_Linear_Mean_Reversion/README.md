@@ -1,5 +1,5 @@
 # Linear Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Linear Mean Reversion Strategy uses the z-score of price relative to a moving average to trade mean reversion with a fixed stop loss in points.
 

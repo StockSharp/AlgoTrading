@@ -1,5 +1,5 @@
 # MultiLayer Acceleration Deceleration Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия накапливает до пяти длинных позиций, используя осциллятор Acceleration/Deceleration. При каждом новом импульсе в направлении тренда выставляется stop-заявка выше максимума бара. Слабость осциллятора или смена тренда отменяет все заявки и закрывает позицию.
 

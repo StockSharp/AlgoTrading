@@ -1,5 +1,5 @@
 # Divergence Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on price and RSI divergence with simple pivot detection.
 

@@ -1,5 +1,5 @@
 # Gap Down Reversal Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Gap Down Reversal looks for bullish reversals after a gap down open.
 When a new session opens below the previous low but closes above its open, it often traps sellers and signals a rebound.

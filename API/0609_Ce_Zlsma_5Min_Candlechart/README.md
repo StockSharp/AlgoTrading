@@ -1,5 +1,5 @@
 # CE ZLSMA 5MIN Candlechart Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following system using Zero Lag LSMA on Heikin Ashi candles with a Chandelier Exit filter. Buys when trend flips bullish and the candle closes above the ZLSMA.
 

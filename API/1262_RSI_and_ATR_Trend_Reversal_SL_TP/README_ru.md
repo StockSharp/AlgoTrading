@@ -1,5 +1,5 @@
 # RSI и ATR Trend Reversal SL TP
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует RSI и ATR для определения разворотов тренда с динамическими уровнями стоп-лосса и тейк-профита.
 

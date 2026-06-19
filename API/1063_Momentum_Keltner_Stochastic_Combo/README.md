@@ -1,5 +1,5 @@
 # Momentum Keltner Stochastic Combo Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy combining momentum comparison with a Keltner-based stochastic oscillator.  
 Positions are scaled dynamically based on equity and protected by a fixed stop loss.

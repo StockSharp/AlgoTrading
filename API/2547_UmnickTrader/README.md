@@ -1,5 +1,5 @@
 # UmnickTrader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Adaptive mean-reversion system converted from the original UmnickTrader MQL5 expert advisor. The strategy works with a single
 position at a time, alternating between long and short bias depending on the outcome of the previous trade. It evaluates price

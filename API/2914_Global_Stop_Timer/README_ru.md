@@ -1,5 +1,5 @@
 # Стратегия Global Stop Timer
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Global Stop Timer — это конвертация советника MetaTrader `Exp_GStop_Tm`, выполняющая роль защитного модуля.
 Она отслеживает стоимость портфеля на закрытии каждой свечи и прекращает торговлю, когда достигается глобальная

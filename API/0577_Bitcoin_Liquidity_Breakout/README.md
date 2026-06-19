@@ -1,5 +1,5 @@
 # Bitcoin Liquidity Breakout Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy enters long positions when liquidity and volatility are high and the short-term trend is bullish. High liquidity is defined as volume above its moving average multiplied by a threshold. Volatility is confirmed when ATR exceeds its moving average.
 

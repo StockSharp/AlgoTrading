@@ -1,5 +1,5 @@
 # Monte Carlo Simulation - Random Walk Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This sample strategy performs a Monte Carlo simulation of future price paths using historical log returns. It does not place trades but demonstrates how to generate random walks and estimate future max and min price levels.
 

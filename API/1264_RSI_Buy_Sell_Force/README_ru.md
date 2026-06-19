@@ -1,5 +1,5 @@
 # Стратегия RSI Buy Sell Force
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия вычисляет RSI и сглаживает его EMA.
 Из этих значений формируются линии `cc` и `bb`, отражающие силу покупателей и продавцов.

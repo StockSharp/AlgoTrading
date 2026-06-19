@@ -1,5 +1,5 @@
 # XMACD Modes Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy based on the MACD indicator that supports four different entry modes:
 

@@ -1,5 +1,5 @@
 # Adaptive Market Level
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy that trades based on the Adaptive Market Level (AML) indicator. The indicator adapts to current volatility and plots a dynamic price level. A long position is opened when the AML line turns upward and a short position when it turns downward. Opposite positions are closed on a color change or when stop loss/take profit triggers.
 

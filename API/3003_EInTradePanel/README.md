@@ -1,5 +1,5 @@
 # eInTradePanel Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The eInTradePanel strategy automates the workflow of the original MetaTrader trade panel. It allows the same eight order modes (market, stop, limit and stop-limit in both directions) while automatically computing trigger, entry, stop-loss and take-profit distances from the current spread and a volatility-sensitive ATR estimate. Protective orders are simulated through candle monitoring so the strategy can be used with data vendors that do not support attached SL/TP orders.
 

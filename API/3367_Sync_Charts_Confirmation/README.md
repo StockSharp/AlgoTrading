@@ -1,5 +1,5 @@
 # Sync Charts Confirmation Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy mirrors the idea of the original MQL "SyncCharts" utility by monitoring two candle feeds of the same instrument and
 making trading decisions only when both streams confirm the same trend direction. The master series acts as the reference chart

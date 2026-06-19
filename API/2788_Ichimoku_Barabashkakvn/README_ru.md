@@ -1,5 +1,5 @@
 # Стратегия Ichimoku Barabashkakvn
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия повторяет советник Владимира Карпутова (редакция barabashkakvn) на платформе StockSharp. Используется классический индикатор Ichimoku: пересечение линий Tenkan/Kijun в сочетании с положением цены относительно облака и полноценное управление рисками из оригинальной версии.
 

@@ -72,4 +72,4 @@ The strategy intentionally keeps both long and short positions open, which cause
 
 - `CS/DualLotStepHedgeStrategy.cs` – StockSharp strategy implementation with extensive inline comments.
 - `README_ru.md` – Russian translation with detailed instructions.
-- `README_cn.md` – Chinese translation with detailed instructions.
+- `README_zh.md` – Chinese translation with detailed instructions.

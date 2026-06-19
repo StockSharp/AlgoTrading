@@ -1,5 +1,5 @@
 # PFE Extremes
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy trades breakouts of the Polarized Fractal Efficiency (PFE) indicator. When PFE crosses above the upper level, the strategy closes any short position and opens a long. When PFE crosses below the lower level, it closes long positions and opens a short.
 

@@ -1,5 +1,5 @@
 # Tick Data Detailed Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Collects and aggregates tick volumes into multiple predefined ranges for both buy and sell directions. Useful for detailed tape reading without generating trading signals.
 

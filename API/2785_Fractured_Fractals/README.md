@@ -1,5 +1,5 @@
 # Fractured Fractals Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Port of the classic MetaTrader "Fractured Fractals" expert advisor. The strategy tracks confirmed Williams fractals, places stop orders on fresh breakout levels, and trails a protective stop on the opposite fractal.
 

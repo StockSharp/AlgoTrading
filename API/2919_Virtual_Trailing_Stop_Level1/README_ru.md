@@ -40,4 +40,4 @@
 
 ## Состав поставки
 - `CS/VirtualTrailingStopLevel1Strategy.cs` — исходный код стратегии.
-- `README.md`, `README_cn.md`, `README_ru.md` — документация на английском, китайском и русском языках.
+- `README.md`, `README_zh.md`, `README_ru.md` — документация на английском, китайском и русском языках.

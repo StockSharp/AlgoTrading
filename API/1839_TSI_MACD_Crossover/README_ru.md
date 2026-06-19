@@ -1,5 +1,5 @@
 # TSI MACD Crossover Strategy
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия реализует систему пересечения на основе индикатора True Strength Index (TSI) и его сигнальной линии, построенной как экспоненциальное скользящее среднее.
 

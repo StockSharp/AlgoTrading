@@ -1,5 +1,5 @@
 # VR Steals 2 Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy is a StockSharp conversion of the MetaTrader 5 expert "VR---STEALS-2". It opens a single long position and demonstrates simple position management without indicators.
 

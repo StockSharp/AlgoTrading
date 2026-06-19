@@ -1,5 +1,5 @@
 # NY Opening Range Breakout - MA Stop Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trades breakouts of the New York 9:30-9:45 opening range with optional moving-average based exits. Entries occur on the bar after a breakout if within the cutoff time and the price aligns with the moving average filter.
 

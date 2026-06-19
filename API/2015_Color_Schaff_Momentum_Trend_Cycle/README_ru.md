@@ -1,5 +1,5 @@
 # Стратегия Color Schaff Momentum Trend Cycle
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия использует индикатор Color Schaff Momentum Trend Cycle (STC) для определения разворотов тренда, когда индикатор выходит из зон перекупленности или перепроданности.
 

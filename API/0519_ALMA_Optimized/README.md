@@ -1,5 +1,5 @@
 # ALMA Optimized Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy blends an Arnaud Legoux Moving Average with a long-term EMA, ADX, RSI, and Bollinger Bands. An ATR based filter ensures sufficient volatility. Positions use ATR multiples for stop-loss and take-profit, with an optional time-based exit.
 

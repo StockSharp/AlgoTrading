@@ -51,6 +51,6 @@ The **Speed MA Strategy** is a direct StockSharp port of the MetaTrader 4 expert
 
 ## Files
 - `CS/SpeedMAStrategy.cs` – strategy implementation.
-- `README.md`, `README_cn.md`, `README_ru.md` – detailed documentation in English, Chinese, and Russian respectively.
+- `README.md`, `README_zh.md`, `README_ru.md` – detailed documentation in English, Chinese, and Russian respectively.
 
 No Python directory is included, in accordance with the conversion guidelines.

@@ -1,5 +1,5 @@
 # BrainTrend2 V2 Duplex Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 The BrainTrend2 V2 Duplex strategy is a high-level StockSharp port of the original MetaTrader 5 expert `Exp_BrainTrend2_V2_Duplex`. It runs two independent instances of the BrainTrend2 V2 indicator: one dedicated to long opportunities and another tuned for short opportunities. Each side can operate on its own candle series, ATR length, and signal shift, allowing the strategy to mix multi-timeframe confirmations or asymmetric risk settings.

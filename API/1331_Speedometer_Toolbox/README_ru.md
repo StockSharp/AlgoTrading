@@ -1,5 +1,5 @@
 # Speedometer Toolbox
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Визуализационная стратегия, рисующая на графике спидометр на основе RSI.
 

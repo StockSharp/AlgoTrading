@@ -1,5 +1,5 @@
 # BTCUSD Adjustable SLTP Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy trades BTCUSD using a crossover between SMA(10) and SMA(25) with an EMA(150) filter. Long entries wait for a pullback: after the crossover a retracement percentage is tracked and a long position opens when price crosses back above that level. Short entries trigger immediately on a bearish crossover while price is below the EMA.
 

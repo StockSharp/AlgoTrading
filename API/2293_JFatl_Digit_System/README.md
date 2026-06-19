@@ -1,5 +1,5 @@
 # JFATL Digit System
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Strategy built around the Jurik moving average (JFATL) slope. It opens long positions when the moving average turns upward and short positions when it turns downward. The idea imitates the color-coded digital system from the original MQL version.
 

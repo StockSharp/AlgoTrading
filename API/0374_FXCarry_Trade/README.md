@@ -1,5 +1,5 @@
 # FX Carry Trade Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This currency strategy ranks a universe of currency instruments by the interest rate differential between the base and quote currencies. At the start of each month it goes long the `TopK` highest‑carry symbols and shorts the `TopK` lowest. Profits aim to capture positive carry on longs while paying the negative carry on shorts.
 

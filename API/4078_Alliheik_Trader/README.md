@@ -1,5 +1,5 @@
 # Alliheik Trader Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Conversion of the MetaTrader 4 expert advisor **alliheik.mq4**. The strategy combines a double-smoothed Heiken Ashi candle body with the forward-shifted Alligator "jaw" moving average. Entries occur when the Heiken Ashi buffers cross after the smoothing process. Exits rely on a jaw crossover filter, optional fixed targets, and a price-based trailing stop.
 

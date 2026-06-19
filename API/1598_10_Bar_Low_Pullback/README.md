@@ -1,5 +1,5 @@
 # Short Only 10 Bar Low Pullback Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 The strategy enters short when price breaks the lowest low of the previous bars and the internal bar strength is above a threshold. An optional EMA filter confirms the downtrend.
 

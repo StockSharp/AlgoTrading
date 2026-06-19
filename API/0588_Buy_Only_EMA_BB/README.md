@@ -1,5 +1,5 @@
 # Buy Only EMA BB Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy opens a long position when price closes above the EMA.
 The initial stop loss is placed at the lower Bollinger Band and moves to the EMA if price closes above the upper band.

@@ -1,5 +1,5 @@
 # Advanced Adaptive Grid Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Advanced Adaptive Grid Strategy uses multiple technical indicators to evaluate trend direction and builds a dynamic grid of entry levels. The grid size adapts to volatility via ATR and orders are placed when price touches grid levels in the trend direction. Risk controls include fixed stop-loss, take-profit, trailing stop, time-based exit and daily loss limit.
 

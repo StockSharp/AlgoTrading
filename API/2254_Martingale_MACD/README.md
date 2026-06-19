@@ -1,5 +1,5 @@
 # Martingale MACD Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 This strategy replicates the original MQL "MartGreg_1" expert in the StockSharp framework. It uses two Moving Average Convergence Divergence (MACD) indicators to search for reversals and applies a martingale rule for position sizing.
 

@@ -1,5 +1,5 @@
 # EMA WPR Retracement Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend-following strategy that combines an EMA trend filter with Williams %R extremes. It waits for a retracement in Williams %R before allowing another trade and can pyramid up to a set number of positions.
 

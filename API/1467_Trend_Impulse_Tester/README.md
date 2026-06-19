@@ -1,5 +1,5 @@
 # Trend Impulse Tester Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Trend Impulse Tester enters trades when a strong trend is confirmed by EMAs and ADX and an RSI impulse appears.
 It buys on bullish impulses during uptrends and sells on bearish impulses during downtrends.

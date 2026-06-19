@@ -1,5 +1,5 @@
 # Ultimate Strategy Template
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Basic moving average crossover template that opens long or short positions when fast and slow averages cross. Includes optional percent stop loss and take profit protections.
 

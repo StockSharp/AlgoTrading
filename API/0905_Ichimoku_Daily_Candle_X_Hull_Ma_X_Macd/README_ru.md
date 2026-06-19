@@ -1,5 +1,5 @@
 # Стратегия Ichimoku Daily Candle X Hull MA X MACD
-[English](README.md) | [中文](README_cn.md)
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия сочетает линии Ишимоку, направление дневной свечи, тренд Hull MA и MACD на основе HMA. Лонг открывается, когда все компоненты указывают вверх; шорт — когда условия меняются на медвежьи.
 

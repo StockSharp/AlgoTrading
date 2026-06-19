@@ -1,5 +1,5 @@
 # Omar MMR Strategy
-[Русский](README_ru.md) | [中文](README_cn.md)
+[Русский](README_ru.md) | [中文](README_zh.md)
 
 Momentum-based method that blends RSI, three exponential moving averages, and a MACD crossover. Long trades occur when price is above the slow EMA, the fast EMA exceeds the medium EMA, MACD crosses bullishly, and RSI sits in a neutral zone between 29 and 70.
 
