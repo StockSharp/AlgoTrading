@@ -1,5 +1,5 @@
 # Fed Model Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This macro timing system compares the earnings yield of the equity market to the yield on 10‑year Treasury notes. When stocks offer a higher yield, the strategy holds an equity ETF; when bonds yield more, it moves to cash. A monthly regression on the yield gap forecasts the next month’s value to reduce noisy switches.
 

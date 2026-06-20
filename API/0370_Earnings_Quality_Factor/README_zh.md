@@ -1,5 +1,5 @@
 # Earnings Quality Factor
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Earnings Quality Factor** 策略每年 7 月 1 日再平衡，依据盈利质量得分买入高质量股票并卖出低质量股票。
 

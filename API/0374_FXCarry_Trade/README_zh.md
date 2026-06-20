@@ -1,5 +1,5 @@
 # 外汇套息交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略按基准货币与报价货币的利差对一篮子货币工具进行排序。每月初多头持有利差最高的 `TopK` 个品种，并做空利差最低的 `TopK` 个品种，力图赚取正向套息并支付负向套息。
 

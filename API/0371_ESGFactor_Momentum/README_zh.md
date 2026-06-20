@@ -1,5 +1,5 @@
 # ESG因子动量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在具有环境、社会和公司治理评分的证券之间轮动。每月初按回测窗口的收益率对所有标的排序，只持有表现最强者。假设获得ESG资金关注的资产能保持动量。只有当交易金额超过最小阈值时才会执行。
 

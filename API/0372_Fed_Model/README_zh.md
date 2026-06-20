@@ -1,5 +1,5 @@
 # 美联储模型策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该宏观时机策略比较股票市场盈利收益率与10年期美国国债收益率。当股票收益率更高时持有股票ETF；当国债收益率更高时转入现金。每月对收益率差进行回归并预测下个月的值，从而减少噪声切换。
 

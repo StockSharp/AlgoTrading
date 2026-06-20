@@ -1,5 +1,5 @@
 # 低波动率股票策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该防御型因子利用“低波动率异常”——波动较小的股票往往拥有更佳风险调整后收益。波动率通过过去一段时间（日内默认为 60 个交易日）的日收益率标准差计算。
 

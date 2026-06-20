@@ -1,5 +1,5 @@
 # Earnings Quality Factor
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Earnings Quality Factor** strategy rebalances annually on July 1, going long high quality and short low quality stocks based on earnings quality scores.
 

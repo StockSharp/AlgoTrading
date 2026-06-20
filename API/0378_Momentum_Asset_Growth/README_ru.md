@@ -1,5 +1,5 @@
 # Momentum Asset Growth Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Гибридная факторная стратегия, объединяющая импульс и рост активов. Компании,
 быстро наращивающие баланс и одновременно демонстрирующие устойчивый тренд,

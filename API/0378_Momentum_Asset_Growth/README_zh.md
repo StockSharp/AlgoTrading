@@ -1,5 +1,5 @@
 # 动量资产增长策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是一种将价格动量与资产扩张相结合的复合因子策略。研究表明，资产快速增长且股价呈现强劲趋势的公司通常表现更好。策略首先筛选资产增长位于前十分位的股票。
 

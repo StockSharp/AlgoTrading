@@ -1,5 +1,5 @@
 # January Barometer Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The January Barometer states that the market’s performance in January sets the tone for the remainder of the year. This strategy invests in an equity ETF for the rest of the year only if January closes higher; otherwise it stays in a cash proxy. The allocation decision is made once per year and held until year end.
 

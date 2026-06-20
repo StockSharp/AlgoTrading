@@ -1,5 +1,5 @@
 # F-Score反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合Piotroski F-Score基本面和短期价格反转。每月买入高F-Score但近期跌幅最大的股票，并可卖空低F-Score且涨幅最大的股票。假设基本面良好的公司在短暂下跌后会反弹，而弱势公司在冲高后会回落。
 

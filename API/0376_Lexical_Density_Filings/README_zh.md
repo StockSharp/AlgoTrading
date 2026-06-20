@@ -1,5 +1,5 @@
 # 文本密度财报策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该因子策略利用公司监管文件中的用词密度来衡量信息含量。我们统计最新财报中独特词汇的比例，密度越高表示披露越详细，可能意味着前景更好；语言稀疏的公司往往表现欠佳。
 

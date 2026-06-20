@@ -1,5 +1,5 @@
 # 一月晴雨表策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一月晴雨表认为1月份的市场表现预示全年走势。该策略只有在1月收涨时才在剩余月份持有股票ETF，否则转为现金代理。每年只在2月初做一次判断并持有到年底。
 

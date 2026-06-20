@@ -1,5 +1,5 @@
 # 动量因子股票策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略利用经典的 12‑1 个月动量因子。每月底按过去 12 个月（忽略最近 1 个月）的收益率对股票排序，动量最高的五分位买入，动量最低的五分位卖空，形成市场中性头寸。
 
