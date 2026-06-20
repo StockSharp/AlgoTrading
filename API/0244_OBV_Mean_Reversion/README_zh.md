@@ -1,5 +1,5 @@
 # OBV 均值回归策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 OBV 指标跟踪累计成交量的流向，以判断买卖力量。本策略在 OBV 与其均值出现显著背离时寻找回归机会。
 

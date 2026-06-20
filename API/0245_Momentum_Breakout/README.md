@@ -1,5 +1,5 @@
 # Momentum Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This breakout system looks for sudden surges in momentum relative to its historical average. When momentum readings exceed the average by a large margin, price may be starting a fast directional move.
 

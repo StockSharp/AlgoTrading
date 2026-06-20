@@ -1,5 +1,5 @@
 # Volatility Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This approach trades around fluctuations in market volatility. When the ATR deviates markedly from its moving average, it suggests volatility has become unusually high or low and may revert.
 

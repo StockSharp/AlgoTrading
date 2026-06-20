@@ -1,5 +1,5 @@
 # 成交量均值回归策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略关注成交量相对其历史均值的异常高低。巨大成交量峰值往往在活动恢复正常后回落，提供逆势交易机会。
 

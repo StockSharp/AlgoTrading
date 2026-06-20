@@ -1,5 +1,5 @@
 # Stochastic Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This breakout approach monitors the Stochastic oscillator for sharp moves away from its recent average. When the %K line breaks above or below a volatility-adjusted threshold, it signals a burst of momentum that may start a trend.
 

@@ -1,5 +1,5 @@
 # OBV Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 On Balance Volume (OBV) tracks cumulative volume flow to determine whether buyers or sellers are dominant. This strategy waits for OBV to diverge sharply from its average and then trades in anticipation of a return to typical levels.
 

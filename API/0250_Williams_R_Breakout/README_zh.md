@@ -1,5 +1,5 @@
 # Williams %R 突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略通过观察 Williams %R 相对其历史均值的强势突破来捕捉动量。当指标远离常态区间时，往往预示着趋势即将展开。
 

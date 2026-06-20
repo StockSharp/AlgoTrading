@@ -1,5 +1,5 @@
 # RSI Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The RSI Breakout strategy looks for momentum bursts when the Relative Strength Index pushes beyond its typical range. By measuring RSI deviations from its moving average, the system aims to catch new trends as they begin.
 

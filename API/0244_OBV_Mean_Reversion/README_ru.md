@@ -1,5 +1,5 @@
 # Стратегия средневозврата по OBV
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Индикатор On Balance Volume (OBV) отслеживает накопленный поток объема, чтобы определить преобладание покупателей или продавцов. Стратегия ждет, когда OBV резко отклонится от своего среднего, и затем открывает позиции в ожидании возвращения к нормальным значениям.
 
