@@ -1,5 +1,5 @@
 # Parabolic Sar Volume Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategy that combines Parabolic SAR with volume confirmation. Enters trades when price crosses the Parabolic SAR with above-average volume.
 

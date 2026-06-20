@@ -1,5 +1,5 @@
 # Стратегия Adx Bollinger
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикаторы ADX и полосы Боллинджера. Длинная позиция открывается, когда ADX > 25 и цена пробивает верхнюю полосу Боллинджера. Короткая — когда ADX > 25 и цена пробивает нижнюю полосу.
 

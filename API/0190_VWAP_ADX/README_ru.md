@@ -1,5 +1,5 @@
 # Vwap Adx Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на VWAP и ADX. Вход в длинные позиции, когда цена выше VWAP и ADX > 25. Вход в короткие, когда цена ниже VWAP и ADX > 25. Выход при ADX < 20.
 

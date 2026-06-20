@@ -1,5 +1,5 @@
 # Стратегия Macd Vwap
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на индикаторах MACD и VWAP. Открывает длинную позицию, когда MACD выше сигнальной линии и цена выше VWAP. Открывает короткую позицию, когда MACD ниже сигнальной линии и цена ниже VWAP.
 

@@ -1,5 +1,5 @@
 # Keltner Macd Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на каналах Кельтнера и MACD. Вход в длинную позицию, когда цена пробивает верхнюю границу канала Кельтнера и MACD > сигнальной. Вход в короткую, когда цена пробивает нижнюю границу канала и MACD < сигнальной. Выход, когда MACD пересекает сигнальную линию в противоположную сторону.
 

@@ -1,5 +1,5 @@
 # Supertrend Adx Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на индикаторе Supertrend и ADX для подтверждения силы тренда. Критерии входа: Long: Price > Supertrend && ADX > 25 (восходящий тренд с сильным движением) Short: Price < Supertrend && ADX > 25 (нисходящий тренд с сильным движением) Критерии выхода: Long: Price < Supertrend (цена падает ниже Supertrend) Short: Price > Supertrend (цена поднимается выше Supertrend).
 

@@ -1,5 +1,5 @@
 # Стратегия Ichimoku Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует облако Ишимоку и осциллятор Стохастик. Длинная позиция открывается, когда цена выше облака, Tenkan больше Kijun, а Стохастик в зоне перепроданности (< 20). Короткая — когда цена ниже облака, Tenkan меньше Kijun и Стохастик в зоне перекупленности (> 80).
 

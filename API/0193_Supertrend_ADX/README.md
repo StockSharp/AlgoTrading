@@ -1,5 +1,5 @@
 # Supertrend Adx Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategy based on Supertrend indicator and ADX for trend strength confirmation. Entry criteria: Long: Price > Supertrend && ADX > 25 (uptrend with strong movement) Short: Price < Supertrend && ADX > 25 (downtrend with strong movement) Exit criteria: Long: Price < Supertrend (price falls below Supertrend) Short: Price > Supertrend (price rises above Supertrend)
 
