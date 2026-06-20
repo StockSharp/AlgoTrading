@@ -1,5 +1,5 @@
 # Parabolic SAR Distance Mean Reversion
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Parabolic SAR Distance Mean Reversion strategy focuses on extreme readings of the Parabolic to exploit reversion. Wide departures from the normal level rarely last.
 

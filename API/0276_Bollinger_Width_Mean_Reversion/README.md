@@ -1,5 +1,5 @@
 # Bollinger Width Mean Reversion
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Bollinger Width Mean Reversion strategy focuses on extreme readings of the Bollinger to exploit reversion. Wide departures from the average level rarely last.
 
