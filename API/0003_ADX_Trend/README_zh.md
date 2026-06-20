@@ -1,5 +1,5 @@
 # ADX趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过平均方向指数(ADX)衡量市场趋势强度。当ADX高于阈值且价格位于均线的有利一侧时顺势进场；当ADX走弱或出现反向信号时退出。止损通常基于ATR倍数，以适应不同的波动性。
 

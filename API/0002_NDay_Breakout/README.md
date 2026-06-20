@@ -1,5 +1,5 @@
 # NDay Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 N-day high/low breakout strategy N-day breakout looks for new highs or lows over the given period. Entries occur when price pierces the latest N-day high or low, anticipating momentum. A moving-average filter and percentage stop manage exits.
 

@@ -1,5 +1,5 @@
 # ADX Trend
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategy based on Average Directional Index (ADX) trend The ADX Trend strategy gauges market strength using the ADX indicator. When ADX is above a threshold and price is on the correct side of its moving average, the system trades in that direction. Positions close once ADX weakens or the opposite setup appears.
 

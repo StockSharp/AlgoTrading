@@ -1,5 +1,5 @@
 # 三重均线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过三条移动平均线的排列确定行情方向。当短期均线位于中期和长期均线上方时做多，反向排列则做空；短线和中线交叉时平仓。三均线组合可过滤单均线的噪音，确认动量后再入场。
 

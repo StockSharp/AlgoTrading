@@ -1,5 +1,5 @@
 # Ichimoku云突破
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略依靠Ichimoku云形态信号。当价格突破云层并且转折线(Tenkan-sen)上穿基准线(Kijun-sen)时买入，反向突破则做空，直到价格返回云层内。云层给出关键支撑与阻力，多重Ichimoku组件可避免震荡期的低概率交易。
 

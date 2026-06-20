@@ -1,5 +1,5 @@
 # HMA季节性背离策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将Hull移动平均线与季节性持仓聚合结合，用来发现价格与市场定位的背离。当价格短暂背离持仓上升的方向时，通常意味着趋势将继续。本系统可双向交易，通过HMA斜率评估动量，季节性持仓数据衡量参与度。
 

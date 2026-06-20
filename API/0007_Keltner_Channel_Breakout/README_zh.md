@@ -1,5 +1,5 @@
 # Keltner通道突破
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略利用基于ATR的Keltner通道。当价格突破上轨或下轨时入场，回到EMA中线或触及止损时退出。通道会随波动扩张或收缩，旨在在行情初期捕捉强势走势，同时给价格一定的回旋空间。
 

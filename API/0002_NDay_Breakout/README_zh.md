@@ -1,5 +1,5 @@
 # N日突破
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格突破最近N日的最高或最低点时入场，并通过均线过滤和百分比止损控制风险。等待极值被突破有助于捕捉方向性行情，趋势均线过滤可避免盘整期间的假信号。
 

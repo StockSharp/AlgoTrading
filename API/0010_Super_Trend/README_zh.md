@@ -1,5 +1,5 @@
 # Super Trend 超级趋势
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于ATR的Supertrend指标。价格上破该线时看多，下破则看空，当线方向反转时平仓。由于止损随价格移动，能够在动量减弱后锁定利润，减少震荡。
 
