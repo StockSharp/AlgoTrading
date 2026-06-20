@@ -1,5 +1,5 @@
 # Стратегия "Назад на N баров"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия держит длинную позицию только в течение последних баров, отсчитываемых от текущего времени. Она демонстрирует, как ограничить торговлю движущимся историческим окном.
 

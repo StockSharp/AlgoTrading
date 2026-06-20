@@ -1,5 +1,5 @@
 # 回测模块
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 TradingView “Backtesting Module”的默认逻辑。当50周期简单移动平均线向上穿越200周期线时开多，当其向下穿越时开空。仅在设定的开始和结束时间之间进行交易。
 

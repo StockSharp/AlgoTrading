@@ -1,5 +1,5 @@
 # 平衡力量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 平衡力量策略通过比较收盘价与价格区间来衡量多空力量。当该值突破正阈值时，表示买方力量强劲。
 

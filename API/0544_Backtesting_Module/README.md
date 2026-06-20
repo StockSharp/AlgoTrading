@@ -1,5 +1,5 @@
 # Backtesting Module
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the default behaviour of the TradingView "Backtesting Module". It trades a simple moving average crossover: a long position is opened when the 50-period SMA crosses above the 200-period SMA, and a short position is opened when the opposite crossover occurs. Trading is allowed only between the specified start and end times.
 

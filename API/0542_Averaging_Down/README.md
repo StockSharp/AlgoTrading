@@ -1,5 +1,5 @@
 # Averaging Down Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Averaging Down strategy buys when the Relative Strength Index (RSI) drops below a defined threshold. Each signal adds to the existing long position, averaging the entry price. The strategy exits when the closing price breaks above the previous bar's high.
 

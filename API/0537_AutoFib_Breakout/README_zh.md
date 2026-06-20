@@ -1,5 +1,5 @@
 # AutoFib Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据最近的摆动高点和低点绘制动态斐波那契扩展，当价格在上升趋势（EMA200）中突破1.618水平时做多。风险通过基于ATR的止损和目标进行管理。
 

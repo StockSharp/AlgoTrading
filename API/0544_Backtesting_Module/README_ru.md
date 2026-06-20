@@ -1,5 +1,5 @@
 # Модуль бэктеста
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия повторяет поведение индикатора TradingView «Backtesting Module». Она использует пересечение простых скользящих средних: длинная позиция открывается, когда SMA(50) пересекает сверху SMA(200), короткая — при обратном пересечении. Торговля разрешена только между указанными временем начала и окончания.
 

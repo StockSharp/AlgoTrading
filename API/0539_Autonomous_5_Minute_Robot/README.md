@@ -1,5 +1,5 @@
 # Autonomous 5-Minute Robot Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Autonomous 5-Minute Robot strategy trades on a 5-minute timeframe.
 It goes long when price is trending up and buying pressure exceeds selling pressure,

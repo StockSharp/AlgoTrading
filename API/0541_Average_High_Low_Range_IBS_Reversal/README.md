@@ -1,5 +1,5 @@
 # Average High-Low Range IBS Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy seeks mean reversion after price has stayed below a dynamic threshold derived from the average high-low range. It calculates the moving average of the bar range, the highest high and lowest low over the lookback period. A buy threshold is defined as the highest high minus 2.5 times the average range. When price remains below this level for a specified number of bars and the intrabar strength (IBS) is under a given limit within the trading window, a long position is opened. The position is closed if the close exceeds the previous bar's high.
 

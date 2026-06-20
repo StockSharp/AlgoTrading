@@ -1,5 +1,5 @@
 # Averaging Down 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Averaging Down 策略在 RSI 低于设定阈值时继续加仓做多，从而摊低平均持仓价格。当收盘价突破前一根 K 线的最高价时平仓。
 

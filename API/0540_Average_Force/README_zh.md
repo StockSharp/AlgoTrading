@@ -1,5 +1,5 @@
 # Average Force 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Average Force 策略使用一个振荡器来衡量收盘价在设定周期内最高价和最低价之间的位置，并通过移动平均线平滑结果。正值表示向上的力量，负值表示向下的压力。
 

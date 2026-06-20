@@ -1,5 +1,5 @@
 # Стратегия Balance of Power
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Balance of Power измеряет силу покупателей и продавцов внутри каждой свечи, сравнивая цену закрытия с диапазоном. Когда значение пересекает положительный порог, это указывает на сильное давление покупателей.
 

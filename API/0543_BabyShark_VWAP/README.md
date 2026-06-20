@@ -1,5 +1,5 @@
 # BabyShark VWAP Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a volume-weighted average price (VWAP) band with an OBV-based RSI filter. Long trades occur when price drops below the lower deviation band and the RSI signals oversold. Short trades trigger when price rises above the upper band and RSI is overbought.
 

@@ -1,5 +1,5 @@
 # Average High-Low Range IBS Reversal策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格持续低于基于高低价平均范围的动态阈值时寻找均值回归。它计算条形高低区间的移动平均值，以及在回溯期内的最高价和最低价。买入阈值定义为最高价减去2.5倍的平均范围。当价格在该水平下方维持指定数量的柱，并且柱内强度(IBS)在交易窗口内低于设定值时，开立多头仓位。若收盘价超过前一根柱的最高价，则平仓。
 

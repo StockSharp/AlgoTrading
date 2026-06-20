@@ -1,5 +1,5 @@
 # Balance of Power Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Balance of Power strategy evaluates the strength of bulls versus bears within each candle by comparing the close to the trading range. When this value crosses above a positive threshold, it indicates strong buying pressure.
 

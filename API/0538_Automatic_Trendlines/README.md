@@ -1,5 +1,5 @@
 # Automatic Trendlines Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Builds dynamic support and resistance trendlines by connecting recent pivot highs and lows. A long signal occurs when price closes above the resistance line, while a short signal fires when price drops below the support line.
 

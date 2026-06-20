@@ -1,5 +1,5 @@
 # 自动化5分钟机器人策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 自动化5分钟机器人策略基于5分钟K线。
 当价格处于上升趋势并且买入量大于卖出量时做多，

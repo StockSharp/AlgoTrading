@@ -1,5 +1,5 @@
 # BabyShark VWAP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合了成交量加权平均价 (VWAP) 通道和基于 OBV 的 RSI 过滤。价格跌破下方偏差带并且 RSI 显示超卖时做多；价格升破上方偏差带且 RSI 表现为超买时做空。
 
