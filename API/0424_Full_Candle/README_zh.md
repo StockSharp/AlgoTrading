@@ -1,5 +1,5 @@
 # Full Candle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当蜡烛收盘突破 EMA 且突破侧仅留下很小的影线时触发入场，旨在捕捉带有明确动力的K线。可选的百分比止盈与止损用于在持仓期间管理风险。
 

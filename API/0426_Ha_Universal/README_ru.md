@@ -1,5 +1,5 @@
 # Универсальная стратегия Heikin Ashi
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Этот универсальный шаблон преобразует обычные свечи в Heikin Ashi и торгует в направлении их тела. Метод сглаживает ценовой шум, делая тренды более заметными. Он легковесен и может служить базой для пользовательских фильтров и выходов.
 

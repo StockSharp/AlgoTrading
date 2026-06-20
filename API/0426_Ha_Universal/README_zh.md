@@ -1,5 +1,5 @@
 # Heikin Ashi 通用策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该模板将普通K线转换为Heikin Ashi，并根据其实体方向进行交易。此方法能够平滑价格噪声，使趋势更加明显，可作为添加其他过滤器或退出条件的基础。
 

@@ -1,5 +1,5 @@
 # Exceeded Candle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找形成在布林带中轨以下的看涨吞没形态。当绿色蜡烛完全包住前一根红色蜡烛时，预示回调可能结束，价格倾向于回到上轨。若连续出现三根红色蜡烛则取消新的入场信号，系统只做多。
 

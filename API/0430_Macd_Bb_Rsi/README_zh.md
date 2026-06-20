@@ -1,5 +1,5 @@
 # MACD + Bollinger Bands + RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该组合策略在 MACD 指示的趋势中寻找超出布林带的回调。当 MACD 为正但价格收于下轨之下且 RSI 处于超卖时买入，期待趋势延续；做空条件与此相反。
 

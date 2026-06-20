@@ -1,5 +1,5 @@
 # Grid Bot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 网格机器人把预设的价格区间划分为等距层级，并在其间的波动中交易。当价格向网格下半部移动时买入，回到上半部时卖出。该方法在边界清晰的盘整行情中表现良好。
 

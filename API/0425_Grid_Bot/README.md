@@ -1,5 +1,5 @@
 # Grid Bot Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The grid bot divides a predefined price range into equal levels and trades the oscillations between them. When price drifts toward the lower half of the grid the strategy accumulates long positions, selling them as price returns to the upper half. This approach thrives in sideways markets with clear bounds.
 

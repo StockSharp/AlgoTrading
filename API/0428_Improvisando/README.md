@@ -1,5 +1,5 @@
 # Improvisando Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Improvisando mixes a basic EMA trend filter with RSI swings. The goal is to follow the prevailing direction indicated by the EMA while entering only when the RSI crosses the neutral 50 line. The original design also experimented with MACD style momentum but this simplified version focuses on clarity and ease of tuning.
 

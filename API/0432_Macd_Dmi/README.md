@@ -1,5 +1,5 @@
 # MACD + DMI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines the Moving Average Convergence Divergence with the Directional Movement Index to trade only when trend strength is confirmed. The system waits for a MACD crossover and checks that the dominant directional line exceeds the opposite line while the ADX is above a key level.
 

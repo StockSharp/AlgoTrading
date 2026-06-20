@@ -1,5 +1,5 @@
 # MACD + DMI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将移动平均收敛背离指标与方向性运动指数结合，只在趋势强度得到确认时交易。系统等待 MACD 金叉/死叉，同时检查主导方向线高于相反方向线，并且 ADX 高于关键水平。
 

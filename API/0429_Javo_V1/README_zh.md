@@ -1,5 +1,5 @@
 # Javo v1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Javo v1 将 Heikin Ashi 蜡烛与两条 EMA 结合。当 HA 方向与快慢 EMA 的交叉一致时开仓，旨在捕捉新出现的趋势并减少噪声。
 

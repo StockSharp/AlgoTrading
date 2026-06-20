@@ -1,5 +1,5 @@
 # Стратегия Heikin Ashi V2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Вторая версия системы Heikin Ashi добавляет фильтр EMA. Сделки совершаются только тогда, когда направление свечи Heikin Ashi совпадает с трендом, определяемым EMA. Такой фильтр помогает избегать контртрендовых сигналов, которые может давать чистый HA.
 

@@ -1,5 +1,5 @@
 # Heikin Ashi V2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该版本在通用 Heikin Ashi 策略上加入 EMA 过滤器。仅当 Heikin Ashi 蜡烛方向与 EMA 定义的趋势一致时才进场，从而避免单纯 HA 可能产生的逆势信号。
 

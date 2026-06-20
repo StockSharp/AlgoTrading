@@ -1,5 +1,5 @@
 # Javo v1 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Javo v1 combines Heikin Ashi candles with a pair of exponential moving averages. A position is opened when the HA direction and the fast/slow EMA crossover align. The approach attempts to catch emerging trends while smoothing noise.
 

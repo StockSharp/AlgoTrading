@@ -1,5 +1,5 @@
 # Improvisando 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Improvisando 将 EMA 趋势过滤器与 RSI 摆动结合。目标是在 EMA 指示的方向上操作，并在 RSI 穿越50中轴时入场。原始设计还尝试使用 MACD 动量，但简化版更注重易懂和易调。
 

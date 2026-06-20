@@ -1,5 +1,5 @@
 # Стратегия Javo v1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Javo v1 сочетает свечи Heikin Ashi с двумя экспоненциальными средними. Позиция открывается, когда направление HA и пересечение быстрого и медленного EMA совпадают. Подход пытается уловить зарождающийся тренд, сглаживая шум.
 

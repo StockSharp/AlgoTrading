@@ -1,5 +1,5 @@
 # Heikin Ashi Universal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This universal template converts standard candles into Heikin Ashi ones and trades in the direction of their body. The method smooths price noise, allowing trends to appear more clearly. It is lightweight and can serve as a base for custom filters or exits.
 

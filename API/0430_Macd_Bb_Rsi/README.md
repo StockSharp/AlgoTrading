@@ -1,5 +1,5 @@
 # MACD + Bollinger Bands + RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This composite setup looks for pullbacks against the prevailing MACD momentum that stretch beyond the Bollinger Bands. When MACD is positive yet price closes below the lower band with an oversold RSI, the strategy buys in anticipation of a trend continuation. The opposite applies for shorts.
 

@@ -1,5 +1,5 @@
 # Flawless Victory 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Flawless Victory 是一种模块化动量系统，将振荡指标与布林带结合。根据不同版本，它可以仅依赖 RSI 信号、加入固定的止盈止损百分比，或要求资金流量指标 MFI 共同确认。目标是在波动带边缘捕捉耗竭并利用价格回归。
 
