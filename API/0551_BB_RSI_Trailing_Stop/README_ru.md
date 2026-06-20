@@ -1,5 +1,5 @@
 # Стратегия BB RSI Trailing Stop
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Комбинирует полосы Боллинджера с RSI и использует условный трейлинг-стоп.
 Покупка происходит при пробое нижней полосы и выходе RSI из перепроданности. Продажа — при пробое верхней полосы и выходе RSI из перекупленности.

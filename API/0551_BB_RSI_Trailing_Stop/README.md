@@ -1,5 +1,5 @@
 # BB RSI Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines Bollinger Bands with RSI momentum and protects trades with a conditional trailing stop.
 Longs occur when price pierces the lower band and RSI exits oversold. Shorts trigger on the upper band with overbought RSI.

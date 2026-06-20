@@ -1,5 +1,5 @@
 # Bbsr Extreme
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Bbsr Extreme** сочетает пробои полос Боллинджера с фильтром тренда на основе скользящей средней.
 Лонг открывается при отбое от нижней полосы и росте средней, шорт — при откате от верхней полосы и снижении средней.

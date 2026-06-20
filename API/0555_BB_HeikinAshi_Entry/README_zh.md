@@ -1,5 +1,5 @@
 # Bollinger Bands Heikin Ashi 入场
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合Heikin Ashi蜡烛与布林带。
 

@@ -1,5 +1,5 @@
 # Стратегия Bar Range
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Bar Range входит в лонг, когда диапазон текущей свечи находится в верхнем процентиле последних значений и свеча закрывается ниже открытия. Позиция закрывается через заданное количество свечей.
 

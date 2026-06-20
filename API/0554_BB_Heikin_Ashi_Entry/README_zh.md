@@ -1,5 +1,5 @@
 # Bollinger Heikin Ashi Entry 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 Heikin Ashi 蜡烛上使用布林带。出现两个连续触及下轨的看跌 HA 蜡烛后，如果下一根 HA 蜡烛收在下轨之上则做多；相反条件做空。
 

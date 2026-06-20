@@ -1,5 +1,5 @@
 # Bbsr Extreme
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Bbsr Extreme** 策略结合布林带突破和均线趋势过滤。
 当价格从下轨反弹且均线上升时做多；当价格从上轨回落且均线下降时做空。

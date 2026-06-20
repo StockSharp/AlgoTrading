@@ -1,5 +1,5 @@
 # Bollinger Heikin Ashi Entry Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy using Bollinger Bands on Heikin Ashi candles. Buys after two consecutive bearish Heikin Ashi candles touching the lower band followed by a bullish candle above it. Sells in reverse.
 

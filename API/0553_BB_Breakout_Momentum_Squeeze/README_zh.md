@@ -1,5 +1,5 @@
 # BB Breakout Momentum Squeeze 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BB Breakout Momentum Squeeze 策略将布林带突破振荡器与波动率挤压过滤器结合。当布林带突破肯特纳通道时被视为挤压结束，可能出现波动扩张。若在此阶段多头振荡器突破阈值则做多，空头振荡器突破阈值则做空。退出基于 ATR 带和风险回报目标。
 

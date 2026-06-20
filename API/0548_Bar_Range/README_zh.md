@@ -1,5 +1,5 @@
 # Bar Range策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bar Range策略在当前K线范围位于近期最高百分位且收盘价低于开盘价时做多，并在固定数量的K线后平仓。
 

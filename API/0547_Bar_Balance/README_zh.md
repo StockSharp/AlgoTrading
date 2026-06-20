@@ -1,5 +1,5 @@
 # Bar Balance 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略衡量每根K线内部向上与向下波动的平衡。正值表示多头占优，负值表示空头压力。
 

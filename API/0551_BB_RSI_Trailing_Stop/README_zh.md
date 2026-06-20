@@ -1,5 +1,5 @@
 # BB RSI Trailing Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将布林带与RSI动量结合，并在利润达到指定阈值后启用跟踪止损。
 当价格跌破下轨且RSI从超卖区上穿时做多；价格突破上轨且RSI从超买区下穿时做空。

@@ -1,5 +1,5 @@
 # 贝叶斯 BBSMA 振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用基于布林带和简单移动平均的贝叶斯模型来估计下一根K线向上或向下突破的概率。可选的比尔·威廉姆斯指标（Accelerator 与 Alligator）确认可用于过滤信号。当向上突破的概率超过阈值时开多单；当向下突破的概率较高时开空单。
 

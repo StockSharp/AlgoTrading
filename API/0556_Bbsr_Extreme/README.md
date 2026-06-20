@@ -1,5 +1,5 @@
 # Bbsr Extreme
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Bbsr Extreme** strategy combines Bollinger Bands breakouts with a trend filter based on a moving average.
 A long position appears when price rebounds from the lower band while the average is rising.
