@@ -1,5 +1,5 @@
 # Fib Hurst Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Fib Hurst Breakout** сочетает уровни Фибоначчи с дневного таймфрейма и фильтр экспоненты Херста. Пробитие ключевых уровней в сторону тренда даёт сигнал, а стоп 2% и соотношение риск/прибыль 1:2 управляют риском.
 

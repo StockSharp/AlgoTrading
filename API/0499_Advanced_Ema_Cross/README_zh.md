@@ -1,5 +1,5 @@
 # 高级EMA交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当短期EMA上穿长期EMA时，该策略做多，并通过归一化ATR、ADX趋势强度以及SuperTrend方向过滤信号。止损和止盈根据通过50周期EMA推断的美元强弱自适应调整。
 

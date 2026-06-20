@@ -1,5 +1,5 @@
 # 高级Supertrend策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 高级Supertrend策略在经典Supertrend指标基础上加入RSI、均线和趋势强度等可选过滤器。Supertrend由空翻多时做多，由多翻空时做空。可选的止损和止盈基于ATR倍数。
 

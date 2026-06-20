@@ -1,5 +1,5 @@
 # 高级多季节性策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据预设的季节性周期进行交易。最多可配置四个周期，每个周期拥有独立的入场日期、持有天数和方向。
 

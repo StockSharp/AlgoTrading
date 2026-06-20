@@ -1,5 +1,5 @@
 # Расширенная стратегия Supertrend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Расширенная стратегия Supertrend дополняет классический индикатор Supertrend опциональными фильтрами RSI, скользящей средней и силы тренда. Вход в лонг происходит при смене Supertrend на бычий, вход в шорт — при смене на медвежий. Необязательные стоп‑лосс и тейк‑профит рассчитываются как кратные ATR.
 

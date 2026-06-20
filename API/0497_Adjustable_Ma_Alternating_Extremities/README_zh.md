@@ -1,5 +1,5 @@
 # 可调移动平均与交替极值策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用布林带模拟可调移动平均，并跟踪交替的极值。当价格突破上轨时开多单，当价格跌破下轨时开空单。极值状态交替变化，避免连续同方向交易。
 

@@ -1,5 +1,5 @@
 # Fib Hurst Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Fib Hurst Breakout combines Fibonacci retracement levels from the daily timeframe with a Hurst exponent filter. Price crossing the key Fibonacci levels in the direction of the prevailing trend triggers entries while a 2% stop and 1:2 risk-reward manage risk.
 

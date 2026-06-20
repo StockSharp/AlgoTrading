@@ -1,5 +1,5 @@
 # Gold RSI Divergence 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gold RSI Divergence 策略通过识别价格与相对强弱指数 (RSI) 之间的背离来对黄金进行短线交易。
 当价格创出新低而 RSI 创出更高低点时，策略做多；

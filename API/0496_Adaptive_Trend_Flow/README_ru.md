@@ -1,5 +1,5 @@
 # Стратегия Adaptive Trend Flow
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Adaptive Trend Flow строит волатильностный канал на основе быстрых и медленных EMA типичной цены. Когда цена пересекает границы канала, внутренний тренд сменяется. Длинные позиции открываются при смене тренда вверх, если дополнительные фильтры SMA и MACD подтверждают сигнал. Позиции закрываются при смене тренда вниз.
 

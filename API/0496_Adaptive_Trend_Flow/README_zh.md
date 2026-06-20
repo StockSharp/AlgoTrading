@@ -1,5 +1,5 @@
 # Adaptive Trend Flow策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Adaptive Trend Flow策略基于典型价格的快慢EMA构建波动率通道。当价格突破通道边界时，内部趋势发生反转。趋势向上并且可选的SMA和MACD过滤条件满足时开多仓；当趋势转向下方时平掉仓位。
 

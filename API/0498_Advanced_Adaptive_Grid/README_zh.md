@@ -1,5 +1,5 @@
 # 高级自适应网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 高级自适应网格策略利用多种技术指标判断趋势方向，并根据ATR波动性调整网格间距。价格触及网格水平并得到RSI确认时开仓，方向取决于当前趋势。风险控制包含固定止损、止盈、跟踪止损、时间退出以及每日亏损限制。
 
