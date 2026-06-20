@@ -1,5 +1,5 @@
 # Vwap Cci Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Implementation of strategy - VWAP + CCI. Buy when price is below VWAP and CCI is below -100 (oversold). Sell when price is above VWAP and CCI is above 100 (overbought).
 

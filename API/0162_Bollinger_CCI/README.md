@@ -1,5 +1,5 @@
 # Bollinger Cci Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Implementation of strategy - Bollinger Bands + CCI. Buy when price is below lower Bollinger Band and CCI is below -100 (oversold). Sell when price is above upper Bollinger Band and CCI is above 100 (overbought).
 

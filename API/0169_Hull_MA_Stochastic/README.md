@@ -1,5 +1,5 @@
 # Hull Ma Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Hull Moving Average + Stochastic Oscillator strategy. Strategy enters when HMA trend direction changes with Stochastic confirming oversold/overbought conditions.
 

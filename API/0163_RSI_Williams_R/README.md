@@ -1,5 +1,5 @@
 # Rsi Williams R Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Implementation of strategy - RSI + Williams %R. Buy when RSI is below 30 and Williams %R is below -80 (double oversold condition). Sell when RSI is above 70 and Williams %R is above -20 (double overbought condition).
 

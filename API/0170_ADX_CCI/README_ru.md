@@ -1,5 +1,5 @@
 # Стратегия Adx Cci
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на индикаторах ADX и CCI. Вход в покупки при ADX > 25 и CCI ниже -100 (перепроданность). Вход в продажи при ADX > 25 и CCI выше 100 (перекупленность).
 

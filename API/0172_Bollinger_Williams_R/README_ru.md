@@ -1,5 +1,5 @@
 # Стратегия Bollinger Williams R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на полосах Боллинджера и индикаторе Williams %R. Покупка совершается, когда цена у нижней полосы и Williams %R в перепроданности (< -80). Продажа — когда цена у верхней полосы и Williams %R в перекупленности (> -20).
 

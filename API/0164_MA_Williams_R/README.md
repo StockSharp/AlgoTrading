@@ -1,5 +1,5 @@
 # Ma Williams R Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Implementation of strategy - MA + Williams %R. Buy when price is above MA and Williams %R is below -80 (oversold). Sell when price is below MA and Williams %R is above -20 (overbought).
 
