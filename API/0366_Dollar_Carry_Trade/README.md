@@ -1,5 +1,5 @@
 # Dollar Carry Trade
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Dollar Carry Trade** strategy ranks USD currency pairs by interest-rate differential and goes long USD against low-carry currencies and short against high-carry currencies. Rebalances monthly on the first trading day.
 

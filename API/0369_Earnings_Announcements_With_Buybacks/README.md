@@ -1,5 +1,5 @@
 # Earnings Announcements With Buybacks
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Earnings Announcements With Buybacks** strategy buys stocks running active buyback programs a few days before their earnings announcements and exits shortly after the report.
 

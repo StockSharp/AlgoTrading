@@ -1,5 +1,5 @@
 # 加密再平衡溢价策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略保持比特币和以太坊的等权组合。通过每周再平衡，试图捕捉两种资产波动带来的再平衡溢价。
 

@@ -1,5 +1,5 @@
 # 货币动量因子策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略按中期动量对货币进行排序，构建多空组合。动量最强的货币做多，最弱的做空，头寸等权分配。
 

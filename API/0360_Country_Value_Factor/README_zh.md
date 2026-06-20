@@ -1,5 +1,5 @@
 # 国家价值因子策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略按席勒CAPE比率对各国股市进行排序。CAPE最低的国家被视为低估并买入，而昂贵市场被避开。此方法利用了低估市场长期跑赢的现象。
 

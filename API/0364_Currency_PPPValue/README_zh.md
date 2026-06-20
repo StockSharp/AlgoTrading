@@ -1,5 +1,5 @@
 # 货币PPP价值策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于购买力平价（PPP）的偏离来寻找价值。低于PPP估值的货币被买入，高于PPP估值的货币被做空。组合每月再平衡，以维持多空敞口。
 

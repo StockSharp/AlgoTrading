@@ -1,5 +1,5 @@
 # 离散交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 离散交易策略利用指数与成分股之间的分化。当成分股之间的平均相关性低于阈值时，策略买入这些股票并做空指数，押注相关性回归。
 

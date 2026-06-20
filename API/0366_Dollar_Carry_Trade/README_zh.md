@@ -1,5 +1,5 @@
 # Dollar Carry Trade
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Dollar Carry Trade** 策略根据利率差对美元货币对进行排名：对低利差货币做多美元，对高利差货币做空美元。每月第一个交易日再平衡。
 

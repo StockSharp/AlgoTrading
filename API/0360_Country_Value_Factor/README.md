@@ -1,5 +1,5 @@
 # Country Value Factor Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Country Value Factor strategy ranks equity markets by the Shiller CAPE ratio. Countries with the lowest CAPE are considered cheap and are bought, while expensive markets are avoided. The approach exploits the tendency for undervalued markets to outperform over time.
 

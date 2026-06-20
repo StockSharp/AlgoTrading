@@ -1,5 +1,5 @@
 # Earnings Announcements With Buybacks
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Earnings Announcements With Buybacks** 策略在公司财报前几天若存在股票回购计划则买入，并在财报后不久卖出。
 

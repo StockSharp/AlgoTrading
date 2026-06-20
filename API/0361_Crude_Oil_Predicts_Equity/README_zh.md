@@ -1,5 +1,5 @@
 # 原油预测股票策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用原油和股票收益之间的关系。如果过去一个月原油收益为正，则资金投入股票ETF；否则转向现金或债券ETF，在油价疲弱时退出股市。
 
