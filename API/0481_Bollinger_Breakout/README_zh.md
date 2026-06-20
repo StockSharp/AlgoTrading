@@ -1,5 +1,5 @@
 # 4小时布林突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 4小时布林突破策略在四小时图上交易布林带突破。当价格向上穿越下轨并且成交量和趋势得到确认时做多；当价格向下穿越上轨且 RSI 低于阈值时做空。
 

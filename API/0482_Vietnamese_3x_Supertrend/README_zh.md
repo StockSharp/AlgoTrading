@@ -1,5 +1,5 @@
 # Vietnamese 3x Supertrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用三个不同 ATR 参数的 SuperTrend 指标。当慢速趋势仍为下行时，在回调处逐步建立多头头寸。价格向有利方向运行后，可选择启用保本止损。
 

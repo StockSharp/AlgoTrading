@@ -1,5 +1,5 @@
 # Стратегия Three Kilos BTC 15m
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Three Kilos BTC 15m использует три индикатора TEMA и фильтр Supertrend. Лонг открывается, когда средняя TEMA пересекает снизу короткую, располагается выше медленной и Supertrend показывает восходящий тренд. Шорт открывается, когда короткая TEMA пересекает сверху среднюю, средняя ниже медленной и Supertrend указывает на нисходящий тренд. Фиксированные проценты тейк‑профита и стоп‑лосса управляют рисками.
 

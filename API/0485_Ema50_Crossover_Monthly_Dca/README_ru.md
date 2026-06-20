@@ -1,5 +1,5 @@
 # Стратегия EMA50 Crossover Monthly DCA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда цена закрывается выше 50-периодной EMA, и ежемесячно добавляет позицию. Неиспользованные DCA суммы копятся в виде наличных и инвестируются при возобновлении тренда.
 

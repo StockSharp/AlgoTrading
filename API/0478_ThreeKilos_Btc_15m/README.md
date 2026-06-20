@@ -1,5 +1,5 @@
 # Three Kilos BTC 15m Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Three Kilos BTC 15m strategy combines three Triple Exponential Moving Averages (TEMA) with a Supertrend filter. A long position is opened when the middle TEMA crosses above the short TEMA, stays above the slow TEMA, and the Supertrend indicates an uptrend. A short position is opened when the short TEMA crosses above the middle TEMA, remains below the slow TEMA, and the Supertrend shows a downtrend. Fixed percentage take profit and stop loss manage risk.
 

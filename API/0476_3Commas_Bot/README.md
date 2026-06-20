@@ -1,5 +1,5 @@
 # 3Commas Bot Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simplified version of the 3Commas Bot strategy. It trades when a fast EMA crosses a slower EMA and manages risk using an ATR based stop. A fixed reward target and optional ATR trailing stop are supported.
 

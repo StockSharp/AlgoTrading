@@ -1,5 +1,5 @@
 # 5 EMA 无触摸突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 5 EMA 无触摸突破策略等待一根完全位于 5 周期 EMA 一侧的K线。当价格随后突破该K线的极值时，策略按突破方向入场。止损放在该K线的另一端，止盈设为风险的倍数。
 

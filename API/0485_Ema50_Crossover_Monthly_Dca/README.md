@@ -1,5 +1,5 @@
 # EMA50 Crossover Monthly DCA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 EMA50 Crossover Monthly DCA buys when price closes above the 50-period EMA and accumulates additional positions each month. Uninvested DCA amounts are stored as cash and deployed once the trend resumes.
 

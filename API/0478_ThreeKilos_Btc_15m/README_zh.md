@@ -1,5 +1,5 @@
 # Three Kilos BTC 15m 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Three Kilos BTC 15m 策略结合三条 TEMA 指标和 Supertrend 滤波器。当中期 TEMA 上穿短期 TEMA、同时高于长期 TEMA 且 Supertrend 显示上升趋势时开多；当短期 TEMA 上穿中期 TEMA、同时低于长期 TEMA 且 Supertrend 显示下降趋势时开空。固定百分比的止盈和止损用于风险控制。
 

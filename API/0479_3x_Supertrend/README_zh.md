@@ -1,5 +1,5 @@
 # 3x Supertrend
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **3x Supertrend** 使用三个不同周期和倍数的 ATR 线。
 当价格站上所有三条线且快速线转为上行时开多仓；

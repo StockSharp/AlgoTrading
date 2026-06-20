@@ -1,5 +1,5 @@
 # 3Commas Bot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 3Commas Bot 策略的简化版本。当快速 EMA 上穿或下穿慢速 EMA 时开仓，风险管理使用 ATR 止损，可选的固定收益目标和基于 ATR 的追踪止损。
 

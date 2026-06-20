@@ -1,5 +1,5 @@
 # Vietnamese 3x Supertrend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy stacks three SuperTrend indicators with different ATR lengths and multipliers. It scales into long positions when the slow trend is bearish and faster trends show pullback opportunities. An optional break-even stop protects profits once price moves favorably.
 

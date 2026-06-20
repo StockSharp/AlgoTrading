@@ -1,5 +1,5 @@
 # 5 EMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The 5 EMA strategy marks a candle that closes entirely below or above the 5-period EMA. If price breaks the signal candle's extreme within three bars and outside the block window, the strategy enters in the breakout direction. Targets are based on a user-defined reward-to-risk ratio and trades can be forcibly closed at a specific time.
 

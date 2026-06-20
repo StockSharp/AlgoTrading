@@ -1,5 +1,5 @@
 # Scalping EMA RSI MACD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在30分钟K线下运行，结合快慢EMA交叉、趋势EMA、RSI与MACD过滤，并加入成交量条件。止损基于ATR，止盈使用固定的风险收益比。
 

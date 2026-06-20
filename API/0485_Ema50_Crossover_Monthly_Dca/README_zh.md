@@ -1,5 +1,5 @@
 # EMA50 Crossover Monthly DCA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价高于50期EMA时买入，每月追加投资。未使用的DCA金额会累积为现金并在趋势恢复时投入。
 

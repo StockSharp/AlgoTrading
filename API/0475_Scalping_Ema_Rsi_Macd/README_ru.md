@@ -1,5 +1,5 @@
 # Стратегия Scalping EMA RSI MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Скальпинговая стратегия на 30‑минутных свечах использует пересечение быстрых и медленных EMA, трендовую EMA, фильтры RSI и MACD, а также условие по объёму. Стоп-лосс рассчитывается по ATR, тейк-профит определяется фиксированным соотношением риск/прибыль.
 

@@ -1,5 +1,5 @@
 # 5 EMA No-Touch Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The 5 EMA No-Touch Breakout strategy waits for a candle that remains entirely on one side of the 5-period EMA. When price later breaks the extreme of that setup candle, the strategy enters in the breakout direction. The stop-loss is placed at the opposite extreme and the take-profit is set at a multiple of the risk.
 

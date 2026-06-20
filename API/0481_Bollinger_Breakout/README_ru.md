@@ -1,5 +1,5 @@
 # Стратегия 4H Bollinger Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия 4H Bollinger Breakout торгует пробои полос Боллинджера на четырёхчасовом графике. Длинные позиции открываются при пересечении ценой нижней полосы снизу вверх при подтверждении объёмом и трендом. Короткие позиции открываются при пересечении цены верхней полосы сверху вниз и RSI ниже порога.
 

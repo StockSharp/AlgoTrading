@@ -1,5 +1,5 @@
 # 四柱动量反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 四柱动量反转策略在选定时间窗口内，当收盘价连续 `BuyThreshold` 根K线低于 `Lookback` 根之前的收盘价时做多。一旦价格突破前一根K线的最高价，仓位被平掉。
 

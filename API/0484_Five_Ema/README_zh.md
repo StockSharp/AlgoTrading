@@ -1,5 +1,5 @@
 # 5 EMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 5 EMA 策略会记录一根完全收盘在 5 周期 EMA 之下或之上的K线。如果在三根K线内价格突破该信号K线的极值且不在禁止交易的时间窗口内，策略按突破方向入场。目标基于用户设定的风险收益比，并且可以在指定时间强制平仓。
 

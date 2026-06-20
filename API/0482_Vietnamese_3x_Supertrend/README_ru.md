@@ -1,5 +1,5 @@
 # Стратегия Vietnamese 3x Supertrend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует три индикатора SuperTrend с разными параметрами ATR. Входы в длинную позицию выполняются на откатах, когда медленный тренд остается нисходящим. При благоприятном движении можно включить стоп в точке безубытка.
 

@@ -1,5 +1,5 @@
 # Стратегия 3Commas Bot
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Упрощённая версия стратегии 3Commas Bot. Открывает сделки при пересечении быстрой EMA и медленной EMA. Управление рисками реализовано через стоп по ATR, поддерживаются фиксированная цель прибыли и опциональный трейлинг-стоп на основе ATR.
 
