@@ -1,5 +1,5 @@
 # Фигура "Двойная вершина"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Фигура "Двойная вершина" характеризуется двумя пиками, разделёнными несколькими барами с близкими ценами. После формирования второго пика медвежья свеча подтверждает разворот.
 

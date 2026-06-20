@@ -1,5 +1,5 @@
 # MACD Divergence
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 MACD Divergence looks for disagreement between price action and the MACD indicator. Higher highs in price but lower highs in MACD suggest weakening momentum (bearish divergence), while lower lows in price and higher MACD lows hint at bullish reversal.
 

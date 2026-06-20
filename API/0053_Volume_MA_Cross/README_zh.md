@@ -1,5 +1,5 @@
 # 成交量均线交叉 (Volume MA Cross)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用成交量快慢均线交叉判断参与度变化。
 

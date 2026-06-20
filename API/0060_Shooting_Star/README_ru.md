@@ -1,5 +1,5 @@
 # Фигура "Падающая звезда"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Свеча "падающая звезда" часто появляется после роста и предупреждает о возможном развороте. Стратегия ищет длинную верхнюю тень относительно тела и почти отсутствие нижней тени.
 

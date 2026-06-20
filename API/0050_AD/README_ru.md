@@ -1,5 +1,5 @@
 # Тренд по индикатору накопления/распределения
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует индикатор Accumulation/Distribution (A/D) для оценки покупательского и продавцкого давления. Рост A/D вместе с ценой выше скользящей средней указывает на накопление, падение A/D при цене ниже средней — на распределение.
 

@@ -1,5 +1,5 @@
 # 成交量激增趋势 (Volume Spike Trend)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当成交量超过平均值乘以倍数时表明强烈参与。
 

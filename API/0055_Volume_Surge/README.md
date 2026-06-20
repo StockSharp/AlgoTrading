@@ -1,5 +1,5 @@
 # Volume Surge
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Volume Surge identifies unusually high volume relative to the moving average. When the ratio exceeds the defined multiplier, it signals strong interest and potential continuation in the direction of price relative to its moving average.
 

@@ -1,5 +1,5 @@
 # Volume Divergence
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Volume Divergence looks for discrepancies between price movement and trading volume. If price falls but volume increases, it may signal accumulation; if price rises with strong volume, it may signal distribution.
 

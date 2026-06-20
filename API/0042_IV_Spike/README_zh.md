@@ -1,5 +1,5 @@
 # 隐含波动飙升 (Implied Volatility Spike)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 监控隐含波动率急剧上升并与均线方向相反时做短期反转。
 

@@ -1,5 +1,5 @@
 # VWAP突破 (VWAP Breakout)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 价格从另一侧穿越成交量加权平均价(VWAP)时视为突破。
 

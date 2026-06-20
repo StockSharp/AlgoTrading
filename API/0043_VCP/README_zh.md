@@ -1,5 +1,5 @@
 # 波动收缩形态 (Volatility Contraction Pattern)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 寻找一系列逐渐收窄的价格区间, 为爆发行情蓄势。
 

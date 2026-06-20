@@ -1,5 +1,5 @@
 # 震荡指数突破 (Choppiness Index Breakout)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用Choppiness Index判断市场从震荡转向趋势。
 

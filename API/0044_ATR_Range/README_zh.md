@@ -1,5 +1,5 @@
 # ATR区间突破 (ATR Range Breakout)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 价格移动超过ATR平均值时顺势开仓。
 

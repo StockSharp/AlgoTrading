@@ -1,5 +1,5 @@
 # RSI超买超卖 (RSI Overbought/Oversold)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当RSI跌破超卖水平时买入, 升破超买水平时卖出。
 

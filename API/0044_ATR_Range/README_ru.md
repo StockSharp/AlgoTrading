@@ -1,5 +1,5 @@
 # Прорыв диапазона ATR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Прорыв диапазона ATR измеряет движение цены за фиксированное число баров и сравнивает его со средним истинным диапазоном. Когда движение превышает значение ATR, открывается позиция в направлении движения.
 
