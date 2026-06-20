@@ -1,5 +1,5 @@
 # 随机RSI交叉
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略关注StochRSI的%K与%D线交叉。接近超卖区的金叉触发做多，接近超买区的死叉触发做空，反向交叉时平仓。由于StochRSI波动很快，信号频繁，通常要求交叉靠近极值以过滤噪音。
 

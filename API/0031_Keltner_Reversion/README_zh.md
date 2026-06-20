@@ -1,5 +1,5 @@
 # Keltner均值回归 (Keltner Reversion)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格突破Keltner通道时做反向交易, 期望价格回到中轨。
 

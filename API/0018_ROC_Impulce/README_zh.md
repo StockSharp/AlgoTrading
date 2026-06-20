@@ -1,5 +1,5 @@
 # ROC动量突发
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略捕捉ROC指标的突然脉冲。ROC快速向上冲高时做多，快速向下跌破时做空，当动量回落至零附近则平仓。可调整触发阈值以只在极端动量事件时入场，ATR止损防止冲高回落造成大亏。
 

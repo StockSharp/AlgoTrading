@@ -1,5 +1,5 @@
 # CCI 突破
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用CCI（商品通道指数）捕捉强劲走势。当CCI突破正负阈值时入场，CCI回落至零附近或出现反向信号时离场。CCI衡量价格相对均线的偏离，极端读数意味着价格可能不可持续，本系统等待这些极端后跟随行情。
 

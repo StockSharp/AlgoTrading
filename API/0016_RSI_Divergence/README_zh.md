@@ -1,5 +1,5 @@
 # RSI背离
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略寻找价格与RSI震荡指标不一致的极端情况。出现看涨背离时买入，看跌背离时卖出，直到RSI反转或触发止损。背离常在长期趋势末端出现，通过对比指标与价格行为，可在受控风险下捕捉早期反转。
 

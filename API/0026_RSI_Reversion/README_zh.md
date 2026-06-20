@@ -1,5 +1,5 @@
 # RSI 回归
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略认为当RSI达到极端值后价格会回归。RSI跌破下限时买入，升破上限时卖出，RSI回到中值附近离场。阈值可根据市场调整，结合趋势过滤器可避免过早逆势。
 

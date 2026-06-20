@@ -1,5 +1,5 @@
 # MACD零轴反转 (MACD Zero Cross)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当MACD柱趋近零轴时捕捉动量反转。
 

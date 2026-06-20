@@ -1,5 +1,5 @@
 # Bollinger Percent B Reversion
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This approach fades price extremes beyond the Bollinger Bands using the Percent B indicator. Moves above the upper band or below the lower band suggest overextension.
 

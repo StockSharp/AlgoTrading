@@ -1,5 +1,5 @@
 # Laguerre RSI
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用平滑的Laguerre RSI，减少传统RSI的噪音。当Laguerre值从超卖区向上穿越时买入，从超买区向下穿越时卖出，回到中值附近离场。平滑处理可避免普通RSI在震荡市频繁给出假信号，适合捕捉日内波段。
 

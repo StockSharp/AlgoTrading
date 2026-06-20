@@ -1,5 +1,5 @@
 # MA偏离
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格与其移动平均线出现显著偏离时，该策略进行交易，预期价格回归均线。价格偏离既定百分比时入场，回归均线时离场。偏离阈值可根据波动性调整，使用ATR控制仓位以保持一致风险。
 

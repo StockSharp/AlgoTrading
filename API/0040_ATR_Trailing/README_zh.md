@@ -1,5 +1,5 @@
 # ATR跟踪止损 (ATR Trailing Stops)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 以ATR倍数跟随价格设置止损。
 

@@ -1,5 +1,5 @@
 # ATR Expansion Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This strategy follows bursts of volatility using the Average True Range. When ATR is rising compared to the previous bar and price trades relative to a moving average, it looks to ride the breakout.
 

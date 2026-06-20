@@ -1,5 +1,5 @@
 # ATR均值回归 (ATR Reversion)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用平均真实波幅(ATR)的异常波动寻找反转机会。
 

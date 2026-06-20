@@ -1,5 +1,5 @@
 # VIX触发 (VIX Trigger)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 监控波动率指数VIX的变化。上升的VIX可能预示反转。
 

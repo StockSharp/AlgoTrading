@@ -1,5 +1,5 @@
 # 布林收窄突破
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略关注布林带极窄时的低波动，一旦价格突破带宽就顺势入场，动量衰竭或出现反向突破时离场。带宽收窄预示即将爆发的波动，进入后依靠ATR止损或带线交叉退出。
 

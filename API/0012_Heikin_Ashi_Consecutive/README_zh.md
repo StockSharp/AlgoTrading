@@ -1,5 +1,5 @@
 # Heikin Ashi 连续形态
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等待连续数根同色的Heikin Ashi蜡烛以确认动量。出现一系列上涨或下跌蜡烛后跟进，并在首根反向蜡烛或ATR止损时离场。由于Heikin Ashi平滑了价格数据，连续同色强调方向明确，ATR跟踪止损能在走势突然反转时保住利润。
 

@@ -1,5 +1,5 @@
 # 历史波动率突破 (Historical Volatility Breakout)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用历史波动率设定动态阈值, 突破该阈值表明新趋势。
 

@@ -1,5 +1,5 @@
 # DMI动力移动
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将DMI方向指标差值与ADX结合，以捕捉强劲趋势。当+DI明显高于-DI（或相反）且ADX强劲时入场；当ADX减弱或DI差收窄时离场。此方法通过同时要求明显的方向性和上升的ADX，过滤掉较弱的信号，虽交易较少但质量更高。
 

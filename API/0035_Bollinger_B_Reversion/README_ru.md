@@ -1,5 +1,5 @@
 # Возврат по индикатору Percent B
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Этот подход торгует против экстремальных ценовых движений за пределами полос Боллинджера с использованием индикатора Percent B. Движения выше верхней полосы или ниже нижней указывают на перекупленность или перепроданность.
 
