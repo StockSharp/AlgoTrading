@@ -1,5 +1,5 @@
 # Стратегия VWAP Williams R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия VWAP Williams %R сосредоточена на внутридневном возврате к среднему вокруг объёмно-взвешенной средней цены (VWAP). Она наблюдает, когда цена отклоняется от VWAP, а осциллятор Williams %R достигает зон перекупленности или перепроданности. Предполагается, что экстремальные значения возле VWAP часто приводят к обратному движению к среднему.
 

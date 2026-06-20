@@ -1,5 +1,5 @@
 # Стратегия Parabolic SAR CCI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикаторы Parabolic SAR и CCI для генерации сигналов. Длинная позиция открывается, когда цена выше SAR и CCI ниже -100, что указывает на восходящий тренд с перепроданностью. Короткая позиция возникает при цене ниже SAR и CCI выше 100 — нисходящий тренд с перекупленностью.
 

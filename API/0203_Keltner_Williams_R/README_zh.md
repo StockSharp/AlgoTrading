@@ -1,5 +1,5 @@
 # Keltner Williams R Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略结合Keltner通道与Williams %R指标。当价格位于下轨且%R < -80时做多；当价格在上轨且%R > -20时做空，分别代表超卖和超买的突破。
 

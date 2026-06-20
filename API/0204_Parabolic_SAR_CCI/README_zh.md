@@ -1,5 +1,5 @@
 # Parabolic SAR CCI Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合抛物线SAR和CCI指标。当价格高于SAR且CCI < -100时做多；当价格低于SAR且CCI > 100时做空，对应超卖与超买的趋势。
 

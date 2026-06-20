@@ -1,5 +1,5 @@
 # Стратегия Keltner Williams R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует индикаторы Keltner и Williams %R для получения сигналов. Длинная позиция открывается, когда цена опускается ниже нижней полосы Келтнера, а Williams %R ниже -80, что говорит о перепроданности. Короткая позиция возникает при цене выше верхней полосы и Williams %R выше -20 — перекупленность.
 

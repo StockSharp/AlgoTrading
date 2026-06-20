@@ -1,5 +1,5 @@
 # VWAP Williams R Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The VWAP Williams %R strategy focuses on intraday reversion around the Volume Weighted Average Price. It observes when price drifts away from VWAP while the Williams %R oscillator reaches oversold or overbought territory. The assumption is that extreme readings near VWAP often lead to a snapback toward the mean.
 

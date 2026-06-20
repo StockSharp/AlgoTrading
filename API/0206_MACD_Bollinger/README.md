@@ -1,5 +1,5 @@
 # MACD Bollinger Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This strategy uses MACD Bollinger indicators to generate signals.
 Long entry occurs when MACD > Signal && Price < BB_lower (trend up with oversold conditions). Short entry occurs when MACD < Signal && Price > BB_upper (trend down with overbought conditions).

@@ -1,5 +1,5 @@
 # Ichimoku Adx Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategy based on Ichimoku Cloud and ADX indicators. Entry criteria:
 Long: Price > Kumo (cloud) && Tenkan > Kijun && ADX > 25 (uptrend with strong movement) Short: Price < Kumo (cloud) && Tenkan < Kijun && ADX > 25 (downtrend with strong movement) Exit criteria: Long: Price < Kumo (price falls below cloud) Short: Price > Kumo (price rises above cloud)

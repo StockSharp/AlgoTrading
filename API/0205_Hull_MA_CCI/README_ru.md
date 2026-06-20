@@ -1,5 +1,5 @@
 # Стратегия Hull MA CCI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия использует индикаторы Hull Moving Average и CCI. Длинная позиция открывается, когда HMA(t) > HMA(t-1), а CCI опускается ниже -100, что указывает на рост HMA при перепроданности. Короткая позиция возникает, когда HMA(t) < HMA(t-1) и CCI выше 100 — снижение HMA при перекупленности.
 

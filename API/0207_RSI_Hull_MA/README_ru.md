@@ -1,5 +1,5 @@
 # Стратегия RSI Hull MA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикаторы RSI и Hull Moving Average. Длинная позиция открывается при RSI ниже 30 и растущей HMA, то есть HMA(t) > HMA(t‑1). Короткая позиция формируется, когда RSI выше 70 и HMA(t) < HMA(t‑1), что указывает на перекупленность при падающей HMA.
 

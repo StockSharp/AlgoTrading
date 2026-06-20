@@ -1,5 +1,5 @@
 # RSI Hull MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This strategy uses RSI Hull MA indicators to generate signals.
 Long entry occurs when RSI < 30 && HMA(t) > HMA(t-1) (oversold with rising HMA). Short entry occurs when RSI > 70 && HMA(t) < HMA(t-1) (overbought with falling HMA).
