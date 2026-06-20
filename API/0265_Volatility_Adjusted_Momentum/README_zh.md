@@ -1,5 +1,5 @@
 # 波动率调整的动量突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控市场波动率的快速扩张。当读数超出平均范围时，价格往往展开新的趋势。
 

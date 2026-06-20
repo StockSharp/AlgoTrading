@@ -1,5 +1,5 @@
 # Прорыв по ширине канала Келтнера
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Keltner Channel Width Breakout наблюдает за быстрым расширением канала Келтнера. Когда значения выходят за пределы типичного диапазона, цена часто начинает новое движение.
 

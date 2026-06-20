@@ -1,5 +1,5 @@
 # EMA 斜率突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略监测指数移动平均线斜率的变化。斜率异常陡峭时可能预示着新趋势的产生。
 

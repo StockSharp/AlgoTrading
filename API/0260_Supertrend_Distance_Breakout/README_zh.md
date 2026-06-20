@@ -1,5 +1,5 @@
 # Supertrend 距离突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略监控 Supertrend 指标的快速扩张。当读数明显超出平均范围时，价格往往启动新的运动。
 

@@ -1,5 +1,5 @@
 # Hull MA Slope Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Hull MA Slope Breakout strategy tracks the rate of change of the Hull. An unusually steep slope hints that a new trend is forming.
 

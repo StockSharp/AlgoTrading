@@ -1,5 +1,5 @@
 # Ichimoku Cloud Width Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Ichimoku Cloud Width Breakout strategy watches the Ichimoku for sharp expansions. When readings jump beyond their average range, price often starts a new move.
 

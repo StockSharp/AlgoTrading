@@ -1,5 +1,5 @@
 # Прорыв по ширине полос Боллинджера
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Bollinger Band Width Breakout отслеживает резкое расширение полос Боллинджера. Когда значения выходят за пределы обычного диапазона, цена часто начинает новое движение.
 

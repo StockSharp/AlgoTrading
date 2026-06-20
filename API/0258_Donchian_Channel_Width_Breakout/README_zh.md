@@ -1,5 +1,5 @@
 # Donchian 通道宽度突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略观察 Donchian 通道宽度的扩张情况。当宽度显著超出常态时，波动往往开始增强并可能形成趋势。
 

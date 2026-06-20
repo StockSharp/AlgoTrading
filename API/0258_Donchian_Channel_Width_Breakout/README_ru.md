@@ -1,5 +1,5 @@
 # Прорыв по ширине канала Дончиана
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Donchian Channel Width Breakout наблюдает за резким расширением канала Дончиана. Когда значения выходят за пределы среднего диапазона, цена часто начинает новое движение.
 

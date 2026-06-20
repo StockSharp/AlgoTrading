@@ -1,5 +1,5 @@
 # MA Slope Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The MA Slope Breakout strategy watches the rate of change of the MA. An unusually steep slope hints that a new trend is forming.
 
