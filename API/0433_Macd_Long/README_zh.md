@@ -1,5 +1,5 @@
 # MACD 多空策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI 极值与 MACD 金叉/死叉，用于捕捉趋势中的回调。当 RSI 到达超买或超卖区后，系统等待 MACD 进一步确认再进场，从而过滤噪音信号。
 

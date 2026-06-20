@@ -1,5 +1,5 @@
 # RSI + 1200 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **RSI + 1200 策略** 通过结合相对强弱指数与高时间框的趋势过滤器来
 捕捉趋势反转。策略使用 14 周期 RSI，并在 120 分钟的多时间框数据上

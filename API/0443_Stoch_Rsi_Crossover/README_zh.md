@@ -1,5 +1,5 @@
 # 随机RSI交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该方法将传统相对强弱指数转换为随机RSI，并通过平滑处理得到%K与%D两条线。当%K在预设区间内上穿或下穿%D时，意味着短期动量发生变化。只有当三层EMA结构确认趋势方向时才允许交易，从而过滤震荡市场中的虚假信号。
 

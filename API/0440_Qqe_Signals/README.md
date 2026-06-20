@@ -1,5 +1,5 @@
 # QQE Signals Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements the Quantitative Qualitative Estimation technique on RSI. The indicator builds dynamic upper and lower bands around a smoothed RSI line and tracks band crosses to signal trend changes. When RSI crosses above the trailing band a long signal is generated; crosses below trigger exits.
 

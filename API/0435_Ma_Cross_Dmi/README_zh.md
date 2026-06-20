@@ -1,5 +1,5 @@
 # 均线交叉 + DMI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当方向性运动指数确认趋势强度时，策略才会依据快慢 EMA 的交叉进行交易。通过等待 +DI 或 -DI 占优且 ADX 高于关键值，可过滤弱势信号。
 

@@ -1,5 +1,5 @@
 # 多时间框架布林带策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在主时间框架和更高时间框架上同时应用布林带。当价格突破高时间框架的上下轨时产生信号，并可选用长期 EMA 作为过滤器。目标是在大趋势背景下反转极端价格。
 

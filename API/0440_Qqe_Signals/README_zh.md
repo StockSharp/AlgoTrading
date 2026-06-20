@@ -1,5 +1,5 @@
 # QQE 信号策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在 RSI 指标上实现 QQE 技术。该方法围绕平滑的 RSI 构建动态上下轨，并跟踪 RSI 对轨道的突破来识别趋势变化。当 RSI 上穿轨道时产生买入信号，下穿则平仓。
 

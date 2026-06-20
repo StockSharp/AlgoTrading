@@ -1,5 +1,5 @@
 # RSI + EMA 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将经典的相对强弱指数（RSI）与两条指数移动平均线（EMA）趋势过滤器相结合。RSI 用于衡量短期的超买和超卖状态，而快慢两条 EMA 则界定了市场的大方向。只有当快 EMA 高于慢 EMA 时才允许开仓，从而避免在强劲趋势中逆势操作。
 

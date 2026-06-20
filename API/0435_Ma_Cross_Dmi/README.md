@@ -1,5 +1,5 @@
 # MA Cross + DMI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades a crossover of fast and slow exponential moving averages only when the Directional Movement Index confirms trend strength. By waiting for +DI or -DI to dominate while ADX rises above a key level, the system filters out weak crossovers.
 

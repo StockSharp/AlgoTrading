@@ -1,5 +1,5 @@
 # 多时间框架 EMA + BB + RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合两条 EMA、布林带和 RSI 来交易回撤。价格触及下轨后收于快 EMA 之上触发多头；价格突破上轨后收于快 EMA 之下且 RSI 高于 50 时触发空头。
 

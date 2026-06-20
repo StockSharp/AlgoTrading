@@ -1,5 +1,5 @@
 # Стратегия QQE Signals
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализует технику Quantitative Qualitative Estimation на основе RSI. Индикатор строит динамические верхнюю и нижнюю полосы вокруг сглаженного RSI и фиксирует их пробои для сигналов смены тренда. Пересечение RSI выше полосы даёт сигнал на покупку, пересечение ниже — на выход.
 

@@ -1,5 +1,5 @@
 # Multi-Timeframe Bollinger Bands Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Applies Bollinger Bands on both a primary and a higher timeframe. Trades when price pierces the higher timeframe bands and optionally filters entries with a long-term moving average. The goal is to fade extremes against the broader trend.
 

@@ -1,5 +1,5 @@
 # Стратегия Omar MMR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Импульсная методика, объединяющая RSI, три экспоненциальные средние и пересечение MACD. Лонг открывается, когда цена выше медленной EMA, быстрая EMA превышает среднюю, MACD пересекает сигнал снизу вверх, а RSI находится в диапазоне 29–70.
 

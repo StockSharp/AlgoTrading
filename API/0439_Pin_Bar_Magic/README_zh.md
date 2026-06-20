@@ -1,5 +1,5 @@
 # Pin Bar Magic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在由三条移动平均线定义的趋势中识别多头和空头 Pin Bar。挂单放置于K线极值处，若数个周期内未成交则取消。仓位大小基于账户风险百分比和 ATR 计算的止损距离。
 

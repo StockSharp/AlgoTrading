@@ -1,5 +1,5 @@
 # MACD Long Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Pairs Relative Strength Index extremes with MACD crossovers to capture pullbacks within a trend. After RSI reaches an extreme reading, the system waits for a confirming MACD crossover before entering. This approach filters noisy momentum shifts and focuses on high-probability reversals.
 

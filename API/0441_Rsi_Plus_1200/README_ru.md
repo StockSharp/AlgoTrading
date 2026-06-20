@@ -1,5 +1,5 @@
 # Стратегия RSI + 1200
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **RSI + 1200** ищет развороты тренда, подтверждённые силой движения и
 трендовым фильтром из старшего тайм‑фрейма. В стратегии используется классический
