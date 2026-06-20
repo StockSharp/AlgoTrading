@@ -1,5 +1,5 @@
 # BTC期货Gamma加权动量模型
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略计算Gamma加权平均价(GWAP)来捕捉BTC期货动量。当价格位于GWAP之上且连续三根K线收盘价上升时开多；当价格位于GWAP之下且连续三根K线收盘价下降时开空。
 

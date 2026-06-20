@@ -1,5 +1,5 @@
 # Big Runner 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Big Runner 策略在收盘价和快速 SMA 同时与慢速 SMA 发生交叉时进行交易，表示强劲的动量。仓位大小根据账户资产百分比并乘以杠杆计算。可选的止损和止盈用于风险控制。
 

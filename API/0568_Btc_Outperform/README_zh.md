@@ -1,5 +1,5 @@
 # BTC 超额表现策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 比较周收盘价和季度收盘价。当周收盘价高于季度收盘价时做多，当季度收盘价高于周收盘价时做空。
 

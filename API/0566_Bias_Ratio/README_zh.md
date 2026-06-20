@@ -1,5 +1,5 @@
 # 偏差比率策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 偏差比率策略基于价格相对长期移动平均线的偏离进行突破交易。策略同时比较收盘价与指数移动平均线（EMA）和简单移动平均线（SMA）。当价格高于EMA一定比例时做多，当价格低于SMA相同比例时做空。
 

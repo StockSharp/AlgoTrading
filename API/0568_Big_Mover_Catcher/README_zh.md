@@ -1,5 +1,5 @@
 # 大波动捕捉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格收于布林带上轨之上且所有启用的过滤器都通过时，本策略做多；当价格收于下轨之下且过滤器通过时，可做空。过滤器包括 RSI、ADX、ATR、EMA 趋势方向和 MACD。策略设置固定百分比止损，当价格回到中轨时平仓，并可在异常大的 K 线时强制获利了结。
 

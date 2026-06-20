@@ -1,5 +1,5 @@
 # BTC DCA AHR999 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在设定的起止日期之间每周一买入比特币。买入金额取决于
 AHR999 指数，该指数结合了价格的几何平均值与比特币的对数增长模型。

@@ -1,5 +1,5 @@
 # Bias Ratio Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Bias Ratio strategy trades breakouts based on price deviation from long-term moving averages. It compares the close price to both an exponential moving average (EMA) and a simple moving average (SMA). A long position is opened when price exceeds the EMA by a specified ratio, while a short position is opened when price falls below the SMA by the same ratio.
 

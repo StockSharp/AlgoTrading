@@ -1,5 +1,5 @@
 # BTC 难度调整策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BTC 难度调整策略基于比特币挖矿难度的变化进行交易。启用阈值模式时，仅当百分比变化超过设定阈值才开仓。难度上调时开多，难度下调时开空。
 

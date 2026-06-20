@@ -1,5 +1,5 @@
 # BTC Seasonality 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据 EST 时间的星期和小时规则开仓和平仓。用户可设置入场日和小时、出场日和小时，以及做多或做空方向。策略在指定的入场时间开仓，并在指定的出场时间平仓。
 

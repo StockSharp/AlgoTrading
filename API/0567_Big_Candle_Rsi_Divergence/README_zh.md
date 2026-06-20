@@ -1,5 +1,5 @@
 # 大实体K线与RSI背离
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找实体大于前五根K线的蜡烛，并比较快慢RSI。信号按照蜡烛方向入场，风险管理使用延迟的追踪止损，只有当价格向有利方向移动指定tick后才启动。
 

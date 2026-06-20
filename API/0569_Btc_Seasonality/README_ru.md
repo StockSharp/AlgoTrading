@@ -1,5 +1,5 @@
 # Стратегия BTC Seasonality
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позицию согласно выбранным дню недели и часу по времени EST. Пользователь задаёт день и час входа, день и час выхода, а также направление сделки. В указанное время стратегия входит в позицию и закрывает её в момент выхода.
 

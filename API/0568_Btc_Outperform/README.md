@@ -1,5 +1,5 @@
 # BTC Outperform Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Compares weekly and quarterly closing prices. Goes long when the weekly price is higher than the quarterly price, and goes short when the quarterly price is higher.
 
