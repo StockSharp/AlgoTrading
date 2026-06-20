@@ -1,5 +1,5 @@
 # Keltner Channel Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Volatility-based channels can highlight overextended moves. This method fades price when it pushes outside the Keltner Channel, anticipating a snap back toward the middle line. It uses an exponential moving average and ATR to size the channel width.
 

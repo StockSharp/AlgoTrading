@@ -1,5 +1,5 @@
 # Outside Bar Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 An outside bar occurs when a candle's range exceeds that of the previous candle, creating a brief surge of volatility. This strategy fades the move if the outside bar closes in the opposite direction of the prior trend, expecting a snap back toward equilibrium.
 

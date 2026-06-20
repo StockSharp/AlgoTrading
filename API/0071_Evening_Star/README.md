@@ -1,5 +1,5 @@
 # Evening Star Pattern Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Evening Star mirrors the Morning Star but indicates a potential top. It begins with a strong bullish candle, followed by a small indecision candle, and ends with a bearish candle closing below the midpoint of the first bar.
 

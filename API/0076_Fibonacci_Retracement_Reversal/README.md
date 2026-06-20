@@ -1,5 +1,5 @@
 # Fibonacci Retracement Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Markets often retrace a portion of a prior move before resuming trend. This strategy identifies recent swing highs and lows and watches for price to test the 61.8% or 78.6% retracement levels. These areas frequently mark exhaustion points.
 

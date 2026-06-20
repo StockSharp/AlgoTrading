@@ -1,5 +1,5 @@
 # 三棒反转向上策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该形态在短暂下跌后捕捉快速的看涨转折。它要求连续出现两根下跌蜡烛，随后一根强势上涨蜡烛收盘价突破前一根的高点。逻辑上还可选检查价格此前是否处于下降趋势。
 

@@ -1,5 +1,5 @@
 # Pivot Point Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Daily pivot points and their support and resistance levels often act as turning points for intraday price action. This strategy calculates the classic floor-trader pivots from the prior day's high, low and close, then looks for candles bouncing off S1 or R1.
 

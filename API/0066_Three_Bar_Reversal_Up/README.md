@@ -1,5 +1,5 @@
 # Three-Bar Reversal Up Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This pattern catches quick bullish turns after a short decline. It requires two consecutive down candles followed by a strong up candle that closes above the prior bar's high. The logic optionally checks that price was trending lower beforehand.
 

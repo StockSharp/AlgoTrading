@@ -1,5 +1,5 @@
 # 斐波那契回撤反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 市场在延续趋势前往往会回撤部分幅度。本策略识别最近的波峰波谷，关注价格测试 61.8% 或 78.6% 回撤位，这些区域常是行情衰竭点。
 

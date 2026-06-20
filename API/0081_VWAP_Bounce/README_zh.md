@@ -1,5 +1,5 @@
 # VWAP 回踩策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 成交量加权平均价（VWAP）是常用的日内基准。当价格远离 VWAP 后又出现向其回归的蜡烛时，通常会有短暂的反弹。本策略交易这种回踩。
 

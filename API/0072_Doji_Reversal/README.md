@@ -1,5 +1,5 @@
 # Doji Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Doji candles reflect a temporary balance of buyers and sellers. When a doji appears after a strong directional move it can precede a reversal as momentum fades. This strategy measures the candle body relative to its range to decide if a true doji formed.
 

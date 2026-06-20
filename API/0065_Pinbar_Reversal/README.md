@@ -1,5 +1,5 @@
 # Pinbar Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Pinbars highlight sudden rejections of price and can signal short-term turning points. This strategy measures the length of the candle's tail relative to its body, looking for long shadows that stick out from recent price action. A moving average filter helps trade in the direction of the underlying trend.
 

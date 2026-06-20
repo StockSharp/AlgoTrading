@@ -1,5 +1,5 @@
 # 肯特纳通道反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于波动率的通道可以指出过度扩展的行情。当价格突破肯特纳通道时，本方法做反向交易，预期其回到中线。通道宽度由指数均线和ATR确定。
 

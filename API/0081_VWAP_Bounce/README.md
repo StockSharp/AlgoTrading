@@ -1,5 +1,5 @@
 # VWAP Bounce Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Volume Weighted Average Price (VWAP) is a popular intraday benchmark. When price deviates significantly from VWAP and then prints a candle back toward it, a brief reversion move often follows. This strategy trades those bounces.
 

@@ -1,5 +1,5 @@
 # 内包线突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当一根蜡烛的最高点和最低点完全落在前一根蜡烛的范围内时，称为内包线，表示短期犹豫，一旦价格突破该范围，可能产生强劲的行情。本策略等待突破后顺势交易。
 

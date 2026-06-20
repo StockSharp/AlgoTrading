@@ -1,5 +1,5 @@
 # 布林带反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格突破布林带外侧时，往往会迅速回到中轨。本策略利用这一特性，在收盘价跌破下轨且蜡烛为阳时买入，在收盘价突破上轨且蜡烛为阴时做空。
 

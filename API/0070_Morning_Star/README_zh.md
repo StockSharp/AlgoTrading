@@ -1,5 +1,5 @@
 # 晨星形态策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 晨星形态是看涨的三根K线组合，常在下跌后预示底部形成。它由一根大阴线、一个小型十字或小实体蜡烛以及一根收盘价高于第一根中点的强阳线组成。
 

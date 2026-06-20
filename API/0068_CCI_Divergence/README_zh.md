@@ -1,5 +1,5 @@
 # CCI 背离策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格走势与商品通道指数（CCI）方向相反时，可能预示趋势即将反转。本策略比较价格和 CCI 的波峰波谷，以识别隐藏的强弱。
 

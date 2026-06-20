@@ -1,5 +1,5 @@
 # Bollinger Band Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Price extremes outside the Bollinger Bands often snap back toward the middle band. This approach fades those extensions, buying dips below the lower band when the candle finishes green and selling rallies above the upper band after a red candle.
 

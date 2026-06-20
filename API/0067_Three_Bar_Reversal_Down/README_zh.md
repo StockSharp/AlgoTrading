@@ -1,5 +1,5 @@
 # 三棒反转向下策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是看涨版本的镜像形态，用于捕捉短暂的看跌回调。在两根强势上涨并创出新高的蜡烛之后，一根决断的下跌蜡烛收盘价低于前一根的低点。此前的短暂上升趋势有助于确认买盘衰竭。
 

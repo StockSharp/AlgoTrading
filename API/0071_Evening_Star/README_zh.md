@@ -1,5 +1,5 @@
 # 暮星形态策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 暮星形态与晨星相反，通常表示顶部形成。它由一根大阳线开始，随后是一根小型犹豫蜡烛，最后以一根收盘价跌破第一根中点的阴线结束。
 

@@ -1,5 +1,5 @@
 # 枢轴点反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 日内枢轴点及其支撑阻力位常成为价格转折点。本策略根据前一日的高点、低点和收盘价计算经典枢轴点，并观察价格在 S1 或 R1 附近的反弹。
 

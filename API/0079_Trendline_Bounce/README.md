@@ -1,5 +1,5 @@
 # Trendline Bounce Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Markets often respect trendlines drawn across prior swing highs or lows. This strategy automatically fits regression lines to recent price action and looks for candles that bounce from those lines in the direction of the dominant trend.
 

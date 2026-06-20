@@ -1,5 +1,5 @@
 # Stochastic Overbought/Oversold Reversal
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The strategy reacts to extreme levels of the Stochastic Oscillator. When the %K line dives into oversold territory the system expects a bounce, whereas overbought readings can foreshadow a drop. The method runs on short intraday candles so signals arrive quickly.
 

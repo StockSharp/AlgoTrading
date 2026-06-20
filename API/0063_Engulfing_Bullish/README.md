@@ -1,5 +1,5 @@
 # Bullish Engulfing Pattern Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This setup looks for a sharp bullish reversal when a candle completely engulfs the prior bearish bar. Such a formation often ends a short-term decline and hints at renewed upward momentum. The optional downtrend filter counts consecutive red candles to confirm sellers are exhausted.
 

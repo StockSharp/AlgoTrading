@@ -1,5 +1,5 @@
 # Bearish Engulfing Pattern Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This pattern aims to capture the start of a bearish swing after a rally. A bearish engulfing occurs when a red candle completely swallows the prior bullish body. Counting a few consecutive up bars before the pattern ensures the market was previously rising.
 

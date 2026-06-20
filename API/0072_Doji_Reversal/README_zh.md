@@ -1,5 +1,5 @@
 # 十字线反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 十字线表示买卖双方暂时达到平衡。当在明显的单边走势后出现十字线，随着动能减弱可能预示反转。本策略根据蜡烛实体相对于整体区间的大小判断是否真正形成十字线。
 

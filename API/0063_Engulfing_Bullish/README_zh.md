@@ -1,5 +1,5 @@
 # 看涨吞没形态策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当一根阳线完全吞没前一根阴线时，往往预示着短期下跌结束并可能启动新的上升动能。本策略利用这一形态，并可选用下跌趋势过滤器，通过统计连续的下跌蜡烛数量来确认空头力量衰竭。
 

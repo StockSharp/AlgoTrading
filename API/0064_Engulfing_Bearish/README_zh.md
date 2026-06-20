@@ -1,5 +1,5 @@
 # 看跌吞没形态策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该形态试图在一段上涨后捕捉看跌回调的开始。当一根阴线完全吞没之前的阳线时形成看跌吞没。统计此前连续上涨的蜡烛数量可确认市场先前处于上升阶段。
 

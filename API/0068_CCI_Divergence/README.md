@@ -1,5 +1,5 @@
 # CCI Divergence Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Commodity Channel Index divergences can foreshadow trend reversals when price moves in the opposite direction of the indicator. This strategy compares swing highs and lows in price to those of the CCI to identify hidden strength or weakness.
 
