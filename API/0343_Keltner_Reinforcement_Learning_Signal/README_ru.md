@@ -1,5 +1,5 @@
 # Keltner и сигнал обучения с подкреплением
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Keltner Reinforcement Learning Signal** использует канал Кельтнера и алгоритмы обучения с подкреплением.
 Сигналы формируются, когда Кельтнер подтверждает смену тренда на внутридневных данных (15м). Такой подход подходит активным трейдерам.

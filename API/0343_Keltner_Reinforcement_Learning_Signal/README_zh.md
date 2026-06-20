@@ -1,5 +1,5 @@
 # Keltner Reinforcement Learning Signal
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Keltner Reinforcement Learning Signal** 策略基于 Keltner Reinforcement Learning Signal。
 

@@ -1,5 +1,5 @@
 # Supertrend и коэффициент put/call
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Supertrend Put Call Ratio** основана на индикаторе Supertrend и коэффициенте put/call.
 Сигналы формируются, когда индикаторы подтверждают смену тренда на внутридневных данных (15м). Такой подход подходит активным трейдерам.
