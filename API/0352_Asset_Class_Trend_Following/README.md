@@ -1,5 +1,5 @@
 # Asset Class Trend Following Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy follows trends across multiple asset classes. It applies a simple moving average filter to each security in the universe and rebalances the portfolio on the first trading day of each month. Positions are taken only when price is above the moving average.
 

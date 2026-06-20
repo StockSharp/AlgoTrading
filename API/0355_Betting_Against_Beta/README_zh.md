@@ -1,5 +1,5 @@
 # Betting Against Beta
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Betting Against Beta** 策略做多最低贝塔分位的资产，做空最高贝塔分位。贝塔相对于基准在滚动窗口上计算，
 组合在每个月的第一个交易日重新平衡。

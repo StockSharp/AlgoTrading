@@ -1,5 +1,5 @@
 # Accrual Anomaly
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Accrual Anomaly** strategy implements the accrual anomaly factor. It rebalances annually on the first trading day of May, going long low-accrual stocks and short high-accrual ones.
 

@@ -1,5 +1,5 @@
 # Betting Against Beta
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Betting Against Beta** strategy goes long on the lowest-beta assets and short on the highest-beta ones. Betas are
 calculated against a benchmark over a rolling window and the portfolio is rebalanced on the first trading day of each

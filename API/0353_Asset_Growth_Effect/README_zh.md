@@ -1,5 +1,5 @@
 # 资产增长效应策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在总资产增长最低的公司上做多，在资产增长最高的公司上做空。组合每年七月依据最新的财务数据进行再平衡。
 

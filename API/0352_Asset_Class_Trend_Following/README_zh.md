@@ -1,5 +1,5 @@
 # 资产类别趋势跟随策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在多个资产类别上跟随趋势。对投资范围中的每个品种应用简单移动平均线过滤，并在每个月的第一个交易日进行再平衡。只有当价格高于均线时才持有头寸。
 

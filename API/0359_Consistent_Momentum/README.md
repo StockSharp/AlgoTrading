@@ -1,5 +1,5 @@
 # Consistent Momentum Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Consistent Momentum** strategy selects instruments that exhibit strong momentum across two time windows and rebalances the portfolio monthly. It holds each tranche for a fixed number of months and allocates capital equally to long and short baskets.
 

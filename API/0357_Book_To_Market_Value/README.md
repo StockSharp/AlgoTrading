@@ -1,5 +1,5 @@
 # Book to Market Value
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Book-to-Market Value** strategy demonstrates universe parameter setup and daily candle subscription for the book-to-market factor.
 This sample is a placeholder and currently contains no trading logic.

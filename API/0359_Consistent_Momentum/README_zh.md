@@ -1,5 +1,5 @@
 # 一致动量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Consistent Momentum** 策略选择在两个时间窗口中都表现出强劲动量的标的，并在每月的首个交易日进行再平衡。每个分批持仓维持固定的月数，资金在多头和空头篮子之间平均分配。
 

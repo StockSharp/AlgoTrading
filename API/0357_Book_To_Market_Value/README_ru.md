@@ -1,5 +1,5 @@
 # Book to Market Value
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Book-to-Market Value** демонстрирует настройку списка инструментов и подписку на дневные свечи для фактора book-to-market.
 Текущая версия служит примером и не содержит торговой логики.

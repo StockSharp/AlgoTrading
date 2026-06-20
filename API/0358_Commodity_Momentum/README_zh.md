@@ -1,5 +1,5 @@
 # Commodity Momentum
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Commodity Momentum** 策略做多具有最强 12 个月动量（跳过最近一个月）的商品。
 在每月第一个交易日进行再平衡。
