@@ -1,5 +1,5 @@
 # 开盘区间突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略记录交易开始后前几分钟内的最高价和最低价。区间结束后，在区间外加上可配置缓冲的价格处布置突破订单。目标基于收益风险比，止损设置在区间的另一侧。
 

@@ -1,5 +1,5 @@
 # 2:45 AM蜡烛突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略监控每天2:45 AM的K线，并在接下来数根K线中交易其高点或低点的突破。当价格突破该K线高点时做多，跌破低点时做空。如果在观察窗口结束前未出现相反突破，持仓将被平仓。
 

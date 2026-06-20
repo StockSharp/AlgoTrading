@@ -1,5 +1,5 @@
 # 流动性摆动策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 流动性摆动策略利用最近的枢轴高点和低点来确定阻力位和支撑位。当最低价上穿支撑且收盘价仍低于阻力时开多；当最高价下穿阻力且收盘价仍高于支撑时开空。风险管理使用加缓冲的止损以及距离为风险两倍的止盈，形成 1:2 的收益风险比。
 

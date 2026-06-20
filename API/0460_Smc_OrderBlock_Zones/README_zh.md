@@ -1,5 +1,5 @@
 # SMC Order Block Zones 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略识别摆动高点和低点以构建溢价区和折扣区。简单移动平均线作为趋势过滤器，最近的订单块用于确认信号。当价格在订单块确认下从一个区域向均衡线移动时开仓，并通过百分比止损保护仓位。
 

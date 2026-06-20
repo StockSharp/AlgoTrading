@@ -1,5 +1,5 @@
 # 一二三反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一二三反转策略通过价格行为寻找多头 1-2-3 形态。当满足以下条件时开多：今日低点低于昨日低点、昨日低点低于三根前低点、两根前低点低于四根前低点、两根前高点低于三根前高点。持仓达到设定的条数或收盘价上穿移动平均线时平仓。
 

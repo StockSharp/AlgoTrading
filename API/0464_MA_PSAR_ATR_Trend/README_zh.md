@@ -1,5 +1,5 @@
 # MA PSAR ATR 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA PSAR ATR 趋势策略结合均线交叉与日线 Parabolic SAR 过滤。只有当价格同时位于快、慢均线上方或下方且 PSAR 同向时才开仓。ATR 波动止损用于控制风险。
 

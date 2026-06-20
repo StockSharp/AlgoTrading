@@ -1,5 +1,5 @@
 # Opening Range Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Opening Range Breakout strategy tracks the highest and lowest prices during the first minutes of a trading session. After the range ends, breakout orders are placed beyond the range with a configurable buffer. Targets are derived from a reward-to-risk ratio while stops are set on the opposite side of the range.
 

@@ -1,5 +1,5 @@
 # Squeeze Pro Overlays 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Squeeze Pro Overlays 策略在布林带完全处于多个肯特纳通道内部时识别波动收缩。挤压解除后，通过收盘价线性回归的斜率来确定交易方向。
 

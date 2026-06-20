@@ -1,4 +1,5 @@
 # Averaging Down Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens a position when price moves outside an ATR-based band around the EMA. If the market moves against the position, the strategy adds to it using step scaled percentage deviations (DCA). Profit is taken when price returns to the averaged entry plus a fixed percent.
 
