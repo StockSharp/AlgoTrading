@@ -1,5 +1,5 @@
 # Стратегия Pre-Holiday Strength
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Pre-Holiday Strength означает бычью тенденцию непосредственно перед крупными рыночными праздниками, когда объём ниже обычного, а настроение оптимистичное.
 Трейдеры часто открывают позиции заранее, подталкивая цены выше в последние одну‑две сессии.

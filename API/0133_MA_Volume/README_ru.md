@@ -1,5 +1,5 @@
 # Стратегия MA Volume
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA Volume сочетает фильтр тренда по скользящей средней с всплесками объёма для определения точек входа.
 Рост объёма при цене выше средней сигнализирует о накоплении; падение объёма ниже средней указывает на распределение.

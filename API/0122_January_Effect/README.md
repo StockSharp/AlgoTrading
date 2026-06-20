@@ -1,5 +1,5 @@
 # January Effect Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The January Effect observes that small-cap stocks often outperform early in the year, possibly due to tax-loss selling in December.
 Traders attempt to capture this tendency by buying in late December and selling after the first few weeks of January.

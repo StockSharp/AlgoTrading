@@ -1,5 +1,5 @@
 # 节前强势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 节前强势指在主要市场假日前，由于成交减轻和乐观情绪推动，价格往往上涨。
 交易者通常提前布局，使假日前一两日的行情被推高。

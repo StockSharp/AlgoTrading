@@ -1,5 +1,5 @@
 # 布林 RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略结合布林带过度扩张与RSI动量信号。
 当价格收于布林带外且RSI出现背离时，往往预示即将反转。

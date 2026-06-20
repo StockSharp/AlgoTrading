@@ -1,5 +1,5 @@
 # 隔夜缺口策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在开盘时交易因消息或盘后活动造成的显著跳空。
 大型缺口通常会部分回补，因为市场需要消化这一波动。

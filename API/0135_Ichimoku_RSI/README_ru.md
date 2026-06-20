@@ -1,5 +1,5 @@
 # Стратегия Ichimoku RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ichimoku RSI использует уровни облака Ichimoku для определения направления тренда, а RSI указывает краткосрочные откаты.
 Сделки совершаются по направлению облака: вход при восстановлении RSI из перепроданности в восходящем тренде или при падении из перекупленности в нисходящем.

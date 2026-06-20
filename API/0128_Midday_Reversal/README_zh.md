@@ -1,5 +1,5 @@
 # 午间反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 午间反转旨在捕捉午餐时间附近的趋势转折，早盘的动能常在此时衰竭。
 中盘流动性降低，交易者结清仓位可能导致价格反向。

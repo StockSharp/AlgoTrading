@@ -1,5 +1,5 @@
 # Стратегия ADX MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ADX MACD сочетает силу тренда по индикатору ADX с изменениями импульса по MACD.
 Когда ADX растёт, вероятность продолжения пробоя выше, особенно если MACD пересекается в том же направлении.

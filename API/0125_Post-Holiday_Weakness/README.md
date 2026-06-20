@@ -1,5 +1,5 @@
 # Post-Holiday Weakness Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Post-Holiday Weakness is the tendency for prices to drift lower immediately after a major holiday when volume remains thin.
 With many participants still away, counter-trend moves can gain traction.

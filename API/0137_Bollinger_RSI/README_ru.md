@@ -1,5 +1,5 @@
 # Стратегия Bollinger RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger RSI сочетает выход цены за пределы полос Боллинджера с импульсными сигналами RSI.
 Когда цена закрывается вне полос, но RSI демонстрирует дивергенцию, часто ожидается разворот.

@@ -1,5 +1,5 @@
 # 开盘冲击策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 开盘冲击指市场在开盘瞬间就出现显著的单边走势，往往由隔夜消息驱动。
 交易者在开盘几分钟内观察大量成交和持续动能。

@@ -1,5 +1,5 @@
 # 一目均衡表 RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略用一目均衡云确定整体趋势，并利用RSI寻找短期回调的机会。
 在上升趋势中，当RSI自超卖区回升时买入；在下降趋势中，当RSI自超买区回落时卖出。

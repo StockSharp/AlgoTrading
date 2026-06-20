@@ -1,5 +1,5 @@
 # 一月效应策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一月效应观察到小盘股在年初往往表现更佳，可能由于投资者在十二月进行税务亏损卖出。
 交易者因此在十二月底买入，并在一月前几周卖出以获取这一优势。

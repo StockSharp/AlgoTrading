@@ -1,5 +1,5 @@
 # ATR MACD Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 ATR MACD uses volatility from the Average True Range to adjust position size while trading MACD crossovers.
 Larger ATR readings result in smaller trade size, keeping risk consistent across market regimes.

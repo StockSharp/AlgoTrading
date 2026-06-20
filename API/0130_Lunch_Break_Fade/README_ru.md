@@ -1,5 +1,5 @@
 # Стратегия Lunch Break Fade
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lunch Break Fade нацелена на развороты, которые формируются в медленное обеденное время.
 После утренней сессии тренды часто приостанавливаются или откатываются по мере снижения объёмов к полудню.

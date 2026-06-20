@@ -1,5 +1,5 @@
 # 季度交割策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 季度交割周由于期货和期权换月，仓位调整往往引发波动。
 对冲调整和流动性暂时下降可能使价格剧烈波动。

@@ -1,5 +1,5 @@
 # 节后疲软策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 节后疲软是指在主要假日结束后，由于成交清淡，价格往往缓慢下行。
 很多交易者尚未回归，逆势波动因此更易获得动量。

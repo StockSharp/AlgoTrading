@@ -1,5 +1,5 @@
 # 均线随机指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略使用移动平均线过滤趋势，并结合随机指标的回调信号。
 当价格位于均线之上且随机指标进入超卖区时，等待指标重新上行买入；下降趋势中则在随机超买时做空。

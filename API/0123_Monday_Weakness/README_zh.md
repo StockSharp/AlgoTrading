@@ -1,5 +1,5 @@
 # 周一疲软策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 周一疲软指股票市场在周末后开盘常见下跌，因交易者消化新闻并重新布局。
 这种短期卖压在周初出现，随后市场趋于稳定。

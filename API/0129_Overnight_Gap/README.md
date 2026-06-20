@@ -1,5 +1,5 @@
 # Overnight Gap Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Overnight Gap plays the open when price gaps significantly from the prior close due to news or after-hours activity.
 Large gaps often retrace partially as traders digest the move.

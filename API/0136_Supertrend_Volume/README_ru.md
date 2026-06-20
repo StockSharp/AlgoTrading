@@ -1,5 +1,5 @@
 # Стратегия Supertrend Volume
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Supertrend Volume дополняет индикатор Supertrend подтверждением объёма.
 Рост объёма во время смены направления по Supertrend усиливает вероятность нового импульсного движения.

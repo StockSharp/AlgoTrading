@@ -1,5 +1,5 @@
 # Стратегия MA Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA Stochastic использует фильтр тренда по скользящей средней вместе со стохастическим осциллятором для поиска откатов.
 Когда цена находится выше средней, а стохастик падает в зону перепроданности, система готовится купить следующий подъём.
