@@ -1,5 +1,5 @@
 # Stochastic Keltner Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合随机指标与Keltner通道。当随机%K小于20且价格位于下轨时做多；当随机%K大于80且价格在上轨时做空。
 

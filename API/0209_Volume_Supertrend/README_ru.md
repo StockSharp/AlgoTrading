@@ -1,5 +1,5 @@
 # Стратегия Volume Supertrend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия опирается на индикаторы объёма и Supertrend для определения сигналов. Длинная позиция открывается, когда объём выше среднего и цена находится выше линии Supertrend (скачок объёма на восходящем тренде). Короткая позиция появляется при объёме выше среднего и цене ниже Supertrend — скачок объёма на нисходящем тренде.
 

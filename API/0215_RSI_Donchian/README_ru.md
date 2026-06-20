@@ -1,5 +1,5 @@
 # Стратегия RSI Donchian
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия RSI Donchian ищет экстремумы импульса, совпадающие с пробоем канала Donchian. Индекс относительной силы оценивает перекупленность и перепроданность, тогда как канал определяет недавние максимумы и минимумы цены.
 

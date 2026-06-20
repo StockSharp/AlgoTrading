@@ -1,5 +1,5 @@
 # Bollinger Supertrend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This strategy blends Bollinger Bands with the Supertrend indicator to pinpoint entries during strong directional moves. Bollinger Bands gauge volatility expansion while the Supertrend line tracks the overall trend and acts as a trailing stop.
 

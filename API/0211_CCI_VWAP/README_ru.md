@@ -1,5 +1,5 @@
 # Стратегия CCI VWAP
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Подход CCI VWAP старается поймать внутридневные развороты, когда импульс и цена отклоняются от объёмно-взвешенной средней. Наблюдая индекс товарного канала (CCI) вместе с уровнем VWAP, система оценивает силу недавних движений относительно справедливой цены.
 

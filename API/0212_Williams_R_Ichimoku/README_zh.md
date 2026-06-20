@@ -1,5 +1,5 @@
 # Williams R Ichimoku Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略结合Williams %R与一目均衡表。当%R跌破-80且价格位于云层上方并且转折线高于基准线时做多；当%R高于-20且价格在云层下方并且转折线低于基准线时做空。价格穿越云层另一侧时离场。
 

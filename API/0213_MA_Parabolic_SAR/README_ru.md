@@ -1,5 +1,5 @@
 # Стратегия MA Parabolic SAR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия MA Parabolic SAR стремится захватывать продолжительные тренды, используя скользящую среднюю для определения направления и Parabolic SAR для точки входа и размещения стопа. Когда оба индикатора совпадают, предполагается, что импульс достаточно сильный, чтобы его поддержать.
 

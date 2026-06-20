@@ -1,5 +1,5 @@
 # Williams R Ichimoku Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This setup combines the momentum extremes of Williams %R with the trend structure defined by the Ichimoku Cloud. The idea is to join strong moves only when price sits on the favourable side of the cloud and the short term lines confirm the bias.
 
