@@ -1,5 +1,5 @@
 # 30-Minute Candle Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This approach compares the current 30-minute candle opening price with the previous candle's close.
 If a new candle opens above the prior close, a long position is opened.

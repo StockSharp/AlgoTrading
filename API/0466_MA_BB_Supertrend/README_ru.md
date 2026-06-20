@@ -1,5 +1,5 @@
 # Стратегия MA + BB + SuperTrend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия совмещает пересечение скользящих средних с подтверждением
 SuperTrend и использует полосы Боллинджера для выхода. Лонг открывается,

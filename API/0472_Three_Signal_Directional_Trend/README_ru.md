@@ -1,5 +1,5 @@
 # Стратегия Three Signal Directional Trend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Three Signal Directional Trend** объединяет три индикатора: MACD, стохастик и скорость скользящей средней (ROC). Каждый индикатор подает сигнал на покупку или продажу. Позиция открывается, когда хотя бы два индикатора совпадают по направлению. Такой подход помогает отфильтровать шум и следовать основному тренду.
 

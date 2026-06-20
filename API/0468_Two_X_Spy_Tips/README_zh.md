@@ -1,5 +1,5 @@
 # Two X SPY TIPS
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 S&P 500 和 TIPS 的价格在新月份开始时都高于各自的 200 期 SMA 时，该策略会在交易品种上建仓。
 

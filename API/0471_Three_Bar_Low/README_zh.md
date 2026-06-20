@@ -1,5 +1,5 @@
 # 3-Bar Low 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 3-Bar Low 策略在收盘价跌破前一根K线的三根最低收盘价时做多，并在收盘价突破前一根K线的七根最高收盘价时平仓。可选的 EMA 过滤器要求价格在进场前位于长期均线上方。
 

@@ -1,4 +1,5 @@
 # 2Mars OKX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合移动平均线交叉与 SuperTrend 过滤。布林带用于设定获利目标，ATR 止损限制风险。
 

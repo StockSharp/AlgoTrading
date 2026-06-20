@@ -1,5 +1,5 @@
 # Three Down Three Up Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy buys after a specified number of consecutive down closes and closes the position after a run of up closes. An optional EMA filter allows entries only when price is above the moving average.
 

@@ -1,5 +1,5 @@
 # 200 SMA Buffer 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 200 SMA Buffer 策略利用价格与长期简单移动平均线之间的距离。当收盘价上穿 SMA 一定百分比时买入，当价格跌破 SMA 指定百分比时退出。该方法试图在长期趋势中保留一个缓冲区。
 

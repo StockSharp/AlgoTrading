@@ -1,4 +1,5 @@
 # Стратегия 2Mars OKX
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия сочетает пересечение скользящих средних с фильтром SuperTrend. Полосы Боллинджера задают цели по прибыли, а стоп-лосс на основе ATR ограничивает риск.
 

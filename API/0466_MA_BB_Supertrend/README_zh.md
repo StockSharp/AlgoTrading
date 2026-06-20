@@ -1,5 +1,5 @@
 # MA + BB + SuperTrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将移动平均线交叉与 SuperTrend 确认结合，并使用布林带作为退出信号。
 当信号均线向上穿越基准均线且价格位于 SuperTrend 之上时做多；

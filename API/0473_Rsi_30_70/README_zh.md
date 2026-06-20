@@ -1,5 +1,5 @@
 # RSI 30-70 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略利用相对强弱指数（RSI）来识别超买和超卖区域。当 RSI 低于超卖水平时开多单；当 RSI 高于超买水平时平仓。该系统仅使用单一时间框架，并且不做空。
 

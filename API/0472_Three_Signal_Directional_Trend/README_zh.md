@@ -1,5 +1,5 @@
 # Three Signal Directional Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Three Signal Directional Trend** 策略结合 MACD、随机指标和移动平均变化率 (ROC) 三个信号来判断趋势。当至少两个信号方向一致时开仓。多重确认有助于过滤噪音并跟随主要趋势。
 

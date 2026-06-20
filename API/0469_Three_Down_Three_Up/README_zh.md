@@ -1,5 +1,5 @@
 # 三跌三涨策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在连续多根下跌收盘后买入，在连续上涨收盘后平仓。可选的 EMA 过滤器要求价格高于均线才允许入场。
 
