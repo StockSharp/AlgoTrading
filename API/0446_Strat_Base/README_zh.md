@@ -1,5 +1,5 @@
 # 策略基础模板
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此文件夹提供构建自定义交易思路的最小框架。策略仅计算一个指数移动平均线，并暴露常见参数：是否启用多头或空头、可选的止盈和止损以及优化区间。开发者可在预留位置插入自己的进出场逻辑，以快速原型化新系统。
 

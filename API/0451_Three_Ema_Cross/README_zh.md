@@ -1,5 +1,5 @@
 # 三重EMA交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 三重EMA交叉策略将传统的快/慢指数移动平均线交叉与更长周期的趋势过滤器结合。在快速EMA自下而上穿越慢速EMA后，策略等待价格回踩快速均线，只要收盘价仍位于长期趋势EMA之上即可进场。这种设置旨在捕捉主趋势中的短暂回调后的延续走势。
 

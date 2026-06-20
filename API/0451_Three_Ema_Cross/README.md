@@ -1,5 +1,5 @@
 # Three EMA Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Three EMA Cross strategy combines a classic fast/slow moving average crossover with a longer trend filter. After the fast EMA crosses above the slow EMA, the strategy waits for a pullback to the fast average while the closing price remains above a broader trend EMA. This setup attempts to capture continuation moves after a brief retracement within the prevailing trend.
 

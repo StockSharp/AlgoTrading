@@ -1,5 +1,5 @@
 # Vela Superada策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Vela Superada策略交易由两根K线组成的反转形态。当一根看跌K线之后出现一根看涨K线并且收盘价高于前一根的开盘价时形成多头信号。策略使用短期EMA、RSI和MACD过滤，以避免逆势交易。多空方向可以单独启用。
 

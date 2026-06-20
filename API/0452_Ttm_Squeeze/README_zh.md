@@ -1,5 +1,5 @@
 # TTM挤压策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TTM挤压策略寻找价格波动被压缩的阶段，即布林带收缩至肯特纳通道内。当出现这种“挤压”时，可能预示即将发生的波动扩张。策略在挤压期间使用线性回归动量振荡器和RSI判断方向，一旦挤压解除且动量开始转向，就按走势方向建立头寸。
 

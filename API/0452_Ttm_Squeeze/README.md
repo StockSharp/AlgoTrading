@@ -1,5 +1,5 @@
 # TTM Squeeze Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The TTM Squeeze strategy looks for periods of price compression when Bollinger Bands contract inside Keltner Channels. This "squeeze" signals a potential volatility expansion. During the squeeze the strategy monitors a linear regression momentum oscillator and RSI to gauge direction. When the squeeze releases and momentum turns, positions are taken in the direction of the move.
 

@@ -1,5 +1,5 @@
 # Williams VIX Fix策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Williams VIX Fix策略将Larry Williams的波动率指标应用于没有官方VIX的品种。该指标通过计算过去一段时间最高收盘价与当前最低价之间的距离来构造合成VIX。当该值上穿基于布林带的阈值或价格跌破下轨时，被视为超卖信号；通过反向计算可以识别超买情形。
 

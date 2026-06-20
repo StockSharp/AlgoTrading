@@ -1,5 +1,5 @@
 # Golden Ratio Cubes策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Golden Ratio Cubes策略利用斐波那契数计算金分率扩展。策略追踪一段时间内的最高价和最低价，并基于黄金分割(φ ≈ 1.618)计算突破水平。当价格收盘突破这些水平时，按照突破方向入场。
 

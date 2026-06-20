@@ -1,5 +1,5 @@
 # Tendency EMA + RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在慢速趋势 EMA 上叠加快/中速 EMA 的交叉，并加入 RSI 过滤。做多需要快 EMA 上穿中 EMA，且二者都在慢 EMA 之上并且K线收阳；做空条件相反。RSI 到达极值时平仓，还可选择在盈利情况下经过 X 根K线后平仓。
 

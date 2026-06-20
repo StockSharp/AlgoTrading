@@ -1,5 +1,5 @@
 # 随机RSI SuperTrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将随机RSI的快速震荡与趋势过滤和简化的SuperTrend模型结合。随机RSI指出短期动量极值，而移动平均线和基于ATR的带状区间定义主要趋势。只有当%K在相应区域内上穿或下穿%D且大趋势一致时，才会开仓，从而减少震荡行情中的假信号。
 

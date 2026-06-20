@@ -1,5 +1,5 @@
 # SuperTrend + EMA 回调策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略沿 SuperTrend 的方向交易，并寻找回调至指数移动平均线的机会。当 SuperTrend 方向反转或价格在保持当前 SuperTrend 趋势的情况下从 EMA 反弹时建立头寸。该组合旨在捕捉新趋势的第一波及其后的回撤。
 

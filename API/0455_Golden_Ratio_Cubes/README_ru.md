@@ -1,5 +1,5 @@
 # Стратегия Golden Ratio Cubes
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Golden Ratio Cubes использует числа Фибоначчи для поиска пробоев. Она отслеживает максимум и минимум за период и рассчитывает уровни расширения на основе золотого сечения (φ ≈ 1.618). Когда цена закрывается выше или ниже этих уровней, стратегия входит в направлении пробоя.
 

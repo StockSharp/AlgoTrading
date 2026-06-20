@@ -1,5 +1,5 @@
 # Strategy Tester 示例策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例演示如何将动量与趋势强度结合成一个基础系统。线性回归斜率衡量短期动量，ADX 指标评估趋势的持续性。存在两条独立的入场规则：动量形成高点并且 ADX 回落，或 ADX 创新高同时动量从负值回升。
 
