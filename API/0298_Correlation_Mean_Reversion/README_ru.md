@@ -1,5 +1,5 @@
 # Корреляционный средневозврат
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Correlation Mean Reversion сосредоточена на экстремальных значениях корреляции, чтобы использовать возврат к среднему. Широкие отклонения от типичного уровня редко продолжаются долго.
 

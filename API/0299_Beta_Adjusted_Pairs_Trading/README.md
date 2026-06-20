@@ -1,5 +1,5 @@
 # Beta Adjusted Pairs Trading
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Beta Adjusted Pairs Trading strategy uses the Beta alongside volatility filters. It enters trades only when specified conditions align.
 

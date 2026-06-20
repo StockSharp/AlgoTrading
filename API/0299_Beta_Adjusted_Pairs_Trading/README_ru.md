@@ -1,5 +1,5 @@
 # Парный трейдинг с учетом беты
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Beta Adjusted Pairs Trading использует коэффициент бета вместе с фильтрами волатильности. Вход в сделки происходит только при совпадении заданных условий.
 
