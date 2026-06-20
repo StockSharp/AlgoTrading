@@ -1,5 +1,5 @@
 # Bollinger Band Squeeze Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This setup monitors the width of the Bollinger Bands to detect periods of low volatility. When the bands contract relative to their recent average, it signals a potential volatility expansion is near.
 

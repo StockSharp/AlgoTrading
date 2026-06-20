@@ -1,5 +1,5 @@
 # ATR Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The ATR Mean Reversion strategy measures how far price travels away from a moving average relative to recent volatility. The Average True Range (ATR) provides an adaptive gauge so thresholds expand during active periods and contract when markets quiet down.
 

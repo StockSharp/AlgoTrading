@@ -1,5 +1,5 @@
 # Volatility Adjusted Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This variation of mean reversion scales entry thresholds by the ratio of ATR to standard deviation. When volatility increases relative to typical noise, the distance needed to trigger a trade grows, helping avoid premature signals during chaotic swings.
 

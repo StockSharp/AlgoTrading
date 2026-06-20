@@ -1,5 +1,5 @@
 # ZScore Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The ZScore Reversal strategy measures how far price deviates from a moving average in terms of standard deviations. The resulting Z-Score highlights statistically stretched conditions that may snap back toward the mean.
 

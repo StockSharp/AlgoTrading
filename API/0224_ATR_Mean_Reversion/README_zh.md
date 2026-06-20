@@ -1,5 +1,5 @@
 # ATR Mean Reversion Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略衡量价格偏离移动平均线的距离与近期波动(ATR)的比值。价格偏离越大，ATR阈值越宽，动态适应市场活跃程度。
 

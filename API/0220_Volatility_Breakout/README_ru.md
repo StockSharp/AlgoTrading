@@ -1,5 +1,5 @@
 # Стратегия Volatility Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Volatility Breakout ищет сильные направленные движения, когда цена выходит за пределы своего среднего диапазона. Измеряя расстояние от простой скользящей средней с помощью ATR, алгоритм задаёт порог breakout, который масштабируется в зависимости от волатильности.
 

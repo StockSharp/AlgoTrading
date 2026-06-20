@@ -1,5 +1,5 @@
 # Стратегия ZScore Reversal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ZScore Reversal измеряет, насколько цена отклоняется от скользящей средней в стандартных отклонениях. Полученный Z‑Score выявляет статистически растянутые состояния, которые могут вернуться к среднему.
 
