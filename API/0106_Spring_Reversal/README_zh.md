@@ -1,5 +1,5 @@
 # 弹簧反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 弹簧反转是魏科夫理论中的概念，指价格短暂跌破支撑后又迅速回到其上方。
 这种震荡往往令追空者被困，常是新一轮上升的起点。

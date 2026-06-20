@@ -1,5 +1,5 @@
 # Стратегия "CCI Failure Swing"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 CCI Failure Swing основана на индексе товарного канала, который формирует более низкий максимум выше +100 или более высокий минимум ниже -100. Неспособность установить новый экстремум зачастую сигнализирует о завершении предыдущего тренда.
 

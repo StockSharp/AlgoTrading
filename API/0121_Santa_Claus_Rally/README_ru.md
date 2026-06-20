@@ -1,5 +1,5 @@
 # Стратегия Santa Claus Rally
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Так называемое «ралли Санта-Клауса» описывает склонность акций расти в последнюю неделю декабря и первые два торговых дня января.
 Предпраздничный оптимизм и позиционирование под конец года могут подпитывать этот краткий рост.

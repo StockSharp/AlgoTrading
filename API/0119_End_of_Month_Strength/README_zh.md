@@ -1,5 +1,5 @@
 # 月末强势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 月末强势现象指股票在每月最后几日常因基金调仓而出现上涨。
 这一"粉饰橱窗"的买盘使得月底通常有向上的偏好。

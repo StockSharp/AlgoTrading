@@ -1,5 +1,5 @@
 # Bullish Abandoned Baby Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Bullish Abandoned Baby is a rare three-candle pattern featuring a gap down doji followed by a gap up.
 This formation leaves the middle candle "abandoned" and often precedes a sharp reversal higher.

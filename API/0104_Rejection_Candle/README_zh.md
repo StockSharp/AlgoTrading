@@ -1,5 +1,5 @@
 # 拒绝蜡烛策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格试探某一水平却无法站稳时，会形成带长影线的小实体蜡烛，即“拒绝蜡烛”。
 这种形态说明市场对该方向的尝试遭到强烈抵制。

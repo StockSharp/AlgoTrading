@@ -1,5 +1,5 @@
 # Стратегия "RSI Failure Swing"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Метод Failure Swing для RSI — классическая разворотная техника, при которой индикатор формирует более высокий минимум в зоне перепроданности или более низкий максимум в зоне перекупленности. Неспособность достичь нового экстремума часто предвещает изменение тренда.
 

@@ -1,5 +1,5 @@
 # 魏科夫吸筹策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 魏科夫吸筹指在下跌后大型资金悄然建立仓位的筑底阶段。
 此时成交量和价格多次测试支撑并形成更高的低点，表明需求逐渐增加。

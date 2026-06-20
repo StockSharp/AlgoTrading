@@ -1,5 +1,5 @@
 # 周二逆转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 “周二逆转”指市场在周一大跌后第二天往往出现反弹的倾向。
 这种现象通常归因于周末情绪过度导致的抛售，随后在周二出现修正。

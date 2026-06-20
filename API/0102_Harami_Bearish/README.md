@@ -1,5 +1,5 @@
 # Bearish Harami Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Bearish Harami is the inverse of the bullish version, appearing after an upswing.
 Here a small candle forms completely inside the prior bullish bar, hinting that upward momentum is stalling.

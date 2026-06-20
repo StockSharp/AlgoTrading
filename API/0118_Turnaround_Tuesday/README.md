@@ -1,5 +1,5 @@
 # Turnaround Tuesday Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Turnaround Tuesday refers to the tendency for markets that sold off on Monday to rebound the next day.
 The effect is often attributed to traders overreacting after the weekend and then reversing course.

@@ -1,5 +1,5 @@
 # 魏科夫派发策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 魏科夫派发阶段表现为在反弹中出现大量抛压并不断测试阻力位。
 下跌时成交量放大，回升时缩小，说明大资金正在出货。

@@ -1,5 +1,5 @@
 # 上冲反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 上冲反转是弹簧形态的看跌对应，当价格短暂突破阻力后又迅速跌回。
 这种走势会洗出追涨买家，随后往往向下反转。

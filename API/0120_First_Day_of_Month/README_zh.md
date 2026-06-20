@@ -1,5 +1,5 @@
 # 月初第一天策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 许多市场在每月首个交易日因新资金流入而表现偏强。
 交易者通常在前月收盘或当天早盘提前买入以抢占先机。

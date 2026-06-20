@@ -1,5 +1,5 @@
 # CCI失败摆动策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 CCI失败摆动侧重于当CCI在+100上方形成更低的高点或在-100下方形成更高的低点时的反转信号。
 无法创出新极值往往意味着原有趋势已走到尽头。

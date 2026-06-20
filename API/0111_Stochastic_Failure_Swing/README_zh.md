@@ -1,5 +1,5 @@
 # 随机指标失败摆动策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控随机振荡指标，当80以上出现更低的高点或20以下出现更高的低点时留意反转。
 指标未能刷新极值并掉头，通常意味着趋势即将变化。

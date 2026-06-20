@@ -1,5 +1,5 @@
 # RSI Failure Swing Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 RSI Failure Swing is a classic reversal technique where the RSI forms a higher low in oversold territory or a lower high in overbought territory.
 This failure to reach a new extreme often precedes a change in trend.

@@ -1,5 +1,5 @@
 # 暗池成交策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 暗池成交策略追踪场外的大额交易，这些交易披露后往往会引发明显波动。
 异常的成交量可能表明机构正在布局，尚未影响公开市场。

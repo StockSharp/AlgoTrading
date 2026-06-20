@@ -1,5 +1,5 @@
 # CCI Failure Swing Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The CCI Failure Swing is based on the Commodity Channel Index forming a lower high above +100 or a higher low below -100.
 This inability to make a new extreme often signals the end of the prior trend.

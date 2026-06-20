@@ -1,5 +1,5 @@
 # 假突破陷阱策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 假突破陷阱旨在利用关键支撑或阻力位突破后不能维持的情形。
 许多交易者在突破时追入，却常看到价格迅速回落而被套。

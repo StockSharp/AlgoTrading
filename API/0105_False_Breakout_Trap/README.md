@@ -1,5 +1,5 @@
 # False Breakout Trap Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The False Breakout Trap aims to capitalize on breaks that fail to hold beyond key support or resistance.
 Traders often jump into a breakout only to see price quickly reverse, leaving them trapped.

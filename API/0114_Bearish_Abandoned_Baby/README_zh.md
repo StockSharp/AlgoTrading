@@ -1,5 +1,5 @@
 # 看跌弃婴策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 看跌弃婴与多头版本相反，常预示顶部的形成。
 该形态先出现向上跳空的十字星，随后向下跳空，使中间蜡烛孤立在上方。

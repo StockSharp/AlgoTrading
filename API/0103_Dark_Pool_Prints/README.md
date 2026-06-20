@@ -1,5 +1,5 @@
 # Dark Pool Prints Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Dark Pool Prints tracks large off-exchange transactions that often precede sharp moves once the activity is revealed.
 Unusual volume hitting the tape can signal institutional positioning that hasn't yet impacted the regular market.

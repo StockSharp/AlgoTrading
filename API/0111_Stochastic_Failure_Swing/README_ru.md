@@ -1,5 +1,5 @@
 # Стратегия "Stochastic Failure Swing"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Stochastic Failure Swing отслеживает осциллятор на предмет более низкого максимума выше 80 или более высокого минимума ниже 20. Когда индикатор не достигает нового экстремума и разворачивается, это часто указывает на смену тренда.
 

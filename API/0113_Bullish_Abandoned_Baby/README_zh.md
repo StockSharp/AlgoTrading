@@ -1,5 +1,5 @@
 # 看涨弃婴策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 看涨弃婴是一种少见的三烛形态，中间的十字星向下跳空，随后又向上跳空。
 这使得中间蜡烛被“遗弃”，往往预示价格将快速反弹。

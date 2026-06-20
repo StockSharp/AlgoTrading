@@ -1,5 +1,5 @@
 # Стратегия "Эффект месяца"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует различия в результатах, наблюдаемые в разные месяцы года. Например, акции часто растут в ноябре и декабре, но могут быть слабыми в сентябре.
 

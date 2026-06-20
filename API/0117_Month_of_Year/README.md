@@ -1,5 +1,5 @@
 # Month of Year Effect Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Month of Year Effect captures performance differences observed in various months.
 For example, equities often rally in November and December but can be weak during September.
