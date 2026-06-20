@@ -1,5 +1,5 @@
 # Delta Neutral Arbitrage 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该套利策略在兩個相關資產之間交易價差，保持整體頭寸接近 Delta 中性。通過在一個資產做多、另一個資產做空，期望從價差的均值回歸中獲利，而非單純依賴市場方向。
 

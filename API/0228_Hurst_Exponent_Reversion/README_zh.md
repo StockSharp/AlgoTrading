@@ -1,5 +1,5 @@
 # Hurst Exponent Reversion Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用赫斯特指数检测市场是否具备均值回归特性。当指数低于0.5时，价格倾向回到平均值，可在极端处反向。
 

@@ -1,5 +1,5 @@
 # Hurst Exponent Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This approach uses the Hurst exponent to detect when a market is behaving in a mean-reverting manner. Values below 0.5 suggest price tends to return toward its average, creating opportunities to fade extremes.
 

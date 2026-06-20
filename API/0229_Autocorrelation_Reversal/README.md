@@ -1,5 +1,5 @@
 # Autocorrelation Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This strategy analyzes short-term price autocorrelation to gauge whether recent moves are likely to reverse. Negative autocorrelation suggests successive price changes tend to alternate direction, creating mean-reverting conditions.
 

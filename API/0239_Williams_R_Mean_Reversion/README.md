@@ -1,5 +1,5 @@
 # Williams R Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Williams %R oscillates between 0 and -100 to show when price closes near the extremes of its recent range. This strategy fades those extremes once the indicator stretches far from its own average.
 

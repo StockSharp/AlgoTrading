@@ -1,5 +1,5 @@
 # ADX Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Here the Average Directional Index (ADX) measures overall trend strength. When ADX is low, the market lacks direction and prices tend to oscillate around a mean value. This strategy exploits that behaviour by trading deviations of ADX from its moving average.
 

@@ -1,5 +1,5 @@
 # CCI Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Commodity Channel Index (CCI) measures how far price moves from its statistical average. This strategy enters when CCI deviates from its own mean by a large margin, expecting a snap back once momentum fades.
 

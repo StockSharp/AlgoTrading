@@ -1,5 +1,5 @@
 # RSI 均值回归策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略跟踪相对强弱指数(RSI)与其平均值的偏离程度。当 RSI 偏离超过近期标准差的数倍时，预期其向均值回归。
 

@@ -1,5 +1,5 @@
 # MACD 均值回归策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该方法关注 MACD 柱状图相对于其平均值的偏离程度。极端的柱状图往往在动能消散后回归，通过监控 MACD 与信号线的差距来捕捉过度的走势。
 

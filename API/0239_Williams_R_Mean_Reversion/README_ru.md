@@ -1,5 +1,5 @@
 # Стратегия возврата по Williams %R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Индикатор Williams %R колеблется между 0 и −100, показывая, когда цена закрывается у крайних значений недавнего диапазона. Эта стратегия продаёт такие экстремы, когда индикатор удаляется от своего среднего.
 

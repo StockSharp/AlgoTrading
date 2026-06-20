@@ -1,5 +1,5 @@
 # Delta Neutral Arbitrage Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This arbitrage strategy trades the spread between two correlated assets while keeping the combined position close to delta neutral. By balancing a long position in one asset against a short in another, it attempts to profit from mean reversion in the spread rather than market direction.
 

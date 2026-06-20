@@ -1,5 +1,5 @@
 # RSI Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 This strategy tracks the relative strength index and measures its distance from an average level. When RSI deviates by more than a multiple of its recent standard deviation, the algorithm expects a snap back toward the mean.
 
