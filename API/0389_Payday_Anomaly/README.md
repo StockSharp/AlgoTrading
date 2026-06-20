@@ -1,6 +1,6 @@
 # Payday Anomaly Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy exploits the "payday" effect by holding a broad market ETF around typical salary payment dates. The ETF is owned from two trading days before month-end through the third trading day of the new month, capturing inflows from paycheck contributions.
 

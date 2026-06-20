@@ -1,6 +1,6 @@
 # Momentum Style Rotation Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This Python strategy rotates among a set of factor exchange​-traded funds (ETFs) and a broad market ETF. At the end of each month the ETFs are ranked by their trailing three-month total return. The portfolio then invests entirely in the top ranked fund for the following month to harvest medium-term momentum.
 

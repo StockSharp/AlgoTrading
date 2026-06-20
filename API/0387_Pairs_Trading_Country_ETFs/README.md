@@ -1,6 +1,6 @@
 # Pairs Trading Country ETFs Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This mean-reversion strategy trades a pair of country ETFs based on the z-score of their price ratio. When the ratio deviates beyond a threshold the system enters a long/short position expecting the spread to revert toward its average.
 

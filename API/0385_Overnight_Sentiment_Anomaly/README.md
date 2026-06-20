@@ -1,6 +1,6 @@
 # Overnight Sentiment Anomaly Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades an equity ETF only overnight when an external sentiment indicator signals extreme optimism. At the close the ETF is bought if the indicator exceeds a threshold and is sold the next morning, targeting the overnight drift associated with positive sentiment.
 

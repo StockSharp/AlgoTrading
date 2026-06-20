@@ -1,6 +1,6 @@
 # 动量风格轮动策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该 Python 策略在因子 ETF 和广泛市场 ETF 之间轮换。每月末根据过去三个月的总收益率对 ETF 进行排名，下一个月全部资金买入排名最高的 ETF，以捕捉中期动量。
 

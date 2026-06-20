@@ -1,6 +1,6 @@
 # Mutual Fund Momentum Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy rotates quarterly among a set of mutual funds. At the end of each quarter the funds are ranked by their trailing six-month performance. Capital is allocated to the top fund for the next quarter, allowing long-term investors to follow persistent momentum in actively managed products.
 

@@ -1,6 +1,6 @@
 # 研发支出策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该横截面策略按照研发支出与市值比例对股票排序。每月初买入研发消耗比例最高的前20%公司，卖空比例最低的后20%，假设高研发支出预示更好的未来表现。
 

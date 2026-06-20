@@ -1,6 +1,6 @@
 # 隔夜情绪异常策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅在外部情绪指标显示极度乐观时隔夜持有股票 ETF。如果指标值高于阈值，则在收盘买入，次日开盘卖出，利用正向情绪下的隔夜偏离。
 

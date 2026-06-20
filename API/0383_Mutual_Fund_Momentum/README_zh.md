@@ -1,6 +1,6 @@
 # 共同基金动量策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略按季度在一组共同基金之间轮换。每个季度结束时，根据过去六个月的收益率对基金排序，下一季度将全部资金投入排名首位的基金，让长线投资者可以跟随主动管理产品中的持续动量。
 

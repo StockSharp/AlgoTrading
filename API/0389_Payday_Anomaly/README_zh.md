@@ -1,6 +1,6 @@
 # 发薪日异常策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用“发薪日”效应，在常见的工资支付日附近持有市场 ETF。从月底前两个交易日开始持有，直至新月的第三个交易日，捕捉薪资投入带来的资金流入。
 

@@ -1,6 +1,6 @@
 # 国家 ETF 配对交易策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该均值回归策略根据价格比值的 z 分数在两只国家 ETF 之间进行交易。当比值偏离超过阈值时，系统建立多空夹头，期望价差回归均值。
 

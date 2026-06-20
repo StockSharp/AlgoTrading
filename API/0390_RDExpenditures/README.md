@@ -1,6 +1,6 @@
 # R&D Expenditures Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This cross-sectional strategy ranks stocks by their ratio of research-and-development (R&D) expenses to market value. At the start of each month the top quintile of firms with the highest R&D intensity is bought while the bottom quintile is sold short, betting that heavy R&D spending predicts future outperformance.
 

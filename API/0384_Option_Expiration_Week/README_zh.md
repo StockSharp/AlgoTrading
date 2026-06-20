@@ -1,6 +1,6 @@
 # 期权到期周策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该 Python 策略仅在期权到期周买入并持有某只 ETF。每月第三个星期五前的星期一开盘买入，星期五收盘平仓，利用到期周常见的短期强势。
 

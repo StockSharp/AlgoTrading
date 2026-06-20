@@ -1,5 +1,5 @@
 # 动量反转波动率策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该复合因子同时考虑长期动量、短期反转以及低波动率。每月为每只股票计算一个综合得分，包含12个月动量、最近1个月收益率的相反数以及过去60天的波动率，可通过权重 `WM`、`WR`、`WV` 调整三项的影响。
 

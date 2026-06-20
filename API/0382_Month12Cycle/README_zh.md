@@ -1,6 +1,6 @@
 # 12个月周期策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该 Python 策略利用“12个月周期”异常。根据一年前同月的收益率对股票排序，每月买入前10%并卖空后10%，构建基于滞后年度表现的市场中性组合。
 

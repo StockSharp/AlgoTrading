@@ -1,6 +1,6 @@
 # Pairs Trading Stocks Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This simplified pairs trading strategy operates on multiple stock pairs. For each pair the price ratio is tracked over a rolling window and its z-score is computed. When the z-score exceeds an entry threshold a long/short trade is opened; positions are closed when the z-score reverts.
 

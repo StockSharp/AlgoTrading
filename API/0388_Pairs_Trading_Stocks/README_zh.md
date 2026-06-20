@@ -1,6 +1,6 @@
 # 股票配对交易策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该简化策略在多组股票对上进行配对交易。对每对股票的价格比值进行滚动跟踪并计算 z 分数，当 z 分数超过进入阈值时建立多空夹头，回到退出水平时平仓。
 
