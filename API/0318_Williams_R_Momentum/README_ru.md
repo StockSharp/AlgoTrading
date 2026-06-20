@@ -1,5 +1,5 @@
 # Импульс Williams %R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Williams R Momentum** основана на индикаторе Williams %R с фильтром Momentum.
 
