@@ -1,5 +1,5 @@
 # Стратегия VWAP Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает индикаторы VWAP и Стохастик. Покупки выполняются, когда цена ниже VWAP и Стохастик находится в зоне перепроданности. Продажи — когда цена выше VWAP и Стохастик в зоне перекупленности.
 

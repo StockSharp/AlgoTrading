@@ -1,5 +1,5 @@
 # Стратегия Ichimoku Volume
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №151 — Ichimoku + Объём. Покупка производится, когда цена выше облака Кумо, Тенкан-сен выше Киджун-сен и объём выше среднего. Продажа — когда цена ниже облака, Тенкан-сен ниже Киджун-сен и объём также выше среднего.
 

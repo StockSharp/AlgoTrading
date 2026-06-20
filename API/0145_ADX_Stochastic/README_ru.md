@@ -1,5 +1,5 @@
 # Стратегия ADX Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает индикатор ADX (Average Directional Index), определяющий силу тренда, и осциллятор Стохастик для точного входа на уровнях перепроданности или перекупленности.
 
