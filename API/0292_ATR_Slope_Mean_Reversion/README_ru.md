@@ -1,5 +1,5 @@
 # ATR: средневозврат по наклону
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ATR Slope Mean Reversion сосредоточена на экстремальных значениях среднего истинного диапазона (ATR), чтобы использовать возврат к среднему. Широкие отклонения от нормального уровня редко продолжаются долго.
 
