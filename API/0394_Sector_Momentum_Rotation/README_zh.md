@@ -1,5 +1,5 @@
 # 行业动量轮动
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **行业动量轮动** 策略在行业ETF之间轮动资金。每月末计算各行业在多个回溯窗口的收益，系统买入最强行业并退出较弱行业，仅持有表现最佳的部分。
 

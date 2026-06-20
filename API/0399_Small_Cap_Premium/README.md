@@ -1,5 +1,5 @@
 # Small Cap Premium
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Small Cap Premium** strategy captures the historical tendency for small capitalization stocks to outperform large caps. The universe is split by market capitalization and the portfolio holds a basket of small caps while shorting an index of large caps.
 

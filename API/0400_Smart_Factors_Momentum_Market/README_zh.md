@@ -1,5 +1,5 @@
 # 智能因子动量市场
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **智能因子动量市场** 策略将多个股票因子与大盘趋势过滤器结合。仅当因子组合和市场指数都显示上升趋势时才做多市场，否则持有现金。
 

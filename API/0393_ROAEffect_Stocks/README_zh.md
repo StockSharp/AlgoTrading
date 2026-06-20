@@ -1,5 +1,5 @@
 # ROA效应股票
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ROA效应股票** 策略关注资产回报率高的公司。外部基本面数据源提供交易标的的ROA值。每月初根据ROA对股票排序，组合做多最高十分位并做空最低十分位。
 

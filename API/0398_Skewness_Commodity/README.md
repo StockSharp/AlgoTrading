@@ -1,5 +1,5 @@
 # Skewness Commodity
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Skewness Commodity** strategy ranks commodity futures by the skewness of their return distribution. Contracts with positive skewness are favored for long positions, while those with strongly negative skewness are sold short, assuming extreme downside moves will mean revert.
 

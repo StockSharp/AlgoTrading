@@ -1,5 +1,5 @@
 # 股票短期反转
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **股票短期反转** 策略将均值回归应用于股票。每天买入上一周跌幅最大的股票并做空涨幅最大的股票，押注短暂的反转。
 

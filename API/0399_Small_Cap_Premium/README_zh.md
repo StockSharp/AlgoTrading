@@ -1,5 +1,5 @@
 # 小盘股溢价
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **小盘股溢价** 策略利用小市值股票相对大市值股票的超额收益。根据市值对股票进行排序，组合持有小盘股篮子并做空大盘指数。
 

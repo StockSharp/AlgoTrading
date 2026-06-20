@@ -1,5 +1,5 @@
 # Short-Term Reversal Futures
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Short-Term Reversal Futures** strategy seeks mean reversion across futures contracts. Each day the strategy identifies contracts with the worst return over the previous week and buys them while selling contracts that rallied the most, expecting a snap back.
 

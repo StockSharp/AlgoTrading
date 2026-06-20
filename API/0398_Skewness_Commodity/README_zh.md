@@ -1,5 +1,5 @@
 # 商品偏度
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **商品偏度** 策略根据收益分布的偏度对期货进行排序。偏度为正的合约倾向做多，偏度为负的合约做空，假设极端下行会回归均值。
 

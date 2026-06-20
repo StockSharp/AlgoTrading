@@ -1,5 +1,5 @@
 # 期货短期反转
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **期货短期反转** 策略在期货市场寻找均值回归。每天根据上一周的收益对合约排序，买入跌幅最大的合约并做空涨幅最大的合约，期望出现反弹。
 

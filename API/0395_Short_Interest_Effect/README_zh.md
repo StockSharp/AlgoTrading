@@ -1,5 +1,5 @@
 # 空头兴趣效应
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **空头兴趣效应** 策略利用做空兴趣水平预测股票表现。做空比例低或回补天数少的证券通常优于被大量做空的证券。每月按照空头兴趣排序，组合买入最低组并做空最高组。
 

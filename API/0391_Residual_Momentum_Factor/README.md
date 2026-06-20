@@ -1,5 +1,5 @@
 # Residual Momentum Factor
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Residual Momentum Factor** strategy ranks securities by an external residual momentum score.
 Each month on the first trading day it goes long the top decile and short the bottom decile.

@@ -1,5 +1,5 @@
 # ROA Effect Stocks
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **ROA Effect Stocks** strategy targets equities with high returns on assets. An external fundamental data feed supplies the ROA values for the trading universe. At the beginning of each month, the stocks are ranked by ROA, and the portfolio goes long the top decile and short the bottom decile.
 

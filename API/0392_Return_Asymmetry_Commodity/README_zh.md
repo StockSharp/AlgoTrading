@@ -1,5 +1,5 @@
 # 商品收益不对称
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **商品收益不对称** 策略利用正收益和负收益的差异。对于每个商品期货，在滚动窗口中分别累加所有上涨和下跌的幅度。较高的比率表示持续上涨动能，较低的比率表明卖压持续。
 

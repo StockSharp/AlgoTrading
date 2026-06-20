@@ -1,5 +1,5 @@
 # Return Asymmetry Commodity
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Return Asymmetry Commodity** strategy exploits the difference between positive and negative returns. For each commodity future, the rolling window sums all upward and downward moves separately. A high ratio implies persistent positive drift, while a low ratio points to sustained selling pressure.
 
