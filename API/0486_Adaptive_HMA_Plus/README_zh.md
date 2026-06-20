@@ -1,5 +1,5 @@
 # Adaptive HMA Plus
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于自适应 Hull 均线的策略，根据波动率或成交量调整周期。当市场活跃且 HMA 斜率指向趋势方向时开多或做空。
 

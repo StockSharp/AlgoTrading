@@ -1,5 +1,5 @@
 # 自适应RSI策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 自适应RSI策略根据相对强弱指数计算平滑系数。当RSI偏离50的中性水平时，系数增大，使自适应RSI更加贴近价格；当RSI接近50时，系数减小，曲线更加平滑。自适应RSI向上转折时开多仓，向下转折时开空仓。
 

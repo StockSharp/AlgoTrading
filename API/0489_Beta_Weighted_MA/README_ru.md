@@ -1,5 +1,5 @@
 # Стратегия Beta Weighted MA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Beta Weighted MA (BWMA) использует распределение Бета для взвешивания последних цен, создавая скользящую среднюю с регулируемой задержкой и сглаживанием с помощью параметров alpha и beta. Стратегия открывает длинную позицию при пересечении цены выше BWMA и короткую при пересечении ниже.
 

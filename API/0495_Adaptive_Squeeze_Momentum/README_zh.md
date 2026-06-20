@@ -1,5 +1,5 @@
 # Adaptive Squeeze Momentum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Adaptive Squeeze Momentum 策略在布林带进入肯特纳通道时识别波动性收缩，并等待伴随强动量的突破。动量强度通过标准差阈值衡量。可选的 RSI 和 EMA 趋势过滤器帮助优化进场。ATR 可用于设置动态止损和止盈，持仓在预定的时间周期后自动关闭。
 

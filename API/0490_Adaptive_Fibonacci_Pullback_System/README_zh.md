@@ -1,5 +1,5 @@
 # 自适应斐波那契回撤策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将三条使用斐波那契倍数(0.618、1.618、2.618)构建的SuperTrend线求平均，并通过EMA平滑。交易基于回撤至此自适应趋势，同时使用AMA中线和可选的RSI过滤方向。
 

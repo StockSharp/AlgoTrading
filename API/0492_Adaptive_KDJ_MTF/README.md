@@ -1,5 +1,5 @@
 # Adaptive KDJ (MTF)
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Adaptive KDJ strategy blends KDJ oscillator values from three timeframes. Each timeframe is smoothed with an EMA and combined using adjustable weights. Trend strength is measured with an SMA of the combined oscillator, which adapts the overbought and oversold levels.
 

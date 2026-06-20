@@ -1,5 +1,5 @@
 # Adaptive HMA Plus
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Adaptive Hull Moving Average strategy that adjusts its period based on volatility or volume. It opens long or short positions when the HMA slope points in the trend direction during active market conditions.
 

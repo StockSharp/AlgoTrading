@@ -1,5 +1,5 @@
 # SMA 回调 + ATR 出场策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当短期均线位于长期均线之上或之下时，策略在回调时入场。价格跌破快速 SMA 且仍高于慢速 SMA 时做多；价格升破快速 SMA 且仍低于慢速 SMA 时做空。退出使用从入场价计算的 ATR 倍数。
 

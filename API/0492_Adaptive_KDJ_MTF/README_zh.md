@@ -1,5 +1,5 @@
 # 自适应KDJ (MTF)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 自适应KDJ策略将三个不同时间框架的KDJ振荡器值进行加权平均，并使用EMA进行平滑处理。合成振荡器的SMA用来衡量趋势强度，从而动态调整超买和超卖水平。
 

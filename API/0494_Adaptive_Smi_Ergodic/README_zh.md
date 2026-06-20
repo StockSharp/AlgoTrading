@@ -1,5 +1,5 @@
 # Adaptive SMI Ergodic策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Adaptive SMI Ergodic策略利用True Strength Index (TSI)振荡器及其EMA信号线来识别超买或超卖后的反转。当TSI上穿超卖阈值并位于信号线上方时开多仓；当TSI下穿超买阈值且位于信号线下方时开空仓。
 

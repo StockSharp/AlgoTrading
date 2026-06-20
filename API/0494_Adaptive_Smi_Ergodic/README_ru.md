@@ -1,5 +1,5 @@
 # Стратегия Adaptive SMI Ergodic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Adaptive SMI Ergodic использует осциллятор True Strength Index (TSI) и сигнальную линию EMA для выявления разворотов из зон перекупленности и перепроданности. Длинная позиция открывается, когда TSI пересекает снизу вверх уровень перепроданности и находится выше сигнальной линии. Короткая позиция открывается, когда TSI пересекает сверху вниз уровень перекупленности и находится ниже сигнальной линии.
 

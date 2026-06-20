@@ -1,5 +1,5 @@
 # 80-20 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找收盘价位于蜡烛区间顶部或底部20%的形态。若收盘价接近最高价且开盘价接近最低价，则产生看多信号；若开盘价接近最高价且收盘价接近最低价，则产生看空信号。该方法旨在捕捉价格从极端位置快速反转。
 

@@ -1,5 +1,5 @@
 # Стратегия Adaptive Fibonacci Pullback
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия усредняет три линии SuperTrend с коэффициентами Фибоначчи (0.618, 1.618, 2.618) и сглаживает результат EMA. Торги ведутся по откатам к адаптивному тренду, направление подтверждается средней линией AMA и опциональным фильтром RSI.
 

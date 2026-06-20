@@ -1,5 +1,5 @@
 # Beta Weighted MA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Beta Weighted MA（BWMA）策略使用Beta分布对最近的价格加权，通过alpha和beta参数调节滞后和平滑程度。当价格上穿BWMA时开多仓，下穿时开空仓。
 

@@ -1,5 +1,5 @@
 # 自适应分形网格剥头皮
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在最近的分形枢轴周围根据ATR距离放置限价单。趋势由简单移动平均线确定。当波动率高于阈值时，上升趋势在分形低点下方设置买入限价，下降趋势在分形高点上方设置卖出限价。退出在相反网格水平或基于ATR的止损。
 

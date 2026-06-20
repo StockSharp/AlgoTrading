@@ -1,5 +1,5 @@
 # 80-20 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy detects candles where price closes in the top or bottom 20% of the session. A bullish signal occurs when the close is within the upper fifth and the open is within the lower fifth of the range. A bearish signal occurs when the open is within the upper fifth and the close is within the lower fifth. The approach aims to capture rapid reversals from extreme candle closes.
 
