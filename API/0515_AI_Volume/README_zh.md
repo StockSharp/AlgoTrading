@@ -1,5 +1,5 @@
 # AI Volume策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AI Volume策略寻找成交量的突然放大。当当前成交量超过其EMA乘以设定的倍数，价格位于50期EMA之上/下并且K线颜色一致时，在该方向开仓。每笔交易在固定数量的K线后平仓。
 

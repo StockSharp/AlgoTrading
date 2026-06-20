@@ -1,5 +1,5 @@
 # ADX Range Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters long positions when the close breaks above the highest close of a lookback period while the ADX remains below a specified threshold, indicating a quiet market. Trading is limited to a defined session and a maximum number of trades per day. A fixed stop-loss in price units protects every position.
 

@@ -1,5 +1,5 @@
 # 高IV市场的激进策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合EMA交叉与ATR波动率过滤。只有当波动率高于其均值加上一倍标准差时才进场，并以ATR为基础设定止盈止损。
 

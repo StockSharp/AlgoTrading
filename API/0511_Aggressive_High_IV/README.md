@@ -1,5 +1,5 @@
 # Aggressive High IV Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Aggressive High IV Strategy combines EMA crossovers with an ATR volatility filter. Trades are opened only when volatility exceeds its mean by one standard deviation and closed with ATR based targets.
 

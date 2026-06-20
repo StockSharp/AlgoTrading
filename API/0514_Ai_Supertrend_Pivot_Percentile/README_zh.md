@@ -1,5 +1,5 @@
 # AI Supertrend Pivot Percentile 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两个 Supertrend 指标、ADX 过滤器以及 Williams %R 枢轴百分位过滤。 当价格位于两个 Supertrend 之上、ADX 显示强趋势且 Williams %R 高于 -50 时开多仓；相反条件下开空仓。
 

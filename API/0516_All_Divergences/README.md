@@ -1,5 +1,5 @@
 # All Divergences Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The All Divergences strategy looks for bullish and bearish RSI divergences filtered by a moving average trend. A long position is opened when price makes a lower low while RSI forms a higher low above the moving average. A short position is opened when price makes a higher high while RSI forms a lower high below the moving average. Optional stop-loss and take-profit protection can automatically close positions, and a moving average risk control exits after several closes against the trend.
 

@@ -1,5 +1,5 @@
 # ADX Volume Multiplier 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ADX Volume Multiplier 策略将平均方向性指数的趋势强度与成交量放大过滤器结合。只有当 ADX 超过阈值、主要方向线指向趋势方向且当前成交量超过移动平均乘以系数时才开仓。
 

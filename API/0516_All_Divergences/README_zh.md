@@ -1,5 +1,5 @@
 # All Divergences 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 All Divergences 策略通过移动平均线趋势过滤 RSI 的多空背离。当价格创新低而 RSI 创新高并且价格位于均线上方时开多；当价格创新高而 RSI 创新低并且价格位于均线下方时开空。可选的止损和止盈保护可以自动平仓，移动平均线风险控制在多次逆势收盘后退出。
 

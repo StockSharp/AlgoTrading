@@ -1,5 +1,5 @@
 # Стратегия ADX Volume Multiplier
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ADX Volume Multiplier сочетает силу тренда по индикатору Average Directional Index с фильтром всплеска объёма. Сделки открываются только когда ADX превышает порог, доминирующая линия направлена в сторону тренда, а текущий объём больше средней величины, умноженной на заданный коэффициент.
 

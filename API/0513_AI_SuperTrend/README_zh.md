@@ -1,5 +1,5 @@
 # AI SuperTrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AI SuperTrend 策略结合 SuperTrend 指标与价格及 SuperTrend 线的加权移动平均。 当 SuperTrend 向上反转且价格 WMA 高于 SuperTrend WMA 时开多仓；相反条件下开空仓。 持仓使用基于 ATR 的动态跟踪止损进行保护。
 

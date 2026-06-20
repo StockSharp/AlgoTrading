@@ -1,5 +1,5 @@
 # AI Volume Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AI Volume Strategy hunts for sudden participation bursts. A volume spike occurs when current volume exceeds its EMA by a given multiplier. If the spike aligns with the 50-period price EMA and the candle color, the strategy enters in that direction. Each trade is closed after a fixed number of bars.
 
