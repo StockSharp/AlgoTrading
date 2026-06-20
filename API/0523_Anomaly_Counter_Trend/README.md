@@ -1,5 +1,5 @@
 # Anomaly Counter-Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The algorithm detects sharp percentage moves over a short window and trades against them. When price jumps above the threshold it sells; when price drops below the threshold it buys. Stop-loss and take-profit are set in ticks.
 

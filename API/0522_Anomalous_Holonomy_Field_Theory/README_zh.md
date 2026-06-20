@@ -1,5 +1,5 @@
 # Anomalous Holonomy Field Theory 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 EMA、RSI、MACD、ATR、ROC 和 VWAP 距离生成综合信号。当信号超过设定阈值时做多，当信号低于负阈值时做空。ATR 止损用于保护持仓。
 

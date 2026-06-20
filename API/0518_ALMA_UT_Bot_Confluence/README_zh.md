@@ -1,5 +1,5 @@
 # ALMA & UT Bot Confluence 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ALMA & UT Bot Confluence 策略将 Arnaud Legoux 移动平均滤波与 UT Bot 风格的追踪止损结合。 当价格高于长期 EMA 与 ALMA、成交量高于均值、RSI 显示动能、ADX 表明趋势强度、蜡烛低于布林带上轨并且 UT Bot 触发买入信号时开多仓。 当 UT Bot 转为空头并且价格下穿快速 EMA 时在相同过滤条件下开空仓。 平仓可使用 UT Bot 追踪止损或基于 ATR 的固定止损与止盈。
 

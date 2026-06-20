@@ -1,5 +1,5 @@
 # AO 背离策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找价格与 Awesome Oscillator (AO) 之间的多头和空头背离。当价格创出更低低点而 AO 形成更高低点时，出现多头背离；当价格创出更高高点而 AO 形成更低高点时，出现空头背离。
 

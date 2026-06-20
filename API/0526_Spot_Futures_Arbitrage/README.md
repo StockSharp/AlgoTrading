@@ -1,4 +1,5 @@
 # Spot Futures Arbitrage
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Arbitrages the price difference between a spot asset and its futures contract.
 Enters long spot/short futures when the futures trades above the spot by a threshold, and the opposite when below.

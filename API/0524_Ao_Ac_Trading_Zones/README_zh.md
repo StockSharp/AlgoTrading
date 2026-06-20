@@ -1,5 +1,5 @@
 # AO/AC 交易区策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 “AO/AC Trading Zones” 概念。它结合 Awesome Oscillator (AO)、Acceleration/Deceleration (AC) 以及威廉姆斯分形，在动能加速并突破齿线后逐步加仓多头。
 

@@ -1,5 +1,5 @@
 # Anands Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This breakout system sets the trade direction using the previous day's candle.
 If the prior close is above that day's high the strategy looks for longs, while a close below the low turns it bearish.

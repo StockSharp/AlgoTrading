@@ -1,5 +1,5 @@
 # ALMA 优化策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 ALMA、长期 EMA、ADX、RSI 与布林带结合，并以 ATR 过滤波动性。开仓后根据 ATR 倍数设置止损和止盈，并可选按时间退出。
 

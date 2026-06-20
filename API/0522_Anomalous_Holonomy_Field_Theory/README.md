@@ -1,5 +1,5 @@
 # Anomalous Holonomy Field Theory Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines EMA, RSI, MACD, ATR, rate of change and VWAP distance into a composite signal. Long positions are opened when the signal exceeds a user-defined threshold, while short positions are opened when it falls below the negative threshold. An ATR-based stop protects open trades.
 

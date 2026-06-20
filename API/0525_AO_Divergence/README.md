@@ -1,5 +1,5 @@
 # AO Divergence Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy looks for bullish and bearish divergences between the Awesome Oscillator (AO) and price. A bullish divergence occurs when price makes a lower low while AO forms a higher low. A bearish divergence appears when price makes a higher high while AO makes a lower high.
 

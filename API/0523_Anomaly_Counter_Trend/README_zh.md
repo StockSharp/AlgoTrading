@@ -1,5 +1,5 @@
 # 异常逆势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该算法检测短时间内的剧烈百分比变动并逆向交易。价格大幅上升超过阈值时做空，跌破阈值时做多。止损和止盈以跳数设置。
 

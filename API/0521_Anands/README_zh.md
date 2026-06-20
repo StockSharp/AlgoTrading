@@ -1,5 +1,5 @@
 # Anands策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过上一交易日的日线确定方向。
 若前一日收盘价高于其最高价，则考虑做多；若低于最低价，则考虑做空。

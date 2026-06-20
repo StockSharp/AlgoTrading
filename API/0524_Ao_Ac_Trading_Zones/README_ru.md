@@ -1,5 +1,5 @@
 # Стратегия зон торговли AO/AC
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воспроизводит концепцию «AO/AC Trading Zones». Она сочетает осцилляторы AO и AC с фракталами Билла Вильямса, постепенно наращивая длинную позицию при ускорении импульса выше линии зубов аллигатора.
 

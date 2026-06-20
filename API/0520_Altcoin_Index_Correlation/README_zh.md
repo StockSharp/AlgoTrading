@@ -1,5 +1,5 @@
 # 山寨币指数相关策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较交易品种和参考指数的 EMA 趋势。当两个品种的快 EMA 均高于慢 EMA 时做多，均低于慢 EMA 时做空。可选择反向逻辑或忽略指数。
 

@@ -1,5 +1,5 @@
 # Стратегия ALMA Optimized
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает среднюю ALMA, долгосрочную EMA, ADX, RSI и полосы Боллинджера. Фильтр по ATR обеспечивает достаточную волатильность. Для выхода используются ATR‑множители стоп‑лосса и тейк‑профита, а также необязательный выход по времени.
 

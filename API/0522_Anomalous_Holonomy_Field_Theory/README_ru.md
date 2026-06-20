@@ -1,5 +1,5 @@
 # Стратегия Anomalous Holonomy Field Theory
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает EMA, RSI, MACD, ATR, ROC и расстояние до VWAP для формирования композитного сигнала. Лонг открывается, когда сигнал превышает заданный порог. Шорт открывается, когда сигнал падает ниже отрицательного порога. Позиции защищаются стопом на основе ATR.
 

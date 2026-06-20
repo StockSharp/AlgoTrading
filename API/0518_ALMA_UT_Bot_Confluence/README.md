@@ -1,5 +1,5 @@
 # ALMA & UT Bot Confluence Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The ALMA & UT Bot Confluence strategy combines an Arnaud Legoux Moving Average filter with a UT Bot style trailing stop. A long position opens when price is above both the long-term EMA and ALMA, volume exceeds its average, RSI signals momentum, ADX confirms trend strength, the candle is below the upper Bollinger Band and the UT Bot generates a buy signal. Short entries occur when the UT Bot turns bearish and price crosses below the fast EMA under the same filters. Exits use either the UT Bot trailing stop or fixed ATR-based stop loss and take profit.
 
