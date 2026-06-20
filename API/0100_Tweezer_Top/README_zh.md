@@ -1,5 +1,5 @@
 # 镊子顶策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 镊子顶形态出现在行情上涨后，两根蜡烛具有几乎相同的最高价，显示买方力量受阻。
 当第二根蜡烛确认顶部时，策略做空，期望上涨动能减弱后出现回落。

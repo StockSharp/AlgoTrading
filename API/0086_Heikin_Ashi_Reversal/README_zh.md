@@ -1,5 +1,5 @@
 # 平滑烛线反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heikin-Ashi 烛线能够平滑噪声并突出趋势方向。当连续的看跌 HA 烛线转为看涨，或反之，可能表示动能变化。本策略交易这种颜色翻转，并用百分比止损保护。
 

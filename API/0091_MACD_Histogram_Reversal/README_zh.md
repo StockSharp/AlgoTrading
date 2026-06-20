@@ -1,5 +1,5 @@
 # MACD 直方图反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MACD 直方图表示 MACD 线与信号线的差值。当直方图穿越零轴时常意味着动能转向。本策略在这些穿越发生时入场，并以百分比止损控制风险。
 

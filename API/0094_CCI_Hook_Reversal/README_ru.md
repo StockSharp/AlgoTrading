@@ -1,5 +1,5 @@
 # Стратегия разворота по CCI Hook
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия CCI Hook Reversal использует индикатор CCI в качестве триггера, когда он «зацепляется» от экстремального значения. После достижения уровня выше +100 или ниже −100 индикатор часто быстро возвращается, сигнализируя о затухании импульса.
 

@@ -1,5 +1,5 @@
 # Volume Exhaustion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Sharp spikes in volume often signal the end of a move as traders rush to exit or enter positions. This strategy measures current volume against an average to spot exhaustion. When combined with candle direction and a moving average filter it can pinpoint reversal entries.
 

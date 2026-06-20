@@ -1,5 +1,5 @@
 # Heikin-Ashi Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Heikin-Ashi candles smooth noise and highlight trend direction. A shift from a series of bearish HA candles to a bullish one, or vice versa, can indicate a change in momentum. This strategy trades those color flips and uses a percentage stop for protection.
 

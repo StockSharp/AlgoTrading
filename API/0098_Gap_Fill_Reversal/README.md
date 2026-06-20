@@ -1,5 +1,5 @@
 # Gap Fill Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Gap Fill Reversal takes advantage of overnight gaps that quickly retrace during the next session.
 When price gaps away from the prior close but immediately moves back to fill that void, it often signals an exhaustion of the initial move.

@@ -1,5 +1,5 @@
 # ADX 减弱策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 平均方向指数（ADX）衡量趋势强度。当 ADX 开始下降时，通常说明当前走势动能减弱。本策略在价格位于简单移动平均线另一侧时，逆势交易这种减弱的趋势。
 

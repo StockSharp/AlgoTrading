@@ -1,5 +1,5 @@
 # Стратегия пересечения Tenkan/Kijun по Ichimoku
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Индикаторы Ichimoku образуют полноценную трендовую систему. Здесь внимание уделяется пересечению линии Tenkan‑sen и Kijun‑sen при расположении цены относительно облака Kumo. Бычье пересечение выше облака сигнализирует о продолжении роста, а медвежье ниже облака указывает на слабость.
 

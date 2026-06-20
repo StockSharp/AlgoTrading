@@ -1,5 +1,5 @@
 # Bullish Harami Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Bullish Harami is a two-candle pattern where a small body is contained within the range of the prior bearish candle.
 It hints that selling momentum has stalled and buyers may step back in.

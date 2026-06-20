@@ -1,5 +1,5 @@
 # 三只白兵策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 “三只白兵”是经典的看涨反转形态，由三根连续强势的阳线组成。下跌行情后出现该形态常标志买盘力量压倒卖方，行情可能持续上行。
 

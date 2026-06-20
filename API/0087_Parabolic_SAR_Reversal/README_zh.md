@@ -1,5 +1,5 @@
 # 抛物线 SAR 反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 抛物线 SAR 指标在价格上方或下方绘制点位以指示趋势方向。当点位转换至另一侧时，可能意味着前一波行情结束。本策略在这种翻转发生时进场，期待短期反转。
 

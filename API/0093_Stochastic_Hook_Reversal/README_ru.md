@@ -1,5 +1,5 @@
 # Стратегия разворота по Stochastic Hook
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Stochastic Hook Reversal наблюдает за линией %K, ищущей «зацеп» из перекупленности или перепроданности. После выхода осциллятора к экстремуму он часто загибается обратно, что указывает на ослабление импульса.
 

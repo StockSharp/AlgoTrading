@@ -1,5 +1,5 @@
 # Стратегия разворота по Hull MA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hull Moving Average быстро реагирует на изменения цены и при этом остаётся гладкой. Изменение её направления может предвещать краткосрочный разворот. Стратегия отслеживает последовательные значения Hull MA и открывает сделку, когда наклон меняется.
 

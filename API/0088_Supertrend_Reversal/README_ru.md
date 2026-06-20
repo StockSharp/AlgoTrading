@@ -1,5 +1,5 @@
 # Стратегия разворота по Supertrend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Индикатор Supertrend сочетает ATR и цену, формируя линию поддержки или сопротивления. Когда линия Supertrend переключается с одной стороны цены на другую, это указывает на возможное изменение тренда. Стратегия торгует такие переключения.
 

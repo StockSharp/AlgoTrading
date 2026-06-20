@@ -1,5 +1,5 @@
 # Tweezer Top Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Tweezer Top mirrors the bottom version but appears after an advance.
 Two candles share nearly the same high, showing that buyers could not push beyond a certain level.

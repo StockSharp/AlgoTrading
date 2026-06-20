@@ -1,5 +1,5 @@
 # Parabolic SAR Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Parabolic SAR indicator places dots above or below price to signal trend direction. When the dots flip sides, it may mark the end of the previous move. This strategy enters trades on that switch, expecting a short-term reversal.
 

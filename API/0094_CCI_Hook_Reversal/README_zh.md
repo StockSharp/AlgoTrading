@@ -1,5 +1,5 @@
 # CCI 钩形反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当商品通道指数（CCI）在极端读数后钩回时，该策略用作入场触发。指标超过+100或低于-100后动能常迅速减弱并回撤。
 

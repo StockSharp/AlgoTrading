@@ -1,5 +1,5 @@
 # ATR 疲劳策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 平均真实波幅（ATR）的突然飙升意味着波动扩大，但往往很快衰减。本策略寻找 ATR 高于其均线一定倍数的情况，配合反转蜡烛捕捉随后的回落。
 

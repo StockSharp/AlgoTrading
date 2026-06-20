@@ -1,5 +1,5 @@
 # Стратегия разворота по Heikin‑Ashi
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Свечи Heikin‑Ashi сглаживают шум и подчёркивают направление тренда. Переход от серии медвежьих HA‑свечей к бычьей, или наоборот, может указывать на смену импульса. Эта стратегия торгует такие смены цвета и использует процентный стоп для защиты.
 

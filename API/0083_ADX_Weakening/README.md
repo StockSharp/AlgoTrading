@@ -1,5 +1,5 @@
 # ADX Weakening Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The Average Directional Index measures trend strength. When ADX begins to decline it often signals that the current move is losing momentum. This system trades against that weakening trend when price is on the opposite side of a simple moving average.
 

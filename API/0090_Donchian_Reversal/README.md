@@ -1,5 +1,5 @@
 # Donchian Channel Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Donchian Channels mark recent highs and lows over a chosen period. Prices that pierce those boundaries and then reverse can signal exhaustion. This strategy watches for closes back inside the channel after a brief breakout.
 

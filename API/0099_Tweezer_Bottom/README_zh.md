@@ -1,5 +1,5 @@
 # 镊子底策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 镊子底是出现在下跌后的两根蜡烛反转形态，两根蜡烛的最低点几乎相同，表明卖方未能突破该水平。
 

@@ -1,5 +1,5 @@
 # ATR Exhaustion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 A sudden surge in Average True Range indicates expanding volatility that can quickly fade. This strategy looks for ATR readings that spike above a moving average by a configurable multiplier. When coupled with a reversal candle it aims to capture the subsequent contraction.
 

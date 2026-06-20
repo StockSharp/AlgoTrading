@@ -1,5 +1,5 @@
 # 多头孕线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多头孕线是一种两根蜡烛组成的形态，第二根小实体完全包含在前一根空头蜡烛的范围内。
 这表明卖压减弱，买家可能重新进场。

@@ -1,5 +1,5 @@
 # RSI 钩形反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 RSI 从极端水平回钩时，RSI 钩形反转试图捕捉短期转折。指标在超买或超卖后常先向中线回钩，随后价格才会反应。
 

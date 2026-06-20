@@ -1,5 +1,5 @@
 # 三只黑乌鸦策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 “三只黑乌鸦”与三只白兵相反，由三根连续的大阴线构成，通常出现在涨势之后，表明卖方已占据主导，每根收盘价都逼近当日低点。
 
