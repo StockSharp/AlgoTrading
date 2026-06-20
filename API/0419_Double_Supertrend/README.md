@@ -1,5 +1,5 @@
 # Double Supertrend
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Double Supertrend employs two ATR‑based moving averages with different periods
 and multipliers. The first line sets the trade direction, while the second can

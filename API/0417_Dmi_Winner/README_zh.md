@@ -1,5 +1,5 @@
 # DMI Winner
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 DMI Winner 是基于方向性运动指数 (DMI) 的趋势策略。
 当 `+DI` 与 `-DI` 交叉且 ADX 高于关键水平时，表示趋势增强，策略据此开仓。

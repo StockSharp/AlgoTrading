@@ -1,5 +1,5 @@
 # Bollinger Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Bollinger Breakout** стремится поймать движение, выходящее за пределы
 полос Боллинджера и продолжающееся дальше. При закрытии выше верхней или ниже

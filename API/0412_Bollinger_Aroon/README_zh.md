@@ -1,5 +1,5 @@
 # Bollinger Aroon
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Aroon 策略在强劲上升趋势中寻找回调。  
 当价格跌破布林带下轨而 Aroon Up 仍保持高位时，系统认为趋势未变，

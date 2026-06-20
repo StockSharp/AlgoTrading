@@ -1,5 +1,5 @@
 # EMA Moving Away
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 EMA Moving Away 策略监测价格与指数移动平均线 (EMA) 的偏离程度。
 当连续的蜡烛使价格偏离 EMA 达到设定百分比时，策略预期价格将回归均值。

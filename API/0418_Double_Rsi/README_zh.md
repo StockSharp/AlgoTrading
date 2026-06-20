@@ -1,5 +1,5 @@
 # Double RSI
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Double RSI 结合两个 RSI 指标：一个在当前交易周期，另一个在更高时间周期。
 只有当两个 RSI 的方向一致时才开仓，从而使短期信号与长期动量同步。

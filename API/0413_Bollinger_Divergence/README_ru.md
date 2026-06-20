@@ -1,5 +1,5 @@
 # Bollinger Divergence
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Bollinger Divergence** ищет моменты, когда цена выходит за пределы
 полос Боллинджера, а противоположная полоса начинает сужаться. Такое

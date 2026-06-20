@@ -1,5 +1,5 @@
 # Bollinger Winner Pro
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Winner Pro 在 Lite 基础上增加了可选过滤器和风险控制。
 当价格收于布林带之外时，只有所有启用的过滤器都确认后才会开仓。

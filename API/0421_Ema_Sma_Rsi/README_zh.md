@@ -1,5 +1,5 @@
 # EMA/SMA + RSI 趋势交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略跟踪三条指数移动平均线（快线、中线和慢线）并配合 RSI 过滤器，以在新趋势中占据主动。当快线向上（或向下）穿越中线且价格位于慢线之上（或之下）并且蜡烛收盘方向一致时产生交易信号，从而减少震荡噪音。
 

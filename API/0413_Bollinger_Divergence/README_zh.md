@@ -1,5 +1,5 @@
 # Bollinger Divergence
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Divergence 策略寻找价格突破布林带同时相反一侧收缩的情况，
 这种价格与波动性的背离往往预示着回归中轨。

@@ -1,5 +1,5 @@
 # Bollinger Winner Lite
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Winner Lite 是一个简化的布林带反转系统，关注价格大幅超出带之后的快速回归。
 `CandlePercent` 参数限定入场蜡烛需要相对于近期波动足够大，从而过滤微小噪音。

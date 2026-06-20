@@ -1,5 +1,5 @@
 # Double RSI
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Double RSI uses two Relative Strength Index calculations: one on the trading
 chart and another on a higher timeframe. Trades are taken only when both RSI

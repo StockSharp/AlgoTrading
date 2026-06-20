@@ -1,5 +1,5 @@
 # DMI Winner
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 DMI Winner is a trend‑following strategy based on the Directional Movement Index
 (DMI). It opens trades when the `+DI` and `-DI` lines cross and the Average

@@ -1,5 +1,5 @@
 # Bollinger Breakout
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Breakout 策略旨在捕捉突破布林带后继续发展的行情。
 当收盘价高于上轨或低于下轨时，如启用的过滤器全部同意，便在突破方向开仓。

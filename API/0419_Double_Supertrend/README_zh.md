@@ -1,5 +1,5 @@
 # Double Supertrend
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Double Supertrend 使用两个基于 ATR 的移动平均线，周期和倍数各不相同。
 第一条线确定交易方向，第二条线可作为目标或跟踪退出，从而在趋势交易中
