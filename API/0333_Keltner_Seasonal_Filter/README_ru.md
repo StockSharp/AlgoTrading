@@ -1,5 +1,5 @@
 # Кельтнер с сезонным фильтром
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Keltner Seasonal Filter** торгует по пробоям канала Кельтнера с учётом сезонного смещения.
 Сигналы формируются, когда Кельтнер подтверждает отфильтрованные входы на внутридневных данных (5м). Такой подход подходит активным трейдерам.

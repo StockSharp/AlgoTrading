@@ -1,5 +1,5 @@
 # Parabolic SAR и дивергенция RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Parabolic SAR RSI Divergence** торгует сигналы Parabolic SAR, когда RSI расходится с ценой.
 Сигналы формируются, когда Parabolic подтверждает настройки дивергенции на внутридневных данных (5м). Такой подход подходит активным трейдерам.

@@ -1,5 +1,5 @@
 # VWAP Hidden Markov Model
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 The **VWAP Hidden Markov Model** strategy is built around that trades based on VWAP with Hidden Markov Model for market state detection.
 

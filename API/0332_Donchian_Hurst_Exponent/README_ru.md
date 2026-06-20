@@ -1,5 +1,5 @@
 # Дончан и показатель Херста
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Donchian Hurst Exponent** торгует по пробоям канала Дончиана с фильтром по экспоненте Херста.
 Сигналы формируются, когда Дончиан подтверждает смену тренда на внутридневных данных (5м). Такой подход подходит активным трейдерам.

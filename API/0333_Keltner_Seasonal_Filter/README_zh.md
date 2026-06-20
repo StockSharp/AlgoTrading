@@ -1,5 +1,5 @@
 # Keltner Seasonal Filter
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Keltner Seasonal Filter** 策略基于 that trades based on Keltner Channel breakouts with seasonal bias filter。
 

@@ -1,5 +1,5 @@
 # Адаптивный пробой полос Боллинджера
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Adaptive Bollinger Breakout** торгует по пробоям полос Боллинджера с адаптивно подстраиваемыми параметрами.
 Сигналы формируются, когда Bollinger подтверждает возможности пробоя на внутридневных данных (5м). Такой подход подходит активным трейдерам.

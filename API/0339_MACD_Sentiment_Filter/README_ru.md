@@ -1,5 +1,5 @@
 # MACD с фильтром настроения
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **MACD Sentiment Filter** использует MACD с фильтром настроения.
 Сигналы формируются, когда индикаторы подтверждают отфильтрованные входы на внутридневных данных (15м). Такой подход подходит активным трейдерам.

@@ -1,5 +1,5 @@
 # Hull MA с кластеризацией K-Means
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Hull MA K-Means Cluster** использует направление скользящей средней Hull и кластеризацию K-Means для определения состояния рынка.
 Сигналы формируются, когда индикаторы подтверждают смену тренда на внутридневных данных (5м). Такой подход подходит активным трейдерам.
