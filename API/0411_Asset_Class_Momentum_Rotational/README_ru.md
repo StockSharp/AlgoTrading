@@ -1,5 +1,5 @@
 # Ротация активов по моментуму
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ротационная модель распределяет капитал между классами активов с наибольшим последним моментумом. Каждый период ETF ранжируются, и портфель содержит лидеров, избегая отстающих.
 

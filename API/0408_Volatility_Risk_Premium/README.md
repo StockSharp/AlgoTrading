@@ -1,5 +1,5 @@
 # Volatility Risk Premium
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy sells options to harvest the volatility risk premium, expecting implied volatility to exceed realized volatility on average. Positions are delta‑hedged to isolate the premium.
 

@@ -1,5 +1,5 @@
 # 波动率风险溢价
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过卖出期权获取波动率风险溢价，假设隐含波动率平均高于实现波动率。通过 delta 对冲以分离溢价。
 

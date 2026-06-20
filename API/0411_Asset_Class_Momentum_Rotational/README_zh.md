@@ -1,5 +1,5 @@
 # 资产类别动量轮动
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是一种轮动模型，将资本分配给近期动量最强的资产类别。系统定期对 ETF 排名，只持有领先者并回避落后者。
 

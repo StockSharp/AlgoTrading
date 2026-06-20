@@ -1,5 +1,5 @@
 # 足球俱乐部套利
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控不同交易所足球俱乐部粉丝代币的定价差异。通过同时做多和做空并利用资金费率差，系统力求锁定无风险利润。
 

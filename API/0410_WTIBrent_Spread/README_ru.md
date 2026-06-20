@@ -1,5 +1,5 @@
 # Спред WTI/Brent
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Сделка ориентирована на ценовой дифференциал между нефтью WTI и Brent. При отклонении спреда от исторической нормы система рассчитывает на возврат к среднему, покупая один сорт и продавая другой.
 

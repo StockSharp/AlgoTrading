@@ -1,5 +1,5 @@
 # 52-Week High
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This momentum strategy focuses on stocks making new 52‑week highs, which often continue to outperform. The system buys breakouts and holds until momentum fades.
 

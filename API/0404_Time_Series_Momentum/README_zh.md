@@ -1,5 +1,5 @@
 # 时间序列动量
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该方法根据每个资产自身的历史收益决定做多或做空。当过去收益为正时买入，为负时卖出，从而构建分散化的趋势跟随组合。
 

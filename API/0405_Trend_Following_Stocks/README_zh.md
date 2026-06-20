@@ -1,5 +1,5 @@
 # 股票趋势跟随
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用简单的趋势过滤器交易单只股票。价格高于移动平均线的股票买入，低于则回避或做空。
 

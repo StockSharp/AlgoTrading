@@ -1,5 +1,5 @@
 # WTI-Brent 价差
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该交易关注 WTI 与 Brent 原油价格差。当价差偏离历史水平时，系统通过买入较便宜的品种并做空较贵的品种押注其回归。
 

@@ -1,5 +1,5 @@
 # 月末转月效应
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该季节性策略在月底前几天买入股票指数，并在新月开始后不久卖出，利用“月初效应”。
 

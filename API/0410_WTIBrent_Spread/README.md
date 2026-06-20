@@ -1,5 +1,5 @@
 # WTI Brent Spread
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The trade targets the price differential between WTI and Brent crude oil. When the spread deviates from historical norms, the system bets on mean reversion by longing one grade and shorting the other.
 

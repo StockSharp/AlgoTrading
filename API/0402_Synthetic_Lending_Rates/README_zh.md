@@ -1,5 +1,5 @@
 # 合成借贷利率
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用衍生品市场产生的合成借贷利率与链上借贷收益之间的差异。通过在低利率场所借入并在高利率场所出借，系统捕捉利差。
 

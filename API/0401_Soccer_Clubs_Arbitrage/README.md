@@ -1,5 +1,5 @@
 # Soccer Clubs Arbitrage
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy seeks arbitrage opportunities between soccer club fan tokens traded on multiple venues. By watching price spreads and funding rate imbalances, it opens offsetting long and short positions to lock in mispricings.
 

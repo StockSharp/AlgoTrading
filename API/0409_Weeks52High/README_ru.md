@@ -1,5 +1,5 @@
 # 52-недельный максимум
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Моментум‑стратегия сосредоточена на акциях, обновляющих 52‑недельные максимумы, которые часто продолжают опережать рынок. Система покупает пробой и держит, пока импульс не ослабнет.
 

@@ -1,5 +1,5 @@
 # 52 周新高
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是一种动量策略，关注创出 52 周新高的股票，这些股票通常会继续跑赢。系统在突破时买入，直到动量减弱。
 
