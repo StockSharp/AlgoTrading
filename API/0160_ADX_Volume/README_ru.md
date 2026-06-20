@@ -1,5 +1,5 @@
 # Стратегия ADX Volume
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №160 — ADX + Объём. Вход в сделки происходит, когда ADX выше заданного порога и объём выше среднего. Направление определяется сравнением DI+ и DI-.
 

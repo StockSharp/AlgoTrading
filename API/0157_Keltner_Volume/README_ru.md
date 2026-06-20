@@ -1,5 +1,5 @@
 # Стратегия Keltner Volume
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №157 — каналы Келтнера + объём. Покупать, когда цена пробивает верхнюю границу канала на объёме выше среднего. Продавать, когда цена пробивает нижнюю границу на повышенном объёме.
 

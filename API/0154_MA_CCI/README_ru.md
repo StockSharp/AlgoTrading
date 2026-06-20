@@ -1,5 +1,5 @@
 # Стратегия MA CCI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет скользящую среднюю и индикатор CCI. Покупка совершается, когда цена выше MA и CCI в зоне перепроданности. Продажа — когда цена ниже MA и CCI в зоне перекупленности.
 

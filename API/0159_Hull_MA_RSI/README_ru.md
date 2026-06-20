@@ -1,5 +1,5 @@
 # Стратегия Hull MA RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №159 — Hull Moving Average + RSI. Покупать, когда HMA растёт и RSI ниже 30 (перепроданность). Продавать, когда HMA падает и RSI выше 70 (перекупленность).
 

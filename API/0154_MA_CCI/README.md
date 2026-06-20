@@ -1,5 +1,5 @@
 # Ma Cci Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategy combining Moving Average and CCI indicators. Buys when price is above MA and CCI is oversold. Sells when price is below MA and CCI is overbought.
 

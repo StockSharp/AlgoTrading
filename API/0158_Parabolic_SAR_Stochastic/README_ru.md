@@ -1,5 +1,5 @@
 # Стратегия Parabolic SAR Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №158 — Parabolic SAR + Стохастик. Покупка производится, когда цена выше SAR и Stochastic %K ниже 20 (перепроданность). Продажа — когда цена ниже SAR и %K выше 80 (перекупленность).
 

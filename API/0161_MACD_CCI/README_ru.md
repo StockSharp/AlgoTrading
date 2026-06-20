@@ -1,5 +1,5 @@
 # Стратегия Macd Cci
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №161 - MACD + CCI. Покупка, когда MACD выше сигнальной линии и CCI ниже -100 (зона перепроданности). Продажа, когда MACD ниже сигнальной линии и CCI выше 100 (зона перекупленности).
 
