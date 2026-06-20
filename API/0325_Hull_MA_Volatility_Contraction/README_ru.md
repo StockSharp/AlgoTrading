@@ -1,5 +1,5 @@
 # Hull MA и сжатие волатильности
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Hull MA Volatility Contraction** использует скользящую среднюю Hull с фильтром сжатия волатильности.
 Сигналы формируются, когда индикаторы подтверждают паттерны сжатия волатильности на внутридневных данных (15м). Такой подход подходит активным трейдерам.

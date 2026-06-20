@@ -1,5 +1,5 @@
 # Дончан с сезонным фильтром
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Donchian Seasonal Filter** торгует по пробоям канала Дончиана с учётом сезонного фильтра.
 Сигналы формируются, когда Дончиан подтверждает отфильтрованные входы на внутридневных данных (15м). Такой подход подходит активным трейдерам.

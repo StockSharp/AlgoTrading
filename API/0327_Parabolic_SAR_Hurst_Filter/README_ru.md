@@ -1,5 +1,5 @@
 # Parabolic SAR с фильтром Херста
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Parabolic SAR Hurst Filter** основана на индикаторах Parabolic SAR и фильтре Херста.
 Сигналы формируются, когда Parabolic подтверждает отфильтрованные входы на внутридневных данных (5м). Такой подход подходит активным трейдерам.

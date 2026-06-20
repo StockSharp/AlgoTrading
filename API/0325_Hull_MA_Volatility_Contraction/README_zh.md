@@ -1,5 +1,5 @@
 # Hull MA Volatility Contraction
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Hull MA Volatility Contraction** 策略基于 Hull Moving Average with volatility contraction filter。
 

@@ -1,5 +1,5 @@
 # Полосы Боллинджера с фильтром Калмана
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Bollinger Kalman Filter** использует полосы Боллинджера совместно с фильтром Калмана.
 Сигналы формируются, когда Bollinger подтверждает отфильтрованные входы на внутридневных данных (5м). Такой подход подходит активным трейдерам.
