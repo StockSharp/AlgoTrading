@@ -1,5 +1,5 @@
 # Arpeet MACD策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Arpeet MACD策略在MACD与信号线交叉时交易，并使用零轴过滤。当天MACD线在零轴下方向上穿越信号线时，生成做多信号。当天MACD线在零轴上方向下穿越信号线时，生成做空信号。
 

@@ -1,5 +1,5 @@
 # ATR止损双SMA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速简单移动平均线(SMA)向上穿越慢速SMA时开多单，向下穿越时开空单。
 可选的止损根据平均真实波幅(ATR)乘以系数计算，用于确定退出价格。

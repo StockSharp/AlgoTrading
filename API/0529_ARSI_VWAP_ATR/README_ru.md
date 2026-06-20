@@ -1,5 +1,5 @@
 # Стратегия Arsi Vwap Atr
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Адаптивная стратегия RSI, где уровни перекупленности и перепроданности расширяются или сужаются на основе ATR или отклонения от VWAP. Позиции открываются при пересечении RSI адаптивных уровней и закрываются при возвращении RSI в среднюю зону.
 

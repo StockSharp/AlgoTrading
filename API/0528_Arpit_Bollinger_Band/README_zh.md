@@ -1,4 +1,5 @@
 # Arpit Bollinger Band 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 布林带突破策略。监控两根K线前收盘价是否突破布林带，若当前价格突破该K线的极值则入场。
 

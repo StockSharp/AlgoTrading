@@ -1,3 +1,4 @@
 # 自动斐波那契和江恩扇形回撤组合
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略自动检测新的波段高点和低点。当出现新的极值时，在最近的波段之间计算斐波那契和江恩回撤水平。计算结果写入日志，策略本身不包含交易逻辑。

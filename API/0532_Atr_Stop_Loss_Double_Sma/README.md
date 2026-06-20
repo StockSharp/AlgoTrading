@@ -1,5 +1,5 @@
 # ATR Stop Loss Double SMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters long when a fast Simple Moving Average (SMA) crosses above a slow SMA and enters short on the opposite cross.
 An optional stop-loss uses the Average True Range (ATR) multiplied by a user-defined factor to determine exit levels.

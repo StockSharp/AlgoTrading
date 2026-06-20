@@ -1,5 +1,5 @@
 # AUD/USD 剥头皮策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在短周期内对 AUD/USD 进行剥头皮交易，结合 EMA 趋势过滤、布林带和 RSI。快慢 EMA 用于确定趋势方向。当处于上升趋势时，价格触及布林带下轨且 RSI 高于超卖水平则做多；当处于下降趋势时，价格触及上轨且 RSI 低于超买水平则做空。固定的止盈和止损用于控制风险。
 

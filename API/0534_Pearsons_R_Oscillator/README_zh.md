@@ -1,5 +1,5 @@
 # Pearson's R振荡策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Pearson's R振荡策略根据皮尔逊相关系数自动寻找价格与线性回归通道最匹配的周期。当相关系数达到设定的正或负阈值时，形成回归通道并在突破时交易。
 

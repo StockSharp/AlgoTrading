@@ -1,5 +1,5 @@
 # Стратегия Pearson's R Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Pearson's R Oscillator динамически ищет период, при котором цена наилучшим образом укладывается в канал линейной регрессии по коэффициенту корреляции Пирсона. Когда корреляция достигает заданного положительного или отрицательного порога, формируется канал и выполняются сделки на пробой.
 

@@ -1,5 +1,5 @@
 # Стратегия Arpeet MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Arpeet MACD торгует пересечения линий MACD с фильтром нулевой линии. Сигнал на покупку появляется, когда линия MACD пересекает сигнальную снизу вверх, оставаясь ниже нуля. Сигнал на продажу возникает, когда MACD пересекает сигнальную сверху вниз выше нуля.
 

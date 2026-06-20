@@ -1,5 +1,5 @@
 # AUD/USD Scalping Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy scalps AUD/USD on short timeframes using a combination of EMA trend filter, Bollinger Bands and RSI. The fast and slow EMAs define trend direction. Long trades are opened in uptrends when price touches the lower Bollinger Band and RSI is above the oversold threshold. Shorts are taken in downtrends when price reaches the upper band and RSI is below the overbought level. Fixed take profit and stop loss manage risk.
 

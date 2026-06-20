@@ -1,5 +1,5 @@
 # 基于ATR的趋势线
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略从枢轴点构建基于ATR的趋势线，并在价格突破时开仓。
 

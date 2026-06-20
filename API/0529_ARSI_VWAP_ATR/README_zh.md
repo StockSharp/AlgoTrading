@@ -1,5 +1,5 @@
 # Arsi Vwap Atr 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 自适应 RSI 策略，超买和超卖水平根据 ATR 或偏离 VWAP 动态调整。当 RSI 穿越这些自适应水平时开仓，当 RSI 回到中间区域时平仓。
 
