@@ -1,5 +1,5 @@
 # Breakouts With Timefilter 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在指定交易时段内，当价格突破最近的高点或低点时入场。可选的移动平均过滤器用于确认方向。止损可基于ATR、蜡烛极值或固定点数，并具有可配置的风险回报比。
 

@@ -1,5 +1,5 @@
 # Berlin Range Index Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Berlin Range Index strategy filters the standard Choppiness Index with an ATR based factor to highlight trending and ranging phases. When the filtered index falls below a minimum threshold the strategy opens a position in the direction of the current candle. Positions are closed when the index indicates a ranging or weakening trend.
 

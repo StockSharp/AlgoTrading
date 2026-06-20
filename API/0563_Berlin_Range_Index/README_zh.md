@@ -1,5 +1,5 @@
 # Berlin Range Index 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Berlin Range Index 策略通过基于 ATR 的因子过滤 Choppiness Index，以识别趋势与盘整阶段。当过滤后的指数低于最小阈值时，策略按当前 K 线方向开仓；当指数显示盘整或趋势减弱时，平掉持仓。
 

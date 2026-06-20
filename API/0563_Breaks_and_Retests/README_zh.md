@@ -1,5 +1,5 @@
 # 突破回测策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格突破最近高点或低点时入场，并可在回测时入场，同时使用移动止损管理风险。
 

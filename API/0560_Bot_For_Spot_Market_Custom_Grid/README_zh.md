@@ -1,5 +1,5 @@
 # Bot for Spot Market - Custom Grid 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bot for Spot Market - Custom Grid 策略先建立初始头寸，当价格跌破上次买入价的指定百分比时加仓。当价格高于平均买入价达到设定的盈利百分比且持仓盈利时，策略会全部平仓。
 

@@ -1,5 +1,5 @@
 # BBTrend SuperTrend Decision 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过两个不同周期的布林带计算 **BBTrend** 值，并将其输入 SuperTrend 指标。
 SuperTrend 的方向用于决定做多或做空。可以选择开启按百分比计算的止盈和止损保护。

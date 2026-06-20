@@ -1,5 +1,5 @@
 # Стратегия Bot for Spot Market - Custom Grid
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Bot for Spot Market - Custom Grid покупает начальную позицию и добавляет новые ордера при падении цены на заданный процент от последнего входа. Все позиции закрываются, когда цена поднимается выше средней цены входа на величину целевой прибыли.
 

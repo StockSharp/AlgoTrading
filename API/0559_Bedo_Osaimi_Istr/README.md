@@ -1,5 +1,5 @@
 # Bedo Osaimi Istr Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A simple trend-following strategy that compares moving averages of close and open prices. A long position is opened when the moving average of close crosses above the moving average of open. The position is reversed when the opposite cross occurs.
 

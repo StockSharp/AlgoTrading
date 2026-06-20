@@ -1,5 +1,5 @@
 # Breaks and Retests
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy entering on breakouts of recent highs or lows and optional retests with trailing stop management.
 

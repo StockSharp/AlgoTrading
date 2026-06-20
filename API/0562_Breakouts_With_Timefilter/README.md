@@ -1,5 +1,5 @@
 # Breakouts With Timefilter Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout strategy that enters on price crossing above recent highs or below recent lows within a specified trading session. An optional moving average filter confirms direction. Stop-loss can be based on ATR, candle extremes, or fixed points with a configurable risk-reward target.
 

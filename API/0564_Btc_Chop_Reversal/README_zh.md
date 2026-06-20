@@ -1,5 +1,5 @@
 # BTC Chop Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格触及ATR通道并出现动量转折时交易BTC短期反转。结合EMA、ATR、RSI、MACD直方图以及成交量尖峰过滤器。
 

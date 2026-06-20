@@ -1,5 +1,5 @@
 # Berlin Candles 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于平滑 Heikin Ashi 值的 Berlin 自定义蜡烛。当看涨的 Berlin 蜡烛收盘价高于 Donchian 基线时做多；当看跌的 Berlin 蜡烛收盘价低于基线时做空。
 

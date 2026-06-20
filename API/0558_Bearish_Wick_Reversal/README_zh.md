@@ -1,5 +1,5 @@
 # 看跌影线反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在出现具有较长下影线的看跌K线时做多。可选的EMA过滤器要求收盘价高于指数均线以确认趋势。当价格收于上一根K线最高点之上时，策略平仓。
 

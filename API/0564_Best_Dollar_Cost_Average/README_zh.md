@@ -1,5 +1,5 @@
 # 最佳定投策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过在用户设定的起止日期之间以固定金额定期买入来累积持仓。
 每个周期在所选时间框架的收盘价执行买入，不考虑价格波动，实现

@@ -1,5 +1,5 @@
 # Bedo Osaimi Istr 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是一个简单的趋势策略，比对收盘价和开盘价的移动平均线。当收盘价的移动平均线上穿开盘价的移动平均线时开多头；出现相反交叉时反向操作。
 
