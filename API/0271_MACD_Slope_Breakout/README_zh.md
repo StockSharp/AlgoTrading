@@ -1,5 +1,5 @@
 # MACD Slope Breakout
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MACD Slope Breakout 策略监控相关指标的变化率。斜率异常陡峭时暗示新的趋势正在形成。
 

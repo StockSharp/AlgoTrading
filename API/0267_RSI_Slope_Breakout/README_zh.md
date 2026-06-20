@@ -1,5 +1,5 @@
 # RSI 斜率突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略监测 RSI 斜率的变化。若斜率异常陡峭，表明可能产生新的趋势。
 

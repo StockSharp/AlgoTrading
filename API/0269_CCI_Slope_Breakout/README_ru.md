@@ -1,5 +1,5 @@
 # Прорыв наклона CCI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия CCI Slope Breakout отслеживает скорость изменения индекса товарного канала. Необычно крутой наклон говорит о начале нового тренда.
 
