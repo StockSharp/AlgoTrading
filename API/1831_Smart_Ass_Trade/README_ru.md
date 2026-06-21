@@ -1,4 +1,5 @@
 # Стратегия Smart Ass Trade
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Smart Ass Trade — конвертированная из MQL многофреймовая трендовая стратегия.
 Она анализирует гистограмму MACD (OsMA) и простые средние с периодом 20 на графиках 5, 15 и 30 минут,

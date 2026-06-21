@@ -1,4 +1,5 @@
 # Swing Cyborg 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Swing Cyborg 是一种辅助型策略，根据交易者对中长期趋势的主观判断来执行交易。用户设置预期的趋势方向以及该趋势有效的时间段，策略使用 RSI 指标确认入场并通过固定的目标管理退出。

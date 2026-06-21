@@ -1,5 +1,5 @@
 # EMA 2-35 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两条指数移动平均线的交叉。长度为2的快速EMA对价格变动非常敏感，长度为35的慢速EMA代表长期趋势。当快速EMA自下而上穿越慢速EMA时建立多头头寸；反向穿越时建立空头头寸。
 

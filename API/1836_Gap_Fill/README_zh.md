@@ -1,5 +1,5 @@
 # 缺口回补策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 缺口回补策略利用连续15分钟K线之间的价格缺口。
 当新的K线开盘价高于前一根K线的最高价且超过设定阈值时，策略做空并在前一最高价处挂买单，期待缺口被回补。

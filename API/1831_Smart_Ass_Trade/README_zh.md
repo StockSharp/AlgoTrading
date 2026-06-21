@@ -1,4 +1,5 @@
 # Smart Ass Trade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Smart Ass Trade 是从 MQL 版本转换而来的多时间框趋势跟随策略。
 它在 5、15、30 分钟图上计算 MACD 直方图（OsMA）和 20 周期简单移动平均线，

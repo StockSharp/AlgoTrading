@@ -1,4 +1,5 @@
 # Smart Ass Trade Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Smart Ass Trade is a multi-timeframe trend following strategy converted from the MQL implementation.
 It analyzes MACD histogram (OsMA) and 20-period simple moving averages on 5, 15 and 30 minute charts.

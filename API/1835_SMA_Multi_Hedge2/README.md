@@ -1,4 +1,5 @@
 # SMA Multi Hedge2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades a base security while hedging with a correlated instrument. Trend direction is determined by a Simple Moving Average (SMA). When the correlation between the base and hedge symbols exceeds a threshold, both instruments are traded to form a market-neutral pair.
 

@@ -1,4 +1,5 @@
 # 虚拟止损管理器
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略由 MetaTrader 顾问 “VR---STEALS-3-EN” 转换而来，实现隐藏的止损、止盈、追踪止损和保本机制。策略在启动后开立多头仓位，并在不向交易所发送可见保护单的情况下管理退出。
 

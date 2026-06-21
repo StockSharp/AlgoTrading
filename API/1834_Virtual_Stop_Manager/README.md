@@ -1,4 +1,5 @@
 # Virtual Stop Manager
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy converted from MetaTrader advisor "VR---STEALS-3-EN". Implements hidden order management features: stop loss, take profit, trailing stop and breakeven. The strategy opens a long position on first candle and manages exit levels virtually without placing visible stop orders on the exchange.
 

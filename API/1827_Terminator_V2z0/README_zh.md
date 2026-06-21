@@ -1,5 +1,5 @@
 # Terminator V2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用移动平均收敛发散（MACD）指标进行双向交易。当 MACD 线向上穿越信号线时开多单；当 MACD 线向下穿越信号线时开空单。策略通过固定的止损和止盈保护持仓，并可选用追踪止损以在趋势行情中锁定利润。
 

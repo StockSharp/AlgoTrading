@@ -1,4 +1,5 @@
 # SMA Multi Hedge2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在基础品种上进行交易，并用相关资产进行对冲。趋势方向由简单移动平均线 (SMA) 判断。当基础品种与对冲品种之间的相关性达到设定阈值时，同时交易两个品种以形成市场中性组合。
 

@@ -1,4 +1,5 @@
 # Swing Cyborg Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Swing Cyborg is a discretionary helper that automates execution based on a trader's own trend forecast. The user defines the expected trend direction and the time window when it should be valid. The strategy then confirms entries with the RSI indicator and manages exits with fixed targets.
