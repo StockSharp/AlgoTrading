@@ -1,5 +1,5 @@
 # Medico Action Zone Self Adjust TF Version 2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пересечения EMA с подтверждением старшего таймфрейма. Позиция открывается при пересечении быстрой EMA выше медленной и закрытии старшего таймфрейма выше быстрой EMA. При обратном сигнале позиция переворачивается.
 

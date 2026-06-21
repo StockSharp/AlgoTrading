@@ -1,5 +1,5 @@
 # MFI 退出超卖区并加仓策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等待资金流量指数（MFI）进入超卖区。当 MFI 回到超卖水平之上时，在当前收盘价下方按固定百分比设置限价买单。如果在设定的 bar 数内未成交，则取消订单。通过 StartProtection 设置止损和止盈。
 

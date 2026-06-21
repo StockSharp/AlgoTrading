@@ -1,5 +1,5 @@
 # MFS三蜡烛形态策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在下跌趋势中寻找由三根蜡烛组成的看涨反转序列。它检测一根大阳线作为“点火”蜡烛，随后出现一根较小的回调阴线，最后是收盘价高于回调高点的确认阳线。趋势过滤要求长周期SMA>中周期SMA>短周期SMA，并且点火蜡烛的收盘价低于短期SMA。
 

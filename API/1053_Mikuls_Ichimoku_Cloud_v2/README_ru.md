@@ -1,5 +1,5 @@
 # Стратегия Mikul's Ichimoku Cloud v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия прорыва на основе облака Ишимоку с необязательным фильтром по скользящей средней. Позиции сопровождаются трейлинг-стопом (ATR, процент или правила Ишимоку) и опциональным тейк-профитом.
 

@@ -1,5 +1,5 @@
 # Megabar突破 (Range & Volume & RSI)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Megabar突破寻找具有巨大实体和高成交量的K线，并用RSI均线过滤。看涨megabar做多，看跌megabar做空。
 

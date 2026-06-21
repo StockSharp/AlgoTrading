@@ -1,5 +1,5 @@
 # Прорыв Мегабар (Диапазон, Объём и RSI)
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Megabar Breakout ищет крупные свечи, поддержанные высоким объёмом и подтверждением RSI. Входит в лонг при бычьих мегабарах и в шорт при медвежьих.
 

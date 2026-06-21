@@ -1,5 +1,5 @@
 # Mikul's Ichimoku Cloud v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于一目均衡表的突破策略，可选移动平均过滤。仓位通过跟踪止损（ATR、百分比或一目规则）和可选的止盈来管理。
 

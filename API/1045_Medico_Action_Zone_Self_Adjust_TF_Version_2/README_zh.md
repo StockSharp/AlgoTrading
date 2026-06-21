@@ -1,5 +1,5 @@
 # Medico Action Zone Self Adjust TF Version 2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于EMA交叉并由高时间框架确认的策略。当快速EMA上穿慢速EMA且高时间框架收盘价位于快速EMA之上时开仓；反向条件触发平仓或反向。
 

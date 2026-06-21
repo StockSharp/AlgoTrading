@@ -1,5 +1,5 @@
 # Megabar Breakout (Range & Volume & RSI)
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Megabar Breakout detects large candles supported by high volume and RSI confirmation. The strategy enters long on bullish megabars and short on bearish ones.
 

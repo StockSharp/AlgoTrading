@@ -1,4 +1,5 @@
 # MK Custome Adaptive SuperTrend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 ATR 波动率聚类为三个级别以自适应 SuperTrend。
 趋势转为上升时做多，转为下降时做空。
