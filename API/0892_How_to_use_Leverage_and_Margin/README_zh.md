@@ -1,5 +1,5 @@
 # How to Use Leverage and Margin 策略 (中文)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于随机振荡指标的交叉。当 %K 线在 80 以下上穿 %D 时做多；当 %K 在 20 以上下穿 %D 时做空。持仓使用以 tick 为单位的止盈。
 

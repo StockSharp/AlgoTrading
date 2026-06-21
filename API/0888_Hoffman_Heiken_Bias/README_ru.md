@@ -1,5 +1,5 @@
 # Стратегия Hoffman Heiken Bias
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Hoffman Heiken Bias объединяет набор скользящих средних и модель нетто-объёма Heikin Ashi для определения направления тренда. Длинная позиция открывается, когда быстрая SMA выше быстрой EMA, все долгосрочные средние ниже неё, а регрессия нетто-объёма положительна. Короткая позиция открывается при обратных условиях.
 

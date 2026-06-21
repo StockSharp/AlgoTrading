@@ -1,5 +1,5 @@
 # HSI首个30分钟蜡烛策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在香港市场开盘后的前30分钟记录最高价和最低价，并在5分钟图上交易其突破。每天仅允许一笔交易。
 

@@ -1,5 +1,5 @@
 # Honest Volatility Grid
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用多个 Keltner 通道水平构建波动率网格，在预设的带区逐步开仓做多和做空，并在相反带或紧急止损时平仓。
 

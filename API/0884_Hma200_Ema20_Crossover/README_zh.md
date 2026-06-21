@@ -1,5 +1,5 @@
 # HMA 200 + EMA 20 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格高于200周期Hull移动平均线并上穿20周期指数移动平均线时进场做多；
 当价格低于HMA并下穿EMA时进场做空。出现相反信号时仓位反转。

@@ -1,5 +1,5 @@
 # HMA 200 + EMA 20 Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy enters long when price is above the 200-period Hull Moving Average
 and crosses above the 20-period Exponential Moving Average. Short positions are

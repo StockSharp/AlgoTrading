@@ -1,5 +1,5 @@
 # Стратегия "How to Use Leverage and Margin"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на пересечениях стохастического осциллятора. Покупка происходит, когда линия %K пересекает %D снизу в зоне ниже 80. Продажа выполняется, когда %K пересекает %D сверху при значении выше 20. Позиции сопровождаются тейк‑профитом, заданным в тиках.
 

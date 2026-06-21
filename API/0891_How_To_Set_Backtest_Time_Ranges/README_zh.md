@@ -1,5 +1,5 @@
 # How To Set Backtest Time Ranges
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略演示如何将交易限制在特定的日期和日内时间范围内。快速SMA上穿慢速SMA时开多，反向下穿时平仓。
 

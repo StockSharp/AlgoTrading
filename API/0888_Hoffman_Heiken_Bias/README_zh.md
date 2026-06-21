@@ -1,5 +1,5 @@
 # Hoffman Heiken Bias 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hoffman Heiken Bias 策略结合多条移动平均线和 Heikin Ashi 净成交量模型来判断趋势方向。当快速 SMA 高于快速 EMA、所有更长周期均线都在 EMA(18) 下方且净成交量回归为正时做多；反之做空。
 

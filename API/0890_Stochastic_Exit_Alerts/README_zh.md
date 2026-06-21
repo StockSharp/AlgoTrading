@@ -1,4 +1,5 @@
 # 随机指标退出警报策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在随机指标 %K 线于超卖区域上穿 %D 线时做多，在 %K 线于超买区域下穿 %D 线时做空。仓位通过设定固定的止损和止盈（以跳动数计算）进行保护。当出现反向交叉且离开极端区域时，策略只会平仓而不会反手。
 

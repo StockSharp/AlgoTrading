@@ -1,5 +1,5 @@
 # Стратегия первой 30-минутной свечи HSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия фиксирует максимум и минимум первых 30 минут после открытия сессии Гонконга и торгует их пробой на 5-минутном графике. Разрешена только одна сделка в день.
 
