@@ -1,5 +1,5 @@
 # Стратегия Innocent Heikin Ashi Ethereum
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию по Ethereum, когда серия медвежьих свечей ниже EMA50 сменяется бычьей свечой выше EMA50. Стоп размещается на минимуме последних 28 баров, тейк рассчитывается по множителю `RiskReward`. Опция **Moon Mode** позволяет входить при цене выше EMA200. Позиция может закрываться досрочно по сигналам продажи или ловушек.
 

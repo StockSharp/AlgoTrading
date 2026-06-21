@@ -1,5 +1,5 @@
 # Стратегия Internal Bar Strength IBS
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда показатель внутренней силы бара (IBS) ниже нижнего порога, и закрывает её, когда IBS превышает верхний порог в заданном временном окне.
 

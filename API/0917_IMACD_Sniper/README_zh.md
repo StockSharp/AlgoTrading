@@ -1,5 +1,5 @@
 # IMACD 狙击手
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IMACD Sniper 策略结合 MACD 金叉/死叉、EMA 趋势过滤、成交量确认和强势 K 线。基于近期平均波动的动态止盈与止损。
 

@@ -1,5 +1,5 @@
 # IMACD Sniper
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IMACD Sniper combines MACD crossovers with an EMA trend filter, volume confirmation, and strong candle patterns. Dynamic take profit and stop loss are based on the recent average range.
 

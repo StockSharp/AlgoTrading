@@ -1,5 +1,5 @@
 # ICT Master Suite Trading IQ Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The ICT Master Suite strategy trades breakouts of the daily session high and low. When price closes above the session high the strategy enters a long position; when price closes below the session low it enters a short position. Positions are managed with an ATR-based trailing stop.
 

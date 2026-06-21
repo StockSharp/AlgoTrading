@@ -1,5 +1,5 @@
 # Improved EMA & CDC Trailing Stop Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 EMA 趋势过滤、MACD 确认和基于 ATR 的 CDC 移动止损。
 

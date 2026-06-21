@@ -1,5 +1,5 @@
 # ICT Master Suite Trading IQ 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ICT Master Suite 策略交易每日会话的高点和低点突破。当收盘价高于当日高点时做多，收盘价低于当日低点时做空。持仓使用基于 ATR 的跟踪止损管理。
 

@@ -1,5 +1,5 @@
 # Стратегия ICT Master Suite Trading IQ
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ICT Master Suite торгует пробои дневных максимумов и минимумов. При закрытии цены выше максимума сессии открывается длинная позиция, при закрытии ниже минимума — короткая. Позиции сопровождаются трейлинг-стопом на основе ATR.
 

@@ -1,5 +1,5 @@
 # 条件表测试指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将最新收盘价与自定义水平比较，当满足条件时执行市价单。多空方向分别具有独立的入场和离场参数。
 

@@ -1,4 +1,5 @@
 # iD EMARSI on Chart 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易绘制在价格图上的 RSI 与其指数移动平均线的交叉。RSI 上穿 EMA 时开多，下穿时开空。信号可通过最小趋势持续时间过滤，仓位可使用百分比止盈和追踪止损进行保护。
 

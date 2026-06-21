@@ -1,5 +1,5 @@
 # Innocent Heikin Ashi Ethereum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格在 EMA50 下方出现一系列看跌蜡烛后，若出现一根看涨蜡烛并站上 EMA50，该策略将在以太坊上开多单。止损设在最近 28 根K线的最低点，止盈根据 `RiskReward` 倍数计算。可选的 **Moon Mode** 允许在价格位于 EMA200 之上时进场。仓位也可能因卖出或陷阱信号而提前平仓。
 

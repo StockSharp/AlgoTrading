@@ -1,5 +1,5 @@
 # 内部柱强度 IBS 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当内部柱强度（IBS）低于下限阈值并且在指定时间窗口内时，本策略做多；当 IBS 高于上限阈值时平仓。
 
