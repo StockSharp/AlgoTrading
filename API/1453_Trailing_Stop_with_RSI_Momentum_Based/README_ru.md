@@ -1,5 +1,5 @@
 # Стратегия Trailing Stop with RSI - Momentum-Based
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия входит по прорывам импульса и использует индикатор RSI для разворота позиций при достижении зон перекупленности или перепроданности. Трейлинг-стоп активируется после заданной прибыли и сопровождает цену, защищая прибыль.
 

@@ -1,5 +1,5 @@
 # TradingViewTo Strategy Template With Dynamic Alerts
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该模板策略基于RSI水平开仓，并通过百分比止损和止盈管理交易。
 

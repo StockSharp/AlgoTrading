@@ -1,5 +1,5 @@
 # Trailing Take Profit - Close Based
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在快速SMA上穿慢速SMA时做多。进场后设置固定盈利目标，达到后可选择在最高收盘价下方跟踪止损以锁定利润。
 

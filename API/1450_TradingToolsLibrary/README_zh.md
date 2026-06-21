@@ -1,5 +1,5 @@
 # Trading Tools Library Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 简单的SMA交叉策略，结合RSI过滤和入场冷却时间。
 

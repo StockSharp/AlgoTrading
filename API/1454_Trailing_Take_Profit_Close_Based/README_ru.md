@@ -1,5 +1,5 @@
 # Стратегия Trailing Take Profit - Close Based
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию при пересечении быстрой и медленной SMA. От точки входа устанавливается фиксированная цель по прибыли. После достижения цели стоп может следовать ниже максимальной цены закрытия, фиксируя прибыль.
 

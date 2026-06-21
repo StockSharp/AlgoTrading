@@ -1,5 +1,5 @@
 # Trailing Monster Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合KAMA趋势判断、RSI过滤和百分比追踪止损。当RSI在KAMA趋势方向上突破极值时开仓，延迟一定的K线后启动追踪止损以保护利润。
 

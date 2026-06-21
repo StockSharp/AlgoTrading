@@ -1,5 +1,5 @@
 # Trailing Monster Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy combining KAMA trend detection with RSI filter and a trailing stop. Positions open when RSI crosses extreme levels in the direction of the KAMA trend. After a delay, a percentage trailing stop protects profits.
 

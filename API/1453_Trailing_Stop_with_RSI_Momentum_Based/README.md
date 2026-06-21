@@ -1,5 +1,5 @@
 # Trailing Stop with RSI - Momentum-Based Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters on momentum breakouts and uses an RSI filter to reverse positions at overbought or oversold levels. A trailing stop activates after a configurable profit and follows price to protect gains.
 

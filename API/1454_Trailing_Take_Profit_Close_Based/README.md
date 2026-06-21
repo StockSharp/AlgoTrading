@@ -1,5 +1,5 @@
 # Trailing Take Profit - Close Based
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This long-only strategy enters on a fast/slow SMA crossover. A fixed profit target is set from the entry price. When the target is reached the stop can trail below the highest close to lock in gains.
 
