@@ -1,5 +1,5 @@
 # Percent Stop Take Profit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses two simple moving averages (SMA) to detect trend direction. When the fast SMA crosses above the slow SMA, it enters a long position. When the fast SMA crosses below the slow SMA, it enters a short position. After entering, the strategy sets stop-loss and take-profit levels as percentages of the entry price.
 

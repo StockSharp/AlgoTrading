@@ -1,5 +1,5 @@
 # Strategy1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация из скрипта TradingView "strategy1". Стратегия торгует отскоки от канала Боллинджера. Открывает лонг после выхода цены ниже нижней границы и возвращения выше неё. Выход при пересечении средней линии, касании верхней границы или срабатывании стопа ниже канала.
 

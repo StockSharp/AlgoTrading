@@ -1,5 +1,5 @@
 # 连续走势交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略跟踪连续上涨和下跌的 K 线。当达到设定的连胜或连败数量时，在相反方向开仓，并持有固定数量的 K 线。根据阈值忽略十字星。
 

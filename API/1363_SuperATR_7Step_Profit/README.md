@@ -1,4 +1,5 @@
 # SuperATR 7-Step Profit Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines an adaptive ATR trend filter with a seven-stage take-profit system. Momentum-normalized ATR defines trend strength, while entries occur when the short moving average aligns with the confirmed trend direction.
 

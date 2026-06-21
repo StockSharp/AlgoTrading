@@ -1,5 +1,5 @@
 # Sunil 2 Bar Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两根K线突破形态放置止损单。当最新收盘价高于前一收盘价且上一根K线的高点高于前两根K线的高点时，放置买入止损单；当最新收盘价低于前一收盘价且上一根K线的低点低于前两根K线的低点时，放置卖出止损单。止损位设在信号柱的相反端。
 

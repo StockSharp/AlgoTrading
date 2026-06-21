@@ -1,5 +1,5 @@
 # SuperTrade ST1 Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 只做多策略，结合 Supertrend 指标、EMA 过滤器和基于 ATR 的风控。
 

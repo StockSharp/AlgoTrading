@@ -1,5 +1,5 @@
 # Strategy1
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 TradingView 脚本 "strategy1" 转换而来。策略交易布林通道回调。当价格跌破下轨后再次收于其上方时开多。离场条件为上穿中轨、触及上轨或在通道下方触发止损。
 

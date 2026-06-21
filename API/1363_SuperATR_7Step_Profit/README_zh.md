@@ -1,4 +1,5 @@
 # SuperATR 7-Step Profit 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将自适应 ATR 趋势过滤与七级分批止盈系统相结合。动量标准化的 ATR 用于评估趋势强度，只有当短期均线符合趋势方向时才开仓。
 

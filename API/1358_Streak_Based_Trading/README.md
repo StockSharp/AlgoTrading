@@ -1,5 +1,5 @@
 # Streak-Based Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tracks consecutive winning and losing candles. After the specified streak is reached, the strategy enters in the opposite direction and holds the position for a fixed number of candles. Doji candles are ignored based on body size.
 

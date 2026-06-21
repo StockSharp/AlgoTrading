@@ -1,5 +1,5 @@
 # 百分比止损止盈策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两条简单移动平均线（SMA）来判断趋势方向。当快速 SMA 向上穿越慢速 SMA 时开多；当快速 SMA 向下穿越慢速 SMA 时开空。进场后按照入场价的百分比设置止损和止盈水平。
 
