@@ -1,5 +1,5 @@
 # Стратегия Trend Following Moving Averages
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Вычисляет скользящую среднюю и оценивает её тренд внутри динамического ценового канала.
 Покупки выполняются при положительном значении тренда, продажи — при отрицательном.

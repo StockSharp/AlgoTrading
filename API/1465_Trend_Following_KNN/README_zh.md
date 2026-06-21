@@ -1,5 +1,5 @@
 # Trend Following KNN 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Following KNN 是一种简化策略，通过窗口内的平均价格变化并与移动平均比较。
 当平均变化为正且价格在均线上方时买入，平均变化为负且价格在均线下方时卖出。

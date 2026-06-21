@@ -1,5 +1,5 @@
 # 趋势跟随 MAs 3D 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用两条短期简单移动平均线来判断趋势方向。
 当5周期均线高于10周期均线时开多仓，

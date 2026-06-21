@@ -1,5 +1,5 @@
 # 趋势偏离 BTC
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 DMI 交叉、布林带以及 Momentum、MACD、SuperTrend、Aroon 等确认信号，在趋势中寻找价格偏离并入场。
 

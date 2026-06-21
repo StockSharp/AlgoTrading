@@ -1,5 +1,5 @@
 # Trend Deviation BTC
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines DMI crosses with Bollinger Bands and confirmations from momentum, MACD, SuperTrend and Aroon. The strategy looks for price deviations within a trend and enters when multiple signals align.
 

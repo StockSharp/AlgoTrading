@@ -1,5 +1,5 @@
 # Следование тренду ADX Parabolic SAR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует ADX и Parabolic SAR для торговли по тренду. Лонг открывается, когда ADX выше порога, +DI превышает -DI и цена находится выше линии SAR. Шорт — при обратных условиях.
 

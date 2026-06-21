@@ -1,5 +1,5 @@
 # 趋势跟随 ADX Parabolic SAR
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 ADX 与 Parabolic SAR 以捕捉趋势。当 ADX 高于阈值、+DI 大于 -DI 且价格在 SAR 之上时做多，反向条件下做空。
 

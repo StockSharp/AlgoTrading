@@ -1,5 +1,5 @@
 # Trend Following KNN Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Following KNN is a simplified strategy that measures the average price change over a window and compares price with a moving average.
 It buys when average change is positive and price is above the moving average, sells when average change is negative and price is below the moving average.

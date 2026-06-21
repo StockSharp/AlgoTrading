@@ -1,5 +1,5 @@
 # Отклонение от тренда BTC
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает пересечение DMI с полосами Боллинджера и подтверждениями от Momentum, MACD, SuperTrend и Aroon. Ищет ценовые отклонения внутри тренда и входит при совпадении нескольких сигналов.
 

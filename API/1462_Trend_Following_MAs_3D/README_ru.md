@@ -1,5 +1,5 @@
 # Стратегия Trend Following MAs 3D
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует две короткие простые скользящие средние для определения направления тренда.
 Длинная позиция открывается, когда среднее за 5 периодов выше среднего за 10 периодов.

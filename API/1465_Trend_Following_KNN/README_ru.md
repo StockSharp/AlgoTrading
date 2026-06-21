@@ -1,5 +1,5 @@
 # Стратегия Trend Following KNN
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Following KNN — упрощённая стратегия, измеряющая среднее изменение цены за окно и сравнивающая цену с скользящей средней.
 Покупает при положительном среднем изменении и цене выше средней, продаёт при отрицательном и цене ниже средней.

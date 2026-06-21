@@ -1,5 +1,5 @@
 # 趋势跟随抛物线买卖策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将抛物线SAR与均线交叉结合。
 当价格位于长期SMA之上、快速EMA上穿慢速EMA且SAR看涨时开多仓；

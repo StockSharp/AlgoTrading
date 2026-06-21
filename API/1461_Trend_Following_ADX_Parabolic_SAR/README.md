@@ -1,5 +1,5 @@
 # Trend Following ADX Parabolic SAR
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses ADX with directional movement and Parabolic SAR to follow trends. Long positions occur when ADX is above a threshold, +DI exceeds -DI, and price is above the SAR line. Short signals use the opposite setup.
 

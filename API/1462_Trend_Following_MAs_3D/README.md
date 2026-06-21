@@ -1,5 +1,5 @@
 # Trend Following MAs 3D Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses two short simple moving averages to detect trend direction.
 A long position is opened when the 5-period average is above the 10-period average.

@@ -1,5 +1,5 @@
 # Trend Following MM3 High Low
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses a 3-period simple moving average of highs and lows. A long trade opens when price closes above the SMA of highs and exits when price falls below the SMA of lows.
 

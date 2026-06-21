@@ -1,5 +1,5 @@
 # 趋势跟随 MM3 高低
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用 3 周期的最高价和最低价简单移动平均线。当收盘价高于高点均线时开多，跌破低点均线时平仓。
 

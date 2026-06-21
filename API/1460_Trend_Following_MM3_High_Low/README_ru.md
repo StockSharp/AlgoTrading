@@ -1,5 +1,5 @@
 # Следование тренду MM3 High Low
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует 3-периодную простую скользящую среднюю максимумов и минимумов. Лонг открывается, когда цена закрытия выше SMA максимумов, и закрывается, когда цена опускается ниже SMA минимумов.
 

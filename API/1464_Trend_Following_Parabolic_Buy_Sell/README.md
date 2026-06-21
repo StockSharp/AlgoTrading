@@ -1,5 +1,5 @@
 # Trend Following Parabolic Buy Sell Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines Parabolic SAR with moving average crossovers.
 Long entries occur when price is above a long trend SMA, the fast EMA crosses above the slow EMA, and SAR is bullish.

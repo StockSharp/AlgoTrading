@@ -1,5 +1,5 @@
 # Trend Following Candles 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用移动平均线和简单的蜡烛信号来跟随趋势。
 当价格位于均线上方且看涨蜡烛突破枢轴阻力时买入；当价格位于均线下方且看跌蜡烛跌破支撑时卖出。

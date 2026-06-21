@@ -1,5 +1,5 @@
 # 趋势跟随移动均线策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 计算移动平均线并在动态价格通道中评估其趋势。
 当趋势得分为正时做多，负时做空。
