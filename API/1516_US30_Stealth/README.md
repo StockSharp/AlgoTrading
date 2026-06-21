@@ -1,5 +1,5 @@
 # US30 Stealth Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Price action strategy for US30 using moving average slope, engulfing patterns, volume and session filter.
 Position size is calculated from risk per trade, with stop-loss and take-profit based on candle range.

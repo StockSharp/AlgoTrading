@@ -1,5 +1,5 @@
 # Up Gap 策略（带延迟）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在出现向上跳空并满足延迟期后做多，持有固定数量的K线。
 

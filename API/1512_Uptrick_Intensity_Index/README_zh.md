@@ -1,5 +1,5 @@
 # Uptrick Intensity Index 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算基于三条均线的趋势强度指数，并在TII与其均线交叉时交易。
 

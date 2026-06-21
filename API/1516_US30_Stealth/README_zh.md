@@ -1,5 +1,5 @@
 # US30 Stealth 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 US30 的价格行为，结合均线斜率、吞没形态、成交量和交易时段过滤。
 仓位大小根据每笔交易的风险计算，止损和止盈依赖于蜡烛的范围。

@@ -1,5 +1,5 @@
 # US 30 Daily Breakout Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 交易前一天高点或低点的突破，每个突破仅一次交易。
 
