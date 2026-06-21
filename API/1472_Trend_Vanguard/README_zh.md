@@ -1,5 +1,5 @@
 # Trend Vanguard 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Vanguard 通过对最高价和最低价的简单 ZigZag 来跟随趋势反转。
 当 ZigZag 方向改变时切换持仓方向。

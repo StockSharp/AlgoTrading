@@ -1,5 +1,5 @@
 # 多斐波那契 SuperTrend 趋势线突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算三条以斐波那契系数 0.618、1.618、2.618 为基础的 SuperTrend，并将其平均值通过 EMA 平滑。利用 ATR 决定斜率，根据摆动高点和低点构建动态趋势线。当价格向上突破上方趋势线、平滑 SuperTrend 向上且 +DI 大于 −DI 时做多；做空条件相反。
 

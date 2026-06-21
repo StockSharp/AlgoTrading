@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# TrendGuard Flag Finder Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TrendGuard Flag Finder spots bull and bear flag patterns confirmed by SuperTrend.
 It buys when price breaks above a bullish flag and sells when it breaks below a bearish flag.

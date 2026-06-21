@@ -1,5 +1,5 @@
 # Trend Impulse Tester 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Impulse Tester 在 EMA 和 ADX 确认趋势后，当 RSI 产生动能时入场。
 上升趋势中的看涨冲动买入，下降趋势中的看跌冲动卖出。

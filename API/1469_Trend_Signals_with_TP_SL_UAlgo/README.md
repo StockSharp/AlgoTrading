@@ -1,5 +1,5 @@
 # Trend Signals with TP & SL Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy uses an ATR-based channel to determine trend direction. A new uptrend starts when price breaks above the upper band, triggering a long entry. A downtrend starts when price falls below the lower band, triggering a short entry. Each trade places stop-loss and take-profit orders using ATR multipliers.
 

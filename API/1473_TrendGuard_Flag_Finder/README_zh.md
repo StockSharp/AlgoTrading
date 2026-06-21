@@ -1,5 +1,5 @@
 # TrendGuard Flag Finder 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TrendGuard Flag Finder 利用 SuperTrend 确认趋势，寻找多头和空头旗形。
 价格向上突破多头旗形时买入，向下跌破空头旗形时卖出。

@@ -1,5 +1,5 @@
 # Стратегия TrendGuard Scalper SSL + Hama Candle с зонами консолидации
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет канал SSL и направление свечей Hama. Длинная позиция открывается, когда закрытие выше средней SSL, Hama close (EMA 20) выше долгой линии Hama (EMA 100) и цена находится выше Hama close. Для коротких сделок используются обратные условия. ATR применяется для выявления периодов низкой волатильности как возможных зон консолидации.
 

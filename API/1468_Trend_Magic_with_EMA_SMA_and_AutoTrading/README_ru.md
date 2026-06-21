@@ -1,5 +1,5 @@
 # Trend Magic with EMA, SMA, and Auto-Trading Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует линию Trend Magic на основе CCI совместно с EMA(45), SMA(90) и SMA(180). Длинная позиция открывается, когда Trend Magic меняет цвет на синий при бычьем порядке скользящих средних. Короткая позиция открывается при смене линии на красный и медвежьем порядке средних. Стоп размещается на уровне SMA90, а тейк-профит рассчитывается по фиксированному отношению риск/прибыль.
 

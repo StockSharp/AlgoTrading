@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Trend Vanguard Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Vanguard uses a simple ZigZag on highs and lows to follow trend reversals.
 It flips direction when the ZigZag changes orientation.

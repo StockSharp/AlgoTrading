@@ -1,5 +1,5 @@
 # Стратегия Trend Vanguard
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Vanguard использует простой ZigZag по максимумам и минимумам для отслеживания разворотов тренда.
 Направление меняется при смене ориентации ZigZag.

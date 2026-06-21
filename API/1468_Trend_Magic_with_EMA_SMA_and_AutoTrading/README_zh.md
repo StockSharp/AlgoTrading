@@ -1,5 +1,5 @@
 # Trend Magic with EMA, SMA, and Auto-Trading Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将基于 CCI 的 Trend Magic 线与 EMA(45)、SMA(90) 和 SMA(180) 结合使用。当 Trend Magic 在多头排列的均线上变为蓝色时做多；当其在空头排列时变为红色则做空。每笔交易在进入时固定止损于 SMA90，止盈按固定的风险回报比计算。
 

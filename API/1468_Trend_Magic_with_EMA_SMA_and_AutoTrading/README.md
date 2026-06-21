@@ -1,5 +1,5 @@
 # Trend Magic with EMA, SMA, and Auto-Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses a CCI-based Trend Magic line together with EMA(45), SMA(90), and SMA(180) filters. A long trade opens when Trend Magic switches to blue during a bullish moving average alignment. Short trades occur when the line turns red and moving averages align bearishly. Each position has a stop at SMA90 and a take profit based on a fixed risk/reward ratio.
 

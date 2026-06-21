@@ -1,5 +1,5 @@
 # TrendMaster Pro 2.3 策略（含提醒）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 TrendMaster Pro 的简化实现。当短期均线穿越长期均线且 RSI 确认动量时进场。可以启用更高时间框架的均线过滤方向。止盈和止损以入场价的百分比设定。
 

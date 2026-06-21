@@ -1,5 +1,5 @@
 # TrendGuard Scalper SSL + Hama Candle with Consolidation Zones Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a simple SSL channel with Hama candle direction. A long position is opened when the close is above the SSL average, the Hama close (EMA 20) is above the long Hama line (EMA 100) and price stays above the Hama close. Short trades use the opposite conditions. ATR is used to mark periods of low volatility as potential consolidation zones.
 

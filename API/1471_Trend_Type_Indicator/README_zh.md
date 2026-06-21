@@ -1,5 +1,5 @@
 # 趋势类型指示器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 趋势类型指示器利用ATR和ADX识别市场状态。
 在上涨趋势做多，下跌趋势做空，横盘时退出。
