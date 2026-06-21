@@ -1,5 +1,5 @@
 # DecEMA 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 DecEMA 指标来跟随趋势方向。DecEMA 通过十次连续的指数平滑并按特定系数组合，得到低滞后的移动平均线。策略比较最近三个 DecEMA 值：当曲线转向上并且当前值高于前一个值时买入并关闭空头；当曲线转向下并且当前值低于前一个值时卖出并关闭多头。
 

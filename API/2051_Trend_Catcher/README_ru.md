@@ -1,5 +1,5 @@
 # Стратегия Trend Catcher
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Trend Catcher** сочетает Parabolic SAR и несколько простых скользящих средних для захвата направленных движений. Она ждёт пересечения цены с Parabolic SAR в сторону текущих быстрых средних и затем управляет позицией с помощью динамического стоп-лосса и трейлинг-стопа.
 

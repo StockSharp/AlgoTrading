@@ -1,4 +1,5 @@
 # Стратегия Anchored Momentum Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Стратегия Anchored Momentum Breakout анализирует соотношение экспоненциальной скользящей средней (EMA) и простой скользящей средней (SMA), чтобы определить направление импульса. Рост отношения EMA/SMA сигнализирует о бычьем импульсе, снижение — о медвежьем.

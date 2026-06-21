@@ -1,5 +1,5 @@
 # Стратегия Negative Spread
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Negative Spread использует редкие ситуации, когда лучшая цена спроса оказывается ниже лучшей цены предложения, что создаёт отрицательный спред.
 При появлении такого дисбаланса стратегия продаёт по рынку, пытаясь захватить аномальный спред.

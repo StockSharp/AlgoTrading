@@ -1,4 +1,5 @@
-# Bands Price 策略
+# BandsPrice 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 平台 **i-BandsPrice** 专家的移植。它利用布林带衡量价格在通道中的相对位置，并在值离开极端区域时做出反应。
 

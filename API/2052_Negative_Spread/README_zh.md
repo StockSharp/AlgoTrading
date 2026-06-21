@@ -1,5 +1,5 @@
-# Negative Spread Strategy
-[English](README.md) | [Русский](README_ru.md)
+# 负价差策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Negative Spread 策略利用一种罕见情况：最优卖价低于最优买价，从而出现负点差。
 当发现这种错误定价时，策略立即按市价卖出，以捕获该异常价差。

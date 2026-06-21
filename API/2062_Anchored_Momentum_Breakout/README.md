@@ -1,4 +1,5 @@
 # Anchored Momentum Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Anchored Momentum Breakout Strategy uses the ratio of an exponential moving average (EMA) to a simple moving average (SMA) to measure momentum. When the short-term EMA begins to rise faster than the long-term SMA, it indicates increasing bullish momentum. Conversely, a falling ratio signals strengthening bearish momentum.

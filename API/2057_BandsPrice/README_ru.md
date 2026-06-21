@@ -1,4 +1,5 @@
-# Стратегия Bands Price
+# Стратегия BandsPrice
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является адаптацией эксперта **i-BandsPrice** из MetaTrader. Она использует полосы Боллинджера для оценки положения цены внутри канала и реагирует на выход из крайних зон.
 

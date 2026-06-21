@@ -1,5 +1,5 @@
 # 历史波动率比率策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于历史波动率比率 (HVR)。利用对数收益率计算6根K线的短期波动率与100根K线的长期波动率之比。当比率高于阈值时，系统做多，预期波动率扩张；当比率低于阈值时，系统做空。
 

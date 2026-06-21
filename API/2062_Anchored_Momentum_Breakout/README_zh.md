@@ -1,4 +1,5 @@
 # 锚定动量突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 锚定动量突破策略通过比较指数移动平均线（EMA）与简单移动平均线（SMA）的比率来评估市场动量。当EMA相对SMA上升时，说明上涨动能增强；当比率下降时，表明下跌动能增强。

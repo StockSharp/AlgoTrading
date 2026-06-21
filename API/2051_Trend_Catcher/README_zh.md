@@ -1,5 +1,5 @@
 # Trend Catcher 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Trend Catcher** 策略将 Parabolic SAR 与多条简单移动平均线结合，用于捕捉趋势走势。当价格在快均线方向上穿越 Parabolic SAR 时入场，并通过动态止损和跟踪止损管理仓位。
 

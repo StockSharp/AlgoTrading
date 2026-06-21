@@ -1,4 +1,5 @@
 # Simple Trailing Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This example demonstrates how to manage an open position with a trailing stop using StockSharp's high level API.
 

@@ -1,4 +1,5 @@
 # KlPrice Reversal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家 **exp_i-KlPrice.mq5** 的 C# 版本。它基于归一化价格振荡指标实现反转交易系统。振荡器将当前价格与由移动平均线和平均真实波幅（ATR）构建的平滑价格带进行比较。穿越预设边界会产生交易信号。
 

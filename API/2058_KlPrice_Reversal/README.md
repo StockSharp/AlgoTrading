@@ -1,4 +1,5 @@
 # KlPrice Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# conversion of the original MQL5 expert **exp_i-KlPrice.mq5**. It implements a reversal system based on a normalized price oscillator. The oscillator compares the current price to a smoothed price band derived from a moving average and the average true range (ATR). Crossing predefined boundaries generates trading signals.
 
