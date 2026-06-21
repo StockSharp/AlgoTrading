@@ -1,5 +1,5 @@
 # 定时器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 定时器策略按照固定的时间间隔重新计算突破价格，当价格突破这些动态阈值时入场。突破水平由平均真实波幅（ATR）和可选的附加点差确定，用于捕捉双向的短期突破。
 

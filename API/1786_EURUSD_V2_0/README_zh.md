@@ -1,5 +1,5 @@
 # EURUSD V2.0 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 针对 EURUSD 的均值回归策略，利用长期简单移动平均线 (SMA) 和基于 ATR 的波动性过滤。
 

@@ -1,5 +1,5 @@
 # Hedger 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在设定价格放置限价单，同时挂出相反方向的止损单以对冲持仓。支持做多和做空，并提供多种风险控制。
 

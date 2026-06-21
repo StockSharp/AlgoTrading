@@ -1,4 +1,5 @@
 # 止损移至益交平衡策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在持仓达到指定盈利点数后，将止损单移动到开仓价格，以保护盈利。
 

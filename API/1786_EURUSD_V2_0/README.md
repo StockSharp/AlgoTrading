@@ -1,5 +1,5 @@
 # EURUSD V2.0 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Mean-reversion system for EURUSD using a long-term simple moving average (SMA) and volatility filter based on Average True Range (ATR).
 

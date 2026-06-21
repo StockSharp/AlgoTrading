@@ -1,5 +1,5 @@
 # Hedger Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy places a limit order and an opposite stop order to hedge the initial position. It works for both long and short modes and adds several risk controls.
 

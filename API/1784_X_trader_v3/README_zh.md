@@ -1,5 +1,5 @@
 # X Trader V3 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易基于两条中位价移动平均线的交叉。第一条移动平均线较长并带有位移，第二条非常短。当第一条均线自上而下穿越第二条并在两根K线内保持在其下方且两根K线前仍在上方时买入。相反条件下卖出。持仓可在反向信号出现时平仓。交易仅在设定的日内时间窗口内进行，并可使用保护性止损和止盈。
 

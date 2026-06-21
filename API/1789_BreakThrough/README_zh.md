@@ -1,5 +1,5 @@
 # BreakThrough 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BreakThrough 策略在价格突破用户设定的趋势线水平时开仓。
 主要使用两个价格水平：

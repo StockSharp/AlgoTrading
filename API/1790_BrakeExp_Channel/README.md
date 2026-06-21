@@ -1,4 +1,5 @@
 # BrakeExp Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the **BrakeExp** indicator, which builds an exponential channel around price movements. The indicator switches between long and short regimes and generates buy or sell signals when price crosses the dynamic channel borders.
 

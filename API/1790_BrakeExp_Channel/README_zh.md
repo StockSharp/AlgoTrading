@@ -1,4 +1,5 @@
 # BrakeExp通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 **BrakeExp** 指标进行交易，该指标在价格周围构建指数通道。当价格突破动态通道边界时，指标在多空模式之间切换并生成买入或卖出信号。
 
