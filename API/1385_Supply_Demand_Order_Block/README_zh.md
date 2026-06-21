@@ -1,5 +1,5 @@
 # Supply Demand Order Block
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 突破策略，利用 Donchian 支撑阻力配合 EMA 趋势过滤和成交量放大确认。仓位通过止损和移动止损保护。
 

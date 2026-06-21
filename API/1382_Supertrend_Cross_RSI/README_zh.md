@@ -1,4 +1,5 @@
 # Supertrend Cross RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合高时间框 SuperTrend 与 RSI 退出条件。
 

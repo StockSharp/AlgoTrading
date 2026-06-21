@@ -1,5 +1,5 @@
 # Supertrend Target Stop
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格上穿 Supertrend 线时买入，下穿时卖出。仓位在达到固定百分比目标或止损时平仓。
 

@@ -1,5 +1,5 @@
 # Supertrend Target Stop
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает при пересечении цены выше линии Supertrend и продаёт при пересечении ниже. Фиксированные проценты тейк-профита и стоп-лосса закрывают позиции.
 

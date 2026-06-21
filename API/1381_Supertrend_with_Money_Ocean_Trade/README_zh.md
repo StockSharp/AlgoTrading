@@ -1,4 +1,5 @@
 # Supertrend 策略与 Money Ocean Trade
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用 SuperTrend 指标确认趋势反转。
 
