@@ -1,5 +1,5 @@
 # VIDYA ProTrend Multi-Tier Profit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该趋势策略结合快慢 VIDYA 与布林带过滤器。
 可选地根据 ATR 倍数和百分比目标设置多级止盈单。

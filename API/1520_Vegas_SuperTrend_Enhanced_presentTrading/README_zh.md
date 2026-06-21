@@ -1,5 +1,5 @@
 # Vegas SuperTrend Enhanced 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合 Vegas 通道与调整后的 SuperTrend。
 当 SuperTrend 方向翻转时入场，乘数随波动宽度调整。

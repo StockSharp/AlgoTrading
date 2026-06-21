@@ -1,5 +1,5 @@
 # VIDYA Auto-Trading (Reversal Logic) Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy applies a Variable Index Dynamic Average (VIDYA) with wide ATR bands.
 A long trade is opened when price breaks above the upper band, and a short trade when price breaks below the lower band.

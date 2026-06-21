@@ -1,5 +1,5 @@
 # Vector3 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于三条移动平均线的排列进行交易。
 当 fast > middle > slow 时做多，fast < middle < slow 时做空。

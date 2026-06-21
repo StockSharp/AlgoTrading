@@ -1,5 +1,5 @@
 # Visible Chart Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This sample shows how to work with a visible range of candles. The strategy tracks the highest high and lowest low over a configurable number of recent bars. A breakout above the visible high triggers a long entry, while a break below the visible low triggers a short entry.
 

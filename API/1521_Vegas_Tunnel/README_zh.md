@@ -1,5 +1,5 @@
 # Vegas Tunnel 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用四条 EMA 构成隧道，并可选择基于 ATR 的止损。
 当价格和快 EMA 高于慢 EMA 与隧道 EMA 时做多，反之做空。

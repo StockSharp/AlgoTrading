@@ -1,5 +1,5 @@
 # VIX Spike Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Buys when the VIX index spikes above its moving average by a multiple of standard deviation and closes after a fixed number of bars.
 

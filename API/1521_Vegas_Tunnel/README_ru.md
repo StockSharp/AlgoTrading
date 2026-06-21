@@ -1,5 +1,5 @@
 # Стратегия Vegas Tunnel
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует четыре EMA для формирования туннеля и опциональные ATR-стопы.
 Открывает лонг, когда цена и быстрая EMA выше медленных и туннельных EMA, и шорт, когда ниже.

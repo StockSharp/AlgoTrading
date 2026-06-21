@@ -1,5 +1,5 @@
 # Стратегия VIDYA ProTrend Multi-Tier Profit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая стратегия на основе быстрых и медленных VIDYA и фильтра полос Боллинджера.
 Опционально выставляет серию тейк-профитов по ATR и процентным целям.

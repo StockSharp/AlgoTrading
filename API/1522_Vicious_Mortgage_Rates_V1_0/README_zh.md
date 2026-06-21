@@ -1,5 +1,5 @@
 # Vicious Mortgage Rates V1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略构建由四个波动率指数组成的合成指标。
 当合成指数的快EMA上穿慢EMA时做多，反之则做空。

@@ -1,5 +1,5 @@
 # 波动率套利价差振荡模型 (VASOM)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当前月 VIX 期货与次月合约之间的价差 RSI 低于阈值时做多前月合约, 当 RSI 上穿退出阈值时平仓。
 
