@@ -1,5 +1,5 @@
 # RSI Stochastic WMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI、随机振荡指标和加权移动平均线 (WMA)。
 当 RSI 低于 30，%K 上穿 %D 且价格高于 WMA 时做多。

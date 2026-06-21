@@ -1,5 +1,5 @@
 # RSI交叉复利策略（月线）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当月线RSI收于其SMA之上时，策略全额买入；当RSI跌破SMA时全部卖出。利润加入本金实现复利。
 

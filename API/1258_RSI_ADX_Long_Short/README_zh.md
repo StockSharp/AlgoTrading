@@ -1,5 +1,5 @@
 # RSI & ADX 长短策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 RSI 产生信号，并通过 ADX 确认趋势，可进行多空交易。
 当 RSI 上穿 70 且 ADX 高于阈值时开多头。

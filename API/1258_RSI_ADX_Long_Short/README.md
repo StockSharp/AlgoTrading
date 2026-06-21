@@ -1,5 +1,5 @@
 # RSI & ADX Long Short Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades both sides using RSI for signals and ADX for trend confirmation.
 A long position is opened when RSI crosses above 70 and ADX is above a threshold.

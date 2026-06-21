@@ -1,5 +1,5 @@
 # RSI 与 反向加权均线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI 和反向加权移动平均的变化率过滤。当 RSI 高于阈值且均线 ROC 低于水平时做多；当 RSI 低于阈值且均线 ROC 高于水平时做空。包含基于 ATR 的追踪止损和固定比例的资金管理。
 

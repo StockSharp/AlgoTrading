@@ -1,5 +1,5 @@
 # RSI Box（伪网格机器人）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据RSI的超买和超卖信号构建价格网格。当RSI越过极值时，网格线会根据最近的高点和低点重新计算。当价格突破下一条网格线时进行交易，可选择做空。
 

@@ -1,5 +1,5 @@
 # RMI 趋势同步
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RMI 趋势同步结合 RSI 与 MFI 的动量信号，并使用 SuperTrend 作为追踪止损。平均动量向上突破阈值且 EMA 斜率上升时做多，向下突破时做空。退出基于相反动量或 SuperTrend 线。
 

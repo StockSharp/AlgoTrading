@@ -1,5 +1,5 @@
 # RSI Box (Псевдо Grid Bot)
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Сетка цен строится на основе уровней перекупленности и перепроданности RSI. После пересечения экстремума RSI линии сетки пересчитываются по недавним максимумам и минимумам. Сделки совершаются при пробое следующей линии. Шорты по желанию.
 

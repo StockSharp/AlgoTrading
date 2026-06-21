@@ -1,5 +1,5 @@
 # RSI + MACD Long-Only 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 RSI 上穿中线并获得 MACD 多头确认，或 MACD 上穿信号线且 RSI 位于中线之上时进入多头。 当 RSI 跌破中线或 MACD 下穿信号线且柱状图 ≤ 0 时退出。 可选的 EMA 趋势过滤和超卖窗口可进一步精炼入场。
 

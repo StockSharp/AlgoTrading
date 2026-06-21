@@ -1,5 +1,5 @@
 # RSI & Backed-Weighted MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy uses the Relative Strength Index and a retro weighted moving average with a rate-of-change filter. Long positions open when RSI exceeds the threshold and MA ROC is below the set level, while short positions open on the opposite conditions. The system applies an ATR-based trailing stop and fixed ratio position sizing.
 

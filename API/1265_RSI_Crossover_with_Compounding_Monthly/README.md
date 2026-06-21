@@ -1,5 +1,5 @@
 # RSI Crossover Strategy with Compounding (Monthly)
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy invests the entire capital when the monthly RSI closes above its SMA and exits when RSI falls below the SMA. Gains are added to the capital for compounding.
 

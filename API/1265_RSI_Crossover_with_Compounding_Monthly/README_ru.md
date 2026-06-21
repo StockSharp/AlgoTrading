@@ -1,5 +1,5 @@
 # Стратегия "RSI Crossover Strategy with Compounding (Monthly)"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия инвестирует весь капитал, когда месячный RSI закрывается выше своей SMA, и выходит, когда RSI опускается ниже SMA. Прибыль добавляется к капиталу, обеспечивая сложный процент.
 

@@ -1,5 +1,5 @@
 # RSI 和 ATR 趋势反转 SL TP
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 RSI 和 ATR 计算动态阈值，通过价格与阈值交叉来捕捉趋势反转，并内置止损和止盈。
 

@@ -1,4 +1,5 @@
 # Стратегия RK's Framework Auto Color Gradient
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Объединяет Bollinger Bands %B и RSI в единый осциллятор, преобразует его в цветовой градиент и торгует при пересечении центрального уровня.
 

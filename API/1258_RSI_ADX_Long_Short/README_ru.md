@@ -1,5 +1,5 @@
 # Стратегия RSI & ADX Long Short
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует в обе стороны, используя RSI для сигналов и ADX для подтверждения тренда.
 Длинная позиция открывается при пересечении RSI выше 70 и значении ADX выше порога.
