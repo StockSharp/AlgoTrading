@@ -1,5 +1,5 @@
 # 三重EMA交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用三条简单移动平均线。
 当短期SMA向上穿越中期SMA且三条均线呈多头排列时开多，

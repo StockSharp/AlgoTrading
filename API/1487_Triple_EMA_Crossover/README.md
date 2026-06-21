@@ -1,5 +1,5 @@
 # Triple EMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on three simple moving averages.
 A long trade is opened when the short SMA crosses above the middle SMA while all three are aligned upward.

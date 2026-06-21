@@ -1,5 +1,5 @@
 # Turn Around Tuesday on Steroids 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一种季节性多头策略，在周初连续两天下跌后买入，并在价格突破前一高点时退出。可选的移动平均过滤器用于确认趋势。
 

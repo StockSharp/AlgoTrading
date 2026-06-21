@@ -1,5 +1,5 @@
 # Turn of the Month Strategy on Steroids
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A seasonal strategy that buys near the end of each month after two consecutive down closes and exits when a short RSI signals overbought conditions.
 

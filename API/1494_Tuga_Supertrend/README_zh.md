@@ -1,5 +1,5 @@
 # Tuga Supertrend
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tuga Supertrend 是一种基于 SuperTrend 指标的纯多策略。当 SuperTrend 方向由上转下时开多头，在方向由下转上时平仓。
 

@@ -1,5 +1,5 @@
 # Turn Around Tuesday on Steroids Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A seasonal long strategy that buys after two consecutive down days at the start of the week and exits on a breakout above the previous high. An optional moving average filter confirms trend direction.
 

@@ -1,5 +1,5 @@
 # Turn of the Month on Steroids 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一种季节性策略，在每月末连续两天下跌后买入，并在短周期 RSI 显示超买时退出。
 

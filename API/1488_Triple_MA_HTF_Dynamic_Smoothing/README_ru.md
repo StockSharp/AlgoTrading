@@ -1,5 +1,5 @@
 # Стратегия Triple MA HTF - Dynamic Smoothing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сравнивает три скользящие средние, рассчитанные на старших таймфреймах.
 Каждая средняя сглаживается пропорционально отношению её таймфрейма к рабочему.

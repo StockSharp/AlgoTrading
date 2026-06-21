@@ -1,5 +1,5 @@
 # TTP智能累积器
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当RSI低于其平均值一个标准差时，该策略会累积多头仓位；当RSI高于相同阈值时逐步退出。
 

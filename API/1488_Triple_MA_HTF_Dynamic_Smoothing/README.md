@@ -1,5 +1,5 @@
 # Triple MA HTF Strategy - Dynamic Smoothing
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that compares three moving averages calculated on higher timeframes.
 Each higher timeframe MA is smoothed proportionally to the ratio between its timeframe and the working timeframe.

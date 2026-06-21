@@ -1,5 +1,5 @@
 # Стратегия Turn Around Tuesday on Steroids
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Сезонная длинная стратегия, покупающая после двух подряд падающих дней в начале недели и выходящая при пробое предыдущего максимума. Дополнительно может использоваться фильтр по скользящей средней для подтверждения тренда.
 

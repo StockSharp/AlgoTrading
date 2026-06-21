@@ -1,5 +1,5 @@
 # 三重MA高阶时间框架动态平滑策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较在更高时间框架上计算的三条移动平均线。
 每条均线根据其时间框架与基础时间框架的比例进行平滑处理。

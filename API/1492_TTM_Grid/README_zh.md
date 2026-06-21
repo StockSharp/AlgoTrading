@@ -1,5 +1,5 @@
 # TTM 网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于高低价的 EMA 计算简单的 TTM 状态，并据此建立买卖网格。状态改变时重置网格，价格触及网格线即下单。
 
