@@ -1,5 +1,5 @@
 # Distance to Demand Vector 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Distance to Demand Vector 指标。它比较多空需求向量的距离，并在其交叉时交易。
 

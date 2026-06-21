@@ -1,5 +1,5 @@
 # 多指标背离 v4 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控多个动量指标（MACD、RSI、随机指标、CCI、动量、OBV、MFI），当至少指定数量的指标与价格形成同方向背离时入场。
 

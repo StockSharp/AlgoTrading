@@ -1,5 +1,5 @@
 # 背离策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用价格与RSI在简单枢轴上的背离。价格创出新高但RSI未确认时做空，价格创新低而RSI上升时做多。
 

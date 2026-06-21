@@ -1,5 +1,5 @@
 # DEMA 趋势振荡策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过移动平均和标准差对双指数移动平均线（DEMA）进行归一化。当归一化值高于多头阈值且价格位于上轨之上时做多；当归一化值低于空头阈值且价格位于下轨之下时做空。使用基于 ATR 的追踪止损、带状止损以及按风险回报比计算的止盈。
 

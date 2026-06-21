@@ -1,4 +1,5 @@
 # Dema RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易双指数移动平均线的 RSI 与其平滑值的交叉。RSI 上穿平滑线时开多，下穿时开空。持仓可通过止盈、追踪止损和可选的交易时段过滤来保护。
 

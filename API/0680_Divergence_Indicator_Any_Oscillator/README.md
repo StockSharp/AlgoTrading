@@ -1,4 +1,5 @@
 # Divergence Indicator (Any Oscillator)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Detects regular and hidden divergences between price and RSI. The strategy buys on bullish divergences and sells on bearish divergences.
 

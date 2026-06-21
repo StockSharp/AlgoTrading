@@ -1,4 +1,5 @@
 # 背离指标（任意振荡器）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 检测价格与 RSI 之间的常规和隐藏背离。策略在看涨背离时买入，在看跌背离时卖出。
 

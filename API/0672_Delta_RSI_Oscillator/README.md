@@ -1,5 +1,5 @@
 # Delta-RSI Oscillator
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Delta-RSI oscillator, defined as the change of RSI smoothed with an EMA. Signals are triggered when the delta crosses zero, crosses its signal line or changes direction. Exits mirror the selected condition.
 

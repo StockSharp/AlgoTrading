@@ -1,5 +1,5 @@
 # Delta-RSI Oscillator
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用Delta-RSI振荡器，它是RSI的变化并用EMA平滑。当Delta-RSI穿越零轴、穿越信号线或改变方向时产生信号，退出条件与所选条件相同。
 
