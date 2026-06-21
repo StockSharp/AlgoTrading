@@ -1,5 +1,5 @@
 # 相对货币强度
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Relative Currency Strength 策略将交易货币对与主要货币篮子进行比较。
 当交易对强于其他货币的平均值时买入，弱于平均值时卖出。

@@ -1,5 +1,5 @@
 # Resampling Reverse Engineering Bands
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Resampling Reverse Engineering Bands reverse engineers RSI price levels at a configurable resampling rate. The strategy buys when price falls below the low band and sells when price rises above the high band.
 

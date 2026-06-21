@@ -1,5 +1,5 @@
 # Refined SMA EMA Crossover with Ichimoku and 200 SMA Filter
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Ichimoku 云和 200 期 SMA 来过滤 SMA 与 EMA 的交叉。当 SMA 上穿 EMA 且价格位于云层和 200 SMA 之上时做多；当 SMA 下穿 EMA 且价格位于云层和 200 SMA 之下时做空。
 

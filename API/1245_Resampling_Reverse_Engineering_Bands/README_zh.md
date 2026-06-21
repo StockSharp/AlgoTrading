@@ -1,5 +1,5 @@
 # Resampling Reverse Engineering Bands
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Resampling Reverse Engineering Bands 利用重采样计算 RSI 的价格带。当价格跌破下轨时做多，价格突破上轨时做空。
 

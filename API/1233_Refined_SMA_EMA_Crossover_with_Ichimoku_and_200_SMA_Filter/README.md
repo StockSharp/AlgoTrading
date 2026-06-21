@@ -1,5 +1,5 @@
 # Refined SMA EMA Crossover with Ichimoku and 200 SMA Filter
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines a short SMA/EMA crossover with Ichimoku Cloud and 200-period SMA filters. Goes long when SMA crosses above EMA above the cloud and the 200 SMA. Sells when SMA crosses below EMA below both the cloud and 200 SMA.
 

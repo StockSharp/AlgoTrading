@@ -1,5 +1,5 @@
 # Renko Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在看跌砖后出现看涨砖时做多，在相反变化时做空。
 

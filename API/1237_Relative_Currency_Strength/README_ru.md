@@ -1,5 +1,5 @@
 # Относительная сила валют
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Relative Currency Strength сравнивает валютную пару с корзиной основных валют.
 Покупает, когда торгуемая пара сильнее среднего по другим валютам, и продаёт при слабости.

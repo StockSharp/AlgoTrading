@@ -1,5 +1,5 @@
 # 相对强度策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过多种移动平均线计算加权相对强度。
 在强度指标上应用布林带用于识别超买和超卖区域。

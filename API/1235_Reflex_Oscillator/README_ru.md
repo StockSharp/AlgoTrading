@@ -1,5 +1,5 @@
 # Стратегия Reflex Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует осциллятор Reflex Джона Элерса. Открывает длинную позицию при пересечении осциллятором верхнего порога и короткую позицию при пересечении нижнего порога. Позиции закрываются, когда осциллятор возвращается к нулевой линии.
 

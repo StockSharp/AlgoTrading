@@ -1,5 +1,5 @@
 # Reflex Oscillator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 John Ehlers 的 Reflex 振荡器。当振荡器上穿上阈值时做多，下穿下阈值时做空。当振荡器返回到零线时平仓。
 

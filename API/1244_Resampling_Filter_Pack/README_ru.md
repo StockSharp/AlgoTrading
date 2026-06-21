@@ -1,5 +1,5 @@
 # Стратегия Resampling Filter Pack
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пересэмплирует цену каждые N баров и сглаживает её скользящей средней. Открывает длинную позицию, когда фильтр растёт и цена выше него, и короткую, когда фильтр падает и цена ниже.
 

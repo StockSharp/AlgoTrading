@@ -1,5 +1,5 @@
 # Resampling Filter Pack 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略每隔 N 根K线取样一次价格，并用移动平均线平滑。当滤波值上升且价格高于滤波线时做多；当滤波值下降且价格低于滤波线时做空。
 
