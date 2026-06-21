@@ -1,5 +1,5 @@
 # Exchange Price 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较当前收盘价与若干根K线之前的价格差值（短周期与长周期）。当短期变化上穿长期变化时做多，反之做空。
 

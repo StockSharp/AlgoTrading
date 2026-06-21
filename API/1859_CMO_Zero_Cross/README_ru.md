@@ -1,4 +1,5 @@
 # Стратегия пересечения нуля CMO
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует по пересечениям нулевой линии индикатора Chande Momentum Oscillator (CMO).
 Когда осциллятор пересекает ноль сверху вниз, открывается длинная позиция. При пересечении

@@ -1,5 +1,5 @@
 # Heiken Ashi Simplified EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Heikin Ashi 蜡烛的形态策略。该系统监控之前的 HA 开盘价和收盘价序列。当连续三个收盘价高于（或低于）其相应开盘价且这些开盘价呈现减速回撤结构时，只要价格距离最近的 HA 开盘价达到设定距离，下一根蜡烛即可触发突破交易。算法会在允许的上限内逐步加仓。
 

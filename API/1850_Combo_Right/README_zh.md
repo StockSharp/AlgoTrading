@@ -1,4 +1,5 @@
 # Combo Right 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略来自 MQL 脚本 `combo_right.mq5` 的移植版本。
 系统将基础 CCI 信号与三个基于价格差的简单感知机结合使用。

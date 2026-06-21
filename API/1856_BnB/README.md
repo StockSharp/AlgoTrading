@@ -1,4 +1,5 @@
 # BnB Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a port of the MetaTrader 5 Expert Advisor "Exp_BnB". It operates on the custom BnB (Bulls and Bears) indicator that measures bullish and bearish pressure inside each candle and smooths them with an exponential moving average.
 

@@ -1,4 +1,5 @@
 # BnB 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略来源于 MetaTrader 5 EA “Exp_BnB”。它使用自定义的 BnB（多空力量）指标，在每根 K 线内部评估多头和空头压力，并用指数移动平均进行平滑。
 

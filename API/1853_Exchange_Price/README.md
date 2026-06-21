@@ -1,5 +1,5 @@
 # Exchange Price Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy compares the current closing price with prices several bars ago over two lookback periods. A long position is opened when the short-term change rises above the long-term change; a short position is opened when the opposite crossover occurs.
 

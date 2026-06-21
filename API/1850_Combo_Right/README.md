@@ -1,4 +1,5 @@
 # Combo Right Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implementation of strategy converted from MQL script `combo_right.mq5`.
 The system combines a basic CCI signal with three simple perceptrons working on price differences.

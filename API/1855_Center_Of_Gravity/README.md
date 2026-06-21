@@ -1,5 +1,5 @@
 # Center of Gravity Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on the Center of Gravity indicator that multiplies SMA and WMA and smooths the result. A long position opens when the center line crosses above its smoothed average and a short position opens on the opposite crossover. Positions are closed when the signal flips against the current direction.
 

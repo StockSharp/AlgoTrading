@@ -1,4 +1,5 @@
 # Стратегия BnB
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом советника MetaTrader 5 «Exp_BnB». Она использует индикатор BnB (Bulls and Bears), который оценивает бычье и медвежье давление в каждой свече и сглаживает их экспоненциальной средней.
 

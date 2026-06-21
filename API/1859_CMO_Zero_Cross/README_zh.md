@@ -1,4 +1,5 @@
 # CMO 零轴交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Chande 动量振荡器（CMO）的零轴交叉进行交易。
 当振荡器从上向下穿越零轴时开多头，当从下向上穿越零轴时开空头。

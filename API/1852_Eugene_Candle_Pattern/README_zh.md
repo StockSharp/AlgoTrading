@@ -1,5 +1,5 @@
 # Eugene烛形策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于"Eugene"蜡烛形态进行交易。算法分析最近四根K线，识别内包线以及特殊的"鸟"形态，并计算突破水平。当价格突破前一根K线的极值且满足额外确认条件时入场。止损和止盈以价格步长表示。
 

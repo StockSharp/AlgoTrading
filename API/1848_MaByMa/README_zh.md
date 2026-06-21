@@ -1,5 +1,5 @@
 # MA动均线互相纫入策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了双重平滑移动均线的交叉交易。
 价格序列先通过快速EMA平滑，然后该值再被更慢的EMA平滑一次。

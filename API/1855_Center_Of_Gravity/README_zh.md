@@ -1,5 +1,5 @@
 # Center of Gravity 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Center of Gravity 指标，它将 SMA 与 WMA 相乘并对结果进行平滑处理。当中心线向上穿越其平滑均线时开多头，当向下穿越时开空头。信号反向时平仓。
 
