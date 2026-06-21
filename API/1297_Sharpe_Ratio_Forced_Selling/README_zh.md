@@ -1,5 +1,5 @@
 # Sharpe Ratio Forced Selling
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sharpe Ratio Forced Selling 策略在滚动夏普比率低于负阈值时做多，当夏普比率高于正阈值或持仓时间超过限制时退出。收益可使用对数或简单百分比计算，并调整无风险收益率。
 

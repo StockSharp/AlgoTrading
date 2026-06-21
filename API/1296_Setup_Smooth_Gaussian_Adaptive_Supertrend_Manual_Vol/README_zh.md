@@ -1,5 +1,5 @@
 # Setup: Smooth Gaussian + Adaptive Supertrend (Manual Vol)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价高于双重平滑移动平均线（“高斯”趋势）时开多。
 当价格收于趋势线下方时平仓。简单的手动波动率过滤器只有在值为2或3时才允许入场。

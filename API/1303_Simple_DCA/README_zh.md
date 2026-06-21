@@ -1,4 +1,5 @@
 # 简单 DCA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略先下基础订单，并在价格按指定百分比下跌时增加安全单。当价格达到根据平均入场价计算的止盈水平时平仓。每个安全单的数量按倍数递增。
 

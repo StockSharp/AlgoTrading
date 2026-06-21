@@ -1,5 +1,5 @@
 # Simple Pull Back TJlv26 Стратегия
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда цена выше длинной SMA, ниже короткой SMA и RSI(3) меньше 30 в заданном диапазоне дат. Выход осуществляется по стоп-лоссу и тейк-профиту в процентах либо если цена выше короткой SMA и ниже минимума предыдущей свечи.
 

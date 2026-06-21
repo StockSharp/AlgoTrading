@@ -1,5 +1,5 @@
 # Setup: Smooth Gaussian + Adaptive Supertrend (Manual Vol)
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Enters long when the close is above a double-smoothed moving average ("Gaussian" trend).
 Exits when price closes below the trend line. A simple manual volatility filter can restrict entries.

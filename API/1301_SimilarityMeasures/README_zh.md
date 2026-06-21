@@ -1,4 +1,5 @@
 # 相似度测量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例策略演示如何使用相似度测量。
 它计算价格与简单移动平均线 (SMA) 之间的欧氏距离。

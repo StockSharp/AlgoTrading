@@ -1,3 +1,4 @@
 # 银色午夜K线颜色策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在纽约时间凌晨1点根据前一天午夜K线的颜色进行交易。如果午夜K线收涨则做多，否则做空。多单目标57跳、止损200跳；空单目标48跳，止损同样200跳。

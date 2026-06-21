@@ -1,4 +1,5 @@
 # 简单斐波那契回撤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在设定周期内寻找最高价和最低价，并据此计算斐波那契回撤水平。当价格穿越所选的斐波那契水平时开仓，并按固定的点差设置止盈和止损。
 

@@ -1,5 +1,5 @@
 # Sharpe Ratio Forced Selling
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Sharpe Ratio Forced Selling strategy goes long when the rolling Sharpe ratio drops below a negative threshold and exits when it rises above a positive threshold or the holding period exceeds a limit. Returns can be computed using logarithmic or simple changes and adjusted by a risk-free rate.
 

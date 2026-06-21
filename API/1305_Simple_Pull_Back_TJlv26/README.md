@@ -1,5 +1,5 @@
 # Simple Pull Back TJlv26 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy buys when price is above the long SMA, below the short SMA, and RSI(3) is under 30 within a specified date range. It exits with percentage-based stop-loss and take-profit or when price is above the short SMA but below the previous candle's low.
 

@@ -1,5 +1,5 @@
 # Sigma Spike Filtered Binned OPR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sigma Spike Filtered Binned OPR 收集 OPR（开盘位置比率）的分布，并在收益出现 Sigma 突变后 OPR 达到极端区间时进行交易。
 
