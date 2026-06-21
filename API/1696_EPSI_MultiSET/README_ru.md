@@ -1,5 +1,5 @@
 # Стратегия EPSI Multi SET
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пробоя, конвертированная из MQL4 эксперта *e-PSI@MultiSET*.
 Она отслеживает каждую свечу и входит в позицию, когда цена уходит на заданное

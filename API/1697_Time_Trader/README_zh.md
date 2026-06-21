@@ -1,5 +1,5 @@
 # Time Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于时间的策略，在指定的时刻根据设置选择做多或做空，并使用止盈止损保护头寸。
 

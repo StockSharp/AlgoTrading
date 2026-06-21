@@ -1,5 +1,5 @@
 # Time Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Time-based strategy that enters long and/or short exactly at a specified clock time and protects the position with configurable take profit and stop loss.
 

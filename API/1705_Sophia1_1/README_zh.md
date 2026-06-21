@@ -1,4 +1,5 @@
 # Sophia 1_1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sophia 1_1 是一种基于网格的马丁格尔交易策略。
 当连续出现四根同方向的蜡烛时开仓：

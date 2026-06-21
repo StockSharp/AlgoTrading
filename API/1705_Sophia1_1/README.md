@@ -1,4 +1,5 @@
 # Sophia 1_1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sophia 1_1 is a grid-based martingale trading strategy.
 The strategy opens a position after four consecutive candles move in the same direction:

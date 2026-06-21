@@ -1,5 +1,5 @@
 # Martini Martingale Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a hedged martingale grid. It starts by placing stop orders on both sides of the current price and doubles position size in the opposite direction whenever the market moves against the current exposure by a specified step. All trades are closed once accumulated profit exceeds the target.
 

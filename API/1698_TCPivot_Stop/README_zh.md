@@ -1,5 +1,5 @@
 # TCPivot Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易日内枢轴线的突破。枢轴点按照经典交易员公式，用前一日的最高价、最低价和收盘价计算。当收盘价向上突破枢轴线时开多单；当收盘价向下突破枢轴线时开空单。
 

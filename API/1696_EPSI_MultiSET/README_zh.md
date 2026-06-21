@@ -1,5 +1,5 @@
 # EPSI Multi SET 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从原始 MQL4 专家 *e-PSI@MultiSET* 转换而来的突破策略。
 监控每根蜡烛，当价格从开盘价移动到指定距离时入场。

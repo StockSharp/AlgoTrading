@@ -1,4 +1,5 @@
 # 收盘价与前一开盘价策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较上一根完成蜡烛的收盘价与更早一根蜡烛的开盘价。
 当最新收盘价高于前一开盘价时做多；当最新收盘价低于前一开盘价时做空。

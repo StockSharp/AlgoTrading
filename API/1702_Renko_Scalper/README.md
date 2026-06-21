@@ -1,5 +1,5 @@
 # Renko Scalper Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy attempts to capture short-term momentum by comparing the current close to the previous close.
 If the latest candle closes higher than the prior one, the strategy opens a long position.

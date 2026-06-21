@@ -1,5 +1,5 @@
 # Martini Martingale 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现对冲型马丁格尔。它在当前价格上下方放置止损单，当市场按指定步长朝不利方向移动时，以双倍数量在相反方向加仓。一旦累计利润超过设定目标，策略将平掉所有仓位。
 

@@ -1,4 +1,5 @@
 # TCPivotLimit Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades around classic daily pivot point levels. Pivot points are calculated from the previous day's high, low and close prices. Limit orders are placed at selected support or resistance levels and positions are managed with predefined stop-loss and take-profit levels.
 

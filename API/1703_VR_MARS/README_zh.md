@@ -1,4 +1,5 @@
 # VR MARS 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例演示如何将 MQL4 手动交易面板 **VR---MARS-EN** 简化移植到 StockSharp。
 

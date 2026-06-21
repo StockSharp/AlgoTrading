@@ -1,4 +1,5 @@
 # TCPivotLimit 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于经典的日内枢轴点。枢轴点由前一日的最高价、最低价和收盘价计算。策略在选定的支撑或阻力位挂出限价单，并按照预设的止损和止盈管理持仓。
 

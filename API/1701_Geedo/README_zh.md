@@ -1,5 +1,5 @@
 # Geedo 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于时间的策略：在指定的小时比较两根过去K线的开盘价。如果较早的K线高于较新的K线并超过阈值，则开空单；如果较新的K线高于较早的K线，则开多单。每笔交易都有固定的止损和止盈，并在达到最大持仓时间后强制平仓。
 

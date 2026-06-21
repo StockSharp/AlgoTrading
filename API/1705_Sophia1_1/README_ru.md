@@ -1,4 +1,5 @@
 # Стратегия Sophia 1_1
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sophia 1_1 — сеточная торговая стратегия на основе принципа мартингейла.
 Позиция открывается после четырёх подряд идущих свечей в одном направлении:

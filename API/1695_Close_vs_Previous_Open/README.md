@@ -1,4 +1,5 @@
 # Close vs Previous Open Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy compares the close of the last finished candle with the open of the preceding candle.
 It enters a long position when the latest close is above the previous open and a short position when the latest close is below the previous open.

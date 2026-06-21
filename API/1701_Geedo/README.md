@@ -1,5 +1,5 @@
 # Geedo Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Time-based strategy that compares open prices from two past bars at a specific hour. If the earlier bar is above the recent one by a threshold, a short trade is opened. If the recent bar is above the earlier one, a long trade is opened. Each position uses fixed stop loss and take profit and is closed after a maximum holding time.
 

@@ -1,5 +1,5 @@
 # Renko Scalper 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过比较当前蜡烛的收盘价与前一根蜡烛的收盘价来捕捉短期动量。
 如果当前蜡烛收于上一根之上，则开多仓；
