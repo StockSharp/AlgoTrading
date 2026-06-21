@@ -1,4 +1,5 @@
 # Стратегия Batman ATR Trailing Stop
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия основана на советнике "Batman" и использует **ATR (Average True Range)** для построения динамических уровней поддержки и сопротивления. Сделки открываются при пробое этих уровней ценой.
 

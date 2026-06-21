@@ -1,5 +1,5 @@
 # Disturbed 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该对冲策略同时在市场上买入和卖出，并根据当前点差进行管理。当价格向任一方向移动一个点差时，亏损的一侧将被平仓。剩余持仓在达到 `gainMultiplier * spread` 的盈利或亏损时退出。
 

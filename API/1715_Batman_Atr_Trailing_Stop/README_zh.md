@@ -1,4 +1,5 @@
 # Batman ATR 拖尾止损策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于原版“Batman”专家顾问，使用 **平均真实波幅 (ATR)** 构建动态支撑和阻力线，并在价格突破这些水平时入场。
 

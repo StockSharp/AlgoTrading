@@ -1,5 +1,5 @@
 # Robot Danu
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较由蜡烛高低点计算的快慢 ZigZag 水平。
 当快 ZigZag 水平高于慢水平时做空，

@@ -1,5 +1,5 @@
 # 盈利自动平仓策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控策略产生的所有交易的已实现盈亏。当累积利润超过用户设定的阈值时，会立即平掉当前持仓，并可选择取消所有挂单。通过设置亏损限制，也可以在达到最大回撤时触发同样的行为。
 

@@ -1,5 +1,5 @@
 # Zig Dan Zag Ultimate Investment Long Term
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Long-term investment strategy that combines ZigZag pivots with a slow SMA trend filter. A position is opened when a new ZigZag low forms above the SMA, while exits occur on opposite pivots below the SMA.
 

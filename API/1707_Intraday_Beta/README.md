@@ -1,4 +1,5 @@
 # Intraday Beta Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy searches for intraday turning points using smoothed moving average slopes and the Relative Strength Index (RSI).
 A long position is opened when the slope of the 10-period moving average turns upward after a downward move, the RSI is below 70,

@@ -1,5 +1,5 @@
 # Zig Dan Zag Ultimate Investment Long Term
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 长期投资策略，结合 ZigZag 枢轴和缓慢的 SMA 趋势过滤器。当新的 ZigZag 低点形成且价格高于 SMA 时开多仓，出现相反枢轴且价格低于 SMA 时平仓。
 

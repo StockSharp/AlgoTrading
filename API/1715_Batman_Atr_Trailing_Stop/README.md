@@ -1,4 +1,5 @@
 # Batman ATR Trailing Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements an ATR-based trailing stop approach inspired by the original "Batman" Expert Advisor.
 It tracks dynamic support and resistance levels derived from the **Average True Range (ATR)** indicator and reacts when the price crosses these levels.

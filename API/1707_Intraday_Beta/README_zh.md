@@ -1,4 +1,5 @@
 # 日内 Beta 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过平滑移动平均线的斜率变化结合相对强弱指数（RSI）来寻找日内转折。
 当10周期移动平均线的斜率在下行后转为上行、RSI低于70且上一根K线为阳线时开多。

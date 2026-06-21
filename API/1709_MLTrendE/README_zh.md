@@ -1,4 +1,5 @@
 # MLTrendE 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略沿加权移动平均线（WMA）的方向交易，并在价格有利时加仓。
 
