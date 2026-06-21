@@ -1,4 +1,5 @@
 # Ergodic Ticks Volume OSMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MQL5 专家 "Exp_Ergodic_Ticks_Volume_OSMA" 在 StockSharp 平台上的改写。原始专家使用自定义指标来评估逐笔成交量动量，本版本使用 MACD 直方图来近似这个指标。

@@ -1,4 +1,5 @@
 # Стратегия Ergodic Ticks Volume Indicator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия применяет индикатор True Strength Index (TSI) к свечам выбранного таймфрейма и сравнивает его со скользящей средней сигнальной линией. При пересечении TSI выше сигнальной линии открывается длинная позиция, при пересечении ниже — короткая.
 

@@ -1,4 +1,5 @@
 # Color Trend CF 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL 专家 **Exp_ColorTrend_CF** 的移植版本。策略使用两条指数移动平均线来识别趋势变化。快速 EMA 对价格变化反应灵敏，慢速 EMA 用于过滤趋势。当快速 EMA 上穿慢速 EMA 时开多仓；当快速 EMA 下穿慢速 EMA 时开空仓。
 

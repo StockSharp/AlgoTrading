@@ -1,4 +1,5 @@
 # Color Trend CF Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a conversion of the MQL expert **Exp_ColorTrend_CF**. It uses two exponential moving averages to detect trend changes. The fast EMA reacts quickly to price movement, while the slow EMA acts as a trend filter. A long position is opened when the fast EMA crosses above the slow EMA. A short position is opened when the fast EMA crosses below the slow EMA.
 

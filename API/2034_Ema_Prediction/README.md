@@ -1,5 +1,5 @@
 # EMA Prediction Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on the EMA Prediction indicator which generates signals when fast and slow exponential moving averages cross on a candle confirming the direction.
 

@@ -1,5 +1,5 @@
 # Fast2 Crossover 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Fast2 直方图的策略。直方图把最近三根K线的实体按平方根权重组合，并用两条加权移动平均线平滑。当快线下穿慢线时做多，快线上穿慢线时做空。
 

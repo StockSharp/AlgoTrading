@@ -1,4 +1,5 @@
 # EMA交叉信号策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两条指数移动平均线（EMA）的交叉进行交易。根据选定的K线序列计算快速EMA和慢速EMA。当快速EMA上穿慢速EMA时，策略可以平掉当前的空头并在需要时开多头；当快速EMA下穿慢速EMA时，策略可以平掉多头并在需要时开空头。
 

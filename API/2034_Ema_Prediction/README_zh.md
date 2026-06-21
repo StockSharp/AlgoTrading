@@ -1,5 +1,5 @@
 # EMA Prediction 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 EMA Prediction 指标，当快速和慢速指数移动平均线在确认方向的 K 线中发生交叉时产生信号。
 

@@ -1,4 +1,5 @@
 # EMA Crossover Signal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades the crossover of two Exponential Moving Averages (EMA). A faster EMA and a slower EMA are calculated from the chosen candle series. When the fast EMA crosses above the slow EMA the strategy can close any existing short position and optionally open a long position. When the fast EMA crosses below the slow EMA it can close a long position and optionally open a short position.
 

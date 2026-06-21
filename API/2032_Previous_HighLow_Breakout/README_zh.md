@@ -1,5 +1,5 @@
 # Previous High Low Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控所选周期上一根K线的最高价和最低价。当新的K线收盘价突破前高时开多单，收盘价跌破前低时开空单。使用固定的止盈和带追踪的止损来控制风险。
 

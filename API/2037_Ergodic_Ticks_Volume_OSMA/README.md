@@ -1,4 +1,5 @@
 # Ergodic Ticks Volume OSMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy adapts the MQL5 expert "Exp_Ergodic_Ticks_Volume_OSMA" to StockSharp. The original expert uses a custom indicator to evaluate tick volume momentum. In this version the custom indicator is approximated by the MACD histogram.

@@ -1,4 +1,5 @@
 # DiNapoli 随机指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 **DiNapoli 随机指标**，对 %K 与 %D 线的交叉做出反应。
 

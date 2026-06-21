@@ -1,4 +1,5 @@
 # Стратегия Ergodic Ticks Volume OSMA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Эта стратегия представляет собой адаптацию MQL5 эксперта "Exp_Ergodic_Ticks_Volume_OSMA" на платформу StockSharp. В оригинале используется собственный индикатор для анализа тиковой активности, в данной версии вместо него применяется гистограмма MACD.

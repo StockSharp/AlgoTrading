@@ -1,5 +1,5 @@
 # Dig Variation 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MQL5 的 *DigVariation* 示例，使用简单移动平均线 (SMA) 近似原始指标。当 SMA 趋势改变方向时开仓。
 

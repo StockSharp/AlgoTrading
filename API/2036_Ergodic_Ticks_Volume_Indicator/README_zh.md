@@ -1,4 +1,5 @@
 # Ergodic Ticks Volume 指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对指定周期的蜡烛数据应用 True Strength Index (TSI)，并与指数移动平均线形成的信号线比较。当 TSI 上穿信号线时做多，下穿信号线时做空。
 

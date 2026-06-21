@@ -1,4 +1,5 @@
 # MovingUp 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现移动平均线交叉，并提供可选的风险控制模块。
 当快速均线向上穿越慢速均线时开多仓，反向穿越时开空仓。
