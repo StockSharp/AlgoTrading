@@ -1,4 +1,5 @@
 # Renko Live Chart Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy emulates a classic Renko brick chart and trades on brick direction changes. It was converted from the MetaTrader script **RenkoLiveChart_v600**.
 

@@ -1,4 +1,5 @@
 # EM VOL Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts around pivot-based support and resistance levels.
 It calculates yesterday's high and low plus an ATR buffer to form entry triggers.

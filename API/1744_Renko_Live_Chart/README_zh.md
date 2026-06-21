@@ -1,4 +1,5 @@
 # Renko 线图策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模拟经典的 Renko 砖图，并在砖块方向变化时进行交易。代码源自 MetaTrader 脚本 **RenkoLiveChart_v600**。
 

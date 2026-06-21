@@ -1,5 +1,5 @@
 # Trend Capture
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend-following strategy combining Parabolic SAR with ADX filter. Long trades occur when price closes above the SAR value while ADX remains below a threshold, signalling a nascent trend. Short trades open on the opposite condition.
 

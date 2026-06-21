@@ -1,5 +1,5 @@
 # RSI Trader V1 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Relative Strength Index (RSI) to identify reversals after short-term extremes. A buy signal occurs when RSI crosses above the oversold threshold after staying below it for two consecutive candles. A sell signal occurs when RSI crosses below the overbought threshold after staying above it for two candles. The strategy optionally closes an existing opposite position and trades only within a configurable time window.
 

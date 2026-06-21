@@ -1,4 +1,5 @@
 # Стратегия Snowieso
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия сочетает быстрый и медленный **Linear Weighted Moving Average (LWMA)** с индикаторами **MACD** и **Kaufman Adaptive Moving Average (KAMA)** для подтверждения направления тренда.
 

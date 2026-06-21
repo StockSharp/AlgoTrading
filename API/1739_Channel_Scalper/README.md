@@ -1,5 +1,5 @@
 # Channel Scalper Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 An ATR based channel breakout scalping system. For each candle the midpoint is calculated as the average of high and low. Upper and lower bands are built by adding and subtracting the Average True Range multiplied by a factor. When the close breaks above the previous upper band a long position is opened. A break below the lower band triggers a short position. Bands trail in the trade direction and serve as dynamic stops; a cross of the opposite band reverses the position.
 

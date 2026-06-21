@@ -1,5 +1,5 @@
 # 通道剥头皮策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于ATR的通道突破剥头皮系统。每根K线的高低价取平均得到中点，然后加减ATR乘以系数形成上下通道。当收盘价突破上一根K线的上通道时开多；跌破下通道时开空。通道随趋势移动，既作为动态止损，也用于产生反向信号。
 

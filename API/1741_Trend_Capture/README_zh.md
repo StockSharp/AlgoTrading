@@ -1,5 +1,5 @@
 # 趋势捕捉
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合 Parabolic SAR 和 ADX 过滤的趋势跟随策略。当价格收于 SAR 上方且 ADX 低于阈值时开多单，表明新趋势可能开始；反之则开空单。
 

@@ -1,4 +1,5 @@
 # Snowieso 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快速和慢速的 **线性加权移动平均线 (LWMA)**、**MACD** 以及 **Kaufman 自适应移动平均线 (KAMA)** 来确认趋势方向。
 

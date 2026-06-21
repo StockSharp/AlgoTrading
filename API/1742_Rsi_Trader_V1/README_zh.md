@@ -1,5 +1,5 @@
 # RSI Trader V1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用相对强弱指数（RSI）在短期极值后寻找反转。当 RSI 连续两根 K 线位于超卖区以下后向上突破 `BuyPoint` 时开多；当 RSI 连续两根 K 线位于超买区以上后向下跌破 `SellPoint` 时开空。策略可选在出现反向信号时关闭已有仓位，并且只在指定的时间区间内交易。
 

@@ -1,4 +1,5 @@
 # Стратегия Renko Live Chart
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия имитирует построение классического графика Renko и открывает сделки при смене направления кирпичей. Основана на скрипте MetaTrader **RenkoLiveChart_v600**.
 
