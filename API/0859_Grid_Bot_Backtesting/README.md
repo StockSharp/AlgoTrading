@@ -1,5 +1,5 @@
 # Grid Bot Backtesting Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements a grid trading bot that accumulates long positions when price falls to grid levels and closes them when price moves to the next line. Bounds may be set manually or calculated from recent data.
 

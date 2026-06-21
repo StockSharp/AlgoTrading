@@ -1,5 +1,5 @@
 # Grim Slash
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grim Slash 是一种简单的价格行为策略，当当前K线的最低价触及前一收盘价时做多，当最高价达到前一最高价时平仓。通过固定百分比的止盈和止损来控制风险。
 

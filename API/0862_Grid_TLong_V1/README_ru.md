@@ -1,5 +1,5 @@
 # Стратегия Grid TLong V1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Грид-стратегия, постоянно находящаяся в позиции. Повторно открывает сделки при достижении фиксированного шага прибыли или убытка в процентах.
 

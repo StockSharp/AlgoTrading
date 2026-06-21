@@ -1,5 +1,5 @@
 # Good Mode RSI v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略利用 RSI 指标的极端值进行交易，并结合获利水平与追踪止损。当 RSI 超过设定的卖出阈值时开空仓，在 RSI 下降至获利目标时平仓。当 RSI 低于设定的买入阈值时开多仓，在 RSI 上升至获利目标时平仓。无论多空方向，追踪止损都会跟随价格的最佳运行以保护利润。
 

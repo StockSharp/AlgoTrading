@@ -1,5 +1,5 @@
 # Grid TLong V1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于网格的策略，始终保持持仓。当盈利或亏损达到设定百分比时重新开仓。
 

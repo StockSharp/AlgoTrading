@@ -1,5 +1,5 @@
 # 网格机器人回测策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在预设价格区间内构建网格，当价格跌至网格线时买入，在价格上升到下一条线时卖出。网格边界可手动设定或根据近期数据自动计算。
 

@@ -1,5 +1,5 @@
 # Стратегия Grid Bot Backtesting
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит сетку ценовых уровней и покупает, когда цена опускается к ближайшей линии, закрывая позицию на следующей. Границы сетки можно задавать вручную или рассчитывать автоматически по недавним данным.
 
