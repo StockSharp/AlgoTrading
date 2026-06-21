@@ -1,5 +1,5 @@
 # Стратегия Twisted SMA 4h
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Twisted SMA использует три простые скользящие средние и фильтр KAMA на 4-часовых свечах. Длинная позиция открывается, когда быстрая SMA выше средней, средняя выше медленной, цена выше основной SMA и KAMA не находится в плоском состоянии. Позиция закрывается при медвежьем расположении SMA.
 

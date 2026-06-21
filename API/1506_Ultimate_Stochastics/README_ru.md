@@ -1,5 +1,5 @@
 # Стратегия Ultimate Stochastics
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует по пересечению линий осциллятора Stochastic. Допускаются сделки в обе стороны. Возможны выходы по противоположному сигналу и управление позицией через тейк-профит и стоп-лосс в процентах.
 

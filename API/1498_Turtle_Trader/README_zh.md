@@ -1,5 +1,5 @@
 # Turtle Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Turtle Trader 采用经典的 Turtle 突破系统，使用唐奇安通道和 ATR 资金管理。价格突破近期高点时买入，跌破近期低点时卖出。价格朝有利方向移动时通过加仓来扩大利润。
 

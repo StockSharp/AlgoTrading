@@ -1,5 +1,5 @@
 # Ultimate Balance 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ultimate Balance 策略将 ROC、RSI、CCI、Williams %R 和 ADX 加权融合成一个振荡器。当该振荡器的移动平均线突破超卖水平时开多，跌破超买水平时平仓或反向。
 

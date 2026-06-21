@@ -1,5 +1,5 @@
 # Turn of the Month Strategy Honestcowboy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A calendar-based strategy that opens long positions near the end of each month and closes a few days into the new month, adjusting for weekends.
 

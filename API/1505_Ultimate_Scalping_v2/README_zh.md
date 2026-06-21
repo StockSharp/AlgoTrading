@@ -1,5 +1,5 @@
 # Ultimate Scalping v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快慢 EMA 与 VWAP，可选的吞没形态和成交量激增过滤器帮助确认信号。仓位使用基于 ATR 的止损和止盈，并可在出现反向信号时平仓。
 

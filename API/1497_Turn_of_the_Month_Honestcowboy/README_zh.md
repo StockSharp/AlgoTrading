@@ -1,5 +1,5 @@
 # Turn of the Month Honestcowboy 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一种基于日历的策略，在每月末附近建立多头，并在新月开始后的几天内平仓，同时考虑周末影响。
 

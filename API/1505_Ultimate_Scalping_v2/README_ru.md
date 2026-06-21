@@ -1,5 +1,5 @@
 # Стратегия Ultimate Scalping v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Скальперская система, использующая пересечение быстрых и медленных EMA с подтверждением VWAP. Опциональные фильтры по поглощению и всплеску объёма уточняют входы. Позиции сопровождаются стопами и целями на основе ATR и могут закрываться по противоположному сигналу.
 

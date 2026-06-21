@@ -1,5 +1,5 @@
 # Twisted SMA 策略 4h
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Twisted SMA 策略在 4 小时级别使用三条简单移动平均线和 KAMA 过滤器。当快速 SMA 高于中速 SMA、中速高于慢速，且收盘价高于主 SMA 并且 KAMA 不处于平坦状态时开多。当三条 SMA 呈现看跌排列时平仓。
 

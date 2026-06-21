@@ -1,5 +1,5 @@
 # Twisted SMA Strategy 4h
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Twisted SMA Strategy uses three simple moving averages and a KAMA filter on 4 -hour candles. A long position is opened when the fast SMA is above the middle SMA, the middle above the slow, price above a longer SMA and the KAMA is not flat. The position closes when the SMAs align bearish.
 

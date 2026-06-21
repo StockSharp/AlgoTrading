@@ -1,5 +1,5 @@
 # Uhl MA Crossover System
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uhl MA Crossover System 使用方差调节平滑度构建两条自适应线 CTS 与 CMA。当 CTS 上穿 CMA 时开多，下穿时开空。
 
