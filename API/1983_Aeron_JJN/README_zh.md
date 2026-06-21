@@ -1,5 +1,5 @@
 # Aeron JJN 突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略重现原始 Aeron JJN EA 的逻辑。观察到强烈反转蜡烛后，在最后一个相反方向蜡烛的开盘价放置止损单。止损和止盈设置在一个 ATR 之外，可选的跟踪止损保护持仓。
 

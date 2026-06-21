@@ -1,5 +1,5 @@
 # Стратегия XRVI Crossover
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия XRVI Crossover основана на расширенном индикаторе относительной силы XRVI.
 XRVI рассчитывается сглаживанием индикатора RVI и последующим применением второго скользящего среднего для построения сигнальной линии.

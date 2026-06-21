@@ -1,5 +1,5 @@
 # 自适应市场水平
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于自适应市场水平（Adaptive Market Level，AML）指标的策略。该指标根据当前波动率动态调整价格水平。当AML线转向上时开多单，转向下时开空单。出现反向颜色变化或触发止损/止盈时平仓。
 

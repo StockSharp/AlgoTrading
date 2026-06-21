@@ -1,4 +1,5 @@
 # Four Screens Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Four Screens strategy trades using Heikin-Ashi candles across four timeframes: 5, 15, 30, and 60 minutes.
 It goes long when all timeframes show bullish candles and goes short when all show bearish candles.

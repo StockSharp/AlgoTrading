@@ -1,4 +1,5 @@
 # ColorMETRO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 ColorMETRO 指标，该指标在 RSI 周围构建快慢阶梯线。
 当快线向上穿越慢线时开多仓，快线向下穿越慢线时开空仓。相反仓位在相同信号下平仓。

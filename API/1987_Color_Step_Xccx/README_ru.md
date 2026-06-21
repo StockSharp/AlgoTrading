@@ -1,5 +1,5 @@
 # Стратегия Color Step Xccx
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на индикаторе Color Step XCCX. Индикатор оценивает отклонение цены от сглаженного среднего и строит две ступенчатые линии. Лонг открывается, когда быстрая линия опускается ниже медленной. Шорт открывается, когда быстрая линия поднимается выше медленной.
 

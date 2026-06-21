@@ -1,5 +1,5 @@
 # 网格交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了基础网格系统。根据 `GridStep` 间隔在价格上方放置 Buy Stop，在下方放置 Sell Stop。每个订单使用固定的止盈距离。当总利润超过 `ProfitTarget` 时，策略关闭所有仓位并重置网格。可选地，新的订单数量按马丁公式增加。
 

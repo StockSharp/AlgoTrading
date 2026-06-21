@@ -1,4 +1,5 @@
 # Blau TVI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy converts the MQL5 expert `Exp_BlauTVI` into a StockSharp high level strategy. It uses the **Blau True Volume Index (TVI)** to detect reversals in the tick volume flow.
 

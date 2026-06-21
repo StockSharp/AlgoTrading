@@ -1,4 +1,5 @@
 # Стратегия Four Screens
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Four Screens торгует с использованием свечей Heikin-Ashi на четырёх таймфреймах: 5, 15, 30 и 60 минут.
 Покупка выполняется, когда на всех таймфреймах свечи бычьи, продажа — когда все свечи медвежьи.

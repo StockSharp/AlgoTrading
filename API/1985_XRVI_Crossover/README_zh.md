@@ -1,5 +1,5 @@
 # XRVI Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 XRVI Crossover 策略基于扩展的相对活力指数 XRVI。
 XRVI 通过对 RVI 进行平滑处理并再次应用移动平均来生成信号线。

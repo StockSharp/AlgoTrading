@@ -1,4 +1,5 @@
 # 四屏策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 四屏策略使用四个时间框架的 Heikin-Ashi 蜡烛：5、15、30 和 60 分钟。
 当所有时间框架都是看涨蜡烛时做多，全部为看跌蜡烛时做空。

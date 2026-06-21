@@ -1,5 +1,5 @@
 # Aeron JJN Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the logic of the original Aeron JJN expert advisor. It watches for a strong reversal candle and places a stop order at the open of the last opposite candle. The stop and target are set one ATR away, and an optional trailing stop protects open positions.
 

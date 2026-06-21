@@ -1,5 +1,5 @@
 # Color Step Xccx 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Color Step XCCX 指标。该指标衡量价格相对于平滑均值的偏差，并绘制两条阶梯线。当快线跌破慢线时开多，当快线上破慢线时开空。
 

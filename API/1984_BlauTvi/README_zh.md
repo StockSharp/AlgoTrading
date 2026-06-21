@@ -1,4 +1,5 @@
 # Blau TVI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 智能交易系统 `Exp_BlauTVI` 转换为 StockSharp 的高级策略，实现 **Blau True Volume Index (TVI)** 指标来捕捉成交量流向的反转。
 

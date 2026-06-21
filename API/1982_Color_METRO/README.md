@@ -1,4 +1,5 @@
 # ColorMETRO Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the ColorMETRO indicator, which builds fast and slow step lines around the RSI.
 A long position is opened when the fast line crosses above the slow line. A short position is opened when the fast line crosses below the slow line. Opposite positions are closed on the same signals.
