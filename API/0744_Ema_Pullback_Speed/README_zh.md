@@ -1,5 +1,5 @@
 # EMA Pullback Speed 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 EMA Pullback Speed 策略使用根据价格加速度自适应的动态 EMA。价格在上升趋势中回调至动态 EMA 并出现看涨反转且速度达到阈值时开多仓。相反条件下开空仓。退出使用基于 ATR 的止损和固定百分比的止盈。
 

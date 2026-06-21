@@ -1,5 +1,5 @@
 # 吞没与针形线突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等待锤子线或看涨吞没形态出现，并在向上突破信号蜡烛高点时做多。对于看跌情况，使用流星线或看跌吞没，在跌破信号蜡烛低点时做空。止损放在信号蜡烛另一端，止盈按风险收益比设置。
 

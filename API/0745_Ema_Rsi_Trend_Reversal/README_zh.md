@@ -1,5 +1,5 @@
 # EMA RSI 趋势反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速 EMA 上穿慢速 EMA 且 RSI 高于阈值时开多，快速 EMA 下穿慢速 EMA 且 RSI 低于阈值时平仓。使用百分比止盈和止损。
 

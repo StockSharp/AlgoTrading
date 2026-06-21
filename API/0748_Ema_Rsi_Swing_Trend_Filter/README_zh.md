@@ -1,5 +1,5 @@
 # EMA RSI Swing Trend Filter
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在EMA200趋势方向上利用EMA20与EMA50的交叉进行交易。
 可选的RSI过滤器在指标超买或超卖时限制开仓。

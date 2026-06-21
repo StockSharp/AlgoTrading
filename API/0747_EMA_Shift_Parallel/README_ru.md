@@ -1,5 +1,5 @@
 # Стратегия EMA Shift Parallel
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позиции при пересечении сдвинутой быстрой EMA и медленной EMA. Лонговая и шортовая стороны включаются отдельно. Каждая сторона поддерживает стоп‑лосс и трейлинг‑стоп по процентным уровням.
 

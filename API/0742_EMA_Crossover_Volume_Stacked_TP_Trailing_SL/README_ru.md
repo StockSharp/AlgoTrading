@@ -1,5 +1,5 @@
 # Стратегия пересечения EMA с объёмом и ступенчатым тейк-профитом
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует пересечения EMA, подтверждённые объёмом. После входа выставляются два тейк‑профита по ATR и активируется трейлинг‑стоп для оставшейся позиции.
 

@@ -1,5 +1,5 @@
 # EMA Trend Heikin Ashi Entry 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 Heikin Ashi 蜡烛图上应用布林带，并结合高时间框架的 EMA 趋势过滤器。当高时间框架的快速 EMA 高于慢速 EMA 时，若连续多个 Heikin Ashi 熊蜡烛触及下轨后出现一根上涨蜡烛收于下轨之上则做多；反之做空。
 

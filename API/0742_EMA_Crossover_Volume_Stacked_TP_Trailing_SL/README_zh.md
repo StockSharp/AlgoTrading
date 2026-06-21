@@ -1,5 +1,5 @@
 # EMA交叉成交量+分批止盈与跟踪止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在成交量放大的情况下交易EMA交叉。入场后设置两个基于ATR的分批止盈，并在价格有利移动后启动跟踪止损。
 

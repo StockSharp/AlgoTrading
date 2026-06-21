@@ -1,5 +1,5 @@
 # Engulfing & Pin Bar Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy waits for a hammer or bullish engulfing candle and enters long on a breakout above the signal high. For bearish setups, it uses shooting star or bearish engulfing and sells on a break below the signal low. Stop loss is placed at the opposite side of the signal candle and take profit uses a risk/reward ratio.
 

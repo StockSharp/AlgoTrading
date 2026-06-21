@@ -1,5 +1,5 @@
 # EMA Shift Parallel 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在经过偏移的快速 EMA 与慢速 EMA 交叉时交易。多头和空头可以分别启用。每一侧都支持基于百分比的止损和移动止损。
 

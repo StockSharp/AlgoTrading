@@ -1,5 +1,5 @@
 # EMA RSI Swing Trend Filter
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades the crossover of EMA20 and EMA50 in the direction of an EMA200 trend filter.
 An optional RSI filter limits long entries when RSI is overbought and shorts when it is oversold.

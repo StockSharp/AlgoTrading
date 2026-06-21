@@ -1,5 +1,5 @@
 # EMA RSI Swing Trend Filter
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пересечение EMA20 и EMA50 по направлению тренда EMA200.
 Опциональный фильтр RSI ограничивает входы, когда индикатор перекуплен или перепродан.
