@@ -1,4 +1,5 @@
 # KST Strategy Skyrexio
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy goes long when the Know Sure Thing (KST) indicator crosses above its signal while price trades above a chosen moving average and the Alligator jaw. A choppiness index filter can disable entries in ranging markets. Positions are closed using ATR-based stop-loss and take-profit levels.
 

@@ -1,5 +1,5 @@
 # Kaufman 自适应移动平均策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Kaufman 自适应移动平均线（KAMA）。当 KAMA 连续指定数量的柱线向上时，关闭空头仓位并（在允许的情况下）开多头。当 KAMA 连续向下时，关闭多头仓位并（在允许的情况下）开空头。
 

@@ -1,5 +1,5 @@
 # Стратегия Kaufman Adaptive Moving Average
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует адаптивную скользящую среднюю Кауфмана (KAMA). При росте KAMA в течение заданного числа баров закрываются короткие позиции и открывается длинная (если разрешено). При падении KAMA закрываются длинные позиции и открывается короткая (если разрешено).
 

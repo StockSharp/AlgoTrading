@@ -1,5 +1,5 @@
 # Khaled Tamim 的 Avellaneda-Stoikov 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 实现 Avellaneda-Stoikov 做市模型。策略根据最近两根 K 线的收盘价计算买入和卖出报价，当价格偏离这些报价超过设定阈值时下市价单。
 

@@ -1,5 +1,5 @@
 # 价格无线电策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了 John Ehlers 的 Price Radio 指标。当价格导数同时超过振幅和频率阈值时做多，跌破其负值时做空。
 

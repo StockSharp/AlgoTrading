@@ -1,4 +1,5 @@
 # KST 策略 Skyrexio
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 Know Sure Thing (KST) 指标上穿其信号线且价格高于所选均线与鳄鱼指标的下颚线时，本策略做多。震荡指数过滤器可避免在盘整市况下入场。仓位通过基于 ATR 的止损和止盈退出。
 

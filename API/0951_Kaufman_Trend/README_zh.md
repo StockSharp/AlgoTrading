@@ -1,5 +1,5 @@
 # Kaufman Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Kaufman Trend Strategy** 使用卡尔曼滤波器估计价格及其速度。趋势强度由速度计算，并在最近窗口内归一化。当趋势强度达到阈值且价格位于滤波值之上或之下时触发进场。止损基于最近摆动加减 ATR，利润在动能减弱时分批了结。
 
