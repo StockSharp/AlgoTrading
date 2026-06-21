@@ -1,5 +1,5 @@
 # Revelations 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一种波动性突破策略，在 ATR 强烈尖峰且得到本地极值和状态指数确认时入场。头寸大小根据尖峰强度自适应。
 

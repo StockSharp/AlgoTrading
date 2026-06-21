@@ -1,5 +1,5 @@
 # Стратегия Reversal Trading Bot
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Trading Bot использует дивергенцию RSI с дополнительными фильтрами по объёму, ADX, полосам Боллинджера и пересечению RSI для поиска разворотов. Позиции защищены фиксированными процентными стоп-лоссом и тейк-профитом.
 

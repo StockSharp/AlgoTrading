@@ -1,5 +1,5 @@
 # Reversal Trading Bot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Trading Bot 策略利用 RSI 背离，配合可选的成交量、ADX、布林带和 RSI 交叉过滤来捕捉市场反转。仓位使用固定百分比的止损和止盈保护。
 

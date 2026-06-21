@@ -1,5 +1,5 @@
 # Стратегия Reversal Finder
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Finder ищет свечи с большим диапазоном, которые обновляют экстремумы и закрываются в противоположной части бара.
 Покупает, когда цена делает новый минимум, но закрывается возле максимума, и продаёт, когда цена делает новый максимум, но закрывается возле минимума.

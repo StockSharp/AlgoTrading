@@ -1,5 +1,5 @@
 # Reversal Finder 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Finder 寻找具有大区间的蜡烛，这些蜡烛创出新高或新低后又在相反端附近收盘。
 当价格创新低但收盘接近最高点时买入；当价格创新高但收盘接近最低点时卖出。

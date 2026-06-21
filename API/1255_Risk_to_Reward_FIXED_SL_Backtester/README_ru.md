@@ -1,5 +1,5 @@
 # Стратегия Risk to Reward Fixed SL Backtester
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия входит в лонг, когда цена закрытия достигает заданного значения. Стоп-лосс рассчитывается по ATR или по минимуму за период, а тейк-профит определяется через отношение риск/прибыль или фиксированный процент. При достижении цели стоп может переноситься в безубыток.
 

@@ -1,5 +1,5 @@
 # Risk to Reward Fixed SL Backtester Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Enters long when the close price matches a user-defined value. Stop loss is set by ATR or pivot low and take profit uses a risk-to-reward ratio or fixed percentage. Optionally moves the stop to breakeven after a target is reached.
 

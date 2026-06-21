@@ -1,5 +1,5 @@
 # Стратегия Reversal Trap Sniper
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Trap Sniper ищет RSI-ловушки, когда импульс разворачивается, а цена продолжает движение.
 Покупает после краткого выхода в зону перекупленности с закрытием выше, продаёт после выхода из перепроданности с закрытием ниже.

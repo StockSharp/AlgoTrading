@@ -1,5 +1,5 @@
 # Risk to Reward Fixed SL Backtester 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价等于设定值时进入多头。止损基于ATR或一定周期内的最低价，止盈由风险回报比或固定百分比计算。达到目标后可将止损移到保本位。
 

@@ -1,5 +1,5 @@
 # 反向Keltner通道策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格从通道外重新进入Keltner通道时入场，并以相对边界为目标，可选择使用ADX过滤器。
 

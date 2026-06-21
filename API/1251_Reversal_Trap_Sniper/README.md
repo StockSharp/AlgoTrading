@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Reversal Trap Sniper Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Trap Sniper looks for RSI traps where momentum resets but price keeps moving.
 It buys after an overbought reversal that still closes higher, and sells after an oversold reversal that still closes lower.

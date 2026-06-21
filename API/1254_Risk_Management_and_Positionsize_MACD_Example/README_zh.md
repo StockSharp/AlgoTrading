@@ -1,5 +1,5 @@
 # Risk Management and Positionsize - MACD example
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略 **Risk Management and Positionsize - MACD example** 展示了基于当前权益的动态仓位大小。它结合高时间框架的 MACD 金叉/死叉以及移动平均趋势过滤。
 

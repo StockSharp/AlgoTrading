@@ -1,5 +1,5 @@
 # Revolution Volatility Bands With Range Contraction Signal VII Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит вокруг цены диапазон на основе экспоненциальных скользящих средних и отслеживает сужение этого диапазона. При обнаружении сужения и пробое верхней или нижней сглаженной границы открывается позиция в направлении пробоя.
 

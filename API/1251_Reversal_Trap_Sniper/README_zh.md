@@ -1,5 +1,5 @@
 # Reversal Trap Sniper 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Trap Sniper 寻找 RSI 陷阱：动量回落但价格继续前进。
 当 RSI 曾高于超买区并回落但收盘更高时买入；当 RSI 曾低于超卖区并回升但收盘更低时卖出。

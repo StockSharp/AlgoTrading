@@ -1,5 +1,5 @@
 # 自适应线性回归通道
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 自适应线性回归通道，根据时间框调整周期并在价格偏离后交易回归。
 
