@@ -1,5 +1,5 @@
 # Стратегия Dual SuperTrend с фильтром VIX
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает два индикатора SuperTrend с волатильностным фильтром VIX. Лонг открывается, когда оба SuperTrend указывают на рост, а индекс VIX находится выше своей средней. Шорт открывается, когда оба SuperTrend указывают на падение и VIX растёт выше среднего с учётом стандартного отклонения. Позиция закрывается при смене направления любого из SuperTrend.
 

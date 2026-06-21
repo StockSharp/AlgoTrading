@@ -1,4 +1,5 @@
 # Dskyz (DAFE) MAtrix with ATR-Powered Precision
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在快速均线位于慢速均线上方并满足 ATR、成交量和时间过滤时做多；反向条件下做空。
 

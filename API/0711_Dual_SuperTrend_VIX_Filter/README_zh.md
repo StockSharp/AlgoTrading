@@ -1,5 +1,5 @@
 # Dual SuperTrend 策略（含 VIX 过滤）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两个 SuperTrend 指标和 VIX 波动率过滤器。当两个 SuperTrend 均为多头且 VIX 高于其均值时开多；当两个 SuperTrend 均为空头且 VIX 高于其均值并上升时开空。当任一 SuperTrend 反转时平仓。
 

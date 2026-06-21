@@ -1,5 +1,5 @@
 # Dual RSI Differential
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dual RSI Differential 使用两个 RSI 周期的差值来判断行情，
 当差值超过预设阈值时开仓，捕捉短期与长期动量的分歧。

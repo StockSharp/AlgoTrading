@@ -1,5 +1,5 @@
 # Стратегия Dual Momentum
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переключается между рискованным и защитным активом по их моментуму.
 Длинная позиция открывается в рискованном активе только если его моментум положительный и выше моментума защитного.

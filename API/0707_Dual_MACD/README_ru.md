@@ -1,5 +1,5 @@
 # Dual MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия, объединяющая два индикатора MACD. Медленный MACD при пересечении нулевой линии открывает позиции, если гистограмма быстрого MACD подтверждает направление. Позиция закрывается при развороте быстрого MACD или при срабатывании стопа/тейк-профита.
 

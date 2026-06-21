@@ -1,5 +1,5 @@
 # 双MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两组MACD指标。慢速MACD的柱线突破零轴且快速MACD柱线同向时入场。若快速MACD反转或触发止损/止盈则平仓。
 

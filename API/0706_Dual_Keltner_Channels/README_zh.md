@@ -1,5 +1,5 @@
 # 双Keltner通道
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **双Keltner通道**策略使用两个具有不同倍数的Keltner通道来捕捉突破。
 当价格穿越外通道并返回穿过内通道时开仓。

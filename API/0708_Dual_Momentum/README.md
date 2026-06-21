@@ -1,5 +1,5 @@
 # Dual Momentum Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Rotates between a risky and a safe asset using dual momentum.
 The strategy invests in the risky asset only when its momentum is positive and greater than the safe asset's momentum.

@@ -1,5 +1,5 @@
 # 双动量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在两个资产之间根据动量切换。
 只有当风险资产的动量为正且高于安全资产的动量时，策略才持有风险资产，否则转向安全资产。

@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# DSL Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy combines Discontinued Signal Lines (DSL) with ATR bands and a Beluga oscillator. A long position opens when the price stays above the DSL line for three bars and the oscillator crosses above its lower DSL line. Short positions are opened on opposite conditions. Each trade uses the corresponding DSL band as a stop and a risk-to-reward target for take profit.
 

@@ -1,5 +1,5 @@
 # DSL 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 DSL 线、ATR 波动带和 Beluga 振荡器。当价格连续三个柱位于 DSL 线之上并且振荡器上穿其下方 DSL 线时开多；反向条件开空。每笔交易使用对应 DSL 波动带作为止损，并按风险回报比设置止盈。
 

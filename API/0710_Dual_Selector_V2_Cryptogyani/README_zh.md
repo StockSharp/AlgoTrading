@@ -1,5 +1,5 @@
 # Dual Strategy Selector V2 - Cryptogyani 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在两个仅做多的 SMA 方案之间切换。
 
