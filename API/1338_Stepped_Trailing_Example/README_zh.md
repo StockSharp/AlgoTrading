@@ -1,5 +1,5 @@
 # 分段跟踪止损策略示例
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例策略演示了带有可选跟踪止损的三段式仓位管理。
 

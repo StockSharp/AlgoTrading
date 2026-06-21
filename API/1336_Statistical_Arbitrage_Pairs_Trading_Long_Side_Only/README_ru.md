@@ -1,5 +1,5 @@
 # Statistical Arbitrage Pairs Trading - Long-Side Only
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия реализует простую парную торговлю на основе z-score спреда между двумя инструментами. Открывает длинную позицию, когда спред опускается ниже заданного порога, и закрывает её, когда спред пересекает ноль снизу вверх.
 

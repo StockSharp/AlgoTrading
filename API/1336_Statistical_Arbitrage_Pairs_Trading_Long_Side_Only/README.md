@@ -1,5 +1,5 @@
 # Statistical Arbitrage Pairs Trading - Long-Side Only
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy executes a simple pairs trading approach based on the z-score spread between two instruments. It opens a long position when the spread falls below a user-defined threshold and closes the position when the spread crosses above zero.
 

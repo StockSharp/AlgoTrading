@@ -1,5 +1,5 @@
 # Stochastic Z-Score Oscillator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将缩放后的随机指标与价格 Z-Score 结合。当两者的平均值越过阈值时开仓，当 Z-Score 返回零值时平仓。冷却计数器可防止频繁信号。
 

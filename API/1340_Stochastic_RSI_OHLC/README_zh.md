@@ -1,5 +1,5 @@
 # 随机RSI OHLC策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于随机RSI指标构建OHLC柱并在动量变化时交易。策略计算最高价、最低价和收盘价的RSI，然后对每个序列应用随机震荡指标。当随机RSI从低点上升并突破`LongEntry`水平时开多仓；当其从高点下降并跌破`ShortEntry`水平时开空仓。
 

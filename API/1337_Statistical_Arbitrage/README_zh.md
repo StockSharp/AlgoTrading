@@ -1,5 +1,5 @@
 # 统计套利价差策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易两个相关品种之间的价差。当价差低于其均值减去标准差乘数时，买入第一个品种；当价差回归均值时平仓。
 

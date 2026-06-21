@@ -1,5 +1,5 @@
 # Стратегия Stochastic RSI OHLC
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит свечи OHLC на основе индикатора Stochastic RSI и торгует по смене импульса. Вычисляется RSI для максимума, минимума и цены закрытия, после чего к каждому ряду применяется стохастический осциллятор. Длинная позиция открывается, когда Stochastic RSI растёт от пивота и пересекает уровень `LongEntry`. Короткая позиция открывается, когда показатель падает от пивота и пересекает уровень `ShortEntry`.
 

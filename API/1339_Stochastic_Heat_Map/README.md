@@ -1,5 +1,5 @@
 # Stochastic Heat Map Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Stochastic Heat Map strategy averages a set of stochastic oscillators with rising periods.
 The combined reading is smoothed again to form a fast and a slow line.

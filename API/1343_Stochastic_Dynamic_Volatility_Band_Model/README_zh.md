@@ -1,5 +1,5 @@
 # Stochastic-Dynamic Volatility Band Model 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用类似布林带的波动率带在价格穿越时交易，并在固定根数的K线后退出。
 

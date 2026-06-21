@@ -1,5 +1,5 @@
 # 资金止损止盈策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当短期SMA上穿长期SMA时做多，下穿时做空。当盈利或亏损达到设定的资金数额时平仓。
 

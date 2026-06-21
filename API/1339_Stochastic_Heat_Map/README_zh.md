@@ -1,5 +1,5 @@
 # 随机指标热力图策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对多个递增周期的随机指标取平均值，并再次平滑得到快线和慢线。
 当快线向上穿越慢线时做多，反向穿越时做空。

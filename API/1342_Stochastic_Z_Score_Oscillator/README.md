@@ -1,5 +1,5 @@
 # Stochastic Z-Score Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines a rescaled Stochastic oscillator with a price Z-Score. A trade is opened when their average crosses a threshold and closed when the Z-Score returns to zero. Cooldown counters prevent frequent signals.
 
