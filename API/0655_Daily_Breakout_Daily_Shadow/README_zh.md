@@ -1,5 +1,5 @@
 # 日线突破与影线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用最近两根日线，捕捉日内开盘的突破信号，并在新的一天开始时关闭任何持仓。
 

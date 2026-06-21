@@ -1,5 +1,5 @@
 # Cycle Biologique策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Cycle Biologique策略基于正弦周期。当周期上穿零轴时做多，周期下穿零轴时平仓。
 

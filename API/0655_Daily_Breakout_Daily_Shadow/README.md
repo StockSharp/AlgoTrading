@@ -1,5 +1,5 @@
 # Daily Breakout Daily Shadow Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades daily breakouts using the last two completed daily candles. It closes any open position at the start of each new day.
 

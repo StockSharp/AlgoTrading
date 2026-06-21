@@ -1,4 +1,5 @@
 # 日内交易策略（含风险管理）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在快速 EMA 上穿慢速 EMA 且 RSI 低于超买水平时做多，在快速 EMA 下穿慢速 EMA 且 RSI 高于超卖水平时做空。风险管理通过固定百分比的止盈和止损实现。
 

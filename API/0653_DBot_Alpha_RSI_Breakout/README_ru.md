@@ -1,5 +1,5 @@
 # Пробой RSI Alpha
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует SMA и RSI для входа при пересечении RSI выше уровня, когда цена выше SMA. После достижения уровня тейк-профита включается трейлинг-стоп. Выход по уровню RSI стоп-лосс, тейк-профиту или трейлинг-стопу.
 

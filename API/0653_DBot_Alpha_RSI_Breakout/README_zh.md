@@ -1,5 +1,5 @@
 # Alpha RSI 突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 SMA 与 RSI。当 RSI 上穿设定值且价格高于 SMA 时买入。RSI 到达目标后激活追踪止损。退出条件为 RSI 跌破止损值、达到获利目标或触发追踪止损。
 

@@ -1,5 +1,5 @@
 # D-BoT Alpha Short SMA and RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Short strategy that sells when RSI crosses above a threshold while price stays below a simple moving average. A trailing stop follows new lows and positions are closed if RSI reaches stop or take-profit levels.
 

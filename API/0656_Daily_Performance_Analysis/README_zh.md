@@ -1,5 +1,5 @@
 # Daily Performance Analysis 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在交易 SuperTrend 方向变化的同时，统计每周和每月的表现。
 

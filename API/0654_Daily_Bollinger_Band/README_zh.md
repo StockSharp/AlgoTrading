@@ -1,5 +1,5 @@
 # Daily Bollinger Band Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用趋势过滤器和基于 ATR 的仓位管理，交易每日布林带突破。
 

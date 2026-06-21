@@ -1,5 +1,5 @@
 # Alpha RSI Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses SMA and RSI to capture RSI crossovers above a threshold when price is above the SMA. Trailing stop activates after RSI reaches a take-profit level. Exits on RSI stop loss, reaching take profit, or trailing stop.
 

@@ -1,5 +1,5 @@
 # 日线 Supertrend EMA 交叉 RSI 过滤 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅在 Supertrend 确认方向且 RSI 条件满足时交易 EMA 交叉。使用基于 ATR 的止损和止盈。
 
