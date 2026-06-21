@@ -1,5 +1,5 @@
 # Fibonacci ATR 融合策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合多个斐波那契周期的买压比率与 ATR，通过阈值交叉确定进出场，并可选用 ATR 分批止盈。
 

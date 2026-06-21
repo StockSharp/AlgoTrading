@@ -1,5 +1,5 @@
 # 信仰指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过在价格创出新高或新低时的成交量扩张来评估市场的“信心”。正值表示买方占优，负值表示卖方占优。策略在信心值穿越零线时进行交易。
 

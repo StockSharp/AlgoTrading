@@ -1,5 +1,5 @@
 # Fancy Bollinger Bands
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用布林带突破进行交易。当收盘价上穿上轨时买入，下穿下轨时卖出。
 

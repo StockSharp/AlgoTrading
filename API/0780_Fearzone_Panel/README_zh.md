@@ -1,5 +1,5 @@
 # Fearzone Panel
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于《Framgångsrik Aktiehandel》中的 FearZone 面板的策略，用于寻找由恐慌驱动的极端下跌。
 

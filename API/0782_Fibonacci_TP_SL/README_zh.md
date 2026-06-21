@@ -1,5 +1,5 @@
 # Fibonacci TP SL 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用斐波那契回撤水平进行入场，采用 ATR 止损和百分比止盈。交易受限于最小的交易间隔和每周收益上限。
 

@@ -1,5 +1,5 @@
 # Fibonacci TP SL Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses Fibonacci retracement levels to generate entries with ATR-based stop-loss and percentage take-profit. Trading is limited by a minimum bar gap between trades and a weekly profit cap.
 

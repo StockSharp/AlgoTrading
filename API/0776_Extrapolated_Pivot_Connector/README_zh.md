@@ -1,5 +1,5 @@
 # Extrapolated Pivot Connector 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 通过连接最近的枢轴高点和枢轴低点来构建支撑和阻力线。当价格收于阻力线上方时发出做多信号，当价格跌破支撑线时发出做空信号。
 
