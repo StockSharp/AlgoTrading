@@ -1,5 +1,5 @@
 # Renko Live Charts Pimped Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy builds renko bricks and trades on direction changes. It can optionally calculate the brick size from ATR values, allowing the renko structure to adapt to market volatility.
 

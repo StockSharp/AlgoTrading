@@ -1,4 +1,5 @@
 # Стратегия Exp Oracle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом советника **Exp_Oracle** на C#. В основе лежит пользовательский индикатор *Oracle*, объединяющий индикаторы RSI и CCI для прогнозирования движения цены на несколько баров вперёд. Индикатор строит две линии:
 

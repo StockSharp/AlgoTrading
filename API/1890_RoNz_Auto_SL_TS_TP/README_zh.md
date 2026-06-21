@@ -1,5 +1,5 @@
 # RoNz Auto SL TS TP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于EMA交叉开仓，并自动管理止损和止盈。  
 入场后立即设置初始止损与目标，随后可选择锁定利润并启动移动止损。

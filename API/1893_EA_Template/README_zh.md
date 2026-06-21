@@ -1,5 +1,5 @@
 # EA模板策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略来源于一个MetaTrader专家顾问模板。它分析上一根已完成的蜡烛，根据蜡烛实体的方向开仓。阳线触发做多，阴线触发做空。启用反转模式后，信号方向将被颠倒，从而逆向交易。
 

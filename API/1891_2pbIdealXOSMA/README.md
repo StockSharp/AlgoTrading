@@ -1,5 +1,5 @@
 # 2pbIdeal XOSMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# translation of the MQL5 expert adviser **Exp_2pbIdealXOSMA**. It analyzes the slope of the MACD histogram to determine market momentum. When the histogram rises for two consecutive bars, the system enters a long position and closes any open short. When the histogram falls for two consecutive bars, the strategy enters a short position and closes any open long.
 

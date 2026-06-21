@@ -1,5 +1,5 @@
 # Renko Live Charts Pimped Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия строит кирпичи ренко и торгует при изменении их направления. Опционально размер кирпича рассчитывается по ATR, что позволяет адаптировать структуру ренко к волатильности рынка.
 

@@ -1,4 +1,5 @@
 # Genie Stoch RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades using a combination of the Relative Strength Index (RSI) and the Stochastic Oscillator.
 It waits for the market to reach oversold or overbought zones and then looks for a cross between the Stochastic main

@@ -1,4 +1,5 @@
 # Vlt Trader
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略用于监控波动率收缩并在突破时进场。当当前K线的高低范围成为最近周期内的最小值时，策略会在前一根K线的高点上方和低点下方设置买入止损和卖出止损订单。
 

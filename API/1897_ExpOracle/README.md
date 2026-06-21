@@ -1,4 +1,5 @@
 # Exp Oracle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of the MetaTrader **Exp_Oracle** expert advisor. It relies on a custom *Oracle* indicator that blends the Relative Strength Index (RSI) and the Commodity Channel Index (CCI) to forecast market direction several bars ahead. The indicator generates two lines:
 

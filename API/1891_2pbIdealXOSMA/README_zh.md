@@ -1,5 +1,5 @@
 # 2pbIdeal XOSMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家顾问 **Exp_2pbIdealXOSMA** 的 C# 版本。它通过观察 MACD 直方图的斜率来判断市场动量。当直方图连续两个柱上升时，系统做多并平掉所有空单；当直方图连续两个柱下降时，系统做空并平掉所有多单。
 

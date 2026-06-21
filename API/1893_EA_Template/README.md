@@ -1,5 +1,5 @@
 # EA Template Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy originates from a MetaTrader EA template. It analyses the previous finished candle and opens a position in the direction of the candle body. A bullish candle triggers a long trade, while a bearish candle triggers a short one. Reverse mode flips the interpretation of the candle so the strategy trades against the bar color.
 

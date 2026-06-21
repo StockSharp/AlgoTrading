@@ -1,5 +1,5 @@
 # Стратегия RoNz Auto SL TS TP
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позиции по пересечению EMA и автоматически управляет уровнями стоп-лосса и тейк-профита.  
 После входа она устанавливает начальные уровни, затем при желании фиксирует прибыль и включает трейлинг-стоп.

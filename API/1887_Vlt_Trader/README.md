@@ -1,4 +1,5 @@
 # Vlt Trader
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy detects periods of very low volatility and prepares breakout orders. When the range of the current candle becomes the smallest over the specified lookback period, the strategy places buy stop and sell stop orders around the previous candle.
 

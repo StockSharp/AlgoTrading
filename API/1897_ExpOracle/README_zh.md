@@ -1,4 +1,5 @@
 # Exp Oracle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader **Exp_Oracle** 专家的 C# 移植版。它依赖自定义的 *Oracle* 指标，该指标将相对强弱指数 (RSI) 与商品通道指数 (CCI) 结合，用于预测未来数根K线的走势。指标输出两条线：
 

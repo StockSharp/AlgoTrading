@@ -1,4 +1,5 @@
 # 基于RSI的自动挂单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当相对强弱指标（RSI）在超买或超卖区域连续保持指定数量的K线时，本策略会自动放置限价挂单。
 

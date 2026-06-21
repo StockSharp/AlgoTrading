@@ -1,5 +1,5 @@
 # Renko Live Charts Pimped Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略构建砖形图并在方向变化时进行交易。可选地根据 ATR 计算砖块大小，使砖形结构能够随市场波动调整。
 

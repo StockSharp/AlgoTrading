@@ -1,4 +1,5 @@
 # Genie Stoch RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合相对强弱指数（RSI）和随机指标（Stochastic Oscillator）。
 当市场进入超买或超卖区域时，策略等待 Stochastic 主线与信号线的交叉来确认可能的反转。

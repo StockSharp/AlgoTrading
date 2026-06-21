@@ -1,5 +1,5 @@
 # Double Trading 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 成对交易策略，同时在两个相关品种上开立相反方向的头寸，当总利润达到目标值时全部平仓。
 

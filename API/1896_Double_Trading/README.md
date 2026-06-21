@@ -1,5 +1,5 @@
 # Double Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Pairs trading strategy that opens opposite positions on two correlated instruments and closes them when combined profit reaches a target.
 
