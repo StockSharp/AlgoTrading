@@ -1,5 +1,5 @@
 # Стратегия Litecoin с трейлинг-стопом
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Litecoin с трейлинг-стопом** использует адаптивную скользящую среднюю Кауфмана (KAMA) для определения бычьих и медвежьих тенденций. Лонг открывается при росте KAMA, шорт — при её снижении. После настраиваемой задержки активируется трейлинг-стоп в процентах.
 

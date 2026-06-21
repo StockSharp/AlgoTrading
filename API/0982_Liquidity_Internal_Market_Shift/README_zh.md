@@ -1,5 +1,5 @@
 # 流动性内部结构转向策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合最近高低点的流动性线与内部结构转向。当价格触及流动性线后出现相反方向的结构突破时开仓。可选择仅做多、仅做空或双向交易。
 

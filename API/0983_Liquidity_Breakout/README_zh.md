@@ -1,5 +1,5 @@
 # 流动性突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用最近高低点构成的价格区间，当收盘价突破上沿或下沿时开仓。止损可选用 SuperTrend 线或固定百分比。
 

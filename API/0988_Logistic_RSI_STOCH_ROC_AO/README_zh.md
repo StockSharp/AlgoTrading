@@ -1,5 +1,5 @@
 # Logistic RSI STOCH ROC AO
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对选择的指标（AO、ROC、RSI、Stochastic）应用逻辑映射，当带符号的标准差穿越零值时进行交易。
 

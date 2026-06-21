@@ -1,5 +1,5 @@
 # Стратегия Liquidity Engulfment
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позиции по бычьим и медвежьим поглощениям, возникающим после касания ценой ближайших уровней ликвидности. Торговый режим задаётся параметром, используются фиксированные стоп‑лосс и при необходимости тейк‑профит в пунктах.
 

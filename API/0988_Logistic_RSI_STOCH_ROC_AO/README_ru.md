@@ -1,5 +1,5 @@
 # Logistic RSI STOCH ROC AO
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия применяет логистическое отображение к выбранному индикатору (AO, ROC, RSI, Stochastic) и торгует при пересечении нуля знаковой стандартной девиации.
 

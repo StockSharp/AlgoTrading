@@ -1,5 +1,5 @@
 # Liquidity Sweep Filter 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该趋势策略使用布林带判断市场方向，并结合成交量监测潜在的流动性扫单。当趋势从空转多或从多转空时，根据交易模式开仓。
 

@@ -1,5 +1,5 @@
 # 伦敦突破经典策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用亚洲时段的高低点构建区间，在伦敦时段突破时入场。00:00 至 06:55 UTC 的最高价和最低价形成箱体。07:00 UTC 之后，价格突破上沿则做多，突破下沿则做空。止损设在箱体中点，止盈按可调的风险回报比计算。
 

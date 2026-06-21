@@ -1,5 +1,5 @@
 # 流动性吞没策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格触及最近流动性高点或低点后出现的看涨或看跌吞没形态时开仓。交易模式可配置，并使用固定点数的止损及可选止盈。
 

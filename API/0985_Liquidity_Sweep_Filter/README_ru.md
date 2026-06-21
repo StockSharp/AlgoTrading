@@ -1,5 +1,5 @@
 # Стратегия Liquidity Sweep Filter
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта трендовая стратегия использует полосы Боллинджера для определения направления рынка и контролирует объём для возможных ликвидационных свечей. Позиции открываются при смене тренда на бычий или медвежий в зависимости от режима торговли.
 

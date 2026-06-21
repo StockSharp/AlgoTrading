@@ -1,5 +1,5 @@
 # London BreakOut Classic Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts of the London session using the Asian range. The high and low between 00:00 and 06:55 UTC form a box. After 07:00 UTC a breakout above the high opens a long position and a breakout below the low opens a short position. Stop loss is placed at the midpoint of the box and take profit uses a configurable risk-reward factor.
 

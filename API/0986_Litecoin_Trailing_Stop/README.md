@@ -1,5 +1,5 @@
 # Litecoin Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Litecoin Trailing Stop Strategy** uses the Kaufman Adaptive Moving Average (KAMA) to detect bullish and bearish trends. It opens long positions when KAMA is rising and short positions when it is falling. After a configurable delay, a percentage-based trailing stop protects profits.
 

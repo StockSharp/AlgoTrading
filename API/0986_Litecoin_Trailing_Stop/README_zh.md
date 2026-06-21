@@ -1,5 +1,5 @@
 # Litecoin 追踪止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Litecoin 追踪止损策略** 使用考夫曼自适应移动平均线 (KAMA) 识别多空趋势。KAMA 上升时做多，下降时做空。经过可配置的延迟后，基于百分比的追踪止损用于保护利润。
 
