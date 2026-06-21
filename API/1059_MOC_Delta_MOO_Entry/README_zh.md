@@ -1,5 +1,5 @@
 # MOC Delta MOO Entry 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在14:50–14:55期间计算买卖量差，并在08:30当差值占日成交量的百分比超出阈值时入场。策略使用开盘价的SMA过滤，并在入场时附加以tick为单位的止盈和止损。
 

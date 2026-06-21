@@ -1,5 +1,5 @@
 # Стратегия Momentum Alligator 4h Bitcoin
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Momentum Alligator 4h Bitcoin сочетает осциллятор Awesome и индикатор Alligator на дневном таймфрейме. Длинная позиция открывается, когда осциллятор пересекает сверху свою 5-периодную SMA и цена находится выше всех трёх линий дневного Alligator. Динамический стоп-лосс выбирает большее значение между процентным падением от цены входа и линией челюсти Alligator. После прибыльного выхода стратегия пропускает два следующих сигнала.
 

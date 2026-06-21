@@ -1,5 +1,5 @@
 # MOC Delta MOO Entry v2 Reverse 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MOC Delta MOO Entry 的反向版本。在下午 14:50–14:55 期间统计买卖量差，并将其保存为当日成交量的百分比。次日 08:30 若该百分比超过阈值，则按相反方向开仓，并使用两条移动平均线过滤。仓位通过基于 tick 的止盈/止损或在 14:50 平仓。
 

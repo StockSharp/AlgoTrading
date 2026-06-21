@@ -1,5 +1,5 @@
 # Стратегия MOC Delta MOO Entry
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия рассчитывает дельту между покупками и продажами в интервале 14:50–14:55 и входит в 08:30, если полученный процент превышает заданный порог относительно дневного объёма. Используются SMA по цене открытия и тейк‑профит/стоп‑лосс в тиках.
 

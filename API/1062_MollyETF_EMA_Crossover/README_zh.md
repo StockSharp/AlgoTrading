@@ -1,5 +1,5 @@
 # Molly ETF EMA Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速 EMA 上穿慢速 EMA 时，该策略开多单；当快速 EMA 下穿慢速 EMA 时平仓。策略可以通过参数设置仅在指定日期范围内交易。
 

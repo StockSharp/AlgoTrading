@@ -1,5 +1,5 @@
 # 具有背离检测的改进 OBV
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用可选类型的移动平均线对 OBV 进行平滑，并生成信号线。当平滑后的 OBV 与信号线交叉时开仓或反向。策略还使用分形检测记录价格与 OBV 之间的常规和隐藏背离。
 

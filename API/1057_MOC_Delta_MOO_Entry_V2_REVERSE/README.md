@@ -1,5 +1,5 @@
 # MOC Delta MOO Entry v2 Reverse Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reverses the classic MOC Delta MOO Entry logic. It measures the buy-sell volume delta in the afternoon session (14:50–14:55) and stores the delta as a percentage of the day's volume. The next morning at 08:30 a position is opened in the opposite direction of the delta if it exceeds a threshold, filtered by two moving averages. Positions are closed with tick-based take profit and stop loss or at 14:50.
 

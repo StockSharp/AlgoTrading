@@ -1,5 +1,5 @@
 # Momentum Alligator 4h Bitcoin 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Momentum Alligator 4h Bitcoin 策略将 Awesome 振荡器与日线级别的 Alligator 指标结合使用。当振荡器上穿其 5 周期 SMA 且价格位于日线 Alligator 三条线之上时开多。动态止损在入场价按百分比下移和 Alligator 下颚线之间取较高值。盈利平仓后策略会跳过接下来的两个信号。
 

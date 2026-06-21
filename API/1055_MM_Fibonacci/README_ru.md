@@ -1,5 +1,5 @@
 # Стратегия MM Fibonacci
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия вычисляет уровни Fibonacci по Murrey Math и торгует пробои. Покупка выполняется при пробое уровня 100% в восходящем контексте, продажа — при падении ниже уровня 0% в нисходящем контексте. Позиции закрываются при пересечении уровня 50% против направления сделки.
 

@@ -1,5 +1,5 @@
 # Стратегия Momentum Keltner Stochastic Combo
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет сравнение момента цены со стохастиком на базе каналов Кельтнера.  
 Размер позиции динамически увеличивается в зависимости от эквити и защищается фиксированным стоп-лоссом.

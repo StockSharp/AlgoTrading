@@ -1,5 +1,5 @@
 # Momentum Keltner Stochastic Combo 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合动量比较与基于凯尔特纳通道的随机指标。  
 头寸根据权益动态放大，并由固定止损保护。

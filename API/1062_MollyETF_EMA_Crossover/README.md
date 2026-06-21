@@ -1,5 +1,5 @@
 # Molly ETF EMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy enters a long position when the fast EMA crosses above the slow EMA and exits when the fast EMA crosses below. It includes optional parameters to restrict trading to a specific date range.
 

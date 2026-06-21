@@ -1,5 +1,5 @@
 # MM Fibonacci 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算 Murrey Math Fibonacci 水平并交易突破。当趋势向上且价格突破 100% 水平时做多，趋势向下且价格跌破 0% 水平时做空。价格回到 50% 水平时平仓。
 

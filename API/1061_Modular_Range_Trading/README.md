@@ -1,5 +1,5 @@
 # Modular Range-Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy targets range-bound markets using two modules that cannot be active at the same time. The first module relies on MACD momentum confirmation with RSI and Bollinger Bands mean reversion. The second module buys or sells extremes when price bounces back inside the Bollinger Bands with RSI oversold or overbought levels. ATR-based stops and optional exits via Bollinger Bands or RSI reversals manage risk.
 

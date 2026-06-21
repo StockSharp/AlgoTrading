@@ -1,5 +1,5 @@
 # 模块化震荡交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略面向震荡行情，由两个互斥模块组成。模块一在ADX低于阈值时结合MACD金叉、RSI在均线上方以及价格位于布林带中轨下方入场，多空均可。模块二在ADX低于阈值时，当价格重新站回布林带下轨之上或跌回上轨之下并伴随RSI超卖/超买时反向操作。通过ATR倍数止损以及可选的布林带或RSI信号出场来控制风险。
 
