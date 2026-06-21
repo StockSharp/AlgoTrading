@@ -1,5 +1,5 @@
 # Стратегия Hull Suite by MRS
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Следящая за трендом стратегия сравнивает выбранную разновидность скользящей средней Hull со значением два бара назад. Длинная позиция открывается, когда средняя поднимается выше значения двух баров назад, короткая — когда опускается ниже.
 

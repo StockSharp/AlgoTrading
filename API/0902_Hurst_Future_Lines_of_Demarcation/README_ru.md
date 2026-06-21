@@ -1,5 +1,5 @@
 # Стратегия Hurst Future Lines of Demarcation
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует сглаженную линию FLD и три цикла (сигнальный, торговый, трендовый). Вход выполняется при пересечении цены с сигнальной FLD в определённых состояниях тренда. Выход осуществляется при перекрёстке выбранных значений.
 

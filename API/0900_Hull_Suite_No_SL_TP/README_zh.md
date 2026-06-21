@@ -1,5 +1,5 @@
 # Hull Suite No SL/TP
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hull Suite No SL/TP 是一种基于 Hull 移动平均变体的趋势跟随策略。当 Hull 线相对于两根K线前的值改变方向时，策略会反转持仓。
 

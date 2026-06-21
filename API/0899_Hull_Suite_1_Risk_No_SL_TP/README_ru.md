@@ -1,5 +1,5 @@
 # Стратегия Hull Suite – риск 1%, без SL/TP
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Hull Suite открывает длинные позиции, когда выбранная скользящая средняя Халла растёт по сравнению со значением два бара назад, и открывает короткие позиции, когда она падает. Стоп‑лоссы и тейк‑профиты не используются.
 

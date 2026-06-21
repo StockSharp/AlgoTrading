@@ -1,5 +1,5 @@
 # Hull Candles
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hull Candles is a simple trend-following strategy using a Hull Moving Average of the average price (OHLC4). When the HMA rises and the close is above its SMA, it enters long positions; when the HMA falls and the close is below its SMA, it enters short positions.
 

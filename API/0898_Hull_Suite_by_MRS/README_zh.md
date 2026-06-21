@@ -1,5 +1,5 @@
 # Hull Suite by MRS 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该趋势跟随策略比较所选 Hull 类型移动平均与两根柱前的数值。当平均线高于两根柱前的数值时做多，低于时做空。
 

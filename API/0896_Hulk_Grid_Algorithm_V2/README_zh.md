@@ -1,5 +1,5 @@
 # Hulk Grid Algorithm V2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该网格策略在用户设定的中间价附近放置十个分层买入限价单，越靠近中间价数量越大。当价格跌破最低网格的止损或升破最高网格的止盈时，策略平掉所有仓位并取消剩余订单。
 

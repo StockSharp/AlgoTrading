@@ -1,5 +1,5 @@
 # Инструменты градиента HSV и HSL
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Набор утилит для работы с цветами, конвертированный из скрипта TradingView. Включает функции для преобразования между RGB и HSV/HSL, инвертирования цвета и построения градиентов.
 

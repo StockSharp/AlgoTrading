@@ -1,5 +1,5 @@
 # Hulk Grid Algorithm V2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grid trading strategy that places ten layered buy limit orders around a user-defined mid price. Orders increase in size closer to the mid level. The strategy exits all positions and cancels remaining orders when price hits a stop-loss below the lowest grid or a take-profit above the upper grid.
 

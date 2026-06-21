@@ -1,5 +1,5 @@
 # Hurst Future Lines of Demarcation 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用平滑的 FLD 以及三个周期（信号、交易、趋势）。当价格在特定趋势状态下突破信号 FLD 时入场，并在选定数值发生交叉时退出。
 

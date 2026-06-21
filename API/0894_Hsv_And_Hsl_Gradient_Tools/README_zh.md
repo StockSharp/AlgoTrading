@@ -1,5 +1,5 @@
 # HSV 和 HSL 渐变工具
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 TradingView 脚本转换的颜色工具库。提供 RGB 与 HSV/HSL 的转换、颜色反转和渐变生成等功能。
 

@@ -1,5 +1,5 @@
 # Hull Suite策略 – 1%风险，无SL/TP
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hull Suite策略当所选Hull移动平均值相比两根K线前上涨时开多，当其下降时开空。策略不使用止损和止盈。
 
