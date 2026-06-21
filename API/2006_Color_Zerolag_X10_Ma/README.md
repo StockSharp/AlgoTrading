@@ -1,5 +1,5 @@
 # Color Zerolag X10 MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a simplified port of the MetaTrader example **Exp_ColorZerolagX10MA.mq5**. It uses a zero lag exponential moving average to detect slope changes. When the moving average turns upward after decreasing for two bars, the strategy opens or reverses to a long position. Conversely, when the moving average turns downward after increasing, it opens or reverses to a short position.
 

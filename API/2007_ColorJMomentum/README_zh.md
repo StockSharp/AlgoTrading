@@ -1,4 +1,5 @@
 # ColorJMomentum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ColorJMomentum** 策略基于 Jurik 平滑动量指标的方向变化进行交易。该策略源自 MQL5 专家顾问 `Exp_ColorJMomentum`，并使用 StockSharp 的高级 API 重新实现。
 

@@ -1,4 +1,5 @@
 # 彩色零延迟RSI OSMA策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于五个不同周期RSI的组合振荡器。将加权后的RSI值进行两次平滑，得到零延迟的OSMA曲线。
 

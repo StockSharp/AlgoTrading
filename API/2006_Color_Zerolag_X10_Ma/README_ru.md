@@ -1,5 +1,5 @@
 # Стратегия Color Zerolag X10 MA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является упрощённым портом примера **Exp_ColorZerolagX10MA.mq5** из MetaTrader. Используется индикатор zero lag EMA для обнаружения смены наклона. Когда средняя начинает расти после двух свечей снижения, открывается или переворачивается длинная позиция. Если средняя начинает падать после роста, открывается короткая позиция.
 

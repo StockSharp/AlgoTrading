@@ -1,4 +1,5 @@
 # Стратегия ColorJMomentum
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ColorJMomentum** торгует по изменениям направления индикатора импульса, сглаженного методом Jurik. Стратегия основана на экспертном советнике MQL5 `Exp_ColorJMomentum` и реализована на высокоуровневом API StockSharp.
 

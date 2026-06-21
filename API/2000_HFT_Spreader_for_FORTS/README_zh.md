@@ -1,4 +1,5 @@
 # FORTS 高频点差策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略模拟 FORTS 市场上的高频点差交易。它持续监控订单簿，在买卖两侧挂出限价单以获取买卖价差。

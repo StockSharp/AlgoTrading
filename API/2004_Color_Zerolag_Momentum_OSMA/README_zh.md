@@ -1,5 +1,5 @@
 # 零滞后动量OSMA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用五个动量指标构建零滞后的动量OSMA振荡器。
 当振荡器两根K线前的值低于三根K线前的值时，被视为上升趋势。

@@ -1,4 +1,5 @@
 # 重心 OSMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 **重心 OSMA** 振荡器来识别潜在的趋势反转。
 振荡器将简单和加权移动平均相乘，并进行两次平滑处理以跟踪方向变化。

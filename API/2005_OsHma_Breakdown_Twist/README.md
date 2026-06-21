@@ -1,5 +1,5 @@
 # OsHMA Breakdown Twist
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy built on the OsHMA oscillator (difference between fast and slow Hull Moving Averages). It can operate in two modes:
 

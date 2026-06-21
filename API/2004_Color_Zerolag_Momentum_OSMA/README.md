@@ -1,5 +1,5 @@
 # Color Zerolag Momentum OSMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy builds a custom zero-lag momentum OSMA oscillator using five momentum calculations.
 When the oscillator's value two bars ago is below the value three bars ago the trend is considered upward.

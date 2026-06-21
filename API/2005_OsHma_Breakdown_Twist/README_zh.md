@@ -1,5 +1,5 @@
 # OsHMA Breakdown Twist
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 OsHMA 振荡器（快慢 Hull 移动平均差值）的策略。它可以以两种模式运行：
 

@@ -1,5 +1,5 @@
 # Color Zerolag X10 MA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 示例 **Exp_ColorZerolagX10MA.mq5** 的简化移植版本。它利用零滞后指数移动平均线 (Zero Lag EMA) 来检测斜率变化。当均线在连续两根柱子下降后转而向上时，策略会开多或反手做多；反之，当均线在上升后转而向下时，策略会开空。
 
