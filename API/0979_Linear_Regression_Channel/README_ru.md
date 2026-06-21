@@ -1,5 +1,5 @@
 # Канал линейной регрессии
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует возврат цены внутри канала линейной регрессии: покупка при уходе ниже нижней границы в восходящем тренде и продажа при выходе выше верхней границы в нисходящем тренде.
 

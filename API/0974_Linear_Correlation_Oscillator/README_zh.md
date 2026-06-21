@@ -1,5 +1,5 @@
 # 线性相关振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 线性相关振荡器策略计算价格与时间之间的相关性。当振荡器上穿零轴时做多，下穿零轴时做空。
 

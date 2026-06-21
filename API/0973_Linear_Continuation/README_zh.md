@@ -1,5 +1,5 @@
 # Linear Continuation 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例将 TradingView 的 "Linear Continuation" 指标移植到 StockSharp。策略计算三条移动平均线并记录其线性延伸值，用于演示指标功能，不包含任何交易逻辑。
 

@@ -1,5 +1,5 @@
 # Larry Connors Percent B Bollinger 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现 Larry Connors 的%B 思路。当价格位于 200 期 SMA 之上且 Bollinger %B 连续三根K线低于阈值时买入；当 %B 超过上方阈值时平仓。
 

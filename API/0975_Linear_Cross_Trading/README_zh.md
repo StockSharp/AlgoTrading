@@ -1,5 +1,5 @@
 # 线性交叉交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据成交量计算价格的线性回归以得到预测价格。当预测价格上穿其加权移动平均且MACD线向上穿越信号线时建立多头；当MACD线下穿信号线且最近低点不断降低时建立空头。
 

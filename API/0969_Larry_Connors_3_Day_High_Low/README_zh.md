@@ -1,6 +1,7 @@
 # Larry Connors 3 Day High Low Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-实现 Larry Connors 的“三日高低”均值回归策略。
+实现 Larry Connors 的”三日高低”均值回归策略。
 
 ## 逻辑
 

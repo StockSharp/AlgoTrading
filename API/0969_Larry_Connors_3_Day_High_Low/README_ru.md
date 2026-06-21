@@ -1,4 +1,5 @@
 # Larry Connors 3 Day High Low Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии Ларри Коннорса «3 Day High/Low».
 

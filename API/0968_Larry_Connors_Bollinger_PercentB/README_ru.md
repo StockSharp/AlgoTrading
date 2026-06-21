@@ -1,5 +1,5 @@
 # Стратегия Larry Connors Percent B Bollinger
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия следует подходу Larry Connors %B. Покупка выполняется, когда цена находится выше SMA200 и значение Bollinger %B остаётся ниже порога три подряд свечи. Позиция закрывается, когда %B поднимается выше верхнего порога.
 

@@ -1,5 +1,5 @@
 # Стратегия Linear Correlation Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Linear Correlation Oscillator измеряет корреляцию между ценой и временем на скользящем окне. Стратегия открывает длинную позицию, когда осциллятор пересекает ноль снизу вверх, и короткую, когда пересекает сверху вниз.
 

@@ -1,5 +1,5 @@
 # Linear Regression (All Data) 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用所有可用K线计算线性回归并在图表上绘制，同时记录斜率、截距和相关系数。
 
