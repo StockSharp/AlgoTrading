@@ -1,4 +1,5 @@
 # Up3x1 Krohabor D 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用三条简单移动平均线（快线、中线和慢线）来判断趋势方向。当快线向上穿越中线且快线和中线在当前及上一根K线均位于慢线之上时开多仓。相反条件下开空仓。

@@ -1,4 +1,5 @@
 # X Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a contrarian moving average cross system originally written in MQL as **X trader**.
 It uses two simple moving averages and opens positions opposite to the direction of the cross. Risk is managed

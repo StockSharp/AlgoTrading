@@ -1,4 +1,5 @@
 # Drag SL/TP Manager 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在成交价附近的固定距离自动设置止损和止盈单。适用于手动开仓后需要立即保护仓位的场景。
 

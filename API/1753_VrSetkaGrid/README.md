@@ -1,4 +1,5 @@
 # VR Setka Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp implementation of the MetaTrader "VR---SETKAa3hM" grid system. It opens a sequence of buy or sell orders based on percentage deviation from the daily range and optionally increases volume using a martingale multiplier. The average entry price of all open orders is tracked to place a unified take-profit target.
 

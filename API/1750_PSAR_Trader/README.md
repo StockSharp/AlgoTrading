@@ -1,5 +1,5 @@
 # PSAR Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The PSAR Trader strategy acts on shifts in the Parabolic SAR indicator. When the SAR flips below price a long position is opened, and when the SAR flips above price a short position is opened. An optional "Close On Opposite" setting reverses the position when an opposite signal appears. Trading occurs only during the configured session hours. Stop loss and take profit are managed by the protection module.
 

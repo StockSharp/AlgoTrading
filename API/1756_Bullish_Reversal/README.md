@@ -1,5 +1,5 @@
 # Bullish Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that searches for classic bullish reversal candlestick formations. When any of these patterns appears below a 50-period simple moving average the strategy opens a long position. An optional trailing stop protects open profits.
 

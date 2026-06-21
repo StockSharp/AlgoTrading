@@ -1,4 +1,5 @@
 # VR Setka 网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中重现了 MetaTrader 4 的 "VR---SETKAa3hM" 网格系统。根据价格相对于当日高低点的百分比偏离来开启买入或卖出订单，可选地使用马丁加仓算法增加每笔订单的数量。策略跟踪所有订单的平均入场价，并在其基础上设置统一的止盈目标。
 

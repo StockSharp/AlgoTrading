@@ -1,5 +1,5 @@
 # PSAR Trader Ticks
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于抛物线SAR指标。PSAR Trader 跟随SAR点位，当价格从一侧穿越到另一侧时入场：价格突破SAR上方开多，跌破SAR下方开空。可设定交易的时间范围，并可在出现反向信号时选择性平仓。策略还使用以tick为单位的止盈和止损。
 

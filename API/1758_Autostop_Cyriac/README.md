@@ -1,5 +1,5 @@
 # Autostop Cyriac Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This utility strategy automatically attaches a take profit and stop loss to each trade while it is active. It does not create entries or exits itself and can be combined with manual trading or other strategies.
 

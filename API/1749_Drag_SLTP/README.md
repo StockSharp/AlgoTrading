@@ -1,4 +1,5 @@
 # Drag SL/TP Manager Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy automatically places stop-loss and take-profit orders at a fixed distance from the executed trade price. It is useful when manual positions should be protected immediately after entry.
 

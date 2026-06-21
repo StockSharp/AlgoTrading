@@ -1,5 +1,5 @@
 # PSAR Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 PSAR Trader 策略基于 Parabolic SAR 指标的翻转。当 SAR 点移动到价格下方时做多，移动到价格上方时做空。可选的 “Close On Opposite” 参数在出现反向信号时反手。策略只在设定的交易时段内运行，止损和止盈由保护模块自动设置。
 

@@ -1,5 +1,5 @@
 # 看涨反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找经典的看涨反转蜡烛形态。当任一形态出现在50期简单移动平均线之下时，策略开多单。可选的追踪止损用于保护已获得的利润。
 

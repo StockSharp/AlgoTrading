@@ -1,4 +1,5 @@
 # X Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了原始 MQL 版本 **X trader** 的逆势移动平均线交叉系统。
 它使用两条简单移动平均线，当快速均线与慢速均线发生交叉时，采取相反方向的交易。风险通过

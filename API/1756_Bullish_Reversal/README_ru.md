@@ -1,5 +1,5 @@
 # Стратегия Bullish Reversal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ищет классические бычьи разворотные свечные модели. При появлении любого из этих паттернов ниже 50‑периодной простой скользящей средней открывается длинная позиция. Опциональный трейлинг‑стоп защищает прибыль.
 

@@ -1,4 +1,5 @@
 # Maximus vX Lite 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略尝试交易短期盘整区域的突破。它分析 15 分钟K线，当价格离开这些紧凑区间一定距离时开仓。
 

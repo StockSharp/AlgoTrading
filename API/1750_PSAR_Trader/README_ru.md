@@ -1,5 +1,5 @@
 # Стратегия PSAR Trader
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия PSAR Trader торгует по разворотам индикатора Parabolic SAR. Когда точка SAR перемещается ниже цены, открывается длинная позиция; при переходе SAR выше цены открывается короткая. Параметр "Close On Opposite" позволяет закрыть и развернуть позицию при противоположном сигнале. Торговля ведётся только в указанные часы сессии. Стоп‑лосс и тейк‑профит выставляются модулем защиты.
 
