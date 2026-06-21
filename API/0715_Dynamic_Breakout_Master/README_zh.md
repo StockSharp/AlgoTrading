@@ -1,4 +1,5 @@
 # 动态突破大师策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用 Donchian 通道结合均线趋势过滤、RSI 与 ATR 过滤，同时考虑成交量与交易时间的突破策略。
 

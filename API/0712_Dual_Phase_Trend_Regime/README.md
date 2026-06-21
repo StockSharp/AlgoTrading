@@ -1,4 +1,5 @@
 # Dual Phase Trend Regime Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Dual Phase Trend Regime strategy switches between slow and fast trend oscillators based on current volatility. Volatility is derived from return standard deviation and split into low or high regimes. Linear regression slopes determine trend direction. Entries can be taken on regime shifts or oscillator crossovers.
 

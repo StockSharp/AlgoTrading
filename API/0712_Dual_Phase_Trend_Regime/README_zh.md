@@ -1,4 +1,5 @@
 # 双阶段趋势状态策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据当前波动性在慢速和快速趋势振荡器之间切换。波动性由收益的标准差计算并划分为高/低状态。线性回归斜率确定趋势方向。根据信号设置，可在状态切换或振荡器交叉时入场。
 

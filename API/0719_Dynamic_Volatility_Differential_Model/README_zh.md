@@ -1,5 +1,5 @@
 # 动态波动率差模型
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Dynamic Volatility Differential Model (DVDM)** 策略比较隐含波动率与历史波动率。当隐含波动率高于历史波动率并超过动态标准差阈值时做多，低于负阈值时做空。
 

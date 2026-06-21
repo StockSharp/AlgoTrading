@@ -1,5 +1,5 @@
 # 动态支撑阻力枢轴策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过最近的枢轴高点和低点构建动态支撑和阻力位。当价格在接近支撑位时向上穿越支撑买入，当价格在接近阻力位时向下穿越阻力卖出。风险管理使用固定百分比的止损和止盈。
 

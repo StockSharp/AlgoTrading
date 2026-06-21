@@ -1,5 +1,5 @@
 # Dual Supertrend MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Dual Supertrend MACD** 策略结合两条 Supertrend 与 MACD 筛选。
 当价格位于两条 Supertrend 之上且 MACD 柱线为正时做多；

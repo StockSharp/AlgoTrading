@@ -1,5 +1,5 @@
 # Dynamic Ticks Oscillator Model (DTOM)
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Dynamic Ticks Oscillator Model** uses the rate of change of the NYSE Down Ticks index. When the ROC drops below a dynamic threshold based on standard deviation, the strategy opens a long position. The position is closed once the ROC rises above a positive threshold.
 

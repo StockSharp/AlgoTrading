@@ -1,5 +1,5 @@
 # Стратегия Dubic EMA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует экспоненциальные средние по максимумам и минимумам. Торговля пропускается в узких диапазонах и при низкой волатильности. Позиции защищаются стопами на основе ATR, тейк-профитом и по желанию трейлингом Parabolic SAR.
 

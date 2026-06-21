@@ -1,5 +1,5 @@
 # 财报交易
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 根据预设的财报日期进行交易，在入场日期按方向开仓，在出场日期平仓。
 

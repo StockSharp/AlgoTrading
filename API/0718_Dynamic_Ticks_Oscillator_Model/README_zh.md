@@ -1,5 +1,5 @@
 # 动态 Tick 振荡模型 (DTOM)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Dynamic Ticks Oscillator Model** 监控 NYSE Down Ticks 指数的变动率。当 ROC 跌破基于标准差的动态阈值时策略做多；当 ROC 突破正阈值时平仓。
 

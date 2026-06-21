@@ -1,5 +1,5 @@
 # Dynamic Volatility Differential Model
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Dynamic Volatility Differential Model (DVDM)** strategy compares implied volatility with historical volatility. It opens long when implied volatility exceeds realized volatility by a dynamic standard deviation threshold and enters short when the spread falls below the negative threshold.
 
