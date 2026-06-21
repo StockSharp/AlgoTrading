@@ -1,5 +1,5 @@
 # Heiken Ashi No Wick Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades against Heiken Ashi candles that appear without wicks. A bullish Heiken Ashi candle whose body is larger than the previous one and lacks a lower shadow triggers a short entry. A bearish candle with a longer body and no upper shadow opens a long. Positions close when an opposite candle without the respective wick forms.
 

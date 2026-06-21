@@ -1,4 +1,5 @@
 # Lacust Stop and BE
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略演示了一个基础的仓位管理方案，灵感来自原始的 MQL 智能交易系统 **lacuststopandbe**。
 

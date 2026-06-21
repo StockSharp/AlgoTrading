@@ -1,5 +1,5 @@
 # Color J Variation 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 JMA 曲线方向的变化，与 MQL 中的 ColorJVariation EA 相对应。策略跟踪 Jurik 移动平均线的斜率，当趋势由下转上或由上转下时入场，并支持绝对止损和止盈。
 

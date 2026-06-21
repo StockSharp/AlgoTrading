@@ -1,4 +1,5 @@
 # Binario 31 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout strategy converted from MetaTrader script **binario_31**. The algorithm builds two 144-period exponential moving averages calculated over the candle high and low prices, creating a dynamic channel. While the current price stays inside the channel the strategy prepares stop entries:
 

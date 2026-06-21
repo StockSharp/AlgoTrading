@@ -1,5 +1,5 @@
 # Heiken Ashi 无影线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用没有影线的 Heiken Ashi 蜡烛反向交易。当当前蜡烛看涨、实体大于前一根且没有下影线，并且前一根也为看涨时，开空单。当当前蜡烛看跌、实体大于前一根且没有上影线，并且前一根也为看跌时，开多单。出现相反颜色且没有对应影线的蜡烛时平仓。
 

@@ -1,5 +1,5 @@
 # Exp Moving Average FN Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on slope reversals of an exponential moving average (EMA). It enters long when the EMA turns upward after a decline and enters short when the EMA turns downward after a rise. Optional stop-loss and take-profit levels are defined in absolute price units.
 

@@ -1,5 +1,5 @@
 # Super Take策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在多空之间交替交易，并在每次亏损后按马丁系数增加止盈距离。止损保持固定，盈利后止盈恢复为基础值。通过不断反向开仓并在亏损后提高目标，策略试图弥补回撤。
 

@@ -1,5 +1,5 @@
 # Exp Moving Average FN Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于指数移动平均线 (EMA) 斜率的反转进行交易。当 EMA 在下降后转向上升时做多，当 EMA 在上升后转向下降时做空。止损和止盈以绝对价格单位表示。
 

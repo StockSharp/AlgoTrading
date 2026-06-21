@@ -1,5 +1,5 @@
 # Color Zerolag RVI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用相对活力指数 (RVI) 及其信号线。
 当 RVI 主线向下穿越信号线时买入，主线向上穿越信号线时卖出。

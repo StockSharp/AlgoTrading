@@ -1,4 +1,5 @@
 # Binario 31 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 MetaTrader 脚本 **binario_31** 转换而来的突破策略。算法使用 144 周期的指数移动平均分别应用于每根 K 线的最高价和最低价，从而形成一个动态通道。当价格位于通道内部时，策略会预先设置两个止损单：
 

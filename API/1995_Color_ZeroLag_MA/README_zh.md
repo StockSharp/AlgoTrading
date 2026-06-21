@@ -1,4 +1,5 @@
 # Color Zero Lag MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用零滞后移动平均线（Zero Lag Moving Average）来捕捉趋势反转。当 ZLMA 曲线从下降转为上升时开多仓，从上升转为下降时开空仓。若指标斜率反向，则平掉当前仓位。
 

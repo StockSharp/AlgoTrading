@@ -1,5 +1,5 @@
 # Стратегия Color Zerolag RVI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индекс относительной силы (RVI) и его сигнальную линию.
 Покупает, когда основная линия RVI пересекает сигнал снизу, и продаёт, когда основная линия пересекает сигнал сверху.
