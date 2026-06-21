@@ -1,4 +1,5 @@
 # Стратегия торговли по лунному календарю
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию на 12-й день каждого лунного месяца и закрывает её на 26-й день.
 

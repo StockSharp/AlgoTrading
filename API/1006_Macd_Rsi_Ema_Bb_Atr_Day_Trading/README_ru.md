@@ -1,5 +1,5 @@
 # MACD RSI EMA BB ATR Day Trading Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Интрадейная стратегия, сочетающая пересечение MACD, границы RSI и направление тренда по EMA с фильтром сжатия полос Боллинджера. Управление рисками основано на стоп-лоссе по ATR, трейлинг-стопе и тейк-профите по коэффициенту риск/прибыль.
 

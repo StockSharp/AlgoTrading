@@ -1,4 +1,5 @@
 # MA MACD BB BackTester
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略可在三种指标之间选择：简单移动平均线交叉、MACD 交叉或布林带突破。任意时刻仅启用一种模式，并可选择做多或做空方向。
 

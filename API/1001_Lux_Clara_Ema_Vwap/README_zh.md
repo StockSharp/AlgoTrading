@@ -1,5 +1,5 @@
 # Lux Clara EMA + VWAP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lux Clara EMA + VWAP 策略利用快慢 EMA 的金叉/死叉，并结合 VWAP 和时间窗口过滤。当快 EMA 上穿慢 EMA 且慢 EMA 在 VWAP 之上并处于指定时段内时开多仓；相反条件下开空仓。EMAs 反向交叉时平仓。
 

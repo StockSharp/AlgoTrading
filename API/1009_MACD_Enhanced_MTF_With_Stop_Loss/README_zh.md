@@ -1,5 +1,5 @@
 # MACD 增强多周期止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多周期MACD评分结合ATR移动止损线的策略。
 

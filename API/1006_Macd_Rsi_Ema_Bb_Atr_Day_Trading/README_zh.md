@@ -1,5 +1,5 @@
 # MACD RSI EMA BB ATR 日内交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略适用于日内交易，结合MACD信号交叉、RSI区间和EMA趋势方向，并使用布林带挤压过滤。风险管理基于ATR止损、ATR跟踪止损以及风险收益比的止盈。
 

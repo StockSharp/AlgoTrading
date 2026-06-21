@@ -1,5 +1,5 @@
 # MACD RSI EMA BB ATR Day Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Intraday strategy combining MACD signal cross, RSI bounds and EMA trend direction with a Bollinger Bands squeeze filter. Risk management uses ATR-based stop-loss, trailing stop and risk-reward take profit.
 

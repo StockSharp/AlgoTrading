@@ -1,5 +1,5 @@
 # MA Crossover Demand Supply Zones SLTP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将长短期简单移动平均线交叉与需求/供应区结合。当交叉发生在最近确认的需求区或供应区附近时入场，并以固定百分比的止损和止盈管理仓位。
 

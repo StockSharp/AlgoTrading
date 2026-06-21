@@ -1,5 +1,5 @@
 # Стратегия MA Crossover Demand Supply Zones SLTP
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает пересечение короткой и длинной простых скользящих средних с определением зон спроса и предложения. Сигналы появляются, когда пересечение происходит рядом с подтверждённой зоной, после чего позиция управляется по процентным стоп-лоссу и тейк-профиту.
 
