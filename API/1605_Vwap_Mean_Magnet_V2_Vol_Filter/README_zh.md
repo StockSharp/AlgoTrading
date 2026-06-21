@@ -1,5 +1,5 @@
 # VWAP Mean Magnet v2（成交量过滤）策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合了VWAP均值回归、RSI和成交量过滤。当价格偏离VWAP且RSI处于极端水平，同时当前成交量高于移动平均成交量乘以系数时入场交易。
 

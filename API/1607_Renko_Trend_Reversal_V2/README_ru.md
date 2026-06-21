@@ -1,5 +1,5 @@
 # Стратегия Renko Trend Reversal V2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Renko Trend Reversal V2 входит, когда открытие ренко пересекает закрытие. Использует кирпичи ренко на основе ATR и выставляет стоп-лосс и тейк-профит. Шорты можно отключить.
 

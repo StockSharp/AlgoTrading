@@ -1,5 +1,5 @@
 # EMA 5-8-13 带 ADX 过滤的策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 5 与 8 周期的 EMA 金叉死叉进行交易，并使用 13 周期 EMA 作为退出信号。可选的 ADX 过滤器用于确认趋势强度。当 EMA5 上穿 EMA8 且 ADX 超过阈值时做多；相反信号时做空。
 

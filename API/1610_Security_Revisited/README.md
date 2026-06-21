@@ -1,5 +1,5 @@
 # `security()` Revisited
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 `security()` Revisited shows how to access higher timeframe data in StockSharp and control repainting by using previous or current values.
 

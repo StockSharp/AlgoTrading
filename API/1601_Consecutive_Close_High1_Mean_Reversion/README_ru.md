@@ -1,5 +1,5 @@
 # Стратегия Consecutive Close High1 Mean Reversion
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Шортовая стратегия, считающая количество последовательных закрытий выше предыдущего максимума и продающая при достижении порога. Позиция закрывается, когда цена падает ниже предыдущего минимума. Дополнительный фильтр EMA 200 подтверждает нисходящий тренд.
 

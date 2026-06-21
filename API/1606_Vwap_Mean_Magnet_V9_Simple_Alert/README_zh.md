@@ -1,5 +1,5 @@
 # VWAP Mean Magnet v9（简单提醒）策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该简化版本的 VWAP Mean Magnet 策略只使用 VWAP 和 RSI，不包含成交量过滤。当价格偏离 VWAP 且 RSI 达到极端水平时入场，价格回到 VWAP 时平仓。
 

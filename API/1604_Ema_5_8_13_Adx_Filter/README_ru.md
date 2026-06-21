@@ -1,5 +1,5 @@
 # Стратегия EMA 5-8-13 с фильтром ADX
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пересечения EMA с периодами 5 и 8, используя EMA13 для выхода. Необязательный фильтр ADX подтверждает силу тренда. Длинные позиции открываются, когда EMA5 пересекает EMA8 снизу и ADX выше порога. Короткие позиции открываются при обратном сигнале.
 

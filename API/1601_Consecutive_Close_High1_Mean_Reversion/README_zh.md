@@ -1,5 +1,5 @@
 # Consecutive Close High1 Mean Reversion 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅做空，统计连续收盘价高于前高的次数，达到阈值后卖出。价格跌破前低时平仓。可选的 200 EMA 过滤器用于确认下行趋势。
 

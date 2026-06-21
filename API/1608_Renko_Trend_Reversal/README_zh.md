@@ -1,5 +1,5 @@
 # Renko趋势反转策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Renko趋势反转策略在Renko开盘价与收盘价交叉时交易，可选止损和止盈，使用基于ATR的Renko砖。
 

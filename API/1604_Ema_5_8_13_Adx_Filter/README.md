@@ -1,5 +1,5 @@
 # EMA 5-8-13 with ADX Filter Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy trades EMA crossovers on 5 and 8 periods while using a 13-period EMA for exits. An optional ADX filter confirms trend strength. Long positions occur when EMA5 crosses above EMA8 and ADX exceeds the threshold. Short positions are initiated on the opposite signal.
 

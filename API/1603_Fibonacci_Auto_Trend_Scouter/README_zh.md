@@ -1,5 +1,5 @@
 # Fibonacci Auto Trend Scouter 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用基于斐波那契数的两个滚动极值来寻找新趋势。短期窗口（8）跟踪最近的高点和低点，长期窗口（21）提供背景。当短期高点超过长期高点时开多仓；当短期低点跌破长期低点时开空仓。
 

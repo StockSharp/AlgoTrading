@@ -1,5 +1,5 @@
 # 会话解析器
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 会话解析器演示如何将TradingView的会话字符串解析为开始/结束时间和星期几。
 

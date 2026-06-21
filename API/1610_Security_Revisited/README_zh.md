@@ -1,5 +1,5 @@
 # `security()` 再探
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 `security()` 再探展示如何在StockSharp中获取更高时间框架的数据，并通过使用当前值或前一个值来控制重绘。
 
