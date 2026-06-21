@@ -1,5 +1,5 @@
 # Стратегия Averaged Stoch & WPR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия объединяет осциллятор Stochastic и индикатор Williams %R для определения экстремальных зон рынка.
 Длинная позиция открывается, когда значение Stochastic опускается ниже 0.1, а Williams %R падает ниже -90, что указывает на сильную перепроданность.

@@ -1,5 +1,5 @@
 # Стратегия оповещения Parabolic SAR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия отслеживает индикатор Parabolic SAR (Stop and Reverse) для выявления возможных разворотов тренда. Когда значение SAR переходит из области выше цены в область ниже, стратегия рассматривает это как бычий сигнал и открывает длинную позицию. Если SAR движется из-под цены наверх, открывается короткая позиция.
 

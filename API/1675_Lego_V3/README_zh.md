@@ -1,4 +1,5 @@
 # Lego V3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自 MQL4 的 “Lego_v3” EA。  
 它结合多个常见指标来生成交易信号：

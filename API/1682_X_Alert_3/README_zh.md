@@ -1,4 +1,5 @@
 # X Alert 3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 **X_alert_3.mq4** 的逻辑。它计算两条可配置参数的移动平均线，并在发生交叉时输出提示信息。
 

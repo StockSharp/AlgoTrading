@@ -1,4 +1,5 @@
 # Shuriken Lite 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了原始 *Shuriken Lite* MQL 工具的功能。它监控账户中已成交的交易，并根据数字标识 **magic numbers** 进行分组。每个分组都会统计：
 

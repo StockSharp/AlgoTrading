@@ -1,5 +1,5 @@
 # Averaged Stoch & WPR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将随机指标 (Stochastic) 与威廉指标 (Williams %R) 结合，用于识别市场的极端超买和超卖状态。
 当随机指标低于 0.1 且 Williams %R 低于 -90 时开多单，表示市场严重超卖。

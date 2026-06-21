@@ -1,5 +1,5 @@
 # Xbug Free 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 逆势移动平均策略：当价格向下穿越均线时买入，向上穿越时卖出。使用对称的止盈和止损距离。
 

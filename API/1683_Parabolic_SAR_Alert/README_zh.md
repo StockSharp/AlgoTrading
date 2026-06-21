@@ -1,5 +1,5 @@
 # 抛物线SAR警报策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控抛物线SAR（Stop and Reverse）指标以识别趋势反转。当SAR值从价格上方翻到下方时，被视为看涨信号并开多单；当SAR从价格下方翻到上方时，则开空单。
 

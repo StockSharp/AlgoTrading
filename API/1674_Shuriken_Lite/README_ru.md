@@ -1,4 +1,5 @@
 # Shuriken Lite Стратегия
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет функционал оригинального инструмента *Shuriken Lite* на MQL. Она отслеживает исполненные сделки на счёте и группирует их по числовым идентификаторам — **magic numbers**. Для каждой группы рассчитываются:
 

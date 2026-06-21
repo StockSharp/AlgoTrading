@@ -1,4 +1,5 @@
 # 订单关闭状态邮件与警报策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控账户并在关键事件发生时发送通知：
 

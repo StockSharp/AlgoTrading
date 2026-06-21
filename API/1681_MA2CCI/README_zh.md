@@ -1,5 +1,5 @@
 # MA2CCI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快慢简单移动平均线 (SMA) 的交叉与商品通道指数 (CCI) 作为确认过滤。只有当均线与 CCI 同时在同一方向上越过各自的水平时才会开仓。平均真实波幅 (ATR) 用于确定入场时的止损距离。
 
