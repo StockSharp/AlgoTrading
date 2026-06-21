@@ -1,5 +1,5 @@
 # Cleaner Screeners 库
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 简单的筛选器策略，对多个品种的 RSI 进行评估并输出买入或卖出信号。可作为构建自定义多资产筛选器的基础。
 

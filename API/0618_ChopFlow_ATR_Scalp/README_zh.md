@@ -1,5 +1,5 @@
 # ChopFlow ATR 剥头皮
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ChopFlow ATR 剥头皮策略在市场摆脱震荡且 OBV 突破其 EMA 时进场。退出使用基于 ATR 的对称止损和止盈。
 

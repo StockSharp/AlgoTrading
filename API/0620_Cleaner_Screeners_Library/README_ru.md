@@ -1,5 +1,5 @@
 # Библиотека Cleaner Screeners
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Простая стратегия-скринер, которая оценивает RSI для нескольких инструментов и выводит сигналы покупки или продажи. Служит основой для создания пользовательских мультирыночных скринеров.
 

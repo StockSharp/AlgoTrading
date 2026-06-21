@@ -1,5 +1,5 @@
 # Channels with NVI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合布林带或凯尔特纳通道与负量指数（NVI）。当收盘价低于下轨且 NVI 高于其 EMA 时开多仓；当 NVI 低于其 EMA 时平仓。可选择设置止损和止盈百分比。
 

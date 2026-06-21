@@ -1,5 +1,5 @@
 # Cleaner Screeners Library
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simple screener strategy that evaluates RSI across multiple symbols and prints buy or sell ratings. It serves as a foundation for building custom multi-asset screeners.
 

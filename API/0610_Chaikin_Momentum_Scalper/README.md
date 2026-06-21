@@ -1,5 +1,5 @@
 # Chaikin Momentum Scalper
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This scalping strategy uses the Chaikin oscillator to capture momentum shifts. Long trades occur when the oscillator crosses above zero and price is above the 200-period SMA. Short trades occur on a cross below zero with price below the SMA. ATR multiples define stop-loss and take-profit levels.
 

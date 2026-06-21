@@ -1,4 +1,5 @@
 # 经典裸 Z-Score 套利策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Z-Score 交易两资产的价差。当价差的 z 分数高于正阈值时，策略卖出第一个资产并买入第二个资产。当 z 分数低于负阈值时，策略买入第一个资产并卖出第二个资产。当 z 分数回到零附近时平仓。
 

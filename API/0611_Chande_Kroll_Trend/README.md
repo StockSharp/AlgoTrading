@@ -1,5 +1,5 @@
 # Chande Kroll Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that uses Chande Kroll stop with an SMA trend filter. A long position is opened when the close crosses above the lower stop and is above the SMA. The position is closed when the close falls below the upper stop. Position size is based on the lowest close over 1560 bars and the risk multiplier.
 

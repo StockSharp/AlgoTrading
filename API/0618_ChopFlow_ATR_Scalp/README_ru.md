@@ -1,5 +1,5 @@
 # Скалпер ChopFlow ATR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ChopFlow ATR входит, когда рынок выходит из фаз боковика и OBV пересекает свою EMA. Выход осуществляется по симметричным уровням стоп-лосса и тейк-профита, рассчитанным по ATR.
 

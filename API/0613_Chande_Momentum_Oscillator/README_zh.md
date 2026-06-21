@@ -1,5 +1,5 @@
 # Chande 动量振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 Chande 动量振荡器跌破下阈值时买入，当其升破上阈值或持仓达到固定的柱数时平仓。
 

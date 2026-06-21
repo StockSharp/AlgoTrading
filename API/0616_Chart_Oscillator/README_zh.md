@@ -1,5 +1,5 @@
 # 图表振荡器
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用可选择的振荡器进行交易，可在随机指标、RSI 或 MFI 之间选择。当振荡器显示超卖时买入，超买时卖出。对于随机指标，信号基于 %K 和 %D 的交叉。
 
