@@ -1,5 +1,5 @@
 # Friday Bond Short Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This time-based strategy opens a short position on a specified day and hour in Eastern Time and closes it on another day and hour. By default, it sells on Friday at 13:00 ET and buys back on Monday at 13:00 ET.
 

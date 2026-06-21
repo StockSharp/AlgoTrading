@@ -1,5 +1,5 @@
 # Forex 锤子线与上吊线
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易经典的蜡烛图反转形态: 看涨锤子线和看跌上吊线。出现锤子线时做多, 出现上吊线时做空, 并持有固定数量的K线。
 

@@ -1,5 +1,5 @@
 # Forex Fire EMA MA RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多时间框架趋势策略，结合 EMA、MA 和 RSI。使用4小时K线确认，15分钟K线入场。
 

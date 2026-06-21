@@ -1,5 +1,5 @@
 # FON60DK
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens long positions when the Tillson T3 line rises above the Optimized Trend Tracker (OTT) upper band and Williams %R confirms bullish momentum. The position is closed once Tillson T3 drops below the opposite OTT band while Williams %R enters oversold territory.
 

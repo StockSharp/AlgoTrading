@@ -1,5 +1,5 @@
 # 分形突破趋势跟随
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 分形突破趋势跟随在波动性较低时，当激活的看涨分形上方触发买入止损。
 

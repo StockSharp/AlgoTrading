@@ -1,4 +1,5 @@
 # 外汇收益率动量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据两种货币的2年期国债收益率差的动量交易所选外汇对。动量定义为收益率差与其移动平均值的偏离，并在动量上应用布林带以识别超买和超卖区域。持仓在达到固定的K线数量后平仓。
 

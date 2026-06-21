@@ -1,4 +1,5 @@
 # Forex Pair Yield Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades a selected forex pair using the momentum of the 2-year yield spread between its currencies. The momentum is measured as the difference between the spread and its moving average. Bollinger Bands applied to the momentum define overbought and oversold zones. Positions are closed after a fixed number of bars.
 

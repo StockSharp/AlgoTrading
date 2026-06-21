@@ -1,5 +1,5 @@
 # FON60DK
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 Tillson T3 突破 Optimized Trend Tracker (OTT) 上轨且 Williams %R 显示多头动能时开多仓。当 Tillson T3 跌破相反的 OTT 下轨且 Williams %R 进入超卖区时平仓。
 

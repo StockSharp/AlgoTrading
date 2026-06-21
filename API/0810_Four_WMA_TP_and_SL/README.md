@@ -1,5 +1,5 @@
 # Four WMA Strategy with TP and SL
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy using crossover of four moving averages with optional take profit, stop loss, and alternate exit condition.
 

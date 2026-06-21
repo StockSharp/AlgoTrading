@@ -1,5 +1,5 @@
 # Friday Bond Short Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该时间策略在美国东部时间的指定星期与小时开空仓，并在另一天同一时间平仓。默认在星期五13:00 ET 做空，并在星期一13:00 ET 回补。
 
