@@ -1,4 +1,5 @@
 # Стратегия Double AI Super Trend Trading
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует два индикатора SuperTrend и взвешенные скользящие средние для подтверждения направления тренда. Лонг открывается, когда оба SuperTrend показывают рост и цена выше соответствующих WMA SuperTrend. Шорт открывается при обратных условиях. Позиции защищаются трейлинг-стопом на основе первого SuperTrend и ATR.
 

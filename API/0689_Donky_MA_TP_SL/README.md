@@ -1,5 +1,5 @@
 # Donky MA TP SL
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades moving average crossovers with two take-profit targets and a stop-loss. It enters long when the fast SMA crosses above the slow SMA and short when it crosses below. Half of the position is closed at the first target and the remainder at the second target or the stop-loss.
 

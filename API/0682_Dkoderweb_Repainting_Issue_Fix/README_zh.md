@@ -1,5 +1,5 @@
 # Dkoderweb Repainting Issue Fix 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用简单的锯齿形方法识别谐波形态，并在价格回到斐波那契回撤位时入场。当出现看涨形态且价格回调至入场区间时，策略开多单并设置固定的止盈和止损水平。看跌形态触发相反方向的操作。
 

@@ -1,5 +1,5 @@
 # Doji Trading 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找位于指数移动平均线上方的十字星形态。当出现这种形态时开多仓。止损设在最近若干根K线的最低点，并在价格充分向有利方向移动后启用追踪止损。
 

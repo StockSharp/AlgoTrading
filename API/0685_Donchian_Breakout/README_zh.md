@@ -1,5 +1,5 @@
 # Donchian 突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Donchian 通道的突破策略，并结合波动率与成交量过滤。
 

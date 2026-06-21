@@ -1,4 +1,5 @@
 # 双重AI超级趋势交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两个SuperTrend指标与加权移动平均线来确认趋势方向。当两个SuperTrend都处于多头且价格WMA高于各自的SuperTrend WMA时开多仓；当两个SuperTrend都处于空头且价格WMA低于其SuperTrend WMA时开空仓。仓位由第一个SuperTrend的ATR追踪止损进行管理。
 

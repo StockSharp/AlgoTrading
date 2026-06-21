@@ -1,5 +1,5 @@
 # 别让我交叉
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 带垂直偏移的EMA交叉策略。
 

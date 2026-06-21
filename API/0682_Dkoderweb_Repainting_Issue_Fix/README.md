@@ -1,5 +1,5 @@
 # Dkoderweb Repainting Issue Fix Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy detects harmonic patterns using a simple zigzag approach and trades when price returns to a Fibonacci retracement level. When a bullish pattern forms and price pulls back to the entry window, the strategy opens a long position with predefined take‑profit and stop‑loss levels. A bearish pattern triggers the same logic in the opposite direction.
 

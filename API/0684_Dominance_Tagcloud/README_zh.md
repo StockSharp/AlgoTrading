@@ -1,5 +1,5 @@
 # 主导权标签云策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该可视化策略绘制加密货币主导权的标签云。每个符号都会得到一个与其主导比例成大小的方块，并在避免重叠的情况下随机放置。示例展示了自定义绘图与多符号处理，不产生交易信号。
 

@@ -1,5 +1,5 @@
 # Donchian WMA Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 Donchian 通道下轨向上穿越加权移动平均线时，仅在 2025 年内做多。达到设定的盈利百分比、在 WMA 下行时下轨反向穿越，或日期不在 2025 年时全部平仓。
 

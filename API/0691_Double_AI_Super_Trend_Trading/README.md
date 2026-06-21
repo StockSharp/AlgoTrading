@@ -1,4 +1,5 @@
 # Double AI Super Trend Trading Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses two SuperTrend indicators combined with weighted moving averages to confirm trend direction. Long trades open when both SuperTrends are bullish and price WMAs stay above their corresponding SuperTrend WMAs. Short trades occur on the opposite conditions. Positions are managed with an ATR-based trailing stop from the first SuperTrend.
 
