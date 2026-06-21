@@ -1,4 +1,5 @@
 # Стратегия MACD Volume BBO Reversal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует объемный осциллятор и пересечения MACD с нулевой линией.
 Вход в лонг происходит когда MACD пересекает ноль снизу вверх,

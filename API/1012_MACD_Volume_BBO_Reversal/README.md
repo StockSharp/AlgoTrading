@@ -1,4 +1,5 @@
 # MACD Volume BBO Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy combining volume oscillator with MACD zero-line crossings and signal comparison.
 Enters long when MACD crosses above zero with positive volume oscillator and MACD above its signal.

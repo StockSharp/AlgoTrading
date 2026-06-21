@@ -1,5 +1,5 @@
 # MACD配合1日随机指标确认的反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当MACD线向上穿越信号线并且日线随机指标K线高于D线且低于80时买入。价格跌破ATR计算的止损或跌破追踪EMA止盈线时平仓。
 

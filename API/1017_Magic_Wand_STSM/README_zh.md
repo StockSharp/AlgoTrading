@@ -1,5 +1,5 @@
 # Magic Wand STSM 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该趋势策略使用 Supertrend 指标并结合 200 期 SMA 过滤。按 Supertrend 方向交易，使用其作为止损，并根据设定的风险回报比计算止盈。
 

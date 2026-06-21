@@ -1,5 +1,5 @@
 # Manadi Buy Sell EMA MACD RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 EMA crossover strategy with MACD and RSI confirmations. Market entries with fixed percent stop-loss and take-profit.
 

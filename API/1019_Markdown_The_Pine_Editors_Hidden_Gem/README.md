@@ -1,5 +1,5 @@
 # Markdown The Pine Editor's Hidden Gem Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses Bollinger Bands built on a simple moving average. A long position opens when the price closes above the upper band, and a short position opens when it closes below the lower band.
 

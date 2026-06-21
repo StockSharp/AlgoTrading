@@ -1,5 +1,5 @@
 # 机器学习逻辑回归策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在每根K线结束时重新训练一个简单的逻辑回归模型。
 模型使用最近的收盘价及其派生的合成序列。

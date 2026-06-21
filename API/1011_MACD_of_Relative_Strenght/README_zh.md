@@ -1,5 +1,5 @@
 # MACD 相对强度策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过将收盘价与指定周期内的最高价相除来计算相对强度，并在此基础上应用 MACD 指标。当 MACD 直方图为正时开多，当直方图转负时平仓。使用百分比止损保护交易。
 

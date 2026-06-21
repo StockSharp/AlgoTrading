@@ -1,5 +1,5 @@
 # Стратегия Magic Wand STSM
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая система, использующая индикатор Supertrend с фильтром SMA200. Торгует по направлению Supertrend и использует его линию как стоп, устанавливая тейк-профит по заданному соотношению риск/прибыль.
 

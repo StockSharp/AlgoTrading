@@ -1,5 +1,5 @@
 # MACD with 1D Stochastic Confirmation Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that buys on MACD line crossing above signal with confirmation from daily Stochastic oscillator. The trade is closed when price hits an ATR-based stop loss or falls below a trailing EMA take profit.
 

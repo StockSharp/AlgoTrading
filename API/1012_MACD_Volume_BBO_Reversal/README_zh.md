@@ -1,4 +1,5 @@
 # MACD Volume BBO Reversal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合成交量振荡器和 MACD 穿越零轴以及信号线关系。
 当 MACD 上穿零轴且成交量振荡器为正并且 MACD 高于信号线时做多，

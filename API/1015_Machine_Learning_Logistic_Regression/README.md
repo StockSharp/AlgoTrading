@@ -1,5 +1,5 @@
 # Machine Learning Logistic Regression Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy retrains a simple logistic regression model on every bar.
 The model uses recent closing prices and a synthetic series derived from them.

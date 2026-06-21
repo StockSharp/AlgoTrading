@@ -1,5 +1,5 @@
 # MACD Liquidity Tracker
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MACD Liquidity Tracker 利用 MACD 的颜色状态生成交易信号。提供 Fast、Normal、Safe、Crossover 四种模式来调节信号灵敏度，并可选用止损和止盈。
 

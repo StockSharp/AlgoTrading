@@ -1,5 +1,5 @@
 # 机器学习 SuperTrend 止盈止损
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 SuperTrend 指标，并设置跟踪止盈与止损的策略。
 
