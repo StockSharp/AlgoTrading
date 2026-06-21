@@ -1,5 +1,5 @@
 # Bitcoin Exponential Profit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy enters long when the fast EMA crosses above the slow EMA. Position size is calculated from a risk percentage of account equity. Exits occur on EMA crossunder, stop loss, take profit, or trailing stop.
 

@@ -1,5 +1,5 @@
 # 比特币 CME/现货 价差
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用布林带监控 CME 比特币期货与 Bitfinex 现货之间的价差。
 价差跌破下轨做多，突破上轨做空。

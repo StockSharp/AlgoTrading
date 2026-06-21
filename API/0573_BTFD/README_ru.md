@@ -1,5 +1,5 @@
 # BTFD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупки на падении с использованием объёма и RSI, включает пять уровней фиксации прибыли и защитный стоп.
 

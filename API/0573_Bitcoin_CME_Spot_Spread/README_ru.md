@@ -1,5 +1,5 @@
 # Спред Bitcoin CME/Spot
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует фьючерс CME на биткоин по спреду к спотовой цене Bitfinex с помощью полос Боллинджера.
 Покупка при пробое спредом нижней полосы, продажа при пробое верхней.

@@ -1,5 +1,5 @@
 # 内置凯利比例
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用移动平均线与ATR通道，并根据凯利比例动态调整仓位。
 

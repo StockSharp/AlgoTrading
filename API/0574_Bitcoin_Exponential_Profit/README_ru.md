@@ -1,5 +1,5 @@
 # Стратегия Bitcoin Exponential Profit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда быстрая EMA пересекает медленную сверху. Размер позиции рассчитывается от процента риска на капитал. Выход выполняется при пересечении EMA вниз, достижении стоп-лосса, тейк-профита или трейлинг-стопа.
 

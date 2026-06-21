@@ -1,5 +1,5 @@
 # 比特币指数收益策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速EMA上穿慢速EMA时，策略做多。仓位大小根据账户权益的风险百分比计算。出场条件包括EMA下穿、止损、止盈或追踪止损。
 

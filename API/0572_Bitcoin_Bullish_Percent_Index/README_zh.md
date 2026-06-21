@@ -1,5 +1,5 @@
 # Bitcoin Bullish Percent Index 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用RSI指标来近似比特币看涨百分比指数。当RSI上穿超卖水平时做多，当RSI下穿超买水平时做空。
 

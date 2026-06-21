@@ -1,5 +1,5 @@
 # Binomial Option Pricing Model
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This module calculates the theoretical price of an option using a two-step binomial tree. It supports American or European styles and call or put types across different asset classes. Volatility is estimated through the standard deviation of closing prices.
 

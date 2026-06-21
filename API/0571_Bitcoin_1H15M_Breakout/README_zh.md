@@ -1,5 +1,5 @@
 # 比特币 1H-15M 突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略跟踪前一小时K线的最高价和最低价，当15分钟K线收盘价突破该区间时开仓。风险通过固定的止损缓冲和基于风险收益比的止盈来管理。
 

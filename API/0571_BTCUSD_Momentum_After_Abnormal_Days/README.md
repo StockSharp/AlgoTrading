@@ -1,5 +1,5 @@
 # BTCUSD Momentum After Abnormal Days Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy measures the day's return as `(close - open) / open` and compares it with a moving average and standard deviation over a configurable period. If the return exceeds the upper threshold, it opens a long position; if it falls below the lower threshold, it opens a short. All positions are closed at the next day's close.
 

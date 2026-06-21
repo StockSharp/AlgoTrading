@@ -1,5 +1,5 @@
 # BTCUSD异常日动量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算每天的收益 `(close - open) / open`，并与指定周期的移动平均和标准差比较。当收益高于上限阈值时开多仓，低于下限阈值时开空仓。所有持仓在下一交易日收盘时平仓。
 

@@ -1,5 +1,5 @@
 # Стратегия BTCUSD Momentum After Abnormal Days
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия рассчитывает дневную доходность как `(close - open) / open` и сравнивает её со скользящим средним и стандартным отклонением за настраиваемый период. Если доходность превышает верхний порог, открывается длинная позиция; если падает ниже нижнего порога — короткая. Все позиции закрываются на закрытии следующего дня.
 

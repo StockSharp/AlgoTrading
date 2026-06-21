@@ -1,5 +1,5 @@
 # BTCUSD Adjustable SLTP Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует BTCUSD, используя пересечение SMA(10) и SMA(25) с фильтром EMA(150). Длинные позиции открываются после отката: после пересечения фиксируется максимум и рассчитывается уровень отката, вход выполняется при пробое этого уровня. Короткие позиции открываются сразу при медвежьем пересечении, если цена ниже EMA.
 

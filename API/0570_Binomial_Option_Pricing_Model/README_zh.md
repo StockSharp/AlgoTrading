@@ -1,5 +1,5 @@
 # 二项期权定价模型
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两步二项树计算期权的理论价格，支持美式或欧式、看涨或看跌以及不同资产类别。波动率通过收盘价的标准差估计。
 
