@@ -1,5 +1,5 @@
 # Quantitative Trend Strategy Uptrend Long
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy buys when the price closes above the most recent pivot high detected over configurable lookback windows. Support and resistance levels are taken from pivot highs and lows. Positions are protected by percent-based take-profit and stop-loss.
 

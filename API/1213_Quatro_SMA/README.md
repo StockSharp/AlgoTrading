@@ -1,5 +1,5 @@
 # Quatro SMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines three fast simple moving averages (SMAs) with a long-term SMA and a volume filter. A long position opens when the fastest SMA is above the middle SMA, the middle is above the slow SMA, price is above the long SMA, and volume exceeds its average by a configurable multiplier. Short positions require the opposite alignment.
 

@@ -1,5 +1,5 @@
 # Rally Base Drop SND Pivots Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Rally Base Drop SND Pivots strategy trades breakouts of supply and demand pivot levels. Pivots are detected when sequences of bullish and bearish candles form rally-base-drop or drop-base-rally patterns. When price crosses these pivot levels, a position is opened. Exits use an ATR-based stop and a risk-reward target.
 

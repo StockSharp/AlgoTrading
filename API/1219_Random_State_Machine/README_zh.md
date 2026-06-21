@@ -1,3 +1,4 @@
 # Random State Machine Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 随机状态机策略在随机状态改变并且价格位于移动平均线之上或之下时开仓。状态改变且价格高于均线时做多，低于均线时做空。策略可选用止盈止损、持仓时间限制以及均线交叉退出。

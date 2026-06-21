@@ -1,5 +1,5 @@
 # 随机抛硬币策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该实验性策略每隔 N 根K线抛一次硬币，根据结果做多或做空。风险通过基于ATR的止损和止盈控制。
 

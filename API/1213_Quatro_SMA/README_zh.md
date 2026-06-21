@@ -1,5 +1,5 @@
 # Quatro SMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合三条短期简单移动平均线和一条长期SMA，并使用成交量过滤。 当SMA1高于SMA2、SMA2高于SMA3、价格高于长期SMA且成交量超过其平均值的倍数时开多；做空条件相反。
 

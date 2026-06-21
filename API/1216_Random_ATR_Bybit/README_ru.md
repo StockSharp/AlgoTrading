@@ -1,5 +1,5 @@
 # Случайная ATR стратегия - Bybit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия генерирует псевдослучайный сигнал на основе недавнего диапазона цен и текущей даты. Покупает при сигнале 1 и продаёт при сигнале 0. Управление риском выполняется через уровни стоп-лосса и тейк-профита по ATR.
 

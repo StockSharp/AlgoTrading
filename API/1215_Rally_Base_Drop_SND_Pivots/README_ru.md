@@ -1,5 +1,5 @@
 # Стратегия Rally Base Drop SND Pivots
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Rally Base Drop SND Pivots торгует пробои уровней спроса и предложения. Пивоты определяются по последовательности бычьих и медвежьих свечей, формирующих паттерны rally-base-drop или drop-base-rally. При пересечении ценой таких уровней открывается позиция. Выход выполняется по стопу на основе ATR и цели по соотношению риск/прибыль.
 

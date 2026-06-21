@@ -1,5 +1,5 @@
 # 随机ATR策略 - Bybit
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据近期价格区间和当前日期生成确定性的随机信号。信号为1时做多，为0时做空。风险管理使用基于ATR的止损和止盈。
 

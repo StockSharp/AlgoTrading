@@ -1,5 +1,5 @@
 # 定量趋势策略——多头上升
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价突破最近的枢轴高点时，本策略做多。支撑和阻力水平基于枢轴高点和低点计算，并使用百分比止盈和止损保护持仓。
 

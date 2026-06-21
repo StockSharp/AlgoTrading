@@ -1,5 +1,5 @@
 # Rally Base Drop SND Pivots 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Rally Base Drop SND Pivots 策略基于供需枢轴的突破进行交易。枢轴通过多头和空头蜡烛序列形成的 rally-base-drop 或 drop-base-rally 模式来检测。当价格突破这些水平时开仓。退出使用基于 ATR 的止损以及风险回报目标。
 
