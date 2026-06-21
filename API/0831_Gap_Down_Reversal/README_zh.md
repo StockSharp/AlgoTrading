@@ -1,5 +1,5 @@
 # Gap Down Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gap Down Reversal 利用低开后的看涨反转。
 当新的蜡烛开盘价低于前一根的最低点但收盘价高于开盘价时，通常预示着可能的反弹。

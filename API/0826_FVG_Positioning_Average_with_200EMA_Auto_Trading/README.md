@@ -1,5 +1,5 @@
 # FVG Positioning Average with 200EMA Auto Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy averages the levels of bullish and bearish fair value gaps (FVG) and combines them with a 200-period EMA. A trade is opened when price crosses these averages in the direction of the trend.
 

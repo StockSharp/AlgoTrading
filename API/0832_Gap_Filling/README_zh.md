@@ -1,5 +1,5 @@
 # Gap Filling Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gap Filling 策略在新交易日开盘时寻找价格跳空。出现跳空时，策略默认反向开仓并期望价格回补到前一日水平；若启用 `Invert` 参数，则顺势交易并在跳空水平设置止损。
 

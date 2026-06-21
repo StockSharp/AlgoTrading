@@ -1,5 +1,5 @@
 # Стратегия Gap Down Reversal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gap Down Reversal ищет бычий разворот после открытия с понижением.
 Если новая сессия открывается ниже минимума предыдущей свечи, но закрывается выше цены открытия, это указывает на вероятный разворот вверх.

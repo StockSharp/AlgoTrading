@@ -1,5 +1,5 @@
 # 甘氏拉普拉斯混合VSA
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将甘氏风格的趋势滤波与拉普拉斯平滑的成交量价差分析（VSA）结合使用。VSA 值通过价格差与K线范围之比乘以成交量计算，再通过 EMA 平滑。当平滑后的 VSA 与价格相对于趋势均线的方向一致时入场。
 

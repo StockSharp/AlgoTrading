@@ -1,5 +1,5 @@
 # FVG Positioning Average with 200EMA Auto Trading 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对多头和空头公平价值缺口（FVG）的水平进行平均，并结合200周期EMA。当价格沿趋势方向突破这些平均值时开仓。
 

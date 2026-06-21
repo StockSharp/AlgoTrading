@@ -1,5 +1,5 @@
 # Gann Swing Multi Layer
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用简化的多层甘氏摆动分析。
 当三个连续摆动方向一致时开仓。

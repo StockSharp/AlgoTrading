@@ -1,5 +1,5 @@
 # Gap Filling Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Gap Filling** ищет ценовые разрывы между сессиями и торгует их заполнение. По умолчанию она открывает позицию против направления гэпа, ожидая возврата цены к уровню предыдущего дня. При включённом параметре `Invert` торгует в направлении гэпа и использует этот уровень как стоп.
 

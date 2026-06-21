@@ -1,5 +1,5 @@
 # Gap Filling Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gap Filling Strategy looks for overnight price gaps at the start of a new session. When a gap appears, the strategy either fades it expecting a move back to the previous day's price or, if inverted, trades in the direction of the gap with a stop at the gap level.
 
