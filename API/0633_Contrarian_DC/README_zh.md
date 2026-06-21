@@ -1,5 +1,5 @@
 # 逆势DC策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 逆势DC策略利用Donchian通道在价格触及通道边界时反向交易。价格触及下轨时买入，触及上轨时卖出。若止损被触发，则在相同方向的交易中暂停指定根数的K线。风险控制基于百分比止损和按风险回报比设定的止盈。
 

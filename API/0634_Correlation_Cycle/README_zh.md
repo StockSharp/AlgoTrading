@@ -1,5 +1,5 @@
 # 相关周期策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现 John Ehlers 的相关周期、相关角和市场状态思想。它计算价格与正弦/余弦分量的相关性以获得相关角。当角度稳定且为正时进入多头，当角度稳定且为负时建立空头。
 

@@ -1,5 +1,5 @@
 # 相关性数组策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算最多六个品种的滚动相关矩阵。它根据可配置阈值记录相关性水平，帮助评估资产之间的关系。该策略仅用于分析，不执行交易。
 

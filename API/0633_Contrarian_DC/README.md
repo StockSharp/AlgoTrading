@@ -1,5 +1,5 @@
 # Contrarian DC Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Contrarian DC strategy fades Donchian Channel breakouts. It buys when price pierces the lower band and sells when price touches the upper band. After a stop-loss, entries in the same direction are paused for a number of candles. Risk management uses symmetric stop-loss and take-profit based on a risk/reward ratio.
 

@@ -1,5 +1,5 @@
 # Consecutive Bars Above Below EMA Buy The Dip
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在连续若干根K线收盘价低于移动平均线后买入，当收盘价突破前一根K线的最高价时平仓。
 

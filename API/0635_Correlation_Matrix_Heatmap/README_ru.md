@@ -1,4 +1,4 @@
 # Стратегия Correlation Matrix Heatmap
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия выводит матрицу корреляции для максимум семи выбранных инструментов. Она подписывается на все инструменты, сглаживает цену закрытия скользящей средней и записывает корреляции со временем и между инструментами. Торговые операции не выполняются.

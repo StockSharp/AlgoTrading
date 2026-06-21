@@ -1,4 +1,4 @@
 # 相关矩阵热图策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在最多七个选择的品种之间计算相关矩阵。它订阅所有品种，使用移动平均线平滑收盘价，并记录与时间及彼此之间的相关性，不进行交易。

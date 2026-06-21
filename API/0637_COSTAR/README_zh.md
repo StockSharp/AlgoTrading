@@ -1,5 +1,5 @@
 # COSTAR策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 COSTAR策略基于收盘价的线性回归，并计算残差的标准差。通过在回归线上加减标准差乘以系数形成上下轨。当价格偏离过大并回到回归线时进行交易，以寻求均值回归。
 
