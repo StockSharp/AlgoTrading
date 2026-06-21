@@ -1,4 +1,5 @@
 # Color Schaff MFI Trend Cycle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a translation of the MQL5 expert `Exp_ColorSchaffMFITrendCycle`.
 It employs the **Color Schaff MFI Trend Cycle** indicator, which combines

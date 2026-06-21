@@ -1,4 +1,5 @@
 # Color Schaff RVI Trend Cycle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements the Color Schaff RVI Trend Cycle using the StockSharp high level API. The indicator applies a double stochastic process to the difference between fast and slow Relative Vigor Index values and smooths the result.
 

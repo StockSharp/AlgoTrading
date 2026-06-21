@@ -1,4 +1,5 @@
 # Стратегия ColorMaRsi Trigger
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия представляет собой порт оригинального эксперта MQL5 `exp_colormarsi-trigger.mq5` на платформу StockSharp. Используются короткие и длинные EMA, а также RSI. Суммарный сигнал принимает значения -1, 0 или +1. Позиция открывается при смене знака сигнала.
 

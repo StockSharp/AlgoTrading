@@ -1,5 +1,5 @@
 # Color Schaff RSI Trend Cycle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Color Schaff RSI Trend Cycle (STC) 振荡器的趋势跟随系统。策略依据 STC 指标颜色的变化来开仓和平仓多空仓位。
 

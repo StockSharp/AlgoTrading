@@ -1,4 +1,5 @@
 # Color Schaff MFI Trend Cycle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略翻译自 MQL5 专家 `Exp_ColorSchaffMFITrendCycle`。
 它使用 **Color Schaff MFI Trend Cycle** 指标，将快速和慢速 MFI

@@ -1,4 +1,5 @@
 # Color Schaff RVI Trend Cycle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 中实现 Color Schaff RVI Trend Cycle 指标。该指标对快速和慢速 RVI 的差值应用双重随机过程并对结果进行平滑处理。
 

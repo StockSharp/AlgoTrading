@@ -1,5 +1,5 @@
 # 护航趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 护航趋势策略结合快慢加权移动平均线（WMA）、MACD 和 CCI 共同确认信号。当快线 WMA 位于慢线之上、MACD 主线在信号线上方且 CCI 超过正阈值时开多头；相反条件满足时开空头。策略可选用固定止损、止盈和移动止损。
 

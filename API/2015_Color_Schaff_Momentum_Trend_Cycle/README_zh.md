@@ -1,5 +1,5 @@
 # Color Schaff Momentum Trend Cycle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Color Schaff Momentum Trend Cycle (STC) 指标。当指标从超买或超卖区域退出时，识别潜在的趋势反转。
 

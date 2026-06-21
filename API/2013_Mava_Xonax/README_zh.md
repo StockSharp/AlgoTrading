@@ -1,5 +1,5 @@
 # MAVA Xonax 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用开盘价和收盘价的指数移动平均线来识别方向变化。止损和止盈距离基于最高价和最低价的EMA计算，从而在交易中预先设定风险和收益。
 

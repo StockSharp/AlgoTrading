@@ -1,4 +1,5 @@
 # ColorMaRsi Trigger Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the original MQL5 expert `exp_colormarsi-trigger.mq5`. It compares fast and slow EMAs and fast and slow RSI values. The combined signal takes values -1, 0 or +1. A position is opened when the previous signal has the opposite sign to the current one.
 

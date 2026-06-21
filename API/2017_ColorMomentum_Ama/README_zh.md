@@ -1,5 +1,5 @@
 # Color Momentum AMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 专家顾问 *Exp_ColorMomentum_AMA* 转换为 StockSharp。
 它计算指定周期的价格动量，并使用 Kaufman 自适应移动平均线 (AMA) 进行平滑。

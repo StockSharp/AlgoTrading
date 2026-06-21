@@ -1,4 +1,5 @@
 # ColorMaRsi Trigger 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是原始 MQL5 专家 `exp_colormarsi-trigger.mq5` 的 StockSharp 版本。它比较快慢 EMA 以及快慢 RSI 的值，组合信号取值 -1、0 或 +1。当当前信号与前一个信号符号不同时开仓。
 

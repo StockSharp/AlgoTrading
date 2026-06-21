@@ -1,5 +1,5 @@
 # Стратегия Color Schaff RSI Trend Cycle
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая система, основанная на осцилляторе Color Schaff RSI Trend Cycle (STC). Стратегия реагирует на изменения цвета индикатора для открытия и закрытия длинных и коротких позиций.
 
