@@ -1,5 +1,5 @@
 # Separated Moving Average
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит отдельные скользящие средние для бычьих и медвежьих закрытий. Лонг открывается, когда бычья средняя поднимается выше медвежьей, а шорт — при обратном пересечении. Поддерживает SMA, EMA или HMA и может работать по ценам Heikin Ashi.
 

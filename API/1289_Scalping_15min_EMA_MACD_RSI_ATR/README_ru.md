@@ -1,5 +1,5 @@
 # Скальпинг 15m EMA MACD RSI ATR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Скальпинговая стратегия, сочетающая фильтр тренда по EMA 50, импульс по гистограмме MACD и уровни RSI. Управление риском основано на стоп-лоссе и тейк-профите по ATR.
 

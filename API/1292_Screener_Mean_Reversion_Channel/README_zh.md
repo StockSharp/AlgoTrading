@@ -1,5 +1,5 @@
 # Screener Mean Reversion Channel 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用移动平均线和ATR构建均值回归通道。当价格收于上轨之上时做空，收于下轨之下时做多。当价格回到均线附近时平仓。
 

@@ -1,5 +1,5 @@
 # Scalping Strategy By TradingConToto
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Scalping Strategy by TradingConToto draws lines between consecutive pivot highs or lows depending on EMA trend. When price crosses above a descending pivot-high line during an uptrend, the strategy enters long. When price falls below an ascending pivot-low line during a downtrend, it enters short. Trading is allowed only during a specified session.
 

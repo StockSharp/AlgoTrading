@@ -1,5 +1,5 @@
 # Scale In Scale Out 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过在每根K线投入可用资金的固定百分比来逐步建立头寸。当头寸价值达到设定的盈利阈值时，策略会卖出部分仓位，并可选择保留部分已实现利润。
 

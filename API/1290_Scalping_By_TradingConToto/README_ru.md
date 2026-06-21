@@ -1,5 +1,5 @@
 # Стратегия Scalping Strategy By TradingConToto
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Scalping Strategy By TradingConToto строит линии между последовательными пивот-хаями или пивот-лоу в зависимости от тенденции EMA. При восходящем тренде и пробое цены выше нисходящей линии пивот-хая открывается длинная позиция. При нисходящем тренде и пробое цены ниже восходящей линии пивот-лоу открывается короткая позиция. Торговля ведётся только в заданную сессию.
 

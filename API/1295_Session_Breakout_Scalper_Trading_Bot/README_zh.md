@@ -1,5 +1,5 @@
 # Session Breakout Scalper Trading Bot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Session Breakout Scalper 在预定义的交易时段形成的价格区间突破时入场。
 

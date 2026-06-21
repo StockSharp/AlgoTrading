@@ -1,5 +1,5 @@
 # 分离移动平均
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略为上涨和下跌收盘分别构建移动平均。当上涨平均线向上穿越下跌平均线时做多，反向穿越时做空。支持 SMA、EMA 或 HMA，并可使用 Heikin Ashi 价格。
 

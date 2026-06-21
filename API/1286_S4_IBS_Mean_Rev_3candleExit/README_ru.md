@@ -1,5 +1,5 @@
 # Стратегия S4 IBS Mean Rev 3candleExit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда внутренняя сила бара (IBS) предыдущей свечи ниже порога, рассчитывая на возврат к среднему. Выход происходит при закрытии цены выше входа или после трёх свечей, если сделка остаётся убыточной.
 

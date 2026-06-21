@@ -1,5 +1,5 @@
 # Safa Bot Alert 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Safa Bot Alert 策略利用短期 SMA 和 ADX 过滤器进行趋势交叉交易。价格上穿 SMA 且 ADX 高于阈值时做多，下穿且 ADX 高于阈值时做空。策略使用固定止盈、止损和跟踪止损，并在指定的会话时间平仓所有仓位。
 

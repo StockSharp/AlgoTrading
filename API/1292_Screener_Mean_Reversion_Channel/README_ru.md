@@ -1,5 +1,5 @@
 # Стратегия Screener Mean Reversion Channel
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует по каналу возврата к среднему, построенному на скользящей средней и ATR. Продажа происходит при закрытии выше верхней границы, покупка — при закрытии ниже нижней. Позиция закрывается при возврате цены к среднему.
 

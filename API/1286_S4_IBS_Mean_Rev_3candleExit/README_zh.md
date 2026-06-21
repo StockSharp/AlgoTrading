@@ -1,5 +1,5 @@
 # S4 IBS Mean Rev 3candleExit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当上一根K线的内部强度 (IBS) 低于阈值时，本策略买入，预期价格回归均值。若价格收盘高于入场价则平仓，或在交易仍亏损的情况下持有最多三根K线后退出。
 

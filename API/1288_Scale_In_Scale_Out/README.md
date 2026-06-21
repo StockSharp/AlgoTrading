@@ -1,5 +1,5 @@
 # Scale In Scale Out Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy gradually builds a position by investing a fixed percentage of available cash on each bar. When the position value reaches a configurable profit level, it sells a portion of the position and optionally keeps part of the realised profit aside.
 

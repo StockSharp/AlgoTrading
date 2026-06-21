@@ -1,5 +1,5 @@
 # Screener Mean Reversion Channel Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy trades a mean reversion channel built from a moving average and ATR. It sells when price closes above the upper band and buys when price closes below the lower band. Positions are closed when price returns to the mean line.
 
