@@ -1,4 +1,5 @@
 # Perceptron AC 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Accelerator Oscillator (AC) 构建简单感知器。
 当前蜡烛及历史 7、14、21 根蜡烛的 AC 值与可调权重相乘，

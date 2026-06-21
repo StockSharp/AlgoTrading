@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Turtle Trader V1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Turtle Trader V1 combines multiple momentum oscillators with a moving average filter. A long position is opened when the fast EMA is above the slow EMA and RSI, Stochastic, CCI, Momentum and Chaikin oscillator all point upward. Shorts require the opposite conditions.
 

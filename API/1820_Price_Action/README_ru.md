@@ -1,5 +1,5 @@
 # Стратегия Price Action
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Стратегия Price Action** попеременно открывает длинные и короткие сделки, как только закрывается предыдущая позиция.
 Она использует фиксированную дистанцию стоп-лосса, целевой профит, основанный на множителе, и опциональный трейлинг-стоп с настраиваемым шагом.

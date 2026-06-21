@@ -1,4 +1,5 @@
-[English](README.md) | [中文](README_zh.md)
+# Стратегия Turtle Trader V1
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Turtle Trader V1 объединяет несколько осцилляторов импульса с фильтром скользящих средних. Длинная позиция открывается, когда быстрая EMA выше медленной, а RSI, Stochastic, CCI, Momentum и Chaikin oscillator направлены вверх. Для короткой позиции условия обратные.
 

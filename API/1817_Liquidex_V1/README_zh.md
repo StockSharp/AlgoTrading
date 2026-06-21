@@ -1,4 +1,5 @@
 # Liquidex V1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Liquidex V1 是从原始 MQL 智能交易系统转换而来的剥头皮策略。该策略结合 **范围过滤器** 与 **加权移动平均线（WMA）** 来捕捉短期突破。
 

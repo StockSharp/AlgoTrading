@@ -1,4 +1,5 @@
 # Стратегия Liquidex V1
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Liquidex V1 — скальперская стратегия, конвертированная из оригинального советника MQL. Она использует **фильтр диапазона** и **взвешенное скользящее среднее (WMA)** для поиска краткосрочных пробоев.
 

@@ -1,5 +1,5 @@
 # Mad Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Mad Trader 是从原始 MQL 专家“madtrader-8.7”移植而来的趋势跟随策略。它结合 ATR 和 RSI 指标，在波动率较低但开始上升的时段寻找回调。当 ATR 低于设定阈值但仍在上升，并且 RSI 在总体趋势方向上增加时，若蜡烛实体位于设定范围内，策略将按 RSI 指示的方向开仓。仓位通过跟踪止损和篮子收益机制保护，当账户权益达到目标增幅时关闭所有交易。
 

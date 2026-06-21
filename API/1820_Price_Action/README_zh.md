@@ -1,5 +1,5 @@
 # Price Action 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Price Action 策略** 在上一笔交易平仓后交替开立多头和空头市价单。
 该策略使用固定止损距离、基于倍数的止盈目标，以及可选的带步长的跟踪止损。

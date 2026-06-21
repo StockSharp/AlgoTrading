@@ -1,4 +1,5 @@
 # Liquidex V1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Liquidex V1 is a breakout scalping strategy converted from the original MQL expert advisor. It combines a **range filter** and a **weighted moving average (WMA)** to identify short‑term opportunities.
 

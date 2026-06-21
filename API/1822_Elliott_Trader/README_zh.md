@@ -1,4 +1,5 @@
 # Elliott Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当四小时周期的随机指标达到极值时，该策略会开启分层仓位。它先执行市价单，然后在配置好的点差上方或下方挂出一系列限价单。当达到盈利目标并且趋势由移动平均线和布林带确认后，策略将平仓。
 

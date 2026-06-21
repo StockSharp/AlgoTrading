@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [English](README.md)
+# Turtle Trader V1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Turtle Trader V1 将多种动量振荡指标与移动平均过滤器结合。 当快速 EMA 高于慢速 EMA 并且 RSI、随机指标、CCI、动量和 Chaikin 振荡器全部向上时开多单。 空头需要相反条件。
 

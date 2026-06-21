@@ -1,4 +1,5 @@
 # Elliott Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A strategy that opens layered positions when the Stochastic oscillator reaches extreme values on four-hour candles. It places an initial market order followed by a grid of limit orders. Positions are closed once a profit target is reached and the trend is confirmed by moving averages and Bollinger Bands.
 

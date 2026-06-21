@@ -1,5 +1,5 @@
 # BuySell 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模拟 MetaTrader 中的 **BuySell** 专家。它结合移动平均线和平均真实波幅 (ATR) 来识别趋势反转。
 当移动平均线转为向上时视为多头趋势，转为向下时视为空头趋势。

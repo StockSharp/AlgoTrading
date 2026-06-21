@@ -1,5 +1,5 @@
 # BuySell Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy emulates the **BuySell** MetaTrader expert. It combines a moving average with the Average True Range (ATR) to detect trend reversals.
 When the moving average turns upward, the system considers the market bullish; when it turns downward, it considers the market bearish.

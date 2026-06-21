@@ -1,4 +1,5 @@
 # Стратегия Perceptron AC
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия реализует простейший персептрон на базе индикатора Accelerator Oscillator (AC).
 Значение AC текущей свечи и трех прошлых смещений умножаются на настраиваемые веса.

@@ -1,5 +1,5 @@
 # Price Action Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Price Action Strategy** alternates between long and short market orders whenever the previous position closes.
 It applies a fixed stop-loss distance, a leverage-based take-profit target, and an optional trailing stop that follows the market with a configurable step.
