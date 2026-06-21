@@ -1,5 +1,5 @@
 # 买入持有策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在指定的开始日期买入一次并一直持有到结束日期，实现简单的买入并持有方式。
 

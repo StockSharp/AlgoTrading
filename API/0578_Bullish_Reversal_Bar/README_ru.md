@@ -1,5 +1,5 @@
 # Стратегия Bullish Reversal Bar
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии №578 — Bullish Reversal Bar. Вход в лонг происходит, когда бычья разворотная свеча формируется ниже линий Аллигатора и цена пробивает максимум этой свечи. Дополнительно можно включить фильтры по Awesome Oscillator и Market Facilitation Index.
 

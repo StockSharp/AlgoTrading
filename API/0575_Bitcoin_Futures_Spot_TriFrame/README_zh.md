@@ -1,3 +1,4 @@
 # 比特币期货与现货三重时间框架策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在三个时间框架上交易比特币期货与现货之间的价差。当价差的 Z 分数在所有时间框架上超过多头阈值时做多，低于空头阈值时做空。可设置持仓天数，并可选百分比止盈和止损。

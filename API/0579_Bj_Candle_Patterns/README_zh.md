@@ -1,5 +1,5 @@
 # Bj Candle Patterns 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略识别“龙蜻十字星”和“墓碑十字星”形态。长下影的龙蜻十字星常预示多头反转，而长上影的墓碑十字星可能提示空头反转。检测到龙蜻十字星时做多，检测到墓碑十字星时做空。
 

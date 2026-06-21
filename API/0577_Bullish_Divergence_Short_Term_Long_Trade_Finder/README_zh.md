@@ -1,4 +1,5 @@
 # Bullish Divergence Short-term Long Trade Finder
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找价格与RSI之间的看涨背离。当价格创新低而RSI在指定的枢轴范围内形成更高的低点，并且小时RSI低于40时，策略做多。当RSI超过阈值、出现看跌背离或触发止损时平仓。
 

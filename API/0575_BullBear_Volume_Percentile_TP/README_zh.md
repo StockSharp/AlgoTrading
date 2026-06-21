@@ -1,5 +1,5 @@
 # BullBear Volume Percentile TP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Bull/Bear Power 指标并通过 Z-Score 标准化。
 当 Z-Score 向上突破阈值时做多，向下跌破负阈值时做空。

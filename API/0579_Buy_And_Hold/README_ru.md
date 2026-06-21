@@ -1,5 +1,5 @@
 # Стратегия Buy And Hold
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает одну длинную позицию в указанную дату начала и удерживает её до даты окончания, реализуя простой подход "купи и держи".
 

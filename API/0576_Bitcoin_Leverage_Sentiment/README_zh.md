@@ -1,5 +1,5 @@
 # 比特币杠杆情绪策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略分析比特币多头与空头仓位比率的Z分值。当Z分值上穿多头阈值时开多，在跌破多头退出水平时平仓。空头使用相反的阈值。可设置仅做多、仅做空或双向交易。
 

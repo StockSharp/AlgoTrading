@@ -1,5 +1,5 @@
 # 比特币动量
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 仅在价格位于更高周期EMA之上且不存在警戒条件时交易比特币，并通过ATR拖尾止损保护利润。
 

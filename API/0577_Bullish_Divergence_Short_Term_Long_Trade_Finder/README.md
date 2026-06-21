@@ -1,4 +1,5 @@
 # Bullish Divergence Short-term Long Trade Finder
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy searches for bullish divergences between price and RSI. When price makes a lower low but RSI forms a higher low within a specified pivot range and the hourly RSI is below 40, the strategy enters a long position. The position is closed when RSI rises above a threshold, a bearish divergence appears, or the stop loss is hit.
 

@@ -1,5 +1,5 @@
 # 比特币流动性突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在流动性和波动性较高且短期趋势看涨时建立多头仓位。当成交量高于其移动平均值乘以阈值时视为高流动性；当ATR高于其移动平均值时确认波动性。
 

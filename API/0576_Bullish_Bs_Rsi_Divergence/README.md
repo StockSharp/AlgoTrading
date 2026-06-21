@@ -1,5 +1,5 @@
 # Bullish B's RSI Divergence
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses RSI to detect regular and hidden bullish divergences with pivot points. Opens long trades on divergence and closes on bearish signals, RSI target, or trailing stop.
 

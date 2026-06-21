@@ -1,5 +1,5 @@
 # Стратегия Bj Candle Patterns
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ищет свечные модели «Драконьий Доджи» и «Надгробный Доджи». Первая с длинной нижней тенью указывает на возможный разворот вверх, вторая с длинной верхней тенью — на разворот вниз. При обнаружении Dragonfly Doji открывается длинная позиция, при Gravestone Doji — короткая.
 
