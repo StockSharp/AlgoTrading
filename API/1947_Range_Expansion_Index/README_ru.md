@@ -1,4 +1,5 @@
 # Стратегия Range Expansion Index
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикатор Томаса ДеМарка **Range Expansion Index (REI)** для оценки силы и слабости цены.
 Индикатор сравнивает текущие максимумы и минимумы с прошлыми ценами и колеблется в диапазоне положительных и отрицательных значений.

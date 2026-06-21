@@ -1,5 +1,5 @@
 # Anchored Momentum
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Anchored Momentum рассчитывает соотношение EMA и SMA закрытий свечей. При превышении верхнего порога открывается длинная позиция, при падении ниже нижнего порога — короткая. Противоположный сигнал закрывает открытую позицию.
 

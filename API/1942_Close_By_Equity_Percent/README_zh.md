@@ -1,5 +1,5 @@
 # 按权益百分比平仓策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略监控账户权益，当权益高于当前余额乘以指定倍数时平仓，旨在在账户增长到目标比例时锁定利润。策略使用K线进行周期性检查，不自行生成入场，只管理已有仓位。平仓后会更新基准余额，以便后续交易继续执行同一逻辑。
 

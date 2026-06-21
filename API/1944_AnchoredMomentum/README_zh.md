@@ -1,5 +1,5 @@
 # Anchored Momentum
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Anchored Momentum策略通过比较EMA与SMA的比值来衡量趋势强度。当动量突破上界时开多，跌破下界时开空，反向信号平仓。
 

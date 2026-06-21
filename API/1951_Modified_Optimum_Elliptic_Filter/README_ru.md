@@ -1,5 +1,5 @@
 # Стратегия Modified Optimum Elliptic Filter
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует индикатор *Modified Optimum Elliptic Filter*, описанный Джоном Элерсом, чтобы определять развороты направления. Индикатор представляет собой двухполюсный цифровой фильтр, сглаживающий среднее значение high и low по рекуррентной формуле:
 

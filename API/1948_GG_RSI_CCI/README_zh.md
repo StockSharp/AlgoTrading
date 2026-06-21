@@ -1,4 +1,5 @@
 # GG-RSI-CCI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复现 **GG-RSI-CCI** 指标策略。
 它结合 RSI 与 CCI 指标，并分别使用快慢均线进行平滑。当两个指标方向一致时开仓。

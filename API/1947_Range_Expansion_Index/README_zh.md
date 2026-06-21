@@ -1,4 +1,5 @@
 # Range Expansion Index 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现 Tom DeMark 的 **Range Expansion Index (REI)**，用于衡量价格的强弱。
 指标比较当前的高低价与过去的价格，在正负值之间波动。

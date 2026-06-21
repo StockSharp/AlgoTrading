@@ -1,5 +1,5 @@
 # Back to the Future 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该动量策略比较当前收盘价与若干分钟前的价格。当价格相对于历史价格上升超过设定阈值时，系统开多单；当价格低于负阈值时，系统开空单。理念是价格从过去水平大幅偏离通常意味着趋势正在形成。
 

@@ -1,5 +1,5 @@
 # Fisher Cyber Cycle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 Fisher 变换应用于 Ehlers 的 Cyber Cycle 指标。当 Fisher 线上穿其触发线时开多仓，当下穿触发线时开空仓。出现相反交叉时平仓或反向开仓。
 

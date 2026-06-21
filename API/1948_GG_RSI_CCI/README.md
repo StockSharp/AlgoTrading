@@ -1,4 +1,5 @@
 # GG-RSI-CCI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the **GG-RSI-CCI** MetaTrader expert advisor using the StockSharp high-level API.
 It combines the Relative Strength Index (RSI) and Commodity Channel Index (CCI) indicators, each smoothed by two moving averages.

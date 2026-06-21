@@ -1,5 +1,5 @@
 # Стратегия Fisher Cyber Cycle
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия применяет преобразование Фишера к индикатору Cyber Cycle Джона Эллерса. Длинная позиция открывается, когда линия Fisher пересекает свою триггерную линию снизу вверх, короткая — при пересечении сверху вниз. Позиция закрывается или разворачивается при обратном пересечении.
 

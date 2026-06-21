@@ -1,5 +1,5 @@
 # Elder Impulse System Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了 Elder 冲动系统，将指数移动平均线 (EMA) 的方向与 MACD 柱状图的动量结合。在较高级别的时间框架上，当看涨或看跌冲动减弱时开仓。
 

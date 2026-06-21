@@ -1,5 +1,5 @@
 # Modified Optimum Elliptic Filter 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 John F. Ehlers 描述的 *Modified Optimum Elliptic Filter* 指标来捕捉方向变化。该指标是一个双极数字滤波器，通过以下递归公式对每根 K 线的高低价平均值进行平滑：
 

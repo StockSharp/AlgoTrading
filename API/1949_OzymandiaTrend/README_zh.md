@@ -1,5 +1,5 @@
 # Ozymandias Trend
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Ozymandias 指标。该指标结合 ATR 与高低价的移动平均构建动态通道。方向由空转多时策略买入并平掉空头，多转空时卖出并平掉多头。可选的止盈和止损参数用于风险管理。
 
