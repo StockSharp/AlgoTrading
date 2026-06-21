@@ -1,5 +1,5 @@
 # PEAD Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在盈利公告后出现正向EPS惊喜且跳空上涨时交易。
 当价格在业绩公布后的第二天跳空上涨且近期表现良好时进场，

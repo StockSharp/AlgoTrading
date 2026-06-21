@@ -1,5 +1,5 @@
 # Pin Bar Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用带有趋势过滤的 Pin Bar 蜡烛，并根据 ATR 设置止损和止盈。SMA 上方的看涨 Pin Bar 开多，SMA 下方的看跌 Pin Bar 开空，波动性太低时跳过。
 

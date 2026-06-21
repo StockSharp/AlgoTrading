@@ -1,5 +1,5 @@
 # Polynomial Regression Bands Channel 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对最近价格进行多项式回归，并根据残差的标准差构建上下通道。当价格跌破下轨时开多头仓位，当价格突破上轨时开空头仓位。
 

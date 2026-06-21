@@ -1,5 +1,5 @@
 # PEAD Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пост-эрнингс дрейф после позитивного EPS сюрприза и гэпа вверх.
 Вход выполняется в день после отчёта, если цена открывается гэпом вверх и последние результаты положительные.

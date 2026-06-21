@@ -1,5 +1,5 @@
 # Стратегия Polynomial Regression Bands Channel
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия строит полиномиальную регрессию по последним ценам и формирует верхнюю и нижнюю полосы на основе стандартного отклонения остатков. Длинные позиции открываются, когда цена падает ниже нижней полосы, а короткие — когда цена поднимается выше верхней полосы.
 

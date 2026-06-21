@@ -1,5 +1,5 @@
 # Polynomial Regression Bands Channel Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy fits a polynomial regression line to recent prices and builds upper and lower bands from the standard deviation of residuals. Long positions are opened when price falls below the lower band and short positions are opened when price rises above the upper band.
 

@@ -1,5 +1,5 @@
 # 相位交叉策略（带区域）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当带有正偏移的平滑SMA向上穿越带有负偏移的EMA时开多，在相反穿越时平仓。
 

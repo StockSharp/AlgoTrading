@@ -1,5 +1,5 @@
 # Стратегия Post Open Long ATR Stop Loss Take Profit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию во время торговой сессии при пробое сопротивления, когда цена находится рядом с серединой полос Боллинджера. Используются фильтры EMA, RSI, ADX и ATR, выход осуществляется по стоп-лоссу и тейк-профиту на основе ATR.
 

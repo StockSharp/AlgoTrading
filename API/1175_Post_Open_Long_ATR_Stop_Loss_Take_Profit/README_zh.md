@@ -1,5 +1,5 @@
 # Post Open Long ATR Stop Loss Take Profit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在市场开盘时，当价格突破阻力且接近布林带中轨时开多。策略使用 EMA、RSI、ADX 和 ATR 过滤，退出通过基于 ATR 的止损和止盈完成。
 

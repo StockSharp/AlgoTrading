@@ -1,5 +1,5 @@
 # Стратегия Pivot Point SuperTrend TrendFilter
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Комбинирует SuperTrend, рассчитанный по пивотам, с фильтром тренда на основе SuperTrend и подтверждением скользящей средней. Торгует при смене тренда или сигнале от пивотного SuperTrend в заданном диапазоне дат.
 

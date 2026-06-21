@@ -1,5 +1,5 @@
 # Pivot Point SuperTrend TrendFilter Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines a pivot-based SuperTrend line with a SuperTrend trend filter and a moving average confirmation. Trades when the trend flips or when a pivot SuperTrend signal appears within a date window.
 
