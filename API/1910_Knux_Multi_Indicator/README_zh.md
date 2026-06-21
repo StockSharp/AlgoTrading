@@ -1,5 +1,5 @@
 # Knux 多指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合趋势强度与动量振荡指标来捕捉突破。当快速移动平均线上穿或下穿慢速移动平均并且ADX显示趋势强劲时，系统会进一步检查RVI、CCI和Williams %R，以确认动量方向且市场未处于极端状态。
 

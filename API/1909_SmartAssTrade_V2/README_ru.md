@@ -1,5 +1,5 @@
 # SmartAssTrade V2 Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия SmartAssTrade V2 использует гистограмму MACD и скользящие средние с периодом 20 на нескольких таймфреймах (1м, 5м, 15м, 30м, 60м) в сочетании с фильтрами Williams %R и RSI для фиксации тренда. Опциональный трейлинг-стоп защищает прибыль.
 

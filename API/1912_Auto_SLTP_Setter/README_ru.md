@@ -1,4 +1,5 @@
 # Стратегия Auto SL-TP Setter
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Утилита, автоматически выставляющая стоп-лосс и тейк-профит для открытых позиций, если они отсутствуют. Расстояние можно задать фиксированным числом пунктов или как множитель ATR.
 

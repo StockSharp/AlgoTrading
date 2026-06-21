@@ -1,4 +1,5 @@
 # Auto SL-TP Setter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Utility strategy that automatically attaches stop-loss and take-profit orders to open positions when they are missing. Distances can be defined as fixed pip values or multiples of the Average True Range (ATR).
 

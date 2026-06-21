@@ -1,4 +1,5 @@
 # Fibo Stop 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Fibo Stop 策略根据起始价和结束价之间的斐波那契回撤水平移动保护性止损。当价格突破新的斐波那契水平时，止损跟随该水平移动。

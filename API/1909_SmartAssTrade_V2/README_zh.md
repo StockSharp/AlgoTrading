@@ -1,5 +1,5 @@
 # SmartAssTrade V2 Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 SmartAssTrade V2策略在多重时间框架（1m、5m、15m、30m、60m）上使用MACD直方图和20周期移动平均线，并结合Williams %R和RSI过滤器捕捉趋势动量。可选的追踪止损用于保护利润。
 

@@ -1,4 +1,5 @@
 # Fibo Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Fibo Stop strategy trails the protective stop along Fibonacci retracement levels defined by two prices: start and end. The strategy opens a position in the direction from the start level to the end level and moves the stop to each new Fibonacci level once price crosses it.

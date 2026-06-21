@@ -1,4 +1,5 @@
 # Order Expert 策略 (1916)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格达到预设水平时，本策略会开仓。它模拟原始 MQL 专家通过图表线条管理订单的行为。
 

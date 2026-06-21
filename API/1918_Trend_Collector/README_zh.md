@@ -1,4 +1,5 @@
 # 趋势收集策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是原始 MQL `TrendCollector.mq4` 算法的转换版。它通过两条指数移动平均线结合动量与波动性过滤器来识别趋势。
 
