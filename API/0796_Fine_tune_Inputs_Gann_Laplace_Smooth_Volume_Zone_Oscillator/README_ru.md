@@ -1,4 +1,5 @@
 # Стратегия Fine-tune Inputs Gann + Laplace Smooth Volume Zone Oscillator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует осциллятор объёма, сглаженный экспоненциальными средними.
 Длинная позиция открывается, когда сглаженный осциллятор растёт выше порога.

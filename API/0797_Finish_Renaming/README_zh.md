@@ -1,5 +1,5 @@
 # Finish Renaming 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该工具策略会为指定目录中的所有 `.txt` 文件添加顺序的四位数字前缀。可设置起始编号和处理目录。
 

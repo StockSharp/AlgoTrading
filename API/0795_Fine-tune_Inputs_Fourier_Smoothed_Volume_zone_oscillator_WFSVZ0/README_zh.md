@@ -1,5 +1,5 @@
 # Fourier Smoothed Volume Zone Oscillator WFSVZ0
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于傅里叶平滑的成交量区域振荡器策略。当振荡器上升超过阈值时做多，下降到负阈值以下时做空。可在无信号时选择平掉所有仓位。
 

@@ -1,5 +1,5 @@
 # Follow Line Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于布林带突破构建跟随线，并可选择使用ATR偏移。 当跟随线方向改变时入场，可选择通过更高时间框架趋势确认。
 

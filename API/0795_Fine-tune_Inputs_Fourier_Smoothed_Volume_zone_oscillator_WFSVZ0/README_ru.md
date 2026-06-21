@@ -1,5 +1,5 @@
 # Fourier Smoothed Volume Zone Oscillator WFSVZ0
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия, использующая сглаженный по Фурье осциллятор объёмных зон. Открывает длинную позицию при росте осциллятора выше порога и короткую при падении ниже отрицательного порога. При желании закрывает позицию при отсутствии сигнала.
 

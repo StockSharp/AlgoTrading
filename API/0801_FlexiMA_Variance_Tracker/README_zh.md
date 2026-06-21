@@ -1,5 +1,5 @@
 # FlexiMA Variance Tracker 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 跟踪价格相对于移动平均线的偏差，当偏差超过波动阈值且 SuperTrend 方向确认时开仓。
 

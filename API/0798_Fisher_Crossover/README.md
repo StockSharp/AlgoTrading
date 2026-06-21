@@ -1,5 +1,5 @@
 # Fisher Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Fisher Transform indicator to enter long positions when the indicator crosses above its previous value while below 1. Positions are closed when the indicator crosses back below its previous value while above 1.
 

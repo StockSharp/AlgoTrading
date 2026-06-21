@@ -1,5 +1,5 @@
 # FlexiSuperTrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 SuperTrend 滤波与平滑的偏差振荡器。
 当价格与 SuperTrend 方向一致且振荡器确认动量时开仓。

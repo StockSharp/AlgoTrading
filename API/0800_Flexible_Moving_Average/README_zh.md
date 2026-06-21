@@ -1,5 +1,5 @@
 # Flexible Moving Average 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 根据前一周期收盘价与可配置移动平均线的交叉来调整仓位。收盘价跌破均线时按设定百分比减仓，上穿均线时恢复满仓。
 

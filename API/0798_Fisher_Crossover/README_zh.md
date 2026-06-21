@@ -1,5 +1,5 @@
 # Fisher 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Fisher 变换指标。当 Fisher 指标上穿其前一值且低于 1 时开多仓；当 Fisher 指标下穿其前一值且高于 1 时平仓。
 

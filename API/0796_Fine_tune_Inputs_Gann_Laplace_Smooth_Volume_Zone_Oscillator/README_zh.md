@@ -1,4 +1,5 @@
 # Fine-tune Inputs Gann + Laplace Smooth Volume Zone Oscillator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用经指数移动平均平滑的成交量振荡器。
 当平滑后的振荡器上穿阈值时开多仓；

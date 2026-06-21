@@ -1,5 +1,5 @@
 # Fourier Smoothed Volume Zone Oscillator WFSVZ0
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy using a Fourier-smoothed Volume Zone Oscillator. It goes long when the oscillator rises above a threshold and short when it falls below the negative threshold. Optionally closes open positions when no signal is present.
 
