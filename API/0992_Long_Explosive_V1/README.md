@@ -1,5 +1,5 @@
 # Long Explosive V1 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Long Explosive V1 enters a long position when the close price jumps by a defined percentage relative to the previous bar. The position is closed when price drops by the configured percentage or before opening a new long trade.
 

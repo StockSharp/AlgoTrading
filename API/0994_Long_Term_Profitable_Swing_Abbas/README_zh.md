@@ -1,5 +1,5 @@
 # Long Term Profitable Swing 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速 EMA 上穿慢速 EMA 且 RSI 高于设定阈值时，本策略开多。价格触及基于 ATR 的止损或止盈水平时退出。
 

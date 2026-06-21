@@ -1,5 +1,5 @@
 # LSMA Fast And Simple Alternative Calculation 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 `3 × WMA − 2 × SMA` 计算的快速近似 LSMA。当价格上穿 LSMA 时开多仓，下穿时开空仓。
 

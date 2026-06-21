@@ -1,5 +1,5 @@
 # 多指标多空策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI、ROC 和可选择的均线来产生多空信号，并使用基于 ATR 的跟踪止损退出。
 

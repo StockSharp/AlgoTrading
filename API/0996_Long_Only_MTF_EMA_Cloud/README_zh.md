@@ -1,5 +1,5 @@
 # 多头 MTF EMA 云
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当短期 EMA 上穿长期 EMA 时开多的 EMA 云交叉策略。使用固定百分比止损和止盈。
 

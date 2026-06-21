@@ -1,5 +1,5 @@
 # 长影十字突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略识别长影十字K线，在价格向上或向下突破该十字范围时进行交易，可选的ATR过滤器确保影线足够长。
 

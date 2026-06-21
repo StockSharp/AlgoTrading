@@ -1,5 +1,5 @@
 # Стратегия Long Explosive V1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Long Explosive V1 открывает длинную позицию, когда цена закрытия резко возрастает на заданный процент относительно предыдущей свечи. Позиция закрывается при падении цены на указанный процент или перед открытием нового входа.
 

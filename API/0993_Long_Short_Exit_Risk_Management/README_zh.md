@@ -1,5 +1,5 @@
 # 长短方向风险管理策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此示例策略展示如何使用百分比风控来管理多空头寸。策略依赖价格等于预设值的触发条件，并可选用时间退出。
 

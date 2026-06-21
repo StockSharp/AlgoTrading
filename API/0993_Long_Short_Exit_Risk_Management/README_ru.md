@@ -1,5 +1,5 @@
 # Стратегия Long Short Exit Risk Management
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Шаблонная стратегия, демонстрирующая управление длинными и короткими позициями с процентными параметрами риска. Используются простые ценовые триггеры и опциональный выход по времени.
 

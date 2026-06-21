@@ -1,5 +1,5 @@
 # Стратегия Long Term Profitable Swing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда быстрая EMA пересекает сверху медленную EMA и RSI выше заданного порога. Выход осуществляется при достижении ценой уровней стоп-лосса или тейк-профита, основанных на множителях ATR.
 

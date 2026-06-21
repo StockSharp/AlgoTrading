@@ -1,5 +1,5 @@
 # 多头开盘区间突破（ORB）结合枢轴点
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格突破开盘区间高点且日枢轴点的第一阻力位 R1 高于该高点时，策略做多。止损沿枢轴点跟踪。
 

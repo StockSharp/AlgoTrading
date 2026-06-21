@@ -1,5 +1,5 @@
 # Стратегия Long-Leg Doji Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия определяет свечи длинноногого доджи и торгует пробой выше или ниже его диапазона. Дополнительный фильтр ATR гарантирует достаточную длину теней.
 

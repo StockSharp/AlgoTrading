@@ -1,5 +1,5 @@
 # LUBE 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过扫描历史K线来衡量当前收盘价周围的“摩擦”，并使用FIR滤波器确定趋势方向。
 

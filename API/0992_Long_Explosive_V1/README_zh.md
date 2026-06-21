@@ -1,5 +1,5 @@
 # Long Explosive V1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价相对上一根K线上涨达到设定百分比时，Long Explosive V1 开多。若价格下跌超过设定百分比或在新多单前，平掉持仓。
 
