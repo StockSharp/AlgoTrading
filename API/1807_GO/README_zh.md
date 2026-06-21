@@ -1,4 +1,5 @@
 # GO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于开盘价、高价、低价和收盘价的指数移动平均线（EMA）以及成交量计算综合 **GO** 数值，并根据 GO 的符号和阈值进行交易决策。
 

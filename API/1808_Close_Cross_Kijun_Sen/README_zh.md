@@ -1,5 +1,5 @@
 # Kijun-sen 交叉平仓策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略作为持仓管理工具。当收盘价穿越一目均衡表中的 Kijun-sen 线时，自动平掉当前持仓。
 

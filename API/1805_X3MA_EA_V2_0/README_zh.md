@@ -1,4 +1,5 @@
 # 三重均线交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于三条移动平均线（快线、中线、慢线）之间的关系进行交易，源自 MQL EA **X3MA_EA_V2_0**。
 

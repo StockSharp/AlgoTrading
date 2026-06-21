@@ -1,5 +1,5 @@
 # Lucky Jump 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lucky Jump 策略是一种超短线的均值回归系统，它根据最新的买一卖一报价的突然跳动来交易。当卖价相比上一笔报价向上跳动预设的点数时，策略做空并期待价格回落；当买价向下跳动同样的点数时，策略做多。持仓在出现任何盈利后立即平仓，如果亏损超过设定的限制也会立即退出。
 

@@ -1,5 +1,5 @@
 # Close Cross MA Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控简单移动平均线，当收盘价穿越均线时自动平掉当前持仓。它适用于使用其他系统或手动开仓的交易者，用于在趋势反转时自动退出。
 

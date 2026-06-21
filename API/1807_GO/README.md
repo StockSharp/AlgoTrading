@@ -1,4 +1,5 @@
 # GO Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy calculates a composite **GO** value based on exponential moving averages (EMA) of open, high, low, and close prices multiplied by volume. Trading decisions are made according to the sign and level of the GO value.
 

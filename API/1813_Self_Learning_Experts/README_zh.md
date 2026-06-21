@@ -1,5 +1,5 @@
 # 自学习专家策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略从历史的二进制价格模式中学习，估算未来上涨或下跌的概率。当概率超过阈值时，在对应方向开仓。统计数据通过遗忘因子逐渐衰减，以强调最新行情。策略还可以在出现新信号时移动止损/止盈，并支持按价格步长的追踪止损。
 

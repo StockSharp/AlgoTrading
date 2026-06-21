@@ -1,5 +1,5 @@
 # E TurboFx Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Momentum reversal strategy adapted from the MQL5 expert "e-TurboFx". The system watches for a series of candles whose bodies grow in size in the same direction. After several bearish candles with expanding bodies the strategy buys, expecting a rebound. After several bullish candles with growing bodies it sells. Optional stop-loss and take-profit are set in raw price points.
 

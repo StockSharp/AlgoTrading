@@ -1,5 +1,5 @@
 # Close Cross MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy monitors a simple moving average (MA) and automatically closes any open position when the candle close crosses the MA line. It is designed for traders who manage entries manually or with other systems but want an automated exit once the trend reverses.
 

@@ -1,5 +1,5 @@
 # Coensio Swing Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于用户定义趋势线的突破策略。通过参数提供的斜率和截距计算多空趋势线。当收盘价高于买入线加上阈值时开多单；当收盘价低于卖出线减去阈值时开空单。
 

@@ -1,5 +1,5 @@
 # Hardcore FX Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия адаптирована из эксперта MetaTrader "HardcoreFX". Она отслеживает максимумы и минимумы по индикатору ZigZag и открывает позиции при выходе цены за эти уровни. Для управления рисками используется фиксированный стоп-лосс, тейк-профит и трейлинг-стоп, защищающий накопленную прибыль.
 

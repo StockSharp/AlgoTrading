@@ -1,5 +1,5 @@
 # Coensio Swing Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trendline breakout strategy using user-defined trend lines. The strategy computes linear projections from slope and intercept parameters for both bullish and bearish lines. When the close price exceeds the projected buy line by a threshold, a long position is opened. When the price falls below the sell line minus the threshold, a short position is entered.
 

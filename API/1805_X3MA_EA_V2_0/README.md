@@ -1,4 +1,5 @@
 # Triple Moving Average Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the relationship between three moving averages: fast, medium and slow. It is a conversion of the **X3MA_EA_V2_0** MQL expert.
 

@@ -1,5 +1,5 @@
 # E TurboFx 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 MQL5 专家顾问“e-TurboFx”的 StockSharp 实现。策略监控同方向蜡烛实体逐渐增大的序列。当出现多根实体不断增大的阴线时买入，预期价格反转；当出现多根实体不断增大的阳线时卖出。止损和止盈以价格点数形式设置，可选。
 
