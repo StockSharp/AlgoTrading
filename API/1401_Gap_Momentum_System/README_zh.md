@@ -1,5 +1,5 @@
 # Gap Momentum System 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 实现 Perry Kaufman 的 Gap Momentum 系统。该策略比较向上与向下的累积缺口，当信号上升或下降时进行交易。
 

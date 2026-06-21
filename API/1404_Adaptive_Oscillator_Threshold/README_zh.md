@@ -1,5 +1,5 @@
 # Adaptive Oscillator Threshold 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Adaptive Oscillator Threshold 使用基于 Bufi 自适应阈值 (BAT) 的动态阈值 RSI。当 RSI 低于固定水平或自适应阈值时买入。
 

@@ -1,5 +1,5 @@
 # Gap Momentum System Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements the gap momentum system from Perry Kaufman. The strategy compares accumulated up and down gaps and trades when the signal rises or falls.
 

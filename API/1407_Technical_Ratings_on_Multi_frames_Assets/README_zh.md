@@ -1,5 +1,5 @@
 # 技术评级多时间框架资产策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略综合多个时间框架的技术评级。
 在1小时、4小时和日线级别上比较价格与简单移动平均线及RSI阈值。

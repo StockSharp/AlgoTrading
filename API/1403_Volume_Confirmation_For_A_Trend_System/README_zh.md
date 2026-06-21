@@ -1,5 +1,5 @@
 # 趋势系统的成交量确认策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用趋势冲力指标（TTI）、成交量价格确认指标（VPCI）和ADX来确认多头趋势。
 
