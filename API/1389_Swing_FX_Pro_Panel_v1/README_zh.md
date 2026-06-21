@@ -1,5 +1,5 @@
 # Swing FX Pro Panel v1
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 EMA 金叉死叉并带有简单统计信息的演示策略。 快速 EMA 向上穿越慢速 EMA 时做多，向下穿越时做空。 每笔交易使用固定的盈利和亏损目标。
 

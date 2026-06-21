@@ -1,5 +1,5 @@
 # Swing Breakout Strategy PRO
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格突破最近确认的波段高点或低点时入场的突破策略。 最新两个波段之间的距离用于设置止损和目标。
 

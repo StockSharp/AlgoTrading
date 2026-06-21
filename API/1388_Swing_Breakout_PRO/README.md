@@ -1,5 +1,5 @@
 # Swing Breakout Strategy PRO
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout strategy that trades when price closes beyond the last confirmed swing high or low. The distance between the latest swing points defines stop-loss and target levels.
 

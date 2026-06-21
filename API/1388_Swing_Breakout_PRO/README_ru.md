@@ -1,5 +1,5 @@
 # Swing Breakout Strategy PRO
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пробоя, входящая при закрытии цены за последним подтверждённым свинг-уровнем. Расстояние между последними свинг-хай и свинг-ло определяет уровни стоп-лосса и цели.
 

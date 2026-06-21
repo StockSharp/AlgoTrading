@@ -1,5 +1,5 @@
 # 摆动高低枢轴策略 [LV]
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略围绕已确认的摆动高点和低点进行交易。出现枢轴低点时在枢轴柱价位挂多单并设置固定止损与止盈；枢轴高点触发做空。可选的均线过滤器可限制交易方向。
 

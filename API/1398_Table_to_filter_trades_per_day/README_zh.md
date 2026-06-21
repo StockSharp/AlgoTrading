@@ -1,4 +1,5 @@
 # 按天过滤交易表策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用 SMA50 和 SMA200 的简单均线交叉策略，具有固定止盈和止损。
 

@@ -1,5 +1,5 @@
 # Стратегия Support Resistance MTF
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Вспомогательная стратегия, вычисляющая зоны поддержки и сопротивления на старшем таймфрейме. Максимумы и минимумы за настраиваемый период используются как уровни сопротивления и поддержки и выводятся в лог.
 
