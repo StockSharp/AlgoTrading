@@ -1,4 +1,5 @@
 # Tester v0.14 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This sample strategy is a simplified port of the MQL4 "Tester v0.14" script originally designed for EURUSD on the H4 timeframe.
 

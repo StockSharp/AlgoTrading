@@ -1,5 +1,5 @@
 # TradePad 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TradePad 策略是从原始 MQL TradePad 专家顾问移植的手动交易面板。该策略设置面板以交互方式管理交易，处理 tick 数据、交易通知、定时器事件和图表消息，没有任何自动进出场规则。
 

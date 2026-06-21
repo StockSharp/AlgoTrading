@@ -1,5 +1,5 @@
 # EMA 加 WPR v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 Williams %R 振荡器与 EMA 趋势过滤相结合。在回调后 WPR 触及极值时入场。支持基于 WPR 的退出、追踪止损以及按条数退出。
 

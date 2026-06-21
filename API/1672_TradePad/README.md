@@ -1,5 +1,5 @@
 # TradePad Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TradePad Strategy is a manual trading panel ported from the original MQL TradePad expert. The strategy sets up a panel to manage trades interactively. It processes tick data, trade notifications, timer events and chart messages without automated entry or exit rules.
 

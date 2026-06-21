@@ -1,5 +1,5 @@
 # Ride Alligator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ride Alligator 策略使用三个移动平均线，即 Alligator 指标。当嘴唇线从下向上穿过下颚线且牙齿线位于下颚线下方时开多仓；当嘴唇线从上向下穿过下颚线且牙齿线在下颚线上方时开空仓。开仓后使用下颚线作为跟踪止损。
 

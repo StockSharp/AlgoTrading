@@ -1,5 +1,5 @@
 # AI Grid Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AI Grid Strategy 在当前价格上下布置多层买卖订单。策略同时支持突破（停损）和逆势（限价）方式。每当订单成交后，会自动挂出固定距离的止盈单。
 

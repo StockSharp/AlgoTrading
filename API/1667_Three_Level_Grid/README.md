@@ -1,4 +1,5 @@
 # Three Level Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a symmetric grid trading system with up to three take profit ranks.
 Limit orders are placed above and below the current price at fixed intervals. When an entry

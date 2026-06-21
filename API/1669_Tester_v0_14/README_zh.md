@@ -1,4 +1,5 @@
 # Tester v0.14 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例策略是 MQL4 脚本 “Tester v0.14” 的简化移植，原策略针对 EURUSD 的 4 小时周期。
 

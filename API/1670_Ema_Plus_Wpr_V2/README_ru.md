@@ -1,5 +1,5 @@
 # Стратегия EMA plus WPR v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает осциллятор Williams %R с трендовым фильтром EMA. Сделки открываются при достижении WPR экстремальных значений после отката. Поддерживаются опциональные выходы по WPR, трейлинг-стоп и закрытие по количеству убыточных баров.
 

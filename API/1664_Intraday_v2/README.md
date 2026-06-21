@@ -1,5 +1,5 @@
 # Intraday v2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements an intraday mean reversion approach using two sets of Bollinger Bands. The outer bands (deviation 2.4) define entry zones while the inner bands (deviation 1) manage exits. Optional stop-loss and take-profit levels close positions when price moves against the trade by a configurable amount.
 

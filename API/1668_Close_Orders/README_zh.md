@@ -1,5 +1,5 @@
 # Close Orders Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该工具策略用于根据用户设定的过滤条件立即平掉现有仓位并取消挂单。它既可以只处理所选品种，也可以遍历整个投资组合。可选的时间窗口和价格区间限制能精确控制被处理的订单。
 
