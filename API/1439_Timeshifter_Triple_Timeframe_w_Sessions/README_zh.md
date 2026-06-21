@@ -1,5 +1,5 @@
 # Timeshifter 三重时间框架策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合三个不同的时间框架，可选 ADX 确认和交易时段过滤。
 

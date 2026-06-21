@@ -1,5 +1,5 @@
 # Tomas Ratio 多时间框分析策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在多个时间框架上累积加权涨跌，构建 Tomas Ratio 信号。当信号强度超过目标且价格位于 EMA(720) 之上时开多仓，当弱势占主导时平仓。
 

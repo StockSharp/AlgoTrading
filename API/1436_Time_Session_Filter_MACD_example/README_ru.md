@@ -1,5 +1,5 @@
 # Фильтр торговой сессии - пример MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия показывает использование временного фильтра с MACD и трендовой EMA. Торги ведутся только в заданные часы.
 

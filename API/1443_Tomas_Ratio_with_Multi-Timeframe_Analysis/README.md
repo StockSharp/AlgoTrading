@@ -1,5 +1,5 @@
 # Tomas Ratio Strategy with Multi-Timeframe Analysis
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy accumulates weighted gains and losses across multiple timeframes to build a Tomas Ratio signal. Trades are opened when the signal strength exceeds a target and closed when weakness dominates.
 

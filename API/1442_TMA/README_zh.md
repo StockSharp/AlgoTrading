@@ -1,5 +1,5 @@
 # TMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TMA 策略利用多条平滑移动平均线和 K 线形态，在 200 周期趋势方向上交易。它结合 3 线打击和吞没信号，并可选地使用交易时段过滤。
 

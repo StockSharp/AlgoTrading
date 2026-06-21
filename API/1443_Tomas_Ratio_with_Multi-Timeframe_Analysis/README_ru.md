@@ -1,5 +1,5 @@
 # Стратегия Tomas Ratio с многотаймфреймовым анализом
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия накапливает взвешенные прибыли и убытки на нескольких таймфреймах для построения сигнала Tomas Ratio. Сделки открываются при превышении целевого уровня сигнала и закрываются при преобладании слабости.
 

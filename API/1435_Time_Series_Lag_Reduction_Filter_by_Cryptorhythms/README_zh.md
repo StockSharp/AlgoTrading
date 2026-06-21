@@ -1,5 +1,5 @@
 # 时间序列滞后减少滤波
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用带滞后减少滤波的EMA，当价格与滤波线交叉时开仓。
 
