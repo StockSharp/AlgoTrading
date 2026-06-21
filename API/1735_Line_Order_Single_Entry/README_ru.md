@@ -1,4 +1,5 @@
 # Стратегия Line Order Single Entry
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Line Order — порт скрипта MQL4 «LineOrder» (10715). Стратегия открывает позицию, когда цена достигает заданной линии входа, и сопровождает сделку стоп‑лоссом, тейк‑профитом и опциональным трейлинг‑стопом.
 

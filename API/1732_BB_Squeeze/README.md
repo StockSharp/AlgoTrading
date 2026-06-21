@@ -1,5 +1,5 @@
 # BB Squeeze Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy monitors the contraction and expansion of Bollinger Bands to exploit volatility breakouts. It defines a squeeze as a period when the distance between the upper and lower Bollinger Bands becomes narrow relative to the middle band. Once volatility expands and price closes outside of the band after a squeeze, the system enters in the direction of the breakout.
 

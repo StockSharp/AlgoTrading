@@ -1,5 +1,5 @@
 # RGT RSI Bollinger Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the Relative Strength Index (RSI) with Bollinger Bands to spot mean-reversion opportunities. A long position is opened when RSI indicates an oversold market and price trades below the lower Bollinger Band. A short position is entered when RSI shows an overbought market and price rises above the upper band. The strategy applies an initial stop-loss and later trails the stop once a minimum profit is reached.
 

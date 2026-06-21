@@ -1,5 +1,5 @@
 # EMA MACD 信号趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速 EMA 高于慢速 EMA 且 MACD 信号线向上时，该策略做多；当快速 EMA 低于慢速 EMA 且信号线向下时做空。可选地使用止损、止盈和追踪止损。
 

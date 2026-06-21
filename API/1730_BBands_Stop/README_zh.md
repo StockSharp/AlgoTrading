@@ -1,5 +1,5 @@
 # BBands Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于布林带的 BBands Stop 指标跟随市场趋势。当止损线向上翻转时，策略将平掉空头并开多；当止损线向下翻转时，平掉多头并开空。参数可配置布林带周期、偏差、风险系数以及是否允许多空开仓或平仓。
 

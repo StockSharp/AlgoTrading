@@ -1,4 +1,5 @@
 # Line Order Single Entry 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Line Order 策略是 MQL4 脚本“LineOrder”(10715) 的移植版本。策略在市场价格达到预设的进场线时开仓，并通过止损、止盈以及可选的移动止损来管理仓位。
 

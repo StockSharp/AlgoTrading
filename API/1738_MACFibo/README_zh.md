@@ -1,5 +1,5 @@
 # MACFibo策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略实现MACFibo系统。当5周期EMA与20周期SMA发生交叉后，算法测量交叉柱收盘价（点A）到最近极值（点B）的距离，并构建斐波那契扩展水平。随后按市价开仓，止盈和止损来自这些水平。当快速EMA与中间SMA反向交叉且头寸亏损时，可选择提前平仓。
 

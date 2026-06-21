@@ -1,5 +1,5 @@
 # BB Squeeze 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过监控布林带的收缩与扩张来捕捉波动性突破。当上轨和下轨相对中轨变得非常靠近时，被视为进入“挤压”状态。若之后波动性增加并且价格在挤压结束后收于布林带之外，系统将按照突破方向开仓。
 

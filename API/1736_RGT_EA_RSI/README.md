@@ -1,4 +1,5 @@
 # RGT EA RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the **Relative Strength Index (RSI)** with **Bollinger Bands** to identify extreme price movements and trade potential reversals. Positions are opened when the RSI enters oversold or overbought zones and price crosses the Bollinger Bands. A stop loss and trailing stop manage risk and secure profits.
 

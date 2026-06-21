@@ -1,5 +1,5 @@
 # RGT RSI 布林带策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI 指标和布林带来寻找均值回归机会。当 RSI 处于超卖区且价格跌破下轨时开多单；当 RSI 处于超买区且价格突破上轨时开空单。入场后先设置初始止损，当达到最低盈利后启动跟踪止损。
 

@@ -1,4 +1,5 @@
 # Line Order Single Entry Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Line Order strategy is a translation of the MQL4 script "LineOrder" (10715). The strategy opens a position when the market price reaches a predefined entry line and then manages the position with stop-loss, take-profit, and optional trailing stop.
 

@@ -1,5 +1,5 @@
 # Break the Range Bound 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找三条移动平均线在狭窄区间内收敛的盘整期。当价格向上或向下突破该区间时，策略按突破方向开仓，尝试捕捉新的趋势。
 

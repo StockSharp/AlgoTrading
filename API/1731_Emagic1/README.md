@@ -1,5 +1,5 @@
 # EMA MACD Signal Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters long when a fast EMA is above a slow EMA and the MACD signal line is rising. It enters short when the fast EMA is below the slow EMA and the signal line is falling. Stop-loss, take-profit and trailing stop are optional.
 

@@ -1,5 +1,5 @@
 # 3rd Generation XMA Reversal
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Employs a double-smoothed exponential moving average known as the 3rd Generation XMA to spot local highs and lows. A long position is opened when the XMA turns upward from a local bottom. Shorts are initiated when the XMA reverses from a local top. Positions are reversed on opposite signals and no explicit stop or take profit is used.
 
