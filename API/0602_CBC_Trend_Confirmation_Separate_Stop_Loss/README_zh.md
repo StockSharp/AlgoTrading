@@ -1,5 +1,5 @@
 # CBC 策略：趋势确认与独立止损
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用蜡烛颜色变化 (CBC) 状态识别突破前一根蜡烛的高点或低点，并通过 EMA 与 VWAP 进行趋势确认，仅在指定时间窗口内入场。退出时根据 ATR 乘数设置止盈，并在突破前一根蜡烛的极值时止损。
 

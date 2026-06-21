@@ -1,5 +1,5 @@
 # CCI MACD
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines Commodity Channel Index crossovers with a MACD filter and EMA/ATR bands to trade in the trend direction.
 

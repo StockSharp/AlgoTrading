@@ -1,5 +1,5 @@
 # CCI + EMA 策略（百分比或 ATR TP/SL）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将商品通道指数（CCI）与可选的 EMA 趋势过滤和 RSI 确认结合使用。
 当 CCI 离开极端区域并且可选过滤器允许时开仓。

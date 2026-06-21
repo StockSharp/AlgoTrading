@@ -1,5 +1,5 @@
 # 船长回测模型策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 跟踪早盘价格区间以确定当天方向，在交易窗口内回调后突破入场。
 

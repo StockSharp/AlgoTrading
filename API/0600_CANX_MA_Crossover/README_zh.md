@@ -1,5 +1,5 @@
 # CANX MA Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于HL2价格的EMA交叉。当快EMA上穿慢EMA时开多；若未启用仅做多模式，则在快EMA下穿慢EMA时开空。起始年份参数用于过滤指定年份之前的交易。
 

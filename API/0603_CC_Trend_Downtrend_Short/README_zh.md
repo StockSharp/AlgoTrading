@@ -1,5 +1,5 @@
 # CC Trend 2 Downtrend Short 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅做空。当上一根K线收盘价低于动态斐波那契高点且EMA21低于EMA55时卖出。当价格上破EMA200并保持盈利，或上一根收盘价升至0.236斐波那契水平以上且没有新的做空信号时平仓。
 

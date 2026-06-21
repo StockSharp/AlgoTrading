@@ -1,5 +1,5 @@
 # Модель капитана: стратегия
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Отслеживает утренний ценовой диапазон для определения направления дня. Торгует пробои в торговом окне после отката.
 

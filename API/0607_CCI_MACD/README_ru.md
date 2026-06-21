@@ -1,5 +1,5 @@
 # CCI MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Комбинирует пересечения CCI с фильтром MACD и полосами EMA/ATR для торговли по тренду.
 

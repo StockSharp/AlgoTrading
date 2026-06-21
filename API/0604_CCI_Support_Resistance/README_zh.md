@@ -1,5 +1,5 @@
 # CCI 支撑阻力策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 CCI 枢轴构建动态支撑和阻力水平，并在交易这些水平的突破前使用基于 EMA 交叉或斜率的趋势过滤。
 

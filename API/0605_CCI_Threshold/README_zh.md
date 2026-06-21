@@ -1,5 +1,5 @@
 # Cci Threshold Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 CCI 阈值的简单策略。当 CCI 低于阈值时买入，当收盘价高于上一根收盘价时平仓。
 可选的止损和止盈（点数）。

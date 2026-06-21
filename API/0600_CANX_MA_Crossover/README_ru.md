@@ -1,5 +1,5 @@
 # Стратегия CANX MA Crossover
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пересечения EMA медианной цены (HL2). Лонг открывается при пересечении быстрой EMA выше медленной. Если режим только лонг отключен, при пересечении вниз открывается шорт. Фильтр по году старта не позволяет торговать раньше указанной даты.
 

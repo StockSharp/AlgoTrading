@@ -1,5 +1,5 @@
 # CBC Strategy with Trend Confirmation & Separate Stop Loss
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses a color bar change (CBC) state to detect flips when price breaks the previous candle's high or low. Entries require trend confirmation via EMA and VWAP and are restricted to a trading session window. Exits apply an ATR-based profit target and use the prior candle's extremums as stop loss levels.
 
