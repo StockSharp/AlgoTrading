@@ -1,5 +1,5 @@
 # Стратегия RVI Crossover
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия RVI Crossover использует индекс относительной силы импульса и фильтр на основе средних.
 Покупает, когда RVI пересекает сигнальную линию сверху при цене ниже EMA, и продаёт, когда RVI пересекает сигнал снизу при цене выше EMA.

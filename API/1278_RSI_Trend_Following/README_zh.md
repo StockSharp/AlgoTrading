@@ -1,5 +1,5 @@
 # RSI 趋势跟随策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RSI 趋势跟随策略在 RSI、随机指标、MACD 和价格位于长期 EMA 之上时做多。价格按 ATR 的倍数有利运行后，策略启用追踪止盈并跟随较短周期 EMA。
 

@@ -1,5 +1,5 @@
 # RSI-CCI Fusion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines standardized RSI and CCI into a single oscillator with dynamic bands.
 Buys when the fused value crosses above the lower band and sells or shorts when it crosses below the upper band.

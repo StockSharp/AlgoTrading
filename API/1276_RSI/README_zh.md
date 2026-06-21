@@ -1,5 +1,5 @@
 # RSI Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 RSI 指标的简单策略。当 RSI 从下向上穿越超卖水平时买入，当 RSI 从上向下穿越超买水平时卖出。
 

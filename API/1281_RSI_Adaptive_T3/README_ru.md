@@ -1,5 +1,5 @@
 # RSI Adaptive T3
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая стратегия на базе адаптивной скользящей Tillson T3. Покупает при пересечении T3 выше её значения двумя барами ранее и выходит при обратном пересечении.
 

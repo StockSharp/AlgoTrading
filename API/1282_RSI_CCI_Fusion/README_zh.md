@@ -1,5 +1,5 @@
 # RSI-CCI Fusion 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将标准化后的 RSI 与 CCI 融合为单一振荡器，并为其构建动态带。
 当融合值向上穿越下轨时买入，向下穿越上轨时卖出或做空。

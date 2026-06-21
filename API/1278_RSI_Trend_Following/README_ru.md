@@ -1,5 +1,5 @@
 # Стратегия следования тренду по RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия следования тренду по RSI открывает длинную позицию, когда импульс подтверждается RSI, стохастиком, MACD и ценой выше долгосрочной EMA. После движения цены на кратное ATR активируется трейлинг-стоп, основанный на более короткой EMA.
 

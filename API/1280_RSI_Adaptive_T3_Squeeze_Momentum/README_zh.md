@@ -1,3 +1,4 @@
 # RSI 自适应 T3 + Squeeze 动量 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将基于 RSI 的自适应 Tillson T3 趋势过滤器与 Squeeze 动量技术结合。T3 长度根据 RSI 在最小和最大值之间调整。当波动性压缩结束且动量为正时，自适应 T3 向上转折会触发做多；当动量为负且 T3 向下转折时在解除压缩后做空。

@@ -1,5 +1,5 @@
 # S&P 100 期权到期周策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在期权到期周的周一买入（该周包含当月第三个周五），并在第三个周五平仓。
 

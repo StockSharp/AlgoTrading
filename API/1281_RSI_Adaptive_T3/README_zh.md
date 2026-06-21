@@ -1,5 +1,5 @@
 # RSI 自适应 T3
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 RSI 自适应 Tillson T3 的趋势策略。当 T3 上穿其两根柱线前的值时做多，反向穿越时平仓。
 

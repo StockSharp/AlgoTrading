@@ -1,5 +1,5 @@
 # RVI Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The RVI Crossover strategy uses the Relative Vigor Index and a moving average filter.
 It buys when the RVI crosses above its signal line while price is below the EMA, and sells when the RVI crosses below the signal while price is above the EMA.

@@ -1,5 +1,5 @@
 # Стратегия RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Простая стратегия на основе индикатора RSI. Покупает, когда RSI пересекает уровень перепроданности снизу вверх, и продаёт, когда RSI пересекает уровень перекупленности сверху вниз.
 

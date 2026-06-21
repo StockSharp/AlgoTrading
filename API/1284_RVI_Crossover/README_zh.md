@@ -1,5 +1,5 @@
 # RVI Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RVI Crossover 策略使用相对活力指数及均线过滤。
 当 RVI 向上穿越信号线且价格低于 EMA 时买入；当 RVI 向下穿越信号线且价格高于 EMA 时卖出。
