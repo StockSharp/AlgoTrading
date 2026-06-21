@@ -1,5 +1,5 @@
 # 波动脉冲与动态退出策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 ATR 波动扩张并结合动量确认。当 ATR 高于其平均值且动量方向一致时入场。持仓达到指定的 bar 数后，根据 ATR 设置动态止损和止盈退出。
 

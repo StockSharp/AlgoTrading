@@ -1,4 +1,5 @@
 # 成交量回溯速度策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在以下条件同时满足时做多：成交量增加、RSI处于超卖区域、ATR显示波动性减弱，并且最近两次价格突破均线之间的距离大于设定值。
 

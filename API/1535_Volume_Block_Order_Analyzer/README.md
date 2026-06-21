@@ -1,5 +1,5 @@
 # Volume Block Order Analyzer Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simplified strategy based on the TradingView script **"Volume Block Order Analyzer"**. It measures how large volume spikes impact price direction and accumulates this effect over time. When the cumulative impact crosses user-defined thresholds, the strategy enters trades and protects them with a trailing stop.
 

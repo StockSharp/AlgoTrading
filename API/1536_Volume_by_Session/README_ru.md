@@ -1,5 +1,5 @@
 # Стратегия Volume by Session
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Упрощённая стратегия на основе индикатора TradingView **"Volume by Session"**. Торговый день делится на четыре сессии, каждая имеет своё среднее значение объёма. Когда текущий объём в рамках сессии отклоняется от среднего, стратегия входит в сделки.
 

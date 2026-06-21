@@ -1,5 +1,5 @@
 # Volatility Bias Model
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Counts bullish vs bearish closes over a window and trades in the direction of the dominant bias when volatility is sufficient. Uses ATR targets and exits after a maximum number of bars.
 

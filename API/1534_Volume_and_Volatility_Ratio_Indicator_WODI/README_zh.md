@@ -1,5 +1,5 @@
 # 量能与波动率比率指标 WODI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 TradingView 脚本 **"Volume and Volatility Ratio Indicator - WODI"** 的简化策略。策略监控成交量与价格波动的乘积，当波动率指数超过动态阈值且最近的K线出现方向变化时，按斐波那契系数设置止损和止盈并开仓。
 

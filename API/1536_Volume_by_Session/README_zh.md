@@ -1,5 +1,5 @@
 # 分时段成交量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略源自 TradingView 指标 **"Volume by Session"** 的简化版本。将交易日划分为四个时段，每个时段都有自己的平均成交量。当某个时段的当前成交量偏离其平均值时，策略据此开仓或平仓。
 

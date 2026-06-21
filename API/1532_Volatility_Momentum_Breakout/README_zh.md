@@ -1,5 +1,5 @@
 # Volatility Momentum Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合基于ATR的突破水平、EMA趋势过滤以及RSI动量来捕捉强劲的价格运动。
 

@@ -1,5 +1,5 @@
 # Стратегия Volume and Volatility Ratio Indicator WODI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Упрощённая стратегия на основе скрипта TradingView **"Volume and Volatility Ratio Indicator - WODI"**. Стратегия отслеживает произведение объёма и волатильности цены для поиска возможных разворотных точек. Когда индекс волатильности превышает динамический порог и последние свечи показывают смену направления, открывается позиция с управлением рисками по уровням Фибоначчи.
 

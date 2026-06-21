@@ -1,5 +1,5 @@
 # 波动率偏向模型
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 统计窗口内上涨和下跌柱的比例, 当方向性偏向与最低波动范围条件同时满足时开仓。利用 ATR 设定止盈止损, 并在达到最大持仓柱数后退出。
 

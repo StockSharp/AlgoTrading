@@ -1,5 +1,5 @@
 # 大量订单影响分析策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略基于 TradingView 脚本 **"Volume Block Order Analyzer"** 的简化实现。它计算成交量尖峰对价格方向的影响并随时间累加。当累计影响超过设定阈值时，策略开仓，同时使用百分比追踪止损保护持仓。
 

@@ -1,4 +1,5 @@
 # 体积分布策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略简化自体积分布指标，跟踪每个交易日的最高价、最低价以及由最高成交量决定的控制点价格。当价格高于控制点时买入，低于控制点时卖出，当价格回到当日中点时平仓。
 

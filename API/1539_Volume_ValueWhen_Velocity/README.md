@@ -1,4 +1,5 @@
 # Volume ValueWhen Velocity Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy seeks long entries when volume expands, the market is oversold based on RSI, volatility measured by ATR is contracting and the distance between recent SMA breakouts exceeds a specified value. When all conditions are satisfied a market buy order is issued.
 

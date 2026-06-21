@@ -1,5 +1,5 @@
 # Стратегия Volume Block Order Analyzer
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Упрощённая стратегия по мотивам скрипта TradingView **"Volume Block Order Analyzer"**. Она оценивает влияние крупных объёмных всплесков на направление цены и накапливает этот эффект во времени. Когда совокупное влияние превышает заданные пороги, стратегия открывает сделки и защищает их трейлинг-стопом.
 
