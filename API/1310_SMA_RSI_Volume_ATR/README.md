@@ -1,5 +1,5 @@
 # SMA RSI Volume ATR Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a Simple Moving Average (SMA), Relative Strength Index (RSI), volume confirmation and an ATR-based volatility filter.
 It buys when price is above the SMA, RSI is oversold, volume exceeds its moving average by a multiplier and volatility is rising. It sells under the opposite conditions.

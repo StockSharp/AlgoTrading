@@ -1,5 +1,5 @@
 # SMA RSI Volume ATR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合简单移动平均线（SMA）、相对强弱指数（RSI）、成交量确认以及基于 ATR 的波动性过滤。
 当价格高于 SMA、RSI 低于超卖水平、成交量高于其均值乘以阈值且波动性上升时买入；相反条件下卖出。

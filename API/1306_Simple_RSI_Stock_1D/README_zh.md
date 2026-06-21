@@ -1,5 +1,5 @@
 # 简单RSI股票策略 1D
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当RSI跌破超卖水平且价格高于200日SMA时，本系统做多。持仓使用ATR止损并设定三个获利目标。
 

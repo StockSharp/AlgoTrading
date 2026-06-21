@@ -1,5 +1,5 @@
 # SJ NIFTY 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该趋势策略结合 SuperTrend、VWAP、RSI 和 EMA200。Keltner 通道基线可作为可选趋势过滤器。仓位大小根据账户风险百分比计算，并设置技术止损和风险回报比的止盈。
 

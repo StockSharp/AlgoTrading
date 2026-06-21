@@ -1,5 +1,5 @@
 # Smart Grid Scalping Pullback Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Скальпинговая стратегия с сеткой ценовых уровней на основе ATR, расширяемых от цены двадцать баров назад. Для входов по откату используется фильтр RSI. Позиции закрываются по целевой прибыли или трейлинг-стопу на ATR.
 

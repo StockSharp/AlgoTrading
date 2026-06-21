@@ -1,5 +1,5 @@
 # Стратегия SJ NIFTY
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая стратегия на основе SuperTrend, VWAP, RSI и EMA200. База канала Кельтнера используется как дополнительный фильтр тренда. Размер позиции рассчитывается из процента риска от капитала, применяется стоп-лосс и тейк-профит по соотношению риск/прибыль.
 

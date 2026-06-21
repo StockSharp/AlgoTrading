@@ -1,5 +1,5 @@
 # Простая RSI стратегия для акций 1D
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Система открывает лонг, когда RSI падает ниже уровня перепроданности, а цена находится выше SMA(200) дневного таймфрейма. Позиция защищена стопом на основе ATR и тремя уровнями фиксации прибыли.
 

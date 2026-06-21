@@ -1,5 +1,5 @@
 # Smart Fib 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用简单均线突破作为入场，并使用基于ATR的斐波那契带作为出场的策略。
 
