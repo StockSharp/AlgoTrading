@@ -1,5 +1,5 @@
 # Стратегия Squeeze Momentum Indicator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Squeeze Momentum Indicator выявляет сжатие волатильности, когда полосы Боллинджера находятся внутри каналов Кельтнера. Вход в лонг осуществляется при выходе из сжатия вверх при растущем импульсе и цене выше EMA100. Вход в шорт — при выходе вниз при падающем импульсе и цене ниже EMA100. Позиции закрываются при развороте импульса.
 

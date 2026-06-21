@@ -1,5 +1,5 @@
 # SOXL Trend Surge Profit-Only Runner 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格位于200 EMA之上且 SuperTrend 为多头时做多。它要求 ATR 上升、成交量高于均值、时间过滤以及价格脱离 EMA 缓冲区。达到 ATR 目标后平仓一半仓位，其余部分使用 ATR 跟踪止损。
 

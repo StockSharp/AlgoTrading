@@ -1,5 +1,5 @@
 # Spread By Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Spread By uses a moving average with standard deviation bands to trade price extremes.
 It buys when price falls below the lower band and sells when price rises above the upper band.

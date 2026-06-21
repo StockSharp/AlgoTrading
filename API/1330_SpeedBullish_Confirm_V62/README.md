@@ -1,4 +1,5 @@
 # SpeedBullish Strategy Confirm V6.2
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Strategy combining EMA trend filter, MACD histogram crossover and RSI threshold. Optional ATR and volume filters enhance signal quality.

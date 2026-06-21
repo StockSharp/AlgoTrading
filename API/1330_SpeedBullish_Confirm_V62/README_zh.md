@@ -1,4 +1,5 @@
 # SpeedBullish Strategy Confirm V6.2
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略结合EMA趋势过滤、MACD柱状图交叉和RSI阈值，可选ATR和成交量过滤器提高信号质量。

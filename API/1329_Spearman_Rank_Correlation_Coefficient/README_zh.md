@@ -1,5 +1,5 @@
 # Spearman Rank Correlation Coefficient 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该配对交易策略计算两个证券之间的斯皮尔曼等级相关系数。当相关性高于正阈值时，策略做空第一个证券并做多第二个证券；当相关性低于负阈值时，则执行相反操作。当相关性回到零附近时平仓。
 

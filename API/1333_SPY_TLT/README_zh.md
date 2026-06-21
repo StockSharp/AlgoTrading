@@ -1,5 +1,5 @@
 # SPY TLT 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 TLT 价格上穿其 SMA 时，策略买入主交易品种；当 TLT 收盘价下穿 SMA 时平仓。仅在指定的时间范围内允许交易。
 

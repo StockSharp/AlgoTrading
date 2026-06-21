@@ -1,5 +1,5 @@
 # Source 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Source 策略在收盘价高于开盘价时做多，在收盘价低于开盘价时做空。可选的止损、止盈和追踪止损参数用于管理持仓风险。
 

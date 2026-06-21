@@ -1,5 +1,5 @@
 # Spread By 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Spread By 使用移动平均线和标准差带在极端价格位置进行交易。
 当价格跌破下轨时买入，价格升破上轨时卖出。

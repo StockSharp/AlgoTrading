@@ -1,5 +1,5 @@
 # Стратегия Spread By
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Spread By использует скользящую среднюю и полосы стандартного отклонения для торговли на ценовых экстремумах.
 Покупает, когда цена падает ниже нижней полосы, и продаёт, когда цена поднимается выше верхней полосы.

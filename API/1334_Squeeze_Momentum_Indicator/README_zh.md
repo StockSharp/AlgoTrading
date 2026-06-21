@@ -1,5 +1,5 @@
 # Squeeze Momentum Indicator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Squeeze Momentum Indicator 策略在布林带进入肯特纳通道时识别波动收缩。挤压向上解除且动量上升并且价格位于100期EMA之上时做多；挤压向下解除且动量下降并且价格位于EMA之下时做空。动量反转时平仓。
 

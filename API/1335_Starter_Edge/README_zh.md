@@ -1,5 +1,5 @@
 # Starter Edge 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于 ZLEMA 的 MACD，并结合 EMA 100 趋势过滤和 RSI 确认。
 

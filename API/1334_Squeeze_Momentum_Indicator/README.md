@@ -1,5 +1,5 @@
 # Squeeze Momentum Indicator Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Squeeze Momentum Indicator strategy detects volatility contraction when Bollinger Bands fall inside Keltner Channels. A long position is opened when the squeeze releases upward with rising momentum and price above the 100-period EMA. Shorts are taken on a downward release with falling momentum and price below the EMA. Positions exit when momentum reverses.
 

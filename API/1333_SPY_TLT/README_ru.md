@@ -1,5 +1,5 @@
 # Стратегия SPY TLT
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает основной инструмент, когда цена TLT пересекает свою SMA снизу вверх, и выходит при обратном пересечении. Торговля допускается только в заданном временном диапазоне.
 
