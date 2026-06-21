@@ -1,4 +1,5 @@
 # Exp XMA Range Bands Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the logic of the MetaTrader sample "Exp_XMA_Range_Bands" using StockSharp high level API. It employs a Keltner Channel to define dynamic support and resistance based on a moving average and average true range. Trades are triggered when price re-enters the channel after moving outside.
 

@@ -1,4 +1,5 @@
 # Forex Profit Boost 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Forex Profit Boost** 是一种反转交易策略，结合快速指数移动平均线（EMA）和慢速简单移动平均线（SMA）。当快速 EMA 与慢速 SMA 发生交叉时，策略会逆势开仓，期望价格出现回调。可以设置以价格点为单位的止损和止盈来控制风险。

@@ -1,4 +1,5 @@
 # ADX 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ADX 交叉策略**基于平均趋向指数 (ADX) 指标，通过分析正向指标线 (+DI) 与负向指标线 (-DI) 的交叉来识别趋势变化。
 

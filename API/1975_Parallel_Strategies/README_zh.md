@@ -1,5 +1,5 @@
 # Parallel Strategies 策略 (中文)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Heikin Ashi 和 MACD 的突破系统，可做多也可做空。当 Heikin Ashi 趋势反转并且价格突破 Donchian 通道，同时 MACD 方向一致时进场。
 

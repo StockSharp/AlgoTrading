@@ -1,4 +1,5 @@
 # Smoothing Average Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy trades around a simple moving average (SMA) with an additional smoothing offset. It attempts to exploit price deviations from the moving average by entering positions when the close price crosses an offset distance from the average.

@@ -1,5 +1,5 @@
 # Angrybird xScalpingn
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Angrybird xScalpingn is a martingale-style scalping strategy. It opens an initial trade based on short-term price direction and an RSI filter. When price moves against the open position by a dynamic step derived from recent range, the strategy adds another trade with volume multiplied by a factor. All positions are closed when CCI shows a strong counter move or when stop loss or take profit is hit.
 

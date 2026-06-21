@@ -1,5 +1,5 @@
 # Asimmetric Stoch NR Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on asymmetric stochastic oscillator lines. The strategy reacts to %K and %D crossovers and supports optional position protection.
 

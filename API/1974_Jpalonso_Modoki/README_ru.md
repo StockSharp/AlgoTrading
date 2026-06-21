@@ -1,5 +1,5 @@
 # Стратегия Jpalonso Modoki
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Jpalonso Modoki торгует ценовой канал, построенный на простой скользящей средней.
 Верхняя и нижняя границы вычисляются как процентное отклонение от средней линии.

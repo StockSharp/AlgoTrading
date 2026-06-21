@@ -1,5 +1,5 @@
 # Parallel Strategies
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heikin Ashi MACD breakout system trading both directions. It enters when a new Heikin Ashi trend aligns with a breakout above or below the Donchian Channel and the MACD confirms momentum.
 

@@ -1,4 +1,5 @@
 # Exp XMA Range Bands 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 示例“Exp_XMA_Range_Bands” 转换为 StockSharp 高级 API。它利用 Keltner 通道（由移动平均算和平均真实波幅构成）来确定动态支撑和阻力。当价格在突破通道后重新回到通道内部时产生交易信号。
 

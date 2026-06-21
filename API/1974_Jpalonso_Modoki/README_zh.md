@@ -1,5 +1,5 @@
 # Jpalonso Modoki 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Jpalonso Modoki 策略使用简单移动平均线和百分比包络线构建价格通道。
 当价格触及下轨或位于通道上半部分时做多；相反条件下做空。固定的止盈和止损保护仓位。

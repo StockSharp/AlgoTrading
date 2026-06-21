@@ -1,4 +1,5 @@
 # Exp 3XMA Ichimoku 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL 专家 `exp_3xma_ishimoku` 的转换版本。策略使用缩短周期的 Ichimoku 指标，并逆向处理云层突破。
 

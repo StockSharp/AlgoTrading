@@ -1,4 +1,5 @@
 # Forex Profit Boost Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Forex Profit Boost** strategy is a reversal trading system that combines a fast Exponential Moving Average (EMA) and a slow Simple Moving Average (SMA). The strategy waits for the fast EMA to cross the slow SMA and then trades against the direction of the crossover, expecting a price retracement. Optional stop-loss and take-profit levels in absolute price points can be configured for risk management.

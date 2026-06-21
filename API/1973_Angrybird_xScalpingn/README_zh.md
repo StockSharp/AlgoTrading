@@ -1,5 +1,5 @@
 # Angrybird xScalpingn
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Angrybird xScalpingn 是一种马丁格尔式剥头皮策略。首笔交易根据最近的收盘方向和 RSI 过滤器入场。当价格逆着持仓按最近区间计算的动态步长移动时，策略会按系数放大手数加仓。CCI 出现强烈反向信号或触发止损/止盈时，所有仓位都会平掉。
 

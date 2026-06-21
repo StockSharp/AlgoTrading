@@ -1,5 +1,5 @@
 # Asimmetric Stoch NR 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于非对称随机指标的策略。当 %K 与 %D 交叉时开仓或平仓，并可使用止盈和止损保护。
 

@@ -1,4 +1,5 @@
 # ADX Crossing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **ADX Crossing Strategy** is built around the Average Directional Index (ADX) indicator. It analyzes the crossover of the positive directional index (+DI) and the negative directional index (-DI) to identify potential trend shifts.
 

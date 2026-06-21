@@ -1,4 +1,5 @@
 # 平滑均线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略围绕简单移动平均线（SMA）进行交易，并使用额外的平滑偏移量。当收盘价与移动平均线相距一定距离时，策略尝试进入市场，以捕捉价格回归。
