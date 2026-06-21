@@ -1,5 +1,5 @@
 # Symr New Bar Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Symr New Bar Strategy** demonstrates how to detect the beginning of new candles across multiple timeframes using a single subscription. The strategy monitors a base timeframe and calculates when larger intervals such as 5m, 15m, 30m, 1h, 4h, 1d, 20m and 55m begin. Each detected bar is logged.
 

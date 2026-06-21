@@ -1,5 +1,5 @@
 # ZMFX Stolid 5a EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多时间框趋势策略，通过RSI和随机指标确认回调入场。
 系统依据4小时随机指标和1小时平滑均线确定主要趋势。

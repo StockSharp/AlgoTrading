@@ -1,5 +1,5 @@
 # Live RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用多个 RSI 计算（close、weighted、typical、median、open）结合 Parabolic SAR 来检测趋势反转。当 RSI 数值按多头顺序排列且价格在 SAR 之上时做多；当 RSI 数值按空头顺序排列且价格在 SAR 之下时做空。SAR 值同时作为跟踪止损。
 

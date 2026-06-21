@@ -1,5 +1,5 @@
 # EMA Sticker 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用指数移动平均线 (EMA) 追踪短期趋势。当收盘价上穿 EMA 时开多单，当收盘价下穿 EMA 时开空单。可选的固定止损和止盈用于控制风险。
 

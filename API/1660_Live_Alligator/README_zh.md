@@ -1,4 +1,5 @@
 # Live Alligator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用动态配置的 Alligator 指标和多条 EMA 过滤器来捕捉趋势反转。
 当 Alligator 线条改变方向且五条 EMA 确认趋势时开仓。

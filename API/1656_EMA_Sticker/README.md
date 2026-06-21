@@ -1,5 +1,5 @@
 # EMA Sticker Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses an Exponential Moving Average (EMA) to follow short‑term trends. A long position is opened when the close price crosses above the EMA, while a short position is opened when the close price crosses below the EMA. Optional fixed stop‑loss and take‑profit levels help manage risk.
 

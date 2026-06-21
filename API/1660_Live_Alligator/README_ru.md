@@ -1,4 +1,5 @@
 # Стратегия Live Alligator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует развороты тренда, используя динамическую конфигурацию индикатора Alligator и несколько EMA-фильтров.
 Новая позиция открывается при смене направления линий Alligator и подтверждении тренда пятью EMA.

@@ -1,5 +1,5 @@
 # Symr 新K线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Symr 新K线策略** 演示如何通过单一订阅检测多个时间框架的新K线开始。策略监控基础时间框架，并计算更大周期（5m、15m、30m、1h、4h、1d、20m、55m）的起点。每个检测到的K线都会写入日志。
 

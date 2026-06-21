@@ -1,4 +1,5 @@
 # Стратегия Psi Proc EMA MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия реализует систему T4 из оригинального эксперта MQL `e-PSI@PROC.mq4`. Торговля ведётся по согласованности нескольких экспоненциальных средних и фильтру MACD.
 

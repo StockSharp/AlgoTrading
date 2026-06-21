@@ -1,5 +1,5 @@
 # Стратегия MACD EMA SAR Bollinger BullBear
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Объединяет индикаторы MACD, пересечение EMA, Parabolic SAR, полосы Боллинджера и Bulls/Bears Power. Торгует только в активные часы.
 

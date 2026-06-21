@@ -1,4 +1,5 @@
 # Psi Proc EMA MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MQL 专家 `e-PSI@PROC.mq4` 的 T4 系统。它根据多条指数移动平均线的排列和 MACD 过滤器进行交易。
 

@@ -1,5 +1,5 @@
 # MACD Sample 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 的经典 MACD Sample EA。
 它使用 MACD 线与信号线的交叉并结合 EMA 趋势过滤，分别设定多头和空头的止盈止损，同时可选用追踪止损。交易仅在设定的时间窗口内进行。

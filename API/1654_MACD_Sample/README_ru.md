@@ -1,5 +1,5 @@
 # Стратегия MACD Sample
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия повторяет классический эксперт MACD Sample из MetaTrader.
 Она использует пересечение линий MACD с фильтром тренда на EMA, раздельные уровни тейк-профита и стоп-лосса для длинных и коротких сделок, а также опциональный трейлинг-стоп. Торговля допускается только в заданном временном окне.

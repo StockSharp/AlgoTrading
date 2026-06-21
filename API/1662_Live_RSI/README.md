@@ -1,5 +1,5 @@
 # Live RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses multiple RSI calculations (close, weighted, typical, median, open) and Parabolic SAR to detect trend reversals. Enters long when RSI values align in bullish order and price is above SAR, enters short when alignment is bearish and price is below SAR. SAR value acts as a trailing stop.
 

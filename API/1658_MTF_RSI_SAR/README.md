@@ -1,4 +1,5 @@
 # MTF RSI SAR Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines **Relative Strength Index (RSI)** readings across four timeframes, **Parabolic SAR**, and **Bollinger Bands** to capture trend continuation after short pullbacks. Signals are generated on 5‑minute candles while higher timeframes act as confirmation filters.
 

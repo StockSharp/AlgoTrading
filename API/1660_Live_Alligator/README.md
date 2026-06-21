@@ -1,4 +1,5 @@
 # Live Alligator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades trend reversals using a dynamic Alligator configuration and several EMA filters.
 It opens a new position when the Alligator lines switch direction and five EMAs confirm the move.

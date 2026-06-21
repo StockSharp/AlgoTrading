@@ -1,5 +1,5 @@
 # MACD Sample Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the classic MetaTrader MACD Sample expert.
 It uses a MACD cross combined with an EMA trend filter, separate take-profit and stop-loss levels for long and short trades, and an optional trailing stop. Trading is allowed only within a configurable time window.

@@ -1,4 +1,5 @@
 # MTF RSI SAR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合四个周期的 **RSI**、**Parabolic SAR** 和 **布林带**，用于在短期回调后捕捉趋势延续。信号基于 5 分钟K线，更高周期仅用于过滤和确认。
 

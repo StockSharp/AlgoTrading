@@ -1,4 +1,5 @@
 # Psi Proc EMA MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the T4 system from the original MQL expert `e-PSI@PROC.mq4`. It trades based on the alignment of multiple exponential moving averages and a MACD filter.
 
