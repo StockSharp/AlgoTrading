@@ -1,5 +1,5 @@
 # Индикатор Ehlers SwamiCharts RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Усредняет значения RSI с периодами 2–48 для построения цветовой карты. Зеленый цвет даёт сигнал на покупку, красный — на продажу.
 

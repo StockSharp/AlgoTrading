@@ -1,5 +1,5 @@
 # MartinGale Scalping 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 `SMA(3)` 与 `SMA(8)` 交叉时进入仓位，并采用马丁格尔方式加仓，直到触发止损或止盈。
 

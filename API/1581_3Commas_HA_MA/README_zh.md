@@ -1,5 +1,5 @@
 # 3Commas HA & MA
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Heikin Ashi 蜡烛和两条指数均线。当前一根 HA 为阴线、当前为阳线且快线高于慢线时做多；相反条件下做空。价格突破慢线或达到摆动止损时平仓。
 

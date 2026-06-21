@@ -1,5 +1,5 @@
 # Ehlers SwamiCharts RSI 指标
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 汇总周期 2–48 的 RSI 值形成颜色图。平均颜色为绿色时做多，红色时做空。
 

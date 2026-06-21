@@ -1,5 +1,5 @@
 # 3Commas Turtle Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simplified Turtle-style breakout system using Donchian channels. Buys on breakouts above the fast channel when price is also above the slow channel, and sells on breakdowns below the fast channel with confirmation from the slow channel. Exits occur when price crosses the exit channel in the opposite direction.
 

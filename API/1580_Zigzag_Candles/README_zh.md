@@ -1,5 +1,5 @@
 # Zigzag Candles
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据 ZigZag 枢轴点进行交易。当出现新的低点枢轴时开多仓，当出现新的高点枢轴时开空仓。
 
