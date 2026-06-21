@@ -1,5 +1,5 @@
 # Majors Volume Sum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对最近的带符号成交量求和，当短期总和超过其历史最大值的一定比例时入场。
 

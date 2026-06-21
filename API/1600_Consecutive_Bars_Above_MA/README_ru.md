@@ -1,5 +1,5 @@
 # Стратегия Consecutive Bars Above MA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Шортовая стратегия, считающая количество последовательных закрытий выше скользящей средней и продающая при пробое предыдущего максимума. Выход выполняется при падении ниже предыдущего минимума. Дополнительный фильтр EMA 200 ограничивает сделки нисходящим трендом.
 

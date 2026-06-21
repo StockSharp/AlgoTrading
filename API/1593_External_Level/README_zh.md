@@ -1,5 +1,5 @@
 # External Level 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当外部信号值为 1 或 -1 时绘制支撑和阻力线。值为 1 时在上一根蜡烛的最高价处画线，值为 -1 时在最低价处画线。
 

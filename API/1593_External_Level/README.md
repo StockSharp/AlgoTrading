@@ -1,5 +1,5 @@
 # External Level Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Draws support and resistance levels when an external source value equals 1 or -1. A line is drawn at the previous candle's high for value 1 and at the previous candle's low for value -1.
 

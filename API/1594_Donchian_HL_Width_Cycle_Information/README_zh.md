@@ -1,5 +1,5 @@
 # Donchian HL Width Cycle Information
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于唐奇安通道宽度和周期变化的策略。
 

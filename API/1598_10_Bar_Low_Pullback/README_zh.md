@@ -1,5 +1,5 @@
 # Short Only 10 Bar Low Pullback 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格跌破前 N 根K线的最低点且 IBS 高于阈值时做空，可选的 EMA 过滤器用于确认下行趋势。
 

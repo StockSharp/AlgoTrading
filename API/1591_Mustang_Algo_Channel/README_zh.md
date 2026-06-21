@@ -1,5 +1,5 @@
 # Mustang Algo Channel Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于 RSI 的全球情绪振荡器并通过 WMA 平滑，用于交易通道突破。
 

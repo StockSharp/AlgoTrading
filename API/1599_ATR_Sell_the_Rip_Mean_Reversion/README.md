@@ -1,5 +1,5 @@
 # ATR Sell the Rip Mean Reversion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Short-only strategy that sells when price spikes above a smoothed ATR threshold and covers on a drop below the prior low. An optional EMA filter limits trades to downtrends.
 

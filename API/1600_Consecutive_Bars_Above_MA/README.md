@@ -1,5 +1,5 @@
 # Consecutive Bars Above MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Short-only strategy that counts consecutive closes above a moving average and shorts on breakouts above the previous high. Exits when price falls below the prior low. Optional 200 EMA filter enforces downtrend.
 

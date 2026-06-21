@@ -1,5 +1,5 @@
 # Simplistic Automatic Growth Models 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用最高价和最低价的累积平均构建上下轨，当价格突破这些轨道时入场交易。
 

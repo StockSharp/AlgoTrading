@@ -1,5 +1,5 @@
 # Стратегия External Level
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Отрисовывает уровни поддержки и сопротивления, когда значение источника равно 1 или -1. Линия рисуется по максимуму предыдущей свечи при 1 и по минимуму при -1.
 
