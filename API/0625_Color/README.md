@@ -1,5 +1,5 @@
 # Color Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that trades based on the perceived lightness of a configured color.
 If the color is light (luminance > 0.5) the strategy buys, otherwise it sells.

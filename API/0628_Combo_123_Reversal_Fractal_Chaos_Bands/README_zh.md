@@ -1,5 +1,5 @@
 # Combo 123 Reversal & Fractal Chaos Bands 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将基于随机指标的123反转与分形混沌带突破相结合。
 当形成看涨123反转并且收盘价突破上分形带时开多仓。

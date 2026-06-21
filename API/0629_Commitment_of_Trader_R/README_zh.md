@@ -1,5 +1,5 @@
 # Commitment of Trader R 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Williams %R 指标，并可选使用 SMA 趋势过滤器。当 %R 超过上阈值且价格高于 SMA 时开多；当 %R 跌破下阈值且价格低于 SMA 时开空。指示器离开信号区域时平仓。
 

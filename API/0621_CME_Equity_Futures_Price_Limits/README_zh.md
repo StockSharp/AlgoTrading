@@ -1,4 +1,5 @@
 # CME 股指期货价格限制
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算 CME 股指期货的每日价格限制。在指定的小时捕捉参考价格，并计算向上/向下 5% 以及 -7%、-13%、-20% 的限制水平。结果输出到日志以供监控。
 

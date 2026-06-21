@@ -1,5 +1,5 @@
 # Стратегия Commitment of Trader R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует индикатор Williams %R и необязательный фильтр тренда на основе SMA. Длинная позиция открывается, когда %R превышает верхний порог и цена выше SMA. Короткая позиция открывается, когда %R падает ниже нижнего порога и цена ниже SMA. Позиции закрываются при выходе индикатора из зоны.
 

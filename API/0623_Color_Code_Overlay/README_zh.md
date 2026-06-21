@@ -1,4 +1,5 @@
 # 颜色代码叠加策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 根据自定义颜色代码计算的蜡烛颜色变化进行交易，并使用固定点数的止损和止盈。
 

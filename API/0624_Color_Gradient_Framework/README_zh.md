@@ -1,4 +1,5 @@
 # 颜色渐变框架策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 演示如何基于RSI计算从红到绿的颜色渐变，并在RSI穿越中线时交易。
 

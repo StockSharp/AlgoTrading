@@ -1,4 +1,5 @@
 # Cnagda Fixed Swing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A strategy using Heikin Ashi candles with two modes:
 - **RSI**: entries when short EMA of RSI crosses long EMA on high volume.

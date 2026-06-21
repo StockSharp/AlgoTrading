@@ -1,4 +1,5 @@
 # Cnagda Fixed Swing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Heikin Ashi K 线并提供两种模式：
 - **RSI**：在高成交量下 RSI 短期 EMA 上穿长期 EMA 时开仓。

@@ -1,5 +1,5 @@
 # Connors VIX Reversal III
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Contrarian strategy using VIX spikes relative to its moving average. It buys when VIX jumps above the average by a set percentage and shorts when VIX drops below it.
 

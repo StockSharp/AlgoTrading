@@ -1,5 +1,5 @@
 # 色彩策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 根据设定颜色的亮度进行交易的示例策略。
 如果颜色较亮（亮度 > 0.5）则做多，否则做空。

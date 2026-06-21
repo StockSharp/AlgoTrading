@@ -1,5 +1,5 @@
 # Стратегия Combo 123 Reversal и Fractal Chaos Bands
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия комбинирует разворот 123 на основе стохастика и пробой полос Fractal Chaos Bands.
 Длинная позиция открывается, когда формируется бычий разворот 123 и цена закрывается выше верхней фрактальной полосы.

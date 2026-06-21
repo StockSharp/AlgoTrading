@@ -1,5 +1,5 @@
 # Connors VIX反转III
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于VIX相对其移动平均线的突破进行逆向交易。当VIX低点高于均线且收盘价高出一定百分比时买入；当VIX高点低于均线且收盘价低于一定百分比时卖出。
 
