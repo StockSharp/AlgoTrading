@@ -1,5 +1,5 @@
 # Delta SMA 1-Year High Low
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Delta SMA 1-Year High Low** 策略计算买卖量差值及其简单移动平均。当 delta SMA 处于极低水平后向上穿越零线时做多；当 delta SMA 先上穿年内高值的70%后又跌破该高值的60%时平仓。
 

@@ -1,5 +1,5 @@
 # Delta SMA 1-Year High Low
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Delta SMA 1-Year High Low** вычисляет дельту объёма (покупки минус продажи) и её простое скользящее среднее. Длинная позиция открывается, когда SMA дельты была очень низкой и пересекает ноль снизу вверх. Позиция закрывается, когда SMA дельты падает ниже 60% своего годового максимума после предыдущего пересечения 70% этого максимума.
 

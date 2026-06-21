@@ -1,5 +1,5 @@
 # 日内交易ES影线长度策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当K线的上下影线总长度超过其加上偏移量的移动平均值时，该策略建立多头仓位，并在持有固定数量的K线后退出。
 

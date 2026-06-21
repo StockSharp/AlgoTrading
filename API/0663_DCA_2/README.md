@@ -1,4 +1,5 @@
 # DCA Strategy 2
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy buys when a green Heikin Ashi candle follows a red one within the specified year range. Positions are partially closed when RSI crosses below a threshold or the end date is reached.
 

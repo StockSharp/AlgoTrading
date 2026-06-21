@@ -1,5 +1,5 @@
 # Dekidaka-Ashi 蜡烛与成交量策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Dekidaka-Ashi 方法，根据成交量平滑调整蜡烛范围。出现看涨信号时做多，出现看跌信号时做空。上下界同时被突破的蜡烛将平掉已有仓位。
 

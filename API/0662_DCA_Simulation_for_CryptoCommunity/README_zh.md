@@ -1,5 +1,5 @@
 # DCA Simulation for CryptoCommunity 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模拟定投，并带有可选的安全单和移动止盈。策略先建立基础仓位，然后可以定期追加资金或在价格下跌后摊低成本。
 

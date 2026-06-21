@@ -1,5 +1,5 @@
 # DCA Support and Resistance with RSI and Trend Filter Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dollar-cost averaging strategy using support/resistance levels, RSI, and EMA trend filter. Buys at support in an uptrend when RSI is oversold and sells at resistance in a downtrend when RSI is overbought.
 

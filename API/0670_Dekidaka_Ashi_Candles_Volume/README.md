@@ -1,5 +1,5 @@
 # Dekidaka-Ashi Candles Volume Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines candle body with smoothed volume using the Dekidaka-Ashi approach. It buys on bullish signals and sells on bearish ones. Candles that span both ranges close open positions.
 

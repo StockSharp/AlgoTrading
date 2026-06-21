@@ -1,4 +1,5 @@
 # Стратегия DCA 2
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда зелёная свеча Heikin Ashi следует за красной в заданном диапазоне лет. Позиция частично закрывается при пересечении RSI ниже порога или достижении конечной даты.
 

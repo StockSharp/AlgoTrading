@@ -1,5 +1,5 @@
 # Стратегия DCA Simulation for CryptoCommunity
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия моделирует усреднение по времени с дополнительными защитными ордерами и трейлинг-тейк-профитом. Сначала открывается базовый ордер, затем возможны периодические покупки и усреднение при падении цены.
 

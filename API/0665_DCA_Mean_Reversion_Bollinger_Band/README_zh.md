@@ -1,4 +1,5 @@
 # DCA 均值回归布林带策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 价格跌破下轨或每月第一天买入固定美元金额，在设定日期平掉所有仓位。
 
