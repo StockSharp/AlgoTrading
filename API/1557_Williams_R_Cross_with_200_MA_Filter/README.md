@@ -1,5 +1,5 @@
 # Williams %R Cross Strategy with 200 MA Filter
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy trades Williams %R crosses around the -50 level with a 200-period SMA trend filter.
 Positions close using fixed take profit and stop loss distances.

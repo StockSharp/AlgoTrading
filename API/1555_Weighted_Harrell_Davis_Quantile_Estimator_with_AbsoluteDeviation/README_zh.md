@@ -1,5 +1,5 @@
 # Weighted Harrell-Davis Quantile Estimator with AbsoluteDeviation 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于中位数的分位估计和绝对偏差带来检测价格异常。
 当收盘价跌破下轨时买入，涨破上轨时卖出。

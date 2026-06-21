@@ -1,4 +1,5 @@
 # VWAP 标准差通道策略（仅多头）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格跌破下方 VWAP 标准差通道时买入，达到盈利目标后平仓。
 

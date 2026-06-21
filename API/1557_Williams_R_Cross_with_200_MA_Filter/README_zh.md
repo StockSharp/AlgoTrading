@@ -1,5 +1,5 @@
 # Williams %R Cross 策略配合 200 MA 过滤
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Williams %R 在 -50 附近的交叉，并结合 200 期 SMA 作为趋势过滤。
 仓位通过固定的止盈和止损退出。

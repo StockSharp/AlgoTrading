@@ -1,5 +1,5 @@
 # Warrior Trading Momentum Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 受Warrior Trading启发的动量策略，结合跳空、VWAP与"红转绿"形态。
 

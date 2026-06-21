@@ -1,5 +1,5 @@
 # Weighted Harrell-Davis Quantile Estimator with AbsoluteDeviation Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy uses a median-based quantile estimator with absolute deviation bands to detect price outliers.
 It buys when the close drops below the lower band and sells when the close rises above the upper band.

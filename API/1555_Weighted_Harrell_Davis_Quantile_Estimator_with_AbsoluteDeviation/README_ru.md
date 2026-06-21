@@ -1,5 +1,5 @@
 # Стратегия Weighted Harrell-Davis Quantile Estimator with AbsoluteDeviation
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует медианный квантильный оцениватель с полосами абсолютного отклонения для поиска ценовых выбросов.
 Покупает, когда закрытие опускается ниже нижней полосы, и продаёт, когда закрытие поднимается выше верхней полосы.

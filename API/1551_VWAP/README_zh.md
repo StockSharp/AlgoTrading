@@ -1,4 +1,5 @@
 # VWAP 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用 VWAP 及其入场通道并提供多种退出模式。当价格收于下方通道上方时做多，收于上方通道下方时做空。支持按 VWAP 或偏差通道退出，并可在连续反向柱后触发安全退出。
 
