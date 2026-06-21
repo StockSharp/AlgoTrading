@@ -1,5 +1,5 @@
 # Smoothed Heiken-Ashi Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heiken-Ashi candles smoothed with EMA highlight acceleration in price moves. A long position is opened when a bullish smoothed candle has a larger body than the previous one. The position is closed when a bearish body expands.
 

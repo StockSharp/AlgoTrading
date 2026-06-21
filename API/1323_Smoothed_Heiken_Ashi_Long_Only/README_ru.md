@@ -1,5 +1,5 @@
 # Стратегия Smoothed Heiken Ashi Long Only
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Лонг-стратегия, использующая сглаженные свечи Хейкен-Аши. Покупка при смене цвета свечи с красного на зелёный, выход при возврате к красному.
 

@@ -1,5 +1,5 @@
 # 平滑 Heiken Ashi 仅做多策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用平滑的 Heikin-Ashi 蜡烛。当颜色由红变绿时买入，变回红色时平仓。
 

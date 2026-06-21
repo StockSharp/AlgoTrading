@@ -1,5 +1,5 @@
 # 平滑 Heiken-Ashi 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 EMA 平滑后的 Heiken-Ashi 蜡烛图来突出价格加速。当一根看涨蜡烛的实体大于前一根蜡烛时做多；当看跌实体扩大时平仓。
 

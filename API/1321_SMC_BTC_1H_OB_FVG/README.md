@@ -1,5 +1,5 @@
 # SMC Strategy BTC 1H OB FVG
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Smart Money Concepts based strategy for Bitcoin on 1-hour candles. The system enters long after a bullish break of structure when price returns to the detected order block or fair value gap. Stop loss uses an ATR multiplier and take profit is calculated from a risk/reward ratio.
 

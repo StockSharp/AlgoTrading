@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# SMC Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 SMC Strategy defines premium, equilibrium, and discount zones from recent swing highs and lows. It trades in discount or premium zones with an SMA trend filter and simple order block confirmation.
 
