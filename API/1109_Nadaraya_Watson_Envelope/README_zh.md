@@ -1,5 +1,5 @@
 # Nadaraya-Watson Envelope 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 构建对数尺度的Nadaraya-Watson核回归包络。价格向上突破下包络时做多，若选择长短双向模式，价格向下突破上包络时做空。
 

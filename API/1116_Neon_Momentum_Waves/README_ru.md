@@ -1,5 +1,5 @@
 # Стратегия Neon Momentum Waves
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Neon Momentum Waves использует пересечения гистограммы MACD для торговли в обе стороны. Лонг открывается при пересечении гистограммой уровня входа сверху (по умолчанию ноль), шорт — при пересечении снизу. Позиции закрываются, когда гистограмма достигает заданных уровней выхода.
 

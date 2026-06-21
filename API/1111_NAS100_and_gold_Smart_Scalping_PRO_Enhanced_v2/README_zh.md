@@ -1,5 +1,5 @@
 # NAS100 和黄金 Smart Scalping Strategy PRO Enhanced v2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 EMA9 和 VWAP 作为动态参考，RSI 衡量动量，ATR 控制风险。15 分钟 EMA200 趋势过滤器让交易顺势而为，并结合成交量放大过滤强势K线。策略按风险计算仓位，可选跟踪止损并在交易之间设置冷却时间。
 

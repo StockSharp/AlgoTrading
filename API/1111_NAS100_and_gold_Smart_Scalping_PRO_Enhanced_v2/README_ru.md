@@ -1,5 +1,5 @@
 # NAS100 и золото Smart Scalping Strategy PRO Enhanced v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия скальпирует краткосрочные движения, используя EMA9 и VWAP как динамические ориентиры, RSI для оценки импульса и ATR для управления риском. Фильтр тренда по EMA200 с 15 минутных свечей удерживает сделки по тренду, а фильтр объёма ищет сильные свечи. Размер позиции рассчитывается от риска, поддерживаются трейлинг-стопы и пауза между сделками.
 

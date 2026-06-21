@@ -1,5 +1,5 @@
 # Narrow Range Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts after an inside bar where the latest candle range is narrower than a reference bar `Length` periods ago. Stop orders are placed at the reference high and low with a take profit equal to the reference range and a stop loss set as a percentage of that range.
 

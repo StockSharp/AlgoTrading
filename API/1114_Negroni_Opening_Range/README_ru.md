@@ -1,4 +1,5 @@
 # Стратегия Negroni Opening Range
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Торговля пробоями диапазона, рассчитанного по диапазону премаркета или первой сессии. Сделки открываются только внутри заданного торгового окна и все позиции закрываются в конце сессии.
 

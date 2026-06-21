@@ -1,5 +1,5 @@
 # NASDAQ 100 Peak Hours Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy trades NASDAQ 100 only during the first two and last hours of the session. It uses EMA trend confirmation, RSI, ATR and VWAP filters with ATR based trailing and break-even stops.
 

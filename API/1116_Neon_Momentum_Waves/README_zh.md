@@ -1,5 +1,5 @@
 # Neon Momentum Waves策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Neon Momentum Waves策略使用MACD直方图的穿越信号进行双向交易。当直方图向上穿越入场水平（默认0）时做多，向下穿越时做空。直方图达到设定的退出水平时平仓。
 

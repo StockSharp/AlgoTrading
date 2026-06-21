@@ -1,5 +1,5 @@
 # NASDAQ 100 Peak Hours 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅在交易日的前两小时和最后一小时交易纳斯达克100指数。使用 EMA 趋势确认、RSI、ATR 与 VWAP 过滤，并结合基于 ATR 的移动止损和保本止损。
 

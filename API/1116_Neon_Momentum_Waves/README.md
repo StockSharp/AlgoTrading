@@ -1,5 +1,5 @@
 # Neon Momentum Waves Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Neon Momentum Waves Strategy uses MACD histogram crossings to trade in both directions. The strategy goes long when the histogram crosses above the entry level (default zero) and goes short when it crosses below. Positions are closed when the histogram reaches configured exit levels.
 

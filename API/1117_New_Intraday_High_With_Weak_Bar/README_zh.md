@@ -1,5 +1,5 @@
 # New Intraday High With Weak Bar 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当出现新的 `HighestLength` 根K线的最高价且蜡烛收盘接近最低价时做多；当价格收于前一根K线高点之上时平仓。
 

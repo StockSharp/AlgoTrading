@@ -1,5 +1,5 @@
 # 纳斯达克日夜走势拆分
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 比较纳斯达克期货与指数在盘前和常规交易时段的变化。
 计算盘前和盘后差值以及期货的日内波动。

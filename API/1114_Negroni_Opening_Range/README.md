@@ -1,4 +1,5 @@
 # Negroni Opening Range Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades breakouts based on either pre-market or opening range defined by configurable time windows. Orders are allowed only within the specified trading session and any open position is closed at the session end.
 

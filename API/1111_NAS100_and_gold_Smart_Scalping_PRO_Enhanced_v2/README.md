@@ -1,5 +1,5 @@
 # NAS100 and Gold Smart Scalping Strategy PRO Enhanced v2
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy scalps short-term moves using EMA9 and VWAP as dynamic guides, RSI for momentum, and ATR for risk management. A 15 minute EMA200 trend filter keeps trades with the prevailing trend while a volume spike filter seeks strong candles. Positions size by risk and support optional trailing stops and cooldown periods between trades.
 

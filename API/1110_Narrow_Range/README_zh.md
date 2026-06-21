@@ -1,5 +1,5 @@
 # Narrow Range 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在出现内部K线后交易突破，当当前K线范围比 `Length` 个周期前的参考K线更窄时触发。在参考K线的高点和低点放置止损单，止盈为参考范围，止损为该范围的百分比。
 
