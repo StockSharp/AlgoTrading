@@ -1,5 +1,5 @@
 # MTrainer策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MTrainer策略复刻MT4的MTrainer脚本。当价格达到预设的进场线时开仓，并通过止损、止盈和可选的部分平仓线进行管理。该策略用于在可视化测试器中进行手动练习。
 

@@ -1,4 +1,5 @@
 # Good Gbbi Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens a single position at a specific hour of the day based on the difference between historical open prices.
 

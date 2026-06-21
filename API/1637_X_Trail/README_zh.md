@@ -1,5 +1,5 @@
 # X Trail 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在基于中间价(High+Low)/2的快慢简单移动平均线交叉时开仓，
 逻辑来自原始的 MQL 脚本 **X_trail.mq4**，该脚本在交叉时仅发出提醒。

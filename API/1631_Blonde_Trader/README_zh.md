@@ -1,4 +1,5 @@
 # Blonde Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Blonde Trader 是从 MQL 移植而来的网格交易策略。它监控价格相对近期极值的偏离程度，并在触发条件时建立头寸并挂出一组挂单。
 

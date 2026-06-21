@@ -1,4 +1,5 @@
 # Стратегия Exp ATR Trailing
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Пример демонстрирует управление открытой позицией с помощью трейлинг-стопа, основанного на индикаторе **Average True Range (ATR)**. Стратегия не генерирует сигналов входа и только сопровождает уже открытые позиции.
 

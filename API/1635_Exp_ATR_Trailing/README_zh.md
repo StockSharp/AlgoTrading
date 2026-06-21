@@ -1,4 +1,5 @@
 # Exp ATR Trailing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此示例展示如何使用 **平均真实波幅 (ATR)** 指标为已有头寸设置波动性跟踪止损。策略本身不产生入场信号，只根据市场波动调整离场水平。
 

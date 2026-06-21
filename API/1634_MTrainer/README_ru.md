@@ -1,5 +1,5 @@
 # Стратегия MTrainer
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия MTrainer повторяет скрипт MT4 MTrainer. Открывает позицию, когда цена достигает заданной линии входа, и управляет ею через стоп-лосс, тейк-профит и опциональное частичное закрытие. Предназначена для ручной практики в визуальном тестере.
 

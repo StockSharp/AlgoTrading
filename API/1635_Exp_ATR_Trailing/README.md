@@ -1,4 +1,5 @@
 # Exp ATR Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This example demonstrates how to manage existing positions with a trailing stop based on the **Average True Range (ATR)** indicator. The strategy does not generate entry signals; it only adjusts the exit level of an open position according to market volatility.
 

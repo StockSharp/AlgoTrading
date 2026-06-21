@@ -1,5 +1,5 @@
 # Breakdown Level Day 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在指定时间在日内高低区间外放置买入和卖出止损单。当价格突破早盘区间时尝试捕捉趋势。还可以使用止损、止盈、保本移动和跟踪止损来管理已开仓位。
 

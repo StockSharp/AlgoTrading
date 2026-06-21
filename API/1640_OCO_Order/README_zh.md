@@ -1,5 +1,5 @@
 # OCO 订单执行策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略重现了最初为 MetaTrader 编写的“一触即撤”（OCO）订单功能。交易者可以预先设定四个独立的触发价格：
 

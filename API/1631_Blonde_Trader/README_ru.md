@@ -1,4 +1,5 @@
 # Стратегия Blonde Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Blonde Trader — это сеточная стратегия, портированная из MQL. Она ищет отклонение цены от недавних экстремумов и открывает позицию с набором отложенных заявок.
 

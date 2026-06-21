@@ -1,5 +1,5 @@
 # ARD Order Management 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 DeMarker 指标，当指标穿越 0.5 阈值时开仓。
 

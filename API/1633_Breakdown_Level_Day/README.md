@@ -1,5 +1,5 @@
 # Breakdown Level Day Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy places pending stop orders above and below the intraday range at a specified time of day. It aims to capture breakouts when price moves beyond the early session high or low. Optional stop loss, take profit, break-even and trailing stop rules manage the open position.
 

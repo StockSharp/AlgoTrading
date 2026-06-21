@@ -1,5 +1,5 @@
 # EMA WPR 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 EMA 趋势过滤器和 Williams %R 指标信号。在超卖时买入，在超买时卖出。回撤阈值避免连续入场。可选的退出规则在 Williams %R 到达相反极值或在若干亏损 K 线后平仓。
 
