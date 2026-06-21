@@ -1,5 +1,5 @@
 # Стратегия пересечения ZeroLag MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует по пересечению линии MACD и её сигнальной линии. Она конвертирована из эксперта MetaTrader **ZeroLagEA-AIP v0.0.4**. Работа ведётся только в заданные часы, также можно требовать, чтобы пересечение произошло на текущей свече.
 

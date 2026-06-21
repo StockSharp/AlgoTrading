@@ -1,5 +1,5 @@
 # Fxscalper 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 MQL4 专家“fxscalper”移植的布林带突破剥头皮策略。
 策略订阅蜡烛数据和 Bollinger Bands。当收盘价突破上轨时开多仓；当收盘价跌破下轨时开空仓。仓位通过止损和止盈进行保护。

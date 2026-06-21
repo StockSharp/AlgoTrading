@@ -1,5 +1,5 @@
 # MAM Crossover Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy built on comparing simple moving averages of candle close and open prices.
 A long signal occurs when the close SMA crosses above the open SMA and the previous bar confirmed a transition from below. A short signal appears on the opposite pattern. Opposite positions are closed on signal reversal. Optional fixed stop-loss and take-profit protect trades.

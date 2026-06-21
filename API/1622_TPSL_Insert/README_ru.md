@@ -1,4 +1,5 @@
 # Стратегия TPSL Insert
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является конверсией скрипта MetaTrader 4 **TPSL-Insert.mq4**. Она не генерирует торговых сигналов и служит только для добавления стоп-лосса и тейк-профита к уже открытым позициям.
 

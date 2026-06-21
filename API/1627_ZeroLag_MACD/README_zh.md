@@ -1,5 +1,5 @@
 # ZeroLag MACD 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MACD 线与信号线的交叉信号进行交易，来源于 MetaTrader 专家顾问 **ZeroLagEA-AIP v0.0.4**。策略仅在设定的交易时段运行，可选地要求交叉必须在当前柱上发生。
 

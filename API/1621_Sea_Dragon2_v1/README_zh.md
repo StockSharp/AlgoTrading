@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# Sea Dragon 2
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sea Dragon 2 是一种对冲网格策略，会在两个方向上同时开仓，并在价格按设定步长移动时增加新订单。订单量按照预定义序列增长，止盈水平根据多空头寸的平衡情况进行调整。
 

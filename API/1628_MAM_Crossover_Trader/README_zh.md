@@ -1,5 +1,5 @@
 # MAM Crossover Trader Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略对比蜡烛的收盘价和开盘价的简单移动平均线。
 当收盘SMA从下向上穿越开盘SMA并且前两根K线确认该突破时开多；反向形态开空。出现反向信号时关闭已有仓位。固定的止损和止盈用于风险控制。

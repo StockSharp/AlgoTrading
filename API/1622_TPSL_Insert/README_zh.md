@@ -1,4 +1,5 @@
 # TPSL Insert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 4 脚本 **TPSL-Insert.mq4** 的 StockSharp 版本。它不会产生任何买卖信号，仅用于给现有持仓自动添加止盈和止损。
 

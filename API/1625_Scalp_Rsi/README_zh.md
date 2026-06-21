@@ -1,5 +1,5 @@
 # Scalp RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 RSI 快速变化的剥头皮策略，来源于 MetaTrader 脚本 `scalpen_rsi.mq4`。
 当 RSI 快速下跌或上升时开仓，并使用固定的止盈止损。

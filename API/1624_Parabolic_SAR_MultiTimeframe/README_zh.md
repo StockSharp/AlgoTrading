@@ -1,5 +1,5 @@
 # 多周期 Parabolic SAR
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多周期 Parabolic SAR 策略使用来自更高周期的四个 SAR 指标来确认趋势方向。
 策略基于 15 分钟K线，同时检查 30 分钟、1 小时和 4 小时图上的 SAR 值。

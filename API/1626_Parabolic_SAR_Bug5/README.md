@@ -1,4 +1,5 @@
 # Parabolic SAR Bug5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -29,4 +30,3 @@ Parabolic SAR Bug5 Strategy trades price reversals detected by the Parabolic SAR
 | `Reverse` | Reverse trading direction. |
 | `SarClose` | Close position on SAR switch. |
 | `CandleType` | Timeframe of candles to process. |
-

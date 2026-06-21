@@ -1,5 +1,5 @@
 # Стратегия EMA WPR Retracement
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая стратегия, сочетающая фильтр тренда EMA с экстремальными значениями Williams %R. Перед каждой новой сделкой индикатор Williams %R должен выйти из зоны перепроданности/перекупленности, обеспечивая откат. Возможна пирамидальная наработка позиции.
 

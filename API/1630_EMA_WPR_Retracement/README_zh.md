@@ -1,5 +1,5 @@
 # EMA WPR Retracement 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 EMA 趋势过滤和 Williams %R 极值的趋势跟随策略。每次开仓前，Williams %R 必须从极端区域回撤，从而允许新的交易，并支持金字塔式加仓。
 

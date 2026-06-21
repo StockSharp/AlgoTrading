@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Sea Dragon 2
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sea Dragon 2 is a hedging grid strategy that opens positions in both directions and adds new orders when price moves by a user defined step. Order sizes follow a predefined sequence and take profit levels adapt depending on the balance between long and short exposure.
 
