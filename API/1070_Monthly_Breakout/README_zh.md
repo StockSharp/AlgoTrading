@@ -1,5 +1,5 @@
 # Monthly Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略只在选定的月份交易当前月份的高点或低点突破。可以选择在月高或月低做多或做空，持仓在固定的柱数后平仓。
 

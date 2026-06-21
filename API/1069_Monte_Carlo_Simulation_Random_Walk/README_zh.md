@@ -1,5 +1,5 @@
 # 蒙特卡罗模拟 - 随机行走策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例策略使用历史对数收益进行蒙特卡罗模拟，生成未来价格路径。它不执行交易，只用于展示如何产生随机行走并估计未来可能的最高和最低价位。
 

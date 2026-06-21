@@ -1,5 +1,5 @@
 # Monthly Returns Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tracks pivot highs and lows to trade breakouts and computes compounded monthly and yearly returns for strategy equity.
 

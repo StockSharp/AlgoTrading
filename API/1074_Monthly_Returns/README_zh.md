@@ -1,5 +1,5 @@
 # Monthly Returns 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用最近的枢轴高点和低点突破进行交易，并计算策略权益的复利月度和年度收益。
 

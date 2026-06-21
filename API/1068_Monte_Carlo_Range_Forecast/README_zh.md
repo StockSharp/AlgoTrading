@@ -1,5 +1,5 @@
 # Monte Carlo Range Forecast
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Monte Carlo Range Forecast 利用基于 ATR 的波动率进行蒙特卡洛模拟来预测价格范围。当模拟的平均价格高于当前价格时做多，低于当前价格时做空。
 

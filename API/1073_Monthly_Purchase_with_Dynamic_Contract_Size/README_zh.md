@@ -1,5 +1,5 @@
 # 每月购买策略（动态合约规模）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在每月指定日期以账户权益的固定百分比购买动态数量的合约，并跟踪回撤用于参考。
 

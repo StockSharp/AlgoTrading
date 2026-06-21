@@ -1,5 +1,5 @@
 # 动量多空策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在三小时周期内同时进行多头和空头交易。做多时要求价格位于100和500周期均线上方，并可启用RSI、ADX、ATR和趋势方向等过滤条件。做空条件是价格跌破布林带下轨并低于两条均线，可选的ATR过滤器和强势上升趋势阻挡功能可用来限制在强劲上涨期间的空头。
 

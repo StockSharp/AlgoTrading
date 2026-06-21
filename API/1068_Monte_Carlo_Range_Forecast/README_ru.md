@@ -1,5 +1,5 @@
 # Monte Carlo Range Forecast
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Monte Carlo Range Forecast использует моделирование Монте-Карло и волатильность на основе ATR для прогнозирования будущего диапазона цены. Стратегия открывает длинную позицию, когда средняя имитация выше текущей цены, и короткую, когда ниже.
 
