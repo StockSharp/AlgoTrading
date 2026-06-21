@@ -1,5 +1,5 @@
 # IU Big Body Bar Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters when the body of the current candle is several times larger than the average body size of the last 20 candles. A big bullish candle opens a long position, while a big bearish candle opens a short one. Positions are protected with an ATR-based trailing stop.
 

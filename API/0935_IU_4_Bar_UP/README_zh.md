@@ -1,5 +1,5 @@
 # IU 4 Bar UP Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IU 4 Bar UP Strategy 是一种仅做多策略，当价格位于 SuperTrend 上方并出现连续四根上涨 K 线时买入。
 

@@ -1,5 +1,5 @@
 # Стратегия martingale inwCoin
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия реализует подход мартингейла для длинных позиций по Bitcoin.
 Поддерживаются три входных сигнала: пересечение гистограммы MACD выше нуля,

@@ -1,5 +1,5 @@
 # inwCoin 马丁格尔策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在比特币上实现简单的马丁格尔加仓方案。
 可选三种入场信号：MACD 柱状图上穿零轴、Stochastic RSI 的 %D 线上穿 20、

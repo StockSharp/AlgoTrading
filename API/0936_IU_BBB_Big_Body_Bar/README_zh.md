@@ -1,5 +1,5 @@
 # IU 大实体柱策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在当前K线实体比过去20根K线平均实体大数倍时开仓。大阳线开多头，大阴线开空头。仓位通过基于ATR的跟踪止损保护。
 

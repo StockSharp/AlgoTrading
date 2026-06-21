@@ -1,5 +1,5 @@
 # Intra Bullish Strategy - Profit Ping v4.0 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 仅做多系统，使用EMA金叉并由MACD柱状图和RSI强度确认。
 

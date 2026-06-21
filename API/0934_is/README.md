@@ -1,5 +1,5 @@
 # IS Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A simple strategy that opens a long position when the selected source equals the long trigger value and closes it when the value switches to the opposite. If short selling is enabled, the strategy also opens a short position on the opposite signal. Take profit and stop loss are specified as percentages of the entry price.
 

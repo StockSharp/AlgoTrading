@@ -1,5 +1,5 @@
 # IS 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在所选数据源等于多头触发值且前一个值不同时时做多；若允许做空，则在相反信号上做空。止盈和止损以入场价的百分比表示。
 

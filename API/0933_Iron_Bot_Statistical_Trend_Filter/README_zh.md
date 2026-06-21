@@ -1,5 +1,5 @@
 # Iron Bot Statistical Trend Filter Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用斐波那契区间和Z分数计算的统计趋势水平进行突破交易。
 

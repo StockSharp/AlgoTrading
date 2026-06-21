@@ -1,5 +1,5 @@
 # IU 4 Bar UP Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IU 4 Bar UP Strategy is a long-only approach that buys after four consecutive bullish candles when price is above the SuperTrend indicator.
 
