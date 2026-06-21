@@ -1,5 +1,5 @@
 # Supertrend & CCI Strategy Scalp 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两条 Supertrend 线和一个平滑的 CCI 来捕捉短期反转。
 当第一条 Supertrend 在价格上方、第二条在价格下方且平滑 CCI 低于 -100 时买入；做空逻辑相反。

@@ -1,5 +1,5 @@
 # Supertrend Ema Vol 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Supertrend、EMA 趋势确认以及成交量过滤。当 Supertrend 反转且价格位于 EMA 上下并且成交量超过其 EMA 时入场。使用 ATR 作为止损依据。
 

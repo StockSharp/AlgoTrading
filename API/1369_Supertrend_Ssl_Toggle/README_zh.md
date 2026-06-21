@@ -1,5 +1,5 @@
 # Supertrend - SSL 策略（带切换）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Supertrend 指标与 SSL 通道。
 可选开关允许在入场前要求两个指标同时确认。

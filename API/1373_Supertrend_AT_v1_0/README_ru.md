@@ -1,5 +1,5 @@
 # Стратегия Supertrend AT v1.0
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия на основе индикатора Supertrend. Открывает длинную позицию при смене тренда с нисходящего на восходящий и короткую позицию при смене с восходящего на нисходящий. Размер позиции рассчитывается исходя из риска на сделку, выход по стопу или тейк-профиту, основанным на предыдущем значении Supertrend.
 

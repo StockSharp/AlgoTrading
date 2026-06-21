@@ -1,5 +1,5 @@
 # Supertrade RVI Long-Only 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 RVI 指标上穿 20 时开多仓。止损和止盈由风险百分比与收益比率设定。
 

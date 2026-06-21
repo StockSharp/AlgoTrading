@@ -1,5 +1,5 @@
 # Supertrend AT v1.0 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Supertrend 指标。当 Supertrend 从下行翻转为上行时开多，从上行翻转为下行时开空。仓位大小根据单笔风险计算，退出采用基于前一条 Supertrend 的止损和止盈。
 

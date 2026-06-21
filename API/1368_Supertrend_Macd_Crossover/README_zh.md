@@ -1,5 +1,5 @@
 # Supertrend + MACD 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 Supertrend 指标与 MACD 交叉结合，用于识别做多信号。
 当价格位于 Supertrend 线上方且 MACD 线上穿信号线时开多仓。

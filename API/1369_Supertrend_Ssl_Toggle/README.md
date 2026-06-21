@@ -1,5 +1,5 @@
 # Supertrend - SSL Strategy with Toggle
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the Supertrend indicator with the SSL channel.
 A toggle allows requiring confirmation from both indicators before entering a trade.

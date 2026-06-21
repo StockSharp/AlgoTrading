@@ -1,5 +1,5 @@
 # Стратегия SuperTrend Enhanced Pivot Reversal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Комбинирует направление SuperTrend с пробоем pivot‑уровней. Стоп‑заявка на покупку ставится выше последнего pivot high при нисходящем SuperTrend. Стоп‑заявка на продажу — ниже pivot low при восходящем SuperTrend. Позиции защищаются процентным стоп‑лоссом от pivot.
 

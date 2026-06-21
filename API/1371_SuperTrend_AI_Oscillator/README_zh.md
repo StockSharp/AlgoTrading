@@ -1,5 +1,5 @@
 # SuperTrend AI Oscillator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 SuperTrend AI Oscillator 将 SuperTrend 追踪止损与自定义振荡器过滤结合。
 策略在 SuperTrend 反转且振荡器确认时入场。

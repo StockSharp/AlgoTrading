@@ -1,5 +1,5 @@
 # SuperTrend Enhanced Pivot Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 SuperTrend 方向与枢轴高/低突破。在 SuperTrend 向下时，在最近的枢轴高上方挂多头止损单；在 SuperTrend 向上时，在枢轴低下方挂空头止损单。仓位以枢轴价格的百分比止损保护。
 

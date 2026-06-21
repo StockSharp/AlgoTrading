@@ -1,5 +1,5 @@
 # Стратегия Supertrade RVI Long-Only
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует индекс относительной волатильности (RVI), пересекающий уровень 20, чтобы открывать длинные позиции. Стоп-лосс и тейк-профит задаются через процент риска и коэффициент прибыли.
 

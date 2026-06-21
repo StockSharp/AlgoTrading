@@ -1,5 +1,5 @@
 # Supertrend Advance Pullback 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Supertrend Advance Pullback 结合 Supertrend 的回调或反转入场，并使用 EMA、RSI、MACD 和 CCI 过滤器来优化信号。
 
