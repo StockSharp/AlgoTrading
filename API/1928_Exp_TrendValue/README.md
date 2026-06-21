@@ -1,4 +1,5 @@
 # Exp TrendValue Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A strategy based on the TrendValue indicator. It builds dynamic support and resistance bands using weighted moving averages of high and low prices shifted by ATR. A new up or down trend is detected when price crosses the opposite band.
 

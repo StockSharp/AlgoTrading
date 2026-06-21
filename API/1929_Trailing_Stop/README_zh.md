@@ -1,4 +1,5 @@
 # 跟踪止损策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略实现了原始 MQL 脚本 `TRAILING.mq4` 中的跟踪止损逻辑。它管理已经打开的仓位，当价格达到预设的盈利目标或触及止损时平仓。启用跟踪参数后，止损价位会随着价格移动以锁定盈利。

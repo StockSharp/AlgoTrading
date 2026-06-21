@@ -1,4 +1,5 @@
 # Trailing Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy implements the trailing stop logic from the original MQL script `TRAILING.mq4`. It manages an existing open position and closes it when the market moves to a specified profit target or hits a stop loss. When the trailing parameter is enabled, the stop level follows the price to lock in profits.

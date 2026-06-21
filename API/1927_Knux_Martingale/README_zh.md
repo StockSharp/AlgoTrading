@@ -1,5 +1,5 @@
 # Knux Martingale Strategy 策略 (中文)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用马丁格尔方法，在出现亏损后增加交易量。指标 Average Directional Index (ADX) 用于过滤信号，只在趋势市场中开仓。阳线触发做多，阴线触发做空。
 

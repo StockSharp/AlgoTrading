@@ -1,5 +1,5 @@
 # Ilan Dynamic HT 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于网格的马丁格尔策略，通过 RSI 信号开仓，并利用动态价格区间扩大持仓。每增加一笔交易，仓位按倍数增长，共享同一个止盈和止损。
 

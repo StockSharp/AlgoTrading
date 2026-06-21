@@ -1,5 +1,5 @@
 # ZPF Volume Filter
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ZPF Volume Filter combines two moving averages with a volume average. The indicator value is the volume-smoothed difference between a fast and a slow moving average. When this value crosses above zero, bullish pressure is assumed; a cross below zero signals bearish pressure.
 

@@ -1,4 +1,5 @@
 # Exp TrendValue 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 TrendValue 指标。它使用加权移动平均线和 ATR 构建动态支撑与阻力带，当价格突破相反边界时视为趋势反转。
 

@@ -1,4 +1,5 @@
 # FmOne Scalping Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 FmOne Scalping Strategy 是 FMOneEA MetaTrader 4 专家顾问的简化移植。该策略结合快慢指数移动平均线与 MACD 指标，在任何时间框架上捕捉短期动量。

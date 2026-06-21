@@ -1,5 +1,5 @@
 # Trailing Stop EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过追踪止损来管理已存在的仓位。它订阅逐笔成交，并在价格朝有利方向移动时调整止损位置。当市场反转并触及该止损时，策略平仓。
 

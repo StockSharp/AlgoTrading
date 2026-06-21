@@ -1,5 +1,5 @@
 # ZPF体积过滤 (ZPF Volume Filter)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ZPF体积过滤将两条移动平均线与成交量平均结合。指标值是快速与慢速移动平均之差乘以平滑后的成交量。当该值上穿零线时表示多头压力，下穿零线则表示空头压力。
 

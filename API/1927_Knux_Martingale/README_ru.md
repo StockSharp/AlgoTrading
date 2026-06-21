@@ -1,5 +1,5 @@
 # Стратегия Knux Martingale
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия мартингейла, увеличивающая объём сделки после убыточной позиции. Входы фильтруются индикатором Average Directional Index (ADX), чтобы торговать только в трендовых условиях. Бычья свеча открывает длинную позицию, медвежья свеча открывает короткую.
 

@@ -1,4 +1,5 @@
 # RoNz Rapid-Fire 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合移动平均线和抛物线SAR指标，用于捕捉快速趋势变化。当收盘价上穿移动平均线且抛物线SAR切换到价格下方时开多仓；当收盘价下穿移动平均线且抛物线SAR切换到价格上方时开空仓。趋势持续时可以选择加仓。
 

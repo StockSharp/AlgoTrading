@@ -1,5 +1,5 @@
 # 指数MA舍入通道策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将移动平均线按固定的跳动步长进行舍入，并在其周围构建基于ATR的通道。当上一根K线收于上轨上方时开多仓；当上一根K线收于下轨下方时开空仓。相反信号会平掉当前仓位。止损和止盈以跳动点表示并自动管理。
 

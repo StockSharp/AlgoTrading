@@ -1,4 +1,5 @@
 # FmOne Scalping Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 FmOne Scalping Strategy – упрощённый перевод советника FMOneEA для MetaTrader 4. Стратегия сочетает быструю и медленную экспоненциальные скользящие средние с индикатором MACD для фиксации краткосрочного импульса на любых таймфреймах.

@@ -1,4 +1,5 @@
 # RoNz Rapid-Fire Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a moving average with the Parabolic SAR indicator to detect rapid trend changes. A long position is opened when the close price rises above the moving average while the Parabolic SAR flips below the price. A short position is opened on the opposite conditions. Positions can optionally be averaged when the trend continues.
 
