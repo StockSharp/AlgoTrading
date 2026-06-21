@@ -1,5 +1,5 @@
 # 黄金和欧元/美元流动性抓取策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用RSI、SMA、随机指标和基于ATR的公平价值缺口，在黄金和欧元/美元的供需区寻找流动性抓取。
 

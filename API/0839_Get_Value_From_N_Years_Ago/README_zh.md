@@ -1,5 +1,5 @@
 # 获取 N 年前的值
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 演示如何获取 N 年前K线的时间组成，不包含交易逻辑。
 

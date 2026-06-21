@@ -1,5 +1,5 @@
 # Gold Breakout RR4 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gold Breakout RR4 trades Donchian Channel breakouts on gold with volume and LWTI trend filters. Only one trade per day within a specified session and uses a fixed 4:1 risk/reward.
 

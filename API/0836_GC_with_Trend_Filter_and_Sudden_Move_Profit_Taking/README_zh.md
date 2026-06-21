@@ -1,5 +1,5 @@
 # GC策略：趋势过滤与突然波动止盈
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合5/25周期SMA金叉、75周期趋势过滤及ADX确认。当价格相对前一收盘超过设定百分比时，立即平仓以捕捉突然波动。
 

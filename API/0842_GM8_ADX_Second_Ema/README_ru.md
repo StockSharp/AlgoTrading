@@ -1,5 +1,5 @@
 # GM-8 и ADX со второй EMA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия входит в сделки при пересечении цены со SMA GM-8 в направлении второй EMA и подтверждении сильным трендом ADX.
 

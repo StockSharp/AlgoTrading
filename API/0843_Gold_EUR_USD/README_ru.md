@@ -1,5 +1,5 @@
 # Стратегия захвата ликвидности для золота и EUR/USD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ищет выбросы ликвидности у зон спроса и предложения по золоту и EUR/USD, используя RSI, SMA, стохастический осциллятор и разрывы справедливой стоимости по ATR.
 

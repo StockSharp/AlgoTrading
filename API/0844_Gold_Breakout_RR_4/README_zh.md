@@ -1,5 +1,5 @@
 # Gold Breakout RR4 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gold Breakout RR4 策略在黄金上使用 Donchian 通道突破，并结合成交量和 LWTI 趋势过滤。每天只交易一次，在指定时段内执行，并采用固定的 4:1 风险收益比。
 

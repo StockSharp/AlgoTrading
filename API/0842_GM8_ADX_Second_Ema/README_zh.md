@@ -1,5 +1,5 @@
 # GM-8 和 ADX 第二条 EMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格与 GM-8 SMA 交叉并符合第二条 EMA，且 ADX 显示强趋势时入场。
 

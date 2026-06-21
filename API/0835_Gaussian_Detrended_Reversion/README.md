@@ -1,5 +1,5 @@
 # Gaussian Detrended Reversion
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gaussian Detrended Reversion is a mean-reversion strategy that uses a detrended price oscillator smoothed with an Arnaud Legoux Moving Average (ALMA). Long positions open when the smoothed oscillator crosses above its lagged version while below zero; shorts open on downward crosses above zero. Positions exit on opposite crosses or when the oscillator crosses the zero line.
 

@@ -1,5 +1,5 @@
 # Получение значения N лет назад
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Показывает, как получить компоненты времени свечи N лет назад. Торговля не выполняется.
 

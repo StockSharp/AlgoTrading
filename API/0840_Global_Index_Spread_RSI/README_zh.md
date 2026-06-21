@@ -1,5 +1,5 @@
 # Global Index Spread RSI Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Global Index Spread RSI Strategy 是一种在 E-mini S&P 500 上进行交易的策略，当该指数与全球股指的价差出现超卖时入场。该价差以百分比计算并输入短周期 RSI。当 RSI 低于超卖阈值时开多，RSI 高于超买阈值时平仓。
 

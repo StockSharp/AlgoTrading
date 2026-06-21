@@ -1,5 +1,5 @@
 # Gemini 趋势跟随系统
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在强劲上升趋势中，当价格回调至50日均线后重新站上时买入，趋势由200日均线和一年期收益率变化率筛选确认。
 
