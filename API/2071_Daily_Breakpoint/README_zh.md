@@ -1,4 +1,5 @@
 # 日内突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用每日开盘价的突破。每个交易日开始时记录开盘价，当价格偏离该水平达到设定的点数且前一根K线的实体在允许范围内时，在突破方向开仓。
 

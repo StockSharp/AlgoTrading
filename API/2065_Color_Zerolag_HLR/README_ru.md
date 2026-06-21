@@ -1,4 +1,5 @@
 # Стратегия Color Zerolag HLR
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой C# конверсию MQL5 эксперта `Exp_ColorZerolagHLR`. Она строит пять осцилляторов Hi-Lo Range (HLR) с разными периодами и весами, затем сглаживает их для получения быстрых и медленных линий тренда. Пересечения линий используются для генерации торговых сигналов.
 

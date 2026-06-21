@@ -1,4 +1,5 @@
 # Color Zerolag HLR Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# conversion of the MQL5 expert `Exp_ColorZerolagHLR`. It combines multiple Hi-Lo Range (HLR) oscillators with different lengths and weights, then applies an exponential smoothing to build fast and slow trend lines. Crossovers between these lines generate trading signals.
 

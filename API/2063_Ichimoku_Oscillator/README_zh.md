@@ -1,4 +1,5 @@
 # Ichimoku Oscillator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Ichimoku Oscillator** 策略基于 Ichimoku 指标构建的振荡器。该振荡器等于滞后线与 Senkou Span B 的差值，再减去 Tenkan-sen 与 Kijun-sen 的差值，然后使用 Jurik 移动平均进行平滑。
 

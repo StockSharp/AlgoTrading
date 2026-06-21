@@ -1,4 +1,5 @@
 # Color Zerolag HLR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 Expert `Exp_ColorZerolagHLR` 的 C# 版本。策略使用五个不同周期的 Hi-Lo Range (HLR) 振荡器，通过加权求和形成快速线，然后应用零滞后平滑得到慢速线。两条线的交叉用作交易信号。
 

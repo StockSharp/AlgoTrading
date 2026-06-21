@@ -1,4 +1,5 @@
 # Ichimoku Oscillator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Ichimoku Oscillator** strategy uses a custom oscillator derived from the Ichimoku indicator. The oscillator is defined as the difference between the lagging line and Senkou Span B minus the difference between Tenkan-sen and Kijun-sen. The resulting value is smoothed with a Jurik moving average.
 

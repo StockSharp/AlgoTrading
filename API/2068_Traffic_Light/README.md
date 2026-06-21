@@ -1,5 +1,5 @@
 # Traffic Light Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A trend-following approach that uses a set of moving averages colored like a traffic light to determine the trading direction.
 The strategy waits for price to be inside a predefined zone and then checks the order of the averages before entering the market.

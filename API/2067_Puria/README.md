@@ -1,5 +1,5 @@
 # Puria Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Puria is a trend-following strategy that combines a fast EMA, two slow LWMAs of the low price, and a MACD filter. A long position is opened when the 5-period EMA is above both the 75- and 85-period LWMAs, the previous close is above the EMA, and the MACD line is positive. A short position is opened when the opposite conditions are met. The strategy uses fixed take-profit and stop-loss levels and allows only one position per direction until an opposite signal appears.
 

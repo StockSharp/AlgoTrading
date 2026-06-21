@@ -1,4 +1,5 @@
 # Daily Breakpoint Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts from the daily open. At the beginning of each new day the opening price is stored. When the price moves away from this level by a user defined number of points, and the previous bar is within a configurable size range, the strategy enters in the breakout direction.
 

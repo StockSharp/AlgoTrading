@@ -1,5 +1,5 @@
 # Puria策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Puria是一种趋势跟随策略，结合了一个快速EMA、两个低价的慢速LWMA以及MACD过滤器。当5周期EMA位于75和85周期LWMA之上，且前一根K线收盘价高于EMA并且MACD线为正时，建立多头仓位；当相反条件满足时建立空头仓位。策略使用固定的止盈和止损，并在出现反向信号前每个方向只允许一个仓位。
 

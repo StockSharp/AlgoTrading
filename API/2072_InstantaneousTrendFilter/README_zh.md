@@ -1,5 +1,5 @@
 # 即时趋势滤波策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用约翰·埃勒斯的即时趋势线和触发线，在任何时间框架上产生交易信号。触发线计算为 `2 * ITrend - ITrend[2]`，形成一条快速线与较慢的趋势线交叉。当触发线从上向下穿越趋势线时，关闭空头并开多；当触发线从下向上穿越趋势线时，关闭多头并开空。平滑参数 `Alpha` 控制反应速度：值越小，曲线越平滑；值越大，反应越快。
 

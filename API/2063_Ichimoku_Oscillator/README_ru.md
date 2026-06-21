@@ -1,4 +1,5 @@
 # Стратегия Ichimoku Oscillator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Ichimoku Oscillator** использует осциллятор, построенный на базе индикатора Ichimoku. Осциллятор рассчитывается как разница между линией запаздывания и Senkou Span B за вычетом разницы между Tenkan-sen и Kijun-sen. Полученное значение сглаживается средним Юрика (Jurik moving average).
 
