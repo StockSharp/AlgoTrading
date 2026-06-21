@@ -1,5 +1,5 @@
 # EMA 5 Alert Candle Short
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **EMA 5 Alert Candle Short** strategy waits for three candles that touch the 5-period EMA and then identifies a candle that stays above it. A short is opened when the next candle breaks the alert candle low, with the take-profit placed at a distance equal to the stop loss.
 

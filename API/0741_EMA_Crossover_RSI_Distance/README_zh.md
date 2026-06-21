@@ -1,5 +1,5 @@
 # EMA 交叉结合 RSI 与距离策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用多条 EMA 和 RSI 产生多空信号，并通过检查快速 EMA 之间的距离来确认趋势强度。
 

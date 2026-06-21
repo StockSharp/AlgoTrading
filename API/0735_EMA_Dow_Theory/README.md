@@ -1,5 +1,5 @@
 # EMA Dow Theory Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a fast and slow Exponential Moving Average (EMA) crossover with a basic Dow Theory trend filter. The trend is determined by recent swing highs and lows. Positions are taken when the EMAs align with the trend direction.
 

@@ -1,5 +1,5 @@
 # EMA 均线交叉追踪止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两条指数移动平均线。当短期 EMA 向上穿越长期 EMA 时做多；当短期 EMA 向下穿越长期 EMA 时做空。进场后根据最高价或最低价设置的追踪止损在价格逆转达到设定百分比时平仓。
 

@@ -1,5 +1,5 @@
 # Стратегия EMA Crossover Short Focus Trailing Stop
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда 13 EMA выше 33 EMA и нет открытого шорта. Короткая позиция открывается, когда 13 EMA ниже 33 EMA и нет лонга. Выход из длинной происходит при падении 13 EMA ниже 33 EMA, из короткой — при росте 13 EMA выше 25 EMA. Позиции защищаются трейлинг‑стопом от последних экстремумов.
 

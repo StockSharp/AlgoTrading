@@ -1,5 +1,5 @@
 # EMA 10/55/200 Long-Only MTF Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens long positions when EMA crossovers on the 4-hour chart align with bullish trends on daily and weekly charts.
 

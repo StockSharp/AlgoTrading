@@ -1,5 +1,5 @@
 # Стратегия пересечения EMA с RSI и расстоянием
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует несколько EMA и RSI для генерации сигналов на покупку и продажу, проверяя расстояние между быстрыми EMA для подтверждения силы тренда.
 

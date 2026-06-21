@@ -1,5 +1,5 @@
 # EMA 10/55/200 Long-Only MTF 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 4 小时图上的 EMA 金叉得到日线和周线趋势确认时，本策略开多仓。
 

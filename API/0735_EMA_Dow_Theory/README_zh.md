@@ -1,5 +1,5 @@
 # EMA 道氏理论策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将快慢指数移动平均线（EMA）交叉与简化的道氏理论趋势过滤结合。趋势依据最近的波峰与波谷确定。当EMA方向与趋势一致且价格突破相应的波动极值时开仓。
 

@@ -1,5 +1,5 @@
 # EMA 34 Crossover with Break Even Stop Loss
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **EMA 34 Crossover with Break Even Stop Loss** strategy enters long when price crosses above the 34-period EMA. Stop loss is placed at the previous candle's low, take profit is ten times the risk, and the stop moves to break even after price reaches three times the risk.
 

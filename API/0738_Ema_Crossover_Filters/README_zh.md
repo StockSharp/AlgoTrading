@@ -1,5 +1,5 @@
 # 带过滤器的 EMA 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用多条指数移动平均线（EMA）结合趋势过滤器进行交叉交易。
 

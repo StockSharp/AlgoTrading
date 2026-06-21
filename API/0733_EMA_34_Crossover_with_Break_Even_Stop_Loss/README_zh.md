@@ -1,5 +1,5 @@
 # EMA 34 均线突破并带有保本止损
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **EMA 34 Crossover with Break Even Stop Loss** 策略在价格向上穿越34周期EMA时做多。止损放在上一根K线的最低点，止盈设为风险的十倍，当价格达到三倍风险时，止损移动到入场价。
 

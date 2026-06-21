@@ -1,5 +1,5 @@
 # EMA Crossover Take Profit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on a crossover of the 20-period and 50-period exponential moving averages (EMAs). A long position is opened when the fast EMA crosses above the slow EMA, and a short position is opened on the opposite crossover.
 

@@ -1,5 +1,5 @@
 # EMA 5 Alert Candle Short
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **EMA 5 Alert Candle Short** 策略等待三根触及 EMA(5) 的蜡烛，然后出现一根未触及 EMA 的蜡烛。当下一根蜡烛跌破该 "警示蜡烛" 的最低价时做空，止盈距离等于止损。
 

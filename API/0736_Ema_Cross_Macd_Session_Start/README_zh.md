@@ -1,5 +1,5 @@
 # EMA交叉MACD会话策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速EMA上穿慢速EMA且MACD柱线为正时做多；当快速EMA下穿慢速EMA且MACD柱线为负时做空。如果在交易会话的第一根K线上条件已满足，则立即开仓。持仓在相反的EMA交叉或会话结束时平仓。
 

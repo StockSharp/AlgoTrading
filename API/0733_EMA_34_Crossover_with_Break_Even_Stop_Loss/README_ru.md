@@ -1,5 +1,5 @@
 # Пересечение EMA 34 с переводом стопа в безубыток
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **EMA 34 Crossover with Break Even Stop Loss** открывает длинную позицию, когда цена пересекает сверху EMA с периодом 34. Стоп-лосс ставится на минимум предыдущей свечи, тейк-профит равен десяти размерам риска, а после достижения трёх рисков стоп переносится в безубыток.
 

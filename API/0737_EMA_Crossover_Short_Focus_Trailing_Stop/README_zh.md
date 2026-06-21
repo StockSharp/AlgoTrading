@@ -1,5 +1,5 @@
 # EMA Crossover Short Focus Trailing Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当13EMA位于33EMA之上且没有空头仓位时做多；当13EMA位于33EMA之下且没有多头仓位时做空。13EMA跌破33EMA时平多，13EMA升破25EMA时平空。使用追踪止损保护持仓。
 
