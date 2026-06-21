@@ -1,4 +1,5 @@
 # Rijfie 金字塔策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在随机指标上穿设定的低位阈值时建立初始多头仓位。之后只要价格在保持高于EMA滤波器和最低价格的同时按百分比下跌，就会逐步加仓。还可以在指定时间平掉所有仓位。
 

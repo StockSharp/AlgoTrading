@@ -1,5 +1,5 @@
 # XDerivative 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 XDerivative 策略通过平滑的价格变化率来捕捉动量变化。原始的 MQL 专家将 Rate of Change 与 Jurik 平滑相结合来识别转折点。该版本使用 StockSharp 的内置指标实现相同的概念。
 

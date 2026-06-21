@@ -1,5 +1,5 @@
 # Стратегия XDerivative
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия XDerivative отслеживает изменения импульса цены через сглаженную производную. Оригинальный эксперт MQL сочетает расчёт Rate of Change с сглаживанием Jurik для определения точек разворота. В версии StockSharp используются встроенные индикаторы для реализации той же идеи.
 

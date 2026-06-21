@@ -1,4 +1,5 @@
 # Robust EA Template Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy implementing the Robust EA Template from MQL.
 It uses Commodity Channel Index (CCI) and Relative Strength Index (RSI) to generate entry signals and applies fixed take profit and stop loss.

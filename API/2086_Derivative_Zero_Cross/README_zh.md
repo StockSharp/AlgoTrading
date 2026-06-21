@@ -1,4 +1,5 @@
 # 导数零交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于价格导数的符号变化进行交易。导数计算为价格动量除以周期再乘以100。当导数穿越零线时，当前仓位被关闭并开立相反方向的新仓位。
 

@@ -1,5 +1,5 @@
 # 即时执行策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在启动后第一个完成的K线立即开仓，并通过简单的盈亏规则管理持仓。交易方向可通过参数选择。开仓后算法跟踪收益和损失，并可以通过移动止损保护利润。
 

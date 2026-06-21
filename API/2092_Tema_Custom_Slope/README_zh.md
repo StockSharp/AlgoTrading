@@ -1,4 +1,5 @@
 # TEMA Custom Slope 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于三重指数移动平均线（TEMA）斜率变化的反转策略。指标在指定的时间框架上计算，策略在方向改变时做出反应。
 

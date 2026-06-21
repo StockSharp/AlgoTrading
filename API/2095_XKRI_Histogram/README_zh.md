@@ -1,5 +1,5 @@
 # XKRI Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Kairi Relative Index 指标，并使用指数移动平均进行平滑。系统在平滑后的振荡器出现局部高点或低点时识别反转模式并开仓做多或做空。
 

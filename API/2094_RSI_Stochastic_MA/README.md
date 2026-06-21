@@ -1,4 +1,5 @@
 # RSI Stochastic MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a simple moving average (SMA) trend filter with RSI and Stochastic oscillators.
 The moving average defines the market bias. When price is above the SMA the strategy looks for long

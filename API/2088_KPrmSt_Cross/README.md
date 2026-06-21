@@ -1,4 +1,5 @@
 # KPrmSt Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The KPrmSt Cross strategy is a port of the MetaTrader 5 expert `exp_kprmst.mq5`. It uses a stochastic-like oscillator known as KPrmSt to capture reversals when the oscillator's main line crosses the signal line.

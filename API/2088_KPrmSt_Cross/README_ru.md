@@ -1,4 +1,5 @@
 # Стратегия KPrmSt Cross
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия KPrmSt Cross является портом эксперта MetaTrader 5 `exp_kprmst.mq5`. В ней используется осциллятор типа Stochastic (KPrmSt) для поиска разворотов при пересечении основной и сигнальной линий.

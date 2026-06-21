@@ -1,5 +1,5 @@
 # Стратегия Exp Multitrend Signal KVN
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия реализует концепцию MultiTrend Signal KVN. Она строит адаптивный ценовой канал на основе индикатора Average Directional Index (ADX), который определяет размер окна. Когда цена закрывается выше канала, открывается длинная позиция. Когда закрывается ниже – короткая.
 

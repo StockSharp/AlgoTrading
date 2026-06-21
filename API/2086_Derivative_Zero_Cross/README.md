@@ -1,4 +1,5 @@
 # Derivative Zero Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the sign change of the price derivative. The derivative is calculated as the price momentum divided by the period and multiplied by 100. When the derivative crosses the zero line the current position is closed and the opposite position is opened.
 

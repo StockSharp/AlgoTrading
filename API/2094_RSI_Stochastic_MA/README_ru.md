@@ -1,4 +1,5 @@
 # Стратегия RSI Stochastic MA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует простую скользящую среднюю для определения направления тренда и комбинирует её с индикаторами RSI и Stochastic.
 Когда цена выше SMA, ищутся только покупки; когда ниже – только продажи. Уровни RSI и Stochastic помогают находить моменты перекупленности и перепроданности.

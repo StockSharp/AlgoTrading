@@ -1,4 +1,5 @@
 # RSI 随机指标 均线 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把简单移动平均线(SMA)作为趋势过滤器，并结合RSI与随机指标。
 当价格在SMA之上时仅考虑做多；在SMA之下时仅考虑做空。RSI与随机指标的上下限

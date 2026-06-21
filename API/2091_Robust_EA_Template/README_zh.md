@@ -1,4 +1,5 @@
 # Robust EA 模板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据 MQL 的 Robust EA 模板实现，使用 CCI 和 RSI 指标生成交易信号，并应用固定的止盈与止损。
 

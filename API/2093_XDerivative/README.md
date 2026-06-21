@@ -1,5 +1,5 @@
 # XDerivative Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 XDerivative Strategy tracks shifts in price momentum using a smoothed rate of change. The original MQL expert combines a rate-of-change calculation with Jurik smoothing to detect turning points. The StockSharp version reuses built-in indicators to implement the same concept.
 

@@ -1,5 +1,5 @@
 # Instant Execution Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy immediately enters a single position on the first completed candle and manages it with simple profit and risk rules. The position direction is selectable through parameters. Once a trade is opened the algorithm tracks profit and loss and can trail the price to protect gains.
 

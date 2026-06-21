@@ -1,4 +1,5 @@
 # KPrmSt Cross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 KPrmSt Cross 策略移植自 MetaTrader 5 专家 `exp_kprmst.mq5`。策略使用类似随机指标的 KPrmSt 振荡器，当主线与信号线交叉时捕捉趋势反转。
