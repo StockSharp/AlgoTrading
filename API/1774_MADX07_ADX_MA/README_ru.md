@@ -1,4 +1,5 @@
 # Стратегия MADX-07 ADX MA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия является конвертацией советника MADX-07 с платформы MQL4. Используется таймфрейм H4 и сочетание двух скользящих средних с индикатором ADX для фильтрации.
 

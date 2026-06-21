@@ -1,5 +1,5 @@
 # PZ Reversal Trend Following
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy follows breakouts of long-term highs and lows. It buys when the closing price exceeds the highest high of the lookback period and sells short when the closing price falls below the lowest low. The position is always reversed on opposite signals, keeping the strategy continually in the market.
 

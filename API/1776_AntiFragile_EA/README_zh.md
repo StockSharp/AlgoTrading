@@ -1,5 +1,5 @@
 # AntiFragile EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一个网格策略，在当前价格上下按固定间隔挂单并逐级增加手数。
 仓位先设置固定止损，并在价格向有利方向运行时通过追踪止损保护利润。

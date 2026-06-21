@@ -1,5 +1,5 @@
 # PZ Reversal Trend Following 反转趋势跟踪
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略跟随长期高点和低点的突破。当收盘价超过设定周期内的最高点时做多，当收盘价跌破最低点时做空。出现相反信号时头寸会反转，因此策略始终保持在市场中。
 

@@ -1,4 +1,5 @@
 # PSAR Trader v2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy trades market reversals using the Parabolic SAR indicator. A position is opened when the SAR value switches sides relative to price, signalling a potential change in trend. The algorithm operates only within a specified time window and can optionally close an existing position when an opposite signal appears.

@@ -1,5 +1,5 @@
 # PZ Parabolic SAR EA
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 *PZ Parabolic SAR* 专家顾问。它使用两个 Parabolic SAR 指标，分别具有不同的步长和最大加速度参数。"交易" SAR 用于判断趋势方向并产生入场信号，而 "止损" SAR 紧跟价格，当趋势反转时触发退出。
 

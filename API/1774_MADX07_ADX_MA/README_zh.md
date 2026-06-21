@@ -1,4 +1,5 @@
 # MADX-07 ADX MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略由 MQL4 平台的 MADX-07 EA 转换而来，使用 H4 K 线，将两条移动平均线与平均趋向指数 (ADX) 结合作为过滤器。
 

@@ -1,4 +1,5 @@
 # X Trader V2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a contrarian moving average crossover system converted from the original MQL4 expert **X_trader_v2**. It uses two moving averages to detect sudden reversals and executes trades opposite to the crossing direction.

@@ -1,4 +1,5 @@
 # Стратегия C Factor HLH4 Buy Only
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия представляет собой C# адаптацию оригинального советника MQL **C_Factor_HLH4_buy_only**. Она демонстрирует перенос логики MetaTrader в высокоуровневый API StockSharp.
 

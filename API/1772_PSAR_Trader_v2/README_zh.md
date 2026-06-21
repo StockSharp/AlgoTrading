@@ -1,4 +1,5 @@
 # PSAR Trader v2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用抛物线 SAR 指标捕捉趋势反转。当 SAR 值相对于价格发生翻转时开仓，表示可能出现新的趋势。算法仅在指定的时间区间内运行，并可在出现相反信号时关闭当前持仓。

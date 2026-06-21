@@ -1,4 +1,5 @@
 # C Factor HLH4 仅做多策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是原始 MQL 专家顾问 **C_Factor_HLH4_buy_only** 的 C# 翻译版本，展示如何将 MetaTrader 策略移植到 StockSharp 高级 API。
 

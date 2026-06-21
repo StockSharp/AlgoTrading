@@ -1,4 +1,5 @@
 # X Trader V2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是从 MQL4 专家顾问 **X_trader_v2** 转换而来，是一种反向移动平均交叉系统。策略使用两条移动平均线来发现趋势反转，并在交叉方向的反面开仓。
