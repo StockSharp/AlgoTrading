@@ -1,5 +1,5 @@
 # Buy On 5 Day Low
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Buy On 5 Day Low** — стратегия открывает длинную позицию, когда закрытие падает ниже предыдущего 5‑дневного минимума. Выход выполняется при закрытии выше максимума предыдущей свечи. Торговля ведётся только в заданном временном интервале.
 

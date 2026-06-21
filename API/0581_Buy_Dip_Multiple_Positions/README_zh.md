@@ -1,5 +1,5 @@
 # Buy Dip Multiple Positions 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Buy Dip Multiple Positions 策略在价格下跌伴随放量及价格冲击条件时加仓做多。每笔交易风险为账户权益的 2%，并共用追踪止损和目标价。仅在上一笔交易盈利时才允许开新仓。
 

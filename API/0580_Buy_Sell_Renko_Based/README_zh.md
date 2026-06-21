@@ -1,5 +1,5 @@
 # Buy Sell Renko Based 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于 ATR 的 Renko 砖。收盘价上穿开盘价时做多，收盘价下穿开盘价时做空。
 

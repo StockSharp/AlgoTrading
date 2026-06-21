@@ -1,5 +1,5 @@
 # Стратегия Bober XM
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Bober XM использует двойной канал на основе вычислений Кельтнера. Вход осуществляется при пробое границы канала с подтверждением от взвешенной средней и силы тренда через ADX. Выход выполняется, когда OBV пересекает свою среднюю при сохраняющемся сильном ADX.
 

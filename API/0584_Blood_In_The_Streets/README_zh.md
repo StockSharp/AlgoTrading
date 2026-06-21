@@ -1,5 +1,5 @@
 # 血腥街市买入策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当当前回撤相对于最近高点低于标准差阈值时买入，并在固定数量的K线后退出。
 

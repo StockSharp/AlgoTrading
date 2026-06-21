@@ -1,5 +1,5 @@
 # Buy Sell Renko Based Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades Renko bricks created with an ATR based size. A long position is opened when the Renko close crosses above its open. A short position is opened when the close crosses below the open.
 

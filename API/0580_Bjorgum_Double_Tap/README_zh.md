@@ -1,5 +1,5 @@
 # Bjorgum Double Tap 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找双顶和双底形态。当价格跌破双顶颈线时做空，当价格突破双底颈线时做多。目标和止损以形态高度的斐波那契延伸计算。
 

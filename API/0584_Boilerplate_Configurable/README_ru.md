@@ -1,5 +1,5 @@
 # Стратегия Boilerplate Configurable
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Boilerplate Configurable умеет работать в двух режимах: пересечение простых скользящих средних или прорыв после сжатия полос Боллинджера. Предусмотрены фильтры по дням недели и торговой сессии, диапазон дат, окно новостей и управление рисками через ATR или статическое соотношение риск/прибыль.
 

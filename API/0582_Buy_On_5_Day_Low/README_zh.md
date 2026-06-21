@@ -1,5 +1,5 @@
 # Buy On 5 Day Low
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Buy On 5 Day Low** 策略在收盘价跌破前一根K线的5日最低价时做多，收盘价突破前一根K线的最高价时平仓。交易只在指定的时间窗口内进行。
 

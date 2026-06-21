@@ -1,5 +1,5 @@
 # Boilerplate Configurable 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Boilerplate Configurable 策略可以在两种模式下运行：简单移动平均线交叉或布林带挤压突破。它包含交易日和交易时段过滤、日期范围、新闻窗口以及基于 ATR 或固定风险回报的风险管理。
 

@@ -1,5 +1,5 @@
 # Black-Scholes Delta Hedge
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy computes the theoretical price and delta of an option using the Black-Scholes model. At specified intervals it hedges the delta by trading the underlying asset.
 

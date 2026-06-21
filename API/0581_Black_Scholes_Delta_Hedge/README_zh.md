@@ -1,5 +1,5 @@
 # Black-Scholes Delta 对冲
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Black-Scholes 模型计算期权的理论价格和 Delta，并在设定的间隔内通过交易标的资产来对冲 Delta。
 

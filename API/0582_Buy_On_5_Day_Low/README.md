@@ -1,5 +1,5 @@
 # Buy On 5 Day Low
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Buy On 5 Day Low** strategy goes long when the close drops below the previous 5-day low. It exits when the close rises above the prior bar's high. Trading is limited to a configurable time window.
 

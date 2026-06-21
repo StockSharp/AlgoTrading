@@ -1,5 +1,5 @@
 # Bober XM 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bober XM 策略基于自定义的 Keltner 通道。 当价格突破通道并在加权移动平均线和 ADX 强度确认下进入，OBV 与其均线交叉并且 ADX 仍然强劲时退出。
 

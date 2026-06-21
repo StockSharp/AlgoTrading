@@ -1,5 +1,5 @@
 # Black-Scholes 期权定价模型
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用 Black-Scholes 模型计算期权理论价格。
 可通过参数选择看涨或看跌期权。

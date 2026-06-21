@@ -1,5 +1,5 @@
 # Хеджирование по дельте (Black-Scholes)
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия рассчитывает теоретическую цену и дельту опциона по модели Блэка–Шоулза и периодически хеджирует дельту, совершая сделки с базовым активом.
 
