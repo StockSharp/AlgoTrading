@@ -1,5 +1,5 @@
 # Стратегия Three Parabolic SAR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Three Parabolic SAR использует три индикатора Parabolic SAR, рассчитанных на свечах 6 часов, 3 часов и 1 часа. Сделки открываются на часовом таймфрейме, когда два старших таймфрейма подтверждают направление, а SAR на 1‑часовых свечах меняет положение относительно цены.
 

@@ -1,5 +1,5 @@
 # 三重抛物线SAR策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 三重抛物线SAR策略在6小时、3小时和1小时周期上计算三个抛物线SAR指标。当两个较高周期确认方向且1小时SAR翻转时，在1小时周期上开仓。
 

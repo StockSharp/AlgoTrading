@@ -1,5 +1,5 @@
 # Three Parabolic SAR
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Three Parabolic SAR Strategy uses three Parabolic SAR indicators computed on 6‑hour, 3‑hour and 1‑hour candles. A trade is opened on the 1‑hour timeframe when the higher two timeframes confirm the direction and the 1‑hour SAR flips.
 

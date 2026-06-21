@@ -1,5 +1,5 @@
 # Autostop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 用于自动为已有头寸设置止盈和止损的实用策略。
 策略本身不生成交易信号，任何在外部打开的仓位都会按照固定距离进行保护。

@@ -1,4 +1,5 @@
 # Стратегия VR Setka P2
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на советнике MetaTrader 4 `VR---SETKAp2` и реализует сеточный подход.
 Сделки открываются, когда дневная цена закрытия отклоняется от максимума или минимума дня

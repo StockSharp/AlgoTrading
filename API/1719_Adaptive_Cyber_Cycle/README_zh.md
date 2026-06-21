@@ -1,5 +1,5 @@
 # 自适应网络周期策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用约翰·埃勒斯提出的自适应网络周期振荡器。它计算平滑的价格周期，并将上一周期值作为触发线。当周期上穿触发线时开多仓，下穿时开空仓。
 

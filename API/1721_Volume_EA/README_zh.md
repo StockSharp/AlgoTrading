@@ -1,4 +1,5 @@
 # Volume EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略结合成交量激增与商品通道指数 (CCI) 进行交易。当上一根蜡烛的成交量超过更早一根蜡烛的成交量乘以 `Factor` 时，在新一小时的开始开仓。CCI 必须处于指定区间内以确认信号。

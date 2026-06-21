@@ -1,4 +1,5 @@
 # VR Setka P2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MetaTrader 4 专家顾问 `VR---SETKAp2`，属于基于网格的交易方法。
 当日收盘价相对于当天最高或最低偏离设定的百分比时触发交易。

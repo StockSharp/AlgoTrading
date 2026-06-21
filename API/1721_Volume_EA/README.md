@@ -1,4 +1,5 @@
 # Volume EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy trades based on spikes in volume and the Commodity Channel Index (CCI). It opens positions at the start of a new hour when the previous candle's volume exceeds that of the candle before it by a configurable factor. CCI values must fall within specific bands to confirm the signal.

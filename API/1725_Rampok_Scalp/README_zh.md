@@ -1,5 +1,5 @@
 # Rampok Scalp 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于移动平均包络线的剥头皮系统。
 当价格向上突破下轨时做多，向下跌破上轨时做空。

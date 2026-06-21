@@ -1,5 +1,5 @@
 # Pure Martingale Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a basic martingale system. It opens trades in a random direction and doubles the position size and the stop/take distance after each losing trade. After a winning trade it resets to the initial volume and distance.
 

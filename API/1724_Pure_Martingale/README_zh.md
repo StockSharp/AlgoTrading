@@ -1,5 +1,5 @@
 # 纯马丁策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了一个基本的马丁系统。没有持仓时随机选择买入或卖出，若上一笔交易亏损，则成倍增加仓位和止损/止盈距离；若盈利则恢复初始参数。
 
