@@ -1,5 +1,5 @@
 # Outlier Detector with N-Sigma Confidence Intervals 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Nσ 置信区间识别价格变化中的异常波动，在出现极端运动时进行均值回归交易。
 

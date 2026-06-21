@@ -1,5 +1,5 @@
 # Outlier Detector with N-Sigma Confidence Intervals Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy identifies outliers in price changes using N-sigma confidence intervals and trades mean reversion when extreme moves occur.
 

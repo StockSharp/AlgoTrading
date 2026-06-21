@@ -1,5 +1,5 @@
 # Overnight Effect High Volatility Crypto Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that enters a long position during high-volatility evenings and closes before midnight. Volatility is measured by the standard deviation of log returns over a configurable period and compared against the median of historical volatility.
 

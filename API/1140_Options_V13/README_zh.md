@@ -1,5 +1,5 @@
 # Options Strategy V1.3
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 EMA 金叉/死叉配合 RSI 与基于 ATR 的止损和止盈，并加入成交量均线过滤。可选地要求突破开盘区间，并在纽约时间 15:55 自动平仓。策略在特定时段和用户自定义的禁止交易区间内不会开仓。
 

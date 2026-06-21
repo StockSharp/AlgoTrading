@@ -1,5 +1,5 @@
 # Outside Bar Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts of outside bars. A bullish outside bar occurs when the current candle's high is above the previous high and its low is below the previous low. Orders are placed inside the bar with optional partial profit taking and breakeven stop movement.
 

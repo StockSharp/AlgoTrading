@@ -1,5 +1,5 @@
 # ORB 15m – 第一个15分钟突破策略（多/空）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在斯德哥尔摩时区会话开盘后的第一根15分钟K线收盘时入场。首根K线收阳则做多，收阴则做空。仓位大小由风险百分比和到止损的距离决定。
 

@@ -1,4 +1,5 @@
 # Out of the Noise 日内策略与 VWAP
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过计算过去 *Period* 天每根柱子的平均绝对波动，在当日开盘价周围构建动态上下边界。
 

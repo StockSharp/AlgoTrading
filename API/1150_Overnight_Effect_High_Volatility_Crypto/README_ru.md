@@ -1,5 +1,5 @@
 # Стратегия Overnight Effect High Volatility Crypto
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию вечером в дни повышенной волатильности и закрывает её перед полуночью. Волатильность измеряется стандартным отклонением логарифмической доходности за заданный период и сравнивается с медианой исторической волатильности.
 

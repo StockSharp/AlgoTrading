@@ -1,5 +1,5 @@
 # ORB 15m – First 15min Breakout (Long/Short)
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters at the close of the first 15‑minute bar after the session open in Stockholm time. A bullish first bar triggers a long trade, a bearish bar triggers a short. Position size is calculated from risk percentage and the distance to the stop.
 

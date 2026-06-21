@@ -1,5 +1,5 @@
 # 外部柱策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易外部柱突破。当当前蜡烛的最高点高于前一根且最低点低于前一根时出现外部柱。多头在柱内设置买入止损，空头设置卖出止损。支持部分止盈和保本移动。
 

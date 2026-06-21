@@ -1,4 +1,5 @@
 # Out of the Noise Intraday Strategy with VWAP
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements the "Out of the Noise" intraday breakout approach. The strategy builds dynamic upper and lower bounds around the session open using average absolute moves over the past *Period* days.
 

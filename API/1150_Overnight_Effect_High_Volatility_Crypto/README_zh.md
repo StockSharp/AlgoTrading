@@ -1,5 +1,5 @@
 # 隔夜高波动加密策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在高波动的夜间入场做多，并在午夜前平仓。波动率通过指定周期的对数收益标准差计算，并与历史波动率的中位数比较。
 

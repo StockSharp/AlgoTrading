@@ -1,4 +1,5 @@
 # Внутридневная стратегия Out of the Noise с VWAP
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит динамические верхнюю и нижнюю границы вокруг цены открытия, используя средние абсолютные движения за последние *Period* дней.
 
