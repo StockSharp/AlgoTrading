@@ -1,5 +1,5 @@
 # Стратегия Bulls & Bears Power Cross
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует на пересечении индикаторов Bulls Power и Bears Power на четырёхчасовом таймфрейме. Bulls Power показывает давление покупателей выше средней цены, а Bears Power отображает давление продавцов ниже неё. Когда сила покупателей превышает силу продавцов, открывается длинная позиция. При доминировании продавцов открывается короткая позиция.
 

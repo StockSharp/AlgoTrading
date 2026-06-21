@@ -1,4 +1,5 @@
 # 玛格纳掠夺者铜版策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现原始 MQL 专家中的“彩虹”均线系统。
 它使用十一条指数移动平均线，并结合 MACD 与 ADX 过滤器。

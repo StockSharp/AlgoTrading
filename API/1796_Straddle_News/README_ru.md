@@ -1,5 +1,5 @@
 # Стратегия Straddle News
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия предназначена для торговли на новостях. Она размещает отложенные заявки Buy Stop и Sell Stop по обе стороны текущей цены, чтобы поймать рыночный всплеск. После исполнения одной заявки противоположная удаляется, а позиция сопровождается трейлинг-стопом.
 

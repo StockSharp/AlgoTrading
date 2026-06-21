@@ -1,5 +1,5 @@
 # Bulls & Bears Power Cross 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在四小时周期上利用 Bulls Power 与 Bears Power 指标的交叉进行交易。Bulls Power 衡量价格上方的买方力量，Bears Power 衡量价格下方的卖方力量。当买方力量超过卖方力量时，系统做多；当卖方力量占优时，系统做空。
 

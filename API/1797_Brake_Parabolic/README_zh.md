@@ -1,5 +1,5 @@
 # Brake Parabolic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了 Brake Parabolic 指标，该指标在价格上方或下方绘制抛物线屏障。当价格突破屏障时，趋势反转，并在突破方向开仓。算法通过参数 **A**、**B** 和 **Shift** 定义的曲线跟踪极值。
 

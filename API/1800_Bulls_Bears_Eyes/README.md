@@ -1,4 +1,5 @@
 # Bulls Bears Eyes Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy evaluates the balance between bullish and bearish pressure using the **Bulls Power** and **Bears Power** indicators. The two indicators are combined into a single oscillator scaled from 0 to 100. High values indicate dominance of buyers, while low values point to sellers' strength.

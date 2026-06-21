@@ -1,5 +1,5 @@
 # Стратегия Brake Parabolic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия реализует индикатор Brake Parabolic, который строит параболический барьер выше или ниже цены. При пробое барьера тренд разворачивается, и открывается позиция в сторону пробоя. Алгоритм сопровождает экстремумы кривой, задаваемой параметрами **A**, **B** и **Shift**.
 

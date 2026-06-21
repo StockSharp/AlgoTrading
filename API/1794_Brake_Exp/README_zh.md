@@ -1,4 +1,5 @@
 # Brake Exp Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 **BrakeExp** 指标。该指标使用指数曲线构建自适应的支撑和阻力通道，当通道从下轨切换到上轨时产生卖出信号，从上轨切换到下轨时产生买入信号。
 

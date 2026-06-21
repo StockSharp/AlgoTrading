@@ -1,5 +1,5 @@
 # Artificial Intelligence Perceptron 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 Accelerator Oscillator (AC) 指标的值作为线性感知器的输入。以七根K线为间隔获取四个AC值，并乘以用户设定的权重。感知器输出为正时开多，为负时开空。
 

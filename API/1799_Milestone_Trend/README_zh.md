@@ -1,5 +1,5 @@
 # Milestone 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 Milestone 22.5 专家的 StockSharp 移植版本。它通过结合两条平滑移动平均线以及波动性和尖刺过滤器，在趋势方向上交易回调。当K线突破前一根的极值且快速均线支持该动作时，策略沿主趋势开仓。ATR 用于避免在低波动时期交易，而大实体K线被视为尖刺并被忽略。
 

@@ -1,4 +1,5 @@
 # 公牛熊眼策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用 **Bulls Power** 与 **Bears Power** 指标衡量多头与空头的力量对比。两个指标被组合成一个范围在0到100之间的振荡器，数值越高代表买方越强，数值越低代表卖方越强。

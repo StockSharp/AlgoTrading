@@ -1,5 +1,5 @@
 # Straddle News 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略用于重大新闻时的高波动行情。它在当前价格上下放置对称的 Buy Stop 和 Sell Stop 挂单，以捕捉突破。当其中一单被触发后，另一单会被取消，并使用追踪止损保护头寸。
 

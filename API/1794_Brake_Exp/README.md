@@ -1,4 +1,5 @@
 # Brake Exp Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the **BrakeExp** indicator. The indicator draws an adaptive support and resistance channel built from an exponential curve. A switch of the channel from lower to upper line generates a sell signal, and a switch from upper to lower line generates a buy signal.
 

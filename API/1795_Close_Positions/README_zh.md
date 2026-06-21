@@ -1,5 +1,5 @@
 # 平仓策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 根据盈利、亏损或时间规则关闭已有仓位。该策略不会开立新仓。
 

@@ -1,5 +1,5 @@
 # Brake Parabolic Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy implements the Brake Parabolic indicator that projects a parabolic barrier above or below price. When the barrier is broken, the trend flips and a new position is opened in the direction of the breakout. The algorithm trails the extreme price with a curved line defined by parameters **A**, **B**, and **Shift**.
 
