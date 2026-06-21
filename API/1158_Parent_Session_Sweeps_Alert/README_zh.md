@@ -1,5 +1,5 @@
 # 父级会话清扫警报
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控每日会话，当当前会话突破前一会话的高点或低点并收回到范围内时，反向开仓，风险回报比可配置。
 

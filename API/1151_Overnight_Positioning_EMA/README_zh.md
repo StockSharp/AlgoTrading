@@ -1,5 +1,5 @@
 # 隔夜持仓EMA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在所选市场收盘前几分钟建立多头仓位，并在开盘后不久退出。可选的EMA过滤用于确认入场。支持美国、亚洲和欧洲市场，并会在周末前平掉所有持仓。
 

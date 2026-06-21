@@ -1,5 +1,5 @@
 # Pavan CPR Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades long when price crosses above the day's Top Central Pivot Range after previously closing below it. Stop is placed at the pivot level and take profit at a fixed distance.
 

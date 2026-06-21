@@ -1,5 +1,5 @@
 # Стратегия Pairs Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Парная стратегия покупает, когда базовый актив закрывается выше открытия, а текущий инструмент формирует медвежью свечу. Позиция закрывается, когда цена закрытия превышает максимум предыдущей свечи.
 

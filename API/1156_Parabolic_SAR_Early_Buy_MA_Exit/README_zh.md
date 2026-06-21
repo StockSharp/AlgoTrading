@@ -1,5 +1,5 @@
 # Parabolic SAR Early Buy MA Exit策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用Parabolic SAR的反转信号进行交易，当SAR翻到价格上方且收盘价低于`MaPeriod`期的移动平均线时，提前平掉多头头寸。
 

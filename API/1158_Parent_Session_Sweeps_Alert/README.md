@@ -1,5 +1,5 @@
 # Parent Session Sweeps Alert
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy monitors daily sessions and detects when the current session sweeps the previous session's high or low. When a sweep occurs and the candle closes back inside the prior range, a trade is opened in the opposite direction with a configurable risk-reward ratio.
 

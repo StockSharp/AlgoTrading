@@ -1,5 +1,5 @@
 # Parabolic RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 Parabolic SAR 应用于 RSI 用于趋势反转。当 SAR 相对 RSI 发生翻转时入场，并可使用 RSI 阈值过滤交易。
 

@@ -1,5 +1,5 @@
 # 抛物线 SAR 早入场并基于均线退出策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用抛物线 SAR 指标在指标相对价格翻转时入场。额外的退出规则是在 SAR 位于价格之上且价格跌破简单移动平均线时平掉多头。
 

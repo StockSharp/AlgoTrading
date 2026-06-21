@@ -1,5 +1,5 @@
 # 发薪异常策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在每月选定的日期（1日、2日、16日和31日）开多头仓位，并在下一天平仓。
 

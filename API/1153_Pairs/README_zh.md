@@ -1,5 +1,5 @@
 # Pairs Strategy 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该配对交易策略在参考资产收盘价高于开盘价且当前标的形成下跌蜡烛时买入。当收盘价突破前一根蜡烛的最高点时平仓。
 

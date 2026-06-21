@@ -1,5 +1,5 @@
 # Стратегия Parabolic RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия применяет Parabolic SAR к RSI для определения смены тренда. Вход выполняется при смене положения SAR относительно линии RSI, при желании сделки фильтруются по значениям RSI.
 

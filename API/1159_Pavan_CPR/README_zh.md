@@ -1,5 +1,5 @@
 # Pavan CPR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格在前一收盘位于顶部 CPR 之下后向上突破该水平时做多。止损放在枢轴点，固定距离设置止盈。
 

@@ -1,5 +1,5 @@
 # Pairs Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This pair trading strategy buys when the reference asset closes above its open while the current symbol forms a down bar. The position closes when price breaks above the previous candle's high.
 

@@ -1,5 +1,5 @@
 # Parabolic SAR Early Buy MA Exit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Parabolic SAR indicator to enter trades when the indicator switches sides relative to price. A simple moving average provides an additional exit rule: long positions are closed when price drops below the moving average while SAR is above price.
 
