@@ -1,5 +1,5 @@
 # 移动平均策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当短周期移动平均线上穿长周期移动平均线时建立多头头寸，当短均线再次下穿长均线时平仓。
 

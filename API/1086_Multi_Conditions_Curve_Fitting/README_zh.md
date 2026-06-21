@@ -1,5 +1,5 @@
 # 多条件曲线拟合策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合EMA交叉、RSI和随机震荡指标，在多个信号一致时进行交易。
 

@@ -1,5 +1,5 @@
 # 移动平均彩虹 (Stormer) 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略绘制十二条不同周期的移动平均线形成“彩虹”。当趋势得到确认且价格触碰其中一条平均线时开仓。
 

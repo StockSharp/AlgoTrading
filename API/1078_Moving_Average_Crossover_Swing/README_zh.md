@@ -1,5 +1,5 @@
 # Moving Average Crossover Swing 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在快速指数移动平均线上穿或下穿中速均线时交易，可选择使用慢速均线和 MACD 直方图确认。利用 ATR 设定止损和止盈，并可在另一组均线交叉时离场。
 

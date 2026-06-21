@@ -1,5 +1,5 @@
 # Moving Average Shift WaveTrend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a configurable moving average with a WaveTrend-style oscillator. Long trades occur when price is above the moving average and the oscillator rises, confirming an uptrend with a long-term EMA and volatility filter. Shorts trigger on the opposite conditions. Positions are protected by percentage stop loss, take profit and trailing stop.
 

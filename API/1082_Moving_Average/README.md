@@ -1,5 +1,5 @@
 # Moving Average Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy enters a long position when a short moving average crosses above a long moving average of the selected price type. The position is closed when the short average crosses back below the long average.
 

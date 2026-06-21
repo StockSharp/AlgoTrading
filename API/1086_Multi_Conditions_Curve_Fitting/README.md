@@ -1,5 +1,5 @@
 # Multi Conditions Curve Fitting Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines EMA crossover, RSI and Stochastic oscillator to trade when multiple signals align.
 

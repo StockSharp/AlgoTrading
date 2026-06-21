@@ -1,5 +1,5 @@
 # Moving Average Shift WaveTrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合可配置移动平均线和类 WaveTrend 振荡器。 当价格高于均线且振荡器上升时做多，长期 EMA 与波动率过滤器确认趋势； 相反条件下做空。 头寸由百分比止损、止盈和追踪止损保护。
 

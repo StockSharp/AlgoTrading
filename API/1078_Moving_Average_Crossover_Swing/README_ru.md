@@ -1,5 +1,5 @@
 # Стратегия Moving Average Crossover Swing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует при пересечении быстрой и средней экспоненциальных скользящих средних с опциональным подтверждением от медленной MA и гистограммы MACD. Использует ATR для стоп-лосса и тейк-профита и может закрываться по пересечению другой пары MA.
 
