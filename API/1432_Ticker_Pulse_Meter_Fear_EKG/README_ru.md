@@ -1,5 +1,5 @@
 # Стратегия Ticker Pulse Meter + Fear EKG
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает короткие и длинные периоды для поиска перепроданности и восстановления.
 Покупает при пересечении комбинированного процента выше триггера и выходит при пересечении уровня фиксации прибыли.

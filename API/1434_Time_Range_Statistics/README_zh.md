@@ -1,5 +1,5 @@
 # 时间范围统计策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在选定的条目索引之间收集简单统计数据。
 记录平均价格、归一化范围、百分比变化、平均成交量和跳空次数。

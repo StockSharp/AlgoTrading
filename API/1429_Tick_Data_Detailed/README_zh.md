@@ -1,5 +1,5 @@
 # Tick Data Detailed 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 收集并按预设区间统计买卖方向的逐笔成交量，用于详细的盘口分析，不生成交易信号。
 

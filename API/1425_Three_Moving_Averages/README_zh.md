@@ -1,5 +1,5 @@
 # 三均线策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当短期均线上穿或下穿中期均线且两者相对于长期均线位置一致时，该策略开仓。
 

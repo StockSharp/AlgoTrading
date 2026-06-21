@@ -1,4 +1,4 @@
 # Стратегия Tian Di Grid Merge
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Сеточная система, размещающая ордера на ценовых уровнях между верхней и нижней границами. Поддерживает арифметический или геометрический шаг и может закрывать позицию при превышении прибыли над размером сетки.

@@ -1,5 +1,5 @@
 # Стратегия Sigma Spike по времени суток и дню недели
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует z-оценку доходности для выявления сильных движений по часам с фильтром по дням недели.
 Покупает при всплесках и выходит, когда волатильность нормализуется.

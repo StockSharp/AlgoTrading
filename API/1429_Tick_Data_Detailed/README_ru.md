@@ -1,5 +1,5 @@
 # Стратегия Tick Data Detailed
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Собирает и агрегирует тиковые объёмы по нескольким заранее заданным диапазонам для покупок и продаж. Полезно для подробного анализа ленты без генерации торговых сигналов.
 

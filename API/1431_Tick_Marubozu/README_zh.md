@@ -1,5 +1,5 @@
 # Tick Marubozu 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在tick数据上识别Marubozu形态并结合放量确认。出现多头Marubozu时买入，空头Marubozu时卖出。
 

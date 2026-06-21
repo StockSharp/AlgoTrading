@@ -1,5 +1,5 @@
 # Стратегия Three Candle Bullish Engulfing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ищет бычьи и медвежьи паттерны из трёх свечей с поглощением. Дополнительно поддерживается пробой по RSI, трейлинг-стоп и выход по времени.
 

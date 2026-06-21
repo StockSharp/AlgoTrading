@@ -1,5 +1,5 @@
 # 三烛看涨吞没策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找由三根K线组成的看涨或看跌吞没形态，可选RSI突破、跟踪止损和按时间退出。
 

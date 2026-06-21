@@ -1,5 +1,5 @@
 # 按时间和星期的 Sigma Spike 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用收益的 z 分数来识别各小时的大幅波动，可按星期过滤。
 当出现尖峰时买入，波动恢复正常时卖出。
