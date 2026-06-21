@@ -1,5 +1,5 @@
 # Line Order Dual Level 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 智能交易系统 "MyLineOrder" 的 StockSharp 版本。交易者可以设置水平价格线，当价格触及这些水平时自动执行市价单。止损、止盈和跟踪止损以点数表示，交易量也可配置。
 

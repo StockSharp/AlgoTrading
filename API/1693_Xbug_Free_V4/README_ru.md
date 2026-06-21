@@ -1,5 +1,5 @@
 # Стратегия Xbug Free V4
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позиции, когда скользящая средняя от медианной цены пересекает саму медиану. Симметричные тейк-профит и стоп-лосс выставляются на фиксированном расстоянии от цены входа.
 

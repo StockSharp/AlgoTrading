@@ -1,5 +1,5 @@
 # Hybrid EA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Hybrid EA strategy uses the Relative Vigor Index (RVI) and its signal line.
 It opens a long position when the RVI rises above the signal by a specified difference and opens a short position when it falls below by the same amount. Positions are protected by fixed take profit and stop loss levels measured in price points.

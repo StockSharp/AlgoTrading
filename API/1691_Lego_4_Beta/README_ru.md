@@ -1,4 +1,5 @@
 # Стратегия Lego 4 Beta
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является модульной системой, переписанной с MetaTrader скрипта «exp_Lego_4_Beta». Позволяет включать или отключать отдельные индикаторы через параметры.
 

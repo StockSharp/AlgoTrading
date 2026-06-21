@@ -1,5 +1,5 @@
 # Parabolic SAR Bug
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Parabolic SAR Bug** strategy trades trend reversals using the Parabolic SAR indicator. When the SAR flips below price the strategy enters long, and when the SAR flips above price it enters short. Optional reverse mode inverts signals. Protective stop loss, take profit, and trailing stop are supported through the built-in position protection module.
 

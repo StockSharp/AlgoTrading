@@ -1,4 +1,5 @@
 # Lego 4 Beta Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a modular system translated from the MetaTrader script "exp_Lego_4_Beta". It combines several common technical indicators and allows enabling or disabling each component through parameters.
 

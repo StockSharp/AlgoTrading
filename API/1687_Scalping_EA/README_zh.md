@@ -1,5 +1,5 @@
 # 剥头皮EA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模拟一个简单的剥头皮EA。系统始终保持两个挂单：在价格上方的买入止损和在下方的卖出止损。当市场价格与挂单的距离过近或过远时，订单会被替换以保持固定间距。每个成交订单都带有固定的止盈和止损。
 

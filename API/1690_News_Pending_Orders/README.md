@@ -1,4 +1,5 @@
 # News Pending Orders Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy places a pair of pending stop orders around the current price and manages them as the market evolves. It is intended for trading during news releases where sharp moves are expected.
 

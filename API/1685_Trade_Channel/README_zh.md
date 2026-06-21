@@ -1,5 +1,5 @@
-
 # Trade Channel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Trade Channel 策略** 在 Donchian 价格通道周围交易突破与回调。当上轨保持不变且价格触及上轨或收于其下方但高于枢轴点时开多；相反条件下开空。止损设置在相反通道边界之外并加上 ATR 值，可选的移动止损用于跟随盈利。
 

@@ -1,4 +1,5 @@
 # Стратегия News Pending Orders
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия размещает пару отложенных стоп-заявок вокруг текущей цены и управляет ими по мере изменения рынка. Предназначена для торговли на новостях, когда ожидаются резкие движения.
 

@@ -1,4 +1,5 @@
 # Lego 4 Beta 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略来自 MetaTrader 脚本“exp_Lego_4_Beta”的改写，是一个模块化系统，可通过参数开启或关闭不同的技术指标组件。
 

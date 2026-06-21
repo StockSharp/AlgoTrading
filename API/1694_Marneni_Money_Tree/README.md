@@ -1,4 +1,5 @@
 # Marneni Money Tree Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy translates the MQL expert advisor "Marneni Money Tree" into StockSharp.
 It relies on a 40-period simple moving average (SMA) and two shifted values to detect trend direction.

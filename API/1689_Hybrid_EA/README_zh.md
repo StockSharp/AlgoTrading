@@ -1,5 +1,5 @@
 # Hybrid EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hybrid EA 策略使用相对活力指数 (RVI) 及其信号线。
 当 RVI 高于信号线设定的差值时买入，当 RVI 低于信号线相同的差值时卖出。仓位通过固定的止盈和止损点数进行保护。

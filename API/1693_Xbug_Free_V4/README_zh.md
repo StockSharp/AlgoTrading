@@ -1,5 +1,5 @@
 # Xbug Free V4 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在移动平均线穿越自身的价格中位数时开仓。入场后在固定距离处设置对称的止盈和止损。
 

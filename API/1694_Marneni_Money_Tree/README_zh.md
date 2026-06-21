@@ -1,4 +1,5 @@
 # Marneni Money Tree 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL 专家顾问 "Marneni Money Tree" 移植到 StockSharp。
 它使用 40 周期简单移动平均线（SMA）及其两个偏移值来判断趋势方向。

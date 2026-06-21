@@ -1,4 +1,5 @@
 # Стратегия Marneni Money Tree
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переводит эксперт MQL "Marneni Money Tree" на платформу StockSharp.
 Используется простая скользящая средняя с периодом 40 и два смещённых значения для определения тренда.

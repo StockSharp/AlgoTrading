@@ -1,5 +1,5 @@
 # Стратегия Line Order Dual Level
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является адаптацией советника MetaTrader "MyLineOrder" для StockSharp. Трейдер задаёт горизонтальные ценовые уровни, при касании которых автоматически открываются рыночные позиции. Дополнительно можно указать расстояния стоп-лосса, тейк-профита и трейлинг-стопа в пунктах, а также объём сделки.
 
