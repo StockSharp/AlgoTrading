@@ -1,5 +1,5 @@
 # The VoVix Experiment Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy analyzes the ratio of fast ATR to slow ATR. When the z-score of this ratio spikes and reaches a local maximum, it enters in the direction of the candle. Positions are closed when the z-score falls below the exit threshold.
 

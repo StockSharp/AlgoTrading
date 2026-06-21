@@ -1,5 +1,5 @@
 # The Z-Score 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算基于 Heikin-Ashi 的 EMA 的 z-score，并根据近期范围的动态阈值交叉进行交易。
 

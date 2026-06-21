@@ -1,5 +1,5 @@
 # HSI1 First 30m Candle Strategy
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在15分钟图上交易首个30分钟区间的突破，每天只允许一次交易。
 

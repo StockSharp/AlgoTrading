@@ -1,5 +1,5 @@
 # Most Powerful TQQQ EMA Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速 EMA 上穿慢速 EMA 时做多。止盈和止损按入场价的倍数设置。
 

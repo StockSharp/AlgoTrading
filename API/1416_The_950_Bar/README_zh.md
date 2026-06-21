@@ -1,5 +1,5 @@
 # The 950 Bar Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易纽约时间9:50的五分钟K线。K线结束后，按其方向入场，并设定固定的获利目标和止损（以跳动点计）。
 

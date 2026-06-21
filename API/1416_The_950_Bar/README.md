@@ -1,5 +1,5 @@
 # The 950 Bar Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades the 9:50 AM New York five-minute candle. After the bar completes, it enters in the bar's direction with fixed profit target and stop defined in ticks.
 

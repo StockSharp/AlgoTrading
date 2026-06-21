@@ -1,5 +1,5 @@
 # Стратегия The VoVix Experiment
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия анализирует отношение быстрой и медленной ATR. Когда z-score этого отношения достигает пика и локального максимума, открывается позиция по направлению свечи. Позиции закрываются, когда z-score падает ниже порога выхода.
 

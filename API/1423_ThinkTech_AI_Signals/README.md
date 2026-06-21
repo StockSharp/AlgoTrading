@@ -1,5 +1,5 @@
 # ThinkTech AI Signals Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts of the first 15-minute candle of the session. It uses ATR-based stop-loss and take-profit levels and can apply optional trend and RSI filters.
 

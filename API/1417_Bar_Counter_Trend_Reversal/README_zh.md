@@ -1,5 +1,5 @@
 # Bar Counter Trend Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找连续上涨或下跌的K线，当价格触及通道边界时进行逆势交易。
 

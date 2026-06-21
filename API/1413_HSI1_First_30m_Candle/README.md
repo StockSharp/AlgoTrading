@@ -1,5 +1,5 @@
 # HSI1 First 30m Candle Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades breakouts of the first 30-minute range on a 15-minute chart, allowing only one trade per day.
 

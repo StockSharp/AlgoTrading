@@ -1,5 +1,5 @@
 # The VoVix Experiment 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略分析快慢 ATR 的比值。当该比值的 z-score 激增并达到局部最大值时，根据蜡烛方向开仓。当 z-score 低于退出阈值时平仓。
 
