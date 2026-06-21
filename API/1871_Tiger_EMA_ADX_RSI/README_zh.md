@@ -1,4 +1,5 @@
 # Tiger EMA ADX RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用两条指数移动平均线（EMA）的交叉来判断趋势，并通过平均趋向指数（ADX）和相对强弱指数（RSI）进行过滤。快速 EMA 与慢速 EMA 的比较用于确定趋势方向。只有当 ADX 超过设定阈值且 RSI 位于上下边界之间时才允许开仓。
 

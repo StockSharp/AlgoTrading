@@ -1,5 +1,5 @@
 # Kauf WMA 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 Kaufman 自适应移动平均线（KAMA）与加权移动平均线（WMA）交叉时交易。向上交叉时关闭空头仓位并可在允许的情况下开多头。向下交叉时关闭多头仓位并可在允许的情况下开空头。每个方向的开仓和平仓可通过参数单独启用。
 

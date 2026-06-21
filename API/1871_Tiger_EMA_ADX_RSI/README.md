@@ -1,4 +1,5 @@
 # Tiger EMA ADX RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy follows the trend using a crossover of two exponential moving averages (EMAs) and filters trades with Average Directional Index (ADX) and Relative Strength Index (RSI). The fast EMA is compared with the slow EMA to determine trend direction. Trades are allowed only when ADX exceeds a configurable threshold and RSI stays within upper and lower bounds.
 

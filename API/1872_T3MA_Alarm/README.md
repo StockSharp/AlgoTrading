@@ -1,4 +1,5 @@
 # T3MA Alarm Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the idea of the T3MA-ALARM indicator. It applies a double smoothed exponential moving average to detect changes in trend direction.
 

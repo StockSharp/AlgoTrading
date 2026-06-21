@@ -1,4 +1,5 @@
 # CoeffofLine 真 实 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 专家 `Exp_CoeffofLine_true.mq5` 移植到 StockSharp 框架。它跟踪中位价的**线性回归斜率**，并在斜率穿越零轴时做出反应。
 

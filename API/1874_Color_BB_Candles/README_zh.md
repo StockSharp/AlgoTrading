@@ -1,5 +1,5 @@
 # Color BB Candles 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用布林带将蜡烛划分为多头、空头和中性区域。收盘价突破上轨时开多，收盘价跌破下轨时开空，当价格回到两条带之间时平掉所有持仓。
 

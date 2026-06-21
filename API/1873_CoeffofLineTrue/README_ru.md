@@ -1,4 +1,5 @@
 # Стратегия CoeffofLine True
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит эксперт MQL5 `Exp_CoeffofLine_true.mq5` на платформу StockSharp. Она отслеживает **наклон линейной регрессии** от медианных цен и реагирует на пересечения нулевой линии.
 

@@ -1,5 +1,5 @@
 # MA SAR ADX 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合移动平均线、Parabolic SAR 和平均方向指数 (ADX)。
 当价格高于移动平均线和 SAR 且 +DI 大于 -DI 时做多。

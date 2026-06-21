@@ -1,5 +1,5 @@
 # Стратегия Liquidex
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пробоя, входящая при выходе цены за границы каналов Келтнера и управляющая риском через стоп‑лосс, тейк‑профит, перевод в безубыток и трейлинг‑стоп.
 

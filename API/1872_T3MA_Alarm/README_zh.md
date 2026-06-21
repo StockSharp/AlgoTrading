@@ -1,4 +1,5 @@
 # T3MA Alarm 趋势策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 T3MA-ALARM 指标。通过两次平滑的指数移动平均线来识别趋势方向的变化。
 

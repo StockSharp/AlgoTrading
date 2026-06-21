@@ -1,4 +1,5 @@
 # Стратегия Tiger EMA ADX RSI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия следует за трендом, используя пересечение двух экспоненциальных скользящих средних (EMA) и фильтрацию по индикаторам Average Directional Index (ADX) и Relative Strength Index (RSI). Быстрая EMA сравнивается с медленной EMA для определения направления тренда. Сделки разрешаются только когда ADX превышает настраиваемый порог, а значение RSI находится между верхней и нижней границами.
 

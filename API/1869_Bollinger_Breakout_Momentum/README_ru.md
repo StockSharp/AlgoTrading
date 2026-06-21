@@ -1,5 +1,5 @@
 # Стратегия Bollinger Breakout Momentum
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертированная из оригинальной стратегии MQL. Торгует прорывы полос Боллинджера, подтверждённые EMA, MACD и RSI. Стратегия совершает только одну сделку на каждое расширение волатильности, сопровождая стоп по средней полосе и используя фиксированный тейк-профит в пунктах.
 

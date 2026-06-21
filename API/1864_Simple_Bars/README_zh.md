@@ -1,5 +1,5 @@
 # Simple Bars 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simple Bars 策略复制了原始 MQL5 专家 `Exp_SimpleBars` 的行为。它使用 *SimpleBars* 指标，通过比较最新 K 线与最近的高低点来判断当前趋势。当指标检测到趋势变化时，策略会在下一根 K 线开盘时执行交易。
 

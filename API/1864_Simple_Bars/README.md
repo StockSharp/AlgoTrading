@@ -1,5 +1,5 @@
 # Simple Bars Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Simple Bars strategy replicates the behavior of the original MQL5 expert `Exp_SimpleBars`. It uses the *SimpleBars* indicator to determine the current trend by comparing the latest candle with recent highs and lows. When the indicator detects a change in trend, the strategy executes a trade at the open of the next bar.
 

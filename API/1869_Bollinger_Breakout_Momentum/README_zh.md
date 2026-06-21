@@ -1,5 +1,5 @@
 # Bollinger Breakout Momentum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于原始 MQL 策略改写。该策略在布林带宽度超过阈值时，结合 EMA、MACD 和 RSI 的确认进行交易。每次波动性扩张只进场一次，止损沿中轨移动，并使用固定点数的止盈。
 
