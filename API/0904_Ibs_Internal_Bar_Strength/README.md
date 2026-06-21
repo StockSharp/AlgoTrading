@@ -1,5 +1,5 @@
 # IBS Internal Bar Strength
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IBS Internal Bar Strength is a mean-reversion strategy that uses the previous bar's close within its range to find oversold or overbought conditions. An optional EMA filter aligns trades with the trend and entries can be added only when price moves a minimum percentage from the last entry. Positions exit when IBS crosses the opposite threshold or a maximum holding time is reached.
 

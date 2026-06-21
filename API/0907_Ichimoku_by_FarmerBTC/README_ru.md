@@ -1,5 +1,5 @@
 # Стратегия Ichimoku by FarmerBTC
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинные позиции, когда цена выше облака Ichimoku, облако бычье, SMA старшего таймфрейма подтверждает тренд, а объём превышает свою скользящую среднюю, умноженную на коэффициент. Выход происходит при падении цены ниже облака.
 

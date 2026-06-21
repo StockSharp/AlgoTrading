@@ -1,5 +1,5 @@
 # Стратегия Ichimoku Cloud Buy Custom EMA Exit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализация стратегии — покупка при пробое облака Ichimoku с пользовательским выходом по EMA и фильтром объема. Стратегия покупает, когда цена выше облака и объем выше среднего. Дополнительно можно требовать, чтобы цена была выше EMA. Выход происходит при пересечении цены ниже EMA или по стоп-лоссу.
 

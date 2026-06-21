@@ -1,5 +1,5 @@
 # Ichimoku Clouds Strategy Long and Short
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Tenkan-sen and Kijun-sen crossover of the Ichimoku indicator. Crosses are classified as strong, neutral or weak depending on the Tenkan value relative to the cloud. Depending on the selected trading mode, it opens long or short positions when the chosen signal strength occurs. Optional percentage-based take profit and stop loss can close positions or opposite signals as configured.
 

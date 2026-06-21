@@ -1,5 +1,5 @@
 # ICT Bread and Butter Sell-Setup Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy tracks the highs and lows of the London, New York, and Asia sessions and trades predefined setups around them.
 

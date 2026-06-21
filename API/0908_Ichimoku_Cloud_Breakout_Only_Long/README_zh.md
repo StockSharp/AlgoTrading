@@ -1,5 +1,5 @@
 # Ichimoku Cloud Breakout Only Long
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格向上突破 Ichimoku 云层时做多，在价格跌回云层下方时平仓。仅进行多头交易。
 

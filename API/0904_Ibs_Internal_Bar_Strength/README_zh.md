@@ -1,5 +1,5 @@
 # IBS Internal Bar Strength
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IBS Internal Bar Strength 是一种均值回归策略，通过前一根K线在其高低区间中的收盘位置来识别超卖或超买状态。可选的EMA过滤器用于顺势交易，只有当价格相对上次入场达到最小百分比偏移时才允许加仓。当IBS穿越相反阈值或持仓时间超过限制时平仓。
 

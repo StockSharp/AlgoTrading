@@ -1,5 +1,5 @@
 # Ichimoku Clouds Long and Short 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用一目均衡表中的Tenkan-sen和Kijun-sen交叉。根据Tenkan相对于云的位置，交叉被分为强、中性或弱。根据选择的交易模式，当出现所需强度的信号时开多或开空。还可以设置基于百分比的止盈和止损，或者按照相反信号平仓。
 

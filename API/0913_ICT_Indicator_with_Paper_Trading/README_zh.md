@@ -1,5 +1,5 @@
 # ICT Indicator with Paper Trading 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略记录订单区块的高点和低点，当收盘价上穿最新的订单区块高点时做多；当记录的订单区块低点上穿价格时平仓。
 

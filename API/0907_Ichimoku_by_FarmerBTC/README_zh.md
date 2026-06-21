@@ -1,5 +1,5 @@
 # Ichimoku by FarmerBTC 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格位于 Ichimoku 云之上、云层呈现多头、较高周期的 SMA 确认趋势且成交量超过其移动平均乘以系数时，本策略做多。 当价格跌回云层下方时平仓。
 

@@ -1,5 +1,5 @@
 # Ichimoku Daily Candle X Hull MA X MACD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Ichimoku 领先线、日线方向、Hull 均线趋势以及基于 HMA 的 MACD。当所有条件看涨时做多，当所有条件看跌时做空。
 
