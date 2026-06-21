@@ -1,5 +1,5 @@
 # Larry Conners SMTP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在出现10根K线最低点且当前K线拥有过去10根中最大的波动区间并且收盘价处于区间上部25%时做多。买入止损单下达在最高价上方一个最小跳动值，止损沿新的低点上移。
 

@@ -1,5 +1,5 @@
 # LANZ策略 5.0
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 LANZ策略5.0沿着200周期EMA方向交易，并要求连续三根同色蜡烛。策略限制每日交易次数，使用纽约时间的交易窗口，并检查入场之间的最小距离。
 

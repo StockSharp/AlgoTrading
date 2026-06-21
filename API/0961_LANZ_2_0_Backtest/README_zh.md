@@ -1,4 +1,5 @@
 # LANZ Strategy 2.0 [回测]
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过记录最近的摆动高点和低点来识别结构与趋势。
 纽约时间02:00出现符合趋势方向的结构突破时开仓。

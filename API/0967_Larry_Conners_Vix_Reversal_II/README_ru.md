@@ -1,5 +1,5 @@
 # Стратегия Larry Conners Vix Reversal II
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует на основе RSI индекса VIX. Длинная позиция открывается, когда RSI VIX пересекает уровень перекупленности снизу вверх. Короткая позиция открывается, когда RSI пересекает уровень перепроданности сверху вниз. Позиции закрываются после удержания не менее заданного числа дней.
 

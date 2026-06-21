@@ -1,5 +1,5 @@
 # Larry Conners SMTP Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A long-only strategy that buys after a 10-bar low when the current bar has the largest range in the last 10 bars and closes in the top 25% of its range. Entry is placed one tick above the high; stop-loss trails at successive lows.
 

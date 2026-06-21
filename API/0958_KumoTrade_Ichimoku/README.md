@@ -1,5 +1,5 @@
 # KumoTrade Ichimoku Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on Ichimoku Cloud and Stochastic Oscillator.
 It enters long when price pulls back above Kijun with oversold Stochastic and no cloud ahead.

@@ -1,5 +1,5 @@
 # Kyrie Crossover
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades exponential moving average (EMA) crossovers. It buys when the short-term EMA crosses above the long-term EMA and sells short when the short-term EMA crosses below the long-term EMA. A stop-loss is placed at a configurable percentage from the entry price.
 

@@ -1,5 +1,5 @@
 # LANZ Strategy 4.0 Backtest
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 LANZ Strategy 4.0 Backtest is a breakout strategy using swing pivots to detect trend changes. When price breaks above the last pivot high, it enters long; when price breaks below the last pivot low, it enters short. Position size is calculated from risk percent and pip value, with stop loss below/above the last swing plus buffer and take profit by risk-reward ratio.
 

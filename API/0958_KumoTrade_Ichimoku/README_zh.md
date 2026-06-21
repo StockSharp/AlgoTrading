@@ -1,5 +1,5 @@
 # KumoTrade Ichimoku 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Ichimoku 云图和随机震荡指标的策略。
 当价格回到 Kijun 上方、随机指标超卖且前方无云层时做多。

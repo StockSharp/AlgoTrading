@@ -1,5 +1,5 @@
 # LANZ Strategy 3.0
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 LANZ Strategy 3.0 trades breakouts of the Asian range. The direction is chosen after the 01:15–02:15 NY decision window and a limit order is placed at the range high or low with Fibonacci-based targets and stops. If the order is not filled by 02:15 it may flip direction. Unfilled orders are cancelled at 08:00 and open positions are closed at 15:45.
 

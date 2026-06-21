@@ -1,5 +1,5 @@
 # LANZ Strategy 1.0 [Backtest] 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据纽约时间 08:00 到 18:00 之间的价格方向，在 18:00 到 08:00 期间挂入限价单，并设置固定的止损和止盈。任何持仓会在配置的纽约时间自动平仓。
 
