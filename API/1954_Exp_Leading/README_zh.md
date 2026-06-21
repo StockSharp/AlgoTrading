@@ -1,4 +1,5 @@
 # Exp Leading 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于自定义 **Leading** 指标的交叉系统，该指标源自 John F. Ehlers 的《Cybernetics Analysis for Stock and Futures》。指标包含两条曲线：
 

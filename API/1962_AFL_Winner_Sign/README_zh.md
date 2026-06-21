@@ -1,5 +1,5 @@
 # AFL Winner Sign 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 AFL WinnerSign 指标。它对按成交量加权的价格序列应用双重平滑的随机震荡指标。当快速随机线向上穿越慢速线时开多仓，向下穿越时开空仓。
 

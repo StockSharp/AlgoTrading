@@ -1,4 +1,5 @@
 # Exp HLRSign 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中实现 HLRSign 指标。
 当高低比率（HLR）穿越设定阈值时开仓或平仓。

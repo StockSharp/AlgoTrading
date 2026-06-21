@@ -1,5 +1,5 @@
 # AFL Winner Sign Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on the AFL WinnerSign indicator. It applies a double-smoothed stochastic oscillator to a volume-weighted price series. A long position is opened when the fast stochastic line crosses above the slow line, and a short position is opened when the fast line crosses below the slow line.
 

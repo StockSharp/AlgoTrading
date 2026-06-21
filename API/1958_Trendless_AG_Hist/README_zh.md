@@ -1,5 +1,5 @@
 # Trendless AG Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 **Trendless AG Histogram** 指标交易反转。该指标测量价格与平滑移动平均之间的距离，并再次平滑结果，形成围绕零轴的直方图。当指标形成局部低点并开始上升时，可能出现向上的反转；当形成局部高点并开始下降时，可能出现向下的反转。
 

@@ -1,4 +1,5 @@
 # 趋势线突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控用户设定的两条趋势线，当价格突破这些水平时采取行动。上方趋势线代表阻力，下方趋势线代表支撑。当收盘价上穿上方趋势线时开多仓；当收盘价跌破下方趋势线时开空仓。可选的移动止损功能会随着价格移动保护已有仓位。
 

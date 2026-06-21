@@ -1,5 +1,5 @@
 # UltraFATL Threshold Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the UltraFATL oscillator to detect shifts in trend strength. The indicator outputs discrete levels from 0 to 8. A long position is opened when the previous value is above level 4 and the current value falls below 5 while staying positive. A short position is opened when the previous value is below 5 but above zero and the current value rises above 4. The algorithm works on 4‑hour candles by default but the timeframe can be adjusted.
 

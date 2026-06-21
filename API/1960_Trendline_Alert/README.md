@@ -1,4 +1,5 @@
 # Trendline Alert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy monitors two user-defined trendlines and reacts when the price breaks them. The upper and lower lines represent resistance and support levels. When the closing price crosses above the upper line, a long position is opened. When the price falls below the lower line, a short position is opened. Optional trailing stop logic protects opened positions by moving the stop level in the trade direction.
 

@@ -1,5 +1,5 @@
 # FatlSatlOsma 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例在 StockSharp 高级 API 中复现了 MetaTrader 专家 **Exp_FatlSatlOsma** 的逻辑。  
 原始系统使用 Fatl/Satl 振荡器（类似 MACD）。

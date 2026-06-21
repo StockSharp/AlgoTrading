@@ -1,5 +1,5 @@
 # NRatio Sign Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy employs the NRatio indicator, an NRTR-based oscillator that measures the normalized distance between price and a dynamic trailing level. Trading signals occur when the NRatio crosses predefined thresholds. Depending on the selected mode, the system either reacts to breakouts beyond the upper and lower bounds or to reversals back inside them.
 

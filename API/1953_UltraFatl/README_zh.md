@@ -1,5 +1,5 @@
 # UltraFATL阈值策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用UltraFATL振荡指标来捕捉趋势强度的变化。指标输出0到8之间的离散级别。当上一数值高于4且当前值下降到5以下但仍为正时开多仓；当上一数值低于5但大于0且当前值升至4以上时开空仓。默认使用4小时K线，可自行调整时间框架。
 

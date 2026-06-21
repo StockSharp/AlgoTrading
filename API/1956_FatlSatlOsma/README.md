@@ -1,5 +1,5 @@
 # FatlSatlOsma Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This example reproduces logic of the MetaTrader expert **Exp_FatlSatlOsma** using StockSharp high level API.  
 The original system works with the Fatl/Satl oscillator (a custom indicator similar to MACD).  

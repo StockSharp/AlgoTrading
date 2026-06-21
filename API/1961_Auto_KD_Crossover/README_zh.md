@@ -1,4 +1,5 @@
 # Auto KD Crossover Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Auto KD Crossover 策略复现了 MQL5 示例 `autoKD_EA`。  

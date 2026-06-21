@@ -1,4 +1,5 @@
 # Exp Leading Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a crossover system based on the custom **Leading** indicator described by John F. Ehlers in *Cybernetics Analysis for Stock and Futures*. The indicator calculates two lines:
 

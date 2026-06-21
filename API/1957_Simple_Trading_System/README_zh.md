@@ -1,5 +1,5 @@
 # Simple Trading System 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻自 MetaTrader 的 Simple Trading System。它使用向前偏移的移动平均线，并将当前收盘价与过去的收盘价比较，以捕捉短期趋势反转。当移动平均线低于 `MaShift` 根之前的值，且收盘价位于 `MaShift` 和 `MaPeriod + MaShift` 根之前的收盘价之间，并且当前 K 线为阴线时，生成买入信号。卖出信号则相反。根据参数设置，策略在出现信号时可以开仓和/或平仓多头或空头。可选的止损和止盈参数用于风险控制。
 

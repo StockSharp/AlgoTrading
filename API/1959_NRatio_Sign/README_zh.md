@@ -1,5 +1,5 @@
 # NRatio Sign 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 NRatio 指标，这是一种基于 NRTR 的振荡器，用于衡量价格与动态跟踪水平之间的归一化距离。当 NRatio 穿越预设阈值时产生交易信号。根据所选模式，系统要么在突破上下界时入场，要么在价格返回区间内时入场。
 
