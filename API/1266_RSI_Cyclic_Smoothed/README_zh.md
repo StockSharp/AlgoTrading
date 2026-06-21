@@ -1,5 +1,5 @@
 # RSI Cyclic Smoothed
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于周期平滑 RSI 指标。计算动态百分位带，当振荡器穿越这些带时进行反向交易。
 

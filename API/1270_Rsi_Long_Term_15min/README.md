@@ -1,5 +1,5 @@
 # RSI Long-Term Strategy 15min
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses RSI oversold signals combined with long-term moving averages and volume confirmation to enter long positions. It buys when RSI is below 30 while the 250-period SMA is above the 500-period SMA and volume is significantly higher than average.
 

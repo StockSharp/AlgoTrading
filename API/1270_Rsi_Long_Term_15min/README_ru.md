@@ -1,5 +1,5 @@
 # Стратегия RSI Long-Term 15min
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует сигналы перепроданности RSI в сочетании с долгосрочными скользящими средними и подтверждением объема для входа в длинные позиции. Покупка происходит, когда RSI ниже 30, SMA(250) выше SMA(500), а объем значительно превышает средний.
 

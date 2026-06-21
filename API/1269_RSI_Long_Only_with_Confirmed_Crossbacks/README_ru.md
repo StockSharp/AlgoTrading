@@ -1,5 +1,5 @@
 # Стратегия RSI Long Only with Confirmed Crossbacks
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ждёт, когда RSI опустится ниже порога и затем пересечёт его снизу вверх. Такое подтверждённое возвращение из зоны перепроданности открывает длинную позицию. Позиция закрывается при пересечении RSI уровня выхода. Параметры позволяют включить шорты, но по умолчанию они отключены.
 

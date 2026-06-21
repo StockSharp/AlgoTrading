@@ -1,5 +1,5 @@
 # RSI Long Only with Confirmed Crossbacks 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等待 RSI 先跌破某个阈值，再从下方回到该阈值上方。这个确认的回升视为超卖反弹，随后开多仓。RSI 上穿退出水平时平仓。参数允许做空，但默认值实际禁用做空。
 

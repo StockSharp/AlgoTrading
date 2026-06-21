@@ -1,5 +1,5 @@
 # RSI Long-Term 策略 15min
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合RSI超卖信号、长期移动平均线和成交量确认来开多单。当RSI低于30、SMA(250)高于SMA(500)，且成交量大于其20周期SMA的2.5倍时买入。
 

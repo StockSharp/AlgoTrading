@@ -1,5 +1,5 @@
 # RSI Pro+ 熊市策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 RSI 自下而上穿越设定阈值时，该策略买入，并在价格达到固定百分比的盈利目标时平仓。适用于预计会出现短期反弹的熊市环境。
 

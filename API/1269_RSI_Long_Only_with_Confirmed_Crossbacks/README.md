@@ -1,5 +1,5 @@
 # RSI Long Only with Confirmed Crossbacks
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy waits for the RSI to drop below a threshold and then cross back above it. The crossback confirms oversold conditions before entering a long position. Positions close when the RSI crosses above an exit level. Parameters allow short trades, but defaults effectively disable shorts.
 

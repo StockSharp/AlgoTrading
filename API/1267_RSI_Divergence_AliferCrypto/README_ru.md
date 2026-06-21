@@ -1,4 +1,5 @@
 # Стратегия RSI Divergence - AliferCrypto
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует дивергенции RSI с дополнительными фильтрами по зоне RSI и тренду. Стоп-лосс и тейк-профит рассчитываются по свингам или ATR и могут пересчитываться динамически или фиксироваться при входе.
 

@@ -1,4 +1,5 @@
 # RSI Divergence Strategy - AliferCrypto
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on RSI divergences with optional zone and trend filters. Stop loss and take profit can be calculated from swings or ATR with dynamic or static updates.
 

@@ -1,4 +1,5 @@
 # RSI 背离策略 - AliferCrypto
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 RSI 背离，并可选 RSI 区域和趋势过滤器。止损和止盈可根据摆动或 ATR 计算，可动态更新或在入场时锁定。
 

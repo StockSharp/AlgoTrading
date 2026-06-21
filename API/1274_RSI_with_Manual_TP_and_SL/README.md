@@ -1,4 +1,5 @@
 # RSI Strategy with Manual TP and SL
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements an RSI strategy that enters long when RSI crosses above the oversold level and the close is above 70% of the highest close over the last 50 candles. Enters short when RSI crosses below the overbought level and the close is below 130% of the lowest close over the last 50 candles. Positions are protected using percentage-based take profit and stop loss.
 
