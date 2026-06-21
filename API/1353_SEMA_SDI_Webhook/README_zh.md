@@ -1,5 +1,5 @@
 # Strategy Sema Sdi Webhook Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于平滑EMA交叉和方向性指标确认的策略。
 当 +DI > -DI 且快速EMA > 慢速EMA时买入；当 -DI > +DI 且快速EMA < 慢速EMA时卖出。

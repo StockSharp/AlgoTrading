@@ -1,5 +1,5 @@
 # Reversal Catcher 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reversal Catcher 在价格突破布林带后又回到带内并伴随动量变化时入场。快慢 EMA 用于判断趋势方向，RSI 穿越超买或超卖水平提供信号。目标和止损基于布林带以及前一根蜡烛的极值，可选在指定的收盘时间平仓。
 

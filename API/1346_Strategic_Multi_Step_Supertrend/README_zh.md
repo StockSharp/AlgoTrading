@@ -1,5 +1,5 @@
 # Strategic Multi Step Supertrend
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两个 Supertrend 指标并带有多级分批止盈。
 

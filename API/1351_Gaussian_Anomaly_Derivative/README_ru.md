@@ -1,5 +1,5 @@
 # Стратегия Gaussian Anomaly Derivative
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует скользящую среднюю ценовой аномалии `1 - (high + low) / (2 * close)` и её сглаженную производную.
 Покупает, когда производная превышает положительный порог, и продаёт, когда опускается ниже отрицательного порога.

@@ -1,4 +1,5 @@
 # 变色龙策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 - **类型**：结合风险管理的趋势跟随策略
 - **入场**：快均线上穿或下穿慢均线

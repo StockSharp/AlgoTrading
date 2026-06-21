@@ -1,5 +1,5 @@
 # Gaussian Anomaly Derivative 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用价格异常值 `1 - (high + low) / (2 * close)` 的移动平均及其平滑导数。
 当导数高于正阈值时做多，低于负阈值时做空。

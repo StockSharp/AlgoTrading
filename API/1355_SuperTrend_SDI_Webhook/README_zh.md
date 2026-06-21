@@ -1,5 +1,5 @@
 # SuperTrend SDI Webhook 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 SuperTrend 和平滑方向指标 (SDI)。当 +DI 大于 -DI 且 SuperTrend 显示上升趋势时开多，当 -DI 大于 +DI 且 SuperTrend 显示下降趋势时开空。策略使用百分比止盈、止损和移动止损。
 

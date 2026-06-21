@@ -1,5 +1,5 @@
 # Стратегия SuperTrend SDI Webhook
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает индикатор SuperTrend и сглаженный направленный индекс (SDI). Открывает длинные позиции, когда +DI выше -DI и SuperTrend показывает восходящий тренд. Открывает короткие позиции, когда -DI выше +DI и SuperTrend указывает на нисходящий тренд. Использует процентные уровни тейк‑профита, стоп‑лосса и трейлинг‑стопа.
 

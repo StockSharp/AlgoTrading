@@ -1,5 +1,5 @@
 # Strategy Connectable Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 可连接外部信号源的模板策略。
 支持做多和做空，并应用简单的百分比止损和止盈管理。
