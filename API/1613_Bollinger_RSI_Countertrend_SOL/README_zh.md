@@ -1,5 +1,5 @@
 # Bollinger RSI Countertrend SOL 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略针对SOL，利用布林带与RSI进行逆势交易。价格向上穿越下轨且RSI较低时做多，价格向下穿越上轨且RSI较高时做空，仅在工作日交易。
 

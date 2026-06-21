@@ -1,5 +1,5 @@
 # Backtest UT Bot + RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合UT Bot趋势指标与RSI水平。当UT Bot向上反转且RSI低于阈值时做多；当UT Bot向下反转且RSI高于阈值时做空。
 

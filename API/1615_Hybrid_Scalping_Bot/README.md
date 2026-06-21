@@ -1,5 +1,5 @@
 # Hybrid Scalping Bot Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A hybrid scalping system combining RSI signals with EMA trend filters and optional volume confirmation. The bot can adjust signal sensitivity from very easy to strong and includes quick exit and trailing stop features.
 

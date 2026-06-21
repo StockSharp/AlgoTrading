@@ -1,5 +1,5 @@
 # Calculation Position Size Based on Risk Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Demonstrates sizing trades from account risk and a stop-loss percentage. Entries are random to show position sizing logic.
 

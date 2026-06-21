@@ -1,5 +1,5 @@
 # Стратегия DNSE VN301 SMA & EMA Cross
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует индекс VN301 на пересечении EMA(15) и SMA(60). Перед завершением торговой сессии позиции закрываются, а процентный стоп ограничивает убыток.
 

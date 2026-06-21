@@ -1,5 +1,5 @@
 # UNMITIGATED LEVELS ACCUMULATION Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Accumulates long positions by placing limit orders at previous day, week, month and year lows that have not been revisited recently. Orders are only placed during the London session and all positions are closed on new all‑time highs.
 

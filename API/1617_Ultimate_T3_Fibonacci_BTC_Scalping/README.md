@@ -1,5 +1,5 @@
 # Ultimate T3 Fibonacci BTC Scalping Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy applies two Tilson T3 moving averages to capture short-term BTC moves. A crossover between the Fibonacci-tuned and standard T3 lines generates long or short entries. Optional TP/SL management and closing on opposite signals are supported.
 

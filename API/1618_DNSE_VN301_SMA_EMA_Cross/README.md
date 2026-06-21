@@ -1,5 +1,5 @@
 # DNSE VN301 SMA & EMA Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades the VN301 index using a crossover between a 15-period EMA and a 60-period SMA. It exits before the trading session ends and applies a simple percentage stop to cap losses.
 

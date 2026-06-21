@@ -1,5 +1,5 @@
 # 混合剥头皮策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将RSI信号与EMA趋势过滤和可选的成交量确认相结合，可根据需要调整信号灵敏度，并提供快速退出和移动止损功能。
 

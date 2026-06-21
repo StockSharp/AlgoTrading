@@ -1,5 +1,5 @@
 # Стратегия Ultimate T3 Fibonacci BTC Scalping
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует две скользящие средние Тилсона T3 для поиска краткосрочных движений BTC. Пересечение «фибо» и основной линии T3 генерирует сигналы на покупку или продажу, поддерживаются тейк‑профит и стоп‑лосс.
 

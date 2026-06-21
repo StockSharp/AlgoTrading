@@ -1,5 +1,5 @@
 # FT CCI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 5 专家顾问“FT_CCI (barabashkakvn's edition)”的 StockSharp 移植版本。它以商品通道指数（CCI）为核心，在指标远离均值时捕捉反转机会。当 CCI 跌破下轨时转为做多，当 CCI 突破上轨时转为做空。止损和止盈以点（pips）为单位输入，并自动转换为绝对价格偏移。
 

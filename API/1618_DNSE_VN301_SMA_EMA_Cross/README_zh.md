@@ -1,5 +1,5 @@
 # DNSE VN301 SMA 与 EMA 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过15周期EMA与60周期SMA的交叉交易VN301指数，并在收盘前平仓，采用百分比止损限制亏损。
 

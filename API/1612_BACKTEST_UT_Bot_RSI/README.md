@@ -1,5 +1,5 @@
 # Backtest UT Bot + RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combines a UT Bot trend detector with RSI levels. Enters long on a bullish UT Bot reversal when RSI is oversold and short on a bearish reversal when RSI is overbought.
 

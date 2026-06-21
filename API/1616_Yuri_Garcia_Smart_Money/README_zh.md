@@ -1,5 +1,5 @@
 # Yuri Garcia 智能资金策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于智能资金概念，在高成交量区和四小时支撑/阻力带内寻找价格反应。通过累计成交量差和影线回踩确认进场，旨在跟随机构订单流。
 

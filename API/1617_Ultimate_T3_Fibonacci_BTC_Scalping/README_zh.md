@@ -1,5 +1,5 @@
 # 终极 T3 斐波那契 BTC 剥头皮策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两条Tilson T3均线捕捉比特币的短期波动。斐波那契调校的T3与标准T3的交叉产生做多或做空信号，可选择在反向信号或百分比止盈/止损下平仓。
 

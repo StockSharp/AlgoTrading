@@ -1,5 +1,5 @@
 # Стратегия UNMITIGATED LEVELS ACCUMULATION
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Накапливает длинные позиции, выставляя лимитные заявки на прошлых минимумах дня, недели, месяца и года, если цена давно их не касалась. Ордеры размещаются только в лондонскую сессию, а все позиции закрываются при обновлении исторического максимума.
 

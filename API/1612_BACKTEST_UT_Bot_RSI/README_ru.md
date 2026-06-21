@@ -1,5 +1,5 @@
 # Стратегия Backtest UT Bot + RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Сочетает трендовый индикатор UT Bot с уровнями RSI. Открывает лонг при развороте вверх и RSI ниже порога, шорт — при развороте вниз и RSI выше порога.
 

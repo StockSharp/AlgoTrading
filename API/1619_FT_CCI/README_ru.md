@@ -1,5 +1,5 @@
 # Стратегия FT CCI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой порт Expert Advisor MetaTrader 5 «FT_CCI (barabashkakvn's edition)», переписанный под StockSharp. В основе лежит индикатор Commodity Channel Index (CCI), который отлавливает резкие развороты, когда осциллятор заметно удаляется от средней. При пробое нижней границы стратегия переворачивается в покупки, при пробое верхней — в продажи. Стоп-лосс и тейк-профит задаются в пунктах (pips) и автоматически пересчитываются в абсолютный ценовой шаг.
 

@@ -1,5 +1,5 @@
 # UNMITIGATED LEVELS ACCUMULATION 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 通过在尚未回测的历史低点（前日、前周、前月、前年低点）挂限价多单来累积头寸，仅在伦敦交易时段执行。当价格创出新的历史高点时，关闭所有头寸。
 
