@@ -1,5 +1,5 @@
 # Genie 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Genie 是一套基于 Parabolic SAR 的策略，并使用平均趋向指数（ADX）确认趋势强度。当 SAR 相对价格翻转且 ADX 的 +DI 和 -DI 互换主导时，策略开仓。风险通过跟踪止损和固定止盈进行管理。
 

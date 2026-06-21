@@ -1,4 +1,5 @@
 # 双向马丁格尔策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了一种简化的双向马丁格尔方案。启动时同时开多单和空单，并在可配置距离放置限价单以获取利润。
 

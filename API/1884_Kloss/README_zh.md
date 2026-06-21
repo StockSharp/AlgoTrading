@@ -1,5 +1,5 @@
 # Kloss 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Kloss 策略结合加权移动平均线 (WMA)、商品通道指数 (CCI) 和随机振荡指标。所有指标都基于带有偏移的历史值计算，使信号能够参考过去的市场环境。当 CCI 低于负阈值、Stochastic 主线低于 `50 - StochDiffer` 且偏移后的价格高于偏移后的 WMA 时开多单。反向条件下开空单。若启用 `RevClose`，出现反向信号时会平掉当前仓位。止损和止盈以点数形式设置。
 

@@ -1,5 +1,5 @@
 # SMA Trend Filter Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Multi-timeframe strategy that analyzes the slope of five simple moving averages (periods 5, 8, 13, 21, 34) on three timeframes (15m, 1h, 4h). It calculates bullish and bearish scores for each timeframe and trades when all timeframes align in one direction.
 

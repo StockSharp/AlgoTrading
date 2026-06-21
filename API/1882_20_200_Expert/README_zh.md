@@ -1,5 +1,5 @@
 # 20/200 Expert 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据两个历史K线的开盘价差来开仓。当 shift2 的开盘价减去 shift1 的开盘价超过阈值时做多，反之做空。仅在指定小时开仓，并通过止盈、止损或超过最大持仓时间来平仓。
 

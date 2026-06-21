@@ -1,5 +1,5 @@
 # Genie Pivot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了最初用 MQL4 编写的 "Genie" 枢轴反转剥头皮系统。它扫描最近的八根 K 线以在关键点检测突然的反转。当连续七个最低点下降且当前 K 线形成更高的最低点并收于前一高点之上时触发做多。当连续七个最高点上升且当前 K 线形成更低的最高点并收于前一低点之下时触发做空。
 

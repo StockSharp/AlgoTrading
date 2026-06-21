@@ -1,5 +1,5 @@
 # SMA Trend Filter 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略在三个时间框架（15分钟、1小时、4小时）上分析五个简单移动平均线（周期5、8、13、21、34）的斜率。计算每个时间框架的多头和空头评分，当所有时间框架方向一致时进行交易。
 

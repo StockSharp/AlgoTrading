@@ -1,5 +1,5 @@
 # Genie Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Genie is a Parabolic SAR expert advisor enhanced with the Average Directional Index (ADX) to confirm trend strength. The strategy opens positions when the SAR flips relative to price while the +DI and -DI components of ADX change dominance. A trailing stop and fixed take profit manage risk.
 

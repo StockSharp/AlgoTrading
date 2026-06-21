@@ -1,5 +1,5 @@
 # Ilan 1.6 Dynamic Grid Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Ilan 1.6 Dynamic strategy is a classic grid and martingale expert advisor. It opens an initial trade in a selected direction and places additional orders every time price moves against the position by a fixed step. Volume of new orders grows geometrically by a lot exponent. All positions in the basket are closed when price returns to the average entry price plus a take-profit distance. A trailing stop can optionally protect profits if price moves far enough in the favorable direction.
 

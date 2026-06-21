@@ -1,5 +1,5 @@
 # Genie RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于相对强弱指数 (RSI) 的超买超卖反转信号。RSI 高于80时开空单，RSI 低于20时开多单。入场后可使用可选的止盈和跟踪止损参数控制风险。
 

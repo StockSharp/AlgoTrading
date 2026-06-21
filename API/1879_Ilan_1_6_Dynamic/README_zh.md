@@ -1,5 +1,5 @@
 # Ilan 1.6 Dynamic 网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ilan 1.6 Dynamic 是一种经典的网格加仓策略。系统在指定方向上打开首单，当价格以固定步长逆向运动时加仓。每次加仓的手数按 LotExponent 指数增长。当价格回到平均建仓价并达到设定的盈利距离时，整篮子订单一起平仓。如果价格走势良好，可以启用追踪止损保护利润。
 

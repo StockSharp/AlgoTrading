@@ -1,4 +1,5 @@
 # Genie Pivot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了原始 MQL4 版本的 **Genie Pivot** 反转剥头皮思路。它等待由七根连续 K 线组成的转向形态，并使用固定止盈和跟踪止损来管理持仓。
 
