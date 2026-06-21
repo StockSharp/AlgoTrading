@@ -1,5 +1,5 @@
 # EMA 10/20/50 Alignment
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This long-only strategy enters when EMA(10) > EMA(20) > EMA(50) and exits when the EMAs align in descending order. Trading is restricted to a configurable date range.
 

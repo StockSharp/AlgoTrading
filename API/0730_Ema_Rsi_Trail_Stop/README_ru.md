@@ -1,5 +1,5 @@
 # EMA RSI Trail Stop
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует пересечения короткой и средней EMA с фильтрацией длинной EMA. Выходы выполняются по уровням RSI, трейлинг-стопу и опциональному закрытию по времени. Фиксированный стоп превращается в трейлинг после движения цены на `TrailOffset`.
 

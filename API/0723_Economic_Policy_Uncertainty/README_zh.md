@@ -1,5 +1,5 @@
 # 经济政策不确定性策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当经济政策不确定性（EPU）指数的两周期SMA上穿用户设定的阈值时，该策略做多。开仓后持有固定数量的柱，然后退出。
 

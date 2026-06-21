@@ -1,5 +1,5 @@
 # EMA RSI Trailing Stop 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在短期 EMA 穿越中期 EMA 且位于长期 EMA 之上或之下时开仓。通过 RSI 水平和平移止损结合固定百分比止损退出。若交易在盈利，可在指定 K 线数量后平仓。
 

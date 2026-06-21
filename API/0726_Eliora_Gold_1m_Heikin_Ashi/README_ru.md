@@ -1,5 +1,5 @@
 # Стратегия Eliora Gold 1m Heikin Ashi
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует свечи Хейкин-Аши на минутном графике. Вход осуществляется при появлении сильной свечи в направлении тренда при отсутствии консолидации. После каждой сделки задаётся пауза в несколько баров. Выход основан на трейлинговом стопе по ATR.
 

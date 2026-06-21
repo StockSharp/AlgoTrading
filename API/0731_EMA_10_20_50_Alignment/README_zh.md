@@ -1,5 +1,5 @@
 # EMA 10/20/50 Alignment
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅做多，当 EMA(10) > EMA(20) > EMA(50) 时入场，EMA 按降序排列时平仓。交易仅在设定的时间范围内进行。
 

@@ -1,5 +1,5 @@
 # Economic Policy Uncertainty
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Economic Policy Uncertainty (EPU) strategy goes long when the two-period SMA of the EPU index crosses above a user-defined threshold. After entering a position the strategy waits a fixed number of bars before closing it.
 

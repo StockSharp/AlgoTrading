@@ -1,5 +1,5 @@
 # Efficient Work Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses moving averages on short, medium, and long horizons. A long position is opened when the fast average is above both longer averages, and a short position is opened when it is below them.
 

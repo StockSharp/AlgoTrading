@@ -1,5 +1,5 @@
 # Efficient Work 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在短期、中期和长期三个周期上使用移动平均线。当快速均线高于两条慢速均线时开多仓，低于两条慢速均线时开空仓。
 

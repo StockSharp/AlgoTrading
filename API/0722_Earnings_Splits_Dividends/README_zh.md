@@ -1,5 +1,5 @@
 # 财报、拆股、分红
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 演示如何通过新闻源获取财报、拆股与分红信息。
 

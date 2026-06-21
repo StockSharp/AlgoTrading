@@ -1,5 +1,5 @@
 # Elliott Wave Supertrend Exit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that enters on ZigZag-like reversals and exits on Supertrend direction changes with a fixed percentage stop-loss.
 

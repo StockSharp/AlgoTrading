@@ -1,5 +1,5 @@
 # Eliora Gold 1m Heikin Ashi 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在一分钟图上使用 Heikin Ashi 蜡烛。强劲的蜡烛与趋势一致且无盘整时开仓，成交后等待数根 K 线的冷却期。离场基于 ATR 的移动止损。
 
