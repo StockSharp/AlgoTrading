@@ -1,4 +1,5 @@
 # Equivolume Bars Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on volume spikes relative to the sum of volumes over a lookback period.
 

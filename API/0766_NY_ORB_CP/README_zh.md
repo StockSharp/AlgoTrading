@@ -1,5 +1,5 @@
 # NY ORB CP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在纽约开盘区间突破后结合回测确认进行交易。利用 9:30-9:45 的区间，当价格回测并继续突破方向时入场。
 

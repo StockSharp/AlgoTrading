@@ -1,5 +1,5 @@
 # RSI CCI Williams %R
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия объединяет индикаторы RSI, CCI и Williams %R для поиска разворотных точек. Покупка происходит, когда все три индикатора показывают перепроданность, а продажа — при одновременной перекупленности. Для каждой позиции используется фиксированный процент тейк‑профита и стоп‑лосса.
 

@@ -1,5 +1,5 @@
 # Equilibrium Candles Pattern Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy using equilibrium candles to detect short trends and enter on pullbacks. The equilibrium is the midpoint between the highest and lowest prices over a lookback window. After a bullish or bearish streak, a move back through the equilibrium triggers an entry. ATR is used for optional stop/target and to exit on unusually large candles.
 

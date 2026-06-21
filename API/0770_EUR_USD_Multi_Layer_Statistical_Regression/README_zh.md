@@ -1,5 +1,5 @@
 # EUR/USD 多层线性回归策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用多个线性回归层来判断 EUR/USD 的趋势方向。策略计算短期、中期和长期回归，并通过 R² 和斜率阈值验证，然后根据加权结果进行交易。
 

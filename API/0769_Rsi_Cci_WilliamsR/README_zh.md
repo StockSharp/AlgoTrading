@@ -1,5 +1,5 @@
 # RSI CCI Williams %R
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI、CCI 和 Williams %R 用于捕捉可能的反转。当三个指标同时处于超卖区时买入，处于超买区时卖出。每笔交易都使用基于百分比的止盈和止损。
 

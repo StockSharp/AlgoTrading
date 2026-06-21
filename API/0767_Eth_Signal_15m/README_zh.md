@@ -1,5 +1,5 @@
 # ETH Signal 15m 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ETH Signal 15m 策略使用 Supertrend 指标检测方向变化，并用 RSI 过滤信号。当 Supertrend 方向下降且 RSI 低于超买水平时开多仓；当 Supertrend 方向上升且 RSI 高于超卖水平时开空仓。退出使用基于 ATR 的止损和止盈。
 

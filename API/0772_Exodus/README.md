@@ -1,5 +1,5 @@
 # Exodus Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a simplified port of the TradingView **EXODUS** script. It uses a volume weighted momentum oscillator (VWMO) together with the Average Directional Index to detect strong directional moves.
 

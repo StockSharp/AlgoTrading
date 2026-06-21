@@ -1,5 +1,5 @@
 # ETH Signal 15m Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The ETH Signal 15m strategy uses the Supertrend indicator to detect direction changes and the RSI to filter entries. A long position opens when the Supertrend direction decreases and RSI is below the overbought level. A short position opens when the Supertrend direction increases and RSI is above the oversold level. Exits use ATR-based stop loss and take profit.
 

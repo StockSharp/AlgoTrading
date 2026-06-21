@@ -1,5 +1,5 @@
 # RSI CCI Williams %R
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines RSI, CCI, and Williams %R to capture reversal opportunities. It buys when all three indicators reach oversold levels and sells when they all reach overbought levels. Each trade uses percentage-based take profit and stop loss protection.
 
