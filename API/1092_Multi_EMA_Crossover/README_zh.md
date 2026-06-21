@@ -1,5 +1,5 @@
 # Multi EMA Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在四组 EMA 中，每当快速 EMA 上穿慢速 EMA 时开多仓；当快速 EMA 重新跌破对应的慢速 EMA 时平仓。
 

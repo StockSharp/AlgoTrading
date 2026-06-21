@@ -1,5 +1,5 @@
 # Multi-Factor Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多因子策略结合 MACD、RSI 和两条移动平均线来确认趋势。当 MACD 线上穿信号线、RSI 低于 70、价格高于 50 周期均线且 50 均线高于 200 均线时做多；反向条件做空。
 

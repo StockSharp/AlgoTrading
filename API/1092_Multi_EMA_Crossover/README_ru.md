@@ -1,5 +1,5 @@
 # Стратегия Multi EMA Crossover
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает отдельные длинные позиции по четырём парам EMA при пересечении быстрой EMA выше медленной. Каждая позиция закрывается, когда быстрая EMA опускается ниже своей медленной EMA.
 

@@ -1,5 +1,5 @@
 # Multi-Confluence Swing Hunter V1 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Multi-Confluence Swing Hunter V1 strategy uses a scoring system combining RSI, MACD, and price action to identify swing lows and highs. A long trade opens when bullish signals reach the minimum entry score and closes when bearish signals reach the exit score.
 

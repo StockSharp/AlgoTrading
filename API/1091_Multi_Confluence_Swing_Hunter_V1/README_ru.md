@@ -1,5 +1,5 @@
 # Стратегия Multi-Confluence Swing Hunter V1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Multi-Confluence Swing Hunter V1 использует систему баллов, объединяющую RSI, MACD и ценовое действие, для выявления свинговых минимумов и максимумов. Длинная позиция открывается, когда бычьи сигналы достигают минимального входного балла, и закрывается при достижении выходного балла медвежьими сигналами.
 

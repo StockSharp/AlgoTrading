@@ -1,5 +1,5 @@
 # Multi-Band Comparison
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Multi-Band Comparison использует SMA, стандартное отклонение и квантильные уровни цены. Стратегия открывает лонг, когда цена закрывается выше верхнего квантиля минус стандартное отклонение заданное число баров, и закрывает позицию при обратном условии.
 

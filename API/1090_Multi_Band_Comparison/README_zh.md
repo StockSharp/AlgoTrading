@@ -1,5 +1,5 @@
 # Multi-Band Comparison
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Multi-Band Comparison 使用 SMA、标准差和价格分位数带。当价格连续 `EntryConfirmBars` 根 K 线收在上分位数减去标准差之上时做多；当价格连续 `ExitConfirmBars` 根 K 线收在该水平之下时平仓。
 

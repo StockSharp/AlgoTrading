@@ -1,4 +1,5 @@
 # Multi-Step FlexiMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses a variable-length moving average oscillator with a SuperTrend filter and multi-step take profit.
 

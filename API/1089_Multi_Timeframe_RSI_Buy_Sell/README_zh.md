@@ -1,5 +1,5 @@
 # 多时间框架RSI买卖策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用三个不同时间框架的RSI值。当所有启用的RSI低于买入阈值时开多仓；当所有启用的RSI高于卖出阈值时开空仓。冷却期可以避免连续信号。
 

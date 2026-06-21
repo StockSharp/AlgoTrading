@@ -1,4 +1,5 @@
 # Multi-Step FlexiMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用可变长度均线振荡器与 SuperTrend 过滤器，并在多个止盈目标处分批平仓。
 

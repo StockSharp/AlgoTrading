@@ -1,5 +1,5 @@
 # 多指标摆动策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合 Parabolic SAR、SuperTrend、ADX 与成交量差确认的摆动交易策略。
 

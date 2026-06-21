@@ -1,5 +1,5 @@
 # Multi-Confluence Swing Hunter V1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Multi-Confluence Swing Hunter V1 策略使用评分系统结合 RSI、MACD 与价格行为来识别波段低点和高点。当看涨信号的分数达到最小入场值时开多仓，在看跌信号分数达到出场阈值时平仓。
 

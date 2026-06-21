@@ -1,5 +1,5 @@
 # Multi EMA Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy opens separate long positions for four EMA pairs when the faster EMA crosses above the slower one. Each position closes when its faster EMA falls below the slower EMA.
 
