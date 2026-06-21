@@ -1,5 +1,5 @@
 # 范围过滤器
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 范围过滤器策略采用平滑的范围计算，并使用固定的止损和止盈。
 

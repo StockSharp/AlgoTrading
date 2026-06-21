@@ -1,5 +1,5 @@
 # Стратегия RedK Slow Smooth WMA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует тройное сглаживание взвешенным средним для фильтрации шума. Позиция открывается, когда сглаженная средняя меняет направление: long при развороте вверх, short при развороте вниз.
 

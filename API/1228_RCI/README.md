@@ -1,5 +1,5 @@
 # RCI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses the Rank Correlation Index and its moving average to trade crossovers. A long position opens when the RCI rises above its moving average. A short position opens when it drops below. Trade direction can be restricted to long-only or short-only.
 

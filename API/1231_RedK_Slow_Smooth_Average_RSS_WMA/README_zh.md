@@ -1,5 +1,5 @@
 # RedK Slow Smooth WMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用三次加权移动平均来过滤噪声。当平滑均线改变方向时开仓：向上转为做多，向下转为做空。
 

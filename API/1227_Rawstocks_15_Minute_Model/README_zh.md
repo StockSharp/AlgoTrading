@@ -1,4 +1,5 @@
 # Rawstocks 15 Minute Model 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Rawstocks 15 Minute Model 使用摆动订单块和斐波那契回撤水平，在日内时段内交易。
 

@@ -1,5 +1,5 @@
 # Range Filter DW 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现基于 ATR 的范围过滤器，灵感来自 Donovan Wall 的 Range Filter。过滤器只在价格超过基于波动率的区间时移动，从而忽略细小波动。收盘价突破上轨时开多单，跌破下轨时开空单。
 

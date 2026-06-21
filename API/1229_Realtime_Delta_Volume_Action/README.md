@@ -1,5 +1,5 @@
 # Realtime Delta Volume Action
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy tracks the difference between buy and sell volume within each candle. A trade is opened when the volume delta exceeds a threshold.
 

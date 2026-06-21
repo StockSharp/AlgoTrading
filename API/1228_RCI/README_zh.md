@@ -1,5 +1,5 @@
 # RCI策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用秩相关指数(RCI)及其均线的交叉进行交易。当RCI上穿其均线时开多，下穿时开空。交易方向可以限制为仅做多或仅做空。
 

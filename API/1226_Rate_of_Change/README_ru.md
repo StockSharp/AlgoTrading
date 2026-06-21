@@ -1,5 +1,5 @@
 # Стратегия Rate of Change
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикатор Rate of Change для обнаружения пузырей и торговли пересечений нулевой линии с динамическим изменением объёма.
 

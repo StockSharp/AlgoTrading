@@ -1,5 +1,5 @@
 # RedK Slow Smooth WMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses a triple-pass weighted moving average to filter noise. A position is opened when the smoothed average changes direction: long when it turns up, short when it turns down.
 

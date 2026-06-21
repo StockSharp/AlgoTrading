@@ -1,5 +1,5 @@
 # 精炼均线 + 吞没 (M5 + 结构突破确认)
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 精炼均线 + 吞没结合两条简单移动平均线、吞没形态和结构突破确认。只有当至少两个共振因素一致并且冷却周期结束后才会开仓。
 

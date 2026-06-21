@@ -1,5 +1,5 @@
 # 基于ATR止盈止损的Range Filter策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格突破Range Filter上轨或下轨时开仓，并使用ATR计算的止盈止损平仓。
 
