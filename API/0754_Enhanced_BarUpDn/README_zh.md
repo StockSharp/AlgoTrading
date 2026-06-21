@@ -1,5 +1,5 @@
 # 增强型 BarUpDn 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合布林带与趋势确认，寻找向上或向下跳空的 K 线。上涨趋势中出现向上跳空的看涨 K 线时做多；下跌趋势中出现向下跳空的看跌 K 线时做空。退出通过基于 ATR 的止损和止盈实现。
 

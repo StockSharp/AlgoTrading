@@ -1,5 +1,5 @@
 # 吞没形态策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在出现所选吞没形态时入场，可选择看涨或看跌，并可设定交易方向。持仓在固定的条数后自动平仓。
 

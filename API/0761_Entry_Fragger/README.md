@@ -1,5 +1,5 @@
 # Entry Fragger Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy tracks sequences of red and green candles relative to the 50-period EMA. After a series of red candles below the EMA, a green candle closing above a volatility cloud triggers a long entry. A similar setup with green candles precedes short entries. Optional reverse trading enables flipping positions.
 

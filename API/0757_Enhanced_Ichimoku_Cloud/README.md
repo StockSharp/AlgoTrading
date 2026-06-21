@@ -1,5 +1,5 @@
 # Enhanced Ichimoku Cloud Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Long-only Ichimoku strategy with a 171-day EMA filter. The strategy buys when span A is above span B, price breaks the high from 25 bars ago, Tenkan-sen is above Kijun-sen and the close is above the EMA. Position is closed when Tenkan falls below Kijun.
 

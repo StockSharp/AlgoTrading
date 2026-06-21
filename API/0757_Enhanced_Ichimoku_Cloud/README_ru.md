@@ -1,5 +1,5 @@
 # Расширенная стратегия Ишимоку
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Лонговая стратегия Ишимоку с фильтром EMA за 171 день. Покупает, когда span A выше span B, цена пробивает максимум 25 баров назад, Tenkan выше Kijun и закрытие выше EMA. Позиция закрывается, когда Tenkan опускается ниже Kijun.
 

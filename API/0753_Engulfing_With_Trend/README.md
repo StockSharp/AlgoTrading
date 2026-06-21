@@ -1,5 +1,5 @@
 # Engulfing with Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a SuperTrend filter with bullish and bearish engulfing patterns. A trade is opened when a candle engulfs the prior bar in the direction of the prevailing trend. Stop and target levels are calculated from the pattern range.
 

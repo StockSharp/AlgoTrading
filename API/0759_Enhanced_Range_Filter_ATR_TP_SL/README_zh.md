@@ -1,4 +1,5 @@
 # 增强型范围过滤器策略与ATR止盈止损
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合自定义范围过滤器与基于ATR的止盈和止损。
 当价格突破过滤器并满足以下条件时入场：

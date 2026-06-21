@@ -1,5 +1,5 @@
 # 增强型一目均衡云策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 仅做多的一目均衡云策略，带有171日EMA过滤。 当span A高于span B、价格突破25根K线前的最高点、Tenkan高于Kijun且收盘价高于EMA时买入。 当Tenkan跌破Kijun时平仓。
 

@@ -1,5 +1,5 @@
 # 增强型市场结构策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合摆动高低点与 ATR、RSI、成交量、MACD 和 EMA 滤波器。当多个条件确认动量时，在突破或扫单反转处入场。
 

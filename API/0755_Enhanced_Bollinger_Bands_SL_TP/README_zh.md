@@ -1,5 +1,5 @@
 # Enhanced Bollinger Bands SL TP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格穿越布林带时使用限价单入场，并设置以点数计算的固定止损和止盈。
 

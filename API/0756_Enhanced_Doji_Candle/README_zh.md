@@ -1,5 +1,5 @@
 # Enhanced Doji Candle
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于十字星形态配合简单的确认规则和固定的风险收益比。出现十字星时，如果本根或上一根K线收盘突破开盘价且影线较短，则顺势开仓。止损以点数设定，止盈按风险收益系数计算。
 

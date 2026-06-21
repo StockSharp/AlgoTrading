@@ -1,5 +1,5 @@
 # 趋势吞没策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 SuperTrend 方向过滤与看涨和看跌吞没形态结合。当新的蜡烛在当前趋势方向上吞没前一根蜡烛时开仓。止损和目标根据形态区间计算。
 

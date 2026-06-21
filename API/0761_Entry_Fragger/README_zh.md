@@ -1,5 +1,5 @@
 # Entry Fragger 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略跟踪相对于50周期EMA的红色和绿色蜡烛序列。在EMA下方出现一系列红色蜡烛后，收盘价高于波动云的绿色蜡烛触发做多信号。类似地，绿色蜡烛序列后出现的红色蜡烛用于做空。可选的反向交易模式允许在信号反转时直接翻转仓位。
 
