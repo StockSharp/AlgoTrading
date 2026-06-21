@@ -1,5 +1,5 @@
 # Price Flip策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Price Flip策略通过最近的高点和低点镜像价格，当前一根K线收盘价在该反转价格的另一侧并且快线MA上穿慢线MA时进行交易。可以启用基于慢线MA的趋势过滤。
 

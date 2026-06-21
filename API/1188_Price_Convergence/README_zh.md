@@ -1,5 +1,5 @@
 # 价格收敛策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过比较上涨和下跌蜡烛的 OHLC4 值之和来估计价格上涨或下跌的概率。当上涨概率超过 50% 时开多仓，当下跌概率超过 50% 时开空仓。
 

@@ -1,5 +1,5 @@
 # Profitable Pullback Strategy Mark804 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用指数移动平均线组成的带状指标来跟随趋势。系统在确认的趋势中寻找回调，当价格回落到信号 EMA 并再次按趋势方向收盘时开仓，并通过百分比形式的止盈和止损保护头寸。
 

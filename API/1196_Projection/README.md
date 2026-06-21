@@ -1,5 +1,5 @@
 # Projection Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy computes the average percentage change of recent daily opens and projects breakout levels around the current day's open. Long positions are entered when price breaks above the upper projection, while short positions are opened on a break below the lower projection. Protective stops are placed near the opposite side of the projection.
 

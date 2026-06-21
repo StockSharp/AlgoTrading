@@ -1,5 +1,5 @@
 # Price Flip Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Price Flip strategy mirrors price around recent highs and lows and trades moving average crossovers when the previous close is on the opposite side of this inverted price. A trend filter based on the slow moving average can be applied.
 

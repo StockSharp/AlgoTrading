@@ -1,5 +1,5 @@
 # Projection 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算最近日开盘价的平均百分比变化，并在当日开盘价周围投射突破水平。价格突破上方水平时做多，跌破下方水平时做空。止损位设置在相反方向的投射附近。
 

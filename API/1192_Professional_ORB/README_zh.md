@@ -1,3 +1,4 @@
 # 专业 ORB 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 实现开盘区间突破策略。在 09:15 到可配置时长之间的最高价和最低价形成区间。区间结束且宽度足够后，价格向上或向下突破将触发多头或空头进场。仓位使用基于 ATR 的止损、固定点数的止盈，并在交易日结束时平仓。每日交易次数有限制。
