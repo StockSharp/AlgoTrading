@@ -1,5 +1,5 @@
 # 热力图 MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heatmap MACD 策略在五个时间框架的 MACD 直方图一致时进行交易。当所有直方图转为正值时做多，当全部转为负值时做空。如有需要，当任一直方图反向时可平仓。
 

@@ -1,5 +1,5 @@
 # Стратегия Hancock RSI Volume
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия рассчитывает индекс относительной силы (RSI), взвешенный по объёму, по мотивам скрипта Hancock из TradingView. RSI учитывает объёмы покупок и продаж для оценки силы тренда. Длинная позиция открывается при переходе RSI в восходящий тренд, короткая — при переходе в нисходящий.
 

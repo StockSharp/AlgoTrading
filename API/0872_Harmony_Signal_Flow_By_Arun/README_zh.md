@@ -1,5 +1,5 @@
 # Harmony Signal Flow By Arun
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Harmony Signal Flow By Arun 使用短周期 RSI 捕捉反转，并设定固定止损和目标。当 RSI 上穿 `LowerThreshold` 时做多，下穿 `UpperThreshold` 时做空。每笔交易在触及止损、目标或每天 15:25 时平仓。
 

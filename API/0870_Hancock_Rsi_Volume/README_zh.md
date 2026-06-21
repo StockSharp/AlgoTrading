@@ -1,5 +1,5 @@
 # Hancock RSI Volume 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 TradingView 上 Hancock 脚本，计算按成交量加权的相对强弱指数 (RSI)。RSI 结合多空成交量来评估趋势强度，当 RSI 趋势转为上行时开多仓，转为下行时开空仓。
 

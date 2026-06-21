@@ -1,5 +1,5 @@
 # Grover Llorens Activator 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于ATR的自适应追踪策略，当价格与内部激活线交叉时改变方向。
 

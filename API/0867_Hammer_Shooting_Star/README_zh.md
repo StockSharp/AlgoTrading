@@ -1,5 +1,5 @@
 # Hammer & Shooting Star 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略识别锤子线和射击之星形态。
 当前一根K线为锤子线时开多，

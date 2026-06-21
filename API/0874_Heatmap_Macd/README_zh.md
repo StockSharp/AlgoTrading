@@ -1,5 +1,5 @@
 # MACD热图策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该系统使用来自五个时间框的MACD直方图热图。当所有直方图同时转为正或负时，按相应方向进场；若这种排列被打破或触发风险控制则离场。
 

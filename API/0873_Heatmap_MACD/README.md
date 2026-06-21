@@ -1,5 +1,5 @@
 # Heatmap MACD
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heatmap MACD trades when MACD histograms from five timeframes align. A long position is opened when all histograms turn positive, and a short position when all turn negative. Optionally, the position can be closed when any histogram flips against the trade.
 

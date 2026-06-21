@@ -1,5 +1,5 @@
 # Hancock RSI Volume Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy calculates a volume-weighted Relative Strength Index (RSI) inspired by the Hancock script from TradingView. The RSI uses bullish and bearish volume to gauge trend strength. A long position is opened when the RSI trend turns up, and a short position is opened when it turns down.
 

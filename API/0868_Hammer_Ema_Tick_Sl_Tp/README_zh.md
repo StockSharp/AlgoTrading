@@ -1,5 +1,5 @@
 # Hammer + EMA 策略（基于 tick 的止损/止盈）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 结合锤子和倒锤子形态，与 EMA 趋势过滤和基于 tick 的风险管理。
 

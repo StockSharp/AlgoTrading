@@ -1,5 +1,5 @@
 # 仪表策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模仿 TradingView 的 Gauge 库，通过测量价格在预设最小值和最
 大值之间的位置来决策。当百分比突破上限或下限时，在相应方向开仓。
