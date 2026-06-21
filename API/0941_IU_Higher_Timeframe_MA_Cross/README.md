@@ -1,5 +1,5 @@
 # IU Higher Timeframe MA Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IU Higher Timeframe MA Cross Strategy trades when a fast moving average computed on a user-selected timeframe crosses a slower moving average from possibly another timeframe. A long position opens on a bullish cross and a short position on a bearish cross. Stop loss is placed at the previous candle's extreme, and take profit uses a configurable risk-to-reward ratio.
 

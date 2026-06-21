@@ -1,5 +1,5 @@
 # IU Opening Range Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The IU Opening Range Breakout strategy monitors the high and low of the first bar of each session and trades breakouts in either direction. Stops use the previous bar's extreme and targets are derived from a configurable risk-to-reward ratio. All positions are closed at a user-defined end time.
 

@@ -1,5 +1,5 @@
 # IU 区间交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格在特定周期内的高低波动小于 ATR 乘数时认定为区间整理。当价格突破区间上限或下限时开仓，并使用基于 ATR 的移动止损跟随趋势。
 

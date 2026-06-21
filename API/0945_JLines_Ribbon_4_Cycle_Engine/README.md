@@ -1,5 +1,5 @@
 # J-Lines Ribbon 4-Cycle Engine Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The J-Lines Ribbon 4-Cycle Engine strategy classifies the market into CHOP, LONG and SHORT cycles using a ribbon of EMAs and the Average Directional Index. Entries occur on new cycle detections and rebounds from key EMAs, while exits trigger on opposite crossings or swing breaks.
 

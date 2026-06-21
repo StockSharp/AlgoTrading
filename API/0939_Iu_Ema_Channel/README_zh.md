@@ -1,5 +1,5 @@
 # IU EMA Channel
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 TradingView 脚本 "IU EMA Channel Strategy" 转换而来。该策略在价格突破由最高价和最低价 EMA 形成的通道时开仓。止损放在前一根K线极值，止盈按照风险报酬比计算。
 

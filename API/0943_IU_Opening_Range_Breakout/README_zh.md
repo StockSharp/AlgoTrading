@@ -1,5 +1,5 @@
 # IU 开盘区间突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略记录每个交易日第一根K线的最高价和最低价，并在价格突破该区间时进行双向交易。止损使用上一根K线的极值，盈利目标根据可配置的收益风险比计算，并在设定时间平掉所有仓位。
 

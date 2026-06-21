@@ -1,5 +1,5 @@
 # Стратегия John Bob Trading Bot
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пробоя, сочетающая уровни максимума и минимума за 50 баров с простым обнаружением FVG. Открывает пять позиций с ATR-стопом и несколькими уровнями тейк‑профита.
 

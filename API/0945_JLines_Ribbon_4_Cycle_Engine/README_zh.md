@@ -1,5 +1,5 @@
 # J-Lines Ribbon 4-Cycle Engine 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 J-Lines Ribbon 4-Cycle Engine 策略通过EMA带和平均方向指数将市场划分为 CHOP、LONG 和 SHORT 周期。策略在新的周期出现以及价格从关键 EMA 反弹时入场，在相反的交叉或摆动突破时平仓。
 

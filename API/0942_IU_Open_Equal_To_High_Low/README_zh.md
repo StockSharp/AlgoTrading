@@ -1,5 +1,5 @@
 # 开盘等于高低策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在每天的第一根蜡烛上，如果开盘价等于最低价则做多，若开盘价等于最高价则做空。止损使用上一根蜡烛，止盈根据 `RiskReward` 参数计算。
 
