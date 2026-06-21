@@ -1,5 +1,5 @@
 # Max Gain
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Max Gain 通过比较在回溯期内从最低价到当前最高价的百分比上涨与从最高价到当前最低价的百分比下跌（调整后），当潜在涨幅大于调整后的跌幅时做多，否则做空。
 

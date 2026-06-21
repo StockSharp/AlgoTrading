@@ -1,5 +1,5 @@
 # Market Trend Levels Non-Repainting
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 EMA 交叉的策略，可选用 RSI 进行过滤。当快 EMA 上穿慢 EMA 时做多，反向交叉时做空。若启用 `ApplyExitFilters` 且开启 RSI 过滤， 当 RSI 超出设定阈值时仓位将被平掉。
 

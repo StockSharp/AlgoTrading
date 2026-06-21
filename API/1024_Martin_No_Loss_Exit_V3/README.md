@@ -1,5 +1,5 @@
 # Martin Strategy - No Loss Exit V3
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This martingale averaging strategy adds to a long position whenever price drops by a configured percentage from the first entry. Each new order increases the cash amount by a multiplier and adjusts the average price. The position is closed when the candle high reaches the average price plus the take-profit percentage, ensuring exits only in profit.
 

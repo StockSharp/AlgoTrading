@@ -1,5 +1,5 @@
 # Max Gain
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Max Gain compares the percentage distance from the lowest low to the current high and from the highest high to the current low over a lookback period. It goes long when potential gain exceeds the adjusted loss, otherwise it goes short.
 

@@ -1,5 +1,5 @@
 # MACD 与 KDJ 马丁格尔策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 MACD 线与 KDJ 的 %K 线同时穿越各自的信号线时入场，并使用马丁格尔方式加仓：当价格向不利方向移动到设定百分比并反弹后再次加仓。
 

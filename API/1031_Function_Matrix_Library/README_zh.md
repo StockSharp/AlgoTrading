@@ -1,5 +1,5 @@
 # 函数 Matrix Library
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 演示使用基础矩阵代数的多元线性回归。策略计算两个自变量的系数，不生成任何交易。
 

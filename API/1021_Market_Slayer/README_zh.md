@@ -1,5 +1,5 @@
 # Market Slayer 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用加权移动平均线交叉，并通过高时间框架的SSL趋势确认。短期WMA上穿长期WMA且趋势为多头时开多；相反条件下开空。可以选择启用以点数表示的止盈和止损。
 

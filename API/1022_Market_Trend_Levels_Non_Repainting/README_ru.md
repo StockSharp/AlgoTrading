@@ -1,5 +1,5 @@
 # Market Trend Levels Non-Repainting
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия на основе пересечения EMA с опциональным фильтром RSI. Лонг открывается, когда быстрая EMA пересекает медленную снизу вверх, шорт — при обратном пересечении. При включённой опции `ApplyExitFilters` и активном фильтре RSI позиции закрываются, если RSI выходит за разрешённые границы.
 

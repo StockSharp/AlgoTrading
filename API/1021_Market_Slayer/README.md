@@ -1,5 +1,5 @@
 # Market Slayer Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses a weighted moving average crossover with a higher timeframe SSL trend confirmation. A long position is opened when the short WMA crosses above the long WMA while the trend is bullish; a short position is opened on the opposite conditions. Optional absolute take profit and stop loss can be enabled.
 
