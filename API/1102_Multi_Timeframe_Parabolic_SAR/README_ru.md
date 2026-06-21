@@ -1,5 +1,5 @@
 # Многофреймовый Parabolic SAR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет сигналы Parabolic SAR с разных таймфреймов. Лонг открывается, когда цена выше выбранных уровней SAR. Шорт появляется при падении цены ниже SAR. Возможны стоп-лосс, трейлинг-стоп и тейк-профит.
 

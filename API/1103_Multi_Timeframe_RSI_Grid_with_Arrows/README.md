@@ -1,4 +1,5 @@
 # Multi-Timeframe RSI Grid Strategy with Arrows
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades when RSI on the current timeframe and two higher timeframes reach overbought or oversold levels. The first position is opened when all RSIs align, then additional positions are added using an ATR based grid with an increasing lot multiplier. The strategy targets a daily profit percentage, resets each day, and closes on reverse signals or drawdown.
 

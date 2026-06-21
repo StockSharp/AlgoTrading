@@ -1,5 +1,5 @@
 # Mutanabby AI Algo Pro
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Mutanabby AI Algo Pro strategy enters long when a bullish engulfing pattern aligns with an RSI reading below a threshold and price decline over a specified number of bars. Exits occur on a bearish engulfing pattern or when the stop loss is hit.
 

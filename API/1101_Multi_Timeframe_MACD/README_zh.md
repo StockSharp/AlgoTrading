@@ -1,5 +1,5 @@
 # 多时间框架 MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多时间框架 MACD 将当前时间框架和更高时间框架的 MACD 信号结合。只有当两个时间框架在均线交叉或零线穿越上达成一致时才入场。
 

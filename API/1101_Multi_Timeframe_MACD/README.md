@@ -1,5 +1,5 @@
 # Multi-Timeframe MACD
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Multi-Timeframe MACD combines MACD signals from the working timeframe and a higher timeframe. Entries occur when both timeframes agree using line crossovers or zero-line crossings.
 

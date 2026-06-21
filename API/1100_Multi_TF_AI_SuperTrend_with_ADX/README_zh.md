@@ -1,4 +1,5 @@
 # 多周期AI SuperTrend结合ADX策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两个SuperTrend指标和ADX强度过滤器。通过比较价格WMA与SuperTrend WMA来确认趋势方向。当两个SuperTrend均为多头且ADX显示正向强度时开多；相反条件下开空。第一个SuperTrend的ATR用作追踪止损。
 

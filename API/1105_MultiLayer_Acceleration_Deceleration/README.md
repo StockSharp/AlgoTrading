@@ -1,5 +1,5 @@
 # MultiLayer Acceleration Deceleration Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy layers up to five long entries using the Acceleration/Deceleration oscillator. A new buy stop is placed above the bar's high each time momentum builds in the direction of the trend identified by fractals and the Alligator teeth. When the oscillator weakens or the trend reverses, all pending orders are cancelled and the position is closed.
 

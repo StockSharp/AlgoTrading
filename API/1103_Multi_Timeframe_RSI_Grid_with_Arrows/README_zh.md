@@ -1,4 +1,5 @@
 # 多时间框架 RSI 网格策略（含箭头）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在当前时间框架及两个更高级别时间框架的 RSI 同时达到超买或超卖水平时入场。首次建仓后，按照基于 ATR 的间隔并按倍数增加手数进行网格加仓。策略以每日收益目标为目的，每个交易日重置，并在出现反向信号或回撤时平仓。
 

@@ -1,5 +1,5 @@
 # Стратегия Multi-Timeframe Trend Following with 200 EMA Filter - Longs Only
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда быстрая EMA выше медленной на графиках 5, 15 и 30 минут и цена находится выше 200 EMA на 5-минутном графике. Позиция закрывается, если любой таймфрейм становится медвежьим или цена опускается ниже 200 EMA.
 

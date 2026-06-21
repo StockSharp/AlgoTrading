@@ -1,5 +1,5 @@
 # 多时间框架趋势跟随配合200 EMA过滤（仅做多）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当5、15、30分钟图表上快速EMA都高于慢速EMA且价格高于5分钟图上的200 EMA时策略开多。若任何时间框架转为看跌或价格跌破200 EMA则平仓。
 

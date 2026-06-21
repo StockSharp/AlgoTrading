@@ -1,5 +1,5 @@
 # 多时间框架 Parabolic SAR
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合多个时间框架上的 Parabolic SAR 信号。当价格高于所选 SAR 时做多，价格跌破 SAR 时做空。支持可选的止损、追踪止损和止盈。
 

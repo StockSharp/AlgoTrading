@@ -1,5 +1,5 @@
 # MultiLayer Acceleration Deceleration Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用Acceleration/Deceleration振荡器分层建立最多五个多头仓位。每当动能沿趋势增强时，在当前K线最高价之上挂出新的买入止损单。当振荡器走弱或趋势反转时，所有挂单被取消并平仓。
 

@@ -1,5 +1,5 @@
 # Multi-Timeframe Trend Following with 200 EMA Filter - Longs Only
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy goes long when the fast EMA is above the slow EMA on 5, 15 and 30 minute charts and the price is above the 200 EMA on the 5 minute chart. The position is closed if any timeframe turns bearish or the price drops below the 200 EMA.
 
