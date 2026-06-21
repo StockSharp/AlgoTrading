@@ -1,5 +1,5 @@
 # Triple CCI MFI Confirmed Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters long when the fast CCI crosses above zero while the middle and slow CCI remain positive, price is above EMA and MFI exceeds 50. Profit is trailed by EMA after an ATR based activation.
 

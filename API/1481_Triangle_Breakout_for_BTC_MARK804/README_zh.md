@@ -1,5 +1,5 @@
 # Triangle Breakout Strategy for BTC
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格伴随成交量放大突破简单移动平均三角形时开仓，并使用 ATR 止损和止盈。
 

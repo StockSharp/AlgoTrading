@@ -1,5 +1,5 @@
 # 三重EMA + QQE趋势跟随策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将两条TEMA均线与QQE过滤器结合，用于跟随趋势。
 当价格位于两条TEMA之上且QQE给出看涨信号时开多单，

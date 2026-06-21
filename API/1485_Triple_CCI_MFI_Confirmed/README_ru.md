@@ -1,5 +1,5 @@
 # Стратегия Triple CCI MFI Confirmed
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает лонг, когда быстрый CCI пересекает ноль снизу вверх, средний и медленный CCI остаются положительными, цена выше EMA и MFI превышает 50. После активации на основе ATR прибыль сопровождается EMA.
 

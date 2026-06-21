@@ -1,5 +1,5 @@
 # 三角Hull均线
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较Hull均线与其两根K线前的值，上穿视为做多信号，下穿视为做空信号，可选择仅做多或仅做空模式。
 

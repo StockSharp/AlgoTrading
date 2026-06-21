@@ -1,5 +1,5 @@
 # Triple CCI MFI Confirmed 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当快速CCI上穿零轴且中慢CCI保持为正、价格高于EMA并且MFI超过50时，该策略做多。激活基于ATR后，使用EMA进行移动止盈。
 

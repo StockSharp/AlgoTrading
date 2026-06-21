@@ -1,5 +1,5 @@
 # Tri-Monthly BTC Swing 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tri-Monthly BTC Swing 使用 EMA200、MACD 金叉和 RSI 过滤器。
 该策略每 90 天只允许一笔交易。
