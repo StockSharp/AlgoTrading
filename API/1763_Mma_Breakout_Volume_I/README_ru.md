@@ -1,5 +1,5 @@
 # Стратегия MMA Breakout Volume I
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует пробои при пересечении цены и долгосрочной сглаженной скользящей средней (SMMA).
 Длинная позиция открывается при пересечении цены закрытия выше SMMA(200), короткая — при пересечении ниже.

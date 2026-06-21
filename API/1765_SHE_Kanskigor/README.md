@@ -1,5 +1,5 @@
 # SHE Kanskigor Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This daily strategy opens a single position each day based on the direction of the previous day's candle. At the configured time it buys if the prior day closed below its open and sells if it closed above. A fixed take-profit and stop-loss measured in price steps manage risk. Only one trade is allowed per day.
 

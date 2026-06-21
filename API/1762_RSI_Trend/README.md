@@ -1,5 +1,5 @@
 # RSI Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **RSI Trend Strategy** uses the Relative Strength Index (RSI) to detect trend reversals and manages positions with an ATR-based trailing stop. The system opens a long position when the RSI crosses above an overbought threshold and enters a short position when the RSI falls below an oversold threshold. Risk is controlled using a trailing stop derived from the Average True Range (ATR), allowing the stop level to adapt to current volatility.
 

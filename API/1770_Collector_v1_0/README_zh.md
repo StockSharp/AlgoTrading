@@ -1,5 +1,5 @@
 # Collector v1.0 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格触及按固定距离划分的动态买入或卖出水平时开立市价单。在指定的交易次数后，交易量会增加。当累计利润超过阈值时，所有仓位将被关闭。
 

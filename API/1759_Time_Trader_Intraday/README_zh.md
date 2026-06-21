@@ -1,5 +1,5 @@
 # Time Trader Intraday 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在设定的时间开仓多头和/或空头，并设置固定的止损与止盈。适用于测试基于时间的入场，无需任何指标确认。
 

@@ -1,5 +1,5 @@
 # SHE Kanskigor 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该日内策略每天只交易一次，依据前一日蜡烛的方向。在设定时间，若前一日收盘价低于开盘价则买入；若收盘价高于开盘价则卖出。使用固定点数的止盈和止损来控制风险，每天仅允许一笔交易。
 

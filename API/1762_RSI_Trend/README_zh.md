@@ -1,5 +1,5 @@
 # RSI 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **RSI 趋势策略** 使用相对强弱指数 (RSI) 判断趋势反转，并通过基于 ATR 的跟踪止损管理风险。当 RSI 向上突破超买阈值时，策略建立多头头寸；当 RSI 向下跌破超卖阈值时，策略建立空头头寸。跟踪止损基于平均真实波幅 (ATR) 的倍数动态调整，以适应市场波动。
 

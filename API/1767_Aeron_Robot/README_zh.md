@@ -1,5 +1,5 @@
 # Aeron Robot 网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 AeronRobot EA 的网格对冲思想。它在预设的价格间隔处放置买卖单，并在每次新下单后按比例增加手数。策略旨在利用价格的小幅波动获利，同时通过可配置的止盈、止损和交易数量限制来控制风险。
 

@@ -1,4 +1,5 @@
 # Follow Your Heart Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader "Follow Your Heart" expert advisor. It analyses the last several candles and sums the relative changes of their open, close, high and low prices. A long position is opened when all changes are above a threshold and the combined value is positive. A short position is opened on the opposite conditions. Only one position can exist at a time.

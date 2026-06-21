@@ -1,5 +1,5 @@
 # Divergence Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较两条简单移动平均线 (SMA)，并依据它们之间的背离进行交易。
 

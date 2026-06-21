@@ -1,4 +1,5 @@
 # Follow Your Heart 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader "Follow Your Heart" 交易机器人的 StockSharp 版本。它分析最近几根K线，计算开盘、收盘、最高和最低价的相对变化之和。当所有变化都高于阈值并且总和为正时开多单；当所有变化都低于阈值并且总和为负时开空单。策略一次只持有一个仓位。
