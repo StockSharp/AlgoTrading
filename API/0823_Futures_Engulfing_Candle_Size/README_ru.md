@@ -1,5 +1,5 @@
 # Стратегия Futures Engulfing Candle Size
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Открывает одну сделку в день, когда диапазон свечи превышает заданный порог в тиках в пределах торгового окна. Направление следует за телом свечи, выход осуществляется по тейк-профиту и стоп-лоссу.
 

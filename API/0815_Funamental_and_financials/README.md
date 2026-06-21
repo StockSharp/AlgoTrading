@@ -1,5 +1,5 @@
 # Funamental and Financials Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This sample demonstrates how to retrieve fundamental metrics such as cash, debt, revenue, and liquidity around earnings dates. The strategy logs the values for further analysis without producing trading signals.
 

@@ -1,5 +1,5 @@
 # 最高最低函数示例
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例演示具有交替周期的自定义最高和最低函数，不进行交易。
 

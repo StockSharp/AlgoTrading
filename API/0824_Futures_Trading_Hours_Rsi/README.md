@@ -1,5 +1,5 @@
 # Futures Trading Hours RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades only during U.S. futures session hours (08:30–15:00 CT). It uses the Relative Strength Index (RSI) to enter long when the oscillator crosses above an oversold level and enter short when it crosses below an overbought level. At or after 15:00 CT all open positions are closed.
 

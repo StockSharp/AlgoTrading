@@ -1,5 +1,5 @@
 # 期货交易时段 RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅在美国期货交易时段（中央时间 08:30–15:00）运行。使用 RSI 指标，当振荡器向上穿越超卖水平时做多，当向下穿越超买水平时做空。15:00 CT 后自动平掉所有持仓。
 

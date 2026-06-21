@@ -1,5 +1,5 @@
 # 期货吞没蜡烛大小策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当蜡烛的高低差在指定时间窗口内超过设定的tick阈值时，每天交易一次。按照蜡烛方向入场，并使用止盈和止损退出。
 

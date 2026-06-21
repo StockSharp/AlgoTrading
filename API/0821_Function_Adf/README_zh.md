@@ -1,5 +1,5 @@
 # Function Adf
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Function Adf** 模块实现了增广迪基-福勒 (ADF) 检验，用于检测时间序列的平稳性。
 

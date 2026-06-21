@@ -1,5 +1,5 @@
 # 基本面与财务策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例演示如何在财报日期附近获取现金、债务、收入和流动性等基本面指标。策略仅记录这些数值供分析使用，不产生交易信号。
 
