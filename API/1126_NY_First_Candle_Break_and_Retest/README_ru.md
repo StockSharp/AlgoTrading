@@ -1,5 +1,5 @@
 # Стратегия NY First Candle Break and Retest
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пробой первой свечи сессии Нью‑Йорка с подтверждением через ретест уровня. Для стопа и цели используется ATR, имеется опциональный фильтр по EMA и трейлинг‑стоп.
 

@@ -1,5 +1,5 @@
 # Стратегия NY Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пробой диапазона, сформированного между 13:00 и 13:30 UTC. После закрытия окна вход выполняется при пробое максимума или минимума диапазона. Цель — двойной размер диапазона, стоп — за противоположной границей.
 

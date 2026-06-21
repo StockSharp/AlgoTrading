@@ -1,5 +1,5 @@
 # NSE 指数进出场标记策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格高于趋势 SMA 且 RSI 向上突破超卖水平时做多，并使用 ATR 设定止损和止盈。
 

@@ -1,4 +1,5 @@
 # Nova Futures PRO SAFE v6 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合趋势、波动和结构信号。它使用200周期EMA与ADX确认趋势，利用布林带与肯特纳通道的挤压释放捕捉突破，并通过唐奇安通道的前高前低判断结构。可选的高周期过滤器和Choppiness指数帮助避开震荡市场，冷却期避免刚平仓就重新入场。
 

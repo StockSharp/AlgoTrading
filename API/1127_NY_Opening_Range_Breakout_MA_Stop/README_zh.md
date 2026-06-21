@@ -1,5 +1,5 @@
 # NY Opening Range Breakout - MA Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在纽约时间 9:30-9:45 的开盘区间突破后入场，可选择使用均线作为止盈/过滤。若上一根K线突破区间且未超过截止时间，并且符合均线过滤，则在下一根K线上入场。
 

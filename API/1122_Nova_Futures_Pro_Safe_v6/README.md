@@ -1,4 +1,5 @@
 # Nova Futures PRO SAFE v6 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines trend, volatility and structure signals. It uses a 200 EMA with ADX to confirm trends, Bollinger Bands versus Keltner Channels to detect squeeze breakouts, and Donchian levels for structure break of highs or lows. Optional higher timeframe filters and a choppiness index avoid trading in low-quality regimes. A cooldown prevents immediate re-entry after a position closes.
 

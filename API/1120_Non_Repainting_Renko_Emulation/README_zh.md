@@ -1,5 +1,5 @@
 # 非重绘 Renko 仿真策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用收盘价模拟 Renko 砖块，并在方向变化时交易，不发生重绘。
 

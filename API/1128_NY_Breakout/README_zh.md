@@ -1,5 +1,5 @@
 # NY Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用每天 13:00 到 13:30 UTC 形成的区间。窗口结束后，如果价格突破区间高点则做多，跌破区间低点则做空，盈利目标为区间的两倍，止损设在相反一侧。
 

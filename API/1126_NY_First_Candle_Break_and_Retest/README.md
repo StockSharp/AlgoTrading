@@ -1,5 +1,5 @@
 # NY First Candle Break and Retest Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades breakouts of the first New York session candle with retest confirmation. Uses ATR for stop placement and reward-to-risk targets with optional EMA trend filter and trailing stop.
 

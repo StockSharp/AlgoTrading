@@ -1,5 +1,5 @@
 # Nifty Options Trendy Markets with TSL Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于布林带突破并结合ADX与Supertrend过滤的策略。入场需要成交量激增。持仓在MACD交叉、ADX减弱或基于ATR的追踪止损触发时平仓。
 

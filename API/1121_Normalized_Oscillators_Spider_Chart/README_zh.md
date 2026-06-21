@@ -1,4 +1,5 @@
 # 归一化振荡器蜘蛛图策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算多个振荡器（RSI、Stochastic、Correlation、Money Flow Index、Williams %R、Percent Up、Chande Momentum Oscillator 和 Aroon Oscillator）。所有数值被归一化到0-1范围，并求平均生成交易信号。当平均值高于0.6时买入，低于0.4时做空。
 

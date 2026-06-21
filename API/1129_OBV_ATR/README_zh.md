@@ -1,5 +1,5 @@
 # OBV ATR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控能量潮 (OBV)，当 OBV 突破最近的高点或低点时开仓，多空皆可，类似 ATR 突破通道。
 
