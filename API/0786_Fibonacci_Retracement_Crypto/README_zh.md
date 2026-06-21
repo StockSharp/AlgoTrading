@@ -1,4 +1,5 @@
 # 加密货币斐波那契回撤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于一定回溯期内的最高价和最低价计算斐波那契回撤水平进行交易。
 

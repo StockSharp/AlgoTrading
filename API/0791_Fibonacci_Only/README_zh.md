@@ -1,5 +1,5 @@
 # 纯斐波那契策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 纯斐波那契策略基于最近100根K线的19%和82.56%斐波那契回撤水平。当价格触及或突破这些水平并由蜡烛方向确认时入场。策略支持可选的突破入场、ATR止损、移动止损和分批止盈。
 

@@ -1,5 +1,5 @@
 # 基于斐波那契的摆动交易机器人
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用斐波那契回撤水平寻找摆动行情。
 

@@ -1,5 +1,5 @@
 # 斐波那契专用策略 V2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 93 根 K 线计算的 19% 和 82.56% 斐波那契回撤位。当价格触及或突破这些水平并得到 K 线确认时入场。风险通过 ATR 止损和可选的跟踪止损进行管理。
 

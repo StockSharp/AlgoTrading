@@ -1,5 +1,5 @@
 # 斐波那契逆趋势交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用成交量加权移动平均线（VWMA）和标准差构建斐波那契通道。当价格跌破所选下轨时做多，价格突破上轨时做空。可选地，当价格穿越VWMA基线时平仓。
 

@@ -1,5 +1,5 @@
 # Стратегия Fibonacci-Only V2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия работает с уровнями Фибоначчи 19% и 82.56%, рассчитанными по 93 свечам. Вход выполняется при касании или пробое уровня с подтверждением свечой. Риск контролируется стоп-лоссом по ATR и опциональным трейлинг-стопом.
 

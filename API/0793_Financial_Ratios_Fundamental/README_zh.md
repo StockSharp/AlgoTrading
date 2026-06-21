@@ -1,5 +1,5 @@
 # 财务比率基本面策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略评估公司的季度财务比率，包括流动比率、利息覆盖率、应付周转率和毛利率。当这些指标之一相较上一期改善时，策略做多。
 

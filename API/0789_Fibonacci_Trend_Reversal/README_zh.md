@@ -1,4 +1,5 @@
 # 斐波那契趋势反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于最近的高点和低点构建斐波那契通道。当价格向突破方向穿越50%水平时开仓。风险控制采用ATR止损和风险收益比的止盈，并可选择部分平仓。
 

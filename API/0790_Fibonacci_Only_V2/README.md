@@ -1,5 +1,5 @@
 # Fibonacci-Only Strategy V2
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trades around 19% and 82.56% Fibonacci retracements calculated over 93 candles. Entries occur when price touches or breaks these levels with candle confirmation. Risk is managed via optional ATR-based stop loss and trailing stop.
 
