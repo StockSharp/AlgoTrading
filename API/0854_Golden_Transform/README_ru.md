@@ -1,5 +1,5 @@
 # Стратегия Golden Transform
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает индикатор Rate of Change с тройным Hull-TRIX, фильтром на основе Hull MA и сглаженным Fisher Transform. Длинные позиции открываются, когда ROC пересекает TRIX снизу вверх, TRIX находится ниже нуля, а цена открытия выше Hull MA. Короткие позиции открываются при обратном сигнале. Позиции закрываются при обратном пересечении или когда сглаженный Fisher выходит за пороги и разворачивается.
 

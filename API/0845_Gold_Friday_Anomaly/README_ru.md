@@ -1,5 +1,5 @@
 # Gold Friday Anomaly Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает на первой свече пятницы в указанном диапазоне дат и закрывает позицию после удержания заданного числа свечей.
 

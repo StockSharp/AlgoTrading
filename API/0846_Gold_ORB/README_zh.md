@@ -1,5 +1,5 @@
 # 黄金ORB策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略记录亚洲时段的最高价和最低价，并在随后几个小时内交易突破。止损和目标基于区间大小和收益倍数。
 

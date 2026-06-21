@@ -1,5 +1,5 @@
 # Golden Transform Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the Rate of Change indicator with a triple Hull-based TRIX, a Hull MA filter and a smoothed Fisher Transform. Long trades are opened when ROC crosses above TRIX while TRIX is below zero and the opening price is above the Hull MA. Short trades occur on the opposite signal. Positions are closed on opposite crosses or when the smoothed Fisher exceeds thresholds and reverses.
 

@@ -1,5 +1,5 @@
 # 基于成交量的黄金入场策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在连续两根放量的看涨柱体超过成交量均线时买入，且第二根柱体的成交量必须高于第一根。价格按预设幅度上涨后，以固定盈利目标平仓。
 

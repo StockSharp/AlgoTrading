@@ -1,5 +1,5 @@
 # Golden Transform 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Rate of Change 指标、三重 Hull-TRIX、Hull MA 过滤器以及平滑的 Fisher Transform。当 ROC 上穿 TRIX 且 TRIX 低于零并且开盘价高于 Hull MA 时开多仓；相反条件下开空仓。持仓在出现相反交叉或平滑后的 Fisher 超过阈值并反转时平仓。
 

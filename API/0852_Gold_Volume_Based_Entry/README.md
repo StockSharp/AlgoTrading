@@ -1,5 +1,5 @@
 # Gold Volume-Based Entry Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy buys when two consecutive bullish volume bars exceed the volume moving average. The second bar must also have higher volume than the first. A fixed profit target closes the position once price moves a predefined amount in favor.
 
