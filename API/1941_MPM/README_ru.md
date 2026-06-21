@@ -1,4 +1,5 @@
 # Стратегия MPM Momentum
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой упрощённую конвертацию оригинального MQL эксперта `mpm-1_8.mq4`.
 Она ожидает последовательность прогрессивных свечей и открывает позицию в том же направлении.

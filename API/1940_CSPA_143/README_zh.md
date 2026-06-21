@@ -1,4 +1,5 @@
 # CSPA 1.43 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 **CSPA-1_43** MQL 智能交易系统的改写版本。它通过相对强弱指数（RSI）衡量货币对的强弱。当货币对表现出足够的强势或弱势时，策略按趋势方向开仓，并在动能减弱时平仓。
 

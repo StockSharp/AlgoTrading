@@ -1,4 +1,5 @@
 # 线性回归斜率触发策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略利用线性回归斜率指标及其派生的触发线来识别趋势变化。当触发线向上穿越斜率线时开多仓；当触发线向下穿越斜率线时开空仓。出现反向信号时平掉现有仓位。策略灵感来自原始 MQL5 策略“Exp_LinearRegSlopeV2”。

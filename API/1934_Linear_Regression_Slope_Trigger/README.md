@@ -1,4 +1,5 @@
 # Linear Regression Slope Trigger Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy uses a linear regression slope indicator and a derived trigger line to identify trend changes. A long position is opened when the trigger line crosses above the slope line, while a short position is opened when the trigger line crosses below the slope line. Existing positions are closed when an opposite signal appears. The approach is inspired by the original MQL5 strategy "Exp_LinearRegSlopeV2".

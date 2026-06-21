@@ -1,5 +1,5 @@
 # Стратегия пересечения индикатора Vortex
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует пересечения линий VI+ и VI- индикатора Vortex.
 Когда VI+ пересекает VI- снизу вверх, открывается лонг; при пересечении VI- сверху вниз открывается шорт.

@@ -1,5 +1,5 @@
 # Ultra WPR Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy applies a Williams %R oscillator smoothed by two moving averages. The crossing of the fast and slow smoothed lines generates trading signals. A long position opens when the fast line rises above the slow line, and a short position opens when the fast line falls below the slow line.
 

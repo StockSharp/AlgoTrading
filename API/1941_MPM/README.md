@@ -1,4 +1,5 @@
 # MPM Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a simplified conversion of the original MQL expert `mpm-1_8.mq4`.
 It waits for a sequence of progressive candles and then opens a position in the

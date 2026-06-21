@@ -1,4 +1,5 @@
 # CSPA 1.43 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is an adaptation of the **CSPA-1_43** MQL expert advisor. It measures the strength of a currency pair using the Relative Strength Index (RSI). When the pair becomes sufficiently strong or weak, the strategy opens a position in the direction of the prevailing momentum and closes it when momentum fades.
 

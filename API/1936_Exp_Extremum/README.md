@@ -1,4 +1,5 @@
 # Exp Extremum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades reversals detected by comparing price extremes over a lookback window. It observes whether the current candle pushes the price beyond previous highs or lows and reacts when the sign of this comparison changes.
 

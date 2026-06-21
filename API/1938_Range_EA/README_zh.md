@@ -1,5 +1,5 @@
 # Range EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格偏离移动平均线到达固定范围时进行交易。当价格向上或向下偏离到指定距离时开仓。支持可选的追踪止损、分步加仓、反转模块和交易时间过滤。
 

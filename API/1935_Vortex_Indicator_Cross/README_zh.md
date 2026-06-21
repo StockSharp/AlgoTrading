@@ -1,5 +1,5 @@
 # Vortex 指标交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Vortex 指标的 VI+ 与 VI- 交叉进行交易。
 当 VI+ 上穿 VI- 时做多；当 VI- 上穿 VI+ 时做空。

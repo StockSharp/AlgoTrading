@@ -1,5 +1,5 @@
 # Ultra WPR 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Williams %R 振荡器，并通过两条移动平均线进行平滑。快速线向上穿越慢速线时建立多头，快速线向下穿越慢速线时建立空头。
 

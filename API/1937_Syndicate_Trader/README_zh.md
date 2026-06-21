@@ -1,5 +1,5 @@
 # Syndicate Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将 `MQL/12351` 文件夹中的原始 MetaTrader 脚本 **Syndicate_Trader_v_1_04.mq4** 转换到 StockSharp 平台的结果。
 

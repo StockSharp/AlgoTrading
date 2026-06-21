@@ -1,5 +1,5 @@
 # Range EA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy trading price deviations from a moving average within a fixed range. Opens long or short positions when the price moves a specified distance away from the average. Supports optional trailing stop, step-down averaging, reversal module, and trading session filter.
 

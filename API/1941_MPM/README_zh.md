@@ -1,4 +1,5 @@
 # MPM动量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是对原始MQL专家顾问`mpm-1_8.mq4`的简化转换。策略等待一系列同方向的K线，
 当满足条件时在同方向开仓。平均真实波动范围(ATR)用于评估K线大小并跟踪止损。

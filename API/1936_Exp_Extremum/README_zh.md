@@ -1,4 +1,5 @@
 # Exp Extremum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过比较一段时间窗口内的价格极值来交易反转。当当前K线突破之前的最高价或最低价，并且极值方向发生变化时，策略做出反应。
 
