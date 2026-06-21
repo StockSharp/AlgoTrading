@@ -1,5 +1,5 @@
 # ZapTeam Pro v6 — EMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 简化版策略，使用 EMA21/EMA50 交叉并结合 EMA200 趋势过滤。当出现看涨交叉时买入，看跌交叉时卖出（可选做空）。
 

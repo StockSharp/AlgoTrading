@@ -1,5 +1,5 @@
 # Zero-Lag MA Trend Following
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend following system that waits for a zero-lag MA to cross an EMA and then enters when price breaks out of an ATR-sized box. Positions include risk-reward based targets.
 

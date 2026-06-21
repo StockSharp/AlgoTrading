@@ -1,5 +1,5 @@
 # Zero-lag Volatility-Breakout EMA Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout system using zero-lag EMA difference with Bollinger bands and an EMA trend filter. Optionally holds positions until an opposite signal.
 

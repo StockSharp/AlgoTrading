@@ -1,5 +1,5 @@
 # 零滞后波动突破EMA趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用零滞后EMA差值与布林带，结合EMA趋势过滤器，在波动性突破时进场，可选择持有至反向信号。
 

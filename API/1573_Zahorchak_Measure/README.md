@@ -1,5 +1,5 @@
 # Zahorchak Measure Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Calculates a weighted score using multiple moving averages. Buys when the score turns positive and sells when it turns negative.
 

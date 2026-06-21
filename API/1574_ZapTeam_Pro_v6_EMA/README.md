@@ -1,5 +1,5 @@
 # ZapTeam Pro Strategy v6 — EMA
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simplified version using EMA21/EMA50 crossover with EMA200 trend filter. Buys on bullish crossover and sells on bearish crossover (optional shorts).
 

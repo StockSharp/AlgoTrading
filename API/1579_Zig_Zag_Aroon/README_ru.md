@@ -1,5 +1,5 @@
 # Zig Zag Aroon Strategy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает простое определение пивотов ZigZag с индикатором Aroon. Покупка выполняется, когда Aroon Up пересекает Aroon Down сверху и последний пивот является максимумом. Продажа открывается при обратном пересечении и последнем минимуме.
 

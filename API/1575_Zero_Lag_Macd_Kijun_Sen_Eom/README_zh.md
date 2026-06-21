@@ -1,5 +1,5 @@
 # 零滞后MACD + 基准线 + EOM 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将零滞后MACD、基准线(Kijun-sen)与Ease of Movement结合，并基于ATR设置止损和止盈。
 

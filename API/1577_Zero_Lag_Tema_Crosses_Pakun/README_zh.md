@@ -1,5 +1,5 @@
 # 零滞后TEMA交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于零滞后三重指数均线的交叉，使用最近的高点和低点设置止损，并按照风险回报比设置目标。
 

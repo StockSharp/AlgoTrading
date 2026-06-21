@@ -1,5 +1,5 @@
 # Z-Score RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格的 z-score 上计算 RSI，并使用 RSI 的 EMA 作为信号。当 RSI 上穿其 EMA 时做多，下穿时做空。
 

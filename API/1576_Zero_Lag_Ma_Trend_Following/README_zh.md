@@ -1,5 +1,5 @@
 # 零滞后MA趋势跟随
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等待零滞后均线与EMA交叉，然后在价格突破基于ATR的区间时入场，采用风险收益比设定目标。
 
