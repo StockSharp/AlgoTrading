@@ -1,5 +1,5 @@
 # FATL MACD Trend Strategy
-[中文](README_zh.md) | [Русский](README_ru.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a trend-following system based on the **FATL MACD** indicator. FATL (Fast Adaptive Trend Line) is subtracted from price to produce a MACD-like oscillator which is then smoothed by an adaptive moving average. Positive values indicate bullish momentum, negative values indicate bearish momentum.
 

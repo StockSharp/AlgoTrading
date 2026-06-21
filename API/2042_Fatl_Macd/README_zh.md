@@ -1,5 +1,5 @@
 # FATL MACD 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 **FATL MACD** 指标构建趋势跟随系统。FATL（快速自适应趋势线）从价格中减去后得到类似 MACD 的振荡器，并通过自适应移动平均线平滑。正值表示看涨动能，负值表示看跌动能。
 

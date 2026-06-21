@@ -1,4 +1,5 @@
 # Force DiverSign Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Force DiverSign strategy trades based on divergence signals between two Force Index indicators computed with different smoothing periods.
 It looks for a three-candle reversal pattern together with opposite swings in the fast and slow Force values. When a bullish divergence appears,

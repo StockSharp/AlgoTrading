@@ -1,4 +1,5 @@
 # Fractal AMA MBK 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Fractal AMA MBK 交叉策略将 **Fractal Adaptive Moving Average (FRAMA)** 与 **指数移动平均线 (EMA)** 触发线结合使用。当 FRAMA 与 EMA 相交时产生交易信号。

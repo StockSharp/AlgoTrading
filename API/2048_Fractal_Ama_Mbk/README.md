@@ -1,4 +1,5 @@
 # Fractal AMA MBK Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Fractal AMA MBK Crossover strategy uses the **Fractal Adaptive Moving Average (FRAMA)** together with an **Exponential Moving Average (EMA)** trigger line. Trading signals are generated when the FRAMA line crosses the EMA line.

@@ -1,5 +1,5 @@
 # VininI Trend LRMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 VininI Trend LRMA 策略使用线性回归移动平均线（LRMA）来追踪市场方向。策略支持两种入场模式：
 - **Breakdown**：当 LRMA 突破预设的上/下水平时交易。

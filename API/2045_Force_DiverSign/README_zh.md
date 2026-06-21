@@ -1,4 +1,5 @@
 # Force DiverSign 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Force DiverSign 策略基于两个使用不同平滑周期的 Force Index 指标之间的背离信号进行交易。
 该策略寻找由三根K线组成的反转形态，并结合快慢 Force 值的相反摆动。

@@ -1,4 +1,5 @@
 # Стратегия VininI Trend
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Стратегия является конверсией советника **Exp_VininI_Trend** с MQL5 на StockSharp. Для имитации осциллятора VininI Trend используется индикатор Commodity Channel Index. Длинная позиция открывается при пробитии верхнего уровня или развороте вверх, короткая — при падении ниже нижнего уровня или развороте вниз. Работа ведётся только по завершённым свечам.

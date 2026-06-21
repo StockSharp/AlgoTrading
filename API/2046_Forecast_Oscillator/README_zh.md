@@ -1,5 +1,5 @@
 # Forecast Oscillator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将经典的 Forecast Oscillator 指标移植到 StockSharp。线性回归作为基准，随后使用 Tillson T3 平滑以捕捉趋势反转。当振荡器向上穿越其平滑线并且平滑线仍为负值时产生做多信号；当振荡器向下穿越且平滑线为正值时产生做空信号。
 

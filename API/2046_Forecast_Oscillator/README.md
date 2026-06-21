@@ -1,5 +1,5 @@
 # Forecast Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy adapts the classical Forecast Oscillator indicator to StockSharp. It combines a linear regression baseline with Tillson T3 smoothing to highlight trend reversals. A buy signal appears when the oscillator crosses above its smoothed line while the smoothed line remains below zero. A sell signal is produced on the opposite conditions.
 

@@ -1,4 +1,5 @@
 # 修正均线突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用**修正均线**指标。该指标基于移动平均并结合价格标准差来调整平滑程度，从而减少价格异常波动的影响。
 

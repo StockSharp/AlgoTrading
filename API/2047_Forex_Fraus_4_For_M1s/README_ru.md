@@ -1,5 +1,5 @@
 # Стратегия Forex Fraus 4 For M1s
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация MQL4 стратегии №13643. Исходный советник открывает сделки, когда индикатор Williams %R достигает экстремальных уровней и затем возвращается. Эта версия на C# использует высокоуровневый API StockSharp.
 

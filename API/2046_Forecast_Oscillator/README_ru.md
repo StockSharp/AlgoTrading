@@ -1,5 +1,5 @@
 # Стратегия Forecast Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит индикатор Forecast Oscillator в StockSharp. Базовая линия строится по линейной регрессии, а сглаживание выполняется алгоритмом Tillson T3. Сигнал на покупку возникает, когда осциллятор пересекает сглаженную линию снизу вверх при отрицательном значении T3. Продажа происходит при обратных условиях.
 

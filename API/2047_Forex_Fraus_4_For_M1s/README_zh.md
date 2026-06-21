@@ -1,5 +1,5 @@
 # Forex Fraus 4 For M1s 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 转换自 MQL4 策略 #13643。原始 EA 在 Williams %R 指标触及极值并反转时进场。此 C# 版本基于 StockSharp 的高级 API。
 

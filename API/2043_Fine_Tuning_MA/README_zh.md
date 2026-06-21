@@ -1,5 +1,5 @@
 # 精调均线策略 (Fine Tuning MA)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略关注简单移动平均线的斜率。连续两个柱同向运行后，均线反转即触发交易。下行后的上拐做多，上行后的下拐做空，反向信号平掉当前仓位。
 

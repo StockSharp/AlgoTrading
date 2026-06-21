@@ -1,4 +1,5 @@
 # Corrected Average Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts relative to a **Corrected Average** moving average. The indicator smooths the price using a moving average and adjusts the smoothing factor based on the standard deviation of price changes.
 

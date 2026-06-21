@@ -1,4 +1,5 @@
 # RSI EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模拟传统的 RSI 专家顾问。当 RSI 指标跨越预设水平时进行交易，并可通过止损、止盈以及可选的跟踪止损来管理风险。
 

@@ -1,4 +1,5 @@
 # Стратегия Fractal AMA MBK Crossover
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Fractal AMA MBK Crossover использует **Fractal Adaptive Moving Average (FRAMA)** вместе с сигнальной линией **Exponential Moving Average (EMA)**. Торговые сигналы формируются при пересечении линий FRAMA и EMA.

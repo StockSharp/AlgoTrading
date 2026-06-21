@@ -1,4 +1,5 @@
 # VininI Trend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 描述
 该策略将 MQL5 顾问 **Exp_VininI_Trend** 转换为 StockSharp 实现。使用商品通道指数 (CCI) 模拟 VininI Trend 振荡器。当振荡器突破上轨或向上转折时开多仓；当振荡器跌破下轨或向下转折时开空仓。策略仅在蜡烛收盘后处理信号。

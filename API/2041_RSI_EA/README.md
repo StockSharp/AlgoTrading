@@ -1,4 +1,5 @@
 # RSI EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy emulates a classic RSI expert advisor. It trades when the Relative Strength Index crosses predefined levels and manages risk with stop loss, take profit and optional trailing stop.
 
