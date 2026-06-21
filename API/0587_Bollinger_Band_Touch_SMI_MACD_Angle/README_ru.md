@@ -1,5 +1,5 @@
 # Стратегия Bollinger Band Touch с углами SMI и MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда цена касается нижней полосы Боллинджера и углы SMI и MACD направлены вверх. Позиция закрывается при достижении ценой верхней полосы Боллинджера.
 

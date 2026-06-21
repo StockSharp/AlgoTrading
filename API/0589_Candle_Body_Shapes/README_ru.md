@@ -1,5 +1,5 @@
 # Стратегия Candle Body Shapes
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует в зависимости от того, где свеча открывается и закрывается внутри своего диапазона.
 Длинная позиция открывается, когда свеча открылась рядом с минимумом и закрылась возле максимума, что показывает сильное давление быков.

@@ -1,5 +1,5 @@
 # 布林带触底并结合 SMI 与 MACD 角度策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格触及布林带下轨且 SMI 和 MACD 的角度均向上时，该策略买入；当价格达到布林带上轨时平仓。
 

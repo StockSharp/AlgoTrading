@@ -1,5 +1,5 @@
 # 布林带与斐波那契策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用布林带突破并结合斐波那契水平过滤信号。当收盘价上穿上轨且蜡烛最低价高于斐波那契低位时做多。当收盘价下穿下轨且蜡烛最高价低于斐波那契高位时做空。
 

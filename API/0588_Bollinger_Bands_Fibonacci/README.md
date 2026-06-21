@@ -1,5 +1,5 @@
 # Bollinger Bands & Fibonacci Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades Bollinger Band breakouts filtered by Fibonacci levels. A long position opens when price crosses above the upper band and the candle's low is above a Fibonacci-based support. A short position opens when price crosses below the lower band and the candle's high is below a Fibonacci-based resistance.
 

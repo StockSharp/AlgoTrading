@@ -1,5 +1,5 @@
 # Bollinger and Stochastic Trailing Stop Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters long when the price closes below the lower Bollinger Band and the Stochastic %K is below 20. It enters short when the price closes above the upper band and %K is above 80. An ATR-based trailing stop protects open positions.
 

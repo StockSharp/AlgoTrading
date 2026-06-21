@@ -1,5 +1,5 @@
 # Buy The Dips Trend
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 EMA 趋势交叉策略，带固定止盈止损。
 

@@ -1,5 +1,5 @@
 # 布林带与随机指标追踪止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格收于下布林带之下且随机指标 %K 低于20时，策略做多；当价格收于上布林带之上且 %K 高于80时，策略做空。使用基于ATR的追踪止损来保护持仓。
 

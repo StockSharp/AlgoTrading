@@ -1,5 +1,5 @@
 # Buy & Sell Bullish Engulfing 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当出现多头吞没形态并满足可选的趋势过滤条件时，该策略开多单。仓位规模按照当前资金的百分比计算，仓位通过止盈或止损自动平仓。
 
