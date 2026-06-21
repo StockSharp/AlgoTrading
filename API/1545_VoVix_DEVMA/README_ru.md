@@ -1,5 +1,5 @@
 # Стратегия VoVix DEVMA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия анализирует волатильность через отклонение ATR и использует скользящие средние DEVMA для определения смены режимов. Сделки открываются при пересечении быстрый и медленной DEVMA, управление риском основано на ATR.
 

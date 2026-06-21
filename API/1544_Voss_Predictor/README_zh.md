@@ -1,5 +1,5 @@
 # Voss Predictor 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合约翰·埃勒斯的 Voss 预测滤波器和带通滤波器来预判价格走势。当预测滤波值高于带通滤波输出时做多，反之则做空。
 

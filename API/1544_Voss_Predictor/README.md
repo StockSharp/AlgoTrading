@@ -1,5 +1,5 @@
 # Voss Predictor Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements John Ehlers' Voss predictive filter with a band-pass filter to anticipate price movement. A long position opens when the predictive filter rises above the band-pass output, while a short position opens when it falls below.
 

@@ -1,4 +1,5 @@
 # Volume-Supported Linear Regression Trend Modified Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 RSI(14) 高于设定的进入阈值时开多，当 RSI 超过退出阈值时平仓。
 

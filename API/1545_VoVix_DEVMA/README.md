@@ -1,5 +1,5 @@
 # VoVix DEVMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy analyzes volatility behaviour using Deviation Moving Averages (DEVMA) built on the standard deviation of ATR. It trades transitions between contraction and expansion regimes and uses ATR-based exits.
 

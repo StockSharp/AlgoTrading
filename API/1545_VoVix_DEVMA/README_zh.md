@@ -1,5 +1,5 @@
 # VoVix DEVMA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于ATR标准差构建的偏差移动平均线（DEVMA）来分析波动性变化。当快速DEVMA上穿或下穿慢速DEVMA时产生交易信号，并使用ATR倍数的止损和止盈。
 
