@@ -1,5 +1,5 @@
 # XAUUSD 10分钟策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在10分钟周期上交易XAUUSD，结合MACD、RSI与布林带信号。当出现做多条件时开多单，出现做空条件时开空单。系统使用ATR计算的止损和止盈，并考虑固定点差。
 

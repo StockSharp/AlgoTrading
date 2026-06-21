@@ -1,5 +1,5 @@
 # 昨日高点策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 多头突破策略，在昨日高点上方下达买入止损单。
 可选的ROC滤波、跟踪止损和EMA平仓提供风险控制。

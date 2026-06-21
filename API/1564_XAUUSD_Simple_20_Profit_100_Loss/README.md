@@ -1,5 +1,5 @@
 # XAUUSD Simple 20 Profit 100 Loss Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens a long position when no position is held and both cooldown timers are inactive.
 It closes the position once unrealized profit reaches $20 or the loss hits $100.

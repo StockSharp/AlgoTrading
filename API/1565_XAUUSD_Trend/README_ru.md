@@ -1,5 +1,5 @@
 # Стратегия тренда XAUUSD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует XAUUSD, используя пересечения EMA, экстремумы RSI и полосы Боллинджера.
 Покупка выполняется при пересечении быстрой EMA выше медленной, когда RSI ниже уровня перепроданности и цена закрытия выше верхней полосы.

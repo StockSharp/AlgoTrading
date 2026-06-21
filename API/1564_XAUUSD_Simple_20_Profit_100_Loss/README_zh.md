@@ -1,5 +1,5 @@
 # XAUUSD 简单的20美元止盈/100美元止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当没有持仓且两个冷却计时器都结束时，策略建立多头仓位。
 当浮动盈亏达到20美元或亏损达到100美元时，策略平仓。

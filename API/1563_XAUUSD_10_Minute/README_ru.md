@@ -1,5 +1,5 @@
 # Стратегия XAUUSD 10 минут
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует XAUUSD на 10‑минутных свечах, используя сигналы MACD, RSI и полос Боллинджера. Открывает длинные позиции при появлении бычьих условий и короткие при медвежьих сигналах. Применяет стоп-лосс и тейк-профит на основе ATR с учётом фиксированного спреда.
 

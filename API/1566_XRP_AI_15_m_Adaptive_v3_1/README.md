@@ -1,4 +1,5 @@
 # XRP AI 15-m Adaptive v3.1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades XRP on 15-minute candles using a higher time frame trend filter. It selects between small pull-backs, medium volume flushes, or large momentum bursts and applies ATR-based stops, targets, trailing stop and a time-based exit.
 

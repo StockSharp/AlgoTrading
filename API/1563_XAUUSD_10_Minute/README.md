@@ -1,5 +1,5 @@
 # XAUUSD 10-Minute Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades XAUUSD on 10-minute candles using MACD, RSI and Bollinger Bands signals. It opens long positions when bullish conditions appear and short positions when bearish signals trigger. The system applies ATR-based stop-loss and take-profit levels adjusted for a fixed spread.
 

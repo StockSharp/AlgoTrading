@@ -1,5 +1,5 @@
 # Стратегия YinYang RSI Volume Trend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия YinYang RSI Volume Trend использует объёмно-взвешенные ценовые зоны и фильтр RSI для поиска разворотов тренда. Покупки совершаются при выходе цены из нижней зоны, продажи — при выходе из верхней. Дополнительные уровни стоп-лосса и тейк-профита рассчитываются на основе динамических зон.
 

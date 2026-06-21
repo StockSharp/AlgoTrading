@@ -1,5 +1,5 @@
 # XAUUSD Простая стратегия с прибылью 20$ и убытком 100$
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда нет открытых сделок и оба таймера ожидания неактивны.
 Позиция закрывается при прибыли в 20 долларов или убытке в 100 долларов.

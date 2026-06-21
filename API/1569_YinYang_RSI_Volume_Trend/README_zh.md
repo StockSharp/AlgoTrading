@@ -1,5 +1,5 @@
 # YinYang RSI Volume Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 YinYang RSI Volume Trend 策略利用成交量加权的价格区域和 RSI 过滤器来捕捉趋势反转。当价格离开下方区域时买入，离开上方区域时卖出。可选的止损和止盈基于动态区域计算。
 

@@ -1,5 +1,5 @@
 # XAUUSD 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 EMA 交叉、RSI 极值与布林带交易 XAUUSD。
 当快速 EMA 上穿慢速 EMA、RSI 低于超卖线且收盘价高于上轨时做多；

@@ -1,4 +1,5 @@
 # XRP AI 15-m Adaptive v3.1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 15 分钟图上交易 XRP，并使用更高周期的趋势过滤。它在小回调、中等量冲洗或大动量爆发之间选择，并基于 ATR 设置止损、止盈、追踪止损以及时间退出。
 
