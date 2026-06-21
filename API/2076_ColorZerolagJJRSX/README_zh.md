@@ -1,4 +1,5 @@
 # 颜色零延迟 JJRSX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复制 MetaTrader 中 **ColorZerolagJJRSX** 交易策略的逻辑，使用两条平滑处理的 RSI 线来接近原始指标。快线和慢线的交叉用于生成交易信号。
 

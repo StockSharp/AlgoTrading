@@ -1,5 +1,5 @@
 # EF Distance Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader "Exp_EF_distance" 顾问在 StockSharp 平台上的改写。原始的 EF Distance 和 Flat-Trend 指标被简单移动平均线（SMA）和平均真实波幅（ATR）过滤器所取代，用于寻找市场的转折点。算法观察三个连续的 SMA 值以识别局部极值。当 SMA 形成局部底部且波动性超过阈值时开多仓；当出现相反形态时开空仓。头寸在出现反向信号或触及止损/止盈水平时关闭。
 

@@ -1,4 +1,5 @@
 # 颜色 Schaff JCCX 趋势循环策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家 `Exp_ColorSchaffJCCXTrendCycle` 的 C# 版本，
 使用基于 JCCX 算法的 **Schaff 趋势循环 (STC)** 振荡器。

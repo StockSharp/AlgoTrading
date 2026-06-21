@@ -1,5 +1,5 @@
 # ColorSchaff JJRSX Trend Cycle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于 JJRSX 平均值的 Schaff Trend Cycle 振荡器。当振荡器突破设定水平时进入多或空仓。
 

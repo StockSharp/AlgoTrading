@@ -1,5 +1,5 @@
 # Kalman Filter Signal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用卡尔曼滤波器来识别方向变化。根据选择的信号模式，信号由价格与滤波值的关系或滤波器斜率决定。当信号变为看涨时开多单，信号变为看跌时开空单。出现反向信号时反转仓位。止损和止盈使用绝对数值。
 

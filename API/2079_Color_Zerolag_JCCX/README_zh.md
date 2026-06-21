@@ -1,5 +1,5 @@
 # Color Zerolag JCCX 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MetaTrader 的 ColorZerolagJCCX 指标。本实现使用两条简单移动平均线进行近似。
 当快速均线下穿慢速均线时做多，当快速均线上穿慢速均线时做空。

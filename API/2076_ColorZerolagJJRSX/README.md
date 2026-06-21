@@ -1,4 +1,5 @@
 # Color Zerolag JJRSX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the logic of the **ColorZerolagJJRSX** MetaTrader expert. It uses two smoothed RSI oscillators to approximate the original ColorZerolagJJRSX indicator. The fast and slow lines cross to generate trading signals.
 

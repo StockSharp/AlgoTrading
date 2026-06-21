@@ -1,4 +1,5 @@
 # 波动行动策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合了短期波动性突破和比尔·威廉姆斯的 **Alligator** 趋势过滤器，Alligator 在4小时周期上计算。
 

@@ -1,4 +1,5 @@
 # Стратегия Color Schaff JCCX Trend Cycle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия является C# конверсией MQL5 эксперта `Exp_ColorSchaffJCCXTrendCycle`.
 Используется осциллятор **Schaff Trend Cycle (STC)** на основе алгоритма JCCX.

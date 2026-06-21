@@ -1,4 +1,5 @@
 # Color Schaff JCCX Trend Cycle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# conversion of the MQL5 expert `Exp_ColorSchaffJCCXTrendCycle`.
 It employs the **Schaff Trend Cycle (STC)** oscillator built on top of the JCCX algorithm.

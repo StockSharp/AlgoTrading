@@ -1,5 +1,5 @@
 # Стратегия ColorSchaff JJRSX Trend Cycle
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует осциллятор Schaff Trend Cycle, построенный на средних JJRSX. Вход в лонг или шорт происходит при пересечении индикатором заданных уровней.
 

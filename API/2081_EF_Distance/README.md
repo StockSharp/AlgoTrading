@@ -1,5 +1,5 @@
 # EF Distance Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp adaptation of the MetaTrader "Exp_EF_distance" expert advisor. It replaces the original EF Distance and Flat-Trend indicators with a simple moving average (SMA) and an Average True Range (ATR) filter to detect market turning points. The algorithm watches three consecutive SMA values and identifies local minima or maxima. A long position is opened when the SMA forms a local bottom and volatility exceeds the threshold. A short position is opened on the opposite pattern. Positions are closed on opposite signals or when stop-loss or take-profit levels are hit.
 

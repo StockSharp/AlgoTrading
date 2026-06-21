@@ -1,5 +1,5 @@
 # 基础追踪止损
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基础追踪止损策略将商品通道指数 (CCI) 与相对强弱指数 (RSI) 结合，并使用固定点数的追踪止损。在两个指标同时显示超卖或超买时，策略开仓并立即设置以点数表示的追踪止损。随着价格朝有利方向移动，止损位跟随趋势收紧利润。
 

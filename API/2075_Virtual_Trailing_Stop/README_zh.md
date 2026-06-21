@@ -1,4 +1,5 @@
 # 虚拟追踪止损
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略为多头和空头仓位模拟虚拟追踪止损。策略不提供入场信号，仓位需要由外部或手动开立。在存在仓位后，策略会在价格朝有利方向移动时调整追踪止损，一旦价格触及止损线，仓位将以市价平仓。
 
