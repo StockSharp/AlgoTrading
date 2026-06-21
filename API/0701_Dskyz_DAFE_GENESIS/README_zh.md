@@ -1,5 +1,5 @@
 # Dskyz (DAFE) GENESIS 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dskyz (DAFE) GENESIS 策略的简化版本。当短期动量与趋势过滤器和 RSI 一致时，该系统进行交易。
 

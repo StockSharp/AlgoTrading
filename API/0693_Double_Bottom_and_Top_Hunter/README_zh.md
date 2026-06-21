@@ -1,5 +1,5 @@
 # Double Bottom and Top Hunter Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过比较近期的高点和低点来寻找双底和双顶形态。当最低点在更长的回溯期内被触及两次时，形成双底；双顶则使用最高点。策略相应开立多头和空头头寸，并在出现新的极值后价格突破相反极值时平仓。
 

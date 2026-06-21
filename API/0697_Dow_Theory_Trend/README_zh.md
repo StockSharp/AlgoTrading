@@ -1,5 +1,5 @@
 # 道氏理论趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过枢轴高点和低点判断趋势方向。当出现更高的高点和更高的低点时做多，当出现更低的高点和更低的低点时做空。
 

@@ -1,5 +1,5 @@
 # Double MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Double MACD 使用两组不同速度的 MACD 指标。当两组 MACD 同时指向同一方向时才开仓。
 

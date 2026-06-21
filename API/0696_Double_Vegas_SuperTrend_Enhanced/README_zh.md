@@ -1,4 +1,5 @@
 # 双重 Vegas SuperTrend 增强策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两个 SuperTrend 指标，其乘数会根据 Vegas 通道的波动性进行调整。当两个趋势均为多头时开多仓，两个趋势均为空头时开空仓。支持设定持仓天数以及可选的止盈或止损保护。
 

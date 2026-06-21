@@ -1,4 +1,5 @@
 # Double Vegas SuperTrend Enhanced Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines two SuperTrend indicators whose multipliers adapt to Vegas channel volatility. A long position opens when both trends are bullish and a short position opens when both are bearish. Optional holding period and take-profit or stop-loss protections are supported.
 

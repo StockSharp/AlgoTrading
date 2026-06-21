@@ -1,4 +1,5 @@
 # Aurora Divergence 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用价格与累积能量（OBV）的背离进行交易，通过比较价格与 OBV 的线性回归斜率来捕捉潜在反转。
 

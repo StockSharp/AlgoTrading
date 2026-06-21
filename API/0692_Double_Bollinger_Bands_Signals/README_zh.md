@@ -1,5 +1,5 @@
 # Double Bollinger Bands Signals 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两组布林带。当价格上穿下方 3 倍标准差带时买入，当价格下穿上方 3 倍标准差带时卖出。仓位在相反的 2 倍标准差带处平仓。
 

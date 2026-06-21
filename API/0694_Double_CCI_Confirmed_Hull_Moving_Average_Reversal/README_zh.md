@@ -1,5 +1,5 @@
 # Double CCI Confirmed Hull MA Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格向上穿越Hull移动平均线并且快慢CCI均大于0时，该策略做多。ATR触发后使用EMA进行移动止盈。
 
