@@ -1,4 +1,5 @@
 # PresentTrend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses ATR-based thresholds with RSI or MFI to track trend direction. The PresentTrend line is built by expanding or contracting based on oscillator value and ATR. Signals appear when PresentTrend crosses its value from two bars ago and the most recent opposite signal confirms direction.
 

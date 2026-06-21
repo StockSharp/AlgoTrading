@@ -1,5 +1,5 @@
 # PresentTrend RMI Synergy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет импульс по RSI и трейлинг-стоп на основе SuperTrend. Вход происходит при превышении порогов RMI и совпадении цены с направлением тренда. Стоп динамически следует за ценой с помощью скользящей средней и ATR.
 

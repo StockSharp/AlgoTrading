@@ -1,5 +1,5 @@
 # PowerZone 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略识别“PowerZone”订单块：先出现一根看跌K线，随后连续出现若干根看涨K线（反之亦然）。价格向上突破牛区高点买入，向下跌破熊区低点卖出。止盈与止损根据区间大小计算。
 

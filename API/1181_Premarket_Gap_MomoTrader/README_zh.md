@@ -1,5 +1,5 @@
 # Premarket Gap MomoTrader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略专注于盘前跳空动量。当当前K线相对前一收盘涨幅达到设定百分比、出现强烈的多头实体且成交量充足时，策略在可选的盘前时段内做多。仓位大小依据实体所占幅度动态调整。
 

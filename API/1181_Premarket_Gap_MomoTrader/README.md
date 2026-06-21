@@ -1,5 +1,5 @@
 # Premarket Gap MomoTrader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades a single long breakout during the premarket session when the current candle gains at least a specified percentage above the previous close, prints a bullish candle with sufficient volume, and the candle body occupies a large part of its range. Position size is scaled depending on the body size.
 

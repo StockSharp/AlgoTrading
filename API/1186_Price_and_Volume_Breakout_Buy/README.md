@@ -1,5 +1,5 @@
 # Price and Volume Breakout Buy Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy enters when price and volume simultaneously break above their respective lookback highs while price stays above the trend SMA. Short trades trigger when price drops below the lookback low under the same volume condition and SMA filter. Positions close after five consecutive closes on the opposite side of the SMA.
 

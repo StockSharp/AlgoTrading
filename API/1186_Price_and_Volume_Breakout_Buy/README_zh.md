@@ -1,5 +1,5 @@
 # 价格与成交量突破买入策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格与成交量同时突破各自周期高点且价格位于趋势SMA之上时，策略开多。若价格跌破周期低点并满足相同的成交量条件且价格位于SMA之下，则开空。若价格连续五根K线收于SMA另一侧，则平仓。
 

@@ -1,5 +1,5 @@
 # 前日高低突破多头策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格突破前一日的高点或低点且ADX上升时，于指定交易时段做多。
 

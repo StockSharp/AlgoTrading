@@ -1,4 +1,5 @@
 # PowerHouse SwiftEdge AI v2.10 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于枢轴的突破策略并结合动量过滤和简单风险控制。
 当价格突破最近枢轴高点且动量充足并满足最小信号间隔时开多。

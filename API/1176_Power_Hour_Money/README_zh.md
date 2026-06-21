@@ -1,5 +1,5 @@
 # Power Hour Money 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在所选纽约交易时段运行，只有当月、周、日和小时K线同向时才开仓。
 当所有这些周期的收盘价高于开盘价时做多；

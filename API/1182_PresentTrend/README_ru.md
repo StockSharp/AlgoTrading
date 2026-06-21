@@ -1,4 +1,5 @@
 # Стратегия PresentTrend
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует пороги на основе ATR и осциллятора RSI или MFI для отслеживания тренда. Линия PresentTrend строится в зависимости от значения осциллятора и ATR. Сигналы появляются при пересечении линией значения двух баров назад с учётом последнего противоположного сигнала.
 

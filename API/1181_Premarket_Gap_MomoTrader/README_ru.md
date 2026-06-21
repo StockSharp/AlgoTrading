@@ -1,5 +1,5 @@
 # Стратегия Premarket Gap MomoTrader
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует импульсные гэпы на премаркете. Открывает длинную позицию, когда свеча поднимается на заданный процент выше предыдущего закрытия, имеет бычье тело достаточного размера и объём превышает порог. Размер позиции зависит от доли тела свечи.
 

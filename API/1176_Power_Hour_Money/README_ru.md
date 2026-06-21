@@ -1,5 +1,5 @@
 # Стратегия Power Hour Money
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует в выбранные сессии Нью‑Йорка и открывает позиции, когда все основные таймфреймы совпадают.
 Лонг открывается, если месячная, недельная, дневная и часовая свечи закрылись выше открытия.

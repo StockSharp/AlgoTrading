@@ -1,5 +1,5 @@
 # PresentTrend RMI Synergy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 PresentTrend RMI Synergy combines an RSI-based momentum filter with a SuperTrend-style ATR trailing stop. Entries occur when momentum exceeds thresholds and price is aligned with trend. The stop dynamically trails price using a moving average and ATR band.
 

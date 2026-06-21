@@ -1,4 +1,5 @@
 # PresentTrend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用基于ATR的阈值以及RSI或MFI来追踪趋势。PresentTrend 线根据振荡器数值与ATR扩张或收缩。当 PresentTrend 与两根K线前的值发生交叉并且最近一次相反信号更近时产生交易信号。
 
