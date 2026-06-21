@@ -1,5 +1,5 @@
 # CVD 背离
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将累积成交量差（CVD）背离与Hull移动平均、RSI、MACD以及成交量过滤结合。当趋势、动量和成交量一致且CVD出现背离或延续时开仓。出现相反信号或指标交叉时平仓。
 

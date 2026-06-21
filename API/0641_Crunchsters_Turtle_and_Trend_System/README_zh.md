@@ -1,5 +1,5 @@
 # Crunchster's Turtle and Trend System 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快慢 EMA 趋势过滤、Donchian 通道突破入场以及基于 ATR 的止损管理。另一个 Donchian 通道用于趋势反转时的退出。
 

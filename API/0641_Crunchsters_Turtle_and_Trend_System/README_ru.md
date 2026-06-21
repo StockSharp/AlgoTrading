@@ -1,5 +1,5 @@
 # Стратегия Crunchster's Turtle and Trend System
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Сочетает трендовый фильтр из быстрых и медленных EMA с входами по пробою канала Дончиана и стопами на основе ATR. Выйти из позиции помогает трейлинг по каналу Дончиана.
 

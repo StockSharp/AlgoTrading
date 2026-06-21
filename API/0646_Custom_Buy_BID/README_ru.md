@@ -1,5 +1,5 @@
 # Стратегия Custom Buy BID
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикатор Supertrend для поиска разворота вверх. Когда цена пересекает линию Supertrend снизу вверх, открывается длинная позиция. Управление риском осуществляется через настраиваемые уровни тейк-профита и стоп-лосса.
 

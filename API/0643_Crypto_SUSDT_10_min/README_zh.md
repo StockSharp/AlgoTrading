@@ -1,5 +1,5 @@
 # Crypto Strategy SUSDT 10 min
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 EMA 的简单策略：当收盘价高于 EMA 且开盘价低于 EMA 时做多，反之做空。止损和止盈按照入场价的百分比设置。
 

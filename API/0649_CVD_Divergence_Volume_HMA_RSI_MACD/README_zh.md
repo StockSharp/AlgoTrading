@@ -1,5 +1,5 @@
 # CVD Divergence Volume HMA RSI MACD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Hull 移动平均线、RSI、MACD、成交量过滤器以及累积成交量差 (CVD) 的背离来寻找趋势机会。
 

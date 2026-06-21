@@ -1,5 +1,5 @@
 # 加密波动率与比特币相关性
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 VIXFix 和 BVOL7D 指数同时上升且价格位于 EMA 之上时，本策略做多比特币。当价格跌破 EMA 时平仓。
 

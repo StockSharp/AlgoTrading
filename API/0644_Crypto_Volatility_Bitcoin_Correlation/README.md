@@ -1,5 +1,5 @@
 # Crypto Volatility Bitcoin Correlation
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters a long position when Bitcoin volatility rises together with the BVOL7D index and price trades above its EMA. It exits when price drops back below the EMA.
 

@@ -1,5 +1,5 @@
 # 可自定义的 BTC 季节性策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用比特币在一天中的季节性规律，在用户指定的 UTC 小时进出场。
 在进入时间开多头，在退出时间平仓。

@@ -1,5 +1,5 @@
 # CVD Divergence
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy combines cumulative volume delta (CVD) divergence with Hull Moving Averages, RSI, MACD and a volume filter. A trade opens when trend, momentum and volume agree and CVD shows divergence or continues in trade direction. Positions close on opposite signals or indicator cross.
 

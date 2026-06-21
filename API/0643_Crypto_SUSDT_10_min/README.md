@@ -1,5 +1,5 @@
 # Crypto Strategy SUSDT 10 min
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A simple EMA crossover strategy that enters long when price closes above the EMA and opens below it, and enters short on the opposite condition. Stop loss and take profit are defined as percentages from the entry price.
 

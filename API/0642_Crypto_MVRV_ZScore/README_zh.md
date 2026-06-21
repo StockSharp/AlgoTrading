@@ -1,5 +1,5 @@
 # Crypto MVRV ZScore 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 MVRV Z-Score 概念来检测市场价值与实现价值之间的极端偏离。
 当价差 z-score 穿越设定阈值时开仓，并在反向穿越时平仓。

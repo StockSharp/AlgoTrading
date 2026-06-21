@@ -1,5 +1,5 @@
 # Custom Signal Oscillator 自定义信号振荡器
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两个价格信号的差值。当振荡器上穿零线时做多，下穿零线时做空。启用仅做多模式时，振荡器下穿零线会平仓。
 

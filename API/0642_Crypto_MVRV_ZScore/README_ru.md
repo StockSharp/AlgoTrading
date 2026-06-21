@@ -1,5 +1,5 @@
 # Стратегия Crypto MVRV ZScore
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует концепцию MVRV Z-Score для выявления экстремальных отклонений между рыночной и реализованной стоимостью.
 Позиции открываются при пересечении спредового z-score заданных уровней и закрываются при обратном пересечении.

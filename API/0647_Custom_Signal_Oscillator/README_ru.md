@@ -1,5 +1,5 @@
 # Custom Signal Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует разницу между двумя ценовыми сигналами. Входит в лонг, когда осциллятор пересекает ноль снизу вверх, и в шорт, когда пересекает сверху вниз. В режиме только лонг отрицательное пересечение закрывает позицию.
 

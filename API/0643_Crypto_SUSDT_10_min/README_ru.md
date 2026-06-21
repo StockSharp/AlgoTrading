@@ -1,5 +1,5 @@
 # Crypto Strategy SUSDT 10 min
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия на основе EMA, которая открывает длинную позицию, когда цена закрытия выше EMA, а цена открытия ниже, и короткую позицию при обратном условии. Стоп-лосс и тейк-профит задаются в процентах от цены входа.
 
