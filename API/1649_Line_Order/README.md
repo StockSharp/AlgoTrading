@@ -1,5 +1,5 @@
 # Line Order Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Line Order Strategy** triggers a market order when price crosses a user-defined horizontal line. It is intended as a simplified conversion of the original MQL script *LineOrder.mq4*, providing manual line trading functionality through the high-level StockSharp API.
 

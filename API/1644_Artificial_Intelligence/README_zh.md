@@ -1,5 +1,5 @@
 # 人工智能感知器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 人工智能策略使用简单感知器，将不同时间位移的加速振荡器（AC）读数组合成一个加权和。当前AC值与前7、14、21根K线的AC值一起计算，得到的结果决定交易方向。感知器输出为正时开多或保持多头，为负时开空或保持空头。
 

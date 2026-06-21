@@ -1,5 +1,5 @@
 # 简单 EMA 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两条指数移动平均线的交叉，并带有固定止损和止盈。
 

@@ -1,5 +1,5 @@
 # EMA SAR Bulls Bears 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合了快慢指数移动平均线 (EMA)、抛物线 SAR 以及 Bulls/Bears Power 指标。策略仅在设定的日内时间段内交易，并使用简单的止盈止损保护。
 

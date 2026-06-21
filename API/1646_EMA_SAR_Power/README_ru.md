@@ -1,5 +1,5 @@
 # Стратегия EMA SAR Power
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная внутридневная стратегия сочетает быстрые и медленные экспоненциальные скользящие средние с индикатором Parabolic SAR и показателями Bulls/Bears Power. Торговля ведётся только в активные часы рынка и только при достаточном объёме свободной маржи.
 

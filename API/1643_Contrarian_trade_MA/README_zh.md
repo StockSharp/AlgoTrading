@@ -1,5 +1,5 @@
 # 反向移动平均策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 每周评估前期高点、低点及移动平均线，在周线结束时开仓的反向交易系统。无论方向如何，仓位持有一周。
 

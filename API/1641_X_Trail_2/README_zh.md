@@ -1,5 +1,5 @@
 # X Trail 2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两个可配置移动平均线的交叉进行交易，移动平均线计算使用可选的价格类型。
 

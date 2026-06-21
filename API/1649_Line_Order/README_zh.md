@@ -1,5 +1,5 @@
 # 线段订单策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Line Order Strategy** 在价格突破预设水平线时触发市价单。该策略是原始 MQL 脚本 *LineOrder.mq4* 的简化版本，使用 StockSharp 的高级 API 实现手动线段交易。
 

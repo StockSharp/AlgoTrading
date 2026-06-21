@@ -1,5 +1,5 @@
 # EMA SAR Power 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该日内策略结合快慢指数移动平均线、抛物线 SAR 以及 Bulls/Bears Power 指标。策略只在市场活跃时段运行，并在进场前检查账户的可用保证金。
 

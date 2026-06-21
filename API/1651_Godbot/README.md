@@ -1,4 +1,5 @@
 # Godbot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades using Bollinger Bands combined with moving averages to detect reversals and trend strength.
 

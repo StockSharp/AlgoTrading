@@ -1,5 +1,5 @@
 # Stop Loss Mover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This utility strategy monitors an open position and moves its stop-loss to the entry price when the market reaches a predefined level. It subscribes to candle data and checks each completed candle. For long positions, once the candle's high exceeds the configured `MoveSlPrice`, a stop order at the entry price is placed. For short positions, the stop is moved when the candle's low falls below the level.
 

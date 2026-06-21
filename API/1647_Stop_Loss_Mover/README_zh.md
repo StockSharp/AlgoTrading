@@ -1,5 +1,5 @@
 # Stop Loss Mover策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该工具策略监控已有持仓，当市场达到设定价格时将止损移动到入场价。策略订阅K线并检查每根已完成的K线。对于多头，当K线最高价超过`MoveSlPrice`时，会在入场价挂出止损单；对于空头，当最低价跌破该水平时移动止损。
 
