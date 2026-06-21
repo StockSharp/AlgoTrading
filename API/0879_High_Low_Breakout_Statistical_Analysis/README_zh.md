@@ -1,5 +1,5 @@
 # High Low Breakout Statistical Analysis 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于所选时间框架的高点或低点突破进行交易。根据参数决定做多或做空，并在固定条数后平仓。
 

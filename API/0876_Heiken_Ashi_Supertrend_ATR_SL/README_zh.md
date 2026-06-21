@@ -1,5 +1,5 @@
 # Heiken Ashi Supertrend ATR-SL 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Heikin Ashi 蜡烛与 Supertrend 趋势过滤。进场要求无影线的蜡烛，并可启用基于 ATR 的止损与保本。
 

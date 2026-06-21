@@ -1,5 +1,5 @@
 # 高收益利差策略（含SMA过滤）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略基于高收益债利差或VIX指数。当选择的利差突破阈值并通过可选的价格过滤器确认时开仓。价格过滤器要求多头时收盘价高于SMA，空头时收盘价低于SMA。持仓在固定的周期数后平仓。
 

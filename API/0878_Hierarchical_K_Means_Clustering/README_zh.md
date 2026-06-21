@@ -1,5 +1,5 @@
 # 分层与K-Means聚类策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在SuperTrend系统中应用波动性聚类。ATR值被分为三个聚类以识别市场状态，SuperTrend方向改变触发进场。可选的均线和ADX过滤器用于确认趋势强度。当多空成交量比接近平衡时，仓位可提前平仓。
 

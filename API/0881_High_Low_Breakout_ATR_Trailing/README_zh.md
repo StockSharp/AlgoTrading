@@ -1,5 +1,5 @@
 # High-Low Breakout ATR Trailing Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易首个30分钟区间的突破。当价格突破初始高点或低点时，开启仓位并使用ATR跟踪止损。所有仓位在设定的盘中时间平仓。
 

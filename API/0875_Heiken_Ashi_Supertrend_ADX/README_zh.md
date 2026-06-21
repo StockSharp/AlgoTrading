@@ -1,5 +1,5 @@
 # Heiken Ashi Supertrend Adx Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合Heiken Ashi蜡烛、Supertrend方向以及可选的ADX过滤。没有下影线的看涨Heiken Ashi蜡烛在上升趋势中开多单。没有上影线的看跌蜡烛在下降趋势中开空单。仓位在反向信号或ATR跟踪止损下平仓。
 

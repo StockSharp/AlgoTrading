@@ -1,5 +1,5 @@
 # Heikin Ashi ROC 百分位策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将K线转换为Heikin Ashi，并用SMA平滑收盘价后计算其变化率（ROC）。最近ROC高低点的百分位区间形成突破带。ROC上穿下方带时做多或反转为多，ROC下穿上方带时做空。
 

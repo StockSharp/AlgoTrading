@@ -1,5 +1,5 @@
 # High Yield Spread Strategy with SMA Filter
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy trades based on the High Yield Spread or the VIX index. A position opens when the chosen spread crosses a threshold and an optional price filter confirms. The price filter requires the close to be above a simple moving average for longs or below it for shorts. Positions close after a fixed number of bars.
 

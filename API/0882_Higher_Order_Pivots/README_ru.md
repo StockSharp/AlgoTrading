@@ -1,5 +1,5 @@
 # Стратегия Higher Order Pivots
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Определяет пивоты 1-го, 2-го и 3-го порядка, используя 3-баровый или 5-баровый подход. Стратегия носит аналитический характер и не совершает сделок.
 

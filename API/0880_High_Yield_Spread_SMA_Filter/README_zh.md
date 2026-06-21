@@ -1,5 +1,5 @@
 # 高收益利差策略与SMA过滤
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据高收益债利差或VIX指数的水平进行交易。当所选利差超过阈值并且价格位于简单移动平均线的一侧时，在设定的方向开仓。
 

@@ -1,5 +1,5 @@
 # Heiken Ashi Supertrend Adx Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy combining Heiken Ashi candles, Supertrend direction and optional ADX filter. A bullish Heiken Ashi candle without a lower wick opens a long in an uptrend. Bearish candles without upper wicks open shorts in a downtrend. Positions close on opposite signals or an ATR based trailing stop.
 
