@@ -1,4 +1,5 @@
 # 比尔·威廉姆斯第二智者策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了比尔·威廉姆斯交易系统中的第二个“智者”形态。
 通过分析 Awesome Oscillator（AO）柱状图来捕捉动量变化：

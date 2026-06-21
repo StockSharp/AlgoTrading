@@ -1,5 +1,5 @@
 # Стратегия MaRsi Trigger
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует быстрые и медленные экспоненциальные скользящие средние (EMA) и RSI для определения разворотов тренда.
 Когда быстрые EMA и RSI находятся выше медленных, рынок считается бычьим и открывается длинная позиция.

@@ -1,5 +1,5 @@
 # ADX挂单模板策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略演示如何利用平均趋向指数（ADX）及其方向性指标来放置止损挂单。当市场趋势足够强并且+DI与-DI交叉时，系统会在固定距离处设置买入或卖出止损单，并自动处理止损和止盈。
 

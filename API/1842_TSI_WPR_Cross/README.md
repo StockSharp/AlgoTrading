@@ -1,4 +1,5 @@
 # TSI WPR Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the crossover of the True Strength Index (TSI) calculated from the Williams %R oscillator.
 When the TSI crosses above its smoothed signal line the strategy enters a long position. When the TSI crosses below the signal line it enters a short position.

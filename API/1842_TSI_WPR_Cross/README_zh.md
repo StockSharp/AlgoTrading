@@ -1,4 +1,5 @@
 # TSI WPR 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于由 Williams %R 振荡器计算的真实强度指数 (TSI) 与其信号线的交叉进行交易。
 当 TSI 上穿平滑的信号线时做多，当 TSI 下穿信号线时做空。

@@ -1,5 +1,5 @@
 # Karpenko Channel 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于收盘价的移动平均线和最近 N 根K线的平均范围构建 Karpenko 动态通道。通道以黄金比例 1.618 扩展，直到包含当前K线。
 

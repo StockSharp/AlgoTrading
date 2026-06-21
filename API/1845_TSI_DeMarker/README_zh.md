@@ -1,5 +1,5 @@
 # TSI DeMarker 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 DeMarker 振荡器基础上计算 True Strength Index。
 当 TSI 上穿其移动平均信号线时建立多头头寸。

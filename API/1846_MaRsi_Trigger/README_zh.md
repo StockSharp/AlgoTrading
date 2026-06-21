@@ -1,5 +1,5 @@
 # MaRsi Trigger 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将快慢指数移动平均线（EMA）和 RSI 结合以识别趋势反转。
 当快速 EMA 和 RSI 同时高于慢速指标时，认为市场看涨并开多头仓位。

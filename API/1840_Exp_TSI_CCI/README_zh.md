@@ -1,4 +1,5 @@
 # Exp TSI CCI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于商品通道指数 (CCI) 计算真实强度指数 (TSI)，并根据与信号线的交叉进行交易。
 

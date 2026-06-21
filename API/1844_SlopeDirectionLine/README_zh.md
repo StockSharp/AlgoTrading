@@ -1,5 +1,5 @@
 # Slope Direction Line 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现 *Slope Direction Line* 智能交易系统的逻辑。它根据收盘价线性回归的斜率进行交易。当斜率由负转正时开多仓，斜率由正转负时开空仓。每次方向变化时都会平掉相反方向的仓位。通过 `StartProtection` 设置的止损和止盈百分比来保护仓位。
 

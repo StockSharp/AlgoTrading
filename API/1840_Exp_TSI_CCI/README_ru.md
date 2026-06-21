@@ -1,4 +1,5 @@
 # Стратегия Exp TSI CCI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия рассчитывает индекс истинной силы (TSI) на основе индекса товарного канала (CCI) и торгует по пересечениям с сигнальной линией.
 
