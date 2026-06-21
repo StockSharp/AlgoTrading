@@ -1,5 +1,5 @@
 # 布林带增强策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 价格位于200周期EMA之上并触及布林带下轨时买入。  
 止损设置为 `入场价 - ATR * 止损倍数`，当价格上升 `ATR * 启动倍数` 后，中轨作为移动止盈目标。

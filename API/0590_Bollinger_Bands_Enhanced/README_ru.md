@@ -1,5 +1,5 @@
 # Усиленная стратегия полос Боллинджера
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда цена касается нижней полосы Боллинджера и остаётся выше EMA 200.  
 Стоп-лосс: `вход - ATR * стоп`. После роста на `ATR * трейл` активируется плавающая цель по средней полосе.

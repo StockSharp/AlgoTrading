@@ -1,5 +1,5 @@
 # Bollinger Bounce Reversal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that captures reversals when price bounces off Bollinger Bands with MACD and volume confirmation. The system limits entries to five trades per day and applies fixed percent stop loss and take profit.
 

@@ -1,5 +1,5 @@
 # Стратегия Bollinger Bounce Reversal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ищет развороты, когда цена возвращается от полос Боллинджера при подтверждении индикаторами MACD и объёмом. Система ограничивает количество входов пятью сделками в день и использует фиксированные проценты стоп‑лосса и тейк‑профита.
 

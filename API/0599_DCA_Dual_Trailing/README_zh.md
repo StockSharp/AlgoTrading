@@ -1,4 +1,5 @@
 # DCA 双重追踪策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在快 EMA 上穿慢 EMA 时做多。价格按 ATR 或百分比回撤时可加两个补仓单。仓位通过标准追踪止损和达到利润阈值后启动的锁定追踪止损来保护。
 

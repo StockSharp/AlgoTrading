@@ -1,5 +1,5 @@
 # 布林突破方向
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI 过滤交易布林带突破，可选择仅做多、仅做空或双向交易。止损和止盈基于风险回报比固定设定。
 

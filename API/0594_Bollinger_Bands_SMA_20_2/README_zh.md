@@ -1,5 +1,5 @@
 # 布林带 SMA 20-2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略使用基于20期简单移动平均线和2倍标准差的布林带。当收盘价向上穿越下轨时做多；当收盘价向下跌破上轨时做空。没有明确止损，出现相反信号时反向开仓。
 

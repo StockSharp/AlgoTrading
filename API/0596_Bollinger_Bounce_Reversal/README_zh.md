@@ -1,5 +1,5 @@
 # 布林带反弹反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格从布林带边缘反弹时，结合MACD和成交量确认进行交易。系统每天最多入场五次，并使用固定百分比的止损和止盈。
 

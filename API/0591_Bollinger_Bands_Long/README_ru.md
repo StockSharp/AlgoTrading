@@ -1,5 +1,5 @@
 # Стратегия Bollinger Bands Long
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда цена закрывается ниже нижней границы полос Боллинджера и RSI находится в зоне перепроданности. Позиция закрывается при возвращении цены к средней полосе.
 

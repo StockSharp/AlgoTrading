@@ -1,5 +1,5 @@
 # 布林带多头策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格收于布林带下轨且 RSI 进入超卖区时买入，当价格回到中轨时平仓。
 

@@ -1,5 +1,5 @@
 # BONK Long Volatility
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略仅做多，结合均线、波动性和成交量过滤。当市场上行、波动扩大并且动量指标确认时买入。离场通过固定止盈、止损以及基于ATR的追踪止损完成。
 

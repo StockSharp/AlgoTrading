@@ -1,5 +1,5 @@
 # Bollinger Bands 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易布林带的突破。当收盘价高于上轨时买入，当收盘价低于下轨时卖出。离场条件是价格穿越简单移动平均线或触发止损。
 
