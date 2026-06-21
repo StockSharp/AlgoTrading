@@ -1,5 +1,5 @@
 # Auto Trailing Stop
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия автоматически добавляет к существующим позициям приказы стоп-лосс и тейк-профит, а также сопровождает позицию трейлинг-стопом при движении цены в прибыльную сторону.
 

@@ -1,4 +1,5 @@
 # JBrainUltraRSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This sample strategy combines the Relative Strength Index (RSI) and the Stochastic oscillator to generate trading signals.
 The idea is derived from the original MetaTrader Expert Advisor that used the *JBrainTrendSig1* and *UltraRSI* indicators. In this adaptation the Stochastic oscillator acts as a trend filter while RSI provides entry signals.

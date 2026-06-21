@@ -1,4 +1,5 @@
 # Стратегия Bleris
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Bleris анализирует тренд последних ценовых экстремумов и открывает сделки по направлению текущего тренда.

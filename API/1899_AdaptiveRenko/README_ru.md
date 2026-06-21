@@ -1,4 +1,5 @@
 # Стратегия Adaptive Renko
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит адаптивную Renko сетку, где размер кирпича определяется волатильностью рынка с помощью индикатора **ATR (Average True Range)**. Сделка совершается всякий раз, когда цена проходит полный кирпич вверх или вниз.
 

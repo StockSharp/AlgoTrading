@@ -1,4 +1,5 @@
 # Roboti ADX Profit 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将原始的 **RobotiADXProfitwining.mq4** 专家顾问移植到 StockSharp API。核心指标为方向性移动指数（DMI），通过比较 `+DI` 和 `-DI` 线来判断趋势方向。
 

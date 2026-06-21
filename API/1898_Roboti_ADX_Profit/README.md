@@ -1,4 +1,5 @@
 # Roboti ADX Profit Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy converts the original **RobotiADXProfitwining.mq4** expert advisor into the StockSharp API. It relies on the Directional Movement Index (DMI) to determine trend direction.
 

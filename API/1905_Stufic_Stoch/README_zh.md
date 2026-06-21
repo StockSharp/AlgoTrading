@@ -1,4 +1,5 @@
 # Stufic 随机指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两条移动平均线判断趋势，并使用随机振荡器（Stochastic）寻找动能信号。
 当快速均线上穿慢速均线且随机指标的 %K 线在超卖区下方向上穿越 %D 线时买入；

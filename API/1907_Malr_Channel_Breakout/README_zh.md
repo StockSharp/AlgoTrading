@@ -1,4 +1,5 @@
 # MALR 渠道突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易自定义 MALR（移动平均线线性回归）渠道的突破。MALR 指标结合简单移动平均线和线性加权移动平均线形成中心线，价格相对于该线的标准差形成外部通道。
 

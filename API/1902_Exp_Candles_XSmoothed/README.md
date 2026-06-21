@@ -1,5 +1,5 @@
 # Exp Candles XSmoothed Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy monitors candle highs and lows smoothed by a weighted moving average (WMA). When the closing price breaks above the smoothed high plus a configurable buffer, it opens a long position and closes any existing short. Conversely, a close below the smoothed low minus the buffer opens a short and closes any existing long.
 

@@ -1,4 +1,5 @@
 # 自适应 Renko 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略构建一个自适应的 Renko 网格，其砖块大小根据 **ATR（平均真实波幅）** 指标衡量的市场波动性进行调整。当价格在任意方向移动一个完整砖块时执行交易。
 

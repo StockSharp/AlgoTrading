@@ -1,5 +1,5 @@
 # Exp Candles XSmoothed 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用加权移动平均线（WMA）对K线的最高价和最低价进行平滑处理。当收盘价突破平滑后的最高价并超过设定的缓冲区时，策略开多并平掉所有空单；当收盘价跌破平滑后的最低价并超过缓冲区时，策略开空并平掉所有多单。
 

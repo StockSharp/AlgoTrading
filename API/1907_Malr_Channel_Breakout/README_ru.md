@@ -1,4 +1,5 @@
 # Стратегия прорыва канала MALR
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует прорывы кастомного канала MALR (Moving Average Linear Regression). Индикатор MALR комбинирует простую и линейно-взвешенную скользящие средние для формирования центральной линии. Стандартное отклонение цены относительно этой линии задаёт внешние границы канала.
 

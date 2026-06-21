@@ -1,4 +1,5 @@
 # Stufic Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines trend detection using two moving averages with momentum signals from the Stochastic oscillator.
 It buys when the fast moving average is above the slow moving average and the Stochastic %K line crosses above the %D line below an oversold threshold.

@@ -1,4 +1,5 @@
 # JBrainUltraRSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例策略结合相对强弱指数 (RSI) 与 随机振荡指标(Stochastic) 来生成交易信号。
 原始的 MetaTrader 专家顾问使用 *JBrainTrendSig1* 与 *UltraRSI* 指标。本改写版本中使用随机振荡指标作为趋势过滤器，RSI 用于给出入场信号。

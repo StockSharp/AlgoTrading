@@ -1,5 +1,5 @@
 # 随机移动止损策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 随机移动止损策略根据简单移动平均线的偏向打开随机交易，并使用追踪止损进行管理。
 
