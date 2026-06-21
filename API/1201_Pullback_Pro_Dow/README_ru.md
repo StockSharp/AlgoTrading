@@ -1,5 +1,5 @@
 # Стратегия Pullback Pro Dow
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует пивоты по теории Доу для определения направления тренда и входит на откатах к EMA, когда сила тренда подтверждается ADX. Выход осуществляется по двум уровням тейк‑профита по отношению риск/прибыль.
 

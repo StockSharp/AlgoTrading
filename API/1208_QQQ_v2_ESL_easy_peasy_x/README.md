@@ -1,5 +1,5 @@
 # QQQ Strategy v2 ESL easy-peasy-x
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades QQQ using a main moving average crossover with trend filters. It buys when the close price crosses above the main MA while the MA is rising and price is above a long-term trend MA. It sells short when the close crosses below the main MA while the MA is falling and price is below a short-term trend MA.
 

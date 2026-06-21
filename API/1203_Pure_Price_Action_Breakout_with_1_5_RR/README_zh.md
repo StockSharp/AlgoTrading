@@ -1,5 +1,5 @@
 # Pure Price Action Breakout with 1:5 RR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Pure Price Action Breakout with 1:5 RR 策略利用两条 EMA 的交叉，并通过 RSI 和成交量确认。止损基于 ATR，止盈为风险的五倍。
 

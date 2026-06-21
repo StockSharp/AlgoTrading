@@ -1,5 +1,5 @@
 # QQQ 策略 v2 ESL easy-peasy-x
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过主移动平均线的突破并结合趋势过滤来交易QQQ。当收盘价上穿主均线且均线向上并且价格高于长期趋势均线时买入；当收盘价下穿主均线且均线向下并且价格低于短期趋势均线时做空。
 

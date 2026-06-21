@@ -1,5 +1,5 @@
 # PS January Barometer Backtester 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 实现 January Barometer 指标：当2月至6月的收盘价高于1月最高价时建立多头仓位。可选过滤器要求圣诞老人行情和/或前五个交易日收益为正。
 

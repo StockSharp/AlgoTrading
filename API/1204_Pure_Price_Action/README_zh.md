@@ -1,5 +1,5 @@
 # Pure Price Action Strategy 纯价格行为策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于近期高低点检测结构突破 (BOS) 和结构转变 (MSS)。
 

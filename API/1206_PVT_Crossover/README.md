@@ -1,5 +1,5 @@
 # PVT Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the crossover of the Price Volume Trend (PVT) indicator and its exponential moving average (EMA). A long position is opened when PVT crosses above its EMA, and a short position is opened when it crosses below.
 

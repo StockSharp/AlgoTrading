@@ -1,5 +1,5 @@
 # Pullback Pro Dow 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用道氏理论的枢轴点确定趋势方向，并在 EMA 回调时结合 ADX 趋势强度过滤入场。系统在两个风险回报目标处分批止盈。
 

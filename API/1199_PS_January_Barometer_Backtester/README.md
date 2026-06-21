@@ -1,5 +1,5 @@
 # PS January Barometer Backtester Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements the January Barometer where a long position is taken when the close in February–June exceeds the January high. Optional filters require a positive Santa Claus Rally and/or First Five Days return.
 

@@ -1,5 +1,5 @@
 # PVT交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于价格成交量趋势（PVT）与其指数移动平均线（EMA）的交叉进行交易。当PVT上穿其EMA时开多头，当下穿时开空头。
 

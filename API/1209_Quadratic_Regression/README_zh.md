@@ -1,5 +1,5 @@
 # Quadratic Regression 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对最近 `Length` 根K线计算二次回归线，并在价格与回归线交叉时进行交易。
 

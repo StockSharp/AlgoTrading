@@ -1,5 +1,5 @@
 # 布林带追踪止损
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价突破上轨时做多。
 当收盘价跌破下轨或触发基于ATR的追踪止损时平仓。

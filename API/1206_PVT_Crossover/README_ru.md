@@ -1,5 +1,5 @@
 # Стратегия пересечения PVT
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует на основе пересечения индикатора Price Volume Trend (PVT) и его экспоненциального скользящего среднего. Длинная позиция открывается, когда PVT пересекает EMA снизу вверх, короткая — когда пересекает сверху вниз.
 

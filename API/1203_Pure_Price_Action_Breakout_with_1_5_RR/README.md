@@ -1,5 +1,5 @@
 # Pure Price Action Breakout with 1:5 RR Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Pure Price Action Breakout with 1:5 RR strategy uses a crossover of two EMAs confirmed by RSI and volume. The stop loss is based on ATR and the take profit is five times the risk.
 
