@@ -1,5 +1,5 @@
 # Lorenzo SuperScalp 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该剥头皮策略结合RSI、布林带和MACD。当RSI低于45、价格接近下轨且MACD向上穿越信号线时买入；当RSI高于55、价格接近上轨且MACD向下穿越信号线时卖出。设置最小K线间隔以避免过于频繁的交易。
 

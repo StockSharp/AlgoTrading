@@ -1,5 +1,5 @@
 # Octopus Nest 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用布林带和肯特纳通道的“挤压”突破。方向由 EMA 和 Parabolic SAR 确认。止损设置在最近极值，收益按风险比例计算。
 

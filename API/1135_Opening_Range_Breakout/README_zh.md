@@ -1,5 +1,5 @@
 # 开盘区间突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略构建开盘区间，并在价格突破区间高低点时进行交易。开盘区间结束后，如果区间宽度超过收盘价的一定百分比，则在区间边界准备止损单。头寸的止损和止盈基于区间大小。可选择每天只进行一次初始交易，亏损交易可以反向。所有头寸在会话结束时平仓。
 

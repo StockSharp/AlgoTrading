@@ -1,5 +1,5 @@
 # Стратегия Lorenzo SuperScalp
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта скальперская стратегия использует RSI, полосы Боллинджера и MACD. Покупает, когда RSI ниже 45, цена возле нижней полосы и MACD пересекает сигнал снизу вверх. Продаёт, когда RSI выше 55, цена возле верхней полосы и MACD пересекает сигнал сверху вниз. Минимальное количество баров между сделками предотвращает частый вход.
 

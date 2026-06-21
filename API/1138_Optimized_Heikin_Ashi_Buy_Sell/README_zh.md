@@ -1,5 +1,5 @@
 # 优化的 Heikin-Ashi 买卖可选策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heikin-Ashi 蜡烛能够平滑价格并突出趋势方向。本策略一次只交易一个方向：在绿色蜡烛买入或在红色蜡烛卖出，并可限定交易日期范围。可选的止损和止盈参数用于风险控制。
 

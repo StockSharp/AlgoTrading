@@ -1,5 +1,5 @@
 # OBVious MA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当 OBV 上穿其多头进入均线时，策略开多；当 OBV 下穿多头退出均线时平多。OBV 下穿空头进入均线时开空，在其上穿空头退出均线时平空。方向过滤器可仅启用多头或仅启用空头。
 

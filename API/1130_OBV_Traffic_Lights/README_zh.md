@@ -1,4 +1,5 @@
 # OBV Traffic Lights 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于 Heikin Ashi 的能量潮(OBV)，并通过三条以红绿灯颜色标记的指数均线来判断趋势。OBV 与快速 EMA 同时高于慢速 EMA 时做多；OBV 与快速 EMA 同时低于慢速 EMA 时做空。当条件消失时平仓。
 

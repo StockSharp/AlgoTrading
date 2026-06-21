@@ -1,5 +1,5 @@
 # OKX MA Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格穿越简单移动平均线时进行交易。当蜡烛最低价跌破前一个MA值时开多；当蜡烛最高价突破前一个MA值时开空。止盈和止损以进入价格的百分比设定。交易仅在指定日期之后开始。
 

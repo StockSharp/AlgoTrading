@@ -1,4 +1,5 @@
 # Optimized Grid with KNN Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens long positions when the T3 fast line crosses above the T3 slow line and the KNN-based average price change is positive. Entry and exit thresholds are adjusted by the average change. Positions close once the T3 fast line crosses below the slow line and price exceeds the profit threshold.
 
