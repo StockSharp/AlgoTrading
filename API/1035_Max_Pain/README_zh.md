@@ -1,5 +1,5 @@
 # Max Pain 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当成交量和价格变动超过可配置阈值且VIX指数低于设定水平时，该策略开多单。进场时根据波动率设置止损，并在固定的周期数后平仓。
 

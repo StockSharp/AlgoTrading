@@ -1,5 +1,5 @@
 # 最大盈利最小亏损期权策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快/慢均线、RSI、MACD 和成交量均线。当趋势与动量条件一致时入场，退出时使用止损和跟踪止盈。
 

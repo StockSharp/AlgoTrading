@@ -1,5 +1,5 @@
 # McGinley Dynamic (Improved) Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implements the "McGinley Dynamic (Improved)" indicator by John R. McGinley, Jr. and trades when the close price crosses the dynamic line. The strategy supports modern, original, and custom coefficient formulas and can optionally display the unconstrained variant for comparison.
 

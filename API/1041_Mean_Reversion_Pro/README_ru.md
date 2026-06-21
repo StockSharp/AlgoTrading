@@ -1,5 +1,5 @@
 # Стратегия Mean Reversion Pro
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Mean Reversion Pro — система возврата к среднему для основных индексов. Использует две скользящие средние и уровни диапазона свечи для поиска откатов. Предпочитаются длинные сделки, так как индексы имеют восходящее смещение.
 

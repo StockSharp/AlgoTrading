@@ -1,5 +1,5 @@
 # Стратегия Mean Reversion V-F
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия усредняет позицию до пяти слоев при падении цены ниже скользящей средней на заданные проценты. Выход выполняется по фиксированной цели прибыли или по трейлинг-стопу.
 

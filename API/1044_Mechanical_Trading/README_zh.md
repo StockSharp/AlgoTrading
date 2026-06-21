@@ -1,5 +1,5 @@
 # 机械交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略每天在指定的小时执行一次交易。通过 `Short Mode` 参数可以选择做多或做空。交易使用基于百分比的止盈和止损自动保护。
 

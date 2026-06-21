@@ -1,5 +1,5 @@
 # MCOTs Intuition 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 RSI 动量与其标准差的关系。当上升动量强但开始减弱时买入，动量反向且减弱时做空。使用固定的获利和止损目标（以 ticks 表示）。
 

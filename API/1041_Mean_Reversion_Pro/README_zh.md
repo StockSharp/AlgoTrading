@@ -1,5 +1,5 @@
 # Mean Reversion Pro 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Mean Reversion Pro 是一套针对主要指数的均值回归策略。它使用两条移动平均线和蜡烛区间水平来寻找回撤。由于指数通常向上偏移，因此更推荐做多。
 

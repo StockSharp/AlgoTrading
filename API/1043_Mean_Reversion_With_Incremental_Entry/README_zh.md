@@ -1,5 +1,5 @@
 # 均值回归分批入场策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格偏离简单移动平均线一定百分比时入场，并在价格继续偏离时逐步加仓。
 

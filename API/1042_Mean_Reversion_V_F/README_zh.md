@@ -1,5 +1,5 @@
 # 均值回归 V-F 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格跌破移动平均线一定百分比时，本策略分五层逐步买入。持仓在达到固定止盈或触发跟踪止盈时平仓。
 

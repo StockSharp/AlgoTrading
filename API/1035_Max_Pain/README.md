@@ -1,5 +1,5 @@
 # Max Pain Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy enters long positions when both volume and price movement exceed configurable thresholds while the VIX index remains below a specified level. A volatility-based stop-loss is set on entry and the position is closed after a fixed number of periods.
 

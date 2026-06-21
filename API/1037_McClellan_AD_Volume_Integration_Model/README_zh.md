@@ -1,5 +1,5 @@
 # McClellan A-D 量能整合模型策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过将K线的价格差乘以成交量构建加权的 A-D 线，并对其计算两条 EMA 形成 McClellan 振荡器。
 

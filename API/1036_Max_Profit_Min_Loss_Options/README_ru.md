@@ -1,5 +1,5 @@
 # Стратегия Max Profit Min Loss Options
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия сочетает быстрые и медленные скользящие средние с RSI, MACD и фильтром объёма. Покупает при совпадении тренда и импульса и использует стоп-лосс и трейлинг-профит для выхода.
 

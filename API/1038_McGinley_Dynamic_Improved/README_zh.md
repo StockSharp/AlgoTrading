@@ -1,5 +1,5 @@
 # 改进版 McGinley Dynamic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现约翰·麦金利提出的“McGinley Dynamic (Improved)”指标，当收盘价穿越指标线时进行交易。策略支持 Modern、Original 以及自定义系数公式，并可选择显示未约束版本以作对比。
 
