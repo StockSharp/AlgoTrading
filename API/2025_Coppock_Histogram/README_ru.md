@@ -1,5 +1,5 @@
 # Стратегия Coppock Histogram
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует развороты индикатора Coppock Histogram. Индикатор суммирует два значения Rate of Change и сглаживает их скользящей средней. Когда импульс разворачивается вверх, стратегия открывает длинные позиции и закрывает короткие. Разворот вниз закрывает лонги и открывает шорты. Сигналы оцениваются только по завершённым свечам.
 

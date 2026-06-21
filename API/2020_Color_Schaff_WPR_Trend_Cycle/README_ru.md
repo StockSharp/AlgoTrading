@@ -1,4 +1,5 @@
 # Стратегия Color Schaff WPR Trend Cycle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия представляет реализацию эксперта **Color Schaff WPR Trend Cycle** из MetaTrader.
 Она использует Schaff Trend Cycle, рассчитанный по быстрому и медленному Williams %R, чтобы определить развороты рынка.

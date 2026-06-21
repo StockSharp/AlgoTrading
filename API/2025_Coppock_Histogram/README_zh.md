@@ -1,5 +1,5 @@
 # Coppock Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易 Coppock Histogram 指标的转向。指标把两个变动率数值相加，并使用移动平均进行平滑。当动量向上转折时，策略开多单并平仓空单；动量向下转折时，策略平仓多单并开空单。只在蜡烛完全形成后评估信号。
 

@@ -1,5 +1,5 @@
 # Exp Martin V2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Exp Martin V2 策略采用指数型马丁格尔方法。策略始终只持有一个仓位，并在每笔交易结束后根据盈亏决定下一次交易的方向和数量。
 

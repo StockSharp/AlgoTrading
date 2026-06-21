@@ -1,4 +1,5 @@
 # News Hour Trade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **News Hour Trade** 在重要新闻发布前后布置买入和卖出止损单。订单以固定步长偏离当前价格，并包含止损、止盈以及可选的移动止损管理。
 

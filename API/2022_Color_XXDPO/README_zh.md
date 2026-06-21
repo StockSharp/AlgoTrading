@@ -1,5 +1,5 @@
 # Color XXDPO Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用双重平滑的 DPO 指标捕捉斜率反转的策略。
 

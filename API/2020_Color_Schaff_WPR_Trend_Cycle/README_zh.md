@@ -1,4 +1,5 @@
 # 彩色Schaff WPR趋势循环策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了MetaTrader中的 **Color Schaff WPR Trend Cycle** 专家顾问。
 它利用快慢Williams %R计算的Schaff趋势循环来识别市场转向。

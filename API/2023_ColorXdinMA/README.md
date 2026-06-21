@@ -1,4 +1,5 @@
 # ColorXdinMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 ColorXdinMA Strategy implements the XdinMA indicator, calculated as `ma_main * 2 - ma_plus`, where both components are simple moving averages with different lengths. The strategy monitors the slope of this line and opens positions when the slope changes direction.

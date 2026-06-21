@@ -1,4 +1,5 @@
 # Стратегия ColorXdinMA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия ColorXdinMA реализует индикатор XdinMA, рассчитываемый как `ma_main * 2 - ma_plus`, где обе величины — простые скользящие средние с разными периодами. Стратегия отслеживает наклон этой линии и открывает позиции при изменении направления наклона.

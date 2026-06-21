@@ -1,4 +1,5 @@
 # Color LeMan Trend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自原始的 MQL5 专家顾问 *ColorLeManTrend*。指标基于三个不同周期的最高价和最低价计算多头线与空头线，并使用指数移动平均进行平滑。
 

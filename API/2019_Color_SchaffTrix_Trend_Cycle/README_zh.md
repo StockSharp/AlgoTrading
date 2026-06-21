@@ -1,4 +1,5 @@
 # Color Schaff TRIX Trend Cycle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了基于 TRIX 和 MACD 的 **Schaff Trend Cycle** 振荡指标。当振荡器跨越预设水平时，识别趋势的周期性变化并产生交易信号。
 

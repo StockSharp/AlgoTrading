@@ -1,4 +1,5 @@
 # Стратегия Color Schaff TRIX Trend Cycle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия реализует осциллятор **Schaff Trend Cycle**, рассчитанный на основе TRIX и MACD. Осциллятор выявляет циклические изменения тренда и генерирует сигналы при пересечении заданных уровней.
 

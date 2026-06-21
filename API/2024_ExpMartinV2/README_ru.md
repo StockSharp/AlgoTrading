@@ -1,5 +1,5 @@
 # Стратегия Exp Martin V2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Exp Martin V2 реализует экспоненциальную мартингейловую систему. В любой момент открыта только одна позиция, а направление и объём следующей сделки выбираются на основе результата предыдущей.
 

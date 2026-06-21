@@ -1,4 +1,5 @@
 # ColorXdinMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ColorXdinMA 策略实现了 XdinMA 指标，其计算公式为 `ma_main * 2 - ma_plus`，两项均为不同周期的简单移动平均线。策略监控该线的斜率，并在斜率改变方向时开仓。
