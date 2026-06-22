@@ -1,4 +1,5 @@
 # Стратегия Color Schaff Trend Cycle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует по индикатору **Schaff Trend Cycle (STC)**. Индикатор дважды применяет стохастический расчёт к серии MACD и колеблется в диапазоне от -100 до 100. Значения выше верхнего уровня указывают на бычье давление, ниже нижнего уровня — на медвежье.
 

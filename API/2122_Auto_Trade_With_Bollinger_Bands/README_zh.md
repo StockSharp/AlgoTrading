@@ -1,5 +1,5 @@
 # 布林带自动交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合布林带、RSI 和随机指标，在设定的 GMT 时间窗口内自动开仓。当上一根K线收盘价高于布林带上轨、RSI 大于 75 且随机指标 %K 大于 85 时开空单；当K线收盘价低于布林带下轨、RSI 小于 25 且随机指标 %K 小于 155 时开多单。每个方向只允许一个持仓。策略使用以点数表示的追踪止损来保护持仓。
 

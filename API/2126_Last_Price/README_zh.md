@@ -1,5 +1,5 @@
 # Last Price 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略当最新成交价偏离最佳买价或卖价指定区间时，在相应的买一或卖一处挂出限价单。策略订阅Level1报价和成交数据来确定入场。
 

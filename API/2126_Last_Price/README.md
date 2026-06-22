@@ -1,5 +1,5 @@
 # Last Price Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy places limit orders at the best bid or ask when the last trade price moves away by a user-defined interval. It listens to Level1 order book updates and trade prints to decide entries.
 

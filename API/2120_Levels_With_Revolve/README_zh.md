@@ -1,5 +1,5 @@
 # 级别反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在市场价格穿越用户设定的价格水平时开仓。当价格向上穿越该水平时买入，向下穿越时卖出。若启用反转模式，在出现反向信号时会平掉当前仓位并反向开仓。策略还支持以价格单位设定的止损和止盈。
 

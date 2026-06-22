@@ -1,4 +1,5 @@
 # 简易新闻策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在预定的新闻发布时间周围放置挂单，以捕捉新闻引起的剧烈波动。
 

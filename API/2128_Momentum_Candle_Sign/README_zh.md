@@ -1,5 +1,5 @@
 # 动量烛形信号策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较基于开盘价和收盘价计算的动量。当开盘价动量跌破收盘价动量时，显示多头力量增强，策略建立多头头寸；相反，当开盘价动量上穿收盘价动量时，触发空头交易。
 

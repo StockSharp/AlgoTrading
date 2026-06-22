@@ -1,5 +1,5 @@
 # Trend Envelopes Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 TrendEnvelopes 指标的趋势策略。该指标结合 EMA 与基于 ATR 的带状结构来识别突破。
 价格向上突破上轨并出现买入信号时开多；价格向下突破下轨并出现卖出信号时开空；反向带触发平仓。

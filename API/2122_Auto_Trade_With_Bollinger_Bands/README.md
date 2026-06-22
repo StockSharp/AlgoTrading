@@ -1,5 +1,5 @@
 # Auto Trade With Bollinger Bands Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses Bollinger Bands, RSI and Stochastic oscillator to automatically open trades during a specified GMT time window. A short position is opened when the previous candle closes above the upper Bollinger Band while RSI is above 75 and Stochastic %K is above 85. A long position is opened when the candle closes below the lower Bollinger Band with RSI below 25 and Stochastic %K below 155. Only one position per direction is allowed. A trailing stop in points protects open positions.
 

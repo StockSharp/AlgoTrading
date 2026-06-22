@@ -1,4 +1,5 @@
 # JMA Candle Sign 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两条基于开盘价和收盘价计算的 Jurik 移动平均线 (JMA)。当开盘价的 JMA 从下向上穿越收盘价的 JMA 时产生做多信号；当开盘价的 JMA 从上向下穿越收盘价的 JMA 时产生做空信号。
 

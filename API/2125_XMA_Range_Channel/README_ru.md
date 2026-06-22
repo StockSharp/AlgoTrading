@@ -1,5 +1,5 @@
 # Стратегия XMA Range Channel
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит верхнюю и нижнюю границы канала на основе скользящих средних от максимальных и минимальных цен. Пробой вверх выше верхней границы открывает длинную позицию, пробой вниз ниже нижней границы — короткую. Модель повторяет поведение оригинального эксперта MQL "XMA Range Channel".
 

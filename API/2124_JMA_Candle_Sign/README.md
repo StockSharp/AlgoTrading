@@ -1,4 +1,5 @@
 # JMA Candle Sign Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses two Jurik Moving Averages (JMA) calculated on the open and close prices of each candle. A bullish signal occurs when the JMA of the open price crosses below the JMA of the close price, prompting a long entry. A bearish signal occurs when the JMA of the open price crosses above the JMA of the close price, prompting a short entry.
 

@@ -1,5 +1,5 @@
 # XMA Range Channel 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用最高价和最低价的移动平均构建上下通道。收盘价向上突破上轨时做多，向下跌破下轨时做空。此模型模仿原始 MQL "XMA Range Channel" 专家的行为。
 

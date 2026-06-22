@@ -1,4 +1,5 @@
 # Levels With Trail 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据用户设定的价格水平进行交易，并可选择在盈利时跟踪止损。此实现基于 MQL 脚本 `levels_with_trail.mq4`。
 

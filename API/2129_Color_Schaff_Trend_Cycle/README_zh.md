@@ -1,4 +1,5 @@
 # 彩色 Schaff 趋势循环策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 **Schaff Trend Cycle (STC)** 指标进行交易。STC 对 MACD 序列执行两次随机计算，数值在 -100 到 100 之间振荡。数值高于上限表示多头压力，低于下限表示空头压力。
 

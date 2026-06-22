@@ -1,4 +1,5 @@
 # Levels With Trail Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from MQL script `levels_with_trail.mq4`. The strategy opens trades when price crosses a specified level and can trail the stop loss.
 

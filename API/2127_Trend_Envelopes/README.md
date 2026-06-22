@@ -1,5 +1,5 @@
 # Trend Envelopes Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend-following strategy built on the TrendEnvelopes indicator. It combines an EMA with ATR-based bands to detect breakouts.
 Long positions are opened when price breaks above the upper band and a buy signal appears. Short positions are opened on breaks below the lower band with a sell signal. Opposite bands trigger position exits.

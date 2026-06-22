@@ -1,5 +1,5 @@
 # Стратегия Last Price
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия выставляет лимитные заявки на лучшем бид/аске, когда последняя цена сделки отклоняется на заданный интервал. Стратегия анализирует обновления Level1 и поток сделок для определения входов.
 

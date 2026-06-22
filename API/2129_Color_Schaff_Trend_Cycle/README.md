@@ -1,4 +1,5 @@
 # Color Schaff Trend Cycle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the **Schaff Trend Cycle (STC)** indicator. STC applies a double stochastic calculation to a MACD series and oscillates between -100 and 100. Values above the high level suggest bullish pressure, while values below the low level suggest bearish pressure.
 
