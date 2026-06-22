@@ -1,4 +1,5 @@
 # Step Stochastic Cross Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用基于ATR的自定义 Step Stochastic 指标来生成反转信号。策略订阅所选时间框的K线，并计算从0到100的快线和慢线。

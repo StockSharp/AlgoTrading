@@ -1,5 +1,5 @@
 # 通用跟踪止损策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于原始的 MQL4 脚本 `cm_universal_trailing_stop.mq4`。策略本身不生成入场信号，而是在已有仓位上根据盈利自动上移或下移止损。
 

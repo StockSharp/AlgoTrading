@@ -1,5 +1,5 @@
 # Trix Candle Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades reversals based on the Trix Candle indicator, which applies a triple exponential moving average to candle open and close prices and colors each candle depending on whether the smoothed close is above or below the smoothed open.
 

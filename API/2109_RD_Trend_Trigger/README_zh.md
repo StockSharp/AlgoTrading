@@ -1,5 +1,5 @@
 # RD Trend Trigger 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RD Trend Trigger 策略使用 RD-TrendTrigger 振荡器，根据所选模式捕捉趋势反转或突破。在 twist 模式下，交易跟随振荡器方向的变化；在 disposition 模式下，当振荡器突破预设水平时进行交易。
 

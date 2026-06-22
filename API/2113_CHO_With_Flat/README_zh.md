@@ -1,4 +1,5 @@
 # Cho With Flat 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 **Chaikin 振荡器** 与其移动平均线的交叉信号进行交易，并通过布林带过滤器避免在盘整市场中交易。
 

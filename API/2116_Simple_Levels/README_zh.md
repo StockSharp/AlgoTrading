@@ -1,5 +1,5 @@
 # Simple Levels 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格穿越用户定义的趋势线时开仓。每条线可触发做多、做空或双向交易。止损和止盈以价格步长设置。
 

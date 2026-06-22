@@ -1,5 +1,5 @@
 # Универсальная стратегия трейлинг-стопа
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на оригинальном скрипте MQL4 `cm_universal_trailing_stop.mq4`. Она не генерирует сигналы входа, а управляет уже открытой позицией, подтягивая стоп-лосс по мере роста прибыли.
 

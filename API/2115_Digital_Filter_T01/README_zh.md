@@ -1,4 +1,5 @@
 # 数字滤波器 T01 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概要
 使用 DigitalF-T01 滤波器与位移触发线比较。当滤波器下穿触发线时开多仓，上穿时开空仓。策略使用点数形式的止损和止盈保护。

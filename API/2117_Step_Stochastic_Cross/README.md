@@ -1,4 +1,5 @@
 # Step Stochastic Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy uses the Step Stochastic indicator (a custom oscillator based on ATR) to generate reversal signals. It subscribes to a user-selected candle timeframe and calculates fast and slow Step Stochastic lines scaled from 0 to 100.
