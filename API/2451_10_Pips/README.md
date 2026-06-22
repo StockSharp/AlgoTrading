@@ -1,4 +1,5 @@
 # Ten Pips Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This hedging strategy opens long and short positions at the same time. Each position uses fixed take profit and stop loss levels measured in price units and can be protected by a trailing stop. When one side closes, the strategy immediately opens a new position in the same direction to keep both sides active.
 

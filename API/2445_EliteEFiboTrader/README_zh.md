@@ -1,4 +1,5 @@
 # Elite eFibo Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Elite eFibo Trader Strategy** 源自 MQL5 顾问程序 “Elite eFibo Trader”。策略基于斐波那契数列构建加仓网格：先以 `LotsLevel1` 的手数开仓，然后按照固定间距批量挂入止损买/卖单。策略依赖逐笔成交数据，并会随着网格扩展自动上移/下移保护性止损。

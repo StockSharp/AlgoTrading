@@ -1,5 +1,5 @@
 # ADX System
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ADX System** 策略使用平均方向指数 (ADX) 及其 +DI 和 -DI 线进行交易。当 ADX 上升且某一方向线突破 ADX 时开仓。策略设定固定的止盈和止损，并使用追踪止损来保护盈利。
 

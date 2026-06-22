@@ -1,5 +1,5 @@
 # PROphet 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 PROphet 策略通过分析最近三根已完成K线的价格区间，在指定的交易时间内产生信号。自定义函数结合这些区间与用户设置的系数，若结果为正，则在相应方向开仓。
 

@@ -1,4 +1,5 @@
 # MA 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略在 StockSharp 平台中重现了 MetaTrader 5 指标顾问“MA Cross”（文件 `MA Cross.mq5`）的逻辑。系统跟踪两条可配置的移动平均线，只要快线穿越慢线就会发送市价单。为了与原脚本保持一致，代码提供了移动平均类型、应用价格以及指标位移等完整的参数。

@@ -1,5 +1,5 @@
 # Trend Alexcud
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend Alexcud 策略通过在三个时间框架上对齐多条简单移动平均线和 Accelerator Oscillator 来寻找强劲的趋势。它由原始的 MQL5 专家 "TREND_alexcud v_2" 转换而来。
 

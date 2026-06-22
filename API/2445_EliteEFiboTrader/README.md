@@ -1,4 +1,5 @@
 # Elite eFibo Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Elite eFibo Trader Strategy** is a conversion of the MQL5 expert advisor "Elite eFibo Trader". It implements a Fibonacci-based averaging grid that opens an initial market position and layers additional stop orders at fixed distances. The strategy operates on tick data and automatically manages trailing stops as the grid expands.

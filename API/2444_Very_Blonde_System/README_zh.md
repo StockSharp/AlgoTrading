@@ -1,4 +1,5 @@
 # Very Blonde System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于原始 MetaTrader "Very Blonde System" 的网格逆势策略。当当前价格与近期高低点的差距很大时，策略在相反方向入场。
 

@@ -1,5 +1,5 @@
 # PROphet Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The PROphet strategy evaluates price ranges of the last three completed candles to generate signals during specified trading hours. A custom function combines the ranges with user-defined coefficients. If the function is positive, the strategy opens a position in the corresponding direction.
 

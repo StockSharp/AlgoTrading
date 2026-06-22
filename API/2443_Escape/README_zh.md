@@ -1,4 +1,5 @@
 # Escape 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于蜡烛开盘价的简单移动平均线进行交易。它比较最近完成的 5 分钟收盘价与两个开盘价的移动平均：
 

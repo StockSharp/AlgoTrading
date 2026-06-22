@@ -1,5 +1,5 @@
 # ADX System
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **ADX System** торгует на основе индикатора Average Directional Index и его компонент +DI и -DI. Позиция открывается, когда ADX растёт, а соответствующая направленная линия пересекает ADX сверху. Для защиты используются фиксированные уровни тейк-профита и стоп-лосса, а также трейлинг-стоп.
 

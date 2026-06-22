@@ -1,4 +1,5 @@
 # Very Blonde System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grid-based counter-trend strategy inspired by the original "Very Blonde System" for MetaTrader. The strategy looks for a large distance between the current price and recent extremes and trades in the opposite direction.
 

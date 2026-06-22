@@ -1,4 +1,5 @@
 # Ma Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the "MA Cross" MetaTrader 5 expert advisor (file `MA Cross.mq5`) inside the StockSharp framework. The system observes two configurable moving averages and issues market orders whenever the fast average crosses the slow average. The implementation keeps the original level of flexibility by exposing the moving-average method, applied price, and indicator shift for both curves.

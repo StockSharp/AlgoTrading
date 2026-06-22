@@ -1,4 +1,5 @@
 # 10 Pips 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该对冲策略会同时开多头和空头仓位。每个仓位都使用以价格单位表示的固定止盈和止损水平，并可通过追踪止损进行保护。当其中一侧平仓后，策略会立即在同方向开立新的仓位，从而始终保持双向持仓。
 

@@ -1,4 +1,5 @@
 # Fractal WPR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Williams %R 振荡指标，当指标穿越设定的超买和超卖水平时产生交易信号。它改编自一个 MQL5 专家顾问，展示了一种简单的动量反转系统。
 
