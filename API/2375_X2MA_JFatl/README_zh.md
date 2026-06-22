@@ -1,5 +1,5 @@
 # X2MA JFATL 交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家 `Exp_X2MA_JFatl` 的 StockSharp 版本。它结合了快速的简单移动平均线 (SMA)、较慢的 Jurik 移动平均线 (JMA) 以及额外的 JMA 过滤器来确认趋势方向。当快速均线向上穿越慢速均线且价格位于过滤器之上时开多单；当快速均线向下穿越慢速均线且价格位于过滤器之下时开空单。若价格反向穿过过滤器或出现相反的均线交叉，头寸将被关闭。
 

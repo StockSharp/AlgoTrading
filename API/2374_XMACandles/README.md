@@ -1,4 +1,5 @@
 # XMA Candles Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Description
 The XMA Candles strategy monitors the direction of smoothed candles calculated from the XMA (Exponential Moving Average) of open and close prices. A candle is considered **bullish** when the smoothed open price is below the smoothed close price, and **bearish** when the smoothed open price is above the smoothed close price. The strategy reacts to color changes of these smoothed candles.

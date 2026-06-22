@@ -1,4 +1,5 @@
 # Стратегия X2MA Digit DM 361
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия комбинирует две скользящие средние с индикатором Average Directional Index (ADX).
 Длинная позиция открывается, когда быстрая средняя выше медленной и положительный направленный индекс (+DI) превышает отрицательный (-DI).

@@ -1,5 +1,5 @@
 # Стратегия Day Trading Indicator Fusion
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует на пятиминутных свечах, используя Parabolic SAR, MACD (12,26,9), Stochastic Oscillator (5,3,3) и Momentum (14). Вход осуществляется только при согласовании всех индикаторов.
 

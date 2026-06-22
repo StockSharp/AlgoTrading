@@ -1,4 +1,5 @@
 # X2MA Digit DM 361 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两个移动平均线与平均方向指数（ADX）。
 当快速均线在慢速均线上方且正向指标（+DI）大于负向指标（-DI）时开多仓。

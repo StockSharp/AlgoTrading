@@ -1,4 +1,5 @@
 # 20/200 Expert AutoLot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens at most one position per day at a user-defined hour. It compares the open price of two past bars (T1 and T2). If the earlier bar is higher than the later one by DeltaShort pips, it opens a short position. If the later bar is higher by DeltaLong pips, it opens a long position.
 

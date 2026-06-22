@@ -1,5 +1,5 @@
 # Day Trading Indicator Fusion Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy trades 5-minute candles using Parabolic SAR, MACD (12,26,9), Stochastic Oscillator (5,3,3) and Momentum (14). It requires all indicators to align before entering a position.
 

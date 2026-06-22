@@ -1,5 +1,5 @@
 # 布林带与DEMA策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合30分钟K线的布林带和日线的双指数移动平均线（DEMA），用于在趋势确认下交易突破。
 

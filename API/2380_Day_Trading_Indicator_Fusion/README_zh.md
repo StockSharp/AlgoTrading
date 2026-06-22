@@ -1,5 +1,5 @@
 # Day Trading Indicator Fusion 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在5分钟K线下交易，结合 Parabolic SAR、MACD (12,26,9)、Stochastic Oscillator (5,3,3) 和 Momentum (14)。只有当所有指标一致时才入场。
 

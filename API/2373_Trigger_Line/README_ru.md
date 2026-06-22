@@ -1,4 +1,5 @@
 # Стратегия Trigger Line
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Trigger Line объединяет взвешенную трендовую линию и скользящую среднюю наименьших квадратов (LSMA). Длинная позиция открывается при пересечении взвешенной линии выше LSMA, короткая — при пересечении ниже.
 

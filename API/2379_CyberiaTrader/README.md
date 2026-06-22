@@ -1,4 +1,5 @@
 # Cyberia Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a simplified StockSharp port of the original **CyberiaTrader.mq5** system. It combines several classic technical indicators to evaluate market direction and open trades when most filters agree.
 

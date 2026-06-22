@@ -1,4 +1,5 @@
 # Trigger Line 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trigger Line 策略结合加权趋势线和 LSMA（最小二乘移动平均）。当加权趋势线向上穿越 LSMA 时开多仓，向下穿越时开空仓。
 

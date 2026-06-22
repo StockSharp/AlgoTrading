@@ -1,5 +1,5 @@
 # Bollinger Bands with DEMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines Bollinger Bands calculated on 30-minute candles with a Double Exponential Moving Average (DEMA) from daily data to trade breakouts with trend confirmation.
 

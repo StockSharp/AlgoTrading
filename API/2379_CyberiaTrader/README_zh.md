@@ -1,4 +1,5 @@
 # Cyberia Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是原始 **CyberiaTrader.mq5** 的 StockSharp 简化版。它结合多个经典技术指标来评估市场方向，并在多数过滤器一致时开仓。
 

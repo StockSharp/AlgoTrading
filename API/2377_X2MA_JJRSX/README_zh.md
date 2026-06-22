@@ -1,5 +1,5 @@
 # X2MA JJRSX 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合双移动平均线趋势过滤器和基于RSI的入场触发。
 通过比较快慢均线在较高时间框架上确定趋势。

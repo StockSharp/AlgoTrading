@@ -1,5 +1,5 @@
 # X2MA JFATL Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp adaptation of the MetaTrader expert `Exp_X2MA_JFatl`. It combines a fast Simple Moving Average (SMA) with a slow Jurik Moving Average (JMA) and an additional Jurik filter to confirm trend direction. Trades are opened when the fast average crosses the slow one and the price is on the same side of the filter. Positions are closed when price moves against the filter or an opposite crossover occurs.
 

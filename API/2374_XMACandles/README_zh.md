@@ -1,4 +1,5 @@
 # XMA Candles 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 描述
 XMA Candles 策略监控基于开盘价和收盘价指数移动平均 (XMA) 计算的平滑蜡烛的方向。当平滑开盘价低于平滑收盘价时，蜡烛被视为**看涨**；当平滑开盘价高于平滑收盘价时，蜡烛被视为**看跌**。策略根据这些平滑蜡烛的颜色变化进行操作。

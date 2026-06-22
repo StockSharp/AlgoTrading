@@ -1,4 +1,5 @@
 # 20/200 Expert AutoLot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略每天最多在用户设定的时间开仓一次。它比较两个过去K线的开盘价（T1 和 T2）。如果较早的K线比较晚的高出 DeltaShort 点，则做空；如果较晚的K线高出 DeltaLong 点，则做多。
 

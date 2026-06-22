@@ -1,4 +1,5 @@
 # 回归通道突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MQL 脚本 `e-Regr` 实现回归通道交易系统。
 它在指定数量的最近K线之上构建线性回归线，并在一定标准差距离处
