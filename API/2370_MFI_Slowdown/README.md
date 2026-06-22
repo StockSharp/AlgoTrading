@@ -1,5 +1,5 @@
 # MFI Slowdown
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy monitors the Money Flow Index (MFI) on a higher timeframe and reacts when it reaches extreme zones. If `SeekSlowdown` is enabled, a signal is confirmed only when the MFI value changes less than one point between two consecutive bars. On an upward signal it closes short positions and optionally opens a new long position; on a downward signal it closes long positions and can open a short one. Risk management is handled by StartProtection.
 

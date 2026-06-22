@@ -1,5 +1,5 @@
 # Rock Trader Neuro Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合布林带和简单神经元进行交易。
 最近七根K线的布林带宽度被归一化到 [-1,1] 范围，并与固定权重相乘。

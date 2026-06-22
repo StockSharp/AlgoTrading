@@ -1,5 +1,5 @@
 # RSI Slowdown Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The RSI Slowdown strategy reacts to extreme readings of the Relative Strength Index that show signs of weakening momentum. When RSI approaches overbought or oversold zones and its change between bars drops below one point, the strategy assumes the market is ready for a reversal.
 

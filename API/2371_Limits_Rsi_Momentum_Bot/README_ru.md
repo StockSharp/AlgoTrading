@@ -1,4 +1,5 @@
 # Стратегия Limits RSI Momentum Bot
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Стратегия выставляет отложенные лимитные заявки на основе индикаторов RSI и Momentum. Цель — покупать по более выгодной цене и продавать по завышенной, используя отложенные ордера вместо рыночных.

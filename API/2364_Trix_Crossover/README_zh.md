@@ -1,4 +1,5 @@
 # TRIX 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用两个不同周期的 TRIX（三重指数移动平均振荡器）指标来寻找潜在的反转点。当快速 TRIX 形成局部底部且慢速 TRIX 上升时开多；当快速 TRIX 形成局部顶部且慢速 TRIX 下降时开空。
 

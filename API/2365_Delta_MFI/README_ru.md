@@ -1,5 +1,5 @@
 # Стратегия Delta MFI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сравнивает значения быстрого и медленного индикатора Money Flow Index. Покупка осуществляется, когда быстрый MFI выше медленного и медленный MFI превышает сигнальный уровень. Продажа осуществляется, когда быстрый MFI ниже медленного и медленный MFI опускается ниже значения `100 - уровень`.
 

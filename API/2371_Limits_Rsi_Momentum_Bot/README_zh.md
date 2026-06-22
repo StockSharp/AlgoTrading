@@ -1,4 +1,5 @@
 # Limits RSI Momentum Bot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概要
 该策略基于相对强弱指数（RSI）和动量（Momentum）指标，通过在K线开盘价附近放置限价单来实现折价买入和溢价卖出。

@@ -1,5 +1,5 @@
 # Delta MFI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on comparing fast and slow Money Flow Index (MFI) values. It goes long when the fast MFI rises above the slow MFI while the slow MFI is above the signal level. It goes short when the fast MFI falls below the slow MFI while the slow MFI is below 100 minus the signal level.
 

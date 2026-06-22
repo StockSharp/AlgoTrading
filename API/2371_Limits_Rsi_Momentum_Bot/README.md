@@ -1,4 +1,5 @@
 # Limits RSI Momentum Bot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 This strategy places limit orders based on Relative Strength Index (RSI) and Momentum indicators. It aims to buy at discounts and sell at premiums by using pending orders instead of market executions.

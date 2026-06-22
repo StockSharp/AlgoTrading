@@ -1,5 +1,5 @@
 # Delta MFI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略比较快速和慢速 Money Flow Index 指标的值。当快速 MFI 高于慢速 MFI 且慢速 MFI 高于信号水平时做多；当快速 MFI 低于慢速 MFI 且慢速 MFI 低于 `100 - Level` 时做空。
 

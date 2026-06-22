@@ -1,5 +1,5 @@
 # Стратегия RSI Slowdown
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия RSI Slowdown реагирует на экстремальные значения индикатора относительной силы, когда замедляется изменение между барами. Если RSI достигает зон перекупленности или перепроданности и его прирост становится меньше одного пункта, система предполагает разворот тренда.
 

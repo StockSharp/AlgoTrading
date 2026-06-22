@@ -1,5 +1,5 @@
 # MFI减速
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在较高时间框上监控资金流量指数(MFI)，当指标达到极端区域时触发信号。若启用 `SeekSlowdown`，只有当连续两根柱之间的 MFI 变化小于1 时才确认信号。出现向上信号时平掉空头并可选择开多；出现向下信号时平掉多头并可开空。风险管理通过 StartProtection 完成。
 

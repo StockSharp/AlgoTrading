@@ -1,4 +1,5 @@
 # TRIX Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses two TRIX (Triple Exponential Moving Average Oscillator) indicators with different periods to detect potential reversals. A long position is opened when the fast TRIX forms a local bottom while the slow TRIX is rising. A short position is opened when the fast TRIX forms a local top while the slow TRIX is falling.
 

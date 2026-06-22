@@ -1,5 +1,5 @@
 # RSI减速策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RSI减速策略关注相对强弱指数在极端区域的动量衰减。当RSI接近超买或超卖区且相邻K线的变动小于1点时，系统认为行情可能即将反转。
 

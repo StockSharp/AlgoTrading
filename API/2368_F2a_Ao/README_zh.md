@@ -1,5 +1,5 @@
 # F2a AO 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 MetaTrader 顾问 "F2a_AO"。它使用短期 SMA 对 Awesome Oscillator 进行滤波，并且只在高一级时间框架的参考K线方向上开仓。
 

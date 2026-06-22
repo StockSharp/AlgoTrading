@@ -1,5 +1,5 @@
 # Стратегия F2a AO
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия воспроизводит оригинального советника MetaTrader «F2a_AO». Осциллятор Awesome фильтруется короткой SMA и сделки открываются только в направлении свечи на старшем таймфрейме.
 

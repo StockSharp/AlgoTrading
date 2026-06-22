@@ -1,5 +1,5 @@
 # WPR Slowdown 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 WPR Slowdown 策略利用 Williams %R 振荡器在极值附近动量减弱时寻找反转。当当前 Williams %R 与前一个值的差异小于 1 时认为出现“减速”。在上限以上出现减速时，策略会关闭空头仓位并在允许的情况下开多；在下限以下出现减速时，策略会关闭多头仓位并在允许的情况下开空。
 
