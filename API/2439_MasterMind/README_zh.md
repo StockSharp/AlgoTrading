@@ -1,4 +1,5 @@
 # The MasterMind 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用随机震荡指标(Stochastic)和威廉指标(Williams %R)来捕捉极端的超买和超卖情况。
 

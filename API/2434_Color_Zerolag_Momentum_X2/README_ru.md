@@ -1,5 +1,5 @@
 # Стратегия Color Zerolag Momentum X2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует два таймфрейма и пересечение индикатора Momentum с его скользящей средней Zero Lag. Старший таймфрейм определяет направление тренда, младший формирует входы при пересечении Momentum своей Zero Lag средней в сторону тренда.
 

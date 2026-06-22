@@ -1,5 +1,5 @@
 # Zonal Trading 振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Zonal Trading 策略复刻了 Bill Williams 的经典“区域”概念。它监控 Awesome Oscillator (AO) 与 Accelerator Oscillator (AC) 的柱状颜色。绿色表示当前值高于上一根柱，红色表示降低。当两个振荡器同时变绿时开多仓；当两者同时变红时开空仓。任一指标出现相反颜色时平掉现有仓位。
 

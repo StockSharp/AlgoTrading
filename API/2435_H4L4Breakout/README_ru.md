@@ -1,5 +1,5 @@
 # Прорыв H4/L4
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Дневная стратегия прорыва рассчитывает уровни H4 и L4 на основе максимума, минимума и закрытия предыдущего дня.
 В начале каждого дня размещаются отложенные заявки: Sell Limit на уровне H4 и Buy Limit на уровне L4.

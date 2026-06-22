@@ -1,5 +1,5 @@
 # H4/L4 突破
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 日线突破策略，根据前一日的最高价、最低价和收盘价计算 H4 与 L4 水平。
 每天开始时在 H4 价位挂出卖出限价单，在 L4 价位挂出买入限价单。

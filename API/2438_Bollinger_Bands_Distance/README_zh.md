@@ -1,5 +1,5 @@
 # 布林带距离策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用布林带的反转并增加额外距离过滤。价格收于上轨加距离时做空，收于下轨减距离时做多。仓位通过以价格步长表示的止盈或止损退出。
 

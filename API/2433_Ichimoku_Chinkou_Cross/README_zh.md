@@ -1,4 +1,5 @@
 # Ichimoku Chinkou Cross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Ichimoku 的 Chinkou Span（滞后线）与价格的交叉进行交易。
 

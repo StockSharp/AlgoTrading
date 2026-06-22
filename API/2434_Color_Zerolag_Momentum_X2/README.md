@@ -1,5 +1,5 @@
 # Color Zerolag Momentum X2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dual timeframe momentum strategy using a zero lag moving average cross. The higher timeframe defines trend direction, while the lower timeframe triggers entries when momentum crosses its zero lag average in the direction of the trend.
 

@@ -1,5 +1,5 @@
 # Bollinger Bands Distance Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy trading Bollinger Bands reversals with an extra distance filter. Sells when price closes above the upper band plus a set distance and buys when it closes below the lower band minus the same distance. Positions are closed by profit target or stop loss measured in price steps.
 

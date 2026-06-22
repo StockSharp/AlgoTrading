@@ -1,4 +1,5 @@
 # MasterMind 3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用四个不同周期的 **Williams %R** 指标来寻找极端反转。当所有指标都跌入极度超卖区域时，策略做多；当所有指标都升至强烈超买区域时，策略做空。
 

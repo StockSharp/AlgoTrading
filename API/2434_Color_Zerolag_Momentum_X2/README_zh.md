@@ -1,5 +1,5 @@
 # Color Zerolag Momentum X2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在两个时间框架上使用 Momentum 指标与其零滞后均线的交叉。高时间框架确定趋势方向，低时间框架在 Momentum 向趋势方向穿越其零滞后均线时触发进场。
 

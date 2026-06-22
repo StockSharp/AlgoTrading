@@ -1,4 +1,5 @@
 # GO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是原始 MetaTrader 脚本 "GO" 的 C# 移植版本。它基于开盘价、最高价、最低价和收盘价的移动平均线计算自定义振荡器，并用其确定市场方向。
 

@@ -1,4 +1,5 @@
 # MasterMind 3 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades extreme reversals using four **Williams %R** indicators with different periods. When all indicators drop to deep oversold values, the strategy enters a long position. When all indicators rise to strong overbought values, it enters a short position.
 

@@ -1,4 +1,5 @@
 # GO Risk Managed Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of the original MetaTrader script "GO". It calculates a custom oscillator from moving averages of open, high, low and close prices and uses it to determine market direction.
 
