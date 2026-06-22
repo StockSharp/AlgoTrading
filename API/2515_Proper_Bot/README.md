@@ -1,4 +1,5 @@
 # Proper Bot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Proper Bot Strategy** is a grid-based trading system converted from the original MetaTrader 4 "Proper Bot" expert advisor. The strategy opens a directionally biased basket of orders, expands that basket using a configurable distance/volume map and manages the whole cycle with a combination of time, volume and price based filters. The C# port relies on StockSharp high level candle subscriptions and indicators to keep the implementation close to the managed trading workflow.

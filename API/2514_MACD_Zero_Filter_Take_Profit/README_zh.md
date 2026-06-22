@@ -1,4 +1,5 @@
 # MACD零轴过滤止盈策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 MetaTrader 5 专家顾问“Robot_MACD”的核心思想：利用 MACD 与信号线的交叉，并结合零轴过滤条件进行交易。策略仅针对单一标的，在确认 MACD 位置位于零轴的特定一侧后入场，并为每笔交易附加固定点数的止盈目标，与原始 EA 的点差止盈设定保持一致。

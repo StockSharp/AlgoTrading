@@ -1,4 +1,5 @@
 # Trend Catcher Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Trend Catcher strategy is a conversion of the MetaTrader 5 expert advisor "Trend_Catcher_v2". It combines three exponential moving averages with the Parabolic SAR indicator to identify trend reversals and trend continuation opportunities. The system operates on a single symbol and timeframe and relies on end-of-candle calculations, which makes it suitable for backtesting in StockSharp Designer as well as for live execution through StockSharp API-based runners.

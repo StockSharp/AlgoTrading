@@ -1,4 +1,5 @@
 # Стратегия Trend Catcher Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Trend Catcher — это конвертация эксперта MetaTrader 5 «Trend_Catcher_v2». Стратегия объединяет три экспоненциальные скользящие средние и индикатор Parabolic SAR для поиска разворотных точек и продолжений тренда. Алгоритм работает по одному инструменту и таймфрейму, анализируя только закрытые свечи. Такой подход упрощает тестирование в StockSharp Designer и позволяет запускать стратегию через любые приложения на базе StockSharp API.

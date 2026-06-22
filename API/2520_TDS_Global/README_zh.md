@@ -1,5 +1,5 @@
 # TDS Global 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 平台上的 “TDSGlobal” 专家顾问，遵循 Alexander Elder 的三重筛选理念。默认使用日线
 K 线，结合 MACD (12, 23, 9) 主线斜率与 24 周期的 Williams %R 指标。MACD 上升且 %R 低于阈值时寻找做多机会，

@@ -1,5 +1,5 @@
 # TDS Global Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the original MetaTrader "TDSGlobal" expert based on Alexander Elder's Triple Screen concept. It evaluates
 daily candles and combines the slope of MACD (12, 23, 9) with a 24-period Williams %R filter. The system seeks to buy when the

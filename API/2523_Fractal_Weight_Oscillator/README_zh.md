@@ -1,4 +1,5 @@
 # 分形权重振荡器策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是对 "Exp_Fractal_WeightOscillator" 专家的移植，通过组合四个

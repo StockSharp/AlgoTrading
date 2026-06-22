@@ -1,4 +1,5 @@
 # New Martin 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 New Martin 策略复刻了 MetaTrader 平台上的 “New Martin” 智能交易系统，通过在市场两侧同时建立对冲仓位并在移动均线交叉时扩展亏损腿的仓位来实现马丁格尔思路。策略始终持有一张多单和一张空单，当某一侧浮亏时，就按乘数扩大该侧仓位，同时平掉当前盈利最大的头寸。止盈触发后会立即补回缺失的方向，并可选地清理盈利和亏损极值持仓，使网格保持紧凑。

@@ -1,4 +1,5 @@
 # New Martin Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 New Martin Strategy replicates the original MetaTrader "New Martin" expert advisor by running a symmetric martingale hedge on both sides of the market. The strategy keeps an initial long and short position open at all times and rebalances the hedge when the fast and slow smoothed moving averages (SMMA) cross. When one side of the hedge is losing, the algorithm multiplies the exposure on that side and simultaneously realizes gains on the most profitable leg. Take-profit exits recycle the hedge by reopening the missing side and optionally purging both the best and worst performers to keep the grid compact.

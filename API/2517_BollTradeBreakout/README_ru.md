@@ -1,5 +1,5 @@
 # Стратегия Boll Trade Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит эксперта **BollTrade** из MetaTrader в StockSharp. Она торгует пробои полос Боллинджера с
 настраиваемым буфером (в пунктах) и при необходимости масштабирует объём сделок в зависимости от баланса. Все решения о

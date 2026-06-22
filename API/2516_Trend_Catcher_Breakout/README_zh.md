@@ -1,4 +1,5 @@
 # 趋势捕捉突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 趋势捕捉突破策略（Trend Catcher Breakout）来源于 MetaTrader 5 专家顾问 “Trend_Catcher_v2”的移植版本。策略将三条指数移动平均线与 Parabolic SAR 指标结合在一起，用于识别趋势反转和趋势延续信号。算法基于单一品种与单一周期，并且只在 K 线收盘后做出决策，因此既适合在 StockSharp Designer 中回测，也能通过 StockSharp API 应用在实时环境中运行。

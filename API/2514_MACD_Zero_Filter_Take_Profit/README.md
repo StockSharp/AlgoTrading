@@ -1,4 +1,5 @@
 # MACD Zero Filter Take Profit Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the original MetaTrader 5 expert "Robot_MACD" that trades MACD signal line crossovers with additional zero-line filters. It operates on a single instrument and looks for momentum reversals confirmed by the position of the MACD line relative to zero. A fixed-distance take profit is attached to every order, mirroring the point-based profit target from the original implementation.

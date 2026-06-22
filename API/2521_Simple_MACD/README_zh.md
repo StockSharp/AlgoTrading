@@ -1,5 +1,5 @@
 # Simple MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simple MACD 策略将 MQL5 顾问 `Simple_MACD.mq5` 迁移到 StockSharp。算法在每根完成的 K 线后评估 MACD 主线的斜率，只要斜率保持不变就持续在该方向上加仓。
 

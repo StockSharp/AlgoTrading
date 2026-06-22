@@ -1,5 +1,5 @@
 # Boll Trade Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the original **BollTrade** expert advisor by trading Bollinger Band breakouts with a configurable
 pip buffer and optional balance-based position sizing. Orders are opened only on completed candles and are managed with

@@ -1,5 +1,5 @@
 # Boll Trade Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 上的 **BollTrade** EA 移植到 StockSharp 平台，通过布林带突破信号进行交易，并提供可配置
 的点值缓冲与可选的资金规模管理。策略仅在 K 线收盘后作出决策，并使用固定的止损与止盈价位管理仓位。

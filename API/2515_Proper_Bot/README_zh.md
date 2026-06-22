@@ -1,4 +1,5 @@
 # Proper Bot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Proper Bot 策略** 是从 MetaTrader 4 的 "Proper Bot" 智能交易系统移植而来的网格化交易模型。策略通过初始方向性头寸启动一个订单篮子，根据可配置的距离/手数映射逐步加仓，并结合时间、成交量与价格过滤器管理整个交易周期。该 C# 版本基于 StockSharp 的高级蜡烛订阅与指标接口实现。
