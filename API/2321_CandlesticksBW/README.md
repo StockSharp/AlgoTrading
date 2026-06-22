@@ -1,4 +1,5 @@
 # CandlesticksBW Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the Bill Williams CandlesticksBW approach. It colors each candle using Awesome Oscillator (AO) and Accelerator Oscillator (AC) momentum. The strategy opens or closes positions based on transitions between bullish and bearish colors.
 

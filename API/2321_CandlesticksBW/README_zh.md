@@ -1,4 +1,5 @@
 # CandlesticksBW 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现 Bill Williams 的 CandlesticksBW 方法。通过 Awesome Oscillator (AO) 与 Accelerator Oscillator (AC) 的动量变化为每根蜡烛上色，并根据颜色转换开仓或平仓。
 

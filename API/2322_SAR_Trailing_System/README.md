@@ -1,5 +1,5 @@
 # SAR Trailing System Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that enters random long or short positions at fixed time intervals and manages exits using the Parabolic SAR indicator.
 The Parabolic SAR value acts as a trailing stop: the position closes when price crosses the SAR level.

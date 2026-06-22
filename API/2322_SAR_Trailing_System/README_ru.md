@@ -1,5 +1,5 @@
 # Система трейлинга SAR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия, которая через равные интервалы времени случайным образом открывает длинные или короткие позиции и управляет выходом с помощью индикатора Parabolic SAR.
 Значение Parabolic SAR действует как трейлинг-стоп: позиция закрывается, когда цена пересекает уровень SAR.

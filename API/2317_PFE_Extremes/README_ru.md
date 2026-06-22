@@ -1,5 +1,5 @@
 # PFE Экстремумы
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пробои уровней индикатора Polarized Fractal Efficiency (PFE). Когда PFE пересекает верхний уровень, стратегия закрывает короткие позиции и открывает длинную. При пересечении нижнего уровня закрываются длинные позиции и открывается короткая.
 

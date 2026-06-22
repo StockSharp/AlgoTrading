@@ -1,5 +1,5 @@
 # PPO Cloud 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该动量策略交易百分比价格振荡器（PPO）与其信号线的交叉。当 PPO 上穿信号线时开多单，当下穿时开空单。现有头寸可在相反信号上选择平仓。策略使用单一时间框架运行。
 

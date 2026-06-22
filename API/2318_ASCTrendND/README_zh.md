@@ -1,5 +1,5 @@
 # ASCTrendND 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略来源于 MQL5 的 ASCTrendND EA。它使用简单移动平均线作为主要趋势信号，RSI 作为确认过滤器，并以 ATR 乘以倍数作为跟踪止损退出交易。此实现是对 ASCTrend + NRTR + TrendStrength 逻辑在 StockSharp 高级 API 上的简化版本。
 

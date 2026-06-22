@@ -1,4 +1,5 @@
 # Limits Martin Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy places paired limit orders above and below the current market price. Each trade uses a configurable step distance and optional martingale position sizing to recover previous losses.
 

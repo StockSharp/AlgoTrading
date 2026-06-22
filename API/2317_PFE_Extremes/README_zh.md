@@ -1,5 +1,5 @@
 # PFE 极值策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Polarized Fractal Efficiency (PFE) 指标的上下阈值进行交易。当 PFE 突破上方阈值时，策略平掉空头并开多；当 PFE 跌破下方阈值时，平掉多头并开空。
 
