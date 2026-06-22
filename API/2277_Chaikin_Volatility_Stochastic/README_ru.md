@@ -1,4 +1,5 @@
 # Chaikin Volatility Stochastic Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия применяет стохастический осциллятор к значениям волатильности Чайкина для поиска разворотов тренда. Диапазон «максимум-минимум» каждой свечи сглаживается EMA, затем нормализуется стохастиком и дополнительно сглаживается взвешенным средним.
 

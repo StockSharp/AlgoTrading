@@ -1,5 +1,5 @@
 # Q2MA交叉策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Q2MA交叉策略基于蜡烛收盘价和开盘价的平滑移动平均线交叉进行交易。当收盘平均线从上方下穿开盘平均线时开多仓，反向交叉时开空仓。当出现相反趋势时平仓，并使用以跳动为单位的止损和止盈。
 

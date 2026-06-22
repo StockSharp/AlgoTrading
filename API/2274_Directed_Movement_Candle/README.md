@@ -1,5 +1,5 @@
 # Directed Movement Candle Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy monitors the Relative Strength Index (RSI) on candle closes. When RSI leaves the neutral zone and crosses user-defined levels, the strategy opens positions in the direction of momentum and closes any opposite exposure.
 

@@ -1,5 +1,5 @@
 # Directed Movement Candle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于K线收盘价计算的相对强弱指数(RSI)。当RSI离开中性区并突破自定义阈值时，策略顺势开仓并在反向信号出现时平仓。
 

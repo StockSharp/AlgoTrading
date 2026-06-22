@@ -1,5 +1,5 @@
 # RSI Sign 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 的 **iRSISign** 智能交易系统转换为 StockSharp 的高级 API。它结合 RSI 和 ATR 指标来产生交易信号。
 

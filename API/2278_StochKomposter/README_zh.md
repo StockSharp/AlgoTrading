@@ -1,4 +1,5 @@
 # 随机指标 Komposter 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自 MQL5 专家 **Exp_iStochKomposter**，利用随机振荡指标在动量反转时进行交易。
 

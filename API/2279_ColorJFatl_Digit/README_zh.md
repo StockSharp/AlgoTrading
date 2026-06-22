@@ -1,5 +1,5 @@
 # ColorJFatl Digit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Jurik 移动平均线 (JMA) 的斜率方向来生成交易信号。JMA 近似于原始 MQL5 专家中的 "ColorJFatl_Digit" 指标。当 JMA 向上转折时开多单，向下转折时开空单。斜率反向时平掉相反头寸。
 

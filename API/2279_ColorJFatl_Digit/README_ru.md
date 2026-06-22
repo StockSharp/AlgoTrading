@@ -1,5 +1,5 @@
 # Стратегия ColorJFatl Digit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует направление наклона скользящей средней Jurik (JMA) для генерации сигналов. JMA приближает индикатор "ColorJFatl_Digit" из исходного эксперта MQL5. Длинная позиция открывается при развороте JMA вверх, короткая — при развороте вниз. Противоположные позиции закрываются при смене наклона.
 

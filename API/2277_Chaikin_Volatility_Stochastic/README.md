@@ -1,4 +1,5 @@
 # Chaikin Volatility Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy applies a stochastic oscillator to Chaikin volatility values to capture trend reversals. The high-low range of each candle is smoothed with an EMA, then normalized with a stochastic calculation and finally smoothed by a weighted moving average.
 

@@ -1,5 +1,5 @@
 # ROC2 VG 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在 StockSharp 中重现 MetaTrader 的 **Exp_ROC2_VG** 专家。  
 比较两条可配置周期和计算方式的价格变化率线。  

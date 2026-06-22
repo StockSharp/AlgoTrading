@@ -1,5 +1,5 @@
 # TSI Cloud Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The TSI Cloud Cross strategy compares the True Strength Index (TSI) with a delayed copy of itself to form a cloud. A long position is opened when TSI crosses above the shifted line, indicating bullish momentum. A short position is opened when TSI crosses below the shifted line. Signals can be inverted and opposing positions optionally closed.
 

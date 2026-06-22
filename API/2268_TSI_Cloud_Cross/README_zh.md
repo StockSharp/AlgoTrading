@@ -1,5 +1,5 @@
 # TSI Cloud Cross策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TSI Cloud Cross策略将True Strength Index (TSI)与其延迟版本比较形成云区。当TSI上穿移位线时开多仓，表示看涨动能；当TSI下穿移位线时开空仓。可选择反转信号并在相反信号时平仓。
 

@@ -1,5 +1,5 @@
 # Ma通道策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ma通道策略利用由最高价和最低价的移动平均构建的通道来交易。当价格
 向上突破通道上轨时开多仓，向下跌破下轨时开空仓；趋势反转时头寸也

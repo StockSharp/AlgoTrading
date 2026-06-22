@@ -1,5 +1,5 @@
 # Стратегия ROC2 VG
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Реализует в StockSharp эксперт **Exp_ROC2_VG** из MetaTrader.  
 Сравниваются две линии темпа изменения цены с настраиваемыми периодами и типами расчёта.  
