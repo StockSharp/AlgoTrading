@@ -1,5 +1,5 @@
 # 限价机器人策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在每根K线开盘价附近对称挂入限价单，并使用止损、止盈和可选的跟踪止损保护持仓。
 

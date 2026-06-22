@@ -1,5 +1,5 @@
 # ColorXvaMA Digit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the slope change of a double-smoothed moving average. An Exponential Moving Average is smoothed again by a Jurik Moving Average. A long position opens when the fast JMA crosses above the slow EMA, while a short position opens when it crosses below.
 

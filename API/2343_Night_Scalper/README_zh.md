@@ -1,5 +1,5 @@
 # 夜间剥头皮策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在晚上时段利用布林带交易。只有在达到设定的开始时间后，且带宽较窄并且价格突破带外时才开仓。
 

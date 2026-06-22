@@ -1,5 +1,5 @@
 # Renko 图表来自 Ticks 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 直接从 ticks 生成 Renko 砖，并在砖方向反转时交易。展示如何使用 StockSharp 高级 API 构建无时间限制的蜡烛。
 

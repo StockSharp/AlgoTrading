@@ -1,4 +1,5 @@
 # Stochastic Diff Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the difference between the Stochastic oscillator's %K and %D lines. The difference is smoothed with an exponential moving average to reduce noise. A long position opens when the smoothed difference forms a local trough and turns upward. A short position opens when the smoothed difference forms a local peak and turns downward.
 

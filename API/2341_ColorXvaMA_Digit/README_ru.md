@@ -1,5 +1,5 @@
 # Стратегия ColorXvaMA Digit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует на изменении наклона двойного сглаженного среднего. Экспоненциальное среднее дополнительно сглаживается средним Jurik. Длинная позиция открывается, когда быстрая JMA пересекает медленную EMA сверху, короткая — когда пересекает снизу.
 

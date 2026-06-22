@@ -1,4 +1,5 @@
 # Stochastic Diff 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Stochastic 指标的 %K 与 %D 之差进行交易，并通过指数移动平均线对该差值进行平滑以降低噪声。当平滑后的差值形成局部低点并开始向上时开多仓；当平滑后的差值形成局部高点并向下转折时开空仓。
 

@@ -1,4 +1,5 @@
 # HelloSmart Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a simple grid trading approach that opens positions in only one direction. A new order is placed each time the market moves a configured number of ticks against the last entry. When the aggregate position volume reaches a threshold, the next order size is multiplied. All positions are closed when total profit or loss hits predefined limits.
 

@@ -1,5 +1,5 @@
 # Стратегия Limits Bot
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Размещает симметричные лимитные заявки вокруг цены открытия свечи и защищает позиции стоп-лоссом, тейк-профитом и опциональным трейлинг-стопом.
 

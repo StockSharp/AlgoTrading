@@ -1,5 +1,5 @@
 # ColorXvaMA Digit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于双重平滑移动平均线斜率的变化进行交易。先计算指数移动平均线，再通过 Jurik 移动平均线再次平滑。当快速 JMA 上穿慢速 EMA 时开多头；当其下穿时开空头。
 

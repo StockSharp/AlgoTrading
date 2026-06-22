@@ -1,5 +1,5 @@
 # Renko Chart From Ticks Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Generates Renko bricks directly from ticks and trades when brick direction changes. Demonstrates building non-time-based candles using the high level StockSharp API.
 

@@ -1,4 +1,5 @@
 # HelloSmart策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现单向网格交易。市场每向上次入场价反向移动设定的跳数，就会加仓一次。当累计仓位达到阈值时，下一笔订单的手数按乘数放大。当总盈亏达到设定的盈利或亏损限额时，平掉所有仓位。
 

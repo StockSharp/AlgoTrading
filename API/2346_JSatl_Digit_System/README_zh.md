@@ -1,5 +1,5 @@
 # JSatl Digit System 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 JSatl Digit System 使用 Jurik 移动平均线 (JMA) 判断趋势方向。
 策略检测 JMA 的斜率，并在价格与斜率方向一致时开仓。
