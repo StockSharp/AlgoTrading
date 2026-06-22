@@ -1,4 +1,5 @@
 # I Gap 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **I Gap 策略** 复刻自 MetaTrader 的 "i-GAP" 专家顾问。它监控上一根蜡烛的收盘价与当前蜡烛开盘价之间的价格缺口。若向下跳空超过设定的价格步数，可以开多单并可选择性地关闭空单；向上跳空则相反。
 

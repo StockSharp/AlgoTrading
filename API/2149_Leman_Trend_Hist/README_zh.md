@@ -1,4 +1,5 @@
 # LeMan Trend Hist 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是原始 MQL5 专家顾问“LeManTrendHist”的简化转换版本。策略使用基于指数移动平均线的柱状图来产生交易信号。
 

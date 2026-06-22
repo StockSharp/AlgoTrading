@@ -1,4 +1,5 @@
 # Стратегия PA Oscillator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом эксперта MQL5 **Exp_PA_Oscillator.mq5**. Она использует две экспоненциальные скользящие средние (EMA) по цене закрытия свечей и анализирует производную разницы между ними.
 

@@ -1,5 +1,5 @@
 # Labouchere EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略结合了随机振荡指标交叉与 Labouchere 资金管理序列。当 %K 线与 %D 线交叉时生成买卖信号。Labouchere 系统在每次平仓后调整交易手数：亏损时在序列末尾添加首尾元素之和，盈利时移除首尾元素。
 

@@ -1,5 +1,5 @@
 # LeMan趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 LeMan趋势策略通过最近的高点和低点来计算多头和空头压力。它测量当前K线与三个不同周期的最高价和最低价之间的距离，并使用指数移动平均线(EMA)对这些距离进行平滑，从而形成多头线和空头线。当两条线交叉时，可能预示着趋势变化。
 

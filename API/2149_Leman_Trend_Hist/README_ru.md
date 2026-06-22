@@ -1,4 +1,5 @@
 # Стратегия LeMan Trend Hist
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия представляет собой упрощённую конвертацию оригинального эксперта MQL5 «LeManTrendHist». В качестве источника сигналов используется гистограмма на основе экспоненциального скользящего среднего.
 

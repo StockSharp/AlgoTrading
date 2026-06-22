@@ -1,5 +1,5 @@
 # Labouchere EA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a Stochastic Oscillator crossover with a Labouchere money management sequence. The Stochastic indicator generates signals when %K crosses %D. The Labouchere system adjusts trade volume after each closed position: losses append a new element equal to the sum of the first and last numbers in the sequence, while profits remove these elements.
 

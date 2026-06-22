@@ -1,4 +1,5 @@
 # PA Oscillator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MQL5 专家 **Exp_PA_Oscillator.mq5**。策略对收盘价计算两条指数移动平均线，并分析它们差值的导数。
 
