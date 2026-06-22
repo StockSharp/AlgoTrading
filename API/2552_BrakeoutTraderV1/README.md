@@ -1,5 +1,5 @@
 # Brakeout Trader v1
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Brakeout Trader v1 is a simple breakout system built around a static price level. The strategy watches the closing prices of completed candles and enters when the market closes through the chosen breakout level. When the close crosses above the level, a long position is opened (subject to direction filters); when it crosses below, a short position is taken. Position size is calculated from the configured risk percentage and the distance to the stop-loss, enabling automatic scaling with the account equity.
 

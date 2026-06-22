@@ -1,5 +1,5 @@
 # XOSignal Re-Open 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中复刻 MetaTrader 专家顾问 *Exp_XOSignal_ReOpen*，并使用高层 API 实现。算法基于所选品种与周期的K线，通过 ATR(13) 构建的 XO 型突破指示器来生成交易信号。出现上箭头时平掉空单、可选择开多，并在价格每向有利方向移动固定 tick 数时加仓；下箭头对空头执行同样的逻辑。每一层加仓都会附带以 tick 为单位的固定止损与止盈。
 

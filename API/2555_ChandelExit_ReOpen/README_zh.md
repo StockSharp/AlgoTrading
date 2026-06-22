@@ -1,5 +1,5 @@
 # Chandel Exit 再入场策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 智能交易系统“Exp_ChandelExitSign_ReOpen”移植到 StockSharp 的高级 API。它利用 Chandelier Exit 指标捕捉趋势突破，并在趋势持续时自动加仓。信号基于可配置的高周期 K 线计算，同时通过基于 ATR 的止损和可选的止盈保护仓位。
 

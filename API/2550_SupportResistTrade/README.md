@@ -1,5 +1,5 @@
 # Support Resist Trade Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout strategy ported from MetaTrader that combines a long-term EMA trend filter with dynamic support and resistance levels. It looks back over the recent swing range, waits for price to break the prior ceiling or floor in the direction of the trend, and manages positions with staged pip-based trailing stops.
 

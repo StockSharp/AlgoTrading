@@ -1,4 +1,5 @@
 # TTM Trend Re-Entry Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy recreates the logic of the MetaTrader expert advisor *Exp_ttm-trend_ReOpen*. It translates the TTM Trend indicator into the StockSharp framework, uses Heikin-Ashi smoothing to color candles, and trades when the color flips from bearish to bullish or vice versa. Each color change represents a regime shift in volatility compression/expansion, so the bot immediately closes any opposing exposure and opens a position in the new direction.

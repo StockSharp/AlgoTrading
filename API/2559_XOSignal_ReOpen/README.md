@@ -1,5 +1,5 @@
 # XOSignal Re-Open Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the MetaTrader expert *Exp_XOSignal_ReOpen* inside StockSharp using the high-level API. It trades candlestick data of the selected symbol and timeframe with an XO-style breakout detector built on ATR(13). When an up arrow appears the algorithm closes shorts, optionally opens a long, and then adds to the position every time price progresses by a fixed number of ticks. Down arrows behave symmetrically for shorts. Hard stops and targets in ticks are applied to every layer of the pyramid.
 

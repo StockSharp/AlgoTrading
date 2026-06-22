@@ -1,4 +1,5 @@
 # TTM 趋势再入场策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 智能交易系统 *Exp_ttm-trend_ReOpen* 的核心逻辑。它在 StockSharp 框架中重建 TTM Trend 指标，使用 Heikin-Ashi 平滑来给蜡烛着色，并在颜色从看跌翻转为看涨或反向时执行交易。每一次颜色改变都代表波动压缩或扩张状态的切换，策略会立即平掉反向持仓并按新的方向入场。

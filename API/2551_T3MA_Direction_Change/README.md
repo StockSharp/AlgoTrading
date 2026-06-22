@@ -1,4 +1,5 @@
 # T3 MA Direction Change Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the behavior of the original **T3MA(barabashkakvn's edition)** expert advisor. The Expert Advisor relies on the "T3MA-ALARM" indicator that applies exponential smoothing twice and raises a signal when the smoothed line changes direction. The StockSharp port keeps the same concept: it creates a double-smoothed exponential moving average (EMA of EMA) and trades whenever the slope of that curve flips from falling to rising or vice versa.

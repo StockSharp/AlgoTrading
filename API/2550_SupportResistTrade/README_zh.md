@@ -1,5 +1,5 @@
 # Support Resist Trade 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 MetaTrader 移植的突破策略，结合长周期 EMA 趋势过滤和动态支撑/阻力区间。系统回看最近 `Lookback` 根 K 线，等待价格顺着趋势突破前高或前低，并使用分阶段的点值追踪止损管理仓位。
 

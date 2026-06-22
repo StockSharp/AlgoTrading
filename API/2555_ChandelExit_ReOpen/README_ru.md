@@ -1,5 +1,5 @@
 # Стратегия повторных входов по Chandel Exit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия является переносом советника MetaTrader «Exp_ChandelExitSign_ReOpen» на высокоуровневый API StockSharp. Она торгует пробои по полосам Chandelier Exit и автоматически наращивает позицию, если тренд продолжается. Сигналы рассчитываются на настраиваемом таймфрейме, а управление риском реализовано через ATR-стоп и необязательный тейк-профит.
 

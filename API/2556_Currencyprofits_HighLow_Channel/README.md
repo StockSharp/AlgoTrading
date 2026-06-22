@@ -1,4 +1,5 @@
 # Currencyprofits High-Low Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor `Currencyprofits_01.1`. It combines a fast/slow moving average trend filter with a breakout of the recent channel extreme. When the fast moving average is above the slow average, the strategy expects a bullish environment and waits for price to retest the lowest low of the previous channel window. Short trades are taken when the fast average is below the slow average and price retests the highest high of the channel.

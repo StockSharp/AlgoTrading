@@ -1,5 +1,5 @@
 # Brakeout Trader v1
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Brakeout Trader v1 是一套基于固定价格水平的突破策略。策略仅监控已经收盘的蜡烛，如果最新收盘价穿越用户设定的突破价位，就建立仓位。收盘价向上突破并且允许做多时开多单，收盘价向下突破并且允许做空时开空单。仓位规模根据风险百分比和止损距离计算，可随着账户权益自动调整。
 

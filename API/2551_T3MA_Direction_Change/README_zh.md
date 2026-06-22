@@ -1,4 +1,5 @@
 # T3 MA 方向转折策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻了原始的 **T3MA(barabashkakvn's edition)** 智能交易系统。原版 EA 使用 "T3MA-ALARM" 指标，对收盘价进行两次指数平滑，并在平滑曲线方向改变时给出信号。StockSharp 版本沿用了相同的思想：计算一条“EMA 的 EMA”，并在其斜率由下行转为上行或由上行转为下行时进行交易。

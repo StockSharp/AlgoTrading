@@ -1,4 +1,5 @@
 # Currencyprofits High-Low Channel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 MetaTrader 专家顾问 `Currencyprofits_01.1` 的 StockSharp 版本。策略通过一快一慢两条移动平均线确定趋势方向，并在价格回测最近通道的极值时入场。快线位于慢线之上时判定为多头环境，等待价格回到最近若干根 K 线的最低点；快线位于慢线之下时判定为空头环境，关注价格回测通道最高点以入场做空。
