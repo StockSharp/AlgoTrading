@@ -1,4 +1,5 @@
 # 烛影比例策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **烛影比例策略** 是 MetaTrader 专家顾问 *Candle shadow percent* 的移植版本。策略会寻找上下影线达到可调比例的 K 线：出现长上影线时开空，出现长下影线时开多。交易方向与原始算法一致，同时保留了风险管理流程。

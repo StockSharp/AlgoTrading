@@ -1,4 +1,5 @@
 # Стратегия NUp1Down
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **NUp1Down** — это прямой порт советника MetaTrader 5 «N bars up, then one bar down» (файл `NUp1Down.mq5`).

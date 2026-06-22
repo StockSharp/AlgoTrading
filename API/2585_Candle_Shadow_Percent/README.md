@@ -1,4 +1,5 @@
 # Candle Shadow Percent Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Candle Shadow Percent Strategy** is a direct port of the MetaTrader expert advisor *Candle shadow percent*. It searches for candles where the upper or lower wick reaches a configurable percentage of the candle body. When a tall upper wick appears the strategy opens a short position; when a deep lower wick appears it opens a long position. The trade direction is aligned with the original algorithm and keeps the risk management workflow intact.

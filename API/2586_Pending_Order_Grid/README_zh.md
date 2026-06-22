@@ -1,4 +1,5 @@
 # 挂单网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 中“AntiFragile”挂单网格 EA 的逻辑。策略在行情上下方持续铺设对称的止损单网格，并在触发后提供风控处理。
 

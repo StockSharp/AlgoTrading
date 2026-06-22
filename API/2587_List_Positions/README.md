@@ -1,4 +1,5 @@
 # List Positions Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **List Positions Strategy** reproduces the behaviour of the original MetaTrader script by periodically printing the current portfolio positions to the strategy log. It is a monitoring-only helper that never places orders. Instead, it builds a snapshot of the open positions so that the operator can inspect symbol, direction, size, entry price and current profit directly from the Designer or StockSharp logs.

@@ -1,4 +1,5 @@
 # Стратегия RSI Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит советник *"RSI trader v0.15"* на платформу StockSharp с использованием высокоуровневого API. Логика основана на согласовании тренда цены и сглаженного индикатора RSI. По умолчанию анализ ведётся на часовых свечах, однако тип свечей можно изменить параметром `CandleType`.

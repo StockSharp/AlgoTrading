@@ -1,4 +1,5 @@
 # RSI Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader expert advisor *"RSI trader v0.15"* in the StockSharp high-level API. It aligns trend direction between price action and a smoothed Relative Strength Index (RSI). Trading is performed on a single instrument using one-hour candles by default, but the timeframe is configurable through the `CandleType` parameter.

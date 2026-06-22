@@ -1,4 +1,5 @@
 # RSI 趋势交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略将 MetaTrader 中的 *"RSI trader v0.15"* 智能交易系统迁移到 StockSharp 高级 API。通过比较价格均线和经过平滑处理的 RSI 趋势，判断市场方向。默认使用一小时 K 线，但可以通过 `CandleType` 参数修改。

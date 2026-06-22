@@ -1,5 +1,5 @@
 # Стратегия e_RP_250 Reverse Point
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия представляет собой портирование эксперта MetaTrader 5 `e_RP_250` на платформу StockSharp. Исходная система
 работает от разворотных точек, которые вычисляет пользовательский индикатор *rPoint*. Поскольку оригинальный индикатор недоступен

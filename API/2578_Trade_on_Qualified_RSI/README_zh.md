@@ -1,4 +1,5 @@
 # Trade on Qualified RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 的 "Trade on qualified RSI" 专家顾问迁移到 StockSharp 高级 API。它是一种逆势策略：当 RSI 长时间停留在极端区域时，算法将其视为动能耗尽的信号，并在获得多根蜡烛确认后，向相反方向开仓。止损按价格最小变动单位（PriceStep）进行跟踪，只在价格向有利方向移动时上调或下调。

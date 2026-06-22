@@ -1,5 +1,5 @@
 # e_RP_250 反转点策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 5 专家顾问 `e_RP_250` 在 StockSharp 平台上的移植版本。原始脚本依赖自定义 *rPoint* 指标来识别
 关键反转点。由于该指标在 StockSharp 中不可用，本移植使用 `Highest` 与 `Lowest` 指标组合来重现相同的效果。一旦

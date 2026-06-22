@@ -1,5 +1,5 @@
 # e_RP_250 Reverse Point Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor `e_RP_250`. The original system trades reversals detected by
 a custom *rPoint* indicator. Because that indicator is not available inside StockSharp, the conversion recreates the same behaviour

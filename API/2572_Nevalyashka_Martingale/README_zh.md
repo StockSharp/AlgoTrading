@@ -1,4 +1,5 @@
 # Nevalyashka Martingale 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Nevalyashka Martingale 是 MetaTrader 5 专家顾问 “Nevalyashka3_1” 的移植版。策略只处理一个品种，通过在亏损后交替做多和做空来实现马丁格尔逻辑。启动时会先建立一个空头头寸。每次平仓后，策略都会检查账户权益：如果权益创出新高，下一笔交易使用基础手数并保持原方向；如果权益没有超过历史峰值，则将手数乘以系数并改变方向，以尝试弥补回撤。

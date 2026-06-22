@@ -1,4 +1,5 @@
 # NUp1Down 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **NUp1Down** 策略是 MetaTrader 5 专家顾问 “N bars up, then one bar down”（文件 `NUp1Down.mq5`）的直接移植版本。

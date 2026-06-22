@@ -1,4 +1,5 @@
 # 持仓列表策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **持仓列表策略** 复刻了原始 MetaTrader 脚本的行为，会定期把当前投资组合中的持仓写入策略日志。该策略仅用于监控，不会发送任何订单。它会生成一份持仓快照，便于操作者在 Designer 或其他 StockSharp 日志工具中直接查看交易品种、方向、数量、开仓价格以及当前盈亏。

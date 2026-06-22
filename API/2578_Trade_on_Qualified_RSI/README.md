@@ -1,4 +1,5 @@
 # Trade on Qualified RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the MetaTrader "Trade on qualified RSI" expert advisor using StockSharp's high-level API. It behaves as a contrarian system: it interprets extended Relative Strength Index (RSI) readings as exhaustion and opens a position against the prevailing move after the momentum persists for several candles. Trailing stops are managed in price steps so that the stop follows the trade only when price moves in the trade's favor.

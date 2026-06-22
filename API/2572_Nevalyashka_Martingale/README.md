@@ -1,4 +1,5 @@
 # Nevalyashka Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Nevalyashka Martingale strategy is a direct port of the MetaTrader 5 expert advisor "Nevalyashka3_1". It runs a single-symbol martingale that alternates between buying and selling after losing trades. The strategy always starts by selling and measures account equity to decide whether the previous trade cycle ended in profit or loss. Profit resets the volume back to the base lot size and keeps the direction unchanged, while a loss multiplies the lot size and flips the direction in an attempt to recover the drawdown.

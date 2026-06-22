@@ -1,4 +1,5 @@
 # MACD AO Pattern Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a faithful StockSharp port of the FORTRADER `MACD.mq5` expert advisor. It implements the "AOP" pattern that watches the MACD oscillator for deep excursions away from the zero line followed by a hook back toward neutrality. When the hook is confirmed the strategy enters in the direction of the expected reversal and immediately applies fixed stop-loss and take-profit targets expressed in pips.

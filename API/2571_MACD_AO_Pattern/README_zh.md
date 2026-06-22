@@ -1,4 +1,5 @@
 # MACD AO Pattern 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 FORTRADER `MACD.mq5` 智能交易程序的 StockSharp 版本。它实现了所谓的“AOP”形态：当 MACD 指标远离零轴后回抽形成钩形时，系统跟随预期的反转方向开仓，并立即设置以点数表示的固定止损和止盈。

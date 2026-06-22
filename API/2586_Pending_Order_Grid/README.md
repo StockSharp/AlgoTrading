@@ -1,4 +1,5 @@
 # Pending Order Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the behaviour of the MetaTrader "AntiFragile" pending order grid expert advisor. It continuously builds a symmetric grid of stop orders around the current market price and applies protective exits once positions are opened.
 

@@ -1,4 +1,5 @@
 # Стратегия «Candle Shadow Percent»
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Candle Shadow Percent** — портированная из MetaTrader экспертная система *Candle shadow percent*. Стратегия отслеживает свечи, у которых верхняя или нижняя тень превышает настраиваемый процент от тела. Высокая верхняя тень приводит к открытию короткой позиции, длинная нижняя тень — к длинной. Логика входов и управление рисками повторяют оригинальный советник.

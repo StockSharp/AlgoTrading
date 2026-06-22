@@ -1,5 +1,5 @@
 # 20PRExp-3 突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 20PRExp-3 是一个基于日内通道的突破策略。它在每根完成的 5 分钟K线上重新计算当日的最高价、最低价与中线，并利用 30 分钟周期的成交量放大来确认动能。只有当价格有效突破最新通道边界时才会开仓。进场后策略继续跟踪 Parabolic SAR、动态跟踪止损以及基于风险百分比的仓位管理，与原始的 MetaTrader 5 EA 保持一致。
 
