@@ -1,4 +1,5 @@
 # Стратегия Expert RSI Stochastic MA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Expert RSI Stochastic MA** — перенос советника MetaTrader 5 `Expert_RSI_Stochastic_MA.mq5` на инфраструктуру StockSharp. Стратегия сочетает трендовый фильтр на основе настраиваемой скользящей средней, подтверждение импульса через RSI и точку входа по двум линиям стохастика. Логика управления позицией повторяет оригинал: допускается ограниченный убыток и реализован скользящий стоп, который активируется по сигналу стохастика.

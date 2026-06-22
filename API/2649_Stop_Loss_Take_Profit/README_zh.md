@@ -1,5 +1,5 @@
 # 止损止盈策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略为 MetaTrader “Stop Loss Take Profit” 专家的移植版本。每当账户没有持仓时，就抛掷一次“硬币”随机决定方向，并以市价单入场。成交后立即按照设定的点数(pip)放置止损和止盈订单。如果触发止损，下一笔交易的手数会加倍（同时受证券最大手数限制）；若触发止盈，则手数恢复为初始值。整个过程沿用了原策略的马丁格尔风格，并基于 StockSharp 的高级 API 实现。
 

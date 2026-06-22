@@ -1,5 +1,5 @@
 # EURUSD Session Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the classic EUR/USD breakout idea where a narrow European morning range is used as a springboard for the
 US session. It monitors a rolling 24-candle window (15-minute candles by default) to measure the pre-US trading range, filters out

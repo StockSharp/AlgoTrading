@@ -1,4 +1,5 @@
 # Rabbit M2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Rabbit M2 is a trend-following strategy that combines momentum oscillators, Donchian breakouts and adaptive position sizing. The original MetaTrader 5 version by Peter Byrom toggles between buying and selling regimes based on higher timeframe exponential moving averages (EMAs). Within the active regime the strategy waits for Williams %R swings confirmed by the Commodity Channel Index (CCI) before opening a trade. Positions are protected with fixed-distance stop loss and take profit targets and are force-closed when price violates the opposite Donchian channel boundary. After each profitable exit above a configurable profit target the strategy increases its base order size and doubles the profit target threshold, mimicking the scaling logic from the MQL expert advisor.

@@ -1,5 +1,5 @@
 # EURUSD Session Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了经典的欧/美盘突破思路：利用欧洲早盘的窄幅波动，为美盘提供突破信号。系统使用 24 根滚动的
 K 线窗口（默认 15 分钟），计算美盘前的区间，过滤掉波动超出可配置点数阈值的交易日，然后只在价格完全

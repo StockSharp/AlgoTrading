@@ -1,5 +1,5 @@
 # iCCI iMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 iCCI iMA 策略源自 MetaTrader 平台的同名专家顾问。算法监控商品通道指数（CCI）与基于 CCI 序列计算的指数移动平均线（EMA）之间的交叉，同时使用第二个 CCI 观察 ±100 区域的超买/超卖反转。订单以手数下达，可选根据账户余额放大，并在点值单位上设置止损与止盈保护。
 

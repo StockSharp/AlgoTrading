@@ -1,4 +1,5 @@
 # Expert RSI Stochastic MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Expert RSI Stochastic MA Strategy** is a conversion of the MetaTrader 5 expert advisor `Expert_RSI_Stochastic_MA.mq5`. The C# implementation leverages StockSharp's high-level strategy API while reproducing the original logic: a trend filter based on a configurable moving average, momentum confirmation from RSI, and a dual-line Stochastic oscillator for precise timing. Protective behaviour replicates the source algorithm with an optional fixed loss threshold and a Stochastic-driven trailing exit.

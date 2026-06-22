@@ -1,5 +1,5 @@
 # Double ZigZag Alignment 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家顾问「Double ZigZag」的 StockSharp 版本。通过两个不同窗口的摆动检测器来复现双 ZigZag 的确认逻辑。
 只有当两个检测器在最近三个关键点上完全一致且最新波动相对更强时才会触发交易。

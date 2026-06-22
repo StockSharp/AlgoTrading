@@ -1,4 +1,5 @@
 # Expert RSI Stochastic MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Expert RSI Stochastic MA 策略** 源自 MetaTrader 5 的 `Expert_RSI_Stochastic_MA.mq5` 智能交易系统。本版本使用 StockSharp 的高阶策略框架实现原始逻辑：利用可配置的移动平均线作为趋势过滤器，RSI 指标确认动能，双线随机指标负责触发交易。同时保留原策略的风险控制，包括固定亏损阈值与基于随机指标的追踪止损。

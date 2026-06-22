@@ -1,4 +1,5 @@
 # 多重套利策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **多重套利策略** 是对 MetaTrader "Multi_arbitration 1.000" 专家顾问的 StockSharp 版本移植。原始脚本持续评估已经持有的多头和空头仓位，在浮动收益较弱的一侧加仓，并在达到总体盈利目标后一次性平掉全部仓位。本 C# 实现保留了核心决策逻辑，同时针对 StockSharp 的净额持仓模型和高级策略 API 做了适配。

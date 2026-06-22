@@ -1,5 +1,5 @@
 # Стратегия Double ZigZag Alignment
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом советника MQL5 «Double ZigZag». Она воспроизводит логику двойного ZigZag за счёт двух детекторов
 разворотов с разными глубинами. Сделка формируется только тогда, когда оба детектора подтверждают три последовательных экстремума,

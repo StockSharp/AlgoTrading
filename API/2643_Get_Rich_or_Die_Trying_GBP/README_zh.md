@@ -1,5 +1,5 @@
 # Get Rich or Die Trying GBP 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该 StockSharp 策略复刻了 MetaTrader 专家顾问 “Get Rich or Die Trying GBP”。它关注伦敦与纽约交易时段重叠的活跃区间，并在 1 分钟 K 线上等待短暂的方向性失衡。算法统计最近 `CountBars` 根 K 线中开盘价高于收盘价的数量（原始代码称之为“上涨”）与开盘价低于收盘价的数量，当两者不一致时，策略会在所选时间窗口的前 5 分钟尝试反向进入较弱的一方。
 

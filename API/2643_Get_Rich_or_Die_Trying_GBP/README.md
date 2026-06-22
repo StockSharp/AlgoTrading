@@ -1,5 +1,5 @@
 # Get Rich or Die Trying GBP Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy reproduces the behaviour of the MetaTrader expert "Get Rich or Die Trying GBP". It focuses on the busy overlap between the New York and London sessions and waits for a short burst of directional imbalance on 1-minute candles. The algorithm counts how many of the latest bars closed below their open (labelled as "up" in the original code) versus the number that closed above their open. When the counts disagree, the strategy looks for an opportunity to fade the weaker side during the first five minutes of the chosen time windows.
 

@@ -1,5 +1,5 @@
 # Color PEMA Envelopes Digit System
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Color PEMA Envelopes Digit System** 将 MetaTrader 专家
 `Exp_Color_PEMA_Envelopes_Digit_System.mq5` 迁移到 StockSharp。
