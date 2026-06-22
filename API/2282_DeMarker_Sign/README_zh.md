@@ -1,5 +1,5 @@
 # DeMarker Sign 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 DeMarker 振荡指标来捕捉可能的趋势反转。默认情况下在每根完成的 4 小时蜡烛上计算 DeMarker 值，并与可配置的上限和下限比较。当指标上穿下限（默认 0.3）时，策略开多并平掉空单；当指标下穿上限（默认 0.7）时，策略开空并平掉多单。仓位将保持到出现相反信号为止。
 

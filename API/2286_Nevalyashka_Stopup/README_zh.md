@@ -1,5 +1,5 @@
 # Nevalyashka Stopup 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在每次交易结束后反向开仓，类似会翻身的玩具。若交易亏损，下一笔交易的止损和止盈距离按马丁系数放大；若交易盈利，距离恢复为初始值并可选择停止交易。
 

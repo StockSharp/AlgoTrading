@@ -1,5 +1,5 @@
 # VWMA 斜率
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **VWMA 斜率** 策略通过观察成交量加权移动平均线（VWMA）的方向来交易。当 VWMA 连续两个柱向上时做多，连续两个柱向下时做空；当斜率反转时，平掉现有仓位。
 

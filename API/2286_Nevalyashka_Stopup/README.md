@@ -1,5 +1,5 @@
 # Nevalyashka Stopup Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy alternates position direction after each trade, mimicking the "Nevalyashka" toy that flips sides. It uses a martingale approach: if a trade closes at a loss, the stop-loss and take-profit distances for the next trade are multiplied by a coefficient. After a profitable trade, distances reset to their base values and the strategy can optionally stop trading.
 

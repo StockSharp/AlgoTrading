@@ -1,5 +1,5 @@
 # Наклон VWMA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Наклон VWMA** анализирует направление объёмно-взвешенной скользящей средней (VWMA). Длинная позиция открывается, когда VWMA растёт два бара подряд, короткая — когда индикатор падает два бара. При смене наклона текущие позиции закрываются.
 

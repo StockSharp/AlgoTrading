@@ -1,5 +1,5 @@
 # 体积加权均线标准差策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将成交量加权移动平均线（VWMA）与标准差过滤器结合使用。策略在每根K线计算VWMA的变化量，当该变化超过`K1`倍的标准差时做多；当变化低于负的阈值时做空。通过这种方式，只在伴随成交量的强劲趋势中开仓。
 

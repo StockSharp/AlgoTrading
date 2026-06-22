@@ -1,5 +1,5 @@
 # Стратегия ColorX2MA Digit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом MQL5-эксперта **Exp_ColorX2MA_Digit**.
 Первоначальный алгоритм окрашивает дважды сглаженную скользящую среднюю в разные цвета в зависимости от её наклона и использует эти цвета для формирования сигналов.

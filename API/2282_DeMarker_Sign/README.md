@@ -1,5 +1,5 @@
 # DeMarker Sign Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the DeMarker oscillator to detect potential trend reversals. On each completed candle (4-hour timeframe by default), the DeMarker value is compared to configurable upper and lower thresholds. When the oscillator rises above the lower threshold (0.3 by default), the strategy enters a long position and closes any short position. When the oscillator falls below the upper threshold (0.7 by default), it enters a short position and closes any long position. Positions are held until an opposite signal appears.
 

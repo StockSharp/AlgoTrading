@@ -1,4 +1,5 @@
 # Стратегия Multik SMA Exp
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия представляет собой контртрендовую систему, основанную на наклоне простой скользящей средней (SMA). Она портирована из советника MetaTrader 5 «Multik_SMA_Exp».

@@ -1,5 +1,5 @@
 # ColorX2MA Digit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略来源于 MQL5 专家 **Exp_ColorX2MA_Digit**。
 原始算法根据双重平滑移动平均线的斜率改变线条颜色，并用颜色来生成交易信号。

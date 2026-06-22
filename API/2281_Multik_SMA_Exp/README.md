@@ -1,4 +1,5 @@
 # Multik SMA Exp Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy implements a contrarian approach based on the slope of a simple moving average (SMA). It was ported from the MetaTrader 5 expert advisor "Multik_SMA_Exp".

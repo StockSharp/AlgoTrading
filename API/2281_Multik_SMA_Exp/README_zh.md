@@ -1,4 +1,5 @@
 # Multik SMA Exp 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略从 MetaTrader 5 的 “Multik_SMA_Exp” 专家顾问移植，基于简单移动平均线 (SMA) 斜率的逆势交易方法。

@@ -1,5 +1,5 @@
 # Jupiter M 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 MetaTrader 专家 “Jupiter M. 4.1.1” 的网格策略。
 算法使用可配置的步长构建订单篮，并在开启新层时调整

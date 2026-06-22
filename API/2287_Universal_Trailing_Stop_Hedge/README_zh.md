@@ -1,5 +1,5 @@
 # Universal Trailing Stop Hedge 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略展示多种用于保护持仓的移动止损方法。
 提供基于 ATR、Parabolic SAR、移动平均、利润百分比和固定点数的移动止损。
