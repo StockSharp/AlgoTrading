@@ -1,4 +1,5 @@
 # Master MM Droid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Master MM Droid strategy is a multi-module port of the original MetaTrader 5 expert advisor. The StockSharp implementation keeps the core ideas of the legacy robot while using the high-level API for candle subscriptions, indicator binding and order management. Four independent money-management blocks can be switched on or off, allowing the strategy to mix momentum entries with scheduled breakout orders and weekly gap plays.

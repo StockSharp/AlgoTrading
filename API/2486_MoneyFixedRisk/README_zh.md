@@ -1,4 +1,5 @@
 # 固定风险资金管理策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 固定风险资金管理策略是 MetaTrader 5 EA **Money Fixed Risk.mq5** 的移植版本。原始脚本会定期计算在不超过账户权益固定百分比风险的情况下可以开出的最大仓位，并以该仓位开多单，同时设置对称的止损和止盈。本策略使用 StockSharp 的高级 API 复现同样的逻辑：订阅逐笔成交、计算仓位大小，并在进入后监控止损与止盈。

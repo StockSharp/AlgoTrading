@@ -1,5 +1,5 @@
 # Стратегия Forex Profit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Перевод советника MetaTrader «Forex Profit». Стратегия ожидает совпадения трёх экспоненциальных средних и подтверждения от Parabolic SAR, после чего входит в рынок по цене закрытия сформированной свечи. Управление рисками включает несимметричные уровни стоп-лосса и тейк-профита, трейлинг-стоп и дополнительную фиксацию прибыли по развороту EMA.
 

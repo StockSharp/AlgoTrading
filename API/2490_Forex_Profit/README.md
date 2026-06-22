@@ -1,5 +1,5 @@
 # Forex Profit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Translation of the "Forex Profit" MetaTrader expert advisor. The strategy waits for alignment of three exponential moving averages and confirmation from Parabolic SAR before entering trades on the close of each finished candle. Risk is controlled through asymmetric stop-loss and take-profit distances, a trailing stop and an additional EMA-based profit lock.
 

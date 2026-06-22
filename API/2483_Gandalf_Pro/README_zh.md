@@ -1,5 +1,5 @@
 # Gandalf PRO 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MQL 平台上的 Gandalf PRO 智能交易顾问。策略在每根 K 线收盘价上计算 LWMA 和 SMA，并将结果送入原始
 递归平滑公式，生成预测目标价。当预测价相对当前收盘价至少偏移 15 个价格步长时，策略会开出市价单，并记录基于预

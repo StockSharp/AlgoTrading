@@ -1,5 +1,5 @@
 # Forex Profit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 来自 MetaTrader 的 “Forex Profit” 专家顾问的移植版本。策略在每根完成的K线上检查三条指数移动平均线是否排列，并用 Parabolic SAR 做趋势确认，然后按收盘价入场。风险控制包括不对称的止损/止盈距离、跟踪止损以及基于 EMA 反转的利润锁定。
 

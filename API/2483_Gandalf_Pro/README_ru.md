@@ -1,5 +1,5 @@
 # Стратегия Gandalf PRO
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет логику советника Gandalf PRO из MQL. На закрытиях свечей рассчитываются LWMA и SMA, после чего значения
 передаются в исходный рекурсивный фильтр для получения прогнозируемой целевой цены. Когда прогноз уходит от текущего закрытия

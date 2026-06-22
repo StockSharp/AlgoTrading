@@ -1,5 +1,5 @@
 # Gandalf PRO Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the Gandalf PRO expert advisor from MQL. It computes two moving averages (LWMA and SMA) on the candle close
 and feeds them into the original recursive smoothing logic to forecast a future target price. When the projected target moves far

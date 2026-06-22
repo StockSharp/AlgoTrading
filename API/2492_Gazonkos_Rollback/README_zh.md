@@ -1,4 +1,5 @@
 # Gazonkos 回撤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Gazonkos 回撤策略源自 MetaTrader 5 平台上的 **gazonkos** 专家顾问。本策略同样以 EUR/USD 小时级别为主要场景，通过比较两根历史 K 线的收盘价来寻找强势动量，并在出现预设幅度的回撤后顺势入场。StockSharp 版本沿用了原始 EA 的状态机流程，使用高级 API、蜡烛订阅以及保护性订单完成整个逻辑。

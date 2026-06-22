@@ -1,4 +1,5 @@
 # 大阳线声音策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **大阳线声音策略** 复刻了 MetaTrader 专家顾问 “BigBarSound” 的核心功能。策略会监控指定周期的已完成K线，当K线的波动幅度达到设定阈值时，就会给出提示。由于 StockSharp 是跨平台环境，策略不会直接播放音频文件，而是写入详细的日志信息，方便将其转发到任何受支持的通知系统。

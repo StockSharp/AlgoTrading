@@ -1,4 +1,5 @@
 # Master MM Droid Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Master MM Droid — это перенос советника MetaTrader 5 в экосистему StockSharp. Стратегия сохраняет четырёхблочную структуру управления позицией, но использует высокоуровневые подписки на свечи, индикаторы и методы размещения заявок из StockSharp. Каждый блок можно включать или выключать, комбинируя импульсные входы, таймовые пробои и отработку гэпов.

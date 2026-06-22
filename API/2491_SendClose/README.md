@@ -1,4 +1,5 @@
 # SendClose Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 SendClose is a fractal-based breakout strategy that recreates the behaviour of the original MT5 expert advisor. The algorithm continuously builds dynamic support and resistance lines by linking alternating fractal pivots and reacts the moment price revisits those projected levels. The StockSharp port keeps the core mechanics intact: trend lines are generated from alternating up/down fractal sequences, breakouts trigger market entries, and separate offset lines are used to force position liquidation.

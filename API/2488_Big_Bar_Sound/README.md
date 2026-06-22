@@ -1,4 +1,5 @@
 # Big Bar Sound Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Big Bar Sound Strategy** reproduces the behaviour of the MetaTrader expert advisor "BigBarSound". The algorithm watches finished candles of a configurable timeframe and reports whenever the candle range is wide enough to be considered a "big bar". Instead of playing an audio file it writes detailed log messages, which can be further routed to any notification subsystem supported by StockSharp.

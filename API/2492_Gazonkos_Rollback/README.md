@@ -1,4 +1,5 @@
 # Gazonkos Rollback Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Gazonkos Rollback Strategy is a conversion of the original **gazonkos** MetaTrader 5 expert advisor. The approach trades the EUR/USD hourly chart and looks for strong momentum between two historical closes. After detecting that momentum, it waits for a pullback of a predefined size and then enters in the direction of the initial move. The StockSharp implementation keeps the same staged state machine as the source code while using the high-level API with candle subscriptions and protective orders.

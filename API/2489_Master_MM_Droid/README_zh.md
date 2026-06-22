@@ -1,4 +1,5 @@
 # Master MM Droid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Master MM Droid 是将 MetaTrader 5 专家顾问迁移到 StockSharp 平台的多模块策略。实现完全基于高层 API：通过订阅蜡烛、绑定指标以及使用高层下单方法复制原有 EA 的结构。四个资金管理模块可以单独启用/禁用，从而自由组合动量入场、时间盒突破与周度缺口交易。

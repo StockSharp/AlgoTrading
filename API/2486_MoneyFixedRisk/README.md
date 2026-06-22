@@ -1,4 +1,5 @@
 # Money Fixed Risk Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Money Fixed Risk Strategy is a direct port of the MetaTrader 5 expert advisor **Money Fixed Risk.mq5**. The original script periodically computes the maximum position size that keeps risk below a fixed percentage of account equity and then opens a market buy protected with symmetric stop-loss and take-profit orders. This StockSharp version preserves the same behaviour using the high-level tick subscription API and risk controls provided by the framework.

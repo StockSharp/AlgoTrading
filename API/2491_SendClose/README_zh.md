@@ -1,4 +1,5 @@
 # SendClose 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 SendClose 是一套基于分形支撑/阻力的突破系统，来源于 MT5 平台的同名专家顾问。策略通过连接交替出现的上/下分形来构建动态趋势线，一旦价格重新触及这些投射出来的水平，就会执行开仓或平仓操作。此移植版完全基于 StockSharp 的高级 API，实现了与原版相同的交易规则：
