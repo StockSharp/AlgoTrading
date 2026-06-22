@@ -1,4 +1,5 @@
 # MA振荡器柱状图策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略翻译自 MQL5 专家 **Exp_MAOscillatorHist.mq5**。它使用快慢两条简单移动平均线（SMA）的差值构成振荡器。当振荡器出现局部低点或高点时产生交易信号，这通常意味着趋势可能反转。

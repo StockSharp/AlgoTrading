@@ -1,4 +1,5 @@
 # Color XMACD Candle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略在 StockSharp 中实现了 “ColorXMACDCandle” 专家顾问。它使用 MACD 指标，根据柱状图或信号线颜色的变化来产生交易信号。
 

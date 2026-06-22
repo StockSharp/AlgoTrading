@@ -1,5 +1,5 @@
 # Exp Multic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在没有任何技术指标的情况下交易一组固定的主要外汇货币对。
 对于每个货币对，算法保存方向和仓位量。每次盈利后增加交易量，亏损时反向操作。整体利润或亏损超过设定阈值时停止交易并平掉所有仓位。

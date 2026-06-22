@@ -1,5 +1,5 @@
 # IMA专家策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用价格相对于其移动平均的相对速度进行交易。
 指标 `Close / SMA - 1` 在连续两根K线之间比较。指标快速上升开多头，快速下降开空头。

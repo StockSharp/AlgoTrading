@@ -1,4 +1,5 @@
 # 随机指标柱状策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL 专家 `Exp_Stochastic_Histogram` 的 StockSharp 移植版本。
 它使用随机指标在两种模式下生成逆势交易信号：

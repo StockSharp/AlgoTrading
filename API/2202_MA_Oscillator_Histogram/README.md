@@ -1,4 +1,5 @@
 # MA Oscillator Histogram Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a translation of the MQL5 expert **Exp_MAOscillatorHist.mq5**. It uses the difference between a fast and a slow Simple Moving Average (SMA) to form an oscillator. Trading signals are generated when the oscillator forms local minima or maxima, which are interpreted as potential trend reversals.

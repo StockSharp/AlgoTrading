@@ -1,5 +1,5 @@
 # Стратегия IMA Expert
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует по относительной скорости цены относительно её скользящей средней.
 Показатель `Close / SMA - 1` сравнивается между двумя последними свечами. Сильный рост вызывает открытие длинной позиции, сильное падение — короткой.

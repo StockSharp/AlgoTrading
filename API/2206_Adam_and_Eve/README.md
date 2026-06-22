@@ -1,5 +1,5 @@
 # Adam and Eve Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend-following strategy combining Heiken Ashi candles with a cascade of simple moving averages. A short is opened when a bearish Heiken Ashi candle without an upper wick appears and all monitored moving averages (5, 7, 9, 10, 12, 14, 20) slope downward. A long position is triggered by a bullish candle without a lower wick and all averages sloping upward. Each trade targets a profit at a distance of one ATR(14) from entry with no stop loss.
 

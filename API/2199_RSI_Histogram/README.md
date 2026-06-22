@@ -1,5 +1,5 @@
 # RSI Histogram Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Relative Strength Index (RSI) histogram to detect reversals when the oscillator leaves extreme zones. The histogram colors the RSI value based on two thresholds: a high level marking the overbought area and a low level marking the oversold area. When the color changes from green (overbought) to gray or red, the strategy closes short positions and opens a long position. When the color changes from red (oversold) to gray or green, it closes long positions and opens a short position.
 

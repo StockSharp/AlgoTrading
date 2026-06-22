@@ -1,5 +1,5 @@
 # RSI Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 RSI 直方图，当振荡器离开极端区域时识别趋势反转。直方图根据两个阈值对 RSI 值着色：高位表示超买区，低位表示超卖区。当颜色从绿色（超买）变为灰色或红色时，策略关闭空头仓位并开多单；当颜色从红色（超卖）变为灰色或绿色时，策略关闭多头仓位并开空单。
 

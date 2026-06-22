@@ -1,5 +1,5 @@
 # Adam and Eve 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 趋势跟随策略，结合 Heiken Ashi 蜡烛和一组简单移动平均线。当出现没有上影线的看跌 Heiken Ashi 蜡烛并且所有监控的均线 (5, 7, 9, 10, 12, 14, 20) 都向下时开空；当出现没有下影线的看涨蜡烛并且所有均线向上时开多。每笔交易以距离入场价一个 ATR(14) 的利润目标为止，没有止损。
 

@@ -1,4 +1,5 @@
 # WPR柱状图策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于威廉指标 %R 的行为。当指标离开超买或超卖区域时，策略在相反方向开仓。
 
