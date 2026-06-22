@@ -1,5 +1,5 @@
 # Forex Line 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Forex Line 策略源自 MetaTrader 指标“ForexLine”。它对价格应用两次加权移动平均以构建快线和慢线。双重平滑线之间的交叉用于产生入场信号。
 

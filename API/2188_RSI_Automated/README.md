@@ -1,5 +1,5 @@
 # RSI Automated Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Momentum strategy using the Relative Strength Index (RSI) to trade extreme oversold and overbought conditions.
 The system opens a long position when RSI drops below the oversold level and a short position when RSI rises above the overbought level.

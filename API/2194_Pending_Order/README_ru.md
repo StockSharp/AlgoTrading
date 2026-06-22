@@ -1,5 +1,5 @@
 # Pending Order
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия размещает четыре отложенных ордера вокруг текущих цен Bid и Ask в указанные часы. Она постоянно поддерживает Buy Limit, Sell Limit, Buy Stop и Sell Stop на настраиваемом расстоянии от рынка. Каждый ордер использует фиксированные уровни стоп-лосса и тейк-профита.
 

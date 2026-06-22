@@ -1,4 +1,5 @@
 # Stochastic Automated 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在选定的K线周期上使用 **Stochastic 振荡器**。当 %K 与 %D 进入极端区域并发生交叉时触发交易。每笔交易都设置固定的止盈和止损，并使用移动止损来锁定利润。
 

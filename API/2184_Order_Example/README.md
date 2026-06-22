@@ -1,5 +1,5 @@
 # Order Example Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout strategy converted from the MQL5 sample `OrderExample.mq5`.
 It enters trades when price breaks above recent highs or below recent lows.

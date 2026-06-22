@@ -1,4 +1,5 @@
 # Color Coppock 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Color Coppock Strategy** 基于改进的 Coppock 振荡器。该振荡器计算两个不同周期的 ROC 之和，并通过移动平均线进行平滑。当动量上升时产生做多信号，动量下降时产生做空信号。
 

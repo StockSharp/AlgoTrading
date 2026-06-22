@@ -1,5 +1,5 @@
 # RSI Automated Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用相对强弱指数（RSI）在极度超卖和超买状态下进行交易的动量策略。
 当RSI跌破超卖水平时开多仓，当RSI升破超买水平时开空仓。

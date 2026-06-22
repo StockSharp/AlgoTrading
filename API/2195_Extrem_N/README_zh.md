@@ -1,4 +1,5 @@
 # Extrem N 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Extrem N 策略基于 Donchian 通道捕捉新的高点和低点，并在出现反向极值时反向开仓。
 

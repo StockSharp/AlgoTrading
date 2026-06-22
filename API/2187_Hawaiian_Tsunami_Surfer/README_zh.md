@@ -1,5 +1,5 @@
 # Hawaiian Tsunami Surfer
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略寻找突然的动量尖峰并反向交易。它使用 Momentum 指标计算单个柱体收盘价的百分比变化。当变化超过微小阈值时，视为一次“海啸”。策略在强烈上升后卖出，在强烈下跌后买入。通过 StartProtection 以价格步长设置止损和止盈。
 

@@ -1,5 +1,5 @@
 # Pending Order
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在指定时间段内围绕当前买卖价放置四个挂单：买入限价、卖出限价、买入止损和卖出止损。挂单与市场价格保持可配置的距离，并为每个订单设置固定的止损和止盈。
 

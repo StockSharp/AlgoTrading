@@ -1,4 +1,5 @@
 # Stochastic Automated Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades using the **Stochastic Oscillator** on the selected candle timeframe. It waits for %K and %D to enter extreme zones and then acts on crossovers to open positions. Fixed take profit and stop loss protect each trade, while a trailing stop locks in profits.
 

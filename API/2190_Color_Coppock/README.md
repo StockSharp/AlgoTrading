@@ -1,4 +1,5 @@
 # Color Coppock Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Color Coppock Strategy** implements a trading system based on a modified Coppock oscillator. The oscillator sums two Rate of Change (ROC) values and smooths the result with a moving average. Rising momentum generates long signals, while falling momentum generates short signals.
 

@@ -1,4 +1,5 @@
 # Стратегия Color Coppock
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Color Coppock Strategy** реализует торговую систему, основанную на модифицированном осцилляторе Coppock. Осциллятор складывает два значения индикатора ROC и сглаживает результат скользящей средней. Рост импульса генерирует сигналы на покупку, падение — сигналы на продажу.
 

@@ -1,5 +1,5 @@
 # Стратегия Forex Line
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Forex Line основана на индикаторе MetaTrader «ForexLine». Для построения быстрой и медленной линий используется двойное сглаживание цены взвешенными скользящими средними. Пересечения этих линий формируют торговые сигналы.
 

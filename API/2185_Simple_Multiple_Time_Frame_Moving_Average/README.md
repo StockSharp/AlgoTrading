@@ -1,4 +1,5 @@
 # Simple Multiple Time Frame Moving Average Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the logic of `simple_multiple_time_frame_moving_average.mq4`. It aligns trends across two time frames by using simple moving averages.
 

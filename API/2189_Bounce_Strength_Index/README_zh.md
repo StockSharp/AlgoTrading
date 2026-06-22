@@ -1,4 +1,5 @@
 # Bounce Strength Index 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了简化的 Bounce Strength Index（BSI）指标。该指标计算收盘价在最近区间中的位置，并通过两次 **SimpleMovingAverage** 平滑来突出动量变化。
 

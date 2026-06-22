@@ -1,4 +1,5 @@
 # Экстрем N Стратегия
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Extrem N торгует развороты, основанные на новых максимумах и минимумах цены за заданный период.
 

@@ -1,4 +1,5 @@
 # Simple Multiple Time Frame Moving Average 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略改编自 `simple_multiple_time_frame_moving_average.mq4`，通过在两个不同周期的简单移动平均线之间寻找趋势一致性来交易。
 
