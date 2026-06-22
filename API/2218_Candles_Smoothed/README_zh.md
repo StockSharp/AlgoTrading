@@ -1,4 +1,5 @@
 # 平滑蜡烛策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于平滑蜡烛的颜色进行交易。对于每个完成的蜡烛，计算收盘价与开盘价之差并通过移动平均线平滑。当平滑后的差值改变符号时，蜡烛颜色发生切换，策略相应反转头寸。
 

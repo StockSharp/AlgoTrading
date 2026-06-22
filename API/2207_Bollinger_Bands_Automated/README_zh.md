@@ -1,5 +1,5 @@
 # 布林带自动策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在下布林带挂入Buy Limit，在上布林带挂入Sell Limit。当价格触及中轨时平仓。每根新K线开始时刷新所有挂单。
 

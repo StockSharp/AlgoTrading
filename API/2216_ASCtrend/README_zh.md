@@ -1,5 +1,5 @@
 # ASCtrend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用威廉 %R 指标来捕捉类似 ASCtrend 的快速反转。当指标从超卖区迅速上升到超买区时做空，反之则做多。
 

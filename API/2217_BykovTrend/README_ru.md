@@ -1,5 +1,5 @@
 # Стратегия "Bykov Trend"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет классическую систему MetaTrader "Bykov Trend" на базе высокоуровневого API StockSharp. Индикатор основан на осцилляторе Williams %R и фиксирует разворот тенденции. При переходе тренда от медвежьего к бычьему открывается длинная позиция, при смене бычьего тренда на медвежий открывается короткая.
 

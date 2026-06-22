@@ -1,5 +1,5 @@
 # Bykov Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 上重现了 MetaTrader 中的 "Bykov Trend" 系统。指标基于 Williams %R 振荡器，用于捕捉趋势反转。当趋势由空头转为多头时开多；当趋势由多头转为空头时开空。
 

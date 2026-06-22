@@ -1,5 +1,5 @@
 # 三线突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Three Line Break 指标来捕捉趋势反转。
 指标将当前的最高价和最低价与前 N 根已完成蜡烛的最高点和最低点进行比较。

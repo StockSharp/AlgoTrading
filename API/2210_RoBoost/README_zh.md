@@ -1,4 +1,5 @@
 # RoBoost 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将原始 MQL4 智能交易系统 **RoBoostj** 转换为 C# 的实现。
 它基于 RSI 指标结合简单的价格动量判断，在选定的 K 线周期上运行

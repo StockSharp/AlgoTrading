@@ -1,4 +1,5 @@
 # 基于RSI自动交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对最近的RSI值进行平均以生成交易信号。它首先按照可配置的`RsiPeriod`计算相对强弱指数（RSI），随后对RSI本身应用简单移动平均线。平均后的RSI超过或跌破设定阈值时开仓，并在出现相反信号时平仓。
 

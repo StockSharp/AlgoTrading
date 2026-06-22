@@ -1,4 +1,5 @@
 # RoBoost Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# adaptation of the original MQL4 expert advisor **RoBoostj**.
 It trades on a single security using RSI based signals combined with simple

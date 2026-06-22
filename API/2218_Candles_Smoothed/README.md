@@ -1,4 +1,5 @@
 # Candles Smoothed Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the color of smoothed candles. For each finished candle, the difference between the close and open price is passed through a moving average. When this smoothed difference changes sign, the candle "color" switches and the strategy reverses its position.
 

@@ -1,5 +1,5 @@
 # CCI Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用商品通道指数（CCI）在指标离开极值区域时寻找反转机会。当 CCI 先位于上方极值水平后回落至其下方时开多头；当 CCI 先位于下方极值水平后上穿其上方时开空头。可选的固定点数止损和止盈用于保护持仓。
 

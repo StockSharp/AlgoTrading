@@ -1,4 +1,5 @@
 # Auto Trade With RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy averages the last RSI values to generate trading signals. It calculates a standard Relative Strength Index (RSI) over a configurable period and then applies a simple moving average to the RSI itself. Trades are opened when the averaged RSI crosses predefined thresholds and closed when the opposite threshold is reached.
 

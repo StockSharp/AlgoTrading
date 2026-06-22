@@ -1,4 +1,5 @@
 # Hedge Average 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MetaTrader 的 "Hedge Average" 专家。它比较两个周期内开盘价与收盘价的简单移动平均线。
 
