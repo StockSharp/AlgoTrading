@@ -1,4 +1,5 @@
 # Стратегия Anchored Momentum Candle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия конвертирует MQL5 эксперт "AnchoredMomentumCandle" в пример на StockSharp C#. Для каждой свечи вычисляется якорный моментум цены открытия и закрытия с помощью EMA и SMA, формируя цветную свечу.
 

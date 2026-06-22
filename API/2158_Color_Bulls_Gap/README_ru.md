@@ -1,5 +1,5 @@
 # Стратегия Color Bulls Gap
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воссоздает индикатор ColorBullsGap, сравнивая сглаженные разрывы между максимумом и средними цен открытия и закрытия.
 Открывает длинную позицию, когда два бара назад был бычий цвет, а последний бар стал нейтральным или медвежьим, закрывая короткие позиции.

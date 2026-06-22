@@ -1,4 +1,5 @@
 # Стратегия ColorMETRO Stochastic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 C# порт эксперта MQL5 **exp_colormetro_stochastic.mq5**. В оригинале использовался собственный индикатор ColorMETRO Stochastic, здесь его заменяет стандартный `StochasticOscillator` StockSharp.
 

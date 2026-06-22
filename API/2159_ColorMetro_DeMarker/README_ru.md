@@ -1,4 +1,5 @@
 # Стратегия ColorMetro DeMarker
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ColorMetro DeMarker Strategy** — реализация на StockSharp эксперта MQL5 `Exp_ColorMETRO_DeMarker`.
 Стратегия использует индикатор DeMarker с построением ступенчатых уровней для генерации торговых сигналов.

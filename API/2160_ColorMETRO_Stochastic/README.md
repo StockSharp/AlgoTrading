@@ -1,4 +1,5 @@
 # ColorMETRO Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of the MQL5 expert **exp_colormetro_stochastic.mq5**. It replaces the original ColorMETRO Stochastic indicator with the built-in `StochasticOscillator` from StockSharp and trades on crossover events.
 

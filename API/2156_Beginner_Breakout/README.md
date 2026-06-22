@@ -1,4 +1,5 @@
 # Beginner Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Uses the highest and lowest prices of the recent `Period` candles to form a channel. When the close approaches the upper boundary, the strategy goes long. When the close approaches the lower boundary, it goes short.
 

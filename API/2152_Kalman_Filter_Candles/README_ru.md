@@ -1,4 +1,5 @@
 # Стратегия "Kalman Filter Candles"
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует фильтр Калмана для сглаживания цены открытия и закрытия каждой свечи. На основе сглажённых значений формируется новая свеча, цвет которой определяет торговый сигнал:
 

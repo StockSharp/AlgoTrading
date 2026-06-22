@@ -1,4 +1,5 @@
 # ColorMetro DeMarker 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ColorMetro DeMarker 策略** 是 MQL5 专家顾问 `Exp_ColorMETRO_DeMarker` 的 StockSharp 实现。
 该策略使用带有阶梯级别的 DeMarker 指标来生成交易信号。

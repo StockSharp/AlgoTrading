@@ -1,4 +1,5 @@
 # ColorMETRO 随机指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家 **exp_colormetro_stochastic.mq5** 的 C# 版本。原始脚本使用自定义 ColorMETRO Stochastic 指标，这里改用 StockSharp 内置的 `StochasticOscillator` 并依据交叉信号进行交易。
 

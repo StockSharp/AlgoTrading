@@ -1,4 +1,5 @@
 # Loco 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了最初在 MQL5 中编写的 “Loco” 指标。指标分析 K 线价格并分配颜色（绿色或品红）。颜色变化表示趋势反转。
 

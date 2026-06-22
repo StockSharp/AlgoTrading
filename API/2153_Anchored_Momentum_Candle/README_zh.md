@@ -1,4 +1,5 @@
 # 锚定动量蜡烛策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 的 "AnchoredMomentumCandle" 专家转换为 StockSharp C# 示例。策略对每根K线的开盘价和收盘价计算 EMA 和 SMA 形成的动量，并生成一根彩色蜡烛以表示方向。
 

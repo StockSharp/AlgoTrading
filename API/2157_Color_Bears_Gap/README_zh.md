@@ -1,5 +1,5 @@
 # Color Bears Gap 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Color Bears Gap 指标的策略。该指标比较最高价与平滑开盘价和收盘价之间的两个缺口。当差值穿越零时，策略按新方向开仓并平掉反向仓位。
 

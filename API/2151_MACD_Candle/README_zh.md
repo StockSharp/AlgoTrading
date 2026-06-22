@@ -1,5 +1,5 @@
 # MACD Candle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 智能交易系统“Exp_MACDCandle”的改写版本。它将 MACD Candle 指标的颜色信号转换为使用 StockSharp 高级 API 的交易指令。
 

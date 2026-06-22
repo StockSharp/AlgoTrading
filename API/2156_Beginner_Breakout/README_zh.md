@@ -1,4 +1,5 @@
 # Beginner Breakout 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用最近 `Period` 根K线的最高价和最低价构建通道。当收盘价接近上边界时做多，接近下边界时做空。
 

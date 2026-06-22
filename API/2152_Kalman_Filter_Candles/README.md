@@ -1,4 +1,5 @@
 # Kalman Filter Candles Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy applies the Kalman Filter to the open and close prices of each candle. The resulting smoothed candles are classified as bullish or bearish depending on whether the smoothed close is above or below the smoothed open. Positions are opened when the candle color changes:
 

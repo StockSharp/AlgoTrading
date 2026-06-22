@@ -1,4 +1,5 @@
 # 卡尔曼滤波蜡烛策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对每根K线的开盘价和收盘价分别应用卡尔曼滤波器。生成的平滑价格构成新的蜡烛，通过比较平滑后的收盘价与开盘价确定蜡烛颜色：
 
