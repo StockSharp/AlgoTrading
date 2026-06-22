@@ -1,5 +1,5 @@
 # Ha MaZi
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает свечи Heikin Ashi, фильтр EMA и подтверждение разворотом ZigZag. Длинная позиция открывается при формировании бычьей HA свечи на новом минимуме ZigZag выше EMA. Короткая позиция появляется при медвежьей свече на новом максимуме ZigZag ниже EMA. Выход осуществляется по фиксированному стоп-лоссу или тейк-профиту.
 

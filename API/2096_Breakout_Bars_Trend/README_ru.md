@@ -1,5 +1,5 @@
 # Стратегия Breakout Bars Trend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия определяет развороты тренда с помощью индикатора Parabolic SAR. Перед входом в сделку она ожидает заданное число неудачных разворотов, после чего открывается в сторону нового тренда. Расстояния для стоп‑лосса и тейк‑профита задаются либо в пунктах, либо в процентах от цены входа.
 

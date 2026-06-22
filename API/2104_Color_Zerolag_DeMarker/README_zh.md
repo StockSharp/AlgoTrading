@@ -1,4 +1,5 @@
 # 颜色零延迟 DeMarker 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 专家顾问 `Exp_ColorZerolagDeMarker` 转换为 StockSharp 框架。策略使用多个 **DeMarker** 指标的加权组合构建快线和慢线，当两条线交叉时产生交易信号。
 

@@ -1,5 +1,5 @@
 # 突破柱趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Parabolic SAR 指标识别趋势反转。在进入交易前，它会等待若干次失败的反转信号，然后顺着新的趋势方向开仓。止损和止盈距离可按点数或按入场价的百分比计算。
 

@@ -1,4 +1,5 @@
 # LSMA Angle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用最小二乘移动平均线 (LSMA) 的角度来识别趋势方向。角度通过两个 LSMA 值的差近似计算，这两个值在时间上相隔若干根 K 线。
 

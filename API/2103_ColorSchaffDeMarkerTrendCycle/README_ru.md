@@ -1,5 +1,5 @@
 # Стратегия Color Schaff DeMarker Trend Cycle
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Стратегия Color Schaff DeMarker Trend Cycle** использует осциллятор, построенный на быстрых и медленных значениях DeMarker. Индикатор выполняет два шага стохастика, формируя циклическое значение в диапазоне от -100 до +100. В зависимости от уровня и наклона осциллятора задаются цвета, которые применяются для генерации торговых сигналов.
 

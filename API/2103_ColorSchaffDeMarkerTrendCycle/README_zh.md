@@ -1,5 +1,5 @@
 # Color Schaff DeMarker Trend Cycle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Color Schaff DeMarker Trend Cycle 策略** 使用由快慢 DeMarker 值构建的自定义振荡器。该指标通过两次随机过程生成 -100 到 +100 之间的周期性数值。根据振荡器的水平和斜率分配颜色，并据此生成交易信号。
 

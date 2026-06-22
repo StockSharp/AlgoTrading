@@ -1,4 +1,5 @@
 # CandleStop Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy implements trailing stop management based on the CandleStop approach. It analyzes completed candles and moves the stop level only in the direction of the trade. The algorithm relies on Donchian channels with separate look-back periods for long and short positions, making it suitable for attaching to manual trades or other entry strategies.

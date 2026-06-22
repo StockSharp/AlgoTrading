@@ -1,4 +1,5 @@
 # Millenium Code 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Millenium Code** 是一种头寸策略，每天最多只开一笔交易。方向由快速和慢速均线的交叉以及近期高低点过滤决定。交易在设定的时间开仓，并在时间到达、触及止损/止盈或达到最长持仓时间时平仓。
 

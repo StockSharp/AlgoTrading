@@ -1,4 +1,5 @@
 # Millenium Code Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Millenium Code** strategy is a positional system that opens at most one trade per day. Direction is determined by a moving average crossover filtered by recent highs and lows. Trades are placed at a user-defined time and are closed by time, stop loss, take profit or maximum duration.
 

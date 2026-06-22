@@ -1,4 +1,5 @@
 # CandleStop Trailing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略基于 CandleStop 方法实现跟踪止损。它只分析已完成的 K 线，并且仅在对仓位有利的方向上移动止损水平。算法使用不同周期的唐奇安通道分别处理多头和空头仓位，非常适合与手动交易或其他入场策略配合使用。

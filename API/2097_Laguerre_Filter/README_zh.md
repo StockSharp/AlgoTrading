@@ -1,4 +1,5 @@
 # Laguerre Filter
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易 Laguerre 滤波线与短期 FIR 滤波线（对最近中间价的加权移动平均）之间的交叉。
 

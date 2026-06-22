@@ -1,5 +1,5 @@
 # Laguerre ADX Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对平均趋向指数(ADX)的+DI和–DI分量应用拉盖尔滤波。该平滑方法减少了方向波动的噪声，并突出买卖双方主导权的突然变化。当拉盖尔平滑后的+DI向下穿越平滑后的–DI时，系统做多，预期价格反转向上；当平滑的+DI向上穿越平滑的–DI时，系统做空。
 
