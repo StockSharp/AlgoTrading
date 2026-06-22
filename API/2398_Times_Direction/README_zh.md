@@ -1,5 +1,5 @@
 # Times Direction 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该时间驱动策略在预定时间窗口内开仓一次多头或空头，并在另一个时间窗口内平仓。入场方向可配置，同时监控可选的止损和止盈。策略仅使用已完成的K线，不依赖指标。
 

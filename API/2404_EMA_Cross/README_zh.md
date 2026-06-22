@@ -1,5 +1,5 @@
 # EMA Cross 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两条指数移动平均线 (EMA) 的交叉。
 当快速 EMA 上穿慢速 EMA 时开多；当快速 EMA 下穿慢速 EMA 时开空。

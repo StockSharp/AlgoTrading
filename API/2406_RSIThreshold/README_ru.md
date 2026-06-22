@@ -1,5 +1,5 @@
 # Стратегия RSI Threshold
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация советника *Exp_RSI* из MetaTrader в StockSharp. Стратегия открывает и закрывает позиции при пересечении RSI заданных уровней перекупленности и перепроданности.
 

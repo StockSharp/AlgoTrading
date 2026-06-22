@@ -1,4 +1,5 @@
 # DVD Level 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略为原版 "DVD Level" MQL5 程序的简化移植。它使用 RAVI 指标判断市场方向，RAVI 通过在 1 小时K线上计算 2 和 24 周期指数移动平均得出。
 

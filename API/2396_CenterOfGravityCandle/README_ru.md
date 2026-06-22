@@ -1,4 +1,5 @@
 # Стратегия Center Of Gravity Candle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет советник MetaTrader «Exp_CenterOfGravityCandle» с использованием высокоуровневого API StockSharp. Индикатор формирует синтетические свечи: к ценам Open/High/Low/Close применяется алгоритм центра тяжести Джона Элерса, далее результаты сглаживаются выбранной скользящей средней. Цвет синтетической свечи (бычий, медвежий или нейтральный) служит единственным торговым сигналом.
 

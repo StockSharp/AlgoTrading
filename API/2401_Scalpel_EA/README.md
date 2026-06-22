@@ -1,4 +1,5 @@
 # Scalpel EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a simplified conversion of the original *Scalpel EA* written for MetaTrader.
 It combines a Commodity Channel Index (CCI) filter with multi-timeframe breakout

@@ -1,4 +1,5 @@
 # 重心蜡烛策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复刻 MetaTrader 专家顾问 “Exp_CenterOfGravityCandle”。指标对原始蜡烛的开、高、低、收价格分别应用 John Ehlers 的重心算法，并通过可配置的移动平均线进行平滑，构建出三色的合成蜡烛。蜡烛颜色（多头、空头或中性）即为唯一的交易信号。
 

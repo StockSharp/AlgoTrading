@@ -1,5 +1,5 @@
 # Fibo iSAR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快慢两条 Parabolic SAR 指标与斐波那契回撤。当快速 SAR 位于慢速 SAR 之上且低于价格时，视为上升趋势，在最近区间的 50% 斐波那契回撤位挂入 Buy Limit 订单。止损放在近期低点下方，止盈设在 161% 扩展位。下降趋势时逻辑相反，使用 Sell Limit 订单。
 

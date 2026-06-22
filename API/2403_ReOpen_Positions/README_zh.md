@@ -1,4 +1,5 @@
 # 重新开仓策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 示例 `Exp_ReOpenPositions` 的 StockSharp 版本，用于在当前持仓盈利时再次加仓。
 

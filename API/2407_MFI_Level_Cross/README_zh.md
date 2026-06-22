@@ -1,5 +1,5 @@
 # MFI 水平交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用资金流量指数（MFI）震荡指标来识别超买和超卖。当 MFI 穿越预设阈值时，策略会开仓或反转仓位。根据选择的趋势模式，它可以顺势交易或逆势交易。
 

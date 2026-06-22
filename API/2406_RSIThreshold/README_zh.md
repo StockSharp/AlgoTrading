@@ -1,5 +1,5 @@
 # RSI 阈值策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 的 *Exp_RSI* 专家顾问转换为 StockSharp。 当 RSI 指标穿越设定的超买和超卖水平时，策略开仓或平仓。
 
