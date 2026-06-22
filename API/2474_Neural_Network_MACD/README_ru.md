@@ -1,4 +1,5 @@
 # Стратегия Neural Network MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия совмещает простой перцептрон с четырьмя весами и классический сигнал MACD. Сделка открывается только если направление совпадает у MACD и нейронного фильтра.
 

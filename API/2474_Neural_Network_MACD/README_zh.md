@@ -1,4 +1,5 @@
 # 神经网络 MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将四权重感知器过滤器与经典 MACD 交叉结合。只有当 MACD 与神经网络方向一致时才开仓。
 

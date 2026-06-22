@@ -1,4 +1,5 @@
 # Cash Machine 5min Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct conversion of the **CashMachine 5min** expert advisor from MQL to the StockSharp high level API. It is designed for five-minute candles and combines the DeMarker indicator with a Stochastic oscillator crossover filter. Trade management uses hidden stop-loss / take-profit levels together with staged trailing rules that attempt to lock in gains once price momentum appears.

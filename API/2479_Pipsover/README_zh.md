@@ -1,4 +1,5 @@
 # Pipsover
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Pipsover 是一套动量反转策略，针对 Chaikin 振荡器的极值做出反应。原始的 MetaTrader 5 智能交易系统会在振荡器出现显著尖峰、且上一根 K 线回撤到 20 周期简单移动平均线时开仓。本 C# 版本复刻了同样的思想，通过累积/派发指标配合两条指数移动平均线重建 Chaikin 振荡器。同时沿用脚本中设定的止损与止盈距离，以保持风险控制与原版一致。

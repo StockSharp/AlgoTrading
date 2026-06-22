@@ -1,4 +1,5 @@
 # WOC 0.1.2 Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level StockSharp port of the MetaTrader expert advisor "WOC.0.1.2". It listens to Level 1 best bid/ask updates and searches for fast price streaks on the ask side. When the ask price prints a configurable number of consecutive higher or lower ticks within a limited time window, the strategy opens a market position in the breakout direction. Only one position can be open at any moment, which mirrors the single-position behaviour of the original code.

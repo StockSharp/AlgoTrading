@@ -1,4 +1,5 @@
 # WOC 0.1.2 动能策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问“WOC.0.1.2”的 StockSharp 高级 API 版本。策略订阅 Level 1 买一/卖一报价，监控卖一价格的快速连续跳动。当卖一价格在指定时间窗口内连续上涨或下跌达到设定次数时，系统会沿突破方向发送市价单。策略一次只会持有一个方向的仓位，与原始 MQL 代码保持一致。

@@ -1,4 +1,5 @@
 # Стратегия Alligator Fractal Martingale
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MetaTrader «Alligator(barabashkakvn's edition)» на высокоуровневый API StockSharp. Она объединяет индикатор Аллигатор Билла Вильямса, фильтр по фракталам, лестницу усреднения по методу мартингейла и адаптивный трейлинг-стоп. Первая сделка открывается по рынку, а при движении цены против позиции активируются заранее рассчитанные уровни докупки.
 

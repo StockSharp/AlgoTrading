@@ -1,4 +1,5 @@
 # Pipsover
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Pipsover is a momentum-reversal strategy that reacts to strong extremes of the Chaikin oscillator. The original MetaTrader 5 Expert Advisor opens a new trade when the oscillator prints a pronounced spike while the previous candle retraces to the 20-period simple moving average. The C# port keeps the same idea by rebuilding the Chaikin oscillator with the accumulation/distribution line and two exponential moving averages. Each trade is protected with the same stop-loss and take-profit distances defined in the script so that risk control matches the reference implementation.

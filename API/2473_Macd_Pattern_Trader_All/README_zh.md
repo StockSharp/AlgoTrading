@@ -1,5 +1,5 @@
 # MACD模式交易者
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在MACD的剧烈反转时开仓。它寻找在极小中间值周围出现的两个巨大峰值。当前一根MACD为正且当前值大幅跌入负区时做空；当条件相反时做多。止损和止盈基于最近的高点和低点。
 

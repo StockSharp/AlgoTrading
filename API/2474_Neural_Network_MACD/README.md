@@ -1,4 +1,5 @@
 # Neural Network MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines a simple four-weight perceptron filter with a classic MACD crossover. A position is opened only when both the MACD and the neural network agree on the direction.
 

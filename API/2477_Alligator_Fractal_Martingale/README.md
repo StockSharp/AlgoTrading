@@ -1,4 +1,5 @@
 # Alligator Fractal Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader expert "Alligator(barabashkakvn's edition)" to StockSharp's high-level API. It combines Bill Williams' Alligator indicator with fractal breakout confirmation, an averaging martingale ladder and adaptive trailing stops. The logic is designed for hedging-style execution where the first order is opened at market and additional entries are scheduled at predefined distances when price moves against the position.
 

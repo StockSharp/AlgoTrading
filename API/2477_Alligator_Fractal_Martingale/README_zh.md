@@ -1,4 +1,5 @@
 # 鳄鱼指标分形马丁策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把 MetaTrader 上的 “Alligator(barabashkakvn's edition)” 专家顾问移植到 StockSharp 的高级 API。策略结合了比尔·威廉姆斯的鳄鱼指标、分形突破确认、可选的马丁格尔加仓梯队以及自适应追踪止损。首笔单以市价开仓，当行情不利时按照预先设定的价格间距逐级增加头寸。
 

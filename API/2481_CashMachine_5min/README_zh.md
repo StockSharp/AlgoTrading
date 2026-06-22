@@ -1,4 +1,5 @@
 # Cash Machine 5min 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是将 **CashMachine 5min** MQL 智能交易系统直接迁移到 StockSharp 高级 API 的结果。策略基于 5 分钟K线，结合 DeMarker 指标与随机指标（Stochastic）的交叉过滤，并使用隐藏止损/止盈加分段移动止损来管理仓位，力图在趋势发展时逐步锁定利润。

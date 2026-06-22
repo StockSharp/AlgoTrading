@@ -1,4 +1,5 @@
 # Ten Pips EURUSD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Ten Pips EURUSD Strategy** is a breakout system that reproduces the logic of the original MetaTrader expert advisor. It watches the most recent completed candle and places stop orders above and below that range. Orders are sized in pips, adjusted for the current instrument tick size, and optionally managed by a trailing stop. The implementation uses StockSharp's high-level candle subscriptions together with order book updates to keep the behaviour close to the MQL version while remaining broker-neutral.

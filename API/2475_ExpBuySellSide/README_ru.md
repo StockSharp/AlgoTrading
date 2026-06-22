@@ -1,5 +1,5 @@
 # Стратегия ExpBuySellSide
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **ExpBuySellSide** представляет собой конвертацию одноимённого советника MetaTrader в API StockSharp. Она сочетает ATR‑основанные стопы с упрощённым фильтром тренда Step Up/Down.
 

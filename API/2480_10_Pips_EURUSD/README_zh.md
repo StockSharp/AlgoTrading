@@ -1,4 +1,5 @@
 # Ten Pips EURUSD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Ten Pips EURUSD** 是一套复制自 MetaTrader 专家的区间突破策略。策略记录上一根已完成 K 线的最高价与最低价，然后在区间上下各挂一组止损单，并使用点数(pip)来设定止损及止盈距离。通过 StockSharp 的高级烛图订阅与盘口数据，代码保持了原始 EA 的行为，同时可以在任意券商环境下运行。

@@ -1,5 +1,5 @@
 # Macd Pattern Trader All
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy that opens positions on sharp MACD reversals. It looks for two large spikes around a small intermediate value of the MACD line. A sell is opened when the previous MACD value is positive and the current value drops deep into negative territory. A buy is opened on the opposite condition. Stop loss and take profit are derived from recent highs and lows.
 
