@@ -1,4 +1,5 @@
 # CCI Normalized Reversal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用商品通道指数（CCI）在指标离开极端区域后寻找反转信号。
 

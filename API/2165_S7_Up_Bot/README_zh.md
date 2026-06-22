@@ -1,5 +1,5 @@
 # S7 Up Bot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于突破的系统，寻找相近的高点或低点后出现的快速价格移动。
 当连续两个低点几乎相等且价格上升 `Span Price` 时开多单。

@@ -1,4 +1,5 @@
 # RSI MA Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the Relative Strength Index (RSI) with a moving average trend filter.
 A long position is opened when the RSI drops below a specified buy level while the fast moving average is above the slow moving average. 

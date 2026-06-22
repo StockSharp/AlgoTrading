@@ -1,5 +1,5 @@
 # Стратегия ColorMETRO WPR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия использует индикатор ColorMETRO Williams %R, который строит быстрые и медленные ступенчатые линии вокруг осциллятора Williams %R.
 Быстрая линия реагирует на изменения цены оперативно, а медленная сглаживает шум. Сигналы на вход возникают, когда линии

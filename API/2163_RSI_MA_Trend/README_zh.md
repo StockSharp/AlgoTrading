@@ -1,4 +1,5 @@
 # RSI MA 趋势策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合相对强弱指数（RSI）和移动平均趋势过滤。当 RSI 跌破设定的买入阈值且快速移动平均在慢速移动平均之上时开多。当 RSI 升破设定的卖出阈值且快速移动平均在慢速移动平均之下时开空。
 

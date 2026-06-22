@@ -1,5 +1,5 @@
 # AfterEffects Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The AfterEffects strategy is based on the idea that market prices may show aftereffects.
 It calculates a signal using the current close price and the opens from `p` and `2p` bars ago:

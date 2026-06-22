@@ -1,5 +1,5 @@
 # Стратегия Digital CCI Woodies
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует пересечение двух индикаторов Commodity Channel Index. Быстрый CCI быстро реагирует на изменение цены, а медленный CCI фильтрует шум. Торговые сигналы появляются, когда быстрый индикатор пересекает медленный.
 

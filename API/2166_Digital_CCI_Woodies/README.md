@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Digital CCI Woodies Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades on the crossover of two Commodity Channel Index (CCI) indicators. A fast CCI reacts quickly to price changes while a slow CCI smooths market noise. Signals are generated when the fast line crosses the slow one.
 

@@ -1,5 +1,5 @@
 # Digital CCI Woodies 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两个商品通道指数（CCI）的交叉。快速CCI对价格变化反应迅速，慢速CCI用于平滑噪音。当快速线与慢速线交叉时产生交易信号。
 

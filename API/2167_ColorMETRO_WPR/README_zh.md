@@ -1,5 +1,5 @@
 # ColorMETRO WPR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 ColorMETRO Williams %R 指标，该指标在 Williams %R 振荡器周围构建快慢阶梯线。
 快线对价格变化反应迅速，而慢线用于平滑噪音。当两条线交叉时表明动量可能发生变化，此时产生交易信号。

@@ -1,5 +1,5 @@
 # AfterEffects 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AfterEffects 策略基于价格序列可能存在的滞后效应。
 它利用当前收盘价以及 `p` 和 `2p` 根之前的开盘价计算信号：
