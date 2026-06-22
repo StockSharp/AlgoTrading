@@ -1,5 +1,5 @@
 # Wlx BW5 区域策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略利用比尔·威廉姆斯的Awesome振荡器 (AO) 和Accelerator振荡器 (AC)，当两者连续五根柱子同向移动时生成信号。当AO和AC连续上升五根时做多；连续下降五根时做空。收到相反信号时反向持仓。
 

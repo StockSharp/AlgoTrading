@@ -1,5 +1,5 @@
 # Spectral RVI Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Spectral RVI Crossover 策略对相对活力指数及其信号线进行平滑处理，并在平滑后的线条交叉时交易。
 当平滑后的 RVI 上穿平滑后的信号线时做多，反向交叉时做空。

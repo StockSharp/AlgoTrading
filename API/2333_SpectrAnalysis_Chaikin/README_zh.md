@@ -1,4 +1,5 @@
 # Spectr Analysis Chaikin 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Chaikin 振荡器来检测动量的变化。振荡器基于累积/派发线，并使用两条线性加权移动平均线进行平滑。当振荡器的斜率向上转变且最新值向上穿越前一个值时，开多单；当斜率向下转变且最新值向下穿越前一个值时，开空单。
 

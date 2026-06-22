@@ -1,4 +1,5 @@
 # Balance Of Power Histogram Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is an adaptation of the original MetaTrader expert from `MQL/16214`. It uses the **Balance of Power** (BOP) indicator to detect momentum changes in the market.
 

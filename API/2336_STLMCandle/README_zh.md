@@ -1,4 +1,5 @@
 # STLMCandle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略根据最新完成的K线方向进行交易。
 当收盘价高于开盘价时，策略开多并平空；

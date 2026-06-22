@@ -1,4 +1,5 @@
 # Стратегия "Гистограмма Баланса Сил"
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой адаптацию оригинального эксперта из `MQL/16214`. Она использует индикатор **Balance of Power** (BOP) для определения изменений рыночного импульса.
 

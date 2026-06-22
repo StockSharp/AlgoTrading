@@ -1,5 +1,5 @@
 # RVI Diff Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于相对活力指数（RVI）与其信号线之间的平滑差值进行交易。
 当该差值停止下降并开始上升时做多，反之做空。

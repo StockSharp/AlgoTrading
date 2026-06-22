@@ -1,5 +1,5 @@
 # Стратегия RAVI Histogram
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия представляет собой перенос эксперта MetaTrader RAVI Histogram в StockSharp. Индикатор RAVI измеряет силу тренда как процентное различие между быстрой и медленной EMA. Полученное значение сравнивается с верхним и нижним уровнями для принятия торговых решений.
 

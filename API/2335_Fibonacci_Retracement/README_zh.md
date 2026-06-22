@@ -1,4 +1,5 @@
 # 斐波那契回撤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 ZigZag 枢轴点计算斐波那契回撤位并进行突破交易。
 

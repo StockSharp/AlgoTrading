@@ -1,4 +1,5 @@
 # 平衡力量直方图策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略改编自 `MQL/16214` 中的 MetaTrader 专家顾问，利用 **平衡力量**（BOP）指标来识别市场动能的变化。
 

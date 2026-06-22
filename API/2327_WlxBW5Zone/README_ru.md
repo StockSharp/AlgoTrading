@@ -1,5 +1,5 @@
 # Стратегия Wlx BW5 Zone
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует осцилляторы Билла Уильямса — Awesome (AO) и Accelerator (AC). Сигнал на покупку появляется, когда оба индикатора пять баров подряд растут, на продажу — когда пять баров подряд падают. При получении противоположного сигнала позиция переворачивается.
 

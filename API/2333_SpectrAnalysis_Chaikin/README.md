@@ -1,4 +1,5 @@
 # Spectr Analysis Chaikin Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Chaikin oscillator to detect shifts in momentum. The oscillator is calculated from the Accumulation/Distribution line smoothed by two linear weighted moving averages. When the slope of the oscillator turns upward and the latest value crosses above the previous value, a long position is opened. Conversely, when the slope turns downward and the latest value crosses below the previous value, a short position is opened.
 

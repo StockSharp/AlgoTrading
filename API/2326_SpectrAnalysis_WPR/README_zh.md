@@ -1,4 +1,5 @@
 # SpectrAnalysis WPR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略由 MQL5 专家顾问 *Exp_i-SpectrAnalysis_WPR* 转换而来。
 策略通过监控 Williams %R 指标方向的变化来开平仓。

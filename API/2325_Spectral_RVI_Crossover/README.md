@@ -1,5 +1,5 @@
 # Spectral RVI Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Spectral RVI Crossover strategy smooths the Relative Vigor Index and its signal line and trades on their crossovers.
 It buys when the smoothed RVI crosses above the smoothed signal line and sells when the opposite occurs.
