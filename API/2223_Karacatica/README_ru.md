@@ -1,4 +1,5 @@
 # Стратегия Karacatica
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Karacatica относится к трендовым и сочетает ценовое сравнение с индикатором Average Directional Index (ADX). Она анализирует, выше ли текущая цена закрытия по сравнению с ценой закрытия *Period* свечей назад, и подтверждает направление тренда преобладанием линии +DI или -DI.

@@ -1,5 +1,5 @@
 # Silver Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于自定义 SilverTrend 指标的趋势跟随策略。该指标利用指定周期内的最高价和最低价以及风险参数构建动态价格通道。当价格突破通道并导致趋势方向改变时产生交易信号。
 

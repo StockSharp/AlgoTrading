@@ -1,5 +1,5 @@
 # Sidus 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了 SIDUS 移动平均系统。它使用两条线性加权移动平均线与一条指数平均线的交叉来交易。当快速 LWMA 向上穿越慢速 LWMA，或慢速 LWMA 向上穿越慢速 EMA 时建立多头；出现相反交叉时建立空头或平仓。策略通过百分比止盈和止损控制风险。
 

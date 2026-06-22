@@ -1,5 +1,5 @@
 # Fibo Candles 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略采用自定义的 **Fibo Candles** 技术来判断趋势方向。
 指标根据斐波那契比例比较当前收盘价与最近的最高/最低区间，将每根K线着色。

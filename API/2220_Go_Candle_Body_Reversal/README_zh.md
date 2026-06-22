@@ -1,5 +1,5 @@
 # Go Candle Body Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Go 指标，对蜡烛实体大小进行平滑。当实体 SMA 从正值转为负值时做多，反向交叉时做空。当前持仓在出现反向信号时平仓。
 

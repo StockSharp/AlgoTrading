@@ -1,5 +1,5 @@
 # Silver Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A trend-following strategy based on the custom SilverTrend indicator. The indicator builds a dynamic price channel using the highest high and lowest low over a lookback window and a risk factor. A trading signal occurs when price crosses the channel and the trend direction reverses.
 

@@ -1,5 +1,5 @@
 # CCI Automated
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 CCI Automated 是一个基于商品通道指数（CCI）阈值交叉的反转策略。当 CCI 先跌破 -90 后再上穿 -80 时做多；当 CCI 先突破 90 后再下穿 80 时做空。策略允许同时打开多笔仓位，通过固定的止盈和止损控制风险，并使用可配置的追踪止损锁定利润。
 

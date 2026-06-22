@@ -1,4 +1,5 @@
 # Heiken Ashi Smoothed Trend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 EMA 平滑的 Heiken-Ashi 蜡烛来捕捉趋势反转。当红色转为绿色时做多并平掉空头；绿色转为红色时做空并平掉多头。
 

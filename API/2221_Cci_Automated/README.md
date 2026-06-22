@@ -1,5 +1,5 @@
 # CCI Automated
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 CCI Automated is a reversal strategy that reacts to Commodity Channel Index (CCI) threshold crossings. It goes long when CCI rises above −80 after dipping below −90, and goes short when CCI falls below 80 after exceeding 90. The system duplicates trades up to a user-defined limit, manages risk with fixed take-profit and stop-loss levels, and trails profits with a configurable trailing stop.
 

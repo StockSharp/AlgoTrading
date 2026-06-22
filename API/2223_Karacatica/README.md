@@ -1,4 +1,5 @@
 # Karacatica Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Karacatica strategy is a trend-following approach that combines price action with the Average Directional Index (ADX). It looks for situations where the current close price is higher or lower than the close price a specified number of candles ago and confirms the move with the dominance of the +DI or -DI line.

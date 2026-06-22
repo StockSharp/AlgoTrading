@@ -1,5 +1,5 @@
 # Sidus Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements the SIDUS moving average system. It trades using crossovers between two linear weighted moving averages and a confirming exponential average. A position is opened when the short-term LWMA crosses the long-term LWMA or when the long LWMA crosses the slow EMA. Opposite crossovers close or reverse the position. A percentage based stop-loss and take-profit manage risk.
 

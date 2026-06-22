@@ -1,4 +1,5 @@
 # Karacatica 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Karacatica 策略是一种趋势跟随方法，将价格行为与平均趋向指数（ADX）结合使用。当最新收盘价高于或低于 *Period* 根K线之前的收盘价，并且 +DI 或 -DI 领先时产生交易信号。

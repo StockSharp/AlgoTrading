@@ -1,5 +1,5 @@
 # Стратегия Fibo Candles Trend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует технику **Fibo Candles** для определения направления тренда.
 Индикатор окрашивает свечи в один из двух цветов, сравнивая закрытие текущей свечи
