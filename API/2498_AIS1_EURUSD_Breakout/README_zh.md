@@ -1,5 +1,5 @@
 # AIS1 EURUSD Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 AIS1 “A System: EURUSD Daily Metrics” 专家顾问迁移到 StockSharp 高级 API。它关注 EURUSD 对前一日区间的突破，并结合自适应仓位管理与 4 小时追踪止损。
 

@@ -1,5 +1,5 @@
 # Trailing Stop Manager Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the trailing stop controller from the MetaTrader expert `MQL/17263/TrailingStop.mq5`. It focuses on automating stop-loss management after an entry has already been opened.
 

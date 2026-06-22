@@ -1,4 +1,5 @@
 # Altarius RSI Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Altarius RSI Stochastic Strategy is a direct conversion of the MetaTrader 5 expert advisor "Altarius RSI Stohastic" into StockSharp's high-level API. The system synchronizes two Stochastic oscillators with a fast 3-period RSI to capture short-lived reversals that occur when momentum compresses and then expands again. The StockSharp implementation preserves the original entry and exit logic while adding modern conveniences such as strategy parameters, automatic risk management, and adaptive position sizing.

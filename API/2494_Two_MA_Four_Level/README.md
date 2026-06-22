@@ -1,5 +1,5 @@
 # Two MA Four Level Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert "2MA_4Level" using the StockSharp high-level API. It trades a single instrument with two smoothed moving averages (SMMA) calculated on the median price and watches five relative crossover zones between the fast and slow curves. Entries are only allowed when no position is open, and every trade is protected by pip-based stop-loss and take-profit offsets.
 

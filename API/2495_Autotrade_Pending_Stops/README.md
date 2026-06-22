@@ -1,4 +1,5 @@
 # Autotrade Pending Stops Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader expert advisor *Autotrade (barabashkakvn's edition)*. It continuously maintains two symmetric stop entry orders around the current market price. Whenever the market remains flat and no position is open, the strategy refreshes both pending orders. When a stop order fills, the position is actively monitored: exits are triggered once the price action stabilizes or when an absolute profit/loss threshold is met. The implementation uses the high-level StockSharp API as required by the project guidelines.

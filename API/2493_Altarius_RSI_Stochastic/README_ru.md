@@ -1,4 +1,5 @@
 # Стратегия Altarius RSI Stochastic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Altarius RSI Stochastic — это перенос советника MetaTrader 5 «Altarius RSI Stohastic» на высокоуровневый API StockSharp. Алгоритм сочетает две стохастические кривые и быстрый RSI с периодом 3, чтобы ловить краткосрочные развороты, возникающие после сжатия и последующего резкого ускорения импульса. В версии для StockSharp сохранены исходные торговые правила, но добавлены параметризация, автоматическое управление риском и адаптивный расчёт объёма позиции.

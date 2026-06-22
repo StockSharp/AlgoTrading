@@ -1,5 +1,5 @@
 # 双均线四级策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等价于 MetaTrader 顾问 "2MA_4Level"，使用 StockSharp 的高级 API 实现。策略基于两条平滑移动平均线（SMMA），以每根K线的中价 `(High + Low) / 2` 作为输入。系统不仅监控快慢均线的直接交叉，还检测上下两个区间的四个偏移阈值。只有在没有持仓时才会开仓，每笔交易都绑定固定点数的止损和止盈。
 

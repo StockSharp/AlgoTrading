@@ -1,5 +1,5 @@
 # Стратегия «21-Hour Session Breakout»
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воспроизводит эксперта MetaTrader "21hour" на платформе StockSharp. Торговля ведётся в два настраиваемых временных окна: утром и вечером. В начале каждого окна выставляется пара отложенных стоп-заявок для пробоя, а в конце интервала позиции принудительно закрываются и все заявки снимаются.
 

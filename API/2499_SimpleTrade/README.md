@@ -1,4 +1,5 @@
 # Simple Trade Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader 5 expert advisor "SimpleTrade (barabashkakvn's edition)". It compares the opening price of the current bar with the opening price three bars ago. If the current open is higher, the strategy goes long; otherwise it goes short. Every position is held for only one completed candle and is secured with a fixed stop-loss distance expressed in pips.

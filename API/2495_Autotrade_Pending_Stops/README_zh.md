@@ -1,4 +1,5 @@
 # Autotrade Pending Stops 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 顾问 *Autotrade (barabashkakvn's edition)* 的 StockSharp 版本。策略始终在当前价格上下维持两张对称的挂单：在价格上方放置 Buy Stop，在价格下方放置 Sell Stop。只要没有持仓，挂单会在每根收盘 K 线时刷新；一旦挂单被触发，系统会根据市场波动情况或绝对盈亏阈值来决定何时平仓。实现过程中严格遵循 AGENTS.md 的要求，并完全使用 StockSharp 的高级 API。

@@ -1,5 +1,5 @@
 # Стратегия Trailing Stop Manager
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия воспроизводит логику советника `MQL/17263/TrailingStop.mq5`, который автоматически подтягивал стоп-лосс после открытия позиции.
 

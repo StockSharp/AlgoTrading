@@ -1,4 +1,5 @@
 # Big Dog 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Big Dog** 策略用于在伦敦早盘寻找窄幅整理区，并在价格向上或向下突破该区间时入场交易。原始的 MQL 专家顾问会在 `StartHour` 与 `StopHour` 之间形成的价格区间足够窄时挂出止损单。本移植版在 StockSharp 框架中保持同样的思路：先确认区间，再在突破时用市价单开仓，同时根据整理区的高低点计算止损与止盈。
 

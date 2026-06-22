@@ -1,5 +1,5 @@
 # Lucky 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lucky 策略是一种突破型剥头皮系统，专注于最优买价和卖价之间的快速跳动。当卖价（Ask）相对上一笔报价上跳超过设定的点数时做多；当买价（Bid）下跌超过同样的点数时做空。只要头寸转为盈利，或价格回撤超过保护阈值，仓位会立即平仓。
 

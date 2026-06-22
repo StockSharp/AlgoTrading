@@ -1,5 +1,5 @@
 # 跟踪止损管理策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略重现了 `MQL/17263/TrailingStop.mq5` 专家的止损管理逻辑，用于在持仓建立后自动调整止损价位。
 

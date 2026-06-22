@@ -1,4 +1,5 @@
 # Simple Trade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 智能交易系统 “SimpleTrade (barabashkakvn's edition)” 的 C# 版本。策略比较当前K线的开盘价与三根之前K线的开盘价：若当前开盘价更高，则做多；否则做空。每一笔交易只持有一个完整的K线周期，并使用以点值（pip）表示的固定止损距离进行保护。

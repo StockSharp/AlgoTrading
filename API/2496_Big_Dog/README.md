@@ -1,4 +1,5 @@
 # Big Dog Range Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Big Dog** strategy searches for a narrow consolidation window inside the London morning session and trades breakouts from that box. The original MQL expert advisor placed stop orders once the price range between the specified `StartHour` and `StopHour` stayed within a configurable number of points. The StockSharp port keeps the same idea and uses market orders when the breakout happens, accompanied by dynamic stop-loss and take-profit levels derived from the consolidation extremes.
 

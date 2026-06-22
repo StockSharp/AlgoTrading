@@ -1,5 +1,5 @@
 # 21小时时段突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中复现 MetaTrader 上的 “21hour” 专家顾问。它围绕两个可配置的交易时段运作：在每个时段开始时布置双向突破挂单，在时段结束时清空持仓并撤销所有挂单，确保新时段从零仓位开始。
 
