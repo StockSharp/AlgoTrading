@@ -1,5 +1,5 @@
 # Стратегия EMA (редакция barabashkakvn)
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конверсия экспертного советника MetaTrader 5 "EMA (barabashkakvn's edition)". Система торгует пересечение двух экспоненциальных средних, рассчитанных по медианной цене, и использует виртуальные уровни take-profit/stop-loss в пунктах. Сделка открывается только после подтверждённого пересечения и небольшого отката к экстремуму предыдущей свечи.
 

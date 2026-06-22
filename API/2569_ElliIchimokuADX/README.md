@@ -1,4 +1,5 @@
 # Elli Ichimoku ADX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy is a C# port of the MetaTrader 5 expert "Elli" (barabashkakvn's edition). It combines Ichimoku Kinko Hyo structure with an Average Directional Index (+DI) breakout filter. Trades are opened only when a strong directional impulse is confirmed simultaneously by Ichimoku line alignment and a sudden surge in the positive directional index.

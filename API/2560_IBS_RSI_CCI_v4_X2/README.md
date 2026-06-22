@@ -1,5 +1,5 @@
 # IBS RSI CCI v4 X2 Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## Overview
 
 The **IBS RSI CCI v4 X2 Strategy** is a multi-timeframe momentum system that blends the Internal Bar Strength (IBS), Relative Strength Index (RSI), and Commodity Channel Index (CCI). The original algorithm from the MetaTrader 5 ecosystem has been ported to StockSharp and redesigned to use high level candle subscriptions with indicator bindings. Two independent indicator pipelines are evaluated: a slow "trend" timeframe that defines the directional bias and a fast "signal" timeframe that generates entry and exit decisions.

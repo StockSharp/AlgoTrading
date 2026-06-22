@@ -1,4 +1,5 @@
 # Elli Ichimoku ADX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 专家顾问 “Elli”（barabashkakvn 修改版）的 StockSharp 移植版本。策略结合 Ichimoku 云结构和平均趋向指标（ADX）的 +DI 突破过滤，仅在价格动量足够强、并且 Ichimoku 关键线条呈现一致方向时入场。

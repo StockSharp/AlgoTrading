@@ -1,5 +1,5 @@
 # EMA (barabashkakvn Edition) Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the MetaTrader 5 expert advisor "EMA (barabashkakvn's edition)". The system trades the crossover of two exponential moving averages that are calculated on the median price and uses virtual take-profit/stop-loss levels expressed in pips. Positions are opened only after a confirmed crossover and a small retracement toward the previous candle extreme.
 

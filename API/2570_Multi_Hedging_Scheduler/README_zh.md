@@ -1,4 +1,5 @@
 # 多品种套保调度策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Multi Hedging Scheduler Strategy** 是将 MetaTrader 5 指标 `MultiHedg_1.mq5` 迁移到 StockSharp 的版本。策略面向支持对冲的账户，可同时管理最多十个交易品种。在可配置的交易时间窗口内按统一方向开仓，并可根据时间或权益百分比阈值一次性平掉所有仓位。

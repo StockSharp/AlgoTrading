@@ -1,4 +1,5 @@
 # 弹球机策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **弹球机策略** 是将 MetaTrader 5 专家顾问“Pinball machine (barabashkakvn's edition)”移植到 StockSharp 平台的版本。策略不分析市场结构，而是模拟弹球机的随机抽签：每根完成的 K 线都会触发一组随机数，如果有两次抽签结果相同，就会产生交易信号。C# 版本在保持原策略风格的同时，使用高阶 API 重写了资金管理和执行逻辑。

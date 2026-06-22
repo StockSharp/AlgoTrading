@@ -1,4 +1,5 @@
 # Стратегия Pinball Machine
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Pinball Machine** — это перенос экспертной системы MetaTrader 5 «Pinball machine (barabashkakvn's edition)» на платформу StockSharp. Вместо анализа рынка стратегия имитирует игровой автомат: каждое закрытие свечи запускает серию случайных розыгрышей, и если значения совпадают, открывается позиция. Переписанная версия сохраняет дух оригинала, но использует высокоуровневый API StockSharp для управления капиталом и исполнением сделок.

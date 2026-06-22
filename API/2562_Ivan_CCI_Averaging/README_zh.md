@@ -1,5 +1,5 @@
 # Ivan CCI Averaging 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader “Ivan” 智能交易系统移植到 StockSharp 的版本，使用 CCI 极值信号结合加仓与平滑移动平均止损。策略监控长期 CCI(100) 以确认全局多空方向，可在 CCI(13) 回调时按需加仓，并通过平滑均线的止损、保本和跟踪逻辑管理风险。仓位规模沿用原策略的账户风险百分比模型，利润保护系数在权益倍增时强制平仓。
 

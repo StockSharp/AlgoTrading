@@ -1,4 +1,5 @@
 # Стратегия Multi Hedging Scheduler
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Multi Hedging Scheduler Strategy** — это конвертация советника `MultiHedg_1.mq5` из MetaTrader 5 в инфраструктуру StockSharp. Стратегия рассчитана на счёта с поддержкой хеджирования и управляет до десяти инструментов одновременно. Она открывает позиции в заранее заданном направлении в пределах торгового окна и закрывает их либо по времени, либо при достижении заданных порогов по доходности/просадке капитала.

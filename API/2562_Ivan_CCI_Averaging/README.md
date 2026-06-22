@@ -1,5 +1,5 @@
 # Ivan CCI Averaging Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Port of the "Ivan" MetaTrader expert advisor that trades CCI extremes with averaging entries and a smoothed moving-average stop. The strategy monitors a long-term CCI(100) to raise global buy or sell regimes, optionally layers additional positions when a short-term CCI(13) retraces, and manages risk with break-even and trailing logic around a smoothed moving average. Position sizing mirrors the original percent-risk model and a profit-protection coefficient closes the book when equity multiplies.
 

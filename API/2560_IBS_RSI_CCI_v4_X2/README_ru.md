@@ -1,5 +1,5 @@
 # Стратегия IBS RSI CCI v4 X2
-
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## Описание
 
 **IBS RSI CCI v4 X2** — портированная на StockSharp версия популярной MQ5 стратегии, построенной на сочетании индикаторов Internal Bar Strength (IBS), Relative Strength Index (RSI) и Commodity Channel Index (CCI). Стратегия работает в двух таймфреймах:

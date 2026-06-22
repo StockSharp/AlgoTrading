@@ -1,4 +1,5 @@
 # Стратегия Elli Ichimoku ADX
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Порт эксперта MetaTrader 5 «Elli» (редакция barabashkakvn) на платформу StockSharp. Стратегия объединяет индикатор Ichimoku Kinko Hyo и фильтр по линии +DI индекса направленного движения (ADX). Сделки открываются только при наличии мощного импульса, подтверждённого упорядоченным расположением линий Ichimoku и резким ростом положительного направленного индекса.

@@ -1,5 +1,5 @@
 # EMA（barabashkakvn 版本）策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略由 MetaTrader 5 专家顾问 "EMA (barabashkakvn's edition)" 转换而来。系统监控两条以中位价计算的指数移动平均线，在确认均线交叉且价格对上一根 K 线极值出现小幅回撤后才开仓。止盈与止损均为“虚拟”距离，以点数（pip）形式表示。
 

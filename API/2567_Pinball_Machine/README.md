@@ -1,4 +1,5 @@
 # Pinball Machine Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Pinball Machine Strategy** is a playful conversion of the MetaTrader 5 expert advisor "Pinball machine (barabashkakvn's edition)". Instead of analyzing market structure, the strategy emulates a lottery machine: every finished candle triggers several random draws that may result in a trade if two numbers match. The StockSharp port keeps the spirit of the original expert while adapting money management and execution to the high-level API.

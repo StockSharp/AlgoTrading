@@ -1,5 +1,5 @@
 # 三根K线反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 专家顾问 `Exp_ThreeCandles` 完整移植到 StockSharp。核心思想是寻找典型的三根K线反转形态：
 

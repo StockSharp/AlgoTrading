@@ -1,5 +1,5 @@
 # IBS RSI CCI v4 X2 策略
-
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## 概述
 
 **IBS RSI CCI v4 X2 策略** 是一个多时间框架的动量系统，使用内部柱强度 (IBS)、相对强弱指数 (RSI) 与商品通道指数 (CCI) 的组合。原始的 MetaTrader 5 指标被移植到 StockSharp 环境，并通过高级 K 线订阅完成信号绑定。策略包含两组独立的指标管线：

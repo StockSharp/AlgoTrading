@@ -1,4 +1,5 @@
 # Multi Hedging Scheduler Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Multi Hedging Scheduler Strategy** is a direct StockSharp conversion of the original MetaTrader 5 expert advisor `MultiHedg_1.mq5`. The strategy is designed for accounts that allow hedging and can manage up to ten different instruments simultaneously. It opens positions of the same direction during a configurable trading window and provides portfolio-level exit logic based on time or equity percentage thresholds.

@@ -1,5 +1,5 @@
 # Renko Line Break vs RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MetaTrader 的 “RenkoLineBreak vs RSI” 专家顾问，使用 StockSharp 的高级 API 重新实现。策略利用 Renko 砖块判断趋势方向，同时通过 RSI 回调过滤信号，并围绕三根 K 线结构挂出止损挂单。
 
