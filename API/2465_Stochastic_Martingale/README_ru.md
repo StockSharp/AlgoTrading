@@ -1,5 +1,5 @@
 # Стратегия Stochastic Martingale
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия сочетает классический вход по стохастическому осциллятору с усреднением по принципу мартингейла.
 Позиция открывается, когда линия %K пересекает %D и осциллятор находится выше/ниже заданных зон.

@@ -1,5 +1,5 @@
 # MACD 信号策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MACD 线与其信号线的差值进行交易。
 当该差值突破基于 ATR 的阈值时开仓，反向突破时平仓。

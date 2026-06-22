@@ -1,5 +1,5 @@
 # Stochastic Martingale 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将经典的随机振荡器入场与马丁格尔加仓方法结合。
 当 %K 线在超买/超卖区域上方或下方与 %D 线交叉时开仓。

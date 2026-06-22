@@ -1,4 +1,5 @@
 # 零滞后 MACD 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻自 MetaTrader 5 的 **ZeroLagEA-AIP** 算法。它使用基于两条零滞后指数移动平均线的零滞后 MACD。当当前 MACD 值高于前一根柱时开空仓，低于前一根柱时开多仓。如果在持仓期间出现反向信号，当前仓位将被平仓，下一根柱再开新仓。
 

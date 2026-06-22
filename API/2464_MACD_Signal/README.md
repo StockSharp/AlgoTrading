@@ -1,5 +1,5 @@
 # MACD Signal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the difference between the MACD line and its signal line.
 A position is opened when the difference crosses an ATR-based threshold and is closed on opposite crossings.

@@ -1,4 +1,5 @@
 # Zero Lag MACD Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the **ZeroLagEA-AIP** algorithm from MetaTrader 5. It uses a zero lag MACD constructed from two zero lag exponential moving averages. The system opens a short position when the MACD value increases compared to the previous bar and opens a long position when the MACD decreases. If an opposite signal appears while a position is open, the current position is closed and a new one is opened on the following bar.
 

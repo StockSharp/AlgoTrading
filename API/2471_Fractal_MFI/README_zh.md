@@ -1,4 +1,5 @@
 # Fractal MFI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略翻译自 `Exp_Fractal_MFI.mq5`。它利用资金流量指数（MFI）在振荡器突破预设上、下阈值时生成交易信号。
 

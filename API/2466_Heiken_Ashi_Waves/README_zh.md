@@ -1,5 +1,5 @@
 # Heiken Ashi Waves Strategy
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将Heikin-Ashi蜡烛与双移动平均波过滤相结合。快速SMA(2)上穿或下穿慢速SMA(30)提示波段变化，并由当前Heikin-Ashi蜡烛方向确认。
 

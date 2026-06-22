@@ -1,4 +1,5 @@
 # Стратегия Fractal MFI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является переводом советника `Exp_Fractal_MFI.mq5`. Она использует индекс денежного потока (MFI) и формирует торговые сигналы при пересечении заданных верхнего и нижнего уровней.
 

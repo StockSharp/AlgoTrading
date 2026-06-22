@@ -1,5 +1,5 @@
 # Стратегия Macd Cci Lotfy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает индикаторы MACD и CCI с коэффициентом масштабирования.
 Позиция открывается, когда оба индикатора пересекают крайние уровни в одном направлении.

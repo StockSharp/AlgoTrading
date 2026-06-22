@@ -1,4 +1,5 @@
 # Ride Alligator Williams Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements Bill Williams' Alligator indicator. The lips, teeth and jaw lines are calculated from the median price using smoothed moving averages with lengths derived from a base period via the golden ratio. A long position is opened when the lips cross above the jaws while the teeth remain below. A short position is opened when the lips cross below the jaws while the teeth remain above. For an open position a trailing stop follows the jaw line.
 

@@ -1,4 +1,5 @@
 # Ride Alligator Williams 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了比尔·威廉姆斯的 Alligator 指标。使用中值价格计算嘴唇、牙齿和下颚的平滑移动平均线，其长度由基准周期通过黄金比例推导而来。当嘴唇线上穿下颚且牙齿线仍在下颚下方时开多；当嘴唇线下穿下颚且牙齿线仍在下颚上方时开空。持仓期间，止损沿下颚线移动。
 

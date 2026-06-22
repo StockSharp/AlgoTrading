@@ -1,5 +1,5 @@
 # Стратегия Heiken Ashi Waves
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает свечи Heikin-Ashi с фильтром из двух скользящих средних. Пересечение быстрой SMA (2) и медленной SMA (30) указывает на изменение волны, которое подтверждается направлением текущей свечи Heikin-Ashi.
 
