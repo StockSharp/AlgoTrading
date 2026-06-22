@@ -1,5 +1,5 @@
 # UP3x1 Premium 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 UP3x1 Premium 策略是 MetaTrader 指标 *up3x1_premium_v2M* 的 StockSharp 版本。策略结合快/慢 EMA 交叉、宽幅 K 线过滤以及日线趋势背景，在捕捉动量突破的同时使用固定目标和移动止损控制风险。
 

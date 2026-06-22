@@ -1,5 +1,5 @@
 # Стратегия UP3x1 Premium
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **UP3x1 Premium** — это порт советника MetaTrader *up3x1_premium_v2M* на платформу StockSharp. В ней сочетаются пересечения быстрых и медленных EMA, фильтр широких свечей и оценка дневного тренда. Такой набор позволяет отлавливать импульсные движения и управлять риском через фиксированные цели и трейлинг-стоп.
 

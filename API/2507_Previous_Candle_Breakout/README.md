@@ -1,5 +1,5 @@
 # Previous Candle Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the classic "BreakOut" MetaTrader expert by Soubra2003. It monitors the high and low of the most recent
 completed candle and reacts whenever the current close breaks those reference levels. The approach is fully symmetric: long

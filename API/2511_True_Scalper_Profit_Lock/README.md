@@ -1,4 +1,5 @@
 # True Scalper Profit Lock Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **True Scalper Profit Lock Strategy** is a StockSharp port of the MetaTrader 5 expert advisor "True Scalper Profit Lock". The strategy focuses on ultra short-term trading using fast exponential moving averages, a two-period RSI filter, and a profit protection routine that moves stops to break even. Additional "abandon" logic forces the strategy to close trades that do not reach the target within a predefined number of candles.

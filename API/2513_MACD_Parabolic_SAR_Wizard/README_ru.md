@@ -1,4 +1,5 @@
 # Стратегия MACD Parabolic SAR Wizard
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия реализует в StockSharp советник «MACD + Parabolic SAR», созданный мастером MQL5. Логика полностью повторяет систему взвешенных оценок: каждому индикатору присваивается нормированная оценка от 0 до 100, после чего оценки объединяются по заданным весам для формирования торгового решения.

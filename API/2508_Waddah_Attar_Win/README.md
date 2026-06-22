@@ -1,5 +1,5 @@
 # Waddah Attar Win Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy mirrors the original Waddah Attar Win expert advisor. It continuously maintains a symmetric grid of buy- and sell-limit orders spaced at a fixed number of points from the current bid/ask. Whenever the market price approaches the last submitted order, the strategy stacks a new limit at the same distance with an optional volume increment. Floating profit is monitored on every order book update and all positions together with pending orders are closed once the configured profit target in account currency is reached.
 

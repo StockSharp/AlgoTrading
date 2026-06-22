@@ -1,4 +1,5 @@
 # Стратегия True Scalper Profit Lock
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **True Scalper Profit Lock** — порт стратегии MetaTrader 5 «True Scalper Profit Lock» на платформу StockSharp. Стратегия ориентирована на ультракороткие сделки: используются быстрые экспоненциальные скользящие средние, RSI с периодом 2 и блок защиты прибыли, переводящий стоп-заявку в безубыток. Дополнительный модуль «abandon» закрывает позиции, которые слишком долго не достигают цели.

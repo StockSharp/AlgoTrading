@@ -1,4 +1,5 @@
 # e-TurboFx Steps Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **e-TurboFx** strategy is a momentum exhaustion reversal system originally written for MetaTrader 5. It monitors the most recent finished candles and looks for sequences where the candle bodies keep expanding in the same direction. A growing series of bearish candles indicates capitulation and therefore a potential long setup, while a growing series of bullish candles announces a possible short opportunity. The StockSharp port uses the high-level API with candle subscriptions and automated position protection.

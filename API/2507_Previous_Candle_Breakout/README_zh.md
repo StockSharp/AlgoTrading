@@ -1,5 +1,5 @@
 # 上一根蜡烛突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略移植自 Soubra2003 的 MetaTrader 专家顾问 BreakOut。算法保存上一根已完成蜡烛的最高价与最低价，只要当
 前收盘价突破这些参照水平，就会立即平仓并按突破方向开仓。用户还可以以价格单位设置可选的止损与止盈距离，

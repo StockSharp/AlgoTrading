@@ -1,5 +1,5 @@
 # Bull vs Medved 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bull vs Medved 是从 MetaTrader 5 移植而来的限价突破策略。策略监控最近三根已完成的 K 线，只在一天内六个可配置的五分钟时间窗口内允许下单。当出现指定的多头或空头蜡烛组合时，策略会按照与当前买卖价差的固定偏移放置挂单，并使用对称的止损与止盈保护头寸。
 

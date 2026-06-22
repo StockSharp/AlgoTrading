@@ -1,5 +1,5 @@
 # 固定保证金资金管理策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 中的 “Money Fixed Margin” 示例移植到 StockSharp 高级 API。它演示如何按照账户权益的固定百分比来确定持仓手数，并把以点数表示的止损距离换算成绝对价格偏移。策略仅做多，重点在于阐释资金管理流程，而不是预测买卖信号。
 

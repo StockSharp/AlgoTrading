@@ -1,5 +1,5 @@
 # Waddah Attar Win 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 Waddah Attar Win 智能顾问的思路。它始终在当前买卖价附近保持对称的买入限价单和卖出限价单网格，间距为固定的点数。当价格靠近最新挂出的订单时，策略会在相同距离处再堆叠一个限价单，并可按参数增加手数。每次收到盘口更新时都会检查浮动利润，只要账户权益高于保存的余额 `Min Profit` 数额，就会立即平掉所有仓位并撤销挂单。
 

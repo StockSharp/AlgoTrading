@@ -1,4 +1,5 @@
 # MACD 抛物线SAR向导策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是对 MQL5 向导自动生成的 “MACD + Parabolic SAR” 专家顾问的 StockSharp 实现，结合了 MACD 动量与抛物线 SAR 趋势方向。通过为每个指标赋予 0..100 的归一化评分并按权重合成，复现了原始向导模板的评分决策流程。

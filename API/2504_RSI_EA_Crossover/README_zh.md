@@ -1,5 +1,5 @@
 # RSI EA 趋势交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RSI EA 策略复现了 MetaTrader 5 中的 “RSI EA” 智能交易系统。策略在所选 K 线序列上监控相对强弱指数（RSI），当动量穿越可调的超买或超卖阈值时采取操作。转换版本保留了原始系统的止损、止盈、移动止损以及自动资金管理思想，并采用 StockSharp 的高层策略 API 实现。
 

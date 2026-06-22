@@ -1,4 +1,5 @@
 # True Scalper Profit Lock 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **True Scalper Profit Lock 策略** 是 MetaTrader 5 智能交易系统 “True Scalper Profit Lock” 的 StockSharp 移植版本。策略以超短线交易为目标，结合快速指数移动平均线、2 周期 RSI 过滤器以及将止损推向保本位置的利润保护机制。当持仓在设定的 K 线数量内没有达到目标时，“弃单” 模块会强制离场。

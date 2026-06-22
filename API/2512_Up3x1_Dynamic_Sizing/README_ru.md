@@ -1,4 +1,5 @@
 # Стратегия Up3x1 Dynamic Sizing (конвертация из MT5)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 - Конвертация советника MetaTrader 5 `up3x1.mq5` на высокоуровневый API StockSharp.

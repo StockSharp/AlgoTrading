@@ -1,4 +1,5 @@
 # e-TurboFx Steps 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **e-TurboFx** 是一套寻找动量耗竭的反转策略，最初发表于 MetaTrader 5。它关注最近若干根完成的 K 线，如果同方向的 K 线实体持续放大，则认为行情可能即将反转。本移植版本基于 StockSharp 的高级 API，使用蜡烛图订阅、参数系统以及自动化的仓位保护模块。

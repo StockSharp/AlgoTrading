@@ -1,4 +1,5 @@
 # Up3x1 策略（MT5 版本转换）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 5 专家顾问 `up3x1.mq5` 转换为 StockSharp 高层 API 策略实现。
