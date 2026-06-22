@@ -1,5 +1,5 @@
 # Lossless MA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于快慢两条简单移动平均线（SMA）的交叉进行交易。
 当出现反向信号时，可选择将亏损持仓移动到保本价而不是直接平仓，从而避免实现亏损。

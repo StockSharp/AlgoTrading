@@ -1,4 +1,5 @@
 # ColorMETRO XRSX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是对原始 MQL5 专家顾问 “Exp_ColorMETRO_XRSX” 的 StockSharp 实现。它使用两条平滑移动平均线来识别趋势变化。当快线向上穿越慢线时开多仓，当快线向下穿越慢线时开空仓。
 

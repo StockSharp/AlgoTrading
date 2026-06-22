@@ -1,4 +1,5 @@
 # TMA 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用三角移动平均线（TMA）突破信号进行交易。它监控指定周期的K线，将上一根K线的收盘价与TMA值加/减用户设置的偏移量进行比较。当上一根K线收盘价高于 `TMA + UpLevel` 时开多单；当收盘价低于 `TMA - DownLevel` 时开空单。相反信号会反向持仓。
 

@@ -1,4 +1,5 @@
 # TMA Breakout
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy exploits breakouts relative to a Triangular Moving Average (TMA). It watches a configurable candle series and compares the previous candle's close to the TMA value plus or minus user defined offsets. A long position is opened when the previous close is above `TMA + UpLevel`, and a short position is opened when it is below `TMA - DownLevel`. Opposite signals reverse the position.
 

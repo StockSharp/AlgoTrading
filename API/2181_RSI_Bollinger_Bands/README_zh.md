@@ -1,5 +1,5 @@
 # RSI Bollinger Bands
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将相对强弱指数（RSI）与布林带结合。 当RSI低于超卖阈值且收盘价低于下轨时开多单。 当RSI高于超买阈值且收盘价高于上轨时开空单。 在相反信号出现时反向开仓。
 

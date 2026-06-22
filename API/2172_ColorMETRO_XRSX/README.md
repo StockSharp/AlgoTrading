@@ -1,4 +1,5 @@
 # ColorMETRO XRSX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp implementation inspired by the original MQL5 Expert Advisor "Exp_ColorMETRO_XRSX". It uses two smoothed moving averages to detect trend changes. A long position is opened when the fast average crosses above the slow average, while a short position is opened when the fast average crosses below the slow average.
 

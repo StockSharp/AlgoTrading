@@ -1,5 +1,5 @@
 # RSI Bollinger Bands
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy combining the Relative Strength Index (RSI) with Bollinger Bands. A long position opens when RSI is below the oversold threshold and the close price is under the lower Bollinger band. A short position opens when RSI is above the overbought threshold and the close price is above the upper Bollinger band. Positions reverse on opposite signals.
 

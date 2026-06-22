@@ -1,5 +1,5 @@
 # Night Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Night Stochastic strategy trades only during the quiet night session from **21:00** to **06:00**. It uses the %K line of the Stochastic Oscillator to detect oversold and overbought conditions.
 

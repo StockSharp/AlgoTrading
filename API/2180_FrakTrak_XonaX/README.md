@@ -1,4 +1,5 @@
 # FrakTrak XonaX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 FrakTrak XonaX is a breakout strategy based on fractal levels calculated on a higher timeframe. When price moves beyond the most recent fractal by a small offset the strategy enters in the direction of the breakout. A fixed take profit and trailing stop manage the open position.
 

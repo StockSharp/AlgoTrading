@@ -1,5 +1,5 @@
 # 夜间随机指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 夜间随机指标策略仅在**21:00**到**06:00**的夜间时段进行交易。策略使用随机振荡指标的%K线来捕捉超买和超卖状态。
 

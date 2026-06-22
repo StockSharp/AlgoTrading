@@ -1,5 +1,5 @@
 # Exp ADX Cross Hull Style 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将平均趋向指数（ADX）的交叉信号与 Hull 移动平均 (HMA) 滤波相结合。当 +DI 上穿 -DI 时开多单；当 -DI 上穿 +DI 时开空单。平仓由一对 Hull 移动平均线控制：快速 HMA 下穿慢速 HMA 时平多仓，快速 HMA 上穿慢速 HMA 时平空仓。默认使用 4 小时周期。
 

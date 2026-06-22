@@ -1,4 +1,5 @@
 # FrakTrak XonaX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 FrakTrak XonaX 是一种基于较大时间框架分形水平的突破策略。当价格突破最近的分形并额外移动 15 点时，策略沿突破方向入场。仓位通过固定止盈和跟踪止损进行管理。
 

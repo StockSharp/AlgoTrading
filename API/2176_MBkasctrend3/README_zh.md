@@ -1,5 +1,5 @@
 # MBKAsctrend3 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MBKAsctrend3 策略使用三个不同周期的 Williams %R 振荡器。它们的加权组合用于确定市场趋势。当加权值高于 67+Swing 且长期振荡器高于 50-AverageSwing 时开多单；当值低于 33-Swing 且长期振荡器低于 50+AverageSwing 时开空单。头寸通过以点表示的可配置止损和止盈进行保护。
 

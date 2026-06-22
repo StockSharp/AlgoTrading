@@ -1,5 +1,5 @@
 # MBKAsctrend3 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The MBKAsctrend3 strategy uses three Williams %R oscillators with different periods. Their weighted combination defines the market trend. A long position opens when the weighted value crosses above an upper threshold and the long-term oscillator is also high. A short position opens when the values fall below their lower thresholds. Positions are protected by configurable stop-loss and take-profit levels expressed in points.
 

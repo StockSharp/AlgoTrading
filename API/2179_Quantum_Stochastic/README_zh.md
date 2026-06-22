@@ -1,5 +1,5 @@
 # Quantum 随机指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于随机振荡指标。当 %K 上穿 `LowLevel` 离开超卖区时开多头；当 %K 下穿 `HighLevel` 离开超买区时开空头。达到极值平仓水平后平掉仓位以锁定利润。
 

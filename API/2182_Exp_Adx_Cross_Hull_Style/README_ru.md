@@ -1,5 +1,5 @@
 # Стратегия Exp ADX Cross Hull Style
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия объединяет сигналы пересечения индикатора Average Directional Index (ADX) с фильтром на основе Hull Moving Average (HMA). Входы выполняются, когда линия +DI пересекает -DI снизу вверх для длинных позиций и сверху вниз для коротких. Выход осуществляется парой скользящих средних Халла: пересечение быстрой средней со средней медленной закрывает позиции. По умолчанию используется таймфрейм 4 часа.
 

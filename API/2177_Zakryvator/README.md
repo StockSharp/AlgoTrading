@@ -1,5 +1,5 @@
 # Zakryvator Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Zakryvator strategy is a risk management module that monitors the current open position and closes it when the unrealized loss exceeds a predefined threshold. The allowed loss depends on the position volume, replicating the logic of the original MQL script where different lot sizes correspond to different maximum drawdowns.
 

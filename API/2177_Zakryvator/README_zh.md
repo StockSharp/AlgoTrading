@@ -1,5 +1,5 @@
 # Zakryvator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Zakryvator 策略用于风险管理：它监控当前持仓，一旦浮亏超过预设阈值就立即平仓。允许的亏损根据持仓量而变化，复现了原始 MQL 脚本中“不同手数对应不同最大回撤”的思想。
 
