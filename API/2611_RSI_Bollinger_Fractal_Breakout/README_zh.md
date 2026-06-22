@@ -1,4 +1,5 @@
 # RSI 布林线分形突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 中复现 MetaTrader 的“RSI and Bollinger Bands”专家顾问。布林带作用在 RSI 指标上而不是价格。当检测到新的确认分形时，策略会按设置的点差在分形价格外侧挂入止损单，并使用 Parabolic SAR 对持仓进行动态跟踪。

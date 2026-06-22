@@ -1,4 +1,5 @@
 # Cheduecoglioni Alternating Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MQL5 expert advisor "cheduecoglioni". It always keeps the trader in the market by alternating between short and long positions. Every entry is protected with fixed take-profit and stop-loss levels that are defined in pips and converted to price offsets according to the instrument precision.

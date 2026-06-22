@@ -1,4 +1,5 @@
 # Cheduecoglioni 交替策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MQL5 专家顾问“cheduecoglioni”的 StockSharp 版本。它始终保持账户在市，通过固定顺序交替做空和做多。每笔交易都携带固定的止盈和止损距离，这些距离以点值表示，并根据标的物精度转换为绝对价格。

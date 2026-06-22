@@ -1,4 +1,5 @@
 # Breakthrough BB 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Breakthrough BB 策略将 MetaTrader 专家顾问 *Breakthrough_BB* 迁移到 StockSharp 高级 API。系统结合布林带与简单移动平均线（SMA），用于捕捉价格在通道边缘压缩后的突破行情。所有信号均基于已完成的 K 线生成，从而忠实再现原始 MQL5 逻辑。

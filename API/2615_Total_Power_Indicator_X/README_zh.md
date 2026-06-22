@@ -1,4 +1,5 @@
 # Total Power Indicator X 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略使用 StockSharp 的高级 API 重现 MetaTrader 专家顾问 “Exp_TotalPowerIndicatorX”。自定义的 Total Power 指标通过统计滚动窗口内多少根 K 线的高点高于内部 EMA、低点低于内部 EMA 来衡量多空力量，并在两条力量线发生交叉时做出交易决策。

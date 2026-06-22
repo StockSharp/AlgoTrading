@@ -1,5 +1,5 @@
 # N Candles v2
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy searches for a configurable number of consecutive candles that close in the same direction. Once the streak length is reached it opens a market position in the direction of the detected momentum. The implementation mirrors the original MetaTrader 5 "N- candles v2" expert advisor and keeps the logic focused on closed candles to avoid premature signals.

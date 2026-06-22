@@ -1,4 +1,5 @@
 # Breakthrough BB Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Breakthrough BB Strategy replicates the MetaTrader expert advisor *Breakthrough_BB* within the StockSharp high-level API. The system combines Bollinger Bands with a fast simple moving average to capture explosive breakouts that occur after price compresses near the band boundaries. Trades are generated exclusively on completed candles to keep signals deterministic and to mirror the original MQL5 behaviour.

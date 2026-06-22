@@ -1,4 +1,5 @@
 # Vector 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Vector 策略来源于 MetaTrader 5 的 "Vector" 专家顾问，是一个多品种趋势系统，同时交易四个主要外汇货币对：EURUSD、GBPUSD、USDCHF 和 USDJPY。

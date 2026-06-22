@@ -1,4 +1,5 @@
 # Kolier SuperTrend X2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻原始的 MetaTrader 专家顾问，通过两个不同周期的 SuperTrend 滤波器协同工作。高周期 SuperTrend 用于识别市场主趋势，低周期 SuperTrend 负责在趋势方向出现同步反转时触发交易信号。移植到 StockSharp 时使用了高级 API 绑定，因此指标直接接收K线并维护内部状态。

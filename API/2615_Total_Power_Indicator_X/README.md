@@ -1,4 +1,5 @@
 # Total Power Indicator X Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy recreates the behaviour of the MetaTrader expert "Exp_TotalPowerIndicatorX" using StockSharp high level APIs. It relies on a custom implementation of the Total Power Indicator that measures the dominance of bulls and bears by counting how many candles in a rolling window close above or below an internal EMA baseline. Trading decisions are made when the bullish and bearish strength lines cross each other.

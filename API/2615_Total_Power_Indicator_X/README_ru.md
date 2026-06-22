@@ -1,4 +1,5 @@
 # Стратегия Total Power Indicator X
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия повторяет логику советника MetaTrader «Exp_TotalPowerIndicatorX», используя высокоуровневые API StockSharp. Пользовательский индикатор Total Power оценивает преобладание быков и медведей, подсчитывая, сколько свечей в скользящем окне закрылись выше или ниже внутренней EMA. Сделки совершаются, когда линии силы пересекаются.

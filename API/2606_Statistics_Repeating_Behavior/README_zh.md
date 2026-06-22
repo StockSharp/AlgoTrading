@@ -1,5 +1,5 @@
 # 统计重复行为策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是一套日内策略，用来观察最近若干个交易日中相同时间开盘的 K 线是偏多还是偏空。每当新 K 线开始时，策略会统计历史上相同小时和分钟的蜡烛实体（以点数计），分别计算多头与空头的累计力度。如果多头总和更大，则在当前柱的开盘做多；若空头总和更大，则做空。仓位在下一根 K 线关闭，此外还有固定点差的止损，模拟原始 MetaTrader 专家的处理方式。仓位大小在亏损后按黄金分割比例放大，盈利后回到初始值。
 

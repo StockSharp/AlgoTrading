@@ -1,4 +1,5 @@
 # Kolier SuperTrend X2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the original MetaTrader expert by combining two SuperTrend filters working on different timeframes. The higher timeframe SuperTrend defines the dominant market bias, while the lower timeframe SuperTrend searches for synchronized breakouts to trigger entries. The StockSharp port uses high-level API bindings, so the indicators receive candle updates directly and keep their own history.

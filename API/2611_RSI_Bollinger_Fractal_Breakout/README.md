@@ -1,4 +1,5 @@
 # RSI Bollinger Fractal Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the MetaTrader "RSI and Bollinger Bands" expert advisor in StockSharp. It applies Bollinger Bands to the RSI oscillator, waits for a recent fractal breakout level and places stop orders beyond that level with configurable offsets. A Parabolic SAR trailing filter dynamically tightens stops once a position is open.

@@ -1,4 +1,5 @@
 # Стратегия RSI Bollinger Fractal Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит эксперт "RSI and Bollinger Bands" для MetaTrader в инфраструктуру StockSharp. Bollinger Bands строятся не по цене, а по значению RSI. После появления подтверждённого фрактала выставляются отложенные стоп-заявки с заданным отступом, а открытые позиции сопровождаются динамическим трейлингом на основе Parabolic SAR.

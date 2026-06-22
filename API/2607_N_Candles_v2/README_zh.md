@@ -1,5 +1,5 @@
 # N根K线 v2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略会寻找一段固定数量的连续同向K线。当连续收盘方向达到设定阈值后，系统会按照趋势方向开仓。实现完全遵循 MetaTrader 5 的 "N- candles v2" 智能交易顾问，并且只处理已经收盘的K线以减少噪音信号。
