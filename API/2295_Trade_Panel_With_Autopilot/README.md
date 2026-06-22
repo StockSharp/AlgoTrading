@@ -1,4 +1,5 @@
 # Trade Panel With Autopilot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MQL5 **Trade panel with autopilot** example to the StockSharp framework.
 It calculates bullish and bearish pressure across multiple time frames. A position is opened when the corresponding percentage exceeds the *Open %* threshold and closed when it falls below the *Close %* level. Optionally a fractal based stop loss can be applied using 10‑minute candles.

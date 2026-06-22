@@ -1,5 +1,5 @@
 # Стратегия AcceleratorBot USDJPY H4
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия AcceleratorBot представляет собой конвертацию оригинального эксперта MQL4 для пары USDJPY на таймфрейме H4. Она объединяет силу тренда через индекс направленного движения (ADX), импульс по стохастическому осциллятору и значения ускорения/замедления (AC) с нескольких таймфреймов. Свечные модели используются как фильтры направления.
 

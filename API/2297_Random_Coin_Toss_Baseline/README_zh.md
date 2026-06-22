@@ -1,5 +1,5 @@
 # Random Coin Toss Baseline 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了经典的 GuruTrader 示例，通过掷硬币决定交易方向。
 在每根完成的K线，如果没有持仓，就生成一个伪随机数作为掷硬币。

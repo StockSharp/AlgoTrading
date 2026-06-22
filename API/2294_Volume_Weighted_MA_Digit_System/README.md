@@ -1,4 +1,5 @@
 # Volume Weighted MA Digit System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the **Volume Weighted MA Digit System**. It builds two volume weighted moving averages (VWMA) based on candle highs and lows. The price crossing these bands provides trading signals.
 

@@ -1,5 +1,5 @@
 # PChannel 系统策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **PChannel System** 使用带有延迟确认的价格通道突破。指标根据设定周期的最高价和最低价构建上下边界。当价格突破通道后又回到通道内部时，策略按照突破方向开仓并平掉相反仓位。可选的止损和止盈用于控制风险。
 

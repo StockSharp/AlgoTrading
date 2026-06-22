@@ -1,5 +1,5 @@
 # Fisher Org 信号策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用带有预设上下阈值的 Fisher 变换指标。当 Fisher 值上穿下限时开多仓；当 Fisher 值下穿上限时开空仓。
 

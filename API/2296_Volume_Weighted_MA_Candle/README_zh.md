@@ -1,4 +1,5 @@
 # 量价加权MA蜡烛
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对蜡烛的开盘价和收盘价分别计算量价加权移动平均线 (VWMA)，并根据两者的相对位置确定蜡烛的“颜色”。
 

@@ -1,4 +1,5 @@
 # Fisher Org v1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用 Fisher 变换指标捕捉趋势反转。当指标形成局部低点时开多仓，形成局部高点时开空仓。出现反向信号时平掉当前持仓。
 

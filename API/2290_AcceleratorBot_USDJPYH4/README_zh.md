@@ -1,5 +1,5 @@
 # AcceleratorBot USDJPY H4 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AcceleratorBot 策略是原始 MQL4 专家的转换版本，适用于 USDJPY 在 H4 周期。它结合了平均趋向指数 (ADX) 的趋势强度、随机振荡器的动量以及多周期的加速/减速 (AC) 指标。蜡烛图形态被用作方向性过滤器。
 

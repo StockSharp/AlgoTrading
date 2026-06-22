@@ -1,4 +1,5 @@
 # 量价加权MA数字系统策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现 **Volume Weighted MA Digit System**。它基于K线的最高价和最低价构建两条成交量加权移动平均线（VWMA）。价格穿越这些通道时生成交易信号。
 

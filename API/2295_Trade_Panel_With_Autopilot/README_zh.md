@@ -1,4 +1,5 @@
 # 自動駕駛交易面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略將 MQL5 的「Trade panel with autopilot」示例移植到 StockSharp 框架。它在多個時間框中比較當前與前一根 K 線，計算多空百分比。當百分比超過 *Open %* 時開倉，跌破 *Close %* 時平倉。可選地，使用 10 分鐘 K 線的最新分形作為止損。
 

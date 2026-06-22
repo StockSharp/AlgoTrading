@@ -1,5 +1,5 @@
 # PChannel System Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **PChannel System** uses a price channel breakout with delayed confirmation. It tracks the highest high and lowest low over a configurable period. When price breaks through the channel and then closes back inside, the strategy enters in the direction of the breakout while closing any opposite positions. Optional stop-loss and take-profit levels manage risk.
 

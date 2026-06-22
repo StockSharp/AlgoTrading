@@ -1,4 +1,5 @@
 # Donchian 通道系统
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Donchian 通道系统** 使用 Donchian 通道的突破信号并加入 `Shift` 参数以避免前瞻性偏差。
 

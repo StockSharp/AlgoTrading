@@ -1,4 +1,5 @@
 # Fisher Org v1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Fisher Transform indicator to capture trend reversals. A long position is opened when the indicator forms a local minimum, while a short position is opened when a local maximum appears. Opposite signals close any existing position.
 
