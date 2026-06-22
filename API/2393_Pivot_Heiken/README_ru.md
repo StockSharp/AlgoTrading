@@ -1,4 +1,5 @@
 # Стратегия Pivot Heiken
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет дневные уровни Pivot и свечи Heikin-Ashi с опциональным трейлинг-стопом. Дневной пивот рассчитывается по максимуму, минимуму и закрытию предыдущего дня. Свечи Heikin-Ashi сглаживают шум и подчёркивают направление тренда.
 

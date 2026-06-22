@@ -1,4 +1,5 @@
 # Exp MUV NorDIFF Cloud
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于SMA和EMA的归一化动量。
 当SMA或EMA的动量达到+100时开多，降至-100时开空。

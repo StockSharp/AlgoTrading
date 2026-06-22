@@ -1,5 +1,5 @@
 # 2MA Bunny Cross Expert
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **2MA Bunny Cross Expert** 策略交易两条简单移动平均线的交叉。当快线向上穿越慢线时开多单；当快线向下穿越慢线时开空单。在进入新仓位前，任何相反的仓位都会被关闭。
 

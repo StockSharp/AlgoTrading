@@ -1,5 +1,5 @@
 # 按时间开仓和平仓策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一个简单的时间型策略，在指定的时间开仓，并在另一个预设时间平仓。可以配置交易方向（买入或卖出）和下单量。该示例展示了不使用指标或其他过滤条件的定时交易执行。
 

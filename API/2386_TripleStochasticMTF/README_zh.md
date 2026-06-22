@@ -1,5 +1,5 @@
 # 三重随机多周期策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在三个不同的时间周期上运行随机振荡器，当最小周期上的 %K 与 %D 发生反向交叉且较大周期确认方向时入场。其目标是在大趋势背景下捕捉短期回调。
 

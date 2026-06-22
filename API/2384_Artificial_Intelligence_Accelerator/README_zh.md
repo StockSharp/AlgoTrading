@@ -1,5 +1,5 @@
 # Artificial Intelligence Accelerator 策略
-[Русский](README_ru.md) | [English](README.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用比尔·威廉姆斯的**加速/减速振荡器（AC）**构建一个简单的感知器模型。策略提取0、7、14、21根K线的AC值，与可调权重相乘并求和作为信号。信号大于零表示看涨动能，信号小于零表示看跌动能。当信号变号时策略会反向持仓，并在入场价格设置固定止损。
 

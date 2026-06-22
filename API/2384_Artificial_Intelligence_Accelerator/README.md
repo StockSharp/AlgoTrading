@@ -1,5 +1,5 @@
 # Artificial Intelligence Accelerator Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy implements a simple perceptron model on top of Bill Williams' **Acceleration/Deceleration Oscillator (AC)**. Four oscillator readings are sampled at lags of 0, 7, 14 and 21 bars and multiplied by adjustable weights. The weighted sum acts as a decision signal: positive values imply bullish momentum and negative values imply bearish momentum. The strategy reverses its position whenever the signal changes sign and places a fixed stop-loss from the entry price.
 

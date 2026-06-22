@@ -1,4 +1,5 @@
 # Triple RVI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades using the **Relative Vigor Index (RVI)** on three different timeframes. The longer-term RVI trends act as filters, while the shortest timeframe is used for entries. A long position is opened when the short-term RVI crosses below its signal line while both higher timeframes remain bullish. A short position is opened when the short-term RVI crosses above its signal line and both higher timeframes are bearish. Positions are closed when any timeframe indicates a trend change against the current position.
 

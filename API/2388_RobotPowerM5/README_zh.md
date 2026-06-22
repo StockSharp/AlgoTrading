@@ -1,4 +1,5 @@
 # RobotPower M5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在5分钟K线图上结合 Bulls Power 和 Bears Power 指标。
 当两者之和穿越零轴时开仓，并通过固定目标和跟踪止损退出。

@@ -1,4 +1,5 @@
 # RobotPower M5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the Bulls Power and Bears Power indicators on a 5-minute chart.
 It opens positions when the combined momentum of bulls and bears crosses zero and manages exits with fixed targets and a trailing stop.

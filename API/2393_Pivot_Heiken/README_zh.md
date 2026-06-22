@@ -1,4 +1,5 @@
 # Pivot Heiken 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合日内枢轴点与 Heikin-Ashi 蜡烛，并可选用追踪止损。日枢轴点由前一日的最高、最低和收盘价计算。Heikin-Ashi 平滑价格噪音，突出趋势方向。
 

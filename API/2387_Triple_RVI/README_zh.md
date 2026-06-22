@@ -1,4 +1,5 @@
 # 三重 RVI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在三个不同时间框架上使用 **相对活力指数 (RVI)** 进行交易。较长周期的 RVI 趋势用作过滤器，最短周期用于生成入场信号。当短周期 RVI 向下穿越其信号线且两个较长期框架保持看涨时开多；当短周期 RVI 向上穿越其信号线且两个较长期框架保持看空时开空。当任一时间框架出现与当前持仓相反的趋势时，平掉持仓。
 

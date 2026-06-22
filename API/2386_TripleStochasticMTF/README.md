@@ -1,5 +1,5 @@
 # Triple Stochastic MTF Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy runs three Stochastic Oscillators on different timeframes and trades when the smallest timeframe crosses its signal line in the direction confirmed by the higher timeframes. It is designed to capture short-term reversals within a larger trend context.
 

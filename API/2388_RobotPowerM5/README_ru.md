@@ -1,4 +1,5 @@
 # Стратегия RobotPower M5
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет индикаторы Bulls Power и Bears Power на пятиминутном графике.
 Позиции открываются при переходе суммарного импульса быков и медведей через ноль, выходы выполняются по фиксированным целям и трейлинг-стопу.
