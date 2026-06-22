@@ -1,4 +1,5 @@
 # Bullish & Bearish Engulfing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the classic bullish and bearish engulfing candlestick setup that was originally implemented in MetaTrader for the "Bullish and Bearish Engulfing" expert advisor. The StockSharp port evaluates completed candles on a configurable timeframe, optionally skips a number of recent bars, and reacts when an engulfing pattern meets a minimum distance filter. The logic is designed for discretionary traders who want to automate an established price action pattern while keeping control over direction, volume, and how existing positions are handled.

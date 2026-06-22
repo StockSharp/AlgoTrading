@@ -1,4 +1,5 @@
 # Evening Star Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct port of the **EveningStar.mq5** Expert Advisor (MQL5 id 18507). It watches for the classical Evening Star candlestick formation and opens a position as soon as the next bar starts trading. The logic has been rewritten on top of the StockSharp high level API while keeping the original risk management and pattern filters.

@@ -1,5 +1,5 @@
 # ProMart MACD Martingale Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the historical MQL expert **MartGreg_1 / ProMart**. It combines two MACD configurations with a controlled martingale position sizing model. The primary MACD searches for local lows and highs in momentum, while the secondary MACD confirms the direction of the recent slope. After every closed trade the strategy either follows the indicator pattern again (when the last trade was profitable) or immediately flips direction (after a loss) while potentially doubling the next order size.
 

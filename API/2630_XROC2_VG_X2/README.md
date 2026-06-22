@@ -1,4 +1,5 @@
 # XROC2 VG X2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The XROC2 VG X2 strategy is a multi-timeframe system that combines two smoothed rate-of-change streams. The higher timeframe acts as a directional filter while the lower timeframe produces concrete entry and exit signals. The original MetaTrader 5 expert advisor relied on the custom XROC2_VG indicator with flexible smoothing options and a money management module. The StockSharp port keeps the signal logic intact and exposes the key parameters as strategy inputs.

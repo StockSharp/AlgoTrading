@@ -1,4 +1,5 @@
 # N Candles Sequence Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Concept
 The N Candles strategy scans the market for consecutive candles that all close in the same direction. Once a configurable number of bullish or bearish candles has appeared, the strategy enters in the direction of the sequence. The implementation is a direct conversion of the MetaTrader "N Candles v4" expert advisor and preserves its risk controls, pip-based configuration, and optional trailing stop behaviour within the StockSharp high-level API.

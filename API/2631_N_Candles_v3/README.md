@@ -1,4 +1,5 @@
 # N Candles v3 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy scans the latest finished candles and looks for a sequence where the last *N* bars share the same direction (all bullish or all bearish). When such a streak appears it enters in the direction of the sequence while respecting a cap on how many positions can be opened at once. The implementation migrates the original MetaTrader 5 expert advisor to the StockSharp high level API.

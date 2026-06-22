@@ -1,4 +1,5 @@
 # IStochastic Trading Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 IStochastic Trading Strategy is a direct StockSharp port of the "IStochastic_Trading" MetaTrader 5 expert advisor. The bot uses the Stochastic Oscillator to detect oversold and overbought conditions and then builds a martingale-style position ladder while managing every entry with stop loss, take profit and a trailing stop. The implementation operates on finished candles obtained through StockSharp's high-level API and relies on market orders only.

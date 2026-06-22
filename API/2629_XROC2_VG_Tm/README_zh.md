@@ -1,4 +1,5 @@
 # XROC2 VG 时间过滤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高层 API 重建 MetaTrader 专家顾问 **Exp_XROC2_VG_Tm**。系统计算两条平滑后的价格变化率（ROC）曲线，当快速曲线与慢速曲线交叉时采取反向交易。可选的交易时段过滤器与止盈止损距离复现了原始 EA 的资金管理逻辑。
 

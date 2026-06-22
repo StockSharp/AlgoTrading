@@ -1,4 +1,5 @@
 # XROC2 VG Time Filter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert advisor **Exp_XROC2_VG_Tm** using the StockSharp high-level API. It builds two smoothed rate-of-change (ROC) curves and opens contrarian trades when the faster curve crosses the slower one. A trading session filter and optional protective targets reproduce the original money-management settings.
 

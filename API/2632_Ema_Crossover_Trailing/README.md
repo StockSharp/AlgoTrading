@@ -1,4 +1,5 @@
 # EMA Crossover Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MQL5 expert advisor **"Intersection 2 iMA"**. It operates on two exponential moving averages (EMAs) and reacts to crossovers that occur on fully formed candles. The original expert was designed for MetaTrader 5 and managed trade volume dynamically; in this conversion the order size is controlled by a configurable parameter while preserving the crossover and trailing logic.

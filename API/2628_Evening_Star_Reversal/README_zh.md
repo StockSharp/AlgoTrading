@@ -1,4 +1,5 @@
 # Evening Star Reversal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 **EveningStar.mq5**（MQL5 编号 18507）专家顾问的直接移植版本。算法会追踪经典的“黄昏之星”三烛形态，并在下一根蜡烛开始交易时立即执行。全部逻辑基于 StockSharp 的高级 API 重新实现，同时保留了原始的风控与过滤条件。

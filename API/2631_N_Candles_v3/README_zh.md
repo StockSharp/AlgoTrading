@@ -1,4 +1,5 @@
 # N Candles v3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略会监控最近收盘的蜡烛线，只要连续 *N* 根蜡烛具有相同方向（全部阳线或全部阴线），就顺势开仓。同时它限制同向持仓的数量，避免超过 `Max Positions` 指定的上限。本实现将 MetaTrader 5 平台上的专家顾问迁移到了 StockSharp 的高级 API。

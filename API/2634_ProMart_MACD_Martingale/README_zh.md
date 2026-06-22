@@ -1,5 +1,5 @@
 # ProMart MACD 马丁格尔策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是历史 MQL 专家 **MartGreg_1 / ProMart** 的 StockSharp 版本。它组合了两组 MACD 参数，并加入可控的马丁格尔资金管理。第一组 MACD 用于寻找动量的局部低点与高点，第二组 MACD 用于确认最近的斜率方向。每次平仓后，如果上一笔交易盈利，策略会继续等待指标形态；若上一笔交易亏损，则立即反向开仓，并可能把下一笔的下单量翻倍。
 

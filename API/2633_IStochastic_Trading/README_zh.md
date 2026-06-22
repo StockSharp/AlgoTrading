@@ -1,4 +1,5 @@
 # IStochastic 交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 IStochastic 交易策略是 MetaTrader 5 专家顾问 "IStochastic_Trading" 的 StockSharp 版本。策略使用随机指标识别超买与超卖区域，并按照马丁格尔思路逐级加仓，同时为每一笔仓位设置止损、止盈与跟踪止损。实现完全基于 StockSharp 的高级 API，在每根完成的 K 线之后决策，并仅发送市价单。

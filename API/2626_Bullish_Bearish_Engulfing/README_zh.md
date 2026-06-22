@@ -1,4 +1,5 @@
 # 看涨与看跌吞没策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略重现了 MetaTrader 平台上 "Bullish and Bearish Engulfing" 专家顾问的经典看涨/看跌吞没形态。StockSharp 版本在可配置的时间框架上读取已完成的 K 线，根据设定的位移跳过最新的若干根 K 线，并在吞没形态满足最小距离过滤条件时做出反应。该实现适合希望自动化经典价格行为形态、但仍要自主控制交易方向、下单手数以及持仓处理方式的交易者。

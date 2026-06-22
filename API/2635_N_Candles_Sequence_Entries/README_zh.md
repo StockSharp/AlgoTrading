@@ -1,4 +1,5 @@
 # N Candles 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 N Candles 策略会监控连续收盘方向相同的蜡烛。一旦出现设定数量的连续阳线或连续阴线，系统就按同方向开仓。本实现是 MetaTrader “N Candles v4” 专家的移植版本，在 StockSharp 的高层 API 中保留了原有的风险控制、以点（pip）为单位的配置以及可选的移动止损机制。

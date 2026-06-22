@@ -1,4 +1,5 @@
 # EMA 交叉移动止损策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 MQL5 专家顾问 **“Intersection 2 iMA”** 的 StockSharp 版本。策略在选定的 K 线序列上计算两条指数移动平均线（EMA），仅在完全收盘的 K 线上检测交叉信号。原始 EA 支持根据资金动态计算手数，本移植版本改为通过参数控制下单量，同时完整保留均线交叉与阶梯式移动止损的核心逻辑。

@@ -1,4 +1,5 @@
 # XROC2 VG X2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 XROC2 VG X2 是一个多周期策略，通过两条平滑后的动量变化曲线来判断行情。较高周期用于确认方向性过滤，较低周期负责给出具体的入场与离场信号。原始的 MetaTrader 5 版本依赖自定义的 XROC2_VG 指标以及一套资金管理模块。移植到 StockSharp 后，策略保留了核心信号逻辑，并将主要参数暴露为策略输入。
