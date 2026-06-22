@@ -1,5 +1,5 @@
 # EMA WMA Crossover Strategy (中文)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略基于指数移动平均线 (EMA) 与加权移动平均线 (WMA) 的交叉，计算使用的是K线开盘价。
 当EMA从上向下穿越WMA时做多，当EMA从下向上穿越WMA时做空。

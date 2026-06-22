@@ -1,5 +1,5 @@
 # Breakdown Level Intraday 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在指定时间在前一日的最高价和最低价附近布置突破订单。当价格突破最高价加上 `Delta` 时做多，跌破最低价减去 `Delta` 时做空。仓位可选配备止损、止盈、保本和跟踪止损。
 

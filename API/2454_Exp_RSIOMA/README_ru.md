@@ -1,5 +1,5 @@
 # Стратегия Exp RSIOMA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Exp RSIOMA использует индикатор RSI of moving average (RSIOMA) для торговли на разворотах и пробоях. Значения RSI сглаживаются дополнительной скользящей средней, образуя сигнальную линию и гистограмму. Стратегия поддерживает четыре режима:
 

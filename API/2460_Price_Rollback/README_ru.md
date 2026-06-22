@@ -1,4 +1,5 @@
 # Стратегия Price Rollback
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует ценовые разрывы.
 В начале выбранного дня недели сравнивается последняя цена закрытия с ценой открытия 24 часа назад.

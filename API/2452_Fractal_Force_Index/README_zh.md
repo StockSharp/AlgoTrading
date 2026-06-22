@@ -1,5 +1,5 @@
 # Fractal Force Index 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于平滑后的 Force Index 指标与设定水平的比较。当指标上穿上界或下穿下界时，系统根据选定的交易模式开仓或平仓。Force Index 由价格变化和成交量计算，并通过 EMA 进行平滑。
 

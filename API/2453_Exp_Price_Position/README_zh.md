@@ -1,5 +1,5 @@
 # Exp Price Position
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Exp Price Position** 策略来自原始的 MetaTrader 专家顾问，它结合价格位置与趋势过滤。
 策略通过两条中值移动平均线确定最近的摆动水平，然后使用一对平滑移动平均线来识别趋势方向。

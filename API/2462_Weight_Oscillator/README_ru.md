@@ -1,5 +1,5 @@
 # Стратегия Weight Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет RSI, Money Flow Index, Williams %R и DeMarker в взвешенный осциллятор, сглаженный простой скользящей средней. Позиции открываются или разворачиваются при пересечении осциллятором заданных верхнего или нижнего уровней. Режим тренда определяет, следовать ли сигналам осциллятора или торговать против них.
 

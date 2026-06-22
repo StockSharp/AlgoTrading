@@ -1,5 +1,5 @@
 # Ilan14 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ilan14 is a hedging grid strategy that opens long and short positions simultaneously. When the market moves against one side by a user defined pip distance, the strategy adds a new order in that direction with its volume multiplied by the **Lot Exponent**. The average price of the position is tracked and once price reverts by the configured **Take Profit** distance, all orders on that side are closed.
 

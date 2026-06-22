@@ -1,5 +1,5 @@
 # Exp Price Position
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Exp Price Position** strategy adapts the original MetaTrader expert advisor that combines price location and a step trend filter.
 It evaluates the relationship between two median moving averages to locate the most recent swing level and then checks a fast and slow smoothed moving average pair to determine trend direction.

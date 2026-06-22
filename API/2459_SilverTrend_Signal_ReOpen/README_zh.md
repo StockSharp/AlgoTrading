@@ -1,5 +1,5 @@
 # SilverTrend Signal ReOpen 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 SilverTrend 指标并带有加仓功能的策略。当指标改变方向时开仓，并在价格按设定步长朝持仓方向移动时加仓。仓位可在相反信号或触发止损/止盈时平仓。
 

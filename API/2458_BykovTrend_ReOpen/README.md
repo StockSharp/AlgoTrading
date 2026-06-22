@@ -1,4 +1,5 @@
 # BykovTrend ReOpen Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The BykovTrend ReOpen strategy uses the BykovTrend logic based on Williams %R and Average True Range indicators. A buy signal occurs when the trend turns bullish and a sell signal when it turns bearish. After entering a position the strategy can re-open additional positions every predefined price step while the trend continues. Stop-loss and take-profit are applied from the last entry price.

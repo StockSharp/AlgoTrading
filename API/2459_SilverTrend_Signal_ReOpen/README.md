@@ -1,5 +1,5 @@
 # SilverTrend Signal ReOpen Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on the SilverTrend indicator with optional re-entry. Opens a position when the indicator changes direction and adds additional positions every time the price moves a defined step in favor of the trade. Positions can be closed on opposite signals or when stop loss / take profit levels are hit.
 

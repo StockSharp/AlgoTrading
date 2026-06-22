@@ -1,4 +1,5 @@
 # BykovTrend ReOpen 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 BykovTrend ReOpen 策略基于 Williams %R 和平均真实波幅（ATR）来判定趋势。当趋势转为上升时产生买入信号，趋势转为下降时产生卖出信号。进入仓位后，只要趋势持续，策略会在每个设定的价格步长重新加仓。止损和止盈以最近一次开仓价为基准。

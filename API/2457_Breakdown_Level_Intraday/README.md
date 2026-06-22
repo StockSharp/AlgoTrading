@@ -1,5 +1,5 @@
 # Breakdown Level Intraday Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Places breakout orders around the previous day's high and low at a specified time. Enters long when price crosses above the high plus a delta and short when price drops below the low minus the delta. Position management includes optional stop loss, take profit, break-even and trailing stop.
 

@@ -1,5 +1,5 @@
 # Ilan14 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ilan14 是一种对冲网格策略，同时开多单和空单。当市场朝某一方向不利移动指定点数时，策略会在该方向加仓，并将手数乘以 **Lot Exponent**。系统跟踪仓位的平均价格，当价格回撤到设定的 **Take Profit** 距离时，该方向上的所有订单都会被平仓获利。
 

@@ -1,5 +1,5 @@
 # Exp RSIOMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Exp RSIOMA 策略使用 RSI 移动平均线 (RSIOMA) 指标来捕捉趋势反转与突破。RSI 数值通过额外的移动平均线进行平滑，形成信号线和柱状图。策略支持四种模式：
 

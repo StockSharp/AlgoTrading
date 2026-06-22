@@ -1,5 +1,5 @@
 # 权重振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 RSI、资金流量指数、Williams %R 和 DeMarker 组合成一个加权振荡器，并通过简单移动平均线进行平滑。当振荡器穿越设置的高位或低位时开仓或反向。趋势模式决定是顺势交易还是逆势交易。
 
