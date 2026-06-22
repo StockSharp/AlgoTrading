@@ -1,5 +1,5 @@
 # 趋势箭头策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在收盘价突破最近的高点或低点时入场。
 它计算给定周期内的最高和最低收盘价。

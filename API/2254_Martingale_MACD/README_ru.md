@@ -1,5 +1,5 @@
 # Стратегия Martingale MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MQL "MartGreg_1" в платформу StockSharp. Используются два индикатора MACD: первый ищет локальные экстремумы, второй определяет направление импульса. Размер позиции управляется по принципу мартингейла.
 

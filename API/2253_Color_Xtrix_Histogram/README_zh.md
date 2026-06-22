@@ -1,5 +1,5 @@
 # Color XTRIX Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于平滑 TRIX 指标（从对数收盘价计算的三重指数移动平均动量）的方向变化进行交易。当 TRIX 直方图在下跌后转向上升时开多仓；当其在上涨后转向下跌时开空仓。出现相反信号时反向持仓。本策略不使用止损或止盈。
 

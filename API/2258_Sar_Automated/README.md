@@ -1,4 +1,5 @@
 # SAR Automated Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This example demonstrates a simple trading approach based on the **Parabolic SAR** indicator.
 The strategy opens a long position when the current price is above the SAR value and opens a short position when price is below the SAR. Additional risk management features include fixed stop-loss, take-profit and an optional trailing stop.

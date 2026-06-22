@@ -1,4 +1,5 @@
-# VWAP Close 策略
+# VWAP 收盘策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略计算收盘价的成交量加权移动平均线（VWMA）。当 VWMA 发生方向变化时，产生潜在的入场或出场信号：

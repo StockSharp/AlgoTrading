@@ -1,4 +1,5 @@
 # CCI Woodies Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy trades based on the crossover of two Commodity Channel Index (CCI) lines derived from the Woodies CCI method. A fast CCI and a slow CCI are calculated on the specified timeframe. When the fast line crosses below the slow line, a long position is opened and any short position is closed. When the fast line crosses above the slow line, a short position is opened and any long position is closed.

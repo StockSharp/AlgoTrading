@@ -1,4 +1,5 @@
 # Reco RSI Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the behaviour of the original MetaTrader "Reco" expert advisor using StockSharp's high level API. The algorithm opens an initial position based on the Relative Strength Index (RSI) and then places counter positions forming a grid. Distance between grid orders and their volume grow geometrically. All open positions are closed together when cumulative profit or loss reaches predefined thresholds.

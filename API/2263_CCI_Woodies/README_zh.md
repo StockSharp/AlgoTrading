@@ -1,4 +1,5 @@
 # CCI Woodies 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略基于 Woodies CCI 方法的两条 CCI 线（快线和慢线）的交叉进行交易。在指定的时间框架上计算两条 CCI。当快线从上向下穿过慢线时，策略开多仓并平掉可能存在的空仓；当快线从下向上穿过慢线时，策略开空仓并平掉可能存在的多仓。

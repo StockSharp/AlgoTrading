@@ -1,4 +1,5 @@
 # Reco RSI 网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用 StockSharp 的高级 API 重现 MetaTrader 平台上的 "Reco" 智能交易系统。算法首先根据相对强弱指数（RSI）开仓，然后在价格朝不利方向移动时逐步建立反向仓位形成网格。网格订单的距离和手数按几何级数增长，当累积盈亏达到预设阈值时一次性平仓。

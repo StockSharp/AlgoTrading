@@ -1,4 +1,5 @@
 # XDPO蜡烛策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MQL5 专家 **Exp_XDPOCandle** 的移植。它对开盘价和收盘价进行两次指数移动平均平滑，构建出合成蜡烛。合成蜡烛的颜色（多头、空头或中性）用于驱动交易决策。
 

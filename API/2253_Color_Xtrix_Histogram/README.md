@@ -1,5 +1,5 @@
 # Color XTRIX Histogram Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the direction changes of a smoothed TRIX (triple exponential moving average momentum) calculated from logarithmic closing prices. A long position is opened when the TRIX histogram turns upward after declining, while a short position is opened when it turns downward after rising. Positions are reversed on opposite turns. No stop-loss or take-profit is used.
 

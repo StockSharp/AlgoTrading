@@ -1,4 +1,5 @@
 # SAR 自动化策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例展示了基于 **Parabolic SAR** 指标的简单交易方法。
 当价格高于 SAR 值且没有持仓时策略做多；当价格低于 SAR 值且没有持仓时策略做空。策略还包含固定止损、止盈以及可选的移动止损等风险控制功能。

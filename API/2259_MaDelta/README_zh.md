@@ -1,5 +1,5 @@
 # MaDelta策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MaDelta策略计算快慢移动平均线之间的差值。该差值先乘以系数再立方，形成振荡值`px`。两个由`Delta`（以点数表示）间隔的动态阈值跟踪`px`的最新高点和低点。当`px`突破上阈值时，策略转为做多；当`px`跌破下阈值时，策略转为做空。若当前持仓与新信号方向相反，先平仓再按信号方向开仓。
 

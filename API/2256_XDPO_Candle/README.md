@@ -1,4 +1,5 @@
 # XDPO Candle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a conversion of the original MQL5 expert **Exp_XDPOCandle**. It builds synthetic candles by applying two consecutive exponential moving averages to the open and close prices. The color of the resulting candle (bullish, bearish or neutral) drives trading decisions.
 

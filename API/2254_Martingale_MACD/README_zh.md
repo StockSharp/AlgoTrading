@@ -1,5 +1,5 @@
 # Martingale MACD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 框架中重现 MQL "MartGreg_1" 智能交易系统。它使用两个移动平均线收敛/发散 (MACD) 指标来寻找反转，并采用马丁格尔方法管理仓位规模。
 
