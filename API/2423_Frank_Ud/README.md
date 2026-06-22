@@ -1,4 +1,5 @@
 # Frank Ud Hedging Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Frank Ud Hedging Grid Strategy** is a direct port of the MetaTrader expert advisor "Frank Ud" into the StockSharp high-level API. The bot keeps simultaneous long and short baskets on the same instrument and then performs martingale-style averaging whenever price drifts against the active basket. All signal handling is performed on top of best bid/ask (Level 1) updates, making the strategy suitable for low-latency execution or tick-by-tick backtesting.

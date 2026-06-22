@@ -1,5 +1,5 @@
 # Fisher Transform X2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在两个不同的时间框架上使用 Fisher Transform 指标。高时间框架确定总体趋势，低时间框架在 Fisher 与其前值相反方向交叉时产生入场信号。可选参数允许在趋势变化或交叉信号时平仓。
 

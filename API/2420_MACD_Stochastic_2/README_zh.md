@@ -1,5 +1,5 @@
 # MACD Stochastic 2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复刻 MetaTrader 中的“MACD Stochastic 2”专家逻辑。通过 MACD 主线的三根 K 线形态与随机指标 Stochastic 结合，识别接近超卖或超买区域的动量反转。同时为多空方向分别设置止损、止盈，并提供可选的点（pip）单位追踪止损。
 

@@ -1,5 +1,5 @@
 # Fractal RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Fractal RSI 指标的自适应策略。
 该指标根据价格运动的分形维度调整 RSI 的周期，

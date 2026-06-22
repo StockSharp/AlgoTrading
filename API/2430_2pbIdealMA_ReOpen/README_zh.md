@@ -1,4 +1,5 @@
 # 2pb Ideal MA 重新开仓策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 基于 StockSharp 高级 API 重写 MQL 专家顾问 “Exp_2pbIdealMA_ReOpen”。

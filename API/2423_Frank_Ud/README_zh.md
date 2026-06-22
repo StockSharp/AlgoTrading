@@ -1,4 +1,5 @@
 # Frank Ud 对冲网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Frank Ud Hedging Grid Strategy** 是将 MetaTrader 专家顾问 “Frank Ud” 迁移到 StockSharp 高级 API 的版本。策略同时在同一标的上持有多头和空头篮子，并在价格朝不利方向移动时按马丁格尔原则加仓。全部信号都基于最优买卖价（Level 1）更新处理，因此适用于低延迟执行或逐笔回测。

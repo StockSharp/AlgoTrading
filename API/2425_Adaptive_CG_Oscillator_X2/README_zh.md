@@ -1,5 +1,5 @@
 # 自适应CG振荡器X2策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在两个不同的时间框上使用自适应CG振荡器。
 较大的时间框确定整体趋势，较小的时间框根据振荡器交叉生成进出场信号。

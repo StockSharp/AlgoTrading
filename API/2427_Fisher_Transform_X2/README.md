@@ -1,5 +1,5 @@
 # Fisher Transform X2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Fisher Transform indicator on two different timeframes. The higher timeframe defines the overall trend, while the lower timeframe generates entries when Fisher crosses its previous value against that trend. Optional parameters allow closing positions on trend change or on cross signals.
 

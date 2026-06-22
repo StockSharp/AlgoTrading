@@ -1,4 +1,5 @@
 # Expert NEWS Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Expert NEWS Strategy is a direct conversion of the "Expert_NEWS" MQL5 robot. The strategy continuously places symmetrical stop orders above and below the current market price and manages the resulting positions with break-even protection, trailing stops, and scheduled refreshes of pending orders. The implementation relies on Level1 quotes and keeps the default trading volume at 0.1 lots.

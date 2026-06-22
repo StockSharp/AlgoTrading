@@ -1,4 +1,5 @@
 # 2pb Ideal MA Re-Open Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 - Implements the MQL expert "Exp_2pbIdealMA_ReOpen" using the StockSharp high level API.

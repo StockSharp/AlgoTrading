@@ -1,4 +1,5 @@
 # Expert NEWS 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Expert NEWS 策略是 MQL5 机器人 “Expert_NEWS” 的直接移植版本。策略会在当前市场价上下同时挂出对称的止损单，并在成交后通过保本、移动止损以及定期刷新挂单等机制管理仓位。实现完全依赖 Level1 行情，默认交易手数为 0.1。
