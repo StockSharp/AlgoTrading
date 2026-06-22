@@ -1,4 +1,5 @@
 # Dual MA Trend Confirmation Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Dual MA Trend Confirmation Strategy** replicates the original MetaTrader expert that combines a slow exponential moving average (EMA) with a fast linear weighted moving average (LWMA). The system waits for both moving averages to align in the same direction and uses the previous candle close as additional confirmation before entering a position. The idea is to participate only in strong momentum swings when the slow trend filter and the fast confirmation filter simultaneously slope upward or downward.

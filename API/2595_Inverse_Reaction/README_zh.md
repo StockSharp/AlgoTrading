@@ -1,4 +1,5 @@
 # 逆向反应策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 逆向反应策略是一套均值回归系统，灵感来自 MetaTrader 上的 "IREA" 专家顾问。它关注异常巨大的单根 K 线波动，并预期下一根 K 线会出现反向修正。策略通过最近几根 K 线的价格变化计算出动态置信阈值，只有当波动超过该阈值并且仍处在用户设定的范围内时才会下单。策略在任何时刻只持有一个仓位。

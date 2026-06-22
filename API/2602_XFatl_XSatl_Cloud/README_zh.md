@@ -1,5 +1,5 @@
 # XFatl XSatl Cloud 逆势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略在 StockSharp 中复刻了 MT5 专家顾问 **Exp_XFatlXSatlCloud**。它跟踪经过平滑处理的 FATL/SATL 云图，并在交叉发生后执行**逆势**交易：当快速线（XFATL）先位于慢速线（XSATL）之上、随后回落到其下方时开多；当快速线先位于慢速线之下、随后重新上穿时开空。止盈与止损使用合约的最小价格步长表示。
 

@@ -1,5 +1,5 @@
 # N Candles 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 N Candles 策略复刻原始的 MQL 智能交易程序：当最近 `N` 根已完成的蜡烛线方向一致时入场。若窗口内所有蜡烛都收阳，则提交市价买单；若全部收阴，则提交市价卖单。策略本身不包含止盈、止损或离场逻辑，持仓需要人工或其他风控模块来处理。
 

@@ -1,4 +1,5 @@
 # Inverse Reaction Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Inverse Reaction strategy is a mean-reversion system inspired by the original MetaTrader expert advisor "IREA". It reacts to unusually large single-bar moves and anticipates an inverse reaction on the next bar. The strategy computes a dynamic confidence level from recent candle ranges and only trades when price swings exceed that level but stay within user-defined bounds. Only one position can be open at any time.

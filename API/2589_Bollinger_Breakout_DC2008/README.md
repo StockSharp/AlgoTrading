@@ -1,5 +1,5 @@
 # Bollinger Breakout DC2008
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Reimplementation of Sergey Pavlov's (DC2008) MetaTrader Bollinger breakout expert advisor for the StockSharp high-level strategy API. The strategy watches completed candles, evaluates Bollinger Bands breakouts on the selected price source and opens or reverses positions only when the current trade is not losing.
 

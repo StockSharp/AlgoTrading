@@ -1,5 +1,5 @@
 # XFatl XSatl Cloud Countertrend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy recreates the MT5 expert **Exp_XFatlXSatlCloud**. It watches the smoothed FATL/SATL "cloud" and trades **against** the direction of its crossover. When the fast line (XFATL) drops back below the slow line (XSATL) after being above it, the strategy opens a long position. When the fast line rises back above after being below, it opens a short position. Optional stop loss and take profit levels are expressed in instrument price steps.
 

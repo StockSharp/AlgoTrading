@@ -1,5 +1,5 @@
 # DC2008 布林带突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 Sergey Pavlov (DC2008) 的 MetaTrader 布林带突破专家顾问移植到 StockSharp 高级策略 API。策略在选定的周期上等待完整蜡烛，依据指定的价格源计算布林带，并且只有在当前持仓不亏损时才开仓或反向。
 

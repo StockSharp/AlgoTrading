@@ -1,4 +1,5 @@
 # Stochastic Chaikin's Volatility 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 指标专家 `Exp_Stochastic_Chaikins_Volatility` 的 StockSharp 版本。策略先计算每根 K 线高低价之间的区间，并通过可配置的移动平均线进行平滑处理，再将结果以类似随机指标 (Stochastic) 的方式标准化。交易逻辑保持原始 EA 的逆势思路：在振荡指标出现拐点时入场，振荡恢复原方向时出场。

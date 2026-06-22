@@ -1,5 +1,5 @@
 # 摩斯密码策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 摩斯密码策略重现了原始 MetaTrader 5 专家顾问的思想：把每一根收盘完成的 K 线看成「划」或「点」。收盘价大于或等于开盘价的 K 线被编码为 `1`，收盘价小于或等于开盘价的 K 线被编码为 `0`。策略持续读取最近的 K 线序列，并与所选的二进制掩码逐位比较。一旦序列完全匹配，即刻按照指定方向开仓，并同步设置以点（pip）为单位的止盈与止损。

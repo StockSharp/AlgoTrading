@@ -1,4 +1,5 @@
 # Ma SAR ADX Bind Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp high-level API conversion of the original **MaSarADX.mq5** MetaTrader 5 expert advisor. The system combines a simple moving average trend filter with Directional Movement Index (ADX) signals and the Parabolic SAR trailing stop. Trading decisions are evaluated only on completed candles, replicating the "first tick of a new bar" behavior from the MQL version. When the candle close is aligned with both the moving average trend and the ADX directional balance, a position is opened. Parabolic SAR guides both trade direction and exits by forcing a full liquidation when price crosses to the opposite side of the SAR dots.

@@ -1,4 +1,5 @@
 # Stochastic Chaikin's Volatility Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor `Exp_Stochastic_Chaikins_Volatility`. It analyses the spread between high and low prices, smooths that volatility with a configurable moving average, and then normalizes the result using a stochastic-like oscillator. Trading decisions follow the original counter-trend logic: the strategy looks for turning points in the oscillator to fade short-term extremes while optionally closing existing positions when momentum flips back.

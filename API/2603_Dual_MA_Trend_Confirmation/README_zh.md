@@ -1,4 +1,5 @@
 # 双均线趋势共振策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **双均线趋势共振策略** 复刻了原始的 MetaTrader 智能交易系统：通过一条慢速指数移动平均线（EMA）和一条快速线性加权移动平均线（LWMA）来确认趋势。策略会等待两条均线在同一方向上连续倾斜，并使用上一根 K 线的收盘价作为附加确认信号，只有在动量与趋势完全一致时才入场，旨在捕捉最有力量的趋势波段。

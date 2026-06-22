@@ -1,4 +1,5 @@
 # Ma SAR ADX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 5 平台 **MaSarADX.mq5** 专家顾问在 StockSharp 高级 API 上的完整移植。系统通过简单均线确认趋势方向，结合方向性运动指标（ADX）的 +DI / −DI 关系以及抛物线 SAR 轨迹来决定入场与离场。策略仅在蜡烛线收盘后评估信号，复刻原始脚本“仅在新柱子的第一个跳动上交易”的行为。

@@ -1,5 +1,5 @@
 # Candle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Candle Strategy** 是 MT5 经典专家顾问 “Candle.mq5” 的完整移植版。策略在选定周期上分析每一根已完成 K 线的颜色，并让持仓方向始终跟随最新收盘价。收盘价高于开盘价时持有多头，收盘价低于开盘价时持有空头，平收的 K 线则保持现有仓位不变。风险控制通过以点数为单位的止盈和追踪止损来实现，并依据品种的最小报价步长换算成绝对价格。
