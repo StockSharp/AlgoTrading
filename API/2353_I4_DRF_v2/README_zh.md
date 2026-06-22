@@ -1,5 +1,5 @@
 # I4 DRF v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 I4 DRF v2 策略使用 i4_DRF_v2 指标，该指标统计最近周期内上涨和下跌的收盘数。
 根据 TrendModes 参数，可选择反趋势模式（Direct）或顺趋势模式（NotDirect）。

@@ -1,5 +1,5 @@
 # Waddah Attar 趋势
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将原始 MQL 专家顾问 “Exp_Waddah_Attar_Trend” 转换为 StockSharp 的高级 API 实现。它使用 Waddah Attar Trend 指标，该指标把两条指数移动平均线（快线和慢线）的差值与另一条平滑移动平均线相乘。指标输出颜色状态：数值上升时为绿色，下降时为紫色。颜色变化触发交易。
 

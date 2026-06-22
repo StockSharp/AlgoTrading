@@ -1,4 +1,5 @@
 # 熊牛力量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 5 专家顾问 "Exp_Bear_Bulls_Power" 的转换版本，使用平滑后的熊牛力量指标来识别趋势反转。
 

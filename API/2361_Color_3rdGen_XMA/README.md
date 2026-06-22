@@ -1,4 +1,5 @@
 # Color 3rd Generation XMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades based on the direction of a third-generation moving average. The indicator is a combination of two exponential moving averages and turns blue when rising and pink when falling. A buy signal is recorded when the average turns upward, and a sell signal is recorded when it turns downward.
 

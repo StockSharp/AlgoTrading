@@ -1,4 +1,5 @@
 # Figurelli Series 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader5 的 "Exp_FigurelliSeries" 专家顾问转换为 StockSharp。它使用 Figurelli Series 指标，该指标统计当前收盘价上方和下方的移动平均线数量之差。策略在用户设定的开始时间触发一次交易，并在停止时间关闭所有持仓。

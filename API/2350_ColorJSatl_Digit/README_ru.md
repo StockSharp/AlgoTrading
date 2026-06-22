@@ -1,5 +1,5 @@
 # Стратегия Color JSatl Digit
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия является конверсией эксперта MQL5 "Exp_ColorJSatl_Digit" на платформу StockSharp. В основе лежит усреднение Jurik Moving Average (JMA), наклон которого переводится в дискретные состояния: рост или падение. Переход состояния с 0 на 1 указывает на начало восходящего тренда, а переход с 1 на 0 — на нисходящий.
 

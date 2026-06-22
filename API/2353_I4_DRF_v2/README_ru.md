@@ -1,5 +1,5 @@
 # Стратегия I4 DRF v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия I4 DRF v2 использует индикатор i4_DRF_v2, который считает количество растущих и падающих закрытий за выбранный период.
 В зависимости от параметра TrendModes работает против тренда (Direct) или по тренду (NotDirect).

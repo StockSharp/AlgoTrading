@@ -1,4 +1,5 @@
 # Figurelli Series Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy converts the MetaTrader5 expert "Exp_FigurelliSeries" to StockSharp. It uses a custom Figurelli Series indicator which measures the difference between the number of moving averages above and below the current price. Trading occurs once per day at a user-defined start time and all positions are closed at a stop time.

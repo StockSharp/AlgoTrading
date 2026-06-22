@@ -1,5 +1,5 @@
 # I4 DRF 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于自定义 I4 DRF 指标。它比较最近蜡烛的高点和低点方向并生成 -100 到 +100 之间的值。交易动作取决于指标颜色的变化以及所选模式。
 

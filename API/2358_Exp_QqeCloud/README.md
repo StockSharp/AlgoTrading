@@ -1,5 +1,5 @@
 # Exp QQE Cloud Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A trend-following approach that applies the Quantitative Qualitative Estimation (QQE) indicator to a smoothed RSI.
 The strategy opens positions only at a predefined session start time and closes them when the opposite signal occurs

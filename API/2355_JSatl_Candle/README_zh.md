@@ -1,4 +1,5 @@
 # JSatl Candle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Jurik 移动平均线 (JMA) 构建平滑趋势。
 当 JMA 在横盘或下行后向上转折时开多仓。

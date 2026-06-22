@@ -1,4 +1,5 @@
 # Color 3rd Generation XMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于第三代移动平均线的方向进行交易。该指标由两个指数移动平均线组合而成，当上升时显示为蓝色，下跌时显示为粉色。指标向上转变时记录买入信号，向下转变时记录卖出信号。
 

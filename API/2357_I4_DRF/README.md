@@ -1,5 +1,5 @@
 # I4 DRF Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy based on the custom I4 DRF indicator. It compares the direction of recent candle highs and lows and generates a value between -100 and +100. Trading actions depend on color transitions of this indicator and the selected mode.
 

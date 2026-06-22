@@ -1,5 +1,5 @@
 # Color JSatl Digit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy converts the MQL5 expert "Exp_ColorJSatl_Digit" into StockSharp. It digitizes the slope of the Jurik Moving Average (JMA) to classify each bar as up or down. A shift from state 0 to 1 marks an emerging uptrend, while a change from 1 to 0 signals a downtrend.
 

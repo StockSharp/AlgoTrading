@@ -1,4 +1,5 @@
 # ColorXvaMA Digit StDev 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略基于价格相对于指数移动平均线 (EMA) 的偏离程度进行交易。两个偏差倍数（K1 和 K2）定义了由价格标准差计算的内外带。

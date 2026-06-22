@@ -1,4 +1,5 @@
 # Стратегия JSatl Candle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует сглаживающую среднюю Jurik (JMA) для построения тренда.
 Длинная позиция открывается, когда JMA разворачивается вверх после бокового или нисходящего движения.

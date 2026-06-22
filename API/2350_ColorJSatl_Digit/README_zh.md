@@ -1,5 +1,5 @@
 # Color JSatl Digit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MQL5 专家顾问 "Exp_ColorJSatl_Digit" 转换为 StockSharp 实现。系统使用 Jurik 移动平均线 (JMA) 的斜率并将其数字化为上升或下降状态。当状态从 0 变为 1 时表示上升趋势开始，从 1 变为 0 时表示下降趋势开始。
 

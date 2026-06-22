@@ -1,5 +1,5 @@
 # Exp QQE Cloud 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在平滑 RSI 上应用 QQE 指标，仅在预设的交易时段开始时开仓，
 并在出现相反信号或到达结束时间时平仓。
