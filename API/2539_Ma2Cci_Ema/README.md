@@ -1,5 +1,5 @@
 # Ma2Cci Ema Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dual exponential moving average crossover strategy confirmed by a Commodity Channel Index (CCI) zero-line break. Position size and stop placement are derived from Average True Range (ATR) volatility and a configurable risk percentage.
 

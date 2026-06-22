@@ -1,4 +1,5 @@
 # MACD Pattern Trader 时段策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问 **MacdPatternTraderAll0.01** 的等价移植版。策略在单一标的上运行，结合六组不同的 MACD 形态、可选的交易时段过滤、分批止盈以及可配置的马丁格尔加仓机制。所有计算均基于所设置 `CandleType` 的完结 K 线。

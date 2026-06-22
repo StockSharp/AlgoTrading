@@ -1,5 +1,5 @@
 # Eugene Inside Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Eugene Inside Breakout 策略是 barabashkakvn 原版 MetaTrader 智能交易系统的直接移植。策略完全基于价格行为：先等待内部 K 线的压缩，再捕捉随后的区间突破。通过前一根 K 线实体计算出的确认水平，可以在进场前验证突破是否具备动能。
 

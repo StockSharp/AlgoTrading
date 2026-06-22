@@ -1,5 +1,5 @@
 # Eugene Inside Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Eugene Inside Breakout strategy is a direct port of the original MetaTrader expert by barabashkakvn. It focuses on pure price
 action: an inside candle sequence followed by a range breakout. Confirmation levels derived from the previous candle body ensure

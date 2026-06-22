@@ -1,4 +1,5 @@
 # MacdPatternTrader 高级策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MacdPatternTrader 高级策略是将 *MacdPatternTraderAll* MQL 专家顾问移植到 StockSharp 高层 API 的结果。策略只在蜡烛收盘后处理数据，并同时评估六套独立的 MACD 形态。每个形态都拥有独立的快、慢指数移动平均和阈值，用于识别 MACD 主线的反转与延续结构。触发条件可能在同一根蜡烛上出现多个信号，订单的数量由当前的马丁格尔仓位规模决定。

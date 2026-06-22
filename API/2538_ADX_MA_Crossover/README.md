@@ -1,4 +1,5 @@
 # ADX MA Crossover
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the "ADX & MA" Expert Advisor by combining a smoothed moving average with an Average Directional Index (ADX) trend filter. The logic analyses the last two completed candles on the selected timeframe and reacts only after both the moving average and ADX have produced confirmed values. It is designed for hedging-style entries but is implemented on a netted position model, automatically reversing the position when opposite signals appear.

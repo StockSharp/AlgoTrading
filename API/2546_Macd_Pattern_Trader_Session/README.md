@@ -1,4 +1,5 @@
 # MACD Pattern Trader Session Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct conversion of the MetaTrader expert **MacdPatternTraderAll0.01**. It trades a single instrument using six different MACD-based entry patterns, optional trading hours filtering, partial profit taking, and a martingale position sizing option. All calculations are performed on completed candles delivered by the configured `CandleType`.

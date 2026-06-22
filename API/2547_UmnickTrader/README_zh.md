@@ -1,5 +1,5 @@
 # UmnickTrader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略从原版 MQL5 顾问 UmnickTrader 移植而来，属于自适应的逆势/摇摆交易系统。策略在任意时刻只保留一张头寸，
 并根据上一笔交易的盈亏来切换做多或做空方向。它以 `(O + H + L + C) / 4` 的平均价格来衡量行情变化，只有当该平均

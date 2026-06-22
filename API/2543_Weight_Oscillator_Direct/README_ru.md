@@ -1,4 +1,5 @@
 # Стратегия Weight Oscillator Direct
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общая идея
 Стратегия переносит эксперта MetaTrader **Exp_WeightOscillator_Direct** на высокоуровневый API StockSharp. Она объединяет четыре классических осциллятора (RSI, Money Flow Index, Williams %R и DeMarker) в единый взвешенный показатель, сглаженный выбранной скользящей средней. В режиме «Direct» стратегия следует за наклоном результирующего осциллятора, а в режиме «Against» работает как контртрендовая, открывая противоположные сделки.

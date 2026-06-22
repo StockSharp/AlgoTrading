@@ -1,5 +1,5 @@
 # Ma2Cci Ema 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合两条指数移动平均线 (EMA) 的金叉/死叉信号与 CCI 指标突破零轴的确认。仓位规模与止损距离基于 ATR 波动率及可配置的风险百分比计算，从而复现原始 MetaTrader 专家的风控逻辑。
 

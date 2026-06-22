@@ -1,4 +1,5 @@
 # Стратегия IBS RSI CCI v4
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **IBS RSI CCI v4** — контртрендовая стратегия, построенная на комбинации трёх осцилляторов:

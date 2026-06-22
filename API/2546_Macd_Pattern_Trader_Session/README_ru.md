@@ -1,4 +1,5 @@
 # Стратегия MACD Pattern Trader Session
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия является прямой конверсией советника MetaTrader **MacdPatternTraderAll0.01**. Она торгует одним инструментом, используя шесть различных паттернов на основе MACD, опциональный торговый интервал по времени, частичную фиксацию прибыли и возможность мартингейла. Все расчёты выполняются по закрытым свечам типа `CandleType`.

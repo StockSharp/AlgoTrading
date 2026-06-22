@@ -1,4 +1,5 @@
 # Weight Oscillator Direct Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the MetaTrader expert **Exp_WeightOscillator_Direct** inside the StockSharp high-level API. It blends four classic oscillators—RSI, Money Flow Index, Williams %R and DeMarker—into a single weighted composite. The composite signal is smoothed by a configurable moving average and used to detect momentum swings. A rising composite opens long trades (or closes shorts) when the strategy works in the "Direct" mode, while the "Against" mode inverts the logic for contrarian trading.

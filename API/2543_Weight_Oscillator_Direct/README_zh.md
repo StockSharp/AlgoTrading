@@ -1,4 +1,5 @@
 # Weight Oscillator Direct 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 专家顾问 **Exp_WeightOscillator_Direct** 移植到 StockSharp 的高级 API。它把 RSI、资金流量指数 (MFI)、威廉指标 (Williams %R) 和 DeMarker 四个振荡指标按权重合成为一个综合信号，并通过可选的移动平均进行平滑处理。当 *Trend Mode* 为 “Direct” 时，策略沿着综合振荡指标的斜率开仓；当设置为 “Against” 时，则执行反向交易。

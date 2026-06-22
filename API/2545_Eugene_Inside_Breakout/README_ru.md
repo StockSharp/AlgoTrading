@@ -1,5 +1,5 @@
 # Стратегия Eugene Inside Breakout
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Eugene Inside Breakout представляет собой прямую конвертацию оригинального советника MetaTrader от barabashkakvn. Осн
 ова лежит исключительно на ценовом действии: серия внутренних свечей с последующим пробоем диапазона. Уровни подтверждения, рас

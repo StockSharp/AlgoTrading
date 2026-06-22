@@ -1,4 +1,5 @@
 # MacdPatternTrader Advanced Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The MacdPatternTrader strategy is a high level StockSharp conversion of the original *MacdPatternTraderAll* MQL expert advisor. The system listens to completed candles and evaluates six independent MACD based entry patterns. Every pattern uses its own fast and slow exponential moving averages plus dedicated threshold levels to recognize reversal and continuation structures on the MACD main line. Signals can arrive simultaneously and each one submits a market order sized by the current martingale volume.

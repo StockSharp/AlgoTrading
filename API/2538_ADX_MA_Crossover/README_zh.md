@@ -1,4 +1,5 @@
 # ADX MA Crossover
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 MetaTrader 中的“ADX & MA”专家顾问，结合平滑移动平均线（SMMA）与平均趋向指数（ADX）过滤信号。策略仅在所选周期的最近两根已完成K线都给出最终指标值后才会评估入场，从而避免在指标尚未形成时提前交易。实现基于净头寸模型，会在出现反向信号时自动翻转仓位，模拟原始对冲版本的行为。
