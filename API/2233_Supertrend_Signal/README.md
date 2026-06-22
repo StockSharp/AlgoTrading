@@ -1,5 +1,5 @@
 # Supertrend Signal Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy opens positions when the closing price crosses the SuperTrend line. A long trade is placed when price moves above the line, and a short trade is opened when price drops below it. Opposite signals close and reverse existing positions.
 

@@ -1,5 +1,5 @@
 # Стратегия Supertrend Signal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позиции при пересечении цены закрытия и линии SuperTrend. Покупка осуществляется, когда цена оказывается выше линии, продажа — когда цена падает ниже. Противоположные сигналы закрывают и разворачивают текущие позиции.
 

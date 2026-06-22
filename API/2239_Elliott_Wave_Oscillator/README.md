@@ -1,5 +1,5 @@
 # Elliott Wave Oscillator Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy applies the Elliott Wave Oscillator (EWO) on candle closes. The EWO is calculated as the difference between a fast and a slow Simple Moving Average (default 5 and 35 periods). Trading logic looks for turning points in the oscillator to capture potential trend reversals.
 

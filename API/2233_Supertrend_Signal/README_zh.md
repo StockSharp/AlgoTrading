@@ -1,5 +1,5 @@
 # Supertrend Signal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当收盘价穿越 SuperTrend 线时，本策略开仓。价格上破该线时做多，跌破该线时做空。相反的信号会平掉并反向已有仓位。
 

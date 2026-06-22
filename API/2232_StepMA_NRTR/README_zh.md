@@ -1,5 +1,5 @@
 # StepMA NRTR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 StepMA NRTR 指标的趋势跟随策略。该指标结合阶梯移动平均和 Nick Rar Trend 反转机制，在趋势改变时产生买卖信号。
 

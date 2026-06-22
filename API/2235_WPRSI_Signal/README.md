@@ -1,4 +1,5 @@
 # WPRSI Signal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the WPRSIsignal MetaTrader expert. It combines the Williams Percent Range (WPR) and Relative Strength Index (RSI) to generate buy and sell signals.

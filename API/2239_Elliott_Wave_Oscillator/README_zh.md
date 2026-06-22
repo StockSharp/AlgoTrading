@@ -1,5 +1,5 @@
 # 艾略特波动振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于艾略特波动振荡器（EWO），EWO 由快速和慢速简单移动平均线之差组成（默认 5 和 35 周期）。策略寻找振荡器的转折点以捕捉可能的趋势反转。
 

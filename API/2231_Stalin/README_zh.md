@@ -1,5 +1,5 @@
 # Stalin 指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MQL5 中的 “Stalin” 指标逻辑。
 它使用两条指数移动平均线 (EMA) 以及可选的 RSI 过滤。

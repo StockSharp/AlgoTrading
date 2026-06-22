@@ -1,5 +1,5 @@
 # Panel Joke 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将 MetaTrader 的 *panel-joke* 系统转换为 StockSharp。它比较当前和上一根 K 线的七个价格指标（开盘价、高点、低点、high/low 平均值、收盘价、high/low/close 平均值以及 high/low/close 加权平均值）。每个上涨的指标会增加买入计数器，每个下降的指标会增加卖出计数器。
 

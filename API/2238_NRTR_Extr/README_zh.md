@@ -1,4 +1,5 @@
 # NRTR Extr 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了带有附加信号箭头的 **Nick Rypock Trailing Reverse** (NRTR) 算法，是 MQL5 示例“Exp_NRTR_extr”的 StockSharp 高级 API 版本。
 

@@ -1,5 +1,5 @@
 # NRTR Trailing Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 **NRTR (Nick R's Trend Reverse)** 指标跟踪市场趋势。算法根据最近蜡烛的平均波动范围计算跟踪止损水平，当价格突破该水平时，仓位会朝突破方向反转。策略可同时操作多头和空头，并支持可选的止损与止盈。
 

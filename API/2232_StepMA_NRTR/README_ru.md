@@ -1,5 +1,5 @@
 # Стратегия StepMA NRTR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая стратегия, основанная на индикаторе StepMA NRTR. Индикатор объединяет ступенчатое скользящее среднее и механизм разворота Nick Rar Trend, формируя сигналы на покупку или продажу при смене тренда.
 

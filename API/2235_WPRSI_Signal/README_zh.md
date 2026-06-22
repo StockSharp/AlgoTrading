@@ -1,4 +1,5 @@
 # WPRSI 信号策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复现 MetaTrader 中的 WPRSIsignal 专家。策略结合 Williams 百分比范围 (WPR) 与 相对强弱指数 (RSI) 来产生买入和卖出信号。
