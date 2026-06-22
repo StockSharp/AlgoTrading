@@ -1,5 +1,5 @@
 # Binary Wave StdDev 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略对 MA、MACD、CCI、动量、RSI 和 ADX 的信号按权重求和。
 当标准差表示的波动率超过阈值时，按累计得分的方向开仓。

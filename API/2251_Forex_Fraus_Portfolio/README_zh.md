@@ -1,4 +1,5 @@
 # Forex Fraus Portfolio 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于长周期的 **Williams %R** 指标，只交易单一品种。当指标离开极端区间时，策略按照突破方向开仓。
 

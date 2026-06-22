@@ -1,4 +1,5 @@
 # 带标准差的 Color XdinMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家 **Exp_ColorXdinMA_StDev** 的 StockSharp 移植版。
 它将两个移动平均线组合成名为 `XdinMA` 的单一曲线，并跟踪其随时间的变化。

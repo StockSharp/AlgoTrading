@@ -1,4 +1,5 @@
 # Color J2JMA StdDev 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算 Jurik 移动平均线 (JMA) 的斜率，并与最近斜率的标准差进行比较。当斜率超出波动范围的倍数时，策略试图抓住强烈的趋势运动。
 

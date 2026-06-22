@@ -1,4 +1,5 @@
 # 多货币交易面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略模拟原始 MQL “多货币交易面板”EA 的行为。它监控三种货币对（EURUSD、USDJPY、GBPUSD），并使用七个简单指标比较最新K线与上一根K线（开盘价、最高价、最低价、(高+低)/2、收盘价、(高+低+收)/3、(高+低+收+收)/4）。
 每次比较会增加买入或卖出计数。启用自动交易时，如果买入计数大于卖出计数或相反，策略将在相应货币对上开仓或反转仓位。

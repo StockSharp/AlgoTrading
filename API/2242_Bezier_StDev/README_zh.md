@@ -1,5 +1,5 @@
 # Bezier标准差策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用标准差指标捕捉波动率的转折点。指标出现局部低点时，意味着波动率可能向上扩张，系统买入做多；出现局部高点时，预期波动率收缩而卖出做空。
 

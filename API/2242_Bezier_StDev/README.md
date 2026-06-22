@@ -1,5 +1,5 @@
 # Bezier Standard Deviation Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades turning points in volatility using a standard deviation indicator. It interprets local minima and maxima of the indicator as potential reversals in price action. When the standard deviation forms a trough, the system expects volatility to expand upward and enters a long position. When a peak appears, it sells short anticipating volatility contraction.
 

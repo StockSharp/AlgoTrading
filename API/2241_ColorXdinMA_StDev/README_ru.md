@@ -1,4 +1,5 @@
 # Стратегия Color XdinMA со стандартным отклонением
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия представляет собой портирование MQL5-эксперта **Exp_ColorXdinMA_StDev** на платформу StockSharp.
 Она объединяет две скользящие средние в линию `XdinMA` и отслеживает её изменение во времени.

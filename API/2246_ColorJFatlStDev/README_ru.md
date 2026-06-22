@@ -1,4 +1,5 @@
 # Стратегия ColorJFatl StDev
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос советника **ColorJFatl_StDev** из MQL5 на StockSharp API. В ней используется усреднение Jurik (JMA) и каналы стандартного отклонения для формирования торговых сигналов.
 

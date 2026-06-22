@@ -1,4 +1,5 @@
 # ColorJFatl StDev 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 中的 **ColorJFatl_StDev** 专家顾问移植到 StockSharp API。它结合 Jurik 移动平均线 (JMA) 与标准差通道来生成交易信号。
 
