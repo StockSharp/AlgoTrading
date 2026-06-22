@@ -1,4 +1,5 @@
 # V1N1 Lonny 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 V1N1 Lonny 突破策略是对 MetaTrader 平台 "V1N1 LONNY" 专家顾问的复刻版本，重点捕捉伦敦与纽约交易时段交汇处的突破行情。策略在开盘前构建价格区间，等待K线收盘突破该区间后再入场，同时借助指数移动平均线（EMA）判断趋势方向，并用随机指标过滤过度超买或超卖的市场状态。

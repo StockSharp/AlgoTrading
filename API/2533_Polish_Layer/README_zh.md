@@ -1,4 +1,5 @@
 # Polish Layer 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Polish Layer** 策略源自 `MQL/17484` 的 MetaTrader 智能交易系统，现已移植到 StockSharp 的高层 API。策略关注外汇市场的短期趋势延续，默认使用 5 分钟或 15 分钟 K 线。趋势方向由快、慢指数移动平均线（EMA）的相对位置和 RSI 的动量斜率决定，入场需要 Stochastic、DeMarker 与 Williams %R 三个振荡指标同时给出突破信号。

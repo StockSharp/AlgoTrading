@@ -1,4 +1,5 @@
 # V1N1 Lonny Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The V1N1 Lonny Breakout strategy replicates the MetaTrader "V1N1 LONNY" expert advisor. It targets breakouts that emerge around the London and New York sessions by building an opening range and waiting for a decisive close outside that range. The strategy relies on an exponential moving average to capture the prevailing trend and on a stochastic oscillator to filter out overbought or oversold conditions before entering the market.

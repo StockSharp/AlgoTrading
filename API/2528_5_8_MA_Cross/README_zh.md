@@ -1,4 +1,5 @@
 # 5/8 均线交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 5/8 均线交叉策略是 MetaTrader 专家顾问「5_8 MACross」在 StockSharp 平台上的移植版本。策略比较基于收盘价的快速指数移动平均线（EMA）与基于开盘价的慢速 EMA，当两条均线发生交叉时采取操作，适用于所有提供标准时间周期 K 线的数据。

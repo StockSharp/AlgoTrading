@@ -1,4 +1,5 @@
 # Backbone Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the core behaviour of the original **Backbone** MQL5 expert advisor using the StockSharp high-level API. It alternates between bullish and bearish trading cycles, scales into positions according to a risk fraction, and protects open trades with fixed targets together with a trailing stop.
 

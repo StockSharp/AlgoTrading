@@ -1,4 +1,5 @@
 # Kijun Sen Robot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Kijun Sen Robot 策略** 是将 MetaTrader 5 专家顾问 "Kijun Sen Robot" 迁移到 StockSharp 高级策略 API 的版本。默认使用 30 分钟 K 线，通过观察价格突破 Ichimoku 基准线（Kijun-sen）并结合 20 周期线性加权均线（LWMA）确认趋势来执行交易。策略保留了原始 EA 仅在活跃交易时段操作、并使用动态止损、保本和移动止损保护仓位的理念。

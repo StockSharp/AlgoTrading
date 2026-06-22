@@ -1,4 +1,5 @@
 # Backbone 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 5 平台上的 **Backbone** 智能交易系统迁移到 StockSharp 的高级 API 上。系统按周期交替做多、做空，通过风险分配扩展仓位，并使用固定止盈、止损以及移动止损保护仓位。
 

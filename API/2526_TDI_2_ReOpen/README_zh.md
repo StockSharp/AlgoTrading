@@ -1,4 +1,5 @@
 # 2526 TDI-2 再开仓策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 专家顾问 **Exp_TDI-2_ReOpen** 的 C# 版本。它使用趋势方向指数（TDI-2）指标，并保留原始 EA 的加仓与再入场逻辑。移植后的策略依靠 StockSharp 高阶 API，在 TDI 动量线与指数线之间发生交叉时做出反应，在价格沿趋势运行并满足设定距离后追加仓位，并可通过保护性止损/止盈来管理仓位。

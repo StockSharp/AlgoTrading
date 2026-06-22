@@ -1,4 +1,5 @@
 # E-Skoch-Open 策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **E-Skoch-Open** 策略复刻了原始的 MetaTrader 5 智能交易顾问，其核心是一个三根 K 线收盘价的形态过滤。该移植版本在每根完成的 K 线结束后运行，检测最近收盘价的反转信号，并在条件满足时开仓。风险控制来自以调整后的点值（相当于外汇中的“点”/pip）表示的固定止损和止盈，以及一个基于账户权益增长的总平仓触发器。仓位规模采用马丁格尔方式：亏损后下一笔订单乘以 1.6，而盈利后恢复为初始手数。

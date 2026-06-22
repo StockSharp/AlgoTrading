@@ -1,4 +1,5 @@
 # 5/8 MA Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The 5/8 MA Cross strategy is a StockSharp port of the MetaTrader expert advisor "5_8 MACross". It compares a fast exponential moving average (EMA) calculated on closing prices with a slower EMA calculated on opening prices. The system acts on the crossover between the two averages and can be applied to any symbol and timeframe that provides standard time-based candles.

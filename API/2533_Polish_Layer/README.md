@@ -1,4 +1,5 @@
 # Polish Layer Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Polish Layer Strategy** is a conversion of the MetaTrader expert advisor from `MQL/17484` into the StockSharp high-level API. It targets short-term trend continuation on forex pairs using 5-minute or 15-minute candles. Trend direction is defined by the relationship between fast and slow exponential moving averages and the recent momentum of the Relative Strength Index (RSI). Entry confirmation requires synchronized signals from Stochastic Oscillator, DeMarker, and Williams %R oscillators.

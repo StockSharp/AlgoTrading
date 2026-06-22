@@ -1,4 +1,5 @@
 # Currency Strength v1.1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Currency Strength v1.1 strategy replicates the MetaTrader expert advisor *Currency Strength v1.1*. It measures the relative strength of the eight major currencies (USD, EUR, JPY, CAD, AUD, NZD, GBP, CHF) using daily percentage changes for 26 liquid FX pairs. Whenever the strength of two currencies diverges beyond a configurable threshold, the strategy opens a position in the corresponding currency pair in the direction of the stronger currency.

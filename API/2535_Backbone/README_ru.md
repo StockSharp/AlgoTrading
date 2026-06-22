@@ -1,4 +1,5 @@
 # Стратегия Backbone
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная реализация переносит эксперта **Backbone** с платформы MetaTrader 5 на высокоуровневый API StockSharp. Алгоритм поочерёдно формирует длинные и короткие серии сделок, наращивает позицию по доле риска и защищает её фиксированными целями, дополняя сопровождением по трейлинг-стопу.
 

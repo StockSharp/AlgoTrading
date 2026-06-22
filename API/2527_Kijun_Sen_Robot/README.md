@@ -1,4 +1,5 @@
 # Kijun Sen Robot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Kijun Sen Robot Strategy** is a direct conversion of the MetaTrader 5 expert advisor "Kijun Sen Robot" into the StockSharp high-level strategy API. It operates on 30-minute candles by default and focuses on Ichimoku Kijun-sen price crosses confirmed by a 20-period linear weighted moving average (LWMA). The strategy keeps the original expert's idea of trading only during the most active hours, enforcing position protection with dynamic stop, break-even and trailing logic.

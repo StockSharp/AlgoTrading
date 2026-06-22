@@ -1,4 +1,5 @@
 # E-Skoch-Open Strategy (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **E-Skoch-Open** strategy replicates the original MetaTrader 5 expert advisor that trades a simple three-candle pattern. The StockSharp implementation processes completed candles, evaluates momentum reversals in the recent closes and opens a new position when the required configuration appears. Risk is controlled by stop-loss/take-profit offsets measured in adjusted points (pips) and an equity growth target that can flatten every open position. Position sizing follows a martingale scheme: after a losing trade the next order size is multiplied by 1.6 while profitable trades reset the volume to the initial value.

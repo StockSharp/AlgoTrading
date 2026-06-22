@@ -1,4 +1,5 @@
 # 2526 TDI-2 Re-Open Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader 5 expert advisor **Exp_TDI-2_ReOpen**. It trades using the Trend Direction Index (TDI-2) indicator and applies the original position re-entry logic. The C# port uses the high-level StockSharp API and keeps the core behavior of the MQL version: it reacts to crossings between the TDI momentum line and the TDI index line, scales into profitable positions after a configurable price advance, and manages trades with optional protective stops.

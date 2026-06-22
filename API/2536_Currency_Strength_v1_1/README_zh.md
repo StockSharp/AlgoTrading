@@ -1,4 +1,5 @@
 # 货币强度 v1.1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 货币强度 v1.1 策略复现了 MetaTrader 专家顾问 *Currency Strength v1.1* 的核心思想。策略使用 26 个主要及交叉外汇货币对的日线百分比涨跌幅来衡量八大主要货币（USD、EUR、JPY、CAD、AUD、NZD、GBP、CHF）的相对强弱。当两种货币的强弱差值超过阈值时，策略会在对应的货币对上按强势方向开仓。
