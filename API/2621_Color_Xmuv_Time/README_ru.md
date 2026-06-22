@@ -1,4 +1,5 @@
 # Стратегия Color XMUV с торговым окном
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит эксперт **Exp_ColorXMUV_Tm** из MetaTrader в StockSharp, повторяя построение линии Color XMUV и фильтр по
 времени, но используя высокоуровневый API StockSharp для управления сделками. Цвет линии определяет направление: переход в

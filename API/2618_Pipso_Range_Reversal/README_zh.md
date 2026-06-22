@@ -1,5 +1,5 @@
 # Pipso Range Reversal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将 MQL5 平台上的 Pipso 智能交易系统移植到 StockSharp。它是一种均值回归模型：在最近高点区间被上破时做空，在最近低点区间被下破时做多，并通过可配置的交易时段过滤信号。
 

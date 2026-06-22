@@ -1,4 +1,5 @@
 # NRTR ATR Stop 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 NRTR ATR Stop 策略在 StockSharp 的高级 API 上复刻了 MetaTrader 专家顾问 `Exp_NRTR_ATR_STOP` 的运行逻辑。它追踪基于平均真实波幅（ATR）的 NRTR（Non-Repainting Trailing Reverse）动态止损线。当价格突破对侧止损线时，趋势立即翻转，策略会同时平掉旧方向仓位并在新方向开仓。

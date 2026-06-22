@@ -1,4 +1,5 @@
 # Color XMUV 时间过滤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 专家顾问 **Exp_ColorXMUV_Tm** 迁移到 StockSharp 平台，保持原始的 Color XMUV 平滑线与交易时段过滤
 逻辑，同时利用 StockSharp 的高级 API 完成下单与风控。策略监控平滑线的颜色变化：当颜色翻转为向上（青色）时管理多头，

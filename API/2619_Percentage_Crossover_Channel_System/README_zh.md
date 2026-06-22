@@ -1,5 +1,5 @@
 # 百分比通道系统策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 *Exp_PercentageCrossoverChannel_System* 的直接移植版。策略追踪价格与自定义“Percentage Crossover Channel”指标的互动，当蜡烛在突破后重新回到通道内部时做出反应。所有信号流程均按照 StockSharp 的高层 API 重新实现。
 

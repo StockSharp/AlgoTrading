@@ -1,5 +1,5 @@
 # Crossing of Two iMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 上广受欢迎的 **“Crossing of two iMA”** 专家顾问完整迁移到 StockSharp 的高级 API。系统在两条可配置均线发生交叉时交易，并可选地通过第三条均线确认趋势方向。与原始 EA 一样，策略支持手动下单手数或基于账户风险百分比的动态仓位、`PriceLevelPips` 参数控制的类挂单入场方式，以及带有步进的追踪止损。
 

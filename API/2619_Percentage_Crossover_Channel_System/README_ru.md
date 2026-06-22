@@ -1,5 +1,5 @@
 # Стратегия Percentage Crossover Channel System
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является прямой конверсией MetaTrader-советника *Exp_PercentageCrossoverChannel_System*. Она отслеживает, как цена взаимодействует с пользовательским индикатором «Percentage Crossover Channel», и реагирует, когда свечи после пробоя возвращаются внутрь канала. Логика полностью перенесена на высокоуровневый API StockSharp.
 

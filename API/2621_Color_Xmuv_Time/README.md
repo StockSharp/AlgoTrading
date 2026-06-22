@@ -1,4 +1,5 @@
 # Color XMUV Time Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader expert advisor **Exp_ColorXMUV_Tm** to StockSharp. It recreates the original Color XMUV smoothed
 line and the time-window filter while using StockSharp's high-level trading API. The strategy follows the color of the smoothed

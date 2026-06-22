@@ -1,5 +1,5 @@
 # Percentage Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 专家 `Exp_PercentageCrossover` 的行为。它基于 Percentage Crossover 指标的方向进行交易。该指标绘制一条跟随价格的轨迹线，这条线只能在当前收盘价上下固定百分比的通道内移动，线条的斜率用来判断市场状态并生成信号。
 

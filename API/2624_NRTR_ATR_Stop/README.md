@@ -1,4 +1,5 @@
 # NRTR ATR Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The NRTR ATR Stop strategy reproduces the behaviour of the MetaTrader expert `Exp_NRTR_ATR_STOP` using StockSharp's high-level API. It tracks the Non-Repainting Trailing Reverse (NRTR) levels built from the Average True Range (ATR). When price crosses the opposite trailing stop the trend flips, generating a fresh market entry while also closing any open position in the previous direction.

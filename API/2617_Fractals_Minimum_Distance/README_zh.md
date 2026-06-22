@@ -1,4 +1,5 @@
 # 分形最小距离策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 分形最小距离策略在 StockSharp 高层 API 中重现 MetaTrader 专家顾问“Fractals minimum distance”的逻辑。策略订阅所选的 K 线序列，在每根新 K 线结束后检查信号栏位（`SignalBar`）处是否生成了新的比尔·威廉姆斯五根 K 线分形。只有当最新的上分形和下分形之间的间距（以点数 `DistancePips` 表示）达到要求时才允许开仓。

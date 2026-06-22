@@ -1,4 +1,5 @@
 # Стратегия NRTR ATR Stop
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия NRTR ATR Stop переносит логику советника MetaTrader `Exp_NRTR_ATR_STOP` на высокоуровневый API StockSharp. Она отслеживает динамические уровни NRTR (Non-Repainting Trailing Reverse), построенные на основе среднего истинного диапазона (ATR). Когда цена пробивает противоположный уровень, направление тренда мгновенно меняется: старые позиции закрываются, а в новом направлении открывается рыночная сделка.

@@ -1,4 +1,5 @@
 # Color JFATL Digit TM Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Color JFATL Digit TM Strategy** is a port of the original MetaTrader 5 expert advisor that combines a Jurik-filtered FATL (Fast Adaptive Trend Line) with color-based state transitions and an optional trading session filter. The strategy monitors the slope of the smoothed FATL line: each bar is classified as bullish (color = 2), bearish (color = 0) or neutral (color = 1). Changes in these color states trigger entries, exits and position management while respecting configurable session hours, stop-loss and take-profit distances.

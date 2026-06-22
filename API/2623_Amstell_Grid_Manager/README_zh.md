@@ -1,5 +1,5 @@
 # Amstell 网格管理策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 专家顾问 "exp_Amstell-SL" 的高级 API 版本，用于运行双向加仓网格。策略分别跟踪最近一次的多头或空头成交价，当价格偏离最新成交价达到设定距离时继续加仓；当累计浮盈或浮亏达到设定的止盈、止损距离时，立即通过市价单平掉当前方向的全部仓位。实现基于 StockSharp 的蜡烛订阅与高层下单接口，因此只要有单品种的蜡烛数据即可运行。
 

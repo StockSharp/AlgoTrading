@@ -1,5 +1,5 @@
 # Percentage Crossover Channel System Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a direct port of the MetaTrader expert advisor *Exp_PercentageCrossoverChannel_System*. It tracks how price interacts with a custom "Percentage Crossover Channel" and reacts when candles move back inside the channel after previously breaking out. The code was rewritten with StockSharp high-level APIs and preserves the original signal flow.
 

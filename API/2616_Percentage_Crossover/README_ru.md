@@ -1,5 +1,5 @@
 # Стратегия Percentage Crossover
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет работу оригинального эксперта MetaTrader `Exp_PercentageCrossover`. Она торгует направление индикатора Percentage Crossover, который строит тянущуюся за ценой линию и позволяет ей смещаться лишь в пределах фиксированного процентного коридора от текущего закрытия. Наклон линии определяет состояние рынка и формирует торговые сигналы.
 

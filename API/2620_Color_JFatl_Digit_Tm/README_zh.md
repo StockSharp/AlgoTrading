@@ -1,4 +1,5 @@
 # Color JFATL Digit TM 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Color JFATL Digit TM 策略** 是对原始 MetaTrader 5 专家的移植版本。策略通过对 FATL（Fast Adaptive Trend Line）进行 Jurik 平滑处理，并根据曲线斜率的“颜色”变化来决定交易方向，同时支持自定义交易时段、止损和止盈。每根已完成的 K 线都会被标记为：上涨（颜色 = 2）、下跌（颜色 = 0）或中性（颜色 = 1）。颜色的转换会触发建仓、平仓与持仓管理。

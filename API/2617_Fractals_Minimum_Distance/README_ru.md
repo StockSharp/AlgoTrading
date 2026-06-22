@@ -1,4 +1,5 @@
 # Fractals Minimum Distance
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Fractals Minimum Distance переносит советник MetaTrader «Fractals minimum distance» на высокоуровневый API StockSharp. Алгоритм подписывается на выбранный поток свечей и после закрытия каждой новой свечи проверяет, сформировался ли на баре с отступом `SignalBar` подтверждённый пятисвечный фрактал Билла Вильямса. Сделка разрешается только тогда, когда расстояние между последними верхним и нижним фракталами превышает заданный минимум `DistancePips`.
