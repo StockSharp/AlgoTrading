@@ -1,5 +1,5 @@
 # Dots Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from MQL5 "Exp_Dots". The strategy trades reversals when the Dots indicator changes color.
 It goes long when the indicator switches from blue to red and short when it switches from red to blue.

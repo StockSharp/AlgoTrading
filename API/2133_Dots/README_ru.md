@@ -1,5 +1,5 @@
 # Стратегия Dots
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертировано из MQL5 "Exp_Dots". Стратегия торгует развороты при смене цвета индикатора Dots.
 Открывает покупку, когда цвет меняется с синего на красный, и продажу, когда меняется с красного на синий.

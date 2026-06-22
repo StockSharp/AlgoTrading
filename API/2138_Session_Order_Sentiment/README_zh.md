@@ -1,4 +1,5 @@
 # 订单情绪策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略根据盘口中买单和卖单的失衡进行交易。它计算双方的订单数量和总成交量比值，当某一方的优势超过设定阈值时开仓。策略只在指定的时间窗口内运行。

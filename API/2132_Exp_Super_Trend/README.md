@@ -1,5 +1,5 @@
 # Exp Super Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategy converted from MQL script **Exp_Super_Trend.mq5** (ID 14269). It follows the direction of the SuperTrend indicator and reverses positions whenever the trend flips. The implementation uses StockSharp high level API and the built-in SuperTrend indicator.
 

@@ -1,4 +1,5 @@
 # Volatility Quality
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A sample strategy demonstrating how to trade using the direction changes of a smoothed median price. The original MQL expert used the *Volatility Quality* indicator; this implementation approximates it with a simple moving average of the median price.
 

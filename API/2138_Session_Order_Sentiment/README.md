@@ -1,4 +1,5 @@
 # Session Order Sentiment Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy trades based on the imbalance between buy and sell orders observed in the order book. It measures ratios of order counts and total volumes for both sides of the book and opens a position when the dominance of one side exceeds configurable thresholds. Trading is allowed only during a specified time window.

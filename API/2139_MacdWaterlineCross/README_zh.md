@@ -1,4 +1,5 @@
 # MACD水线交叉预期策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在MACD信号线向上穿越零轴时做多，向下穿越零轴时做空。风险管理采用固定止损，并根据可配置的风险收益倍数自动计算止盈距离。
 

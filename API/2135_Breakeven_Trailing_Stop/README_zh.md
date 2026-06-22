@@ -1,5 +1,5 @@
 # Breakeven Trailing Stop 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略演示如何先将止损移动到保本位置，然后随着价格上涨继续跟踪。
 在开多仓后，策略分两阶段管理仓位：

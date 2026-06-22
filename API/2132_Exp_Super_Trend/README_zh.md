@@ -1,5 +1,5 @@
 # Exp Super Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略由 MQL 脚本 **Exp_Super_Trend.mq5**（ID 14269）转换而来。它跟随 SuperTrend 指标的方向，在趋势反转时立即反向开仓。实现基于 StockSharp 的高级 API，并使用内置的 SuperTrend 指标。
 

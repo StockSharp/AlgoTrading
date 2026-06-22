@@ -1,5 +1,5 @@
 # Стратегия Exp Super Trend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сконвертирована из MQL-скрипта **Exp_Super_Trend.mq5** (ID 14269). Она следует направлению индикатора SuperTrend и разворачивает позицию при каждом изменении тренда. Реализация построена на высокоуровневом API StockSharp и использует встроенный индикатор SuperTrend.
 

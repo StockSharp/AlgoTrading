@@ -1,4 +1,5 @@
 # Cidomo V1
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 日内突破策略，当价格突破近期区间时开仓。
 
