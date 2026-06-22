@@ -1,4 +1,5 @@
 # Стратегия Exp Fishing
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает позицию, когда разница между ценой закрытия и открытия завершённой свечи достигает **Price Step**. Если разница положительная – покупка, если отрицательная – продажа.
 

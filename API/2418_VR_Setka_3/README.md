@@ -1,4 +1,5 @@
 # VR Setka 3 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **VR Setka 3 Strategy** implements a grid-based trading approach. The strategy places symmetrical buy and sell limit orders around the current market price. After an order is filled, the take-profit level is recalculated using the average entry price of all positions in the active direction. New grid orders are placed with increasing spacing and, optionally, with increasing volume (martingale).
 

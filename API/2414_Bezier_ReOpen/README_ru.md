@@ -1,5 +1,5 @@
 # Стратегия Bezier ReOpen
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Стратегия Bezier ReOpen** использует пользовательский индикатор на основе кривой Безье для определения направления тренда.
 Когда индикатор разворачивается вверх и его текущее значение выше предыдущего, открывается длинная позиция.

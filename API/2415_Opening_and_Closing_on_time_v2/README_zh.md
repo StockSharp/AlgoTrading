@@ -1,5 +1,5 @@
 # 按时间开仓和平仓 v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于时间，在指定的 `OpenTime` 开仓，并在 `CloseTime` 平仓。交易方向由快、慢指数移动平均线的比较决定。止损和止盈以跳数表示。
 

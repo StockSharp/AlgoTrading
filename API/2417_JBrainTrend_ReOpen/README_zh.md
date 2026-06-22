@@ -1,6 +1,7 @@
 # JBrainTrend ReOpen 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-该策略基于 MQL5 示例 “JBrainTrend1Stop_ReOpen” 的思想，并在 C# 中实现。  
+该策略基于 MQL5 示例 "JBrainTrend1Stop_ReOpen" 的思想，并在 C# 中实现。  
 它使用随机指标判断超买和超卖区域，并在价格按指定步长继续向持仓方向移动时加仓。
 
 ## 逻辑

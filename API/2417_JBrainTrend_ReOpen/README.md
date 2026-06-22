@@ -1,4 +1,5 @@
 # JBrainTrend ReOpen Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# implementation inspired by the MQL5 example "JBrainTrend1Stop_ReOpen".  
 It uses the Stochastic oscillator to determine overbought and oversold conditions and supports pyramiding by reopening positions when price advances by a specified step.

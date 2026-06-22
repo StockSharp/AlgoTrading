@@ -1,4 +1,5 @@
 # Exp Fishing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当一根完成的 K 线的收盘价与开盘价的差值达到 **Price Step** 时，策略开仓。差值为正则买入，为负则卖出。
 
@@ -23,4 +24,4 @@
    - 当订单数量达到 **Max Orders** 后停止加仓。
 4. 每个订单都会自动管理止损和止盈。
 
-该策略改编自 MQL5 专家顾问 “Exp Fishing”，展示了一种简单的网格式趋势跟随方法。
+该策略改编自 MQL5 专家顾问 "Exp Fishing"，展示了一种简单的网格式趋势跟随方法。

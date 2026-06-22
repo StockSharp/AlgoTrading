@@ -1,4 +1,5 @@
 # Стратегия JBrainTrend ReOpen
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является реализацией на C#, вдохновлённой MQL5‑примером «JBrainTrend1Stop_ReOpen».  
 Она использует осциллятор Стохастик для определения зон перекупленности и перепроданности и поддерживает пирамидинг, повторно открывая позиции при движении цены на заданный шаг.

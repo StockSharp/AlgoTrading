@@ -1,5 +1,5 @@
 # Bezier ReOpen 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Bezier ReOpen 策略** 使用基于贝塞尔曲线的自定义指标来跟随趋势方向。
 当指标向上转且当前值高于前一值时，策略可以开多单；

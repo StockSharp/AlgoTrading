@@ -1,5 +1,5 @@
 # ColorJFatl Digit ReOpen 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用Jurik移动平均线（JMA）来识别趋势方向。当JMA向上转折时开多并平掉所有空单；当JMA向下转折时开空并平掉所有多单。价格每朝持仓方向移动固定点数时会追加新的仓位，直至达到最大数量。
 

@@ -1,5 +1,5 @@
 # DoubleUp2 CCI MACD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 DoubleUp2 是一种结合商品通道指数 (CCI) 和 MACD 的马丁格尔策略。
 当两个指标都处于极端正值时开空；当两个指标都处于极端负值时开多。

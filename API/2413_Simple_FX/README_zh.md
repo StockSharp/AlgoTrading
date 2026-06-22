@@ -1,4 +1,5 @@
 # Simple FX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用两条指数移动平均线来检测趋势变化。短期 EMA 上穿长期 EMA 时做多，短期 EMA 下穿长期 EMA 时做空。

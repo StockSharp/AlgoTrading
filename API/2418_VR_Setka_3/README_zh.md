@@ -1,4 +1,5 @@
 # VR Setka 3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **VR Setka 3 策略** 采用网格交易方法，在当前价格上下对称地放置买入和卖出限价单。订单成交后，根据当前方向所有持仓的平均价格重新计算止盈水平。新的网格订单会以更大的间距下单，并可选择性地增加手数（马丁格尔）。
 

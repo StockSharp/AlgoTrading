@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# Turtle Trader SAR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Turtle Trader SAR 将原始的 MQL5 Turtle 系统（可选 Parabolic SAR 追踪）转换为 StockSharp C#。
 该策略利用 Donchian 通道突破进行交易，使用 ATR 计算风险并可对盈利头寸进行加仓。
