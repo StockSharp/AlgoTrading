@@ -1,4 +1,5 @@
 # Стратегия CAi Standard Deviation
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия является портом с MQL5 эксперта **Exp_i-CAi_StDev** на платформу StockSharp. Она использует скользящую среднюю и полосы стандартного отклонения для поиска пробоев и последующих возвратов к средним значениям.
 

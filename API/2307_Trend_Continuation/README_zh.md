@@ -1,4 +1,5 @@
 # 趋势延续策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用两条指数移动平均线来识别趋势的延续。当快 EMA 上穿慢 EMA 时开多单；当快 EMA 下穿慢 EMA 时开空单。
 

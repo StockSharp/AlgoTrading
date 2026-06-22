@@ -1,4 +1,5 @@
 # SMI Correct 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 SMI Correct 策略基于 Stochastic Momentum Index (SMI) 指标进行交易。策略跟踪 SMI 线及其移动平均信号线。当 SMI 线下穿信号线时开多仓；当 SMI 线上穿信号线时开空仓。

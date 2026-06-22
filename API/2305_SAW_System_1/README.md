@@ -1,5 +1,5 @@
 # SAW System 1 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This breakout strategy places stop orders at the start of each trading day. It measures the average daily range over a configurable number of days and uses that value to derive stop-loss and take-profit levels. Orders are positioned on both sides of the current price and only one side is expected to trigger.
 

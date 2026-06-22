@@ -1,5 +1,5 @@
 # ICAi 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于自适应移动平均线 ICAi。指标根据标准差调整斜率并平滑价格。当指标向上转折时建立多头仓位，向下转折时建立空头仓位。
 

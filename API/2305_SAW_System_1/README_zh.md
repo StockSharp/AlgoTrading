@@ -1,5 +1,5 @@
 # SAW System 1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该突破策略在每天开始时放置买入和卖出止损单。策略计算最近几天的平均日波幅，并将其用作止损和止盈的基准。两侧都挂单，预期只有一侧会被触发。
 

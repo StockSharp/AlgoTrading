@@ -1,5 +1,5 @@
 # ADX DMI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用方向移动指数（DMI）交易 +DI 与 -DI 线的交叉。当上一根K线的 -DI 高于 +DI 而当前K线跌破 +DI 时，策略开多仓。上一根K线的 +DI 高于 -DI 而当前K线跌破 -DI 时，策略开空仓。反向信号可选择性关闭已有仓位。
 

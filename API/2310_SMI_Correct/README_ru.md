@@ -1,4 +1,5 @@
 # Стратегия SMI Correct
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия SMI Correct реализует торговую систему на основе индикатора Stochastic Momentum Index (SMI). Стратегия отслеживает линию SMI и её сигнальную скользящую среднюю. Длинная позиция открывается при пересечении SMI ниже сигнальной линии. Короткая позиция открывается при пересечении SMI выше сигнальной линии.

@@ -1,4 +1,5 @@
 # CAi 标准差策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将 MQL5 专家 **Exp_i-CAi_StDev** 移植到 StockSharp 平台的示例。它利用移动平均线和标准差通道来识别突破并在价格回到通道内时退出。
 

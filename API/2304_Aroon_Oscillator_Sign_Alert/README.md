@@ -1,5 +1,5 @@
 # Aroon Oscillator Sign Alert Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy uses the Aroon Oscillator to generate trading signals when the oscillator crosses predefined levels. A long position is opened when the oscillator crosses above the down level (default -50). A short position is opened when it crosses below the up level (default +50). Opposite signals close or reverse the position.
 

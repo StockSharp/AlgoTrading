@@ -1,5 +1,5 @@
 # Aroon Oscillator Sign Alert 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 Aroon 振荡指标，根据指标穿越指定阈值的情况产生交易信号。当振荡值上穿下阈值（默认 -50）时开多仓；当振荡值下穿上阈值（默认 +50）时开空仓。相反信号会平仓或反转持仓。
 

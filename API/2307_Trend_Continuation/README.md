@@ -1,4 +1,5 @@
 # Trend Continuation Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy identifies continuation of the prevailing trend using a pair of exponential moving averages on price data. A long position is opened when the fast EMA crosses above the slow EMA, signaling upward continuation. A short position is opened when the fast EMA crosses below the slow EMA.
 
