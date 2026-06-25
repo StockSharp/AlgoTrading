@@ -1,4 +1,5 @@
 # Стратегия Long/Short Expert MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Long/Short Expert MACD** — это конвертация экспертной системы MetaTrader «LongShortExpertMACD» на StockSharp. Логика базируется на пересечениях MACD и его сигнальной линии, дополненных фиксированными стоп-лоссами и тейк-профитами. Стратегия может работать только в лонг, только в шорт или в обе стороны и автоматически рассчитывает защитные уровни в ценовых пунктах.

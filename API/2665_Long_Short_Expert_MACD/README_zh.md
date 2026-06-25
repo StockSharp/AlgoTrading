@@ -1,4 +1,5 @@
 # Long/Short Expert MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Long/Short Expert MACD** 策略是 MetaTrader 专家顾问「LongShortExpertMACD」的 StockSharp 版本。策略使用 MACD 与其信号线的交叉来产生买卖信号，同时在开仓后立即应用固定距离的止损和止盈。交易者可以选择仅做多、仅做空或允许双向交易，所有保护距离均以价格点数表示。

@@ -1,5 +1,5 @@
 # Slime Mold RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是对 MQL4 专家顾问 “Slime_Mold_RSI_v1.1” 的直接移植。策略使用四个 RSI 指标（12、36、108、324）在蜡烛的中值价格上进行计算，并将它们组合成一个感知机。每个 RSI 数值从 0–100 区间归一化到 -1…+1，再乘以可调的权重，权重和穿越零轴时切换仓位方向。
 

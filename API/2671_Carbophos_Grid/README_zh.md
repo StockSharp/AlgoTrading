@@ -1,4 +1,5 @@
 # Carbophos 网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Carbophos 网格策略是对 MetaTrader 5 专家顾问“Carbophos”的直接移植。它会在当前买入/卖出价附近持续维护对称的限价单梯队，并持续监控整个网格的浮动盈亏。当达到既定盈利目标或者浮亏超过允许阈值时，策略会立即关闭所有头寸并撤销挂单；当市场重新回到空仓状态并且没有未完成订单时，网格会被重新建立。

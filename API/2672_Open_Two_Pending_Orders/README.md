@@ -1,4 +1,5 @@
 # Open Two Pending Orders Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader expert advisor that simultaneously places a buy stop and a sell stop order around the current spread. It works on a single security and uses high-level StockSharp API calls to subscribe to the order book, manage pending orders, and handle portfolio risk controls. As soon as one pending order is filled, the opposite order is cancelled and the active position is managed with stop-loss, take-profit, and trailing-stop rules.

@@ -1,5 +1,5 @@
 # Up3x1 Investor 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是对 MetaTrader 顾问 Up3x1 Investor 的移植。它监控所选周期内最新收盘的 K 线，当上一根 K 线的高低区间和实体长度足够大时，会在下一根 K 线的开始方向开仓。
 

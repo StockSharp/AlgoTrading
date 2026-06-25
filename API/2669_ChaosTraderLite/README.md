@@ -1,4 +1,5 @@
 # Chaos Trader Lite Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Chaos Trader Lite strategy replicates Bill Williams' three wise men entry techniques using StockSharp's high level API. It analyses each finished candle of the configured timeframe (1 hour by default) and places stop orders when any of the following conditions are met:
 

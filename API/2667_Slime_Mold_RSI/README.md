@@ -1,5 +1,5 @@
 # Slime Mold RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A direct conversion of the "Slime_Mold_RSI_v1.1" MQL4 expert advisor. The strategy builds a single perceptron by combining four RSI readings (12, 36, 108 and 324) calculated on the median price. Each RSI value is normalized from the original 0–100 range into -1…+1 and multiplied by a configurable weight. A zero crossing of the weighted sum flips the position.
 

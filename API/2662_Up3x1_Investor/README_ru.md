@@ -1,5 +1,5 @@
 # Стратегия Up3x1 Investor
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Перенос советника Up3x1 Investor из MetaTrader. Стратегия отслеживает последний закрытый бар на выбранном таймфрейме и при достаточной ширине диапазона и тела свечи открывает позицию в направлении закрытия на следующей свече.
 

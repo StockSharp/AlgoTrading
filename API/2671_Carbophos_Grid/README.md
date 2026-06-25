@@ -1,4 +1,5 @@
 # Carbophos Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Carbophos Grid Strategy is a direct conversion of the "Carbophos" MetaTrader 5 expert advisor. It continuously maintains a symmetric ladder of buy and sell limit orders around the current bid/ask prices. The strategy monitors the aggregated floating profit of the entire grid and closes all exposure once either the desired profit target or the maximum tolerated drawdown is reached. After the position is flattened and no working orders remain, the ladder is rebuilt automatically.

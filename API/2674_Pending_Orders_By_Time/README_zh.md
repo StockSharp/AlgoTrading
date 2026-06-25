@@ -1,5 +1,5 @@
 # 挂单定时策略（Pending Orders By Time）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略把 MetaTrader 上的“Pending orders by time”专家顾问移植到 StockSharp。它按照固定时间表运行：在设定的开仓小时到来时，于行情上下各放置一张对称的止损单；到达设定的收盘小时后，会撤销所有未成交的挂单并强制平掉持仓。所有距离参数继续以“点”为单位输入，内部根据品种的最小报价步长转换成真实价格。
 

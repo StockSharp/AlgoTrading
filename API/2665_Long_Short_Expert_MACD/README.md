@@ -1,4 +1,5 @@
 # Long/Short Expert MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Long/Short Expert MACD Strategy** is a StockSharp conversion of the MetaTrader expert "LongShortExpertMACD". It combines the standard Moving Average Convergence Divergence (MACD) crossover logic with fixed-distance risk controls. The strategy reacts to crossovers between the MACD line and its signal line, can operate in long-only, short-only, or bidirectional modes, and automatically applies take-profit and stop-loss levels expressed in price points.

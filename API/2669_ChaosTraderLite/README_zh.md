@@ -1,4 +1,5 @@
 # Chaos Trader Lite 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Chaos Trader Lite 策略使用 StockSharp 的高级 API 复刻了 Bill Williams 的“三个智者”入场模型。系统会在所选时间框架（默认 1 小时）的每根完结 K 线后执行判定，并在任意条件满足时挂出止损订单：
 

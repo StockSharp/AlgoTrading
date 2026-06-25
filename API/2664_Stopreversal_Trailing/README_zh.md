@@ -1,5 +1,5 @@
 # Stopreversal Trailing 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Stopreversal Trailing 策略复刻了 MT5 专家顾问 `Exp_Stopreversal.mq5`。它调用 Stopreversal 自定义指标，在所选的 K 线价格周围构建动态追踪止损线。当价格向上突破该追踪线时，被视为看涨反转，可选地平掉空头仓位并开多；向下突破则执行相反的看跌操作。为了与原始 EA 保持一致，可以通过参数将信号延后若干个已收盘的 K 线才执行。
 

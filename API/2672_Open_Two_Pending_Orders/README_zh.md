@@ -1,4 +1,5 @@
 # 双向挂单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 中的“Open Two Pending Orders”专家顾问，会同时在当前买卖价附近挂出买入止损单和卖出止损单。策略只针对单一标的，使用 StockSharp 的高层 API 订阅盘口、管理挂单并执行风险控制。一旦其中一张止损单被触发，另一张挂单会被取消，持仓随后通过固定止损、固定止盈以及可选的追踪止损进行管理。
