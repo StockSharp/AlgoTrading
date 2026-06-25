@@ -1,4 +1,5 @@
 # JS Sistem 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 JS Sistem 2 is a trend-following system originally written for MetaTrader 5. The StockSharp port keeps the multi-indicator confirmation block from the expert advisor and trades on closed candles of the selected timeframe. Orders are sized with a fixed volume and can optionally be blocked if the connected portfolio balance falls below a configurable threshold. Risk is controlled through hard stop-loss and take-profit distances expressed in pips together with an adaptive trailing stop that follows candle shadows.

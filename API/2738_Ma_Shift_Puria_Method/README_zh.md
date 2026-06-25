@@ -1,4 +1,5 @@
 # Ma Shift Puria Method 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Ma Shift Puria Method 策略是经典 Puria 专家顾问在 StockSharp 高阶 API 上的复刻。算法结合多条指数移动平均线（EMA）、MACD 过滤器以及可选的分形追踪逻辑，仅在完全收盘的 K 线后进行判断。仓位管理包含固定止损/止盈、可配置的追踪止损，以及当价格接近目标时基于分形的保护机制。

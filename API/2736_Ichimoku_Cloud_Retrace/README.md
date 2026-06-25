@@ -1,5 +1,5 @@
 # Ichimoku Cloud Retrace Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader expert "ichimok2005". It looks for pullbacks into the Ichimoku cloud and trades in the direction of the prevailing kumo slope. Signals are evaluated only on completed candles.
 

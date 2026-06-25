@@ -1,4 +1,5 @@
 # Стратегия Dealers Trade ZeroLag MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Эта стратегия переносит советник MetaTrader "Dealers Trade v 7.91 ZeroLag MACD" в инфраструктуру StockSharp. Она анализирует наклон линии ZeroLag MACD, чтобы определять направление тренда, и строит адаптивную сетку ордеров с управлением рисками. Рекомендованный таймфрейм — H4, однако можно выбрать любой тип свечей, поддерживаемый StockSharp.

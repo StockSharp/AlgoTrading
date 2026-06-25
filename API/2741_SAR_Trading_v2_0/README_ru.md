@@ -1,4 +1,5 @@
 # Стратегия SAR Trading v2.0
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **SAR Trading v2.0** — адаптация классического советника Cronex для платформы StockSharp. Стратегия использует простую скользящую среднюю (SMA) и Parabolic SAR для определения направления сделки, а также управляет позицией с помощью фиксированных стопов и трейлинг-стопа, измеряемого в пунктах.
 

@@ -1,4 +1,5 @@
 # XFatlXSatlCloud Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 XFatlXSatlCloud Duplex — это конвертированная из MQL5 двунаправленная стратегия. Она использует индикатор XFatlXSatlCloud, который объединяет быстрый цифровой фильтр FATL и более медленный SATL, а затем сглаживает обе линии выбранными скользящими средними. Для длинной и короткой частей можно задавать разные таймфреймы, методы сглаживания и источники цены.

@@ -1,4 +1,5 @@
 # SAR Trading v2.0 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **SAR Trading v2.0** 将 Cronex 的经典 MQL5 策略迁移到 StockSharp 高阶 API。策略结合简单移动平均线 (SMA) 与 Parabolic SAR，在出现方向信号时入场，并通过固定止损、止盈以及基于点差的跟踪止损管理持仓。
 

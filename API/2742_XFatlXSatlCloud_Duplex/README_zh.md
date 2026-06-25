@@ -1,4 +1,5 @@
 # XFatlXSatlCloud Duplex
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 XFatlXSatlCloud Duplex 是从原始 MQL5 专家顾问移植而来的双向策略。策略使用 XFatlXSatlCloud 指标，该指标将快速的 FATL 数字滤波器与较慢的 SATL 滤波器结合，并使用可配置的移动平均线对两条曲线进行平滑。多头与空头可以分别设置不同的时间框架、平滑方法以及价格来源。

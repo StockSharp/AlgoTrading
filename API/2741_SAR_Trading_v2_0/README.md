@@ -1,4 +1,5 @@
 # SAR Trading v2.0 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **SAR Trading v2.0 Strategy** re-creates the classic Cronex expert advisor inside the StockSharp high-level API. It combines a simple moving average (SMA) with the Parabolic SAR in order to time entries and then manages the position with fixed protective orders and a pip-based trailing stop.
 

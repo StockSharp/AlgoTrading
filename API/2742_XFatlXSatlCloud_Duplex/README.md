@@ -1,4 +1,5 @@
 # XFatlXSatlCloud Duplex
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 XFatlXSatlCloud Duplex is a dual-direction strategy converted from the original MQL5 expert advisor. It trades crossings of the XFatlXSatlCloud indicator, which blends a fast FATL digital filter with a slower SATL filter and then smooths both with configurable moving averages. Separate configurations can be applied to the long and short sides, including different timeframes, smoothing methods and applied price sources.

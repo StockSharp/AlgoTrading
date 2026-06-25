@@ -1,4 +1,5 @@
 # Dealers Trade ZeroLag MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MetaTrader expert advisor "Dealers Trade v 7.91 ZeroLag MACD" to the StockSharp high level API. It tracks the slope of a zero lag MACD to decide whether the market is in an accumulation phase for longs or shorts and builds a grid of positions with adaptive spacing and risk management. The default timeframe is four-hour candles as recommended by the original author, but any candle type supported by StockSharp can be selected.

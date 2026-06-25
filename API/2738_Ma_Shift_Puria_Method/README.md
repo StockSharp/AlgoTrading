@@ -1,4 +1,5 @@
 # Ma Shift Puria Method Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Ma Shift Puria Method strategy is an implementation of the classic “Puria” Expert Advisor adapted for StockSharp's high-level API. The algorithm combines multiple exponential moving averages (EMAs) with a MACD filter and optional fractal-based trailing logic. Signals are evaluated on completed candles only. Position management includes fixed stop-loss and take-profit levels, configurable trailing stops, and an optional fractal trailing mode that locks in profits near the target when a confirmed swing point appears.

@@ -1,5 +1,5 @@
 # Doji Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻经典 **Doji Trader** EA 的核心思想。
 它在每根 K 线收盘后检查是否出现小实体的十字星，一旦下一根 K 线收盘

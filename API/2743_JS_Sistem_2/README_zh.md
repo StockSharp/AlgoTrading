@@ -1,4 +1,5 @@
 # JS Sistem 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 JS Sistem 2 最初是为 MetaTrader 5 编写的趋势策略。移植到 StockSharp 后，仍然保留了原始智能交易系统中的多指标确认模块，只在所选周期的收盘 K 线后进行计算。策略使用固定下单量，当投资组合净值低于阈值 `MinBalance` 时可以停止开仓。风险控制通过以点数表示的止损、止盈距离以及跟随 K 线影线的自适应追踪止损共同完成。

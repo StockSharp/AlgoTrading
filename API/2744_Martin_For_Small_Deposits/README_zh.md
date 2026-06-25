@@ -1,5 +1,5 @@
 # 小资金马丁策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 中复刻了“Martin for small deposits”马丁网格专家。策略每次仅在一根完成的K线上执行逻辑，使用最近15根K线的收盘价：当最新收盘价低于14根之前的收盘价时开多网格，反之则开空网格。所有交易都通过高级策略 API 以市价提交。

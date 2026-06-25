@@ -1,4 +1,5 @@
 # Dealers Trade ZeroLag MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 平台上的 "Dealers Trade v 7.91 ZeroLag MACD" 专家顾问迁移到 StockSharp 高级 API。策略通过观察 ZeroLag MACD 线的斜率来判断市场方向，并在趋势方向上构建具有自适应间距的网格仓位，同时执行严格的风险控制。默认的分析周期为四小时 K 线，但可自定义任何支持的蜡烛类型。

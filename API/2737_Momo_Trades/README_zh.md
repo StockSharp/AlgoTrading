@@ -1,5 +1,5 @@
 # Momo Trades 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 平台上的 "Momo_trades" 专家顾问移植到 StockSharp，实现通过均线偏离度与 MACD 结构过滤的动量突破交易。
 

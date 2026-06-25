@@ -1,5 +1,5 @@
 # Ichimoku Cloud Retrace 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 专家顾问 “ichimok2005” 的 StockSharp 版本。它监控价格回落到 Ichimoku 云内部时的机会，并按照云层（kumo）的倾斜方向进场。所有判断均基于已完成的 K 线。
 
