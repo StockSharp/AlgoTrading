@@ -1,4 +1,5 @@
 # Стратегия Blau TVI Timed Reversal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Краткое описание
 - Перенос с MetaTrader 5 эксперта **Exp_BlauTVI_Tm.mq5** из каталога `MQL/21014`.

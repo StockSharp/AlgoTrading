@@ -1,4 +1,5 @@
 # Color X Derivative Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert "Exp_ColorXDerivative". It works on a configurable candle timeframe (12-hour candles by default) and analyses the ColorXDerivative momentum histogram. The indicator measures how fast the chosen price source changes over a fixed shift, smooths the result with a moving average, and then classifies each bar into one of five colour states. Trades follow the same logic as in the original EA: the robot buys when bullish momentum accelerates or a bearish move starts to contract, and it sells when bearish pressure increases or a bullish leg loses strength.

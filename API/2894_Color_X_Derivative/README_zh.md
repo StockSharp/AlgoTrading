@@ -1,4 +1,5 @@
 # Color X Derivative 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问“Exp_ColorXDerivative”的 StockSharp 版本。策略在可配置的 K 线周期（默认 12 小时）上运行，分析 ColorXDerivative 动量柱状图。指标会衡量所选价格在固定位移内的变化速度，用移动平均进行平滑，并把每个柱子划分为五种颜色状态。交易逻辑完全复刻原始 EA：当多头动能加速或空头走势开始收缩时做多，当空头压力增强或多头走势减弱时做空。

@@ -1,4 +1,5 @@
 # Blau TVI 定时反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 由 `MQL/21014` 中的 MetaTrader 5 专家顾问 **Exp_BlauTVI_Tm.mq5** 转换而来。

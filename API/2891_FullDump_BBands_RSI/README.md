@@ -1,5 +1,5 @@
 # FullDump BB RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A multi-step Bollinger Bands and RSI system converted from the MT5 "FullDump" expert advisor. The strategy waits for momentum exhaustion, confirms a mean-reversion bias with Bollinger Bands, and only trades when price realigns with the middle band. Trade management mirrors the original EA with fixed stop-loss/target offsets and a break-even adjustment when price returns to the opposite band.
 

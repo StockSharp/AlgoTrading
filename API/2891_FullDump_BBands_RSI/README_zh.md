@@ -1,5 +1,5 @@
 # FullDump BB RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自 MT5 的 “FullDump” 专家顾问，结合布林带与 RSI 的多步骤过滤逻辑。它先识别动能耗尽，再通过布林带确认价格有回归均值的倾向，只有当价格重新站上/跌破中轨时才入场。风控流程完全复现原版：固定止损/止盈加自定义偏移，并在价格重新触碰相反布林带时把止损推到保本位。
 

@@ -1,5 +1,5 @@
 # WAMI Cloud X2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略完整复刻 MetaTrader 智能交易程序 “Exp_WAMI_Cloud_X2” 的双周期逻辑。高周期上使用 Warren Momentum Indicator (WAMI) 判断趋势方向，低周期上再次计算 WAMI 用于择时。主线与信号线在两个周期上都会互相比较，从而完全对应原始 MQL 程序的行为。
 

@@ -1,4 +1,5 @@
 # Caudate X Period Candle TM Plus Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the logic of the Caudate X Period Candle TM Plus expert advisor. It smooths the candle open, high, low and close prices with a configurable moving average, builds a Donchian-style range and classifies each finished candle into one of six color codes depending on the position of the body inside the range. Long entries are triggered by the bullish lower-tail colors (0 or 1), while short entries are triggered by the bearish upper-tail colors (5 or 6). Opposite color groups are used to exit existing positions.

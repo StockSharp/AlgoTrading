@@ -1,5 +1,5 @@
 # Exp ColorX2MA X2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MT5 专家 "Exp_ColorX2MA_X2" 移植到 StockSharp。它在高周期上使用 ColorX2MA 判断趋势，在低周期上使用 ColorX2MA 生成进出场信号。每个 ColorX2MA 都由两层可配置均线级联组成，并根据最终曲线的斜率自动着色。当低周期的颜色在高周期趋势方向上发生转换时触发交易。
 

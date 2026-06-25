@@ -1,5 +1,5 @@
 # WAMI Cloud X2
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the dual timeframe behaviour of the original MetaTrader "Exp_WAMI_Cloud_X2" expert advisor. It uses the Warren Momentum Indicator (WAMI) on a higher timeframe to define the dominant bias and a second instance of the same indicator on a lower timeframe to time entries and exits. The main WAMI line is compared against its internal signal line on both timeframes, which mirrors the logic of the original MQL implementation.
 

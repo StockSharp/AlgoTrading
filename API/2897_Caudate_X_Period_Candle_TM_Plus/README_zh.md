@@ -1,4 +1,5 @@
 # Caudate X Period Candle TM Plus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 Caudate X Period Candle TM Plus 智能顾问的逻辑。它先对每根蜡烛的开、高、低、收价格进行可配置的平滑处理，再构建平滑 Donchian 区间，并依据蜡烛实体在区间中的位置将已完成蜡烛划分为六种颜色代码。颜色 **0/1**（看涨下影）触发做多，颜色 **5/6**（看跌上影）触发做空，对立的颜色组用于平仓。

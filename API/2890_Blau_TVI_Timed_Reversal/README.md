@@ -1,4 +1,5 @@
 # Blau TVI Timed Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 - Converted from the MetaTrader 5 expert advisor **Exp_BlauTVI_Tm.mq5** located in `MQL/21014`.
