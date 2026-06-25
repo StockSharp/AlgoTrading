@@ -1,5 +1,5 @@
 # SilverTrend CrazyChart Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert "Exp_SilverTrend_CrazyChart" using the StockSharp high-level API. It trades both s
 ides of the market by comparing two buffers of the custom SilverTrend CrazyChart indicator. When the delayed band crosses the cur

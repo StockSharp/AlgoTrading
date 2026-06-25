@@ -1,4 +1,5 @@
 # Renko Level 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Renko Level 策略是对 MetaTrader 5 中 “Renko Level EA” 的完整移植。策略在 StockSharp 中重建了原始 EA 使用的自定义指标逻辑，当四舍五入后的 Renko 水平跳到新的区间时立即交易。每一次水平变化都被视为合成 Renko 砖块的突破，默认沿突破方向建仓，开启反向模式后则反向交易。

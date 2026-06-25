@@ -1,5 +1,5 @@
 # SilverTrend CrazyChart 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 专家顾问“Exp_SilverTrend_CrazyChart”移植到 StockSharp 平台。策略同时监控 SilverTrend CrazyChart 指
 标的两个缓冲区：当前通道与延迟通道。当延迟通道跨越当前通道时，系统顺势开仓，并平掉反向持仓。

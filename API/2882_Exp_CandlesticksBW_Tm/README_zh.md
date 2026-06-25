@@ -1,4 +1,5 @@
 # Exp CandlesticksBW Tm 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 上复刻了 MetaTrader 专家顾问 **Exp_CandlesticksBW_Tm**。它使用 Bill Williams 的 Candlesticks BW 指标，通过组合 Awesome Oscillator (AO) 与 Accelerator Oscillator (AC) 的方向来为蜡烛染色，并据此捕捉动能加速或减速。可选的交易时段过滤器可以让策略只在特定时间范围内进出场。
 

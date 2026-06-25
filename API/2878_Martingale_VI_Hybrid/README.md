@@ -1,4 +1,5 @@
 # Martingale VI Hybrid Strategy (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Martingale VI Hybrid strategy is a conversion of the original MetaTrader expert advisor into the StockSharp high-level API. It combines a fast/slow moving average filter with a MACD confirmation and scales into positions using a martingale multiplier. The strategy accumulates positions when price moves against the last entry by a fixed pip distance and unifies the take profit of the entire cluster at the level defined by the most recent order. Additional global exits include fixed profit in money, profit as a percentage of starting equity, and a trailing stop in money.

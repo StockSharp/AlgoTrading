@@ -1,4 +1,5 @@
 # Стратегия Renko Level
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Renko Level — это перенос советника MetaTrader 5 «Renko Level EA» на платформу StockSharp. Стратегия полностью повторяет логику оригинала: каждый раз, когда округлённый уровень Renko перескакивает на новый блок, фиксируются противоположные позиции и открывается сделка в направлении изменения (либо в обратном направлении при активном реверсе).

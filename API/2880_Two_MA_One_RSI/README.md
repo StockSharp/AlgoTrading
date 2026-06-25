@@ -1,5 +1,5 @@
 # Two MA One RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader 5 expert "Two MA one RSI" into StockSharp. It combines a fast and slow moving average crossover with an RSI confirmation that is evaluated on the previous closed candle. Flexible switches allow turning each comparison into either a "greater than" or "less than" rule so the setup can be inverted without touching the code.
 

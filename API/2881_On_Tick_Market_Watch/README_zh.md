@@ -1,4 +1,5 @@
 # 跳动行情观察策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **跳动行情观察策略**（On Tick Market Watch Strategy）复刻了 MetaTrader 脚本 `scOnTickMarketWatch.mq5` 的行为。原始脚本会持续扫描行情观察列表，只要任意品种出现新的跳动，就发送自定义事件并打印该品种的买价与点差。本策略将该逻辑转换为 StockSharp 的高级策略：订阅 Level1 数据并通过日志输出 Tick 信息。

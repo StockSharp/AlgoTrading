@@ -1,4 +1,5 @@
 # Martingale VI Hybrid 策略（C#）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Martingale VI Hybrid 策略将原始的 MetaTrader 专家顾问转换为 StockSharp 高级 API。策略采用快/慢均线过滤与 MACD 组合信号，并通过马丁格尔倍量方式分批进场。当价格按照固定点差距离逆向运动时，会继续加仓，并把所有订单的止盈统一在最新订单定义的位置。同时支持以货币金额、账户初始权益百分比以及资金回撤式移动止盈等多种总体退出条件。

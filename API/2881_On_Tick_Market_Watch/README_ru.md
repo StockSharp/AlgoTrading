@@ -1,4 +1,5 @@
 # Стратегия On Tick Market Watch
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **On Tick Market Watch Strategy** переносит логику скрипта MetaTrader `scOnTickMarketWatch.mq5`. Оригинальный скрипт непрерывно перебирает список Market Watch и при появлении нового тика отправляет пользовательское событие, печатая текущий бид и спред. В версии для StockSharp эта функциональность реализована как высокоуровневая стратегия, которая подписывается на данные Level1 и выводит информацию о тикax через логгер стратегии.

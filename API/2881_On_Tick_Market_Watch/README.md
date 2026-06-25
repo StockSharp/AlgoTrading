@@ -1,4 +1,5 @@
 # On Tick Market Watch Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **On Tick Market Watch Strategy** replicates the behaviour of the MetaTrader script `scOnTickMarketWatch.mq5`. The original script continuously scans the Market Watch list and raises a custom event whenever a new tick arrives for any symbol, printing the bid price and spread information. This C# port converts that behaviour into a StockSharp high-level strategy that listens for Level1 updates and logs the tick information through the strategy logger.

@@ -1,4 +1,5 @@
 # Interceptor Strategy (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Interceptor strategy is a C# port of the original MetaTrader5 expert advisor. It combines multi-timeframe EMA "fan" alignment with Stochastic oscillators, flat-range breakout detection, divergence analysis, hammer candlestick filters and horn (fan convergence) confirmation. The goal is to exploit strong trend continuation following periods of consolidation on the GBP/USD 5-minute chart.

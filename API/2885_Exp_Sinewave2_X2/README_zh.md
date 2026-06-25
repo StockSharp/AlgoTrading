@@ -1,4 +1,5 @@
 # Exp Sinewave2 X2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp Sinewave2 X2 是基于 John Ehlers Sinewave 理论的多周期趋势策略。高周期用于判定主要趋势，低周期提供精确的入场和离场。所有信号都来自重写的 Sinewave2 指标，该指标内部调用自适应的 CyclePeriod 组件以保持与原始 MQL 版本一致。

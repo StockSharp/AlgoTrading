@@ -1,5 +1,5 @@
 # Two MA One RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 专家顾问 “Two MA one RSI” 移植到 StockSharp。它通过快慢两条均线的交叉配合前一根 K 线的 RSI 信号生成交易，并提供多个布尔开关来快速反转比较条件。
 

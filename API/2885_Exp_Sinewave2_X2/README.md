@@ -1,4 +1,5 @@
 # Exp Sinewave2 X2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Exp Sinewave2 X2 is a multi-timeframe trend-following strategy inspired by John Ehlers' Sinewave analysis. The higher timeframe filter defines the dominant direction, while the lower timeframe provides precise entry and exit triggers. All calculations use the reconstructed Sinewave2 indicator, which internally relies on the adaptive CyclePeriod module.

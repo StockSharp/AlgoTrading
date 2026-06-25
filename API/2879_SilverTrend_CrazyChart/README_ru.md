@@ -1,5 +1,5 @@
 # Стратегия SilverTrend CrazyChart
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом советника MetaTrader «Exp_SilverTrend_CrazyChart» на платформу StockSharp. Логика использует два буфер
 a индикатора SilverTrend CrazyChart: текущую линию и смещённую линию. Когда смещённая линия пересекает текущую, стратегия открыв

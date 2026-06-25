@@ -1,4 +1,5 @@
 # Interceptor 策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Interceptor 策略是 MetaTrader5 专家顾问的 C# 移植版。策略在 GBP/USD 5 分钟图上同时观察 M5、M15、H1 三个周期的 EMA "扇形" 结构，并结合 Stochastic 指标、盘整突破、锤子线过滤、指标背离及扇形收敛（Horn）条件来确认趋势延续信号。

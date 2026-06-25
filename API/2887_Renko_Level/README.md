@@ -1,4 +1,5 @@
 # Renko Level Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Renko Level Strategy is a faithful conversion of the MetaTrader 5 expert advisor “Renko Level EA”. It reconstructs the indicator-driven logic inside StockSharp and trades whenever the rounded Renko level jumps to a new block. The strategy interprets each level shift as a breakout of the synthetic Renko brick and enters in the breakout direction or in the opposite direction when the reverse mode is enabled.

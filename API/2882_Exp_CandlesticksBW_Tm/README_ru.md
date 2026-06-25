@@ -1,4 +1,5 @@
 # Стратегия Exp CandlesticksBW Tm
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит эксперт **Exp_CandlesticksBW_Tm** из MetaTrader 5 на платформу StockSharp. В основе лежит индикатор Bill Williams Candlesticks BW, который раскрашивает свечи в зависимости от сочетания Awesome Oscillator (AO) и Accelerator Oscillator (AC). Логика строится на смене цветов свечей (ускорение/замедление импульса), а дополнительный фильтр торгового времени ограничивает сделки заданным временным окном.
 
