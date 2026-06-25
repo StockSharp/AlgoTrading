@@ -1,5 +1,5 @@
 # Alligator 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 MetaTrader 脚本 (`Alligator.mq5`) 中的经典比尔·威廉姆斯 Alligator 系统。算法基于三条在中价上计算的平滑移动平均线，并向前偏移以展示市场状态。当快速的 Lips 线位于 Teeth 之上且 Teeth 位于 Jaw 之上时开多单；当排列顺序相反时开空单。系统同一时间只允许持有一个方向的仓位。
 

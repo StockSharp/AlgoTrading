@@ -1,4 +1,5 @@
 # Exp BlauCMI
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy recreates the MetaTrader 5 expert advisor **Exp_BlauCMI** using StockSharp's high level API. It computes the Blau Candle Momentum Index (CMI), a triple-smoothed momentum ratio, on a configurable candle series and reacts to swings in the oscillator. Long trades are opened when the indicator turns upward after a downswing, short trades are opened when the indicator turns downward after an upswing. The module keeps the implementation fully event driven – orders are sent only after candles are closed.

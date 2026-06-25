@@ -1,4 +1,5 @@
 # 2692 MACD Stochastic Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是对 MetaTrader 5 指标策略 “MACD Stochastic” 的 StockSharp 实现。交易逻辑利用 MACD 金叉/死叉，并可选地要求随机指标的确认，同时只在三个可配置的日内交易时段内执行交易。每笔仓位都按点数设定初始止损和止盈，并提供可选的追踪止损，以便在达到指定利润后将止损推至保本区。

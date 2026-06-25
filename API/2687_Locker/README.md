@@ -1,5 +1,5 @@
 # Locker
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grid-based hedging strategy that alternates long and short market orders to lock floating losses and capture a small percentage profit on the account balance.
 

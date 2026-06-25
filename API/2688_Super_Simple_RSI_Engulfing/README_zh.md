@@ -1,5 +1,5 @@
 # Super Simple RSI Engulfing 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把 MetaTrader 上的 SSEATwRSI 专家顾问迁移到 StockSharp。系统仅处理已经收盘的K线，并在每根K线的最高价上计算 7 周期 RSI。只有当 RSI 到达极值并且前两根K线组成清晰的反转型吞没形态时，才会触发交易信号。
 

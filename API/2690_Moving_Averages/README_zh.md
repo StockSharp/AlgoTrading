@@ -1,4 +1,5 @@
 # 移动平均策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 移动平均策略重现了 MetaTrader 专家顾问，通过价格与平移后的简单移动平均线（SMA）交叉来进行交易。算法只处理已经收盘的K线，从而确保交易决策基于完整数据。仓位规模使用动态风险模型，与账户权益挂钩，并根据连续亏损自动调整，延续原始 MQL 逻辑。

@@ -1,5 +1,5 @@
 # Alligator Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy reproduces the classic Bill Williams Alligator system from the original MetaTrader script (`Alligator.mq5`). It uses three smoothed moving averages built on the median price and shifted forward to visualize the market phase. A long position is opened when the fast Lips line is above the Teeth, and the Teeth are above the Jaw. A short position is opened when the alignment is reversed. Only one position can be active at the same time.
 

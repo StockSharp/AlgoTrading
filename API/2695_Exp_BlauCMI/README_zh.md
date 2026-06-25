@@ -1,4 +1,5 @@
 # Exp BlauCMI
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 的高级 API 上复刻 MetaTrader 5 智能交易系统 **Exp_BlauCMI**。它计算 Blau Candle Momentum Index（CMI），这是一个三重平滑的动量比率，用于捕捉动量拐点。系统在蜡烛线收盘后做出决策：当指标在下行后转向上行时开多，当指标在上行后转向下行时开空，从而完全对应原始 EA 的行为。

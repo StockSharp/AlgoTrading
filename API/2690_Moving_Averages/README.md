@@ -1,4 +1,5 @@
 # Moving Averages Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Moving Averages strategy replicates the classic MetaTrader expert that trades crosses of price relative to a shifted simple moving average (SMA). The algorithm processes completed candles only, ensuring that all trading decisions are based on fully formed bars. Position sizing follows a dynamic risk model tied to account equity and adapts to losing streaks, mimicking the original MQL implementation.

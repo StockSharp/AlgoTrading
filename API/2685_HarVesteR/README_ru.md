@@ -1,5 +1,5 @@
 # Стратегия HarVesteR
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия HarVesteR сочетает импульс MACD с двумя простыми скользящими средними и опциональным фильтром по силе тренда ADX.
 Она ищет ситуации, когда цена «прилипает» к средним, а MACD недавно пересёк нулевую линию, что указывает на возможный выход из консолидации.

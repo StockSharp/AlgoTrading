@@ -1,5 +1,5 @@
 # HarVesteR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 HarVesteR 策略将 MACD 动能、两条简单移动平均线以及可选的 ADX 趋势强度过滤器结合起来。
 当价格贴近均线运行并且 MACD 最近穿越零轴时，系统寻找突破盘整的机会。

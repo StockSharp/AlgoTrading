@@ -1,4 +1,5 @@
 # 2692 MACD Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 5 system "MACD Stochastic". It combines a classic MACD crossover with an optional stochastic confirmation filter and trades only during three configurable intraday sessions. Each position uses pip-based risk controls with optional trailing stop logic that can move the stop toward break-even once the trade has reached a specified profit.

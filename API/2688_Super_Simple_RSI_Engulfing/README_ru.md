@@ -1,5 +1,5 @@
 # Стратегия Super Simple RSI Engulfing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит эксперт SSEATwRSI из MetaTrader в StockSharp. Анализируются только завершённые свечи, по максимумам которых считается RSI с периодом 7. Сделка возникает, когда RSI достигает экстремума и две предыдущие свечи формируют выраженный разворот в виде поглощения.
 

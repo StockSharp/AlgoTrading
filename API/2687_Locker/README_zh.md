@@ -1,5 +1,5 @@
 # 锁仓网格（Locker）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于网格的对冲策略，通过交替建立买入和卖出市价单来锁定浮亏，并在账户余额上获取一小部分百分比收益。
 
