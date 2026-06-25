@@ -1,5 +1,5 @@
 # Time EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Time EA Strategy** 将 MetaTrader 平台的 "TimeEA" 智能交易系统迁移到 StockSharp。策略完全依据时间控制单一方向的持仓：在设定时间开仓，保持多头或空头头寸，并在预设的离场时间或触发止损 / 止盈时退出。
 

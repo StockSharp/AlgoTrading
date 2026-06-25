@@ -1,5 +1,5 @@
 # Ambush 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ambush 策略会持续在市场两侧放置一对 Buy Stop 和 Sell Stop 挂单。挂单距离当前最优报价一定的点数，同时根据当前
 点差设置最小距离限制。一旦任意方向被触发，策略会立即重新构建两侧的挂单，让市场始终处于「埋伏圈」。此外

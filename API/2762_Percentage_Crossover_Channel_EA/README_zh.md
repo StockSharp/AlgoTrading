@@ -1,4 +1,5 @@
 # Percentage Crossover Channel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Percentage Crossover Channel 策略源自 MetaTrader 5 的 *Percentage_Crossover_Channel_EA* 智能交易程序。它在选定价格附近构建一个动态通道，并根据价格对通道边界或中线的触碰/交叉发出信号。本版本基于 StockSharp 高级 API，只处理已经收盘的K线数据。

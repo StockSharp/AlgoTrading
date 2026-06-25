@@ -1,4 +1,5 @@
 # NTK 07 Range Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The NTK 07 Range Trader Strategy is a port of the MetaTrader "NTK 07" expert advisor. The algorithm maintains symmetrical stop orders around the current market price and manages open positions with configurable trailing and take-profit logic. The goal is to capture breakouts that occur near the borders or the center of a short-term price range while respecting strict risk controls.
 

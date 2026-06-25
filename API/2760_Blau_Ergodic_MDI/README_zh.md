@@ -1,4 +1,5 @@
 # Blau Ergodic MDI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Blau Ergodic Market Directional Indicator（MDI）策略完整复刻了 MetaTrader 智能交易系统 `Exp_BlauErgodicMDI` 的逻辑。策略读取较高时间周期的蜡烛图（默认 4 小时），对选定的价格源执行三次平滑处理，从而构建动量直方图和信号线。依据所选的入场模式，策略会在以下三种情形中触发信号：

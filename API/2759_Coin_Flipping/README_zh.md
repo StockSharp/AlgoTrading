@@ -1,5 +1,5 @@
 # Coin Flipping 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Coin Flipping 策略是对经典 MetaTrader 智能交易程序的直接移植，它通过“掷硬币”来决定买入还是卖出。每当上一根K线完成并且策略没有持仓时，就会触发一次新的决定，因此交易形成连续且相互独立的序列。StockSharp 版本刻意保持这种极简行为：同时只持有一笔仓位，并且为每笔交易设置对称的止盈和止损距离（以点数表示）。

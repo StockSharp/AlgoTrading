@@ -1,5 +1,5 @@
 # Стратегия Time EA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Time EA Strategy** — портирование советника MetaTrader "TimeEA" в экосистему StockSharp. Стратегия управляет одной позицией, ориентируясь исключительно на время суток: открывает сделку в заданный момент, удерживает её в фиксированном направлении и закрывает по расписанию или при срабатывании опциональных стоп-лосса и тейк-профита.
 

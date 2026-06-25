@@ -1,4 +1,5 @@
 # NTK 07 区间交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 NTK 07 区间交易策略移植自 MetaTrader 的 “NTK 07” 专家顾问。该算法围绕当前价格同时挂出对称的买入和卖出止损单，并使用可配置的追踪和止盈逻辑管理持仓，目的是在短期区间的边缘或中心附近捕捉突破，同时保持严格的风险控制。
 

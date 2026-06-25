@@ -1,4 +1,5 @@
 # Стратегия Blau Ergodic MDI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия Blau Ergodic Market Directional Indicator повторяет работу советника MetaTrader `Exp_BlauErgodicMDI`. Алгоритм получает поток свечей старшего таймфрейма (по умолчанию 4 часа), выполняет тройное сглаживание выбранной ценовой серии и формирует гистограмму момента и сигнальную линию. Торговые решения принимаются в одном из трёх режимов:

@@ -1,5 +1,5 @@
 # Fractals at Close Prices 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 专家顾问 **“Fractals at Close prices”**（作者 Vladimir Karputov）的 StockSharp 版本。策略跟踪连续五根K线的收盘价，并仅使用收盘价来构建 Bill Williams 风格的分形。当最新的多头分形位于上一个多头分形之上时，视为趋势向上；当最新的空头分形位于上一个空头分形之下时，视为趋势向下。在执行新的方向信号前，会先平掉相反方向的仓位，因此策略同一时间只持有多头或空头。

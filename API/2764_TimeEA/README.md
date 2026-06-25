@@ -1,5 +1,5 @@
 # Time EA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Time EA Strategy** replicates the original MetaTrader "TimeEA" expert advisor inside StockSharp. It manages a single position based exclusively on the time of day: it opens at a configured moment, keeps the position in a fixed direction, and exits either at a scheduled closing time or once optional stop-loss / take-profit levels are breached.
 

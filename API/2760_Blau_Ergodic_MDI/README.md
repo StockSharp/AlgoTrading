@@ -1,4 +1,5 @@
 # Blau Ergodic MDI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Blau Ergodic Market Directional Indicator (MDI) strategy reproduces the behaviour of the MetaTrader expert advisor `Exp_BlauErgodicMDI`. The algorithm operates on a higher timeframe candle stream (default 4H) and applies a triple smoothing pipeline to the selected price input in order to build a momentum histogram and a signal line. Trading decisions are derived from that histogram using one of three configurable entry modes:

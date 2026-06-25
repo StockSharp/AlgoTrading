@@ -1,4 +1,5 @@
 # Стратегия Percentage Crossover Channel
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Percentage Crossover Channel — это стратегия, перенесённая из MetaTrader 5 (советник *Percentage_Crossover_Channel_EA*). Она строит динамический канал вокруг выбранной цены и реагирует либо на касания границ, либо на пересечения средней линии. Реализация на StockSharp повторяет исходную логику, обрабатывая только завершённые свечи через высокоуровневый API.

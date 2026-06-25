@@ -1,4 +1,5 @@
 # Diff TF MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 该策略是 MetaTrader 指标 “Diff_TF_MA_EA” 的 StockSharp 版本。

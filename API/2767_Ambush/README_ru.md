@@ -1,5 +1,5 @@
 # Стратегия Ambush
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Ambush постоянно окружает рынок парой отложенных ордеров Buy Stop и Sell Stop. Заявки ставятся на заданном отступе от
 лучших Ask и Bid, а также проверяются на минимально допустимое расстояние, зависящее от текущего спреда. Как только один ордер

@@ -1,5 +1,5 @@
 # Coin Flipping Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Coin Flipping Strategy is a literal port of the classic MetaTrader expert advisor that decides whether to buy or sell by simulating a coin toss. Every completed candle triggers a new decision when the strategy is flat, so the system alternates through a continuous series of independent trades. The StockSharp conversion keeps the behaviour intentionally simple: only one position is held at a time and each trade is paired with a symmetric take-profit and stop-loss expressed in pips.

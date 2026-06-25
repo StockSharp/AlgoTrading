@@ -1,4 +1,5 @@
 # Percentage Crossover Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Percentage Crossover Channel strategy originates from the MetaTrader 5 expert advisor *Percentage_Crossover_Channel_EA*. It relies on a custom channel constructed around a fast moving average and reacts to either band touches or middle line crossovers. This StockSharp implementation follows the same logic while using the high-level API to process completed candles.
