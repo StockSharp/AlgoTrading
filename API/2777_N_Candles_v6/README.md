@@ -1,4 +1,5 @@
 # N Candles v6 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **N Candles v6** strategy monitors the most recent finished candles and looks for streaks of identical direction. When the market prints `N` bullish candles in a row the strategy opens a long position, while a string of `N` bearish candles produces a short entry. The logic is inspired by the MetaTrader expert advisor *N Candles v6.mq5* and is adapted to the StockSharp high-level API.

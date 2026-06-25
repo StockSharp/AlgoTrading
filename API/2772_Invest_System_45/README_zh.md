@@ -1,4 +1,5 @@
 # Invest System 4.5 策略 (C#)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Invest System 4.5 原本是一个 MetaTrader 5 智能交易系统，此处将其迁移到 StockSharp 高层策略 API。策略在 EUR/USD 上运行，根据上一根已经收盘的 4 小时蜡烛的方向进行交易。每个新的 4 小时时段只允许开一笔单，仓位规模会根据实际盈亏以及账户权益的增长自动调整。

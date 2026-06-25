@@ -1,4 +1,5 @@
 # CH2010 Structure Multi-Timeframe Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the behaviour of the original **ch2010structure.mq5** expert by tracking multiple forex pairs on two timeframes. Each instrument monitors the daily candle to determine a directional bias and then watches 30-minute candles to look for breakouts beyond the prior daily range. Market positions are opened when the breakout aligns with the daily trend and closed using protective stop-loss and take-profit levels.
 

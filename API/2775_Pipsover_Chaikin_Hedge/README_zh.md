@@ -1,4 +1,5 @@
 # Pipsover Chaikin Hedge
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 的 “Pipsover 2” 专家顾问移植到 StockSharp。核心思想是在 Chaikin 振荡器出现极端值且上一根

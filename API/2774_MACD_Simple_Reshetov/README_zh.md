@@ -1,4 +1,5 @@
 # MACD Simple Reshetov 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 框架中复刻了 Yury Reshetov 的 “MACDSimple” MetaTrader 智能交易系统。策略只处理一个交易品种，通过两个偏移参数对经典 MACD 信号进行调整。算法仅在每根 K 线收盘后做出决策，确保所有判断都基于确认过的行情，从而避免分时噪声。

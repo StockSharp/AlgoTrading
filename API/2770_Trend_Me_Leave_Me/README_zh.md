@@ -1,4 +1,5 @@
 # Trend Me Leave Me 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Trend Me Leave Me** 策略源自 Yury Reshetov 的经典 MQL5 专家顾问。本移植版本同样耐心等待市场趋于平静，按照

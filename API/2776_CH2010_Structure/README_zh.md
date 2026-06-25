@@ -1,4 +1,5 @@
 # CH2010 结构多周期突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了原始 **ch2010structure.mq5** 专家顾问的核心思想，针对五个外汇货币对同时监控日线与 30 分钟线。日线用于判断当天的方向性倾向，30 分钟线负责在价格突破昨日区间并与方向一致时执行交易，并通过百分比止损与止盈来管理风险。
 

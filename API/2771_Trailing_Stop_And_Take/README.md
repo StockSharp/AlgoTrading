@@ -1,4 +1,5 @@
 # Trailing Stop And Take Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Trailing Stop And Take Strategy** is a direct StockSharp adaptation of the MetaTrader expert advisor from `MQL/19963`. It focuses on active trade management: once a position is open, the strategy attaches initial stop-loss and take-profit levels and then trails both levels as price moves. Trailing adjustments respect configurable minimum step sizes, breakeven protection, and the option to avoid trailing while a trade is still losing.

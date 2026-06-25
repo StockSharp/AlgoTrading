@@ -1,4 +1,5 @@
 # Стратегия EMA Cross Contest Hedged
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 - Перенос оригинальной MetaTrader-стратегии «EMA Cross Contest Hedged» на высокоуровневый API StockSharp.

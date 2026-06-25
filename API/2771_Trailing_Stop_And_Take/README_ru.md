@@ -1,4 +1,5 @@
 # Стратегия Trailing Stop And Take
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Trailing Stop And Take Strategy** — это адаптация эксперта из `MQL/19963` на платформу StockSharp. Стратегия сосредоточена на управлении уже открытыми позициями: после входа выставляются стартовые StopLoss и TakeProfit, а затем уровни подтягиваются вслед за ценой. Корректировки учитывают настраиваемый минимальный шаг, защиту уровня безубыточности и возможность запретить работу в зоне убытка.

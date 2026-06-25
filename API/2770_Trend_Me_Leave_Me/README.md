@@ -1,4 +1,5 @@
 # Trend Me Leave Me Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Trend Me Leave Me** strategy is a direct port of the classic MQL5 expert advisor by Yury Reshetov. It patiently waits for

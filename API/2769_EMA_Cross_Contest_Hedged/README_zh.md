@@ -1,4 +1,5 @@
 # EMA Cross Contest Hedged 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 将 MetaTrader 平台上的 “EMA Cross Contest Hedged” 策略迁移到 StockSharp 的高级 API。

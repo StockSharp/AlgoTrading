@@ -1,4 +1,5 @@
 # MACD Simple Reshetov Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the behavior of Yury Reshetov's "MACDSimple" MetaTrader expert advisor inside the StockSharp framework. It works with a single security and evaluates classic MACD signals that are modified by two offset parameters. The algorithm processes completed candles only, ensuring that all trading decisions are made on confirmed data and avoiding intrabar noise.

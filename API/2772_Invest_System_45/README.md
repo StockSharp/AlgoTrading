@@ -1,4 +1,5 @@
 # Invest System 4.5 Strategy (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Invest System 4.5 is a MetaTrader 5 expert advisor that has been ported to the StockSharp high-level strategy API. The strategy trades the EUR/USD pair by following the direction of the previous completed 4-hour candle. A single trade is allowed during the first minutes of the new 4-hour session and position sizing adapts to realized performance and account growth.

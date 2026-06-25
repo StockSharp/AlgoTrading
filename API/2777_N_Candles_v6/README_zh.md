@@ -1,4 +1,5 @@
 # N Candles v6 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **N Candles v6** 策略跟踪最近完成的蜡烛，寻找方向完全相同的连续序列。当市场连续出现 `N` 根阳线时，策略建立多头仓位；连续出现 `N` 根阴线时则开立空头。该方案源自 MetaTrader 专家顾问 *N Candles v6.mq5*，并针对 StockSharp 高级 API 重新实现。

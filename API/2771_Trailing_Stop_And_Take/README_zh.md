@@ -1,4 +1,5 @@
 # 跟踪止损与止盈策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Trailing Stop And Take Strategy** 是 `MQL/19963` 中 MetaTrader 专家顾问的 StockSharp 版本。策略专注于头寸管理：开仓后立即设置初始止损与止盈，然后在价格波动时动态跟踪两者。跟踪调整遵循可配置的最小步长、保本保护，并可选择禁止在亏损区间内移动。
