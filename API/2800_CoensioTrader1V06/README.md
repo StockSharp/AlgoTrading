@@ -1,4 +1,5 @@
 # CoensioTrader1 V06 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 CoensioTrader1 V06 is a trend-following breakout strategy originally distributed as a MetaTrader Expert Advisor. The StockSharp port keeps the discretionary pattern recognition logic while removing the broker- and internet-specific features from the MQL implementation. The strategy operates on a single security and timeframe, using Bollinger Bands and a double exponential moving average (DEMA) to identify exhaustion moves followed by trend resumption.

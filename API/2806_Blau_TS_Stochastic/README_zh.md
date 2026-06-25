@@ -1,5 +1,5 @@
 # Blau TS Stochastic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 专家顾问“Exp_BlauTSStochastic”的 StockSharp 版本。系统使用 William Blau 提出的三重平滑随机指标，该指标在原始 MQL 套件中提供。它在设定的回溯区间内计算最高价和最低价，分别对随机指标的分子和分母使用所选移动平均类型进行三次平滑，将结果缩放到 [-100, 100] 区间，并额外生成平滑的信号线。所有计算仅基于通过高级蜡烛订阅获得的已完成 K 线。
 

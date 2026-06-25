@@ -1,4 +1,5 @@
 # Zone Recovery Area Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Zone Recovery Area Strategy** is a direct conversion of the MetaTrader expert advisor "Zone Recovery Area" (package `MQL/20266`). It recreates the original hedging logic on top of the StockSharp high-level API and adds exhaustive parameterization so the behaviour can be tuned without touching the code. The strategy combines a trend filter with an alternating buy/sell recovery grid: once a primary trade is opened, additional positions are stacked whenever price leaves or re-enters the predefined zone, creating a hedged basket that aims to recover floating drawdowns.

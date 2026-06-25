@@ -1,5 +1,5 @@
 # Стратегия Hans123 Trader v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hans123 Trader v2 — это адаптация одноимённого эксперта Владимира Карпутова на платформу StockSharp. Стратегия отслеживает выход цены из 80-свечного диапазона и работает через отложенные ордера Buy Stop и Sell Stop. После входа позиции применяются стоп-лосс, тейк-профит и трейлинг-стоп, что полностью повторяет оригинальную логику в MetaTrader.
 

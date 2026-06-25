@@ -1,4 +1,5 @@
 # ADX Expert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ADX Expert 策略** 是对 MetaTrader 4 原始专家顾问 “ADX Expert”（MQL 脚本 20315）的完整移植。策略在平均趋向指数（ADX）低于阈值时，监控正向指标（+DI）与负向指标（-DI）的交叉，识别横盘市场中的短期动量机会。与原版一致，策略一次只持有一个仓位。

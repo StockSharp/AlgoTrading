@@ -1,5 +1,5 @@
 # Blau TS Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader expert advisor "Exp_BlauTSStochastic". The system trades with William Blau's triple-smoothed stochastic oscillator that was bundled with the original MQL package. The indicator computes the highest and lowest prices over a configurable lookback, smooths the stochastic numerator and denominator three times with the selected moving average family, rescales the result to the range [-100, 100], and finally produces a smoothed signal line. All calculations are performed on finished candles that are delivered through the high-level candle subscription API.
 

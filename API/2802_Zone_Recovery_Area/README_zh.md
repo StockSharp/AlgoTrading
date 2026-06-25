@@ -1,4 +1,5 @@
 # Zone Recovery Area 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Zone Recovery Area Strategy** 是将 MetaTrader 专家顾问 “Zone Recovery Area”（`MQL/20266`）完整移植到 StockSharp 高级 API 的版本。策略保留了原有的区间恢复（zone recovery）对冲逻辑，并将主要参数全部公开，方便在不修改代码的情况下调优。开仓后，系统会围绕基准价格交替建立多、空头寸，当价格离开或重新进入预设区域时加仓，以期逐步弥补浮动亏损并最终以盈利关闭整个组合。

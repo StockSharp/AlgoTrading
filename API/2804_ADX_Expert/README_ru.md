@@ -1,4 +1,5 @@
 # Стратегия ADX Expert
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **ADX Expert Strategy** — это конвертация оригинального эксперта MetaTrader 4 "ADX Expert" (MQL-скрипт 20315). Стратегия ищет пересечения линий Directional Index (+DI и -DI), пока значение Average Directional Index (ADX) остаётся ниже заданного порога, что говорит о флэтовом рынке. Как и в исходном советнике, одновременно может быть открыта только одна позиция.

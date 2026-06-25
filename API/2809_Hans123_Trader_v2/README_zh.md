@@ -1,5 +1,5 @@
 # Hans123 Trader v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hans123 Trader v2 是 Vladimir Karputov 编写的 MetaTrader 策略在 StockSharp 平台上的移植版本。策略利用最近 80 根 K 线的最高价和最低价设置买入/卖出止损单，在价格突破区间时跟随动量入场，并提供与原始 EA 相同的风控和拖尾逻辑。
 

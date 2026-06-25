@@ -1,4 +1,5 @@
 # 布林带多仓位 v2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 Vladimir Karputov 的 "Bollinger Bands N positions v2" 智能交易顾问。策略仅在蜡烛图收盘后运行，比较收盘价与布林带上下轨的位置。在迁移到 StockSharp 时保留了原策略的加仓、风险控制以及移动止损逻辑，同时符合平台的净持仓体系。

@@ -1,4 +1,5 @@
 # Crossing of Two iMA v2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy recreates the MetaTrader "Crossing of two iMA v2" expert advisor using StockSharp's high-level API. Two shifted moving averages generate crossover signals, optionally filtered by a third moving average. Protective stops, fixed or percentage-based position sizing, and a bar-by-bar trailing stop emulate the behaviour of the original robot while keeping the implementation compliant with StockSharp best practices.

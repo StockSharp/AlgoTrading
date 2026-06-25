@@ -1,4 +1,5 @@
 # Bollinger Bands N Positions v2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the "Bollinger Bands N positions v2" expert advisor by Vladimir Karputov. It operates on completed candles and looks for price breakouts relative to the Bollinger Bands envelope. The StockSharp port keeps the original pyramiding behaviour, risk controls, and trailing logic while adapting order management to the netting model of the platform.

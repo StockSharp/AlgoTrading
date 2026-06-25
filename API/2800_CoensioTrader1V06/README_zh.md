@@ -1,4 +1,5 @@
 # CoensioTrader1 V06 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 CoensioTrader1 V06 最初是一款 MetaTrader 专家顾问（EA），通过识别布林带假突破并结合趋势过滤进行交易。本次 StockSharp 迁移保留了核心形态逻辑，删除了与经纪商、DLL 授权及远程服务器通信相关的全部代码。策略仅针对单一品种与时间框架运行，依靠布林带与双指数移动平均线（DEMA）来捕捉趋势恢复。

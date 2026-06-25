@@ -1,4 +1,5 @@
 # Crossing of Two iMA v2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 中的 “Crossing of two iMA v2” 专家顾问迁移到 StockSharp 的高级 API。策略利用两条带位移的移动平均线产生交叉信号，并可选用第三条移动平均线作为趋势过滤。通过止损/止盈、防御性追踪止损以及固定或按风险百分比计算的持仓量，尽可能重现原始 EA 的行为，同时满足 StockSharp 的开发规范。

@@ -1,4 +1,5 @@
 # ADX Expert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ADX Expert Strategy** is a direct conversion of the original MetaTrader 4 expert advisor "ADX Expert" (MQL script 20315). The expert looks for crosses between the positive and negative Directional Index (DI) lines while the Average Directional Index (ADX) remains below a specified threshold, indicating that the market is ranging. Only one position can be open at a time, just like in the source expert.
