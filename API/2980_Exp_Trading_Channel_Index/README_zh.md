@@ -1,5 +1,5 @@
-
 # Exp Trading Channel Index 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MQL5 专家顾问 `Exp_Trading_Channel_Index` 移植到 StockSharp 框架。它跟踪 Trading Channel Index (TCI) 指标，这是一种经过波动性校准的动量指标，会根据数值相对于上下通道的位置将每个柱体着色为五种颜色之一。当历史柱体的颜色发生变化时，策略会在下一根柱体开盘处执行交易，从而完全复刻原始 EA 的行为。

@@ -1,4 +1,5 @@
 # Стратегия Russian20 Momentum MA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Russian20 Momentum MA** — это прямой порт оригинального советника MetaTrader 5 `Russian20-hp1.mq5`. Скрипт компании Gordago Software Corp. использует двухчасовые свечи, простое скользящее среднее с периодом 20 и индикатор Momentum с периодом 5 для отслеживания продолжения краткосрочного тренда. Версия для StockSharp сохраняет исходную логику анализа и адаптирует управление позициями под высокоуровневый API стратегий.

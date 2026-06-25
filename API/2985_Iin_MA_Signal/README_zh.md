@@ -1,4 +1,5 @@
 # Iin MA Signal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略完整复刻了经典的 **Iin MA Signal** MQL5 智能交易系统。它跟踪快慢均线的交叉情况，并按照 `SignalBar` 指定的历史K线索引触发信号，与原始程序通过 `CopyBuffer` 读取指标缓冲区的方式一致。当出现多头交叉时，策略可以开多并选择性平掉已有空单；出现空头交叉时则相反。此外，还可以利用 StockSharp 的仓位保护功能自动附加止损和止盈。

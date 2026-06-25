@@ -1,5 +1,5 @@
-
 # Стратегия Exp Trading Channel Index
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия представляет собой портирование советника MQL5 `Exp_Trading_Channel_Index` на платформу StockSharp. Она использует осциллятор Trading Channel Index (TCI), который измеряет положение цены относительно сглаженного канала и окрашивает бары в пять цветов. Сделки совершаются при изменении цвета на указанном историческом баре, что полностью повторяет оригинальную логику.

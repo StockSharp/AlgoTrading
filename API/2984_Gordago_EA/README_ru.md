@@ -1,5 +1,5 @@
 # Стратегия Gordago EA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт классического эксперта "Gordago EA" с платформы MetaTrader 5. Стратегия ведёт расчёт на базовом таймфрейме (по умолчанию M3), но подтверждает сигналы через MACD на старшем внутридневном графике и стохастик на часовом графике. Все изначальные параметры стопов, тейк-профитов и трейлинг-стопа сохранены, реализация построена на высокоуровневом API StockSharp.
 

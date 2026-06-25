@@ -1,4 +1,5 @@
 # Russian20 Momentum MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Russian20 Momentum MA Strategy** is a direct conversion of the MetaTrader 5 expert advisor `Russian20-hp1.mq5`. The original script was published by Gordago Software Corp. and relies on a two-hour chart, a 20-period simple moving average (SMA), and a 5-period Momentum indicator to identify short-term trend continuations. The StockSharp implementation keeps the same analytical core while adapting order handling and money management to the high-level strategy API.

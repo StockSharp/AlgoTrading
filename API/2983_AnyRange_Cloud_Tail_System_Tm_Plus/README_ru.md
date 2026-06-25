@@ -1,5 +1,5 @@
 # Стратегия AnyRange Cloud Tail System Tm Plus
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит логику эксперта **Exp_i-AnyRangeCldTail_System_Tm_Plus.mq5** в экосистему StockSharp. Она строит пользовательский внутридневной диапазон между двумя заданными моментами времени, отслеживает пробои этого диапазона и выставляет сделки через заданное число баров так, чтобы синхронизироваться с оригинальной MQL-реализацией.
 

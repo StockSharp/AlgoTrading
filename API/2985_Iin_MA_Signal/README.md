@@ -1,4 +1,5 @@
 # Iin MA Signal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the behaviour of the classic **Iin MA Signal** MQL5 expert advisor. It watches for a crossover between a fast and a slow moving average and reacts on the bar defined by the `SignalBar` parameter, just like the original template that polled the indicator buffers. Bullish crosses open long positions and optionally close existing shorts, while bearish crosses open shorts and optionally close longs. Stops and targets can be attached automatically through StockSharp position protection.

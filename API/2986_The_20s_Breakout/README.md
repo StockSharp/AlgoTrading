@@ -1,5 +1,5 @@
 # The 20s Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader expert advisor **Exp_The_20s_v020**. It reproduces the original "The 20s" indicator logic that searches for breakout patterns after a volatility squeeze. The algorithm analyses completed candles from a configurable timeframe and reacts when price pushes through 20% bands around the previous bar's range. The implementation keeps the high-level feel of the StockSharp API and exposes all trading permissions so you can enable or disable long or short actions independently.

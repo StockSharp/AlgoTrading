@@ -1,4 +1,5 @@
 # Russian20 动量均线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Russian20 动量均线策略** 直接改编自 MetaTrader 5 专家顾问 `Russian20-hp1.mq5`。原始脚本由 Gordago Software Corp. 发布，使用 2 小时图、20 周期简单移动平均线（SMA）和 5 周期动量指标来捕捉短期趋势延续。StockSharp 版本保留了相同的分析核心，同时将下单与风险控制迁移到高阶策略 API。

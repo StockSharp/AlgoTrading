@@ -1,4 +1,5 @@
 # 趋势线交叉提醒策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了原始 MetaTrader 专家顾问的行为：跟踪交易者在图表上绘制的水平线和趋势线，一旦价格在完成的 K 线中穿越了这些参考线，立即发送一次性提醒。策略默认不自动下单，重点在于帮助主观交易者监控关键区域。

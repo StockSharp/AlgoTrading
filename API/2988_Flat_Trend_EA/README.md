@@ -1,4 +1,5 @@
 # Flat Trend EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Flat Trend EA Strategy is a StockSharp port of the MQL5 expert advisor "Flat Trend EA". The algorithm combines the Parabolic SAR indicator with the Average Directional Index (ADX) to detect four market states: trending up, trending down, end of buy, and end of sell. The strategy reacts only to completed candles from the configured timeframe and mirrors the original logic of closing opposite positions before opening a new one.

@@ -1,4 +1,5 @@
 # Trendline Cross Alert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the behaviour of the original MetaTrader expert advisor that watched for price crossings of manually drawn horizontal lines and trendlines. It continuously monitors finished candles, checks whether the candle body straddled any registered level, and generates alerts the first time a crossing occurs. No automatic orders are submitted by default; the module focuses on tracking discretionary levels and informing the operator.

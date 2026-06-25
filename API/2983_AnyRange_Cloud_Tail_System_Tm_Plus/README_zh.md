@@ -1,5 +1,5 @@
 # AnyRange Cloud Tail System Tm Plus 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 中重现 **Exp_i-AnyRangeCldTail_System_Tm_Plus.mq5** 专家顾问的行为。它在两个自定义时间之间构建日内区间，等待价格突破该区间，然后按照与 MQL 原版相同的延迟逻辑（`SignalBar` 位移）在突破后的指定根 K 线执行订单。
 

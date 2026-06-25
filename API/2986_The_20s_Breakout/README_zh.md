@@ -1,5 +1,5 @@
 # The 20s Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问 **Exp_The_20s_v020** 的 C# 版本。它复现了“The 20s”指标寻找波动率压缩后突破的思路。算法只处理所选周期内已经收盘的 K 线，当价格穿越上一根 K 线 20% 区间时触发交易信号。实现完全使用 StockSharp 的高级 API，并允许分别开启或关闭多头/空头操作。

@@ -1,5 +1,5 @@
 # Renko 图表策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 `RenkoChartStrategy` 是对 **RenkoChart.mq5** 专家的转换版本。该策略不会发出订单，而是在 StockSharp 环境中

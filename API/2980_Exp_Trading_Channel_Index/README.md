@@ -1,5 +1,5 @@
-
 # Exp Trading Channel Index Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MQL5 expert advisor `Exp_Trading_Channel_Index`. It follows the Trading Channel Index (TCI) oscillator, a volatility-adjusted momentum indicator that colors each bar according to its position relative to two channel levels. The strategy reacts when the color assigned to a historical bar changes, mimicking the original expert advisor behaviour.

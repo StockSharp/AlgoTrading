@@ -1,5 +1,5 @@
 # 慢速随机指标多模式策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Slow Stochastic Mode Strategy** 将 MetaTrader 专家顾问 `Exp_Slow-Stoch.mq5` 移植到 StockSharp 高层 API。策略仅在蜡烛完全收盘后计算，并使用经过额外平滑的随机振荡器来识别趋势状态的变化。交易者可以在三种信号模式之间切换，以响应阈值突破、动量拐点或线条交叉。
 

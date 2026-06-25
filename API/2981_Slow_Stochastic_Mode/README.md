@@ -1,5 +1,5 @@
 # Slow Stochastic Mode Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Slow Stochastic Mode Strategy** is a conversion of the MetaTrader expert advisor `Exp_Slow-Stoch.mq5` to the StockSharp high-level API. The system trades on the closing price of finished candles and uses a smoothed stochastic oscillator to detect regime changes. Three distinct signal modes are available so the trader can decide whether to react to level breaks, momentum twists, or line crossings.
 

@@ -1,5 +1,5 @@
 # Gordago EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是对 MetaTrader 5 中经典的 “Gordago EA” 专家的移植版本。策略在基础周期（默认 3 分钟）上执行交易，同时在更高周期上读取 MACD（默认 12 分钟）和随机指标（默认 1 小时）作为过滤条件。所有原始的止损/止盈和跟踪止损设定都被保留，并使用 StockSharp 的高级 API 完成订阅与下单。
 

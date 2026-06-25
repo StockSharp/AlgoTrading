@@ -1,4 +1,5 @@
 # Flat Trend EA策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Flat Trend EA策略是将MQL5专家顾问“Flat Trend EA”移植到StockSharp平台的版本。策略结合Parabolic SAR与平均趋向指数（ADX），划分出四种市场状态：多头趋势、空头趋势、多头结束以及空头结束。算法仅在指定周期的收盘K线上计算，并严格遵循原始EA的流程——在开新仓之前先平掉所有反向仓位。
