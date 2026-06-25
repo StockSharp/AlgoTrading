@@ -1,5 +1,5 @@
 # Simple Pivot 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻自 MetaTrader 5 专家顾问 “SimplePivot”。它持续比较当前 K 线的开盘价与上一根 K 线的枢轴价，总是保持单向持仓。
 当方向改变时，策略会先平掉当前仓位，然后立刻在反向建立新的头寸。

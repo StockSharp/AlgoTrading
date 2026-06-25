@@ -1,4 +1,5 @@
 # Стратегия ColorX2MA Digit NN3 MMRec
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 - Переносит советник на основе индикатора ColorX2MA Digit с тремя таймфреймами.

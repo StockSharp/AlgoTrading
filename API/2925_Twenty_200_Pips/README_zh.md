@@ -1,4 +1,5 @@
 # Twenty 200 Pips 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MQL5 顾问 **20/200 pips** 的思想。它分析小时K线，并比较两个历史开盘价

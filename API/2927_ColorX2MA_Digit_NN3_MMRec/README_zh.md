@@ -1,4 +1,5 @@
 # ColorX2MA Digit NN3 MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 复现基于 ColorX2MA Digit 指标的三周期专家策略。

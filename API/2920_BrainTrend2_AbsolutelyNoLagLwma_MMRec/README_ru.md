@@ -1,4 +1,5 @@
 # Стратегия BrainTrend2 + AbsolutelyNoLagLWMA MMRec
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия воспроизводит советник MetaTrader `Exp_BrainTrend2_AbsolutelyNoLagLwma_MMRec`, объединяя два блока сигналов: трендовый блок BrainTrend2 и адаптивный фильтр AbsolutelyNoLagLWMA. Каждый блок может открывать и закрывать позиции в соответствии со своими разрешениями, как в MMRec-шаблоне оригинала. Заявки исполняются рыночными ордерами через высокоуровневый API StockSharp с настраиваемым объёмом.

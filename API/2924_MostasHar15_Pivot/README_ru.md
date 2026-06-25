@@ -1,4 +1,5 @@
 # Стратегия MostasHaR15 Pivot
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия переносит логику оригинального советника **MostasHaR15 Pivot** (MQL5) на высокоуровневый API StockSharp. Используются дневные уровни floor-pivot, индикатор ADX, разница двух EMA и гистограмма MACD (OsMA). Торговля ведётся по внутридневным свечам (по умолчанию 1 час), а для каждой новой свечи пересчитывается сетка из предыдущей завершённой дневной свечи.

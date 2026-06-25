@@ -1,4 +1,5 @@
 # MostasHaR15 枢轴策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 高层 API 上重现了原始 **MostasHaR15 Pivot** MQL5 智能交易系统的逻辑。策略结合了上一交易日的地板枢轴线、ADX 趋势强度、EMA 差值以及 MACD 直方图（OsMA）过滤器。默认情况下使用 1 小时 K 线进行交易，同时在每根 K 线收盘时读取上一根完成的日线来重新构建枢轴网格。

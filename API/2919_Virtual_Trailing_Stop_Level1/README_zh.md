@@ -1,4 +1,5 @@
 # 虚拟移动止损 Level1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **虚拟移动止损策略** 是 MetaTrader 专家顾问 `Virtual Trailing Stop.mq5`（MQL ID 21362）的 C# 版本。原始 EA 只负责管理已经存在的仓位的止损与止盈。本策略在 StockSharp 高级 API 上重现了同样的逻辑：实时监听买一/卖一价格，并在触发止损、止盈或追踪止损条件时通过市价单平仓。

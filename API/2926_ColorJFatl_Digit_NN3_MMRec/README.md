@@ -1,4 +1,5 @@
 # ColorJFatl Digit NN3 MMRec Strategy (StockSharp Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp high-level port of the MetaTrader 5 expert *Exp_ColorJFatl_Digit_NN3_MMRec*. The original robot used a custom ColorJFatl_Digit indicator together with money-management recovery rules. The StockSharp version focuses on the core signal engine and expresses it through three independent modules working on different timeframes.
 

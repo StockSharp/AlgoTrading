@@ -1,4 +1,5 @@
 # Arttrader v1.5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Arttrader v1.5 strategy is a trend-following system converted from the original MetaTrader 5 expert advisor. It combines a higher timeframe exponential moving average (EMA) slope filter with a short-term price action entry model. The StockSharp version keeps the risk management behaviour of the source code, including the strict handling of large candle gaps, time windows for orders, and emergency exits based on price distance.

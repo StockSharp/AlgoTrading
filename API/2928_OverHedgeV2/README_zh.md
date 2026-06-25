@@ -1,5 +1,5 @@
 # OverHedge V2 网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 上复刻了 MetaTrader 的 OverHedge V2 智能交易系统。策略先使用快、慢 EMA 判断方向，然后在动态隧道内交替开仓，构建对冲网格。每次加仓按几何级数放大手数，当整篮头寸的浮动利润达到设定目标后统一平仓。
 

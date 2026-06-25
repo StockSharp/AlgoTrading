@@ -1,4 +1,5 @@
 # MostasHaR15 Pivot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the behaviour of the original **MostasHaR15 Pivot** MQL5 Expert Advisor using StockSharp's high level API. It combines classic daily floor-pivot calculations with momentum filters from ADX, EMA differentials and the MACD histogram (OsMA). The strategy operates on an intraday candle stream (1 hour by default) and consumes the previous completed daily candle to rebuild the pivot map on every bar.

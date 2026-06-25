@@ -1,4 +1,5 @@
 # BrainTrend2 + AbsolutelyNoLagLWMA MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略重现 MetaTrader 智能交易系统 `Exp_BrainTrend2_AbsolutelyNoLagLwma_MMRec`，将 BrainTrend2 趋势模块与 AbsolutelyNoLagLWMA 自适应滤波器结合在一起。两个模块都可以根据各自的权限独立开仓或平仓，从而模拟原始 MMRec 模板中的风险控制。下单通过 StockSharp 的高级 API 以市价单执行，并可设置默认交易数量。

@@ -1,4 +1,5 @@
 # BrainTrend2 + AbsolutelyNoLagLWMA MMRec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy re-creates the MetaTrader expert `Exp_BrainTrend2_AbsolutelyNoLagLwma_MMRec` by combining two independent signal blocks: the BrainTrend2 trend-following engine and the AbsolutelyNoLagLWMA adaptive filter. Each block can open and close trades according to its own permissions, mimicking the money-management switches of the original MMRec template. Orders are executed with the StockSharp high-level API using market executions and the configurable default volume.

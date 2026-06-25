@@ -1,4 +1,5 @@
 # CloseProfit V2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 CloseProfit V2 replicates the behaviour of the original MetaTrader utility that force-closes all active trading exposure once a configurable profit or loss threshold is reached. The StockSharp port acts as an account-protection module: it monitors floating PnL on every completed candle and, when limits are exceeded, cancels outstanding orders and liquidates positions. The strategy is designed to run alongside discretionary or automated entries that rely on the same portfolio.

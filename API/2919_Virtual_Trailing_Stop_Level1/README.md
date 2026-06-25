@@ -1,4 +1,5 @@
 # Virtual Trailing Stop Level1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Virtual Trailing Stop Strategy** is a direct conversion of the MetaTrader expert advisor `Virtual Trailing Stop.mq5` (MQL ID 21362). The original expert only manages protective stops for positions that were opened elsewhere. This C# port reproduces the same behaviour on top of the StockSharp high-level API: it watches the best bid/ask quotes and closes the current position when stop-loss, take-profit or trailing-stop conditions are met.

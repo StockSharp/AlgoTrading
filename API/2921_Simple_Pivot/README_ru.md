@@ -1,5 +1,5 @@
 # Стратегия Simple Pivot
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия повторяет эксперта MetaTrader 5 «SimplePivot». Она постоянно сравнивает цену открытия текущей свечи с пивотом
 предыдущей свечи и всегда держит позицию в одном направлении. Когда направление меняется, стратегия закрывает текущую позицию и

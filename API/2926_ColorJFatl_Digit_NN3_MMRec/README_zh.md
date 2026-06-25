@@ -1,4 +1,5 @@
 # ColorJFatl Digit NN3 MMRec 策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 5 专家顾问 *Exp_ColorJFatl_Digit_NN3_MMRec* 的 StockSharp 高级 API 迁移版。原始脚本依赖自定义的 ColorJFatl_Digit 指标和复杂的补仓管理。本版本保留信号引擎，将其拆分为三个在不同周期运行的模块。
 

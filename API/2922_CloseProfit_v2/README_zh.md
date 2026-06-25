@@ -1,4 +1,5 @@
 # CloseProfit V2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 CloseProfit V2 复刻了原始 MetaTrader 工具的功能：当未平仓浮动盈亏到达预设的利润或亏损阈值时，强制平掉所有仓位。移植到 StockSharp 后，它扮演账户保护模块的角色——在每根完成的K线上评估浮动盈亏，一旦超出限制，就会撤销所有挂单并平仓。该策略不会自行开仓，可与其他依赖同一资金账户的手动或自动策略并行运行。

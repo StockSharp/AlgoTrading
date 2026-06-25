@@ -1,5 +1,5 @@
 # OverHedge V2 Grid Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the MetaTrader OverHedge V2 expert advisor on the StockSharp high-level API. It builds a hedged grid by following the direction of a fast and a slow EMA, then alternates long and short orders inside a dynamic tunnel. Positions are added according to a geometric lot progression and the whole basket is liquidated once the aggregated unrealized profit reaches the configured target.
 

@@ -1,4 +1,5 @@
 # Arttrader v1.5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Arttrader v1.5 策略来源于 MetaTrader 5 平台的同名专家顾问，属于趋势跟随型系统。它使用较高周期的指数移动平均线（EMA）斜率作为方向滤波，同时结合短周期 K 线的价格形态与时间过滤器。移植到 StockSharp 后，策略保留了原始版本的风险控制行为，包括对异常跳空的严格检查、进出场时间窗口以及基于价格距离的紧急离场机制。
