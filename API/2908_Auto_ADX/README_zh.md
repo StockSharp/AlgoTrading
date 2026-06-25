@@ -1,4 +1,5 @@
 # Auto ADX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Auto ADX 策略** 是将 MetaTrader 专家顾问 `Auto ADX.mq5` 移植到 StockSharp 高级 API 的版本。策略基于平均趋向指数（ADX）及其 +DI/-DI 分量来判断趋势方向，同时保留原有的止损、止盈、反向平仓以及按点数计算的移动止损机制，并使用 StockSharp 的蜡烛订阅与指标绑定框架。

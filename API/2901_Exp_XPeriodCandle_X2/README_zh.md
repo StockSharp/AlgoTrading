@@ -1,4 +1,5 @@
 # Exp XPeriod Candle X2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp XPeriod Candle X2 在 StockSharp 高级 API 上复刻了原始的 MetaTrader 专家顾问。策略在两个时间框架上构建平滑的合成蜡烛，并将指定周期内的延迟开盘价与最新的平滑收盘价进行比较。较高时间框架的蜡烛颜色定义趋势方向，工作时间框架等待颜色翻转触发进出场信号。可选的止损和止盈参数与原始脚本的资金管理设定保持一致。

@@ -1,5 +1,5 @@
 # Alexav D1 Profit GBPUSD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于日线级别的 GBP/USD 突破策略，结合高价 EMA、RSI 滤波、MACD 动量确认以及 ATR 风险管理。此实现完整复刻了原始 MetaTrader 版本的四层分批止盈与保本移动规则。
 

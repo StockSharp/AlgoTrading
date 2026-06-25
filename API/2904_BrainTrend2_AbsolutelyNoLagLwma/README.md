@@ -1,4 +1,5 @@
 # BrainTrend2 + AbsolutelyNoLagLWMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy combines two independent modules that were originally implemented in MetaTrader 5: BrainTrend2_V2 and AbsolutelyNoLagLWMA. Each module analyses its own candle subscription and decides when to go long, go short or return to flat. The C# port keeps both decision flows intact and aggregates their desired exposure into a single StockSharp strategy.

@@ -1,4 +1,5 @@
 # Exp XPeriod Candle X2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Exp XPeriod Candle X2 recreates the original MetaTrader expert using StockSharp's high-level API. The strategy builds synthetic candles on two timeframes by smoothing each bar and comparing the delayed open of a configurable lookback window with the latest smoothed close. The higher timeframe candle color defines the trend bias, while the working timeframe waits for color transitions to trigger entries and exits. Optional stop-loss and take-profit protections replicate the money-management inputs from the source code.

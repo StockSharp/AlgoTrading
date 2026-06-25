@@ -1,4 +1,5 @@
 # Candle Shadows V1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Candle Shadows V1 is a price action reversal strategy that recreates the original MetaTrader expert advisor logic inside the StockSharp high-level API. The system looks for candles with a strong dominant wick and minimal opposite shadow during a configurable trading session. Trades are only allowed during the first minutes of a bar, emulating the intrabar execution of the MQL version while still working on closed candles.

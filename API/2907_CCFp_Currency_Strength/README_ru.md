@@ -1,4 +1,5 @@
 # Стратегия CCFp Currencies Strength
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия переносит классический советник CCFp из MetaTrader на высокоуровневый API StockSharp. Для каждой из восьми основных валют (USD, EUR, GBP, CHF, JPY, AUD, CAD, NZD) вычисляется показатель относительной силы на основе отношения быстрого и медленного простого скользящего среднего по семи основным парам с долларом США (EURUSD, GBPUSD, AUDUSD, NZDUSD, USDCAD, USDCHF, USDJPY). Когда разница между силой двух валют превышает заданный порог, стратегия открывает рыночные позиции, выражающие силу одной валюты против слабости другой.

@@ -1,4 +1,5 @@
 # Стратегия BrainTrend2 + AbsolutelyNoLagLWMA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия переносит два советника из MetaTrader 5 — BrainTrend2_V2 и AbsolutelyNoLagLWMA. Каждый модуль подписывается на собственные свечи, самостоятельно определяет направление и формирует желаемый объем. В версии для StockSharp оба потока решений сохранены, а итоговая позиция рассчитывается как сумма целей двух модулей.

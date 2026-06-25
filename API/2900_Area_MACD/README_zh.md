@@ -1,4 +1,5 @@
 # 区域MACD策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 区域MACD策略通过比较MACD主线在一定历史窗口内的正负面积来判断市场多空优势。策略会累积所有为正的MACD数值以及所有为负数值的绝对值之和，并根据哪一侧更大来决定做多或做空。同时提供反向开关，可在需要时反向交易。

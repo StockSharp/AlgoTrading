@@ -1,5 +1,5 @@
 # Стратегия Alexav D1 Profit GBPUSD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Дневная стратегия по GBP/USD, сочетающая EMA по максимумам свечи, фильтр RSI, подтверждение импульса MACD и управление риском через ATR. Реализация повторяет оригинальный советник MetaTrader с четырьмя частичными фиксингами прибыли и переводом стопа в безубыток.
 

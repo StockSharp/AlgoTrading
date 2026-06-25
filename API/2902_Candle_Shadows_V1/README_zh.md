@@ -1,4 +1,5 @@
 # 蜡烛影线 V1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Candle Shadows V1 是一套价格行为反转策略，将原始 MetaTrader 专家顾问的思路迁移到 StockSharp 高层 API。策略在设定的交易时段内寻找主体影线明显、反向影线极短的蜡烛形态，并只允许在每根 K 线开盘后的前几分钟内入场，以此模拟 MQL 版本的盘中触发方式，同时仍然依赖已完成的蜡烛。

@@ -1,4 +1,5 @@
 # Auto ADX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Auto ADX Strategy** is a direct port of the MetaTrader expert advisor `Auto ADX.mq5` into the StockSharp high-level API. The strategy evaluates Average Directional Index (ADX) strength and the relation between the +DI and -DI components to determine trade direction. It reproduces the original risk controls, including stop-loss, take-profit, reversible signals, and pip-based trailing stops, while adopting StockSharp concepts such as candle subscriptions and indicator bindings.

@@ -1,4 +1,5 @@
 # Area MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Area MACD Strategy evaluates the balance between bullish and bearish momentum using the MACD main line. For every candle the strategy accumulates the sum of all positive MACD values and the absolute sum of all negative MACD values over a configurable history window. The dominant side defines the trading direction: a stronger positive area favours long positions, while a stronger negative area favours short exposure. A reverse switch allows trading against the detected trend when required.

@@ -1,5 +1,5 @@
 # BykovTrend + ColorX2MA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 BykovTrend V2 颜色趋势指标与 ColorX2MA 双重平滑均线斜率过滤器组合在一起。两个模块在同一交易品种上独立生成信号，最终仓位反映了二者的综合意见。
 

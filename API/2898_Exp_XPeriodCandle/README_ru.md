@@ -1,4 +1,5 @@
 # Стратегия Exp XPeriod Candle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой порт MQL5-советника `Exp_XPeriodCandle` на платформу StockSharp. Индикатор XPeriodCandle пересобран средствами высокоуровневого API, а входы и выходы строятся на смене "цвета" свечей.
 

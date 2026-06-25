@@ -1,4 +1,5 @@
 # Exp XPeriod Candle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 专家顾问 `Exp_XPeriodCandle` 的 StockSharp 版本。它在高层 API 中重建了自定义的 XPeriodCandle 指标，通过蜡烛颜色的变化来决定开平仓。
 

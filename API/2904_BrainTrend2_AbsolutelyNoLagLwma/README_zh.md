@@ -1,4 +1,5 @@
 # BrainTrend2 + AbsolutelyNoLagLWMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略结合了最初在 MetaTrader 5 中实现的 BrainTrend2_V2 和 AbsolutelyNoLagLWMA 两个独立模块。每个模块都订阅各自的K线数据，独立判断多头、空头或观望状态。C# 版本完整保留了这两套决策流程，并在 StockSharp 中把它们的目标仓位汇总成一个组合头寸。

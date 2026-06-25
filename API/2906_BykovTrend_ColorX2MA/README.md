@@ -1,5 +1,5 @@
 # BykovTrend + ColorX2MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy combines the BykovTrend V2 color trend indicator with the ColorX2MA double-smoothed moving average slope filter. Both logic blocks operate on the same symbol and can issue orders independently, which allows the net position to reflect the latest agreement between the two signal sources.
 

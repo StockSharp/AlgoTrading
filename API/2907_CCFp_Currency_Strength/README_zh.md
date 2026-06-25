@@ -1,4 +1,5 @@
 # CCFp 货币强弱策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略把经典的 MetaTrader CCFp 专家顾问迁移到 StockSharp 的高级 API。它使用七个与美元相关的主要货币对（EURUSD、GBPUSD、AUDUSD、NZDUSD、USDCAD、USDCHF、USDJPY）的快慢简单移动平均线之比，计算八种主要货币（USD、EUR、GBP、CHF、JPY、AUD、CAD、NZD）的相对强弱。当两种货币的强弱差值向上突破设定阈值时，策略会建立多空组合，买入更强的货币、卖出更弱的货币。
