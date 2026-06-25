@@ -1,5 +1,5 @@
 # 20 Pips Opposite Last N Hour Trend Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy is a high-level port of the MetaTrader Expert Advisor
 **"20 Pips Opposite Last N Hour Trend"**. It observes hourly candles, gauges

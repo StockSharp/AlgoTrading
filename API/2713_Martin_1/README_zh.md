@@ -1,5 +1,5 @@
 # Martin 1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 5 的 "Martin 1" 智能交易程序移植到 StockSharp 高级策略 API。算法始终保持持仓，通过对冲式马丁格尔步骤在回撤中对冲，同时在顺势行情中做金字塔加仓。
 

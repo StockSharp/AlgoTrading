@@ -1,4 +1,5 @@
 # GreenTrade Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The GreenTrade strategy is a conversion of the original MQL5 expert advisor. It follows medium-term trends by combining a smoothed moving average (SMMA) slope filter with momentum confirmation from the Relative Strength Index (RSI). Signals are calculated on completed candles of the configured timeframe, and the strategy can pyramid up to a configurable number of position units while applying fixed risk controls and a step-based trailing stop.

@@ -1,4 +1,5 @@
 # Daily BreakPoint 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Daily BreakPoint Strategy** 是将 MetaTrader 5 专家顾问 “Daily BreakPoint”（构建号 19498）迁移到 StockSharp 的版本。策略关注当前价格与当日开盘价之间的距离。当价格偏离开盘价超过可配置阈值，并且上一根 K 线的实体满足设定的范围时，系统会按照 `CloseBySignal` 参数的设置选择顺势建仓或直接反向开仓。

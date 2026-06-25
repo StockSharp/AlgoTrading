@@ -1,5 +1,5 @@
 # Bollinger Bands RSI Zones 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略源自 MetaTrader 顾问 “Bollinger Bands RSI”。使用相同周期但不同标准差的三组布林带：黄色带为基准，蓝色带的偏差缩小一半，红色带的偏差扩大一倍。价格回落到指定区域时触发交易，并可叠加 RSI 与随机指标过滤器。
 

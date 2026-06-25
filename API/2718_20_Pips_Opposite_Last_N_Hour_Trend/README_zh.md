@@ -1,5 +1,5 @@
 # 20 Pips Opposite Last N Hour Trend 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 顾问 **“20 Pips Opposite Last N Hour Trend”** 的 StockSharp
 高阶移植版本。系统在每根小时 K 线收盘后记录价格，并在设定交易小时结束

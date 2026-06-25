@@ -1,4 +1,5 @@
 # KDJ Expert Advisor Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader 5 "KDJ Expert Advisor" by senlin ge. It trades a single symbol using signals from the KDJ oscillator, an evolution of the stochastic oscillator where the %K line is smoothed twice. The strategy observes the difference between the %K and %D lines (often called the J line) to identify momentum reversals, opening only one position at a time. Trade management mirrors the original expert advisor: each trade immediately receives a fixed stop-loss and take-profit that are expressed in pips and translated into price distance using the instrument settings.

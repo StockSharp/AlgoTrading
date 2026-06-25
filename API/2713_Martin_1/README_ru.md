@@ -1,5 +1,5 @@
 # Стратегия Martin 1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация советника MetaTrader 5 «Martin 1» на высокоуровневый API StockSharp. Алгоритм постоянно поддерживает позицию и использует хеджирующие мартингейл-шаги для выхода из просадок, одновременно наращивая прибыльные тренды пирамидингом.
 

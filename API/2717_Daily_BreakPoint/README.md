@@ -1,4 +1,5 @@
 # Daily BreakPoint Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Daily BreakPoint Strategy** is a StockSharp port of the MetaTrader 5 expert advisor "Daily BreakPoint" (build 19498). The algorithm monitors the distance between the current price and the daily open. When the move from the daily open exceeds a configurable threshold and the previous candle meets strict body-size requirements, the strategy either enters in the direction of the breakout or reverses the existing exposure depending on the `CloseBySignal` flag.

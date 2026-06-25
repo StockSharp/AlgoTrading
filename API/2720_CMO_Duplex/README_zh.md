@@ -1,5 +1,5 @@
 # CMO Duplex 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 5 专家顾问 `Exp_CMO_Duplex.mq5` 在 StockSharp 平台上的移植版本。策略被划分为彼此独立的多头
 和空头两条“腿”，它们都基于 Chande 动量振荡指标（CMO）穿越零轴的行为做出决策。每条腿都可以订阅不同的蜡烛

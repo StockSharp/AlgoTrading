@@ -1,5 +1,5 @@
 # Bollinger Bands RSI Zones Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A multi-band Bollinger breakout system converted from the "Bollinger Bands RSI" MetaTrader expert advisor. The strategy derives three Bollinger envelopes with identical periods but different deviations to create "yellow", "blue", and "red" bands. Orders are triggered when price revisits configurable zones around these bands, optionally confirmed by RSI and Stochastic filters.
 

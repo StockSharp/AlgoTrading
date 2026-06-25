@@ -1,4 +1,5 @@
 # KDJ 指标专家策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 senlin ge 开发的 MetaTrader 5 “KDJ Expert Advisor”。它围绕 KDJ 振荡指标运行，这是一种在传统随机指标基础上加入两次平滑处理的扩展。策略只针对单个品种交易，当检测到 %K 与 %D 线的差值（即原始 EA 中的 KDC/J 线）出现动量反转时才会入场。每次建仓都会立即分配一个以点（pip）为单位的固定止损和止盈，这些距离会根据证券的价格步长自动折算成绝对价格。

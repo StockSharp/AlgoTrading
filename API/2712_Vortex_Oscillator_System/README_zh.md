@@ -1,4 +1,5 @@
 # Vortex Oscillator System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Vortex Oscillator System 是从 MetaTrader 5 专家顾问直接移植的策略，核心是 Vortex 振荡指标。该指标取正向 Vortex 线（VI+）与负向 Vortex 线（VI-）的差值，基于选定的 K 线序列计算。当振荡器数值大幅为负时，说明 VI- 强于 VI+；当数值显著为正时，则代表 VI+ 占据主导。策略把这些极值视为可能的拐点，通过振荡器阈值产生反转式入场，并利用同样的阈值完成止损或止盈。

@@ -1,5 +1,5 @@
 # Billy Expert Pullback Buyer
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Billy Expert 是从 MetaTrader 5 专家顾问“Billy expert”移植而来的只做多回调策略。策略在基础周期上等待四根开盘价和最高价都持续下行的 K 线序列，然后在两个更高周期上的随机指标中寻找多头确认。当两个随机指标都显示动能转强时，系统在不超过最大持仓数的前提下加仓做多。

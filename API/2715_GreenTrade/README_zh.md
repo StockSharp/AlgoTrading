@@ -1,4 +1,5 @@
 # GreenTrade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 GreenTrade 是原始 MQL5 专家顾问的移植版本。策略通过结合平滑移动平均线（SMMA）的斜率过滤器和相对强弱指数（RSI）的动量确认来捕捉中期趋势。信号只在所选时间框架的已收盘 K 线中计算，并且允许在达到上限之前分批加仓，同时使用固定的风险参数和分步式追踪止损。

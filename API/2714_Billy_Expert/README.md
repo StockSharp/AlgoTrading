@@ -1,5 +1,5 @@
 # Billy Expert Pullback Buyer
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Billy Expert is a long-only pullback strategy converted from the MetaTrader 5 Expert Advisor "Billy expert". It waits for a sequence of falling highs and opens on the base timeframe, then checks bullish confirmations from two Stochastic oscillators calculated on different higher timeframes. When both oscillators agree that upside momentum is present, the system adds a new long position, up to a configurable limit.

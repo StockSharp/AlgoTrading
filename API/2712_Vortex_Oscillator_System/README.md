@@ -1,4 +1,5 @@
 # Vortex Oscillator System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Vortex Oscillator System is a direct port of the MetaTrader 5 expert advisor that relies on the Vortex Oscillator to capture sharp shifts between positive and negative directional movement. The oscillator is constructed as the spread between the Vortex positive line (VI+) and the Vortex negative line (VI-) calculated on the selected candle series. Deep negative readings indicate that VI- dominates VI+, while strong positive values show VI+ leadership. The strategy interprets those extremes as potential inflection zones and reacts with mean-reversion style entries backed by oscillator-driven exits.
