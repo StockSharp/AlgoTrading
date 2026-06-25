@@ -1,4 +1,5 @@
 # Стратегия E-News Lucky
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **E-News Lucky** — порт советника MetaTrader `e-News-Lucky` на платформу StockSharp. Стратегия автоматизирует классический новостной пробой:

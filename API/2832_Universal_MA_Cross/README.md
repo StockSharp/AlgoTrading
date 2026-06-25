@@ -1,4 +1,5 @@
 # Universal MA Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Universal MA Cross Strategy** is a direct conversion of the original MQL5 expert advisor "UniversalMACrossEA" into the StockSharp high-level strategy framework. The algorithm compares a fast and a slow moving average that can be configured with different calculation methods and price sources. Optional filters control how signals are confirmed, whether trades are reversed immediately, how risk management is performed and when the strategy is allowed to trade.

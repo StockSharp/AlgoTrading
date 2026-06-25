@@ -1,5 +1,5 @@
 # Amstell 网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Amstell 网格策略是 MetaTrader 5 专家顾问 `exp_Amstell.mq5` 的 C# 版本，专门为 StockSharp 平台编写。策略构建对称的买入/卖出网格，并为每个仓位应用虚拟止盈。实现完全遵循 AGENTS.md 的要求，使用蜡烛数据替代 MT5 中的 `OnTick`，同时保持原始交易思路。
 

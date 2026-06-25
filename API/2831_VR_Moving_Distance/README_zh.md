@@ -1,5 +1,5 @@
 # VR Moving Distance 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该 StockSharp 策略复刻了 MetaTrader 5 的 VR-Moving 智能交易程序。策略监控一条可配置的均线，当价格偏离均线达到设定点差时触发交易。它可以通过放大追加订单的基础手数来加仓趋势，并在只持有一笔仓位时使用简单的止盈逻辑。
 

@@ -1,4 +1,5 @@
 # Exp Sar Tm Plus Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Высокоуровневый порт эксперта **Exp_Sar_Tm_Plus** на платформу StockSharp. Стратегия отслеживает развороты Parabolic SAR на настраиваемом таймфрейме и повторяет оригинальные механизмы управления позицией и тайм-аутами, сохраняя совместимость с высокоуровневым API StockSharp.
 

@@ -1,5 +1,5 @@
 # VR Moving Distance Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy replicates the VR-Moving expert advisor from MetaTrader 5. It watches a configurable moving average and reacts when price drifts beyond a fixed pip distance. The algorithm can scale into trends by multiplying the base order volume for follow-up trades and applies simple take-profit logic while only one position is open.
 

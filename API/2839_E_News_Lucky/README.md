@@ -1,4 +1,5 @@
 # E-News Lucky Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **E-News Lucky Strategy** is a StockSharp port of the MetaTrader expert advisor `e-News-Lucky`. The system automates the classic news breakout approach:

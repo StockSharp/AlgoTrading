@@ -1,4 +1,5 @@
 # Timed Buy Order Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Timed Buy Order Strategy** replicates the MetaTrader expert advisor `buy_order.mq4`, which submits a stream of market buy orders driven by a one-second timer. The StockSharp port keeps the same trading rhythm: it waits until the timer aligns with the expected second within the current minute and then pushes the next order. After a pre-defined number of fills the strategy stops itself automatically.

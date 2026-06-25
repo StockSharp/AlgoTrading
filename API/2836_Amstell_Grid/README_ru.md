@@ -1,5 +1,5 @@
 # Сетка Amstell
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Amstell Grid — это порт эксперт-советника MetaTrader 5 `exp_Amstell.mq5` на C# под экосистему StockSharp. Она строит симметричную сетку из покупок и продаж и использует виртуальный тейк-профит для закрытия отдельных позиций. Реализация выполнена в соответствии с рекомендациями AGENTS.md и использует высокоуровневые подписки на свечи вместо тиковой функции `OnTick`, сохраняя при этом исходную торговую идею.
 

@@ -1,4 +1,5 @@
 # 定时买入策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **定时买入策略** 复刻了 MetaTrader 专家顾问 `buy_order.mq4` 的行为：通过 1 秒计时器连续发送市价买单。StockSharp 版本完全保留了这种节奏——它等待计时器与当前分钟内的预期秒数对齐后才提交下一笔订单，并在达到指定的订单数量后自动停止。

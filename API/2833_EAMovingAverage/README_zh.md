@@ -1,4 +1,5 @@
 # EA Moving Average 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 由 MetaTrader 专家顾问 **“EA Moving Average”**（barabashkakvn 版）移植而来。

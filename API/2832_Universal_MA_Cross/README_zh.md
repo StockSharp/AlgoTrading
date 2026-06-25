@@ -1,4 +1,5 @@
 # Universal MA Cross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Universal MA Cross Strategy** 将原始的 MQL5 专家顾问 “UniversalMACrossEA” 移植到 StockSharp 的高级策略框架。该策略比较一条快速与一条慢速移动平均线，并允许为每条均线分别设置周期、平滑方法和价格类型。附加参数可控制信号确认方式、是否立即反向、风险管理以及允许交易的时间窗口。

@@ -1,4 +1,5 @@
 # Breakeven Trailing Stop Tick 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 根据 MetaTrader 专家顾问 `e_Breakeven_v4` 改写的基于 tick 的追踪止损管理器。

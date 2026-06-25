@@ -1,4 +1,5 @@
 # Breakeven Trailing Stop Tick Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 - Tick-based trailing stop manager converted from the MetaTrader expert advisor `e_Breakeven_v4`.

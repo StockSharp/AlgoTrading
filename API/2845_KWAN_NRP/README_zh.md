@@ -1,4 +1,5 @@
 # Exp KWAN NRP 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp KWAN NRP 策略通过将随机指标、相对强弱指数和动量指标组合成一个比率来复刻原版 MetaTrader 专家顾问。该比率再通过可配置的移动平均线进行平滑，平滑线的斜率决定何时开仓或平仓。策略适用于任意品种和周期，专注在动量发生拐点时捕捉方向性机会。

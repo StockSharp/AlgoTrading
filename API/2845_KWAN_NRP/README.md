@@ -1,4 +1,5 @@
 # Exp KWAN NRP Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Exp KWAN NRP strategy reproduces the original MetaTrader expert advisor by combining a stochastic oscillator, relative strength index, and momentum indicator into a single ratio. The ratio is smoothed with a configurable moving average, and the slope of the smoothed line determines when to open or close positions. The approach works on any symbol or timeframe and is designed for directional trading when momentum shifts.
