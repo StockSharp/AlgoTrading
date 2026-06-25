@@ -1,4 +1,5 @@
 # ATR Normalize Histogram 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ATR Normalize Histogram 策略在 StockSharp 中还原了 MetaTrader 专家顾问 *Exp_ATR_Normalize_Histogram* 的逻辑。系统跟踪经平滑处理的收盘价到最低价差与经平滑处理的真实波动区间的比值。当指标颜色发生变化时触发入场或出场，这与原始 MQL5 程序的多缓冲区实现保持一致。

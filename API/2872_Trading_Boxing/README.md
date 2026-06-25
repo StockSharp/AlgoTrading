@@ -1,4 +1,5 @@
 # Trading Boxing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Trading Boxing Strategy recreates the manual order management panel from the original TradingBoxing expert advisor. Instead of on-chart buttons the StockSharp version exposes parameters that can be toggled from the strategy UI or automation. Each toggle immediately performs the requested action and then resets itself, giving you a convenient control surface for market entries, pending order placement and existing position cleanup.

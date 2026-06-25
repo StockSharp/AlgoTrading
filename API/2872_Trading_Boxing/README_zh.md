@@ -1,4 +1,5 @@
 # Trading Boxing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Trading Boxing 策略复刻了原始 TradingBoxing 专家顾问的手动交易面板。StockSharp 版本不再提供图表按钮，而是通过参数开关来触发行为。每个开关被设置为 `true` 后立即执行相应动作，并在同一周期内自动复位，使得手动开仓、挂单管理以及已有仓位的清理更加方便。

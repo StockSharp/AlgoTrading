@@ -1,4 +1,5 @@
 # Deep Drawdown MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Deep Drawdown MA 策略是将 MetaTrader 5 专家顾问“Deep Drawdown MA (barabashkakvn's edition)”直接移植到 StockSharp 高阶 API 的结果。策略利用两条可配置的移动平均线寻找趋势交叉，同时在出现深度回撤时触发保本机制。所有关键参数（移动平均期数、价格类型、历史偏移、持仓上限以及亏损处理方式）均按照原始脚本实现。

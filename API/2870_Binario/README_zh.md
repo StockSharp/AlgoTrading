@@ -1,4 +1,5 @@
 # Binario 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Binario 是一套停损单突破系统，利用高价与低价移动平均线形成的包络来捕捉方向性扩张。价格运行在两条均线之间时，策略会在上下方同时挂出对称的止损买单与止损卖单，并为每个方向预先计算好止损与止盈距离。此实现基于 StockSharp 高阶 API，保留了原版 MetaTrader 5 EA 的主要思想，并通过 Level-1 行情估算买卖价差以匹配原始入场偏移。

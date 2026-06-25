@@ -1,4 +1,5 @@
 # Deep Drawdown MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Deep Drawdown MA Strategy is a direct conversion of the MetaTrader 5 expert advisor “Deep Drawdown MA (barabashkakvn's edition)” into the StockSharp high-level API. The strategy trades moving-average crossovers while applying a break-even mechanism designed to protect trades that have slipped into drawdown. The StockSharp version retains the configurable moving-average parameters, the ability to limit the number of aggregated entries, and the option to immediately liquidate losing trades on a signal reversal.

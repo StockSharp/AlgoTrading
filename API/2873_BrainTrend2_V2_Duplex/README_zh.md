@@ -1,5 +1,5 @@
 # BrainTrend2 V2 Duplex 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 BrainTrend2 V2 Duplex 策略是 MetaTrader 5 专家顾问 `Exp_BrainTrend2_V2_Duplex` 在 StockSharp 平台上的高阶移植版本。策略并行运行两个 BrainTrend2 V2 指标实例：一个专门监控做多机会，另一个负责做空。两条通道都可以拥有独立的蜡烛类型、ATR 周期以及信号偏移，方便实现多周期确认或不对称风险配置。

@@ -1,4 +1,5 @@
 # Binario Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Binario is a stop-entry breakout system that surrounds price with two moving-average envelopes calculated on candle highs and lows. When price trades between the envelopes the strategy places symmetrical stop orders to capture the next directional expansion. Orders inherit fixed stop-loss and take-profit offsets that mirror the MetaTrader 5 expert advisor.

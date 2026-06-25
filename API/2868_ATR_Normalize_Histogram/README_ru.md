@@ -1,4 +1,5 @@
 # Стратегия ATR Normalize Histogram
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия ATR Normalize Histogram переносит логику советника MetaTrader *Exp_ATR_Normalize_Histogram* в StockSharp. Система анализирует отношение сглаженной разницы «закрытие − минимум» к сглаженному истинному диапазону. Смена цвета гистограммы формирует сигналы входа и выхода, полностью повторяя многобуферный подход оригинала.

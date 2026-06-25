@@ -1,4 +1,5 @@
 # Previous Candle Breakdown 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Previous Candle Breakdown** 策略监控用户设置的高级别K线（默认4小时）的上一根已收盘K线。当当前K线突破该参考K线的高点或低点，并超过指定的点差偏移量时，就会开仓。策略可选用两条移动均线做趋势过滤，并在进场后使用固定止损、止盈以及按点数移动的跟踪止损来控制风险。
 

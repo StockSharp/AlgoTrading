@@ -1,5 +1,5 @@
 # Стратегия EA Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Высокоуровневый порт стратегии MetaTrader «EA Stochastic» на платформу StockSharp. Стратегия подписывается на одну серию свечей,
 получает значения стохастического осциллятора и удерживает не более одной позиции. Вход выполняется, когда основная линия стохастика

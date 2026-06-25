@@ -1,4 +1,5 @@
 # ATR Normalize Histogram Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The ATR Normalize Histogram strategy reproduces the behavior of the MetaTrader expert *Exp_ATR_Normalize_Histogram* inside StockSharp. The system observes the normalized ratio between the smoothed close-to-low distance and the smoothed true range. Color changes of the histogram drive both entries and exits, emulating the multi-buffer logic used in the original MQL5 implementation.

@@ -1,4 +1,5 @@
 # Previous Candle Breakdown Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Previous Candle Breakdown Strategy** watches the high and low of the most recently closed candle from a user-defined timeframe (default: 4 hours). Whenever the live candle pierces beyond those reference levels by a configurable indent, the strategy opens breakout trades. An optional moving average trend filter keeps trades aligned with the prevailing direction, while layered exit logic (fixed stop loss, take profit, and pip-based trailing stop) manages risk after entry.
 

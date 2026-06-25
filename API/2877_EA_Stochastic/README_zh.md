@@ -1,5 +1,5 @@
 # EA Stochastic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是 MetaTrader「EA Stochastic」专家顾问的 StockSharp 高级 API 版本。策略订阅单一的 K 线序列，读取随机指标数值，
 并且始终只保持一笔仓位。当随机指标的主线在多根 K 线中持续位于同一侧阈值时触发开仓。止损、止盈与跟踪止损按点
