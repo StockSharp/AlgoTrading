@@ -1,4 +1,5 @@
 # Стратегия Exp Trend Intensity Index
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой порт MetaTrader-советника **Exp_Trend_Intensity_Index** на платформу StockSharp. Торговля ведётся по закрытым свечам выбранного таймфрейма. Индикатор Trend Intensity Index (TII) отслеживает моменты, когда импульс выходит из экстремальных бычьих или медвежьих зон: при выходе из верхней зоны стратегия закрывает шорты и может открыть лонг, при выходе из нижней зоны — закрывает лонги и может открыть шорт.
 

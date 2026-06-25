@@ -1,4 +1,5 @@
 # Ultra MFI 资金管理重算策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Ultra MFI MMRec 策略** 直接移植自 MetaTrader 5 专家顾问 `Exp_UltraMFI_MMRec`。策略将多级平滑的资金流量指数（MFI）与基于连败的仓位管理结合在一起。两个内部计数器统计有多少平滑层指向上方或下方。当计数器发生交叉时产生交易信号，而最近几笔交易的盈亏则决定下一笔订单使用常规仓位还是缩减仓位。

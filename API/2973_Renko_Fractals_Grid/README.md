@@ -1,4 +1,5 @@
 # Renko Fractals Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Renko Fractals Grid is a direct port of the MetaTrader 4 expert advisor "RENKO FRACTALS GRID". The strategy trades breakouts of recent Bill Williams fractals that are confirmed by a Renko-style volatility filter, a weighted moving average trend bias, and momentum strength derived from the rate of change indicator. The StockSharp version keeps the grid-style position management of the original robot, including martingale position sizing, break-even handling, trailing stops, equity protection, and optional floating profit trailing in currency units.

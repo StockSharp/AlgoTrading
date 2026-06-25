@@ -1,4 +1,5 @@
 # FatPanel 可视化构建器策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **FatPanel 可视化构建器策略** 是对 MetaTrader FAT Panel 专家顾问的 StockSharp 版本。原始 MQL 程序通过拖拽方式把“信号、逻辑、状态、下单”模块连接在一起，而本实现保留模块化思路，将所有连接关系写在一个 JSON 字符串里，策略启动时读取并构建所需的组件。
 

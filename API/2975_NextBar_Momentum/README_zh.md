@@ -1,5 +1,5 @@
 # Next Bar Momentum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在最新收盘价远离较旧的参考收盘价时入场，利用价格的动量突破。这一思路来源于 MetaTrader 上的 “Nextbar” 智能交易系统，并保留了原有的风控元素：以点（pip）为单位的止损/止盈、可选的移动止损以及持仓寿命限制。
 

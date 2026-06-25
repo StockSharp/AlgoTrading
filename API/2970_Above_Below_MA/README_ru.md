@@ -1,5 +1,5 @@
 # Стратегия Above Below MA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Above Below MA повторяет логику советника MetaTrader *Above Below MA (barabashkakvn's edition)*. Она оценивает, насколько далеко текущая цена находится по «неправильную» сторону от настраиваемой скользящей средней, и допускает сделки только если цена удалена от средней не меньше заданного порога и сама средняя разворачивается в ожидаемом направлении. Реализация использует высокоуровневый API StockSharp и работает исключительно по завершённым свечам.
 

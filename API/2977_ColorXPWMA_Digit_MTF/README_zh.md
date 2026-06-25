@@ -1,4 +1,5 @@
 # ColorXPWMA Digit 多周期策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MetaTrader 5 顾问 **Exp_ColorXPWMA_Digit_NN3_MMRec** 移植到 StockSharp 的高级 API。原始机器人由三个独立模块组成，分别在不同周期上根据 ColorXPWMA 移动平均线的颜色变化进行交易。移植后的版本完全保留该逻辑：每个模块监听自己的 K 线序列，在颜色翻转时平仓，并在允许的情况下按新的方向开仓。

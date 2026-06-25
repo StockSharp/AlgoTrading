@@ -1,4 +1,5 @@
 # Exp 趋势强度指数策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 **Exp_Trend_Intensity_Index** 的 StockSharp 版本。策略在可配置周期的收盘K线上工作，利用趋势强度指数（Trend Intensity Index，TII）识别动能离开极端多空区域的时刻：当指标离开上方阈值区时平掉空头并可以转多；当指标离开下方阈值区时平掉多头并可以转空。
 

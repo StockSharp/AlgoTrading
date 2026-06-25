@@ -1,4 +1,5 @@
 # FiftyFiveMaBarComparisonStrategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the MetaTrader 5 "55 MA" expert advisor by comparing two points of a 55-period moving average and trading whenever their difference exceeds a configurable threshold. All calculations are performed on completed candles within a user-defined intraday session, and trade direction can optionally be inverted. The algorithm preserves the original behaviour where a short position is opened whenever no bullish condition is met.

@@ -1,5 +1,5 @@
 # Above Below MA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Above Below MA strategy mirrors the MetaTrader expert advisor *Above Below MA (barabashkakvn's edition)*. It monitors how far current prices trade relative to a configurable moving average and allows trades only when price is on the "wrong" side of the average by at least a defined distance while the average itself trends in the anticipated direction. The logic has been ported to the StockSharp high level API and executes exclusively on completed candles.
 

@@ -1,4 +1,5 @@
 # Renko Fractals Grid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Renko Fractals Grid 源自 MetaTrader 4 的 "RENKO FRACTALS GRID" 专家顾问。策略在最近的比尔·威廉姆斯分形突破时入场，并结合 Renko 风格的波动过滤、加权移动平均的趋势判断以及基于 Rate of Change 的动量强度确认。移植到 StockSharp 后保留了原始机器人的网格式仓位管理：马丁格尔式加仓、无损移动、移动止损、权益保护以及可选的浮动利润拖尾。

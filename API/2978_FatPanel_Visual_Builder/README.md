@@ -1,4 +1,5 @@
 # FatPanel Visual Builder Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **FatPanel Visual Builder Strategy** is a StockSharp translation of the legacy FAT Panel Expert Advisor from MetaTrader. The original MQL implementation exposed a rich drag-and-drop canvas where users could link indicator, logic, state, and order blocks. This C# port keeps the modular philosophy but expresses every block connection through a single JSON document that the strategy reads at start-up.
 

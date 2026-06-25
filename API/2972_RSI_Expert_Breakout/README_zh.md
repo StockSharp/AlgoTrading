@@ -1,4 +1,5 @@
 # RSI Expert 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 源自 MetaTrader 5 平台的「RSI_Expert」策略，核心思想是交易 RSI 阈值的突破与回归。

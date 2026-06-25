@@ -1,5 +1,5 @@
 # Next Bar Momentum Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy trades breakouts that occur when the most recent completed bar closes far away from an older reference bar. It was inspired by the "Nextbar" MetaTrader expert advisor and keeps the original money-management features such as pip-based stops, trailing logic, and limited position lifetime.
 

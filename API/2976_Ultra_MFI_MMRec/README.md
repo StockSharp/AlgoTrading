@@ -1,4 +1,5 @@
 # Ultra MFI Money Management Recount Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Ultra MFI MMRec Strategy** is a direct port of the MetaTrader 5 expert advisor `Exp_UltraMFI_MMRec`. It combines a multi-step smoothed Money Flow Index (MFI) oscillator with streak-based money management. Two internal counters accumulate how many smoothing layers point upward or downward. Crossovers between these counters generate trade signals, while recent trade outcomes determine whether the next position uses the normal or reduced position size.

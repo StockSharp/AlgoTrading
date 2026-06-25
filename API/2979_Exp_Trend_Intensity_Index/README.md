@@ -1,4 +1,5 @@
 # Exp Trend Intensity Index Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp conversion of the MetaTrader expert **Exp_Trend_Intensity_Index**. It trades finished candles on a configurable timeframe and uses the Trend Intensity Index (TII) to detect when momentum leaves extreme bullish or bearish zones. When the indicator transitions out of an upper zone the algorithm exits shorts and can start a new long. When the indicator leaves a lower zone the algorithm closes longs and can start a new short.
 

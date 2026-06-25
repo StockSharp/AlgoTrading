@@ -1,4 +1,5 @@
 # Стратегия FatPanel Visual Builder
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **FatPanel Visual Builder** — перевод эксперта FAT Panel с MetaTrader на платформу StockSharp. В оригинальном MQL-проекте пользователь собирал стратегию, перетаскивая блоки сигналов, логики, состояний и приказов на панель. В версии для StockSharp вся схема описывается единственным JSON-документом, который стратегия читает при запуске.
 

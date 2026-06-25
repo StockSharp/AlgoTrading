@@ -1,5 +1,5 @@
 # Above Below MA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Above Below MA 策略复刻了 MetaTrader 智能交易系统 *Above Below MA (barabashkakvn's edition)* 的思想。策略监控价格与可配置移动平均线之间的距离，当价格位于“错误”一侧且距离不小于设定阈值，同时均线自身朝着预期方向倾斜时才允许开仓。新版实现基于 StockSharp 高级 API，并且仅在蜡烛线收盘后做出决策。
 

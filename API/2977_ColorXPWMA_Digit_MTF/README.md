@@ -1,4 +1,5 @@
 # ColorXPWMA Digit Multi-Timeframe Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy converts the MetaTrader 5 expert advisor **Exp_ColorXPWMA_Digit_NN3_MMRec** into the StockSharp high level API. The original robot operates three independent modules that trade on different timeframes by analysing the digital colouring of the ColorXPWMA moving average. The StockSharp port keeps the same behaviour: every module watches its own candle series, closes positions when the indicator flips colour and optionally opens a new trade in the detected direction.

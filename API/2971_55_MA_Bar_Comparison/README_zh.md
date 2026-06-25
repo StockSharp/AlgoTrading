@@ -1,4 +1,5 @@
 # FiftyFiveMaBarComparisonStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 MetaTrader 5 的“55 MA”专家顾问，通过比较 55 周期移动平均线在两个柱上的数值，只要差值超过可配置阈值就执行交易。所有计算都基于已收盘的K线，并限制在自定义的日内时间窗口内进行，同时可以选择反转信号方向。算法保持原版EA的行为——如果没有满足做多条件，会默认开空单。
