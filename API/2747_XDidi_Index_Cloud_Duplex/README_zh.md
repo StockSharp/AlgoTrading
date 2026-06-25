@@ -1,4 +1,5 @@
 # XDidi Index Cloud Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 XDidi Index Cloud Duplex 策略将 MQL5 专家顾问 *Exp_XDidi_Index_Cloud_Duplex* 的双通道逻辑迁移到 StockSharp。策略同时维护多头与空头两套 XDidi 指标配置，通过可配置的时间框架计算快速、慢速均线与中轴均线的比例关系，并据此发出入场与出场信号。

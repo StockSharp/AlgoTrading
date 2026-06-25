@@ -1,4 +1,5 @@
 # Reduce Risks Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Reduce Risks Strategy is a multi-timeframe trend-following system converted from the MetaTrader expert advisor "Reduce_risks.mq5". It analyses one-minute candles to trigger entries while filtering the market regime with 15-minute and 1-hour averages. The original algorithm was designed for highly liquid forex majors (EURUSD, USDCHF, USDJPY) and focuses on entering trends only when volatility is muted and structure confirms continuation.

@@ -1,4 +1,5 @@
 # Galactic Explosion Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Galactic Explosion strategy rebuilds the original MetaTrader 5 grid expert in StockSharp. It operates on finished candles, uses a long-term moving average to define the directional bias, and deploys an expanding grid of orders. The system accumulates trades when price stays on one side of the moving average and closes the entire basket once a predefined profit target is achieved.

@@ -1,4 +1,5 @@
 # 箭头与曲线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 "Arrows and Curves" 专家顾问的 C# 版本。策略在 StockSharp 高阶 API 中复现了原始指标驱动的交易逻辑，只针对单一标的进行操作。每次只有一笔持仓处于激活状态，新的信号会在没有仓位时开仓，或在已有仓位时执行平仓。

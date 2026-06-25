@@ -1,5 +1,5 @@
 # VR-ZVER v2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 VR-ZVER v2 是原始 MetaTrader 专家的 StockSharp 版本。策略保留了三重确认的理念：均线、随机指标和 RSI 都指向同一方向时才会开仓。
 

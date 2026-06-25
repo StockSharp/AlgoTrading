@@ -1,5 +1,5 @@
 # YTG ADX Level Cross 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 Yuriy Tokman 的 `_ADX.mq5` 专家顾问转换为 StockSharp 高级 API。它监控平均趋向指数（ADX），当 +DI 或 -DI 线突破可配置阈值时触发交易。策略始终保持单笔持仓，并自动设置以点数表示的止盈止损，与原始 MQL 版本完全一致。
 

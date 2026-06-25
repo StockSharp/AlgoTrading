@@ -1,4 +1,5 @@
 # XDidi Index Cloud Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The XDidi Index Cloud Duplex strategy replicates the dual long/short signalling logic of the original MQL5 expert *Exp_XDidi_Index_Cloud_Duplex*. Two independent XDidi index configurations are evaluated on configurable timeframes. Each configuration computes a ratio between fast/medium and slow/medium moving averages. Crossings between these ratios trigger market entries while persistent divergences trigger exits.

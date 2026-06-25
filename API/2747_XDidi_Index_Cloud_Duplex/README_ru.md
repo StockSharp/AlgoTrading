@@ -1,4 +1,5 @@
 # Стратегия XDidi Index Cloud Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия XDidi Index Cloud Duplex переносит логику оригинального эксперта MQL5 *Exp_XDidi_Index_Cloud_Duplex* в инфраструктуру StockSharp. Используются два независимых набора индикаторов XDidi: «бычий» и «медвежий». Каждый набор рассчитывает отношение быстрых и медленных скользящих средних к средней кривой и формирует сигналы на разных таймфреймах.

@@ -1,4 +1,5 @@
 # Reduce Risks 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Reduce Risks 策略源自 MetaTrader 专家顾问“Reduce_risks.mq5”，并移植到 StockSharp 高级 API。策略以 1 分钟蜡烛图为核心，辅以 15 分钟和 1 小时的趋势过滤，旨在在波动较低、结构明确的阶段参与趋势行情。推荐应用于流动性充足、点值明确的外汇品种，例如 EURUSD、USDCHF、USDJPY。

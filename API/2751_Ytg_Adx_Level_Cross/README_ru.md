@@ -1,5 +1,5 @@
 # Стратегия YTG ADX Level Cross
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит эксперт Yuriy Tokman `_ADX.mq5` на высокоуровневый API StockSharp. Она отслеживает индикатор Average Directional Index и реагирует, когда линии +DI или -DI прорывают заданные уровни. Ордера открываются только по одному, что полностью повторяет исходный MQL-алгоритм, а защитные стоп-лосс и тейк-профит в пунктах выставляются автоматически.
 

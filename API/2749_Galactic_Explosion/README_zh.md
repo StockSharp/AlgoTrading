@@ -1,4 +1,5 @@
 # 银河爆炸策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 银河爆炸策略将原版 MT5 网格专家移植到 StockSharp。策略只在收盘后的完整 K 线上工作，利用长期移动平均线来判定方向偏好，并根据价格与历史仓位的距离扩展网格。当价格持续位于移动平均线同侧时逐步加仓，在累积的已实现收益与浮动收益达到目标后一次性平掉全部仓位。

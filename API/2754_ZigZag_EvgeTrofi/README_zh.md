@@ -1,5 +1,5 @@
 # ZigZag EvgeTrofi 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ZigZag EvgeTrofi 策略是将经典的 MetaTrader 专家顾问移植到 StockSharp 高级 API 的版本。它追踪 ZigZag 逻辑识别的最近一个摆动点，并在信号仍然有效的时间窗口内迅速执行交易。
 

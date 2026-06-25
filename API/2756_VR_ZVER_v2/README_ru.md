@@ -1,5 +1,5 @@
 # Стратегия VR-ZVER v2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 VR-ZVER v2 — порт оригинального советника MetaTrader под StockSharp. Логика тройного подтверждения сохранена: для сделки требуется согласие скользящих средних, стохастика и RSI. Пока все активированные фильтры не дадут сигнал в одну сторону, стратегия не откроет позицию.
 

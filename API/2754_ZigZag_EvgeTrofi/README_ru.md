@@ -1,5 +1,5 @@
 # Стратегия ZigZag EvgeTrofi
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия ZigZag EvgeTrofi представляет собой перенос оригинального советника MetaTrader на высокоуровневый API StockSharp. Она отслеживает последний пивот, найденный по логике ZigZag, и стремится открыть позицию, пока сигнал остаётся актуальным.
 

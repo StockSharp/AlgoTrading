@@ -1,5 +1,5 @@
 # Color JJRSX Time Plus 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略由 MetaTrader5 专家 `Exp_ColorJJRSX_Tm_Plus` 改写而来。通过 RSI + Jurik 平滑复制 Color JJRSX 指标的走势，并保留原策略的持仓时间控制与方向开平仓开关。
 
