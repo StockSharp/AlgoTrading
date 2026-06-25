@@ -1,5 +1,5 @@
 # XIT Three MA Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp recreation of the MetaTrader 5 expert advisor **XIT_THREE_MA_CROSS.mq5**. It aligns three moving averages, checks MACD momentum separation, and sizes positions from ATR-based risk limits. The method is trend-following with momentum confirmation and targets medium-term swings on liquid currency pairs or indices.
 

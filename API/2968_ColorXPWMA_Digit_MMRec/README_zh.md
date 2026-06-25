@@ -1,4 +1,5 @@
 # ColorXPWMA Digit MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 **ColorXPWMA Digit MMRec** 策略将 MetaTrader 专家顾问 `Exp_ColorXPWMA_Digit_MMRec` 移植到 StockSharp 平台。核心思想是使用 ColorXPWMA Digit 指标捕捉趋势拐点，并保留原始版本的“递归资金管理”(MM Recounter) 机制。指标首先计算一条带权移动平均线，权重按 `(period - index)^power` 递减，然后再通过选定的移动平均方法进行平滑。平滑后的斜率被量化为三个离散颜色：`2` 表示上升，`0` 表示下降，`1` 表示水平。

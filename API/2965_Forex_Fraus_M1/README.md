@@ -1,4 +1,5 @@
 # Forex Fraus M1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Forex Fraus M1 strategy replicates the MetaTrader 5 expert advisor "Forex Fraus M1" in the StockSharp framework. It is a contrarian system that monitors a long-lookback Williams %R oscillator (period 360) on one-minute candles. Whenever the oscillator touches extreme values, the strategy attempts to fade the move, aiming for a quick reversion toward the recent range mid-point. The implementation keeps the original expert's money management, including optional trading hours, static stop-loss and take-profit levels measured in pips, and a pip-based trailing stop.

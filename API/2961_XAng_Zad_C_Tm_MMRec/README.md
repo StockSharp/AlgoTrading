@@ -1,4 +1,5 @@
 # XAng Zad C TM MM Rec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# port of the MetaTrader expert advisor **Exp_XAng_Zad_C_Tm_MMRec**. It trades adaptive price envelopes calculated by the custom *XAng Zad C* indicator and adds a time-based trading window together with a simple money-management recounter. The goal is to capture breakouts when the adaptive upper and lower lines cross each other while dynamically scaling position size after a configurable number of losing trades.

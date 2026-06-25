@@ -1,5 +1,5 @@
 # XIT 三均线交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是在 StockSharp 平台上重构的 MetaTrader 5 专家顾问 **XIT_THREE_MA_CROSS.mq5**。它在主图上排列三条移动平均线，利用 MACD 动能差值进行确认，并以 ATR 风险距离计算仓位规模。策略定位于趋势跟随并结合动能确认，适合在所选周期内保持延续性的外汇或指数市场。
 

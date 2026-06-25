@@ -1,4 +1,5 @@
 # Forex Fraus M1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Forex Fraus M1 策略在 StockSharp 框架中重现 MetaTrader 5 专家顾问“Forex Fraus M1”。该系统属于逆势交易：它在 1 分钟K线上监控周期为 360 的 Williams %R 指标，当指标触及极端值时尝试逆转行情，期望价格快速回归到区间中枢。实现中保留了原始 EA 的风险控制——可选的交易时段过滤、以点数表示的固定止损/止盈以及基于点的移动止损。

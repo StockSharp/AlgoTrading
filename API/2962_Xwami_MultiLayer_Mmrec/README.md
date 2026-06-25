@@ -1,4 +1,5 @@
 # XWAMI Multi-Layer MMRec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the original **Exp_XWAMI_NN3_MMRec.mq5** expert advisor into StockSharp. Three independent layers (A/B/C) run the XWAMI momentum indicator on different timeframes and combine their signals inside a single netted position. Each layer emulates the corresponding MagicNumber from the MetaTrader version, including its money-management recounter and protective levels.
 

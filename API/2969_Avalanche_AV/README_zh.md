@@ -1,5 +1,5 @@
 # Avalanche AV 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Avalanche AV 是一套随机化的马丁格尔策略。在等待设定数量的收盘 K 线之后，系统以 50/50 的概率开多或开空。每笔新订单都会根据点数设置固定的止损和止盈。当交易以亏损结束时，下一笔订单的手数会按照马丁系数放大；当账户余额创出新的历史高点时，手数会被重置为初始值。此外，策略还监控浮动回撤，并在亏损超过允许的百分比阈值时强制平仓。
 

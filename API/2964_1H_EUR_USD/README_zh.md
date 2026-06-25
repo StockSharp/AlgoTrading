@@ -1,5 +1,5 @@
 # 1小时 EUR/USD MACD 摆动策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 中的 “1H EUR_USD” 专家顾问迁移到 StockSharp 的高级 API。它基于 1 小时 K 线交易 EUR/USD（也可用于其它提供标准蜡烛数据的品种），同时结合两条均线与 MACD 摆动确认。只有在快速均线位于慢速均线上/下、MACD 形成双底/双顶结构并且价格突破近期高低点时才会开仓。风险控制与原始 EA 完全一致：止损、止盈以及分步式追踪止损均以点（pip）为单位设置。
 

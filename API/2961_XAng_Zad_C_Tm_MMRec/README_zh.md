@@ -1,4 +1,5 @@
 # XAng Zad C TM MM Rec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 MetaTrader 智能交易系统 **Exp_XAng_Zad_C_Tm_MMRec** 的 C# 移植版本。它基于自定义的 *XAng Zad C* 自适应通道，结合日内交易时间窗口与仓位递减式风控模块，用于在上下通道交叉时捕捉突破行情，并在出现连续亏损时自动减小下单手数。

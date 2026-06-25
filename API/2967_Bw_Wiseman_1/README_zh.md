@@ -1,4 +1,5 @@
 # BW WiseMan-1 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 **Exp_BW-wiseMan-1** 的 StockSharp 版本。它实现了基于比尔·威廉姆斯鳄鱼指标的 WiseMan-1 突破逻辑。当一根完成的K线脱离鳄鱼三条线并同时突破最近的摆动高/低点时生成信号。可选的逆势模式会交换买卖条件，从而实现对同一突破的反向操作。
 

@@ -1,4 +1,5 @@
 # OHLC Check Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The OHLC Check Strategy replicates the classic MetaTrader expert advisor that inspects the open, high, low, and close structure of the previous candle. The strategy evaluates the candle body on a configurable historical offset and opens a new position in the direction of that body while optionally mirroring the signal. It is designed for simple price-action driven execution without relying on oscillators or moving averages.

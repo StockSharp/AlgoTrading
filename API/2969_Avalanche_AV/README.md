@@ -1,5 +1,5 @@
 # Avalanche AV Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Avalanche AV is a randomized martingale strategy that alternates between long and short entries with equal probability. Trades are opened only after a configurable number of finished candles, and every position inherits fixed stop-loss and take-profit levels defined in pips. When a trade closes at a loss the position size is multiplied by the martingale coefficient to chase recovery; profitable trades reset the size back to the starting volume once the account balance prints a new equity high. The strategy also enforces a maximum floating drawdown as a percentage of account balance and will close any position that breaches this threshold.
 

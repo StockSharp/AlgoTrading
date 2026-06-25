@@ -1,5 +1,5 @@
 # Стратегия XIT Three MA Cross
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия повторяет эксперта MetaTrader 5 **XIT_THREE_MA_CROSS.mq5** на платформе StockSharp. Алгоритм синхронизирует три скользящих средних, проверяет расхождение линий MACD и рассчитывает объём сделки на основе ATR. Получается трендовая методика с подтверждением импульса, рассчитанная на среднесрочные движения ликвидных валютных пар или индексов.
 

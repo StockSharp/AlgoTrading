@@ -1,4 +1,5 @@
 # Стратегия XWAMI Multi-Layer MMRec
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит эксперт **Exp_XWAMI_NN3_MMRec.mq5** в StockSharp. Три независимых слоя (A/B/C) запускают индикатор XWAMI на разных таймфреймах и объединяют сигналы в одну неттинговую позицию. Каждый слой повторяет собственный MagicNumber оригинала, включая алгоритм перерасчёта лота (MMRec) и уровни защиты.
 

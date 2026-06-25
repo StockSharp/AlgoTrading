@@ -1,4 +1,5 @@
 # Стратегия ColorXPWMA Digit MMRec
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **ColorXPWMA Digit MMRec** — это адаптация советника `Exp_ColorXPWMA_Digit_MMRec` под платформу StockSharp. Стратегия использует индикатор ColorXPWMA Digit для поиска точек разворота тренда и повторяет оригинальную схему управления объёмом (MM recounter). Индикатор строит степенную взвешенную среднюю (Power Weighted Moving Average) с дополнительным сглаживанием выбранным методом. Знак наклона сглаженной линии кодируется тремя состояниями: `2` — восходящий наклон, `0` — нисходящий, `1` — нейтральный участок.

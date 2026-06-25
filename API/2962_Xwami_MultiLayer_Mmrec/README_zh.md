@@ -1,4 +1,5 @@
 # XWAMI 多层 MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 **Exp_XWAMI_NN3_MMRec.mq5** EA 迁移到 StockSharp。三个独立层（A/B/C）在不同周期上运行 XWAMI 动量指标，并把信号汇总成单一净头寸。每个层都重现原版对应 MagicNumber 的资金管理（MMRec）与防护设置。
 

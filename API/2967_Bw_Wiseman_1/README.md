@@ -1,4 +1,5 @@
 # BW WiseMan-1 Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader expert advisor **Exp_BW-wiseMan-1**. It automates Bill Williams' WiseMan-1 breakout logic built around the Alligator indicator. Signals are produced whenever a completed candle escapes from the Alligator's jaws and simultaneously breaks the most recent swing extremes. Optional counter-trend mode swaps the signals so that the strategy can fade the same breakouts.
 

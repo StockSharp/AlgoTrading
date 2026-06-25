@@ -1,4 +1,5 @@
 # OHLC Check 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 OHLC Check 策略复刻了经典的 MetaTrader 智能交易系统：它观察历史蜡烛的开盘价、最高价、最低价和收盘价，并根据蜡烛实体的方向来下单。策略允许用户选择信号引用的历史偏移量，还可以反转信号方向，从而在没有技术指标的情况下完成基于价格行为的交易。

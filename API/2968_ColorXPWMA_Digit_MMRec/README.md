@@ -1,4 +1,5 @@
 # ColorXPWMA Digit MMRec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ColorXPWMA Digit MMRec Strategy** replicates the MetaTrader expert adviser `Exp_ColorXPWMA_Digit_MMRec`. It uses the ColorXPWMA Digit indicator to identify trend inflection points and wraps the original money-management recounter logic. The indicator builds a power-weighted moving average (PWMA) that is optionally smoothed by a selected moving-average method. The slope of the smoothed line is converted into discrete colors: `2` for an up-slope, `0` for a down-slope and `1` when the direction is flat.
