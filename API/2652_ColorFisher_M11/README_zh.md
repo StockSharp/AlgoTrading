@@ -1,4 +1,5 @@
 # Color Fisher M11 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Color Fisher M11 策略复刻了 MetaTrader 5 上的 Exp_ColorFisher_m11 专家顾问。它利用改进版的 Fisher Transform 指标，将柱线划分为五个颜色区间，以突出极端的多头与空头动能。信号会延迟若干根已完成的 K 线执行，并提供开仓、平仓方向独立的开关，方便适配不同的交易偏好。

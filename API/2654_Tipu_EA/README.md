@@ -1,4 +1,5 @@
 # Tipu EA Multi-Timeframe Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy recreates the core logic of the Tipu Expert Advisor in StockSharp. It replaces the proprietary Tipu Trend and Tipu Stops indicators with a combination of exponential moving averages (EMA), Average Directional Index (ADX) filtering and Average True Range (ATR) risk controls. The system looks for trend alignment between a higher timeframe (default 1 hour) and a signal timeframe (default 15 minutes), then manages the position with a break-even pyramiding module, trailing stop logic and optional fixed take profit.

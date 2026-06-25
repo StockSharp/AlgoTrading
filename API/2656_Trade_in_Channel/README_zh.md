@@ -1,5 +1,5 @@
 # 通道交易策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是一套逆势通道策略，当唐奇安通道的上下边界保持不变时在极值附近反向建仓。策略把最新的高点/低点与
 上一根K线计算出的通道边界和枢轴价（pivot）进行比较，从而判断是否在通道内反手。仓位保护基于ATR设定

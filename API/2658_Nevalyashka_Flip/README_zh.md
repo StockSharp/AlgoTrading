@@ -1,5 +1,5 @@
 # Nevalyashka 翻转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 专家顾问 “Nevalyashka” 直接移植到 StockSharp。策略始终在多空之间交替：先市价卖出，等待仓位被止损或止盈平仓，然后立即以相同的手数反向开仓。每次进场后都会根据设定的点数重新创建保护性订单，与原始 MQL 逻辑完全一致。
 

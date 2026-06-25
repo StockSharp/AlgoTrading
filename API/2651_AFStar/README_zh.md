@@ -1,5 +1,5 @@
 # AFStar 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AFStar 策略通过两步过滤寻找趋势反转：首先在一系列快/慢 EMA 组合中
 扫描交叉信号，其次使用基于 Williams %R 的通道突破确认。只有当两种

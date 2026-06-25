@@ -1,4 +1,5 @@
 # 随机方向策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **随机方向策略** 完整移植自 MetaTrader 的 “New Random” 专家顾问，提供三种不同的建仓方向选择模式。策略在任意时刻只保持一笔仓位，等待仓位完全平仓后才会评估下一次信号。通过订阅一级行情数据实时获取最新买价、卖价与成交价，并以最佳买卖价作为市价单的执行参考，同时依据点数参数自动计算止损与止盈距离，对 3 位或 5 位报价的外汇品种进行和原始脚本一致的调整。

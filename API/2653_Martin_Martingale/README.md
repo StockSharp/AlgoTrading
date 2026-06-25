@@ -1,4 +1,5 @@
 # Martin Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the behaviour of the original "Martin" Expert Advisor from MQL by running a hedged martingale grid around the current price. It continuously alternates long and short positions, doubling the traded volume on every reversal until the accumulated profit of the entire basket reaches the configured target. Candles are only used as a driver for the decision logic while actual executions rely on market and stop orders exposed by the StockSharp high level API.

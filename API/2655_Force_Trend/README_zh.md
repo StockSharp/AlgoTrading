@@ -1,4 +1,5 @@
 # Force Trend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 5 顾问 **Exp_ForceTrend.mq5**（目录 `MQL/18817`）转换为 StockSharp 策略。

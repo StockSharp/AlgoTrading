@@ -1,5 +1,5 @@
 # Nevalyashka Flip Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A direct StockSharp port of the MetaTrader expert "Nevalyashka". The strategy always alternates between long and short trades: it starts with a market sell order, waits for the position to close by stop loss or take profit, and then immediately opens a market order in the opposite direction. Protective orders are recreated for every entry using the same pip-based offsets as in the original code.
 

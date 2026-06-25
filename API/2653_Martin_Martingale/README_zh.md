@@ -1,4 +1,5 @@
 # Martin Martingale 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略重现了 MQL 原版 "Martin" 智能交易系统的运行方式，通过在当前价格附近构建对冲型的马丁格尔网格来运作。策略在多头与空头之间不断交替，并在每次反向开仓时将成交量加倍，直到整篮订单的累计利润达到设定目标。K 线仅用于驱动决策逻辑，实际下单全部通过 StockSharp 的高级 API（市价单与止损单）完成。

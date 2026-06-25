@@ -1,4 +1,5 @@
 # Tipu EA 多周期策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 中重现 Tipu Expert Advisor 的主要思想。由于原始的 Tipu Trend 与 Tipu Stops 指标为专有实现，这里以指数移动平均线（EMA）、平均趋向指数（ADX）和平均真实波幅（ATR）的组合来完成同样的信号判断与风控。策略在较高周期（默认 1 小时）和信号周期（默认 15 分钟）之间寻找趋势共振，并通过保本加仓、移动止损及可选的固定止盈来管理持仓。

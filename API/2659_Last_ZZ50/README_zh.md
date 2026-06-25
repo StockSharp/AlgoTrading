@@ -1,4 +1,5 @@
 # Last ZZ50 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Last ZZ50 策略复制了 Vladimir Karputov 在 MetaTrader 上的同名专家顾问。

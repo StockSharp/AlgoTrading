@@ -1,4 +1,5 @@
 # New Random Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **New Random Strategy** emulates the original MetaTrader "New Random" expert by offering three distinct entry selection modes. It opens only a single position at a time and waits until the current position is closed before generating the next order direction. Market entries are triggered on top-of-book updates (Level 1 data) using the best bid/ask prices as execution anchors. The strategy automatically calculates stop-loss and take-profit offsets in pips, adapting to 3 and 5 digit forex quotes the same way as the MQL version.

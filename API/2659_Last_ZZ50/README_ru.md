@@ -1,4 +1,5 @@
 # Стратегия Last ZZ50
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Last ZZ50 повторяет одноимённого эксперта MetaTrader, созданного Владимиром Карпутовым.

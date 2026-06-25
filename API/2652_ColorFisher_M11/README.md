@@ -1,4 +1,5 @@
 # Color Fisher M11 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Color Fisher M11 is a trend-following strategy that replicates the Exp_ColorFisher_m11 expert advisor from MetaTrader 5. It uses a custom Fisher Transform variant that paints candles with five color states to highlight extreme bullish and bearish momentum. Signals are delayed by a configurable number of closed candles to avoid trading on incomplete data, while optional toggles allow disabling entries or exits for each side independently.
