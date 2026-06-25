@@ -1,5 +1,5 @@
 # AltrTrend Signal v2.2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 **Exp_AltrTrend_Signal_v2_2** 的 StockSharp 版本。它复刻 AltrTrend Signal 指标的自适应通道
 算法，并按照原版设置的延迟条形执行信号。ADX 数值会压缩或放宽通道，因此只有在趋势强度足够时才会产生突破。

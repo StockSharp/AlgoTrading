@@ -1,4 +1,5 @@
 # MA RSI EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MA RSI EA Strategy** 还原了原始 MetaTrader 智能交易系统的思路：使用快速均线与短周期 RSI 组合来寻找入场点。策略仅在所选蜡烛序列收盘后进行计算，按照账户余额或净值动态调整下单手数，并且一旦所有持仓的浮动盈亏转为正值就立即平仓锁定利润。

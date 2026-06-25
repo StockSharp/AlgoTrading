@@ -1,5 +1,5 @@
 # Freeman Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Freeman is an intraday strategy that layers several momentum filters to scale into trends. It uses two RSI "teachers" driven by moving averages on the trading timeframe together with a higher timeframe moving-average filter. Risk is controlled with ATR-based stop-loss and take-profit targets plus a pip-based trailing stop.
 

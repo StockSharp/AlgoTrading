@@ -1,5 +1,5 @@
 # Open Oscillator Cloud MMRec 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 专家顾问 **Exp_Open_Oscillator_Cloud_MMRec** 迁移到 StockSharp 高级 API。系统利用 Open Oscillator Cloud 指标的交叉：当前开盘价与滑动窗口内最高点和最低点所在蜡烛的开盘价进行比较，并使用可配置的移动平均线对结果进行平滑处理。
 

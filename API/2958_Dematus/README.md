@@ -1,4 +1,5 @@
 # Dematus Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Dematus Strategy replicates the logic of the original MetaTrader 5 "Dematus" expert advisor. It uses the DeMarker oscillator to detect momentum reversals and supports pyramiding with adaptive position sizing. The strategy is designed for a single instrument and trades on the candle series defined by the `CandleType` parameter.

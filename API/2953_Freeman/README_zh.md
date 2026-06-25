@@ -1,5 +1,5 @@
 # Freeman 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Freeman 是一套日内趋势跟随策略，通过多层动量过滤逐步建立仓位。交易级别上使用两组 RSI “教师”配合不同周期的移动平均线，高一级别的移动平均线用于确认趋势。策略利用 ATR 比例的止损/止盈以及按点数计算的追踪止损来控制风险。
 

@@ -1,4 +1,5 @@
 # Dematus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Dematus 策略复刻自 MetaTrader 5 上的 "Dematus" 专家顾问。策略使用 DeMarker 指标识别动量拐点，并支持带有动态仓位规模的金字塔加仓。交易依据 `CandleType` 参数指定的 K 线类型，仅在每根完成的 K 线上评估信号。

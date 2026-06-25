@@ -1,5 +1,5 @@
 # Gaps Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A price action strategy that reacts to opening gaps between consecutive candles. It waits for a new bar to open beyond the prior
  high or low by a configurable pip distance, enters in the direction of the expected reversion, and manages the trade with fixed

@@ -1,4 +1,5 @@
 # Sidus 鳄鱼策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Sidus 策略在 StockSharp 中复刻了 MetaTrader 平台上著名的“Sidus”专家顾问。策略将比尔·威廉姆斯的鳄鱼指标与 14 周期 RSI 结合使用：只有当 RSI 穿越 50 中线并且鳄鱼的三条平滑均线同时向同一方向张开时才会产生信号。进场后立即计算保护性止损和可选的跟踪止损，所有距离均以“点”为单位并自动适配标的的报价精度。

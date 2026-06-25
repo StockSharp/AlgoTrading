@@ -1,5 +1,5 @@
 # Wajdyss Ichimoku Candle MMRec 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略基于 MetaTrader 专家顾问 *Exp_wajdyss_Ichimoku_Candle_MMRec* 改写而成。它重新计算 Ichimoku 的基准线 Kijun，利用 `Highest`

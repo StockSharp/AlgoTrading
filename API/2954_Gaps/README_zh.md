@@ -1,5 +1,5 @@
 # Gaps 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于价格缺口的反转思路：当新 K 线的开盘价突破上一根 K 线的最高价或最低价一定的点数后，立即在
  反方向建立仓位，并通过固定止损、固定止盈以及可选的分级跟踪止损来管理风险。

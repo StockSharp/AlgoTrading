@@ -1,5 +1,5 @@
 # AltrTrend Signal v2.2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader expert advisor **Exp_AltrTrend_Signal_v2_2**. It recreates the adaptive
 channel logic of the original AltrTrend Signal indicator and executes trades on delayed bars just like the MQL5 version. The

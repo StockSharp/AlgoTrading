@@ -1,4 +1,5 @@
 # MA RSI EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MA RSI EA Strategy** reproduces the logic of the original MetaTrader expert advisor that combines a fast moving average with a short-period RSI filter. The strategy trades on the selected candle series, evaluates new orders only on finished bars, and uses dynamic position sizing based on account balance or equity. When the floating profit of all open positions becomes positive, every position is closed immediately to lock in the gain.

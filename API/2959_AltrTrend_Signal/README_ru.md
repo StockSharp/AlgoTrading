@@ -1,5 +1,5 @@
 # Стратегия AltrTrend Signal v2.2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом эксперт-советника **Exp_AltrTrend_Signal_v2_2** под StockSharp. Она полностью повторяет логику
 адаптивного канала индикатора AltrTrend Signal и исполняет сигналы с задержкой по барам, как в оригинале. Значение ADX
