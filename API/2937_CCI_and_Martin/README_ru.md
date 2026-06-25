@@ -1,4 +1,5 @@
 # Стратегия CCI and Martin
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия CCI and Martin ищет резкий разворот после короткой серии однонаправленных свечей и подтверждает сигнал индикатором Commodity Channel Index. Логика повторяет оригинальный советник MetaTrader 5, но использует высокоуровневый API StockSharp. Алгоритм работает только с закрытыми свечами и может применяться к любым инструментам, для которых доступны CCI и шаг цены.

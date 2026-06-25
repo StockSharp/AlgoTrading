@@ -1,4 +1,5 @@
 # 单均线通道突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **单均线通道突破策略** 在 StockSharp 高级 API 中重现 MetaTrader 5 专家顾问 *One MA EA* 的逻辑。策略绘制一条带有水平位移的移动平均线，并在其上下构建以“点”（pip）为单位的通道。当价格在同一根 K 线内先触及通道，再以开盘价突破通道外时，系统按照突破方向建立仓位，同时通过可选的止损和止盈保护自动管理风险。

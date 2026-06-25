@@ -1,4 +1,5 @@
 # Ang Zad C Time MM Recovery Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Ang Zad C Time MM Recovery Strategy is a C# port of the MetaTrader 5 expert advisor `Exp_Ang_Zad_C_Tm_MMRec`. The strategy combines the custom Ang_Zad_C channel indicator with a configurable trading session filter and an adaptive position size model that reduces risk after a configurable number of losing trades.

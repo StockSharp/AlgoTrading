@@ -1,4 +1,5 @@
 # Triple SMA Spread 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 5 专家顾问 `3sma.mq5`（id 21495）的 C# 版本，实现于 StockSharp 平台。策略保持原始思路：当三条简单移动平均线之间的价差达到设定的阈值时开仓或平仓。通过 StockSharp 的高级 API，我们只需订阅蜡烛图数据并绑定指标，无需手动维护序列。

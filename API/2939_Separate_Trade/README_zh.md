@@ -1,4 +1,5 @@
 # 分离交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 分离交易策略源自 MetaTrader 5 专家顾问“Separate trade”，在 StockSharp 环境中完全重写。转换版本保留了原始脚本的多重过滤条件，并利用高层 API 自动完成指标计算和订单管理，从而在框架内实现可视化优化与回测。策略目标是在波动率和价差收缩时捕捉趋势反转信号，默认只保留一个净头寸，与原始 EA 限制持仓数量的理念一致。

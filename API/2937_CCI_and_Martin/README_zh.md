@@ -1,4 +1,5 @@
 # CCI and Martin 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 CCI and Martin 策略在短期的单向行情后寻找快速反转信号，并使用商品通道指数（CCI）进行确认。该实现完全复刻原始 MetaTrader 5 专家顾问的交易逻辑，同时基于 StockSharp 的高级 API，仅处理已经完成的 K 线，可用于任意提供 CCI 与价格步长信息的交易品种。

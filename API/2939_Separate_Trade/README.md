@@ -1,4 +1,5 @@
 # Separate Trade Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Separate Trade strategy is a conversion of the MetaTrader 5 expert advisor "Separate trade". It preserves the original multi-filter logic while adopting the StockSharp high-level API for robust order management and indicator handling. The strategy attempts to capture quiet market turns when volatility and dispersion are suppressed. Only one net position is maintained at a time, which mirrors the intent of the original code that limited the number of simultaneous positions.

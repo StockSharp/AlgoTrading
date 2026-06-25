@@ -1,5 +1,5 @@
 # Return Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于经典的 “Return Strategy” EA 改写。每天在配置的开始小时检查当前是否存在活动挂单，如果没有，则在当前价格上下对称放置成对的买入限价单和卖出限价单。网格的初始距离和逐级步长以点数定义，单笔订单体积既可以固定，也可以根据风险百分比自动计算。订单成交后，策略按固定止损与追踪止损组合管理仓位，并在达到总盈利目标、到达日内截止时间或每周五强制平仓。
 

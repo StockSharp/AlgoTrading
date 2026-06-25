@@ -1,4 +1,5 @@
 # ZigZag EA
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the original MT5 "ZigZag EA" logic by waiting for three consecutive ZigZag swing points and placing two breakout stop orders around the previous swing range. The conversion uses the StockSharp high level API and works with finished candles. The last two completed swings define a trading corridor, while the most recent swing ("room 0" in the MQL version) must remain inside that corridor before the strategy arms itself with pending orders. The approach is symmetrical: it prepares both buy-stop and sell-stop orders and lets the market decide the direction of the breakout.

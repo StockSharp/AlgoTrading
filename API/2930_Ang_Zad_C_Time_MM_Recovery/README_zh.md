@@ -1,4 +1,5 @@
 # Ang Zad C 时间管理回撤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Ang Zad C 时间管理回撤策略是 MetaTrader 5 智能交易系统 `Exp_Ang_Zad_C_Tm_MMRec` 的 C# 移植版。策略将自定义的 Ang_Zad_C 通道指标、可配置的交易时段过滤以及在连续亏损后降低仓位的资金管理规则结合在一起。

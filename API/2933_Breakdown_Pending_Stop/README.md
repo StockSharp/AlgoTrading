@@ -1,4 +1,5 @@
 # Breakdown Pending Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy recreates the original MetaTrader "breakdown" expert advisor. It places stop orders around the previous day's range and continuously refreshes the orders each session. A trailing-stop engine replicates the stepped trailing logic of the source script, keeping the stops tight once a position starts moving in the profitable direction.

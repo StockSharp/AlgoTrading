@@ -1,4 +1,5 @@
 # Breakdown Pending Stop 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 该策略复刻 MetaTrader 平台上的 "breakdown" 专家顾问，通过监控前一日的价格区间在新交易日自动挂出突破性买入/卖出止损单，并在仓位获利时使用阶梯式的追踪止损算法保护收益。

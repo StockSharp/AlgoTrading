@@ -1,4 +1,5 @@
 # One MA Channel Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **One MA Channel Breakout Strategy** replicates the MetaTrader 5 expert advisor *One MA EA* using StockSharp's high-level strategy API. The system draws a shifted moving average and surrounds it with a configurable pip-based channel. When price opens outside of the channel after probing it on the same bar, the strategy opens a position in the breakout direction while optional stop-loss and take-profit protections manage risk automatically.

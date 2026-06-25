@@ -1,4 +1,5 @@
 # CCI and Martin Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The CCI and Martin strategy searches for sharp reversals after a short bearish or bullish sequence and confirms the move with the Commodity Channel Index. The logic replicates the original MetaTrader 5 expert advisor while using StockSharp's high-level API. The strategy works on finished candles only and can operate on any instrument for which CCI values and price steps are available.

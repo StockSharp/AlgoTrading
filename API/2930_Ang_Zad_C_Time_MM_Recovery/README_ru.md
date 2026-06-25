@@ -1,4 +1,5 @@
 # Стратегия Ang Zad C Time MM Recovery
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Ang Zad C Time MM Recovery — это перенос на C# советника MetaTrader 5 `Exp_Ang_Zad_C_Tm_MMRec`. Стратегия объединяет пользовательский индикатор Ang_Zad_C, фильтр торговых сессий и адаптивный манименеджмент, который снижает объём после заданного количества убыточных сделок.

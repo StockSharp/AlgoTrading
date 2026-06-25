@@ -1,4 +1,5 @@
 # ZigZag EA
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻了 MT5 原版 “ZigZag EA” 的核心思想：等待三个连续的 ZigZag 枢轴点，在前两个枢轴之间的区间两端同时布置买入止损和卖出止损单。该移植使用 StockSharp 的高级 API，只处理已经收盘的 K 线。最近的两个枢轴构成交易通道，最新的枢轴（MQL 源码中的 “room 0”）必须保持在通道内部，策略才会激活挂单。整个流程完全对称，让市场自行选择突破方向。
