@@ -1,4 +1,5 @@
 # Neuro Nirvaman 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Neuro Nirvaman 策略是 MetaTrader 5 专家顾问 *NeuroNirvamanEA* 的完整移植版本。策略保持了原始 MQL 代码中的感知机决策树：通过四个 Laguerre 平滑的正向动向指标（+DI）与两个 SilverTrend 波段信号的组合来产生买卖指令。策略仅在收盘完成的 K 线数据上运行，根据参数计算市场价买入或卖出，并在每笔交易时设置点数形式的止盈/止损，不会加仓或同时持有多头与空头。

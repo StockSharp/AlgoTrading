@@ -1,4 +1,5 @@
 # RSI Bollinger Bands EA (StockSharp Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level StockSharp port of the MetaTrader 5 expert advisor "RSI Bollinger Bands EA". It trades on 15-minute candles and combines two independent RSI-based triggers:

@@ -1,4 +1,5 @@
 # KWAN RDP 趋势策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 `Exp_KWAN_RDP` 的 StockSharp 版本。它通过组合三种指标并进行平滑来计算 KWAN RDP 振荡器：
 

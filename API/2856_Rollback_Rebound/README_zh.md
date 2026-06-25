@@ -1,4 +1,5 @@
 # 回撤反弹策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 回撤反弹策略是 MQL5 专家顾问“TST (barabashkakvn's edition)”的 C# 版本。它在 `CandleType` 指定的时间框架上监控单一品种，并寻找先扩张后回撤的价格形态。当多头K线从高点回落超过设置的回撤阈值时买入；当空头K线从低点反弹超过阈值时卖出。策略使用 StockSharp 的高级 K 线订阅接口，并将所有保护性订单以点（pip）表示后换算成绝对价格。

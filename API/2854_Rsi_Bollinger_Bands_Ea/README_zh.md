@@ -1,4 +1,5 @@
 # RSI Bollinger Bands EA（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 指标交易程序 “RSI Bollinger Bands EA” 的 StockSharp 高层 API 改写版本。策略在 15 分钟周期上运行，并提供两套可互斥的 RSI 触发条件：

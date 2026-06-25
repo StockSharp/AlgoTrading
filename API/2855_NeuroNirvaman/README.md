@@ -1,4 +1,5 @@
 # Neuro Nirvaman Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Neuro Nirvaman strategy is a direct conversion of the MetaTrader 5 expert advisor *NeuroNirvamanEA*. It recreates the perceptron-based decision tree from the original MQL implementation by combining four Laguerre-smoothed positive directional indicators (+DI) with two SilverTrend swing detectors. The strategy works on finished candles and submits market orders with dynamic take-profit and stop-loss levels defined in points. No trailing stop, averaging or pyramiding is applied – only a single position can exist at any moment.

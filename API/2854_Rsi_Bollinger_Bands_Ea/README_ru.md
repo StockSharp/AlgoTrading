@@ -1,4 +1,5 @@
 # RSI Bollinger Bands EA (конверсия StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия представляет собой конвертацию советника MetaTrader 5 «RSI Bollinger Bands EA» на высокоуровневый API StockSharp. Работает на 15-минутных свечах и использует две независимые RSI-конфигурации:

@@ -1,4 +1,5 @@
 # Alli Heik 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Alli Heik 策略源自 MetaTrader 5 专家顾问 “AlliHeik”，核心是 **Heiken Ashi Smoothed Oscillator**（HASO）指标。该指标先用可选的移动平均对原始的开盘价、最高价、最低价、收盘价进行平滑，再基于平滑后的数据构建 Heiken Ashi 蜡烛，并对其开收盘均值再次平滑。连续两根平滑值的差即为振荡器曲线，之后再用另一条移动平均形成信号线。
 

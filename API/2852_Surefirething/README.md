@@ -1,4 +1,5 @@
 # Surefirething Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Surefirething strategy recreates the classic MetaTrader 5 expert advisor that places symmetric buy and sell limit orders around the most recent candle close. The system constantly rebuilds the grid after every completed candle, manages protective stops in pip units, and forces a complete flat position ten minutes before midnight server time.

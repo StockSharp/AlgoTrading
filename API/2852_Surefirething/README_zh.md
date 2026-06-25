@@ -1,4 +1,5 @@
 # Surefirething 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Surefirething 策略复刻了 MetaTrader 5 上的经典智能交易系统，它会在最新完成的K线收盘价附近同时挂出对称的买入和卖出限价单。每根K线结束后都会重建网格，所有止损与止盈都以点（pip）为单位管理，并且会在服务器时间23:50强制平掉全部仓位。

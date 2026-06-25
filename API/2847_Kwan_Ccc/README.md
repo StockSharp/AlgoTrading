@@ -1,4 +1,5 @@
 # KWAN CCC Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The KWAN CCC strategy reproduces the MetaTrader expert `Exp_KWAN_CCC.mq5` using StockSharp's high level API. The system derives trading signals from a custom oscillator built as follows:

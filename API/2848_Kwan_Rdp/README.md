@@ -1,4 +1,5 @@
 # KWAN RDP Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp conversion of the MetaTrader expert `Exp_KWAN_RDP`. The logic calculates the KWAN RDP oscillator by combining three standard indicators and smoothing their product:
 

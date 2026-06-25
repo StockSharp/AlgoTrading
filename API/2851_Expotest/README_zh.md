@@ -1,4 +1,5 @@
 # Expotest 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Expotest 策略是对原始 `Expotest.mq5` 专家顾问的 StockSharp 版本转换。策略仅交易单一标的，依靠抛物线 SAR 指标判定方向，并采用类似马丁格尔的资金管理规则。任意时刻只保持一笔仓位，并通过预设的止损与止盈距离来离场。

@@ -1,4 +1,5 @@
 # Rollback Rebound Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Rollback Rebound Strategy is a C# conversion of the "TST (barabashkakvn's edition)" MQL5 expert advisor. It monitors a single instrument on the timeframe specified by the `CandleType` parameter and searches for strong moves that retrace back inside the bar range. When a bullish bar fades from its high by more than the rollback threshold the strategy buys, while an equivalent bearish retracement triggers a sell. The implementation uses StockSharp's high-level candle subscription API and manages all protective orders in pip units that are converted into absolute price offsets.

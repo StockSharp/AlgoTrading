@@ -1,4 +1,5 @@
 # KWAN CCC 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 KWAN CCC 策略在 StockSharp 高级 API 上重现了 MetaTrader 专家顾问 `Exp_KWAN_CCC.mq5`。策略使用以下步骤构建的自定义振荡器来生成交易信号：

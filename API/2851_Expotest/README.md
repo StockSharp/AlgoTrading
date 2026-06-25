@@ -1,4 +1,5 @@
 # Expotest Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Expotest Strategy is a direct StockSharp conversion of the original `Expotest.mq5` expert advisor. It trades a single instrument using the Parabolic SAR indicator and a simple martingale-inspired money management rule. The strategy opens only one position at a time and relies on predefined stop-loss and take-profit levels for exits.

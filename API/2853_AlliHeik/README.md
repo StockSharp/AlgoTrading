@@ -1,4 +1,5 @@
 # Alli Heik Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Alli Heik strategy is a conversion of the MetaTrader 5 expert advisor "AlliHeik". It trades the **Heiken Ashi Smoothed Oscillator** (HASO) originally published by mladen. The indicator builds a custom Heiken Ashi candle by smoothing the raw open, high, low, and close prices with a selectable moving average, applies an additional smoothing pass to the Heiken Ashi midpoint, and then measures the bar-to-bar difference of that smoothed value. A moving average of the difference forms the signal line.
 
