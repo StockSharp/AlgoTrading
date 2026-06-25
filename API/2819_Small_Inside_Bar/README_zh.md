@@ -1,4 +1,5 @@
 # Small Inside Bar 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Small Inside Bar Strategy 通过识别压缩后的内部柱形态，跟随随后的方向转换进行交易。原始的 MetaTrader 5 专家顾问已迁移到 StockSharp 高级 API，实现只在完成的 K 线上运作，非常适合喜欢等待波动收缩后突破信号的交易者。

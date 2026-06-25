@@ -1,4 +1,5 @@
 # Futures Portfolio Control Expiration Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy rebuilds the MetaTrader 5 expert advisor *Futures Portfolio Control Expiration* on top of the StockSharp high-level API. It maintains a three-leg futures portfolio, keeps the desired long/short exposure for each leg, and automatically rolls every contract to the next expiry when the remaining lifetime drops below a configurable threshold.

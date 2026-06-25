@@ -1,4 +1,5 @@
 # Donchain Counter 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Donchain Counter 策略是将 MQL5 专家顾问 “Donchain counter”（作者 Michal Rutka）迁移到 StockSharp 的实现。策略关注 Donchian 通道的扩张来捕捉突破行情，并在价格离开通道一定距离后，把止损沿着相反的通道边界进行跟踪。为了与原始脚本保持一致，每 24 小时只能开仓一次。

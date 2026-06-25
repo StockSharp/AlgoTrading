@@ -1,4 +1,5 @@
 # Small Inside Bar Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Small Inside Bar Strategy searches for a compact inside bar pattern followed by a momentum shift between two consecutive candles. The original MetaTrader 5 expert was translated to StockSharp high-level API and now operates on completed candles only. The approach is designed for traders who prefer breakout-style entries triggered by compressed volatility phases.

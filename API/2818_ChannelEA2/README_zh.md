@@ -1,4 +1,5 @@
 # ChannelEA2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ChannelEA2 策略在 StockSharp 中复刻 MetaTrader 专家顾问 “ChannelEA2”。策略会在配置的会话开始与结束时间之间构建日内价格通道。当会话结束时，它会在通道上沿上方和下沿下方挂入场止损单，每个止损单的保护止损价都设置为通道的另一侧边界。此方法旨在捕捉会话期间盘整后的突破行情。

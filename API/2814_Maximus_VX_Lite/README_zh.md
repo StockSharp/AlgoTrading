@@ -1,5 +1,5 @@
 # Maximus vX Lite 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 5 顾问 "maximus_vX lite" 转换为 StockSharp 高层 API 的实现。
 策略会在当前价格上下寻找盘整区，等待价格离开该区间一定的点数后再进场。仓位大小可以根据

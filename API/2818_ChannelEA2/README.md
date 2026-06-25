@@ -1,4 +1,5 @@
 # ChannelEA2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 ChannelEA2 Strategy replicates the MetaTrader expert "ChannelEA2" in StockSharp. The strategy builds an intraday price channel between the configured session start and end hours. When the session ends, it places stop orders above the channel high and below the channel low. Each stop order carries a protective stop loss defined by the opposite edge of the channel. The approach aims to capture breakouts after a period of consolidation during the session window.

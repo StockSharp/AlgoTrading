@@ -1,5 +1,5 @@
 # Maximus vX Lite Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Conversion of the "maximus_vX lite" MetaTrader 5 expert advisor to the StockSharp high-level API.
 The strategy searches for consolidation zones above and below the current price and waits for price to move a configurable

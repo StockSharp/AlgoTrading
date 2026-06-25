@@ -1,5 +1,5 @@
 # True Sort 趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 中著名的 “True Sort” 模板：要求五条指数移动平均线严格排序。当当前和前一根已完成 K 线都呈现相同的多头或空头顺序，同时平均趋向指数（ADX）超过阈值以确认趋势强度时，策略顺势开仓。风控部分提供可选的绝对价差止损、止盈以及只有在价格足够向有利方向移动后才会启动的跟踪止损。
 

@@ -1,5 +1,5 @@
 # EMA WMA 逆势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略以蜡烛的开盘价计算指数移动平均线（EMA）与加权移动平均线（WMA），在两者发生反向穿越时进行逆势交易。EMA 从上向下穿越 WMA 时买入，期待价格回归；EMA 从下向上穿越 WMA 时做空。仓位规模依据风险百分比和止损距离动态调整，同时提供固定止损、止盈和跟踪止损以控制风险。
 

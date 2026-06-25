@@ -1,4 +1,5 @@
 # Donchain Counter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Donchain Counter strategy is a StockSharp port of the MQL5 expert advisor "Donchain counter" by Michal Rutka. The system watches how the Donchian Channel expands to detect breakouts and then defends the position by trailing the stop along the opposite band once price has moved a fixed distance away. Only one position can be opened every 24 hours, mirroring the original constraint.

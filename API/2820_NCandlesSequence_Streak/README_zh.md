@@ -1,4 +1,5 @@
 # N根同向K线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 N根同向K线策略复刻了 MetaTrader 专家顾问 “N-_Candles_v7” 的核心逻辑，并基于 StockSharp 高阶 API 重新实现。策略在每根K线收盘后统计连续的多头或空头实体数量，当连续数量达到设定阈值时，在同方向开仓，并结合止盈、止损、跟踪止损、交易时段过滤以及浮动盈亏保护进行仓位管理。

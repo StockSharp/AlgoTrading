@@ -1,4 +1,5 @@
 # 期货投资组合到期管理策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略基于 StockSharp 高级 API 重现 MetaTrader 5 专家顾问 *Futures Portfolio Control Expiration* 的全部逻辑。它同时维护三个期货腿的持仓，保证每个腿都保持所需的多/空头寸，并且在合约剩余寿命低于预设阈值时自动将持仓滚动到下一到期合约。

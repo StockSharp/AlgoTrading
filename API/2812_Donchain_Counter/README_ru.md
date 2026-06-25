@@ -1,4 +1,5 @@
 # Стратегия Donchain Counter
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Donchain Counter — перенос эксперта MQL5 «Donchain counter» (Michal Rutka) на StockSharp. Алгоритм отслеживает расширения канала Дончиана, чтобы фиксировать пробои, и после входа переносит защитный стоп вдоль противоположной границы канала, когда цена уходит достаточно далеко. Как и в оригинале, открыть новую позицию разрешается не чаще одного раза в сутки.

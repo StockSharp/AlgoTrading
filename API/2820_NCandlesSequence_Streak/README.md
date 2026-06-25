@@ -1,4 +1,5 @@
 # N-Candles Sequence Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The N-Candles Sequence strategy replicates the behaviour of the original MetaTrader expert "N-_Candles_v7" using the StockSharp high-level API. It monitors finished candles and looks for a configurable number of consecutive bullish or bearish bodies. When a qualifying streak is present, the strategy opens a position in the same direction and manages it with configurable take profit, stop loss, trailing stop, trading hours filter, and floating profit lock.
