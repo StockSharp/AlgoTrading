@@ -1,5 +1,5 @@
 # Lock Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lock Strategy recreates the classic “lock” expert advisor from MetaTrader: it always maintains a hedged pair of long and short positions and keeps recycling them until a profit-lock condition is satisfied. The algorithm is designed for instruments with small tick sizes where a fixed pip-based take profit can be applied.
 

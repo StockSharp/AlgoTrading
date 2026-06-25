@@ -1,5 +1,5 @@
 # XRSI DeMarker Histogram Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 This strategy replicates the **Exp_XRSIDeMarker_Histogram** expert advisor. It trades reversals detected by a custom oscillator that blends a Relative Strength Index (RSI) with the DeMarker indicator and then smooths the result. The system can open or close long and short trades independently, and optional protective stops expressed in price steps are supported.

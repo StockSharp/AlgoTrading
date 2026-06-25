@@ -1,4 +1,5 @@
 # Average Change Candle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 专家顾问 `Exp_AverageChangeCandle` 移植到 StockSharp。策略通过平滑蜡烛价格与基准均线的比值来确定蜡烛颜色，并在颜色变化时执行交易。
 

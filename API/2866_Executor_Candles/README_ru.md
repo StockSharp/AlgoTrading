@@ -1,5 +1,5 @@
 # Стратегия Executor Candles
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой точную конвертацию советника MetaTrader «Executor Candles». Она отслеживает широкий набор свечных разворотных моделей и при необходимости подтверждает сигналы свечой более старшего таймфрейма. Управление сделкой — стоп-лоссы, тейк-профиты и трейлинг-стопы — воспроизведено из оригинала и задаётся в пунктах (price step инструмента).
 

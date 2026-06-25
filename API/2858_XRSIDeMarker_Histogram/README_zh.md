@@ -1,5 +1,5 @@
 # XRSI DeMarker Histogram 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 该策略复刻 **Exp_XRSIDeMarker_Histogram** 专家顾问的思路。它利用一个由 RSI 和 DeMarker 组合而成的自定义振荡器来捕捉趋势反转，并对结果进行平滑处理。多空方向可以分别开启或关闭，并提供以价格步长表示的可选止损与止盈。

@@ -1,4 +1,5 @@
 # AIS2 Trading Robot
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The AIS2 Trading Robot is a multi-timeframe breakout system converted from the original MetaTrader 5 expert advisor. It scans a higher timeframe (default 15-minute candles) to detect directional breakouts, while a faster timeframe (default 1-minute candles) provides adaptive trailing stops. Order placement, risk budgeting, and trailing logic follow the rules encoded in the legacy MQ5 version, but are implemented on top of StockSharp's high-level strategy API.

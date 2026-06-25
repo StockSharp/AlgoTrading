@@ -1,4 +1,5 @@
 # Exp 2XMA Ichimoku Oscillator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the logic of the original MetaTrader expert advisor "Exp_2XMA_Ichimoku_Oscillator" by combining two Ichimoku-style price envelopes that are smoothed with configurable moving averages. The StockSharp implementation uses the high level strategy API and focuses on candle-based signal generation while keeping the position management rules of the source algorithm.
 

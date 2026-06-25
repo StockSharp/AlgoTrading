@@ -1,5 +1,5 @@
 # Стратегия XRSI DeMarker Histogram
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Краткое описание
 Стратегия повторяет логику советника **Exp_XRSIDeMarker_Histogram**. Торговые решения принимаются по разворотам пользовательского осциллятора, который объединяет RSI и DeMarker и затем сглаживает результат. Можно независимо разрешать или запрещать входы в лонг и шорт, предусмотрены необязательные защитные стопы в шагах цены.

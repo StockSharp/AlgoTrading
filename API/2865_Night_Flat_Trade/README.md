@@ -1,5 +1,5 @@
 # Night Flat Trade Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Night Flat Trade Strategy reproduces the classic MQL5 expert advisor that looks for tight overnight ranges on EURUSD H1 candles. It focuses on the hour surrounding the trading day change, waiting for price to drift back toward the edges of a narrow consolidation channel and betting on a breakout continuation. The StockSharp version keeps the original ideas intact while relying on high-level candle subscriptions, indicator bindings and parameter objects for better configurability.
 

@@ -1,4 +1,5 @@
 # Absolutely No Lag LWMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 MetaTrader 专家顾问 **Exp_AbsolutelyNoLagLwma** 的交易思想。策略对所选周期的K线数据连续应用两次线性加权移动平均（LWMA），并根据平滑后的数值斜率对趋势进行着色：2 代表向上，1 表示持平，0 表示向下。颜色的变化触发买入或卖出信号。StockSharp 实现基于高级 API，自动订阅指定时间框架的K线并根据信号发送市价单。

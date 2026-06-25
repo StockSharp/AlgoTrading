@@ -1,4 +1,5 @@
 # AIS2 交易机器人
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AIS2 交易机器人是从 MetaTrader 5 专家顾问移植的多周期突破策略。策略在较高周期（默认 15 分钟 K 线）上寻找突破方向，并使用更快的周期（默认 1 分钟）来动态调整跟踪止损。订单提交、风险预算以及止损管理完全遵循原始 MQ5 代码的逻辑，但基于 StockSharp 的高级策略 API 重新实现。

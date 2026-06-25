@@ -1,5 +1,5 @@
 # Bands Pending Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader "Bands 2" expert advisor on top of the StockSharp high-level API. It monitors finished candles, checks that the current time is inside the configured trading window and that price is trading inside the Bollinger channel. Whenever those conditions are met it places a symmetric grid of three buy stop and three sell stop orders around the Bollinger envelope. Each order carries its own stop-loss and take-profit distances and any fill removes the other pending orders.
 

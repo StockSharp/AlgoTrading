@@ -1,4 +1,5 @@
 # Стратегия Exp 2XMA Ichimoku Oscillator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет работу советника MetaTrader «Exp_2XMA_Ichimoku_Oscillator». Она строит две средние линии в стиле Ichimoku, сглаживает их выбранными скользящими средними и анализирует разницу между ними, используя возможности высокоуровневого API StockSharp.
 

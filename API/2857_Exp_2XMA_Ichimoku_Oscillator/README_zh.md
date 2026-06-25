@@ -1,4 +1,5 @@
 # Exp 2XMA Ichimoku 振荡策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 专家顾问 “Exp_2XMA_Ichimoku_Oscillator” 的逻辑，通过两条平滑处理的 Ichimoku 型中枢线来生成进出场信号，并使用 StockSharp 的高级策略 API 来管理仓位。
 

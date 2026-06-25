@@ -1,5 +1,5 @@
 # Стратегия Night Flat Trade
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Night Flat Trade повторяет оригинальный советник MQL5, который отслеживает узкие ночные диапазоны по EURUSD на часовом таймфрейме. Она концентрируется на периоде вокруг смены торгового дня: ожидает возврата цены к границам диапазона и пытается присоединиться к прорыву. В реализации для StockSharp используется высокоуровневое API: подписка на свечи, индикаторы Highest/Lowest и параметры `StrategyParam<T>` для удобного тестирования и оптимизации.
 

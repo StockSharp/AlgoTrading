@@ -1,4 +1,5 @@
 # Absolutely No Lag LWMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the MetaTrader expert advisor **Exp_AbsolutelyNoLagLwma** by applying a double weighted moving average (LWMA) to candle data. The indicator output is color-coded: green (2) for an upward slope, gray (1) for flat, and magenta (0) for a downward slope. Trade decisions are based on transitions between these color states. The StockSharp implementation uses the high-level API, subscribes to timeframe candles, and sends market orders according to the detected trend direction.

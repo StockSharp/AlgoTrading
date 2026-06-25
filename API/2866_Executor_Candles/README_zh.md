@@ -1,5 +1,5 @@
 # Executor Candles 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader “Executor Candles” 智能交易系统的完整移植版。它监控多种多头与空头反转形态，并可选地通过更高周期的趋势蜡烛确认信号。所有风控机制——止损、止盈与移动止损——都按原策略的“点数”（与品种 price step 相乘）逻辑实现。
 

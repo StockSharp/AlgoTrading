@@ -1,5 +1,5 @@
 # Lock Strategy 策略 (中文)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lock Strategy 复刻了 MetaTrader 上常见的“锁单”专家顾问：系统始终保持一多一空的对冲仓位，并不断循环，直到满足锁定利润的条件为止。该算法适用于点值较小、可以使用固定点差止盈的交易品种。
 

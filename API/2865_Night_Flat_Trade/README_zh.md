@@ -1,5 +1,5 @@
 # 夜间区间突破策略（Night Flat Trade）
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了原始的 MQL5 智能交易程序：在 EURUSD 的 H1 周期寻找夜间的窄幅震荡区间，并尝试在价格靠近区间边缘时参与突破。StockSharp 版本完全使用高级 API —— 蜡烛订阅、Highest/Lowest 指标绑定以及 `StrategyParam<T>` 参数体系 —— 既保持了原有思想，也便于配置与优化。
 

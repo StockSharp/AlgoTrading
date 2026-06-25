@@ -1,5 +1,5 @@
 # Bands Pending Breakout 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 的 “Bands 2” 专家系统迁移到 StockSharp 高级 API。它只在蜡烛收盘后运行，确认当前时间处于设定的交易时段且收盘价落在布林带上下轨之间时，会在通道两侧各挂三张对称的买入 Stop 和卖出 Stop 网格单。每张挂单携带独立的止损与止盈距离，一旦任意挂单成交，其余挂单即刻撤单。
 
