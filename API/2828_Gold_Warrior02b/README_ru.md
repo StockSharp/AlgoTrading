@@ -1,5 +1,5 @@
 # Стратегия GoldWarrior02b
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Алгоритмическая стратегия, конвертированная из советника MetaTrader *GoldWarrior02b*.
 Комбинирует импульсный индикатор, Commodity Channel Index (CCI) и упрощённый ZigZag для торговли

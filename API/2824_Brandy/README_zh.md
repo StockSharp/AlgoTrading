@@ -1,5 +1,5 @@
 # Brandy 策略 (C#)
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Brandy 策略移植自 MetaTrader 5 的 *Brandy (barabashkakvn's edition)* 智能交易系统。策略利用两条可配置的移动平均线，通过比较上一根收盘蜡烛的均线位置来判断趋势方向，同时提供以点（pip）为单位的止损、止盈以及移动止损控制。本移植版本基于 StockSharp 的高级策略 API 实现，重现了原始 EA 的交易、风控和参数结构。

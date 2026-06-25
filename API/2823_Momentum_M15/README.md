@@ -1,4 +1,5 @@
 # Momentum M15 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a direct port of the MetaTrader 5 expert advisor **Momentum-M15** (original file `Momentum-M15.mq5`).
 It trades 15-minute candles and combines a shifted moving average filter with a momentum oscillator that is evaluated on

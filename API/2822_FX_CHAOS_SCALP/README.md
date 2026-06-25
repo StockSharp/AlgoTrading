@@ -1,4 +1,5 @@
 # FX-CHAOS Scalp Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The FX-CHAOS scalp strategy replicates the MT5 expert advisor that combines the Awesome Oscillator with fractal-based ZigZag levels on multiple timeframes. The StockSharp port subscribes to hourly candles for trade execution and daily candles for a higher timeframe filter. Internal trackers rebuild the "ZigZag on Fractals" logic by detecting five-candle fractal patterns and stitching them into alternating swing points.

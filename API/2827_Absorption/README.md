@@ -1,4 +1,5 @@
 # Absorption Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the Absorption expert advisor for MetaTrader. It searches for "engulfing" candles that absorb the range of the previous bar and form an extreme within a short lookback. When such an absorption bar appears, the algorithm brackets the market with stop orders and manages the resulting position with a mix of fixed targets, breakeven logic, and a trailing stop.
 

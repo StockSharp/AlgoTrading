@@ -1,4 +1,5 @@
 # Absorption 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略重现 MetaTrader 平台上的 Absorption 专家顾问。算法寻找吞没前一根 K 线并在近期区间内创出极值的 "吸收" K 线。一旦发现符合条件的 K 线，策略会在其上下放置两条止损挂单，并通过固定目标、保本移动和移动止损来管理仓位。
 

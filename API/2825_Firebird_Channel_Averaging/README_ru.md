@@ -1,4 +1,5 @@
 # Стратегия Firebird Channel Averaging
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Firebird Channel Averaging переносит логику эксперта MetaTrader 5 «Firebird v0.60» на высокоуровневый API StockSharp. Торговля ведётся по настраиваемому каналу вокруг скользящей средней, а позиции усредняются по мере ухода цены от канала. Решение ориентировано на форекс-стратегии возврата к среднему с сеточным набором позиций и фиксированными рисками в пунктах.

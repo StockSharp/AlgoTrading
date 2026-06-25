@@ -1,4 +1,5 @@
 # Momentum M15 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略移植自 MetaTrader 5 顾问 **Momentum-M15**（原始文件 `Momentum-M15.mq5`）。它在 15 分钟级别蜡烛上运
 行，结合带有水平偏移的移动平均线与按开盘价计算的 Momentum 指标。核心思想是在价格位于偏移平均线相对

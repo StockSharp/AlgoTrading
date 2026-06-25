@@ -1,4 +1,5 @@
 # Doji Arrows Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Concept
 The Doji Arrows strategy converts the original MetaTrader "Doji Arrows" expert advisor into the StockSharp high-level API. The idea is to wait for a genuine doji candle and then trade a breakout of its range. A doji candle represents indecision, therefore a close above the doji high hints at bullish strength while a close below the doji low indicates bearish control.

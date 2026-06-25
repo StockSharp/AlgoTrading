@@ -1,5 +1,5 @@
 # GoldWarrior02b 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自 MetaTrader 专家顾问 *GoldWarrior02b*，现移植到 StockSharp 平台。
 策略结合自定义的动量指标、CCI 与简化的 ZigZag，用于在每个 15 分钟区间的最后时刻进行交易。

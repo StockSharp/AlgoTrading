@@ -1,4 +1,5 @@
 # FX-CHAOS 剥头皮策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 FX-CHAOS 剥头皮策略复制了 MT5 专家顾问的逻辑，将 Awesome Oscillator 与基于分形的 ZigZag 水平相结合。移植到 StockSharp 后，策略订阅小时级别的 K 线用于交易执行，同时订阅日线用于高周期过滤。内置的跟踪器通过检测五根 K 线的分形形态来重建 “ZigZag on Fractals” 指标，并把识别出的波峰和波谷连接成交替的摆动点。

@@ -1,4 +1,5 @@
 # Doji Arrows 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 Doji Arrows 策略是将 MetaTrader 平台的同名 EA 转换到 StockSharp 高级 API 的实现。核心思想是在出现标准的十字星（Doji）后等待价格突破其高低点范围。十字星表示买卖力量暂时平衡，一旦下一根 K 线在十字星上方收盘说明多头取得主导，反之在下方收盘则说明空头占优。

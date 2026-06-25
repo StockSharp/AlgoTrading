@@ -1,4 +1,5 @@
 # Firebird通道均值策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Firebird通道均值策略在StockSharp高阶API上重现MetaTrader 5专家顾问“Firebird v0.60”。策略基于可配置的均线通道进行交易，当价格远离通道时逐步加仓，实现典型的外汇均值回归与网格化风格，并通过以点数计的风控参数控制风险。

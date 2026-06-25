@@ -1,5 +1,5 @@
 # Price Impulse 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Price Impulse 策略直接订阅 Level1 行情，监控最佳买卖价的瞬间跳动。它完整复刻了原始 MT5 专家顾问：比较当前报价与若干 tick 之前的价格，只要差值超过指定点数阈值就立即入场。同时，通过高阶 `StartProtection` 接口自动设置固定的止损和止盈，无需额外的手动挂单。
 

@@ -1,5 +1,5 @@
 # Blau Ergodic策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MQL5 平台 **Exp_BlauErgodic** 顾问在 StockSharp 上的移植版本。通过对动量及其绝对值进行三级 EMA 平滑，
 构建 Blau Ergodic 振荡器的归一化主线与信号线，并提供三个与原版一致的信号模式。

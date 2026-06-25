@@ -1,4 +1,5 @@
 # Firebird Channel Averaging Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Firebird Channel Averaging strategy replicates the MetaTrader 5 expert "Firebird v0.60" using StockSharp's high-level API. It trades a configurable moving-average channel and progressively averages into positions when price extends away from the channel. The approach is designed for mean-reversion forex trading where grid-style entries and pip-based risk controls are required.
