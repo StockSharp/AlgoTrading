@@ -1,4 +1,5 @@
 # MAMACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct conversion of the MetaTrader 5 expert advisor **MAMACD (barabashkakvn's edition)** from the `MQL/19334` folder into StockSharp's high-level API. The approach combines trend detection on low prices through two linear weighted moving averages (LWMA) with a fast exponential moving average (EMA) trigger and confirmation from the MACD main line. Trading is performed once per finished candle and keeps the logic of the original EA, including the reset flags that require the fast EMA to leave the LWMA channel before a new entry is allowed.

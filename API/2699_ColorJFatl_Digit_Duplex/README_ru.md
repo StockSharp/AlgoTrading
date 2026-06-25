@@ -1,4 +1,5 @@
 # Стратегия Color JFATL Digit Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Color JFATL Digit Duplex — это конвертация эксперта MetaTrader 5 `Exp_ColorJFatl_Digit_Duplex` на платформу StockSharp. Стратегия состоит из двух независимых модулей: первый обслуживает длинные позиции, второй — короткие. Оба модуля используют индикатор Color Jurik Fast Adaptive Trend Line (JFATL), который окрашивает линию в зависимости от направления локального тренда. Каждый блок имеет собственные параметры сглаживания, источник цены, глубину округления, сдвиг сигнальной свечи и отступы стопов/тейков.

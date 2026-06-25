@@ -1,4 +1,5 @@
 # Color JFATL Digit Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Color JFATL Digit Duplex 策略源自 MetaTrader 5 专家顾问 `Exp_ColorJFatl_Digit_Duplex`，在 StockSharp 高级 API 中实现为双模块系统。策略同时运行多头与空头两套信号流，全部基于 Color Jurik Fast Adaptive Trend Line（JFATL）指标。多头模块在颜色转为多头（值为 2）时尝试开仓，空头模块在颜色转为空头（值为 0）时入场。每个模块都拥有独立的平滑、价格源、数字化精度、信号柱偏移以及止损/止盈距离设置。

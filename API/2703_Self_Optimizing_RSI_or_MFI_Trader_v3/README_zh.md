@@ -1,4 +1,5 @@
 # 自优化 RSI / MFI 交易策略 v3
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 中的 "Self Optimizing RSI or MFI Trader" 专家顾问迁移到 StockSharp 高阶 API。每根已完成的 K 线都会对过去 `OptimizingPeriods` 根历史数据进行回测，寻找在该窗口内表现最优的超买与超卖阈值。当实时的指标数值向最佳阈值方向发生交叉（或者在启用 `UseAggressiveEntries` 时无需等待交叉）时，策略按照历史表现较优的方向开仓。仓位的止损、止盈可以使用 ATR 倍数动态计算，也可以使用固定点差，并可在达到一定浮盈后自动移至保本。

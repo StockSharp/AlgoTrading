@@ -1,4 +1,5 @@
 # JS Chaos 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 JS Chaos 策略在 StockSharp 高级 API 中复刻了 MetaTrader 专家顾问 “JS-Chaos” 的行为。策略围绕比尔·威廉姆斯的短吻鳄结构与分形突破构建入场，辅以 Awesome Oscillator 与 Acceleration/Deceleration 指标确认，并通过追踪止损、保本与复杂的时间过滤器管理持仓。

@@ -1,4 +1,5 @@
 # JS Chaos Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The JS Chaos strategy replicates the behaviour of the original MetaTrader expert advisor "JS-Chaos" using the StockSharp high-level API. The strategy builds break-out entries around Bill Williams' Alligator structure and fractal levels, combines Awesome Oscillator and Acceleration/Deceleration confirmation, and manages open exposure with trailing stops, breakeven logic, and a rich time filter.

@@ -1,4 +1,5 @@
 # MAMACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是在 StockSharp 高级 API 中对 MetaTrader 5 专家顾问 **MAMACD（barabashkakvn 版本）**（位于 `MQL/19334` 目录）的逐句移植。策略通过两条基于最低价的线性加权均线（LWMA）识别趋势通道，配合一条基于收盘价的快速 EMA 触发线，并使用 MACD 主线过滤信号。所有计算都在蜡烛完成之后执行，同时保留原始 EA 的“准备”标志机制——只有当快速 EMA 重新穿越 LWMA 通道后才允许新的交易。

@@ -1,5 +1,5 @@
 # RSI Eraser Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The RSI Eraser strategy is a direct port of the MetaTrader 5 expert advisor created by Vladimir Karputov.
 It uses hourly candles to evaluate the relative strength index (RSI) and looks for mean-reversion style entries when momentum shifts around the neutral 50 level.

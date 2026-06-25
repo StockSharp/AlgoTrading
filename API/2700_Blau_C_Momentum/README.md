@@ -1,4 +1,5 @@
 # Blau C-Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor **Exp_BlauCMomentum**. It trades on a single instrument using candles from a configurable timeframe and interprets Blau's triple-smoothed momentum in one of two modes:

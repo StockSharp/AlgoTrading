@@ -1,4 +1,5 @@
 # Stopreversal Tm Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Stopreversal Tm strategy is a direct translation of the original MetaTrader 5 expert advisor `Exp_Stopreversal_Tm.mq5`. The trading idea follows the Stopreversal custom indicator, which maintains a dynamic trailing stop around price and generates reversal alerts whenever price crosses that trailing boundary. The strategy operates on a single instrument and a single candle feed and is designed for trend reversal trading with a user-defined session filter.

@@ -1,4 +1,5 @@
 # Blau C-Momentum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略是 MetaTrader 专家顾问 **Exp_BlauCMomentum** 的 StockSharp 移植版本。策略使用可配置时间框架的K线，并通过 Blau 三重平滑动量在两种模式下寻找信号：

@@ -1,4 +1,5 @@
 # Self-Optimizing RSI or MFI Trader v3
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MetaTrader "Self Optimizing RSI or MFI Trader" expert advisor to StockSharp's high level API. On every finished candle the algorithm backtests a sliding window of historical bars and finds the most profitable overbought and oversold thresholds for the selected oscillator. Live trades are only taken when the current oscillator value crosses the best performing threshold in the same direction as the historical edge, optionally without requiring a cross in "aggressive" mode. Position exits rely on ATR-based or fixed-distance stops and targets with an optional breakeven step.

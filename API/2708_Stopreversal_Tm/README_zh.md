@@ -1,4 +1,5 @@
 # Stopreversal Tm 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Stopreversal Tm 策略完整移植自 MetaTrader 5 专家顾问 `Exp_Stopreversal_Tm.mq5`。策略基于自定义指标 Stopreversal，它利用选定的价格类型计算跟踪止损，并在价格越过该止损时发出趋势反转信号。策略仅针对一个标的和一组 K 线数据运行，并保留了原策略可配置的交易时段过滤功能。

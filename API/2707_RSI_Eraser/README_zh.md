@@ -1,5 +1,5 @@
 # RSI Eraser 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RSI Eraser 策略直接移植自 Vladimir Karputov 编写的 MetaTrader 5 专家顾问。
 策略使用小时级别的 K 线来计算相对强弱指标 (RSI)，并在 RSI 穿越 50 的过程中寻找均值回归式的入场点。

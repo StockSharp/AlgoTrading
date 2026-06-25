@@ -1,4 +1,5 @@
 # Color JFATL Digit Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Color JFATL Digit Duplex strategy is a dual-module system converted from the MetaTrader 5 expert advisor `Exp_ColorJFatl_Digit_Duplex`. It operates two independent signal streams based on the Color Jurik Fast Adaptive Trend Line (JFATL) indicator. The long module seeks bullish transitions in the indicator colour map, while the short module reacts to bearish transitions. Each side has its own smoothing parameters, price source, rounding precision, bar shift, and protective offsets.
