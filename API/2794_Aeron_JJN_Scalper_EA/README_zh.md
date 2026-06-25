@@ -1,4 +1,5 @@
 # Aeron JJN Scalper EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 **Aeron JJN Scalper** 专家的 StockSharp 高级 API 版本。策略仅处理已结束的K线，寻找特定的两根K线反转结构，并把上一根强劲反向K线的开盘价作为模拟挂单触发价。一旦行情触及该价位，策略以市价建仓，同时根据 ATR 设置止损、止盈，并使用基于点差的追踪止损进行仓位管理。

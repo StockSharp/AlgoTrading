@@ -1,4 +1,5 @@
 # Hans123 Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Hans123 Trader is a breakout system converted from the original MetaTrader 5 expert advisor *Hans123_Trader*. The strategy scans a rolling price range and places pending stop orders during a configurable intraday window. Protective stops, profit targets, and trailing rules mirror the MQL5 logic so the StockSharp port behaves like the source robot.

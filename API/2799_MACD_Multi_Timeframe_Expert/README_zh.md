@@ -1,4 +1,5 @@
 # MACD 多周期专家策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 框架中复刻了原始的 MetaTrader "MACD Expert" 智能交易系统。它同时跟踪 5 分钟、15 分钟、1 小时和 4 小时四个周期上的 MACD 趋势，仅当所有周期给出同向信号时才允许开仓，从而在过滤高点差区间的同时捕捉多周期动量。

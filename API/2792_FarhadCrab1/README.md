@@ -1,4 +1,5 @@
 # Farhad Crab Strategy (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Farhad Crab strategy is a trend-following system that enters trades on pullbacks to an exponential moving average (EMA) and manages exits using fixed stops, take-profits, a Parabolic SAR-inspired trailing stop, and a higher time frame filter. The original MetaTrader 5 expert advisor relies on hourly candles for execution while referencing daily data to decide when to close open positions. This C# port keeps the same core logic by combining a working timeframe EMA filter with a daily EMA crossover exit rule.

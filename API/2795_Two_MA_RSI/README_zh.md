@@ -1,4 +1,5 @@
 # Two MA RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Two MA RSI 策略来自 MetaTrader 专家顾问“2MA_RSI”的移植版本。策略结合了一条快 EMA 和一条慢 EMA 的金叉/死叉，并用 RSI 过滤信号。下单量采用类似马丁格尔的资金管理：每次亏损后会扩大下一笔订单的数量。StockSharp 版本仅在每根 K 线收盘后运行，并按照点数重新计算原策略中的止盈与止损。

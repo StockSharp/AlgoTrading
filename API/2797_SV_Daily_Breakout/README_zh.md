@@ -1,4 +1,5 @@
 # SV日内突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **SV日内突破策略** 是对 MetaTrader 5 专家顾问“SV v.4.2.5”的完整 C# 迁移版本。策略在每根完成的K线后进行评估，每个交易日最多只允许一次入场。只有当服务器时间晚于设定的开始时间后才会考虑信号。系统跳过最近的 `Shift` 根K线，利用之后 `Interval` 根历史K线的高低点与两条平滑移动平均线之间的关系来判断是否出现极端区间，从而捕捉趋势反转的机会。

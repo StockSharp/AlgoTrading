@@ -1,4 +1,5 @@
 # Hans123 Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 Hans123 Trader 是将 MetaTrader 5 上的 *Hans123_Trader* 专家顾问移植到 StockSharp 的突破策略。策略在设定的时间窗口内监控最近 `RangeLength` 根蜡烛的最高价与最低价，并在区间边界上刷新买入/卖出止损挂单，同时支持止损、止盈以及追踪止损。

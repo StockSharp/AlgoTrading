@@ -1,4 +1,5 @@
 # Farhad Crab 策略 (C#)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Farhad Crab 是一套趋势型策略，通过考察价格相对指数移动平均线 (EMA) 的位置来寻找回调入场机会，并使用固定止损、止盈、移动止损以及日线过滤器进行风险控制。原始的 MT5 专家顾问使用小时级别的 K 线执行交易，同时参考日线数据来决定是否平仓。本 C# 版本保持了这一框架，将工作周期的 EMA 与日线 EMA 交叉过滤结合使用。

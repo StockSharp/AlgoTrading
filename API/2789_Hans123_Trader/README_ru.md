@@ -1,4 +1,5 @@
 # Стратегия Hans123 Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Hans123 Trader — портированная в StockSharp версия советника *Hans123_Trader* для MetaTrader 5. Алгоритм отслеживает диапазон из `RangeLength` свечей, в торговом окне выставляет отложенные стоп-заявки на пробой границ диапазона и управляет позицией через стоп-лосс, тейк-профит и трейлинг.

@@ -1,5 +1,5 @@
 # Improve MA & RSI Hedge 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 的 “Improve” EA 迁移到 StockSharp 平台。它同时交易两个品种：在策略中选择的主品种以及用于对冲的品种。交易方向由主品种上的两条平滑移动平均线（SMMA）以及 RSI 指标共同决定。对冲腿与主腿保持同方向，从而构建协同的双品种头寸，目标是在相关资产同步运动时捕捉收益，同时降低单一品种的风险。
 

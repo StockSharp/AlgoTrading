@@ -1,4 +1,5 @@
 # SV Daily Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **SV Daily Breakout Strategy** is a direct C# conversion of the “SV v.4.2.5” MetaTrader 5 expert advisor. The system evaluates price action once per completed bar and allows at most one trade per exchange day. Trading begins only after the configured start time and relies on the relationship between the recent high/low range and two smoothed moving averages. A long position is opened when the full analysed range stays below both averages, signalling an anticipated rebound from oversold conditions. Conversely, a short position is opened when the range remains above both averages, signalling a potential reversal from overbought territory.

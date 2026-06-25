@@ -1,4 +1,5 @@
 # Cross Line Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy emulates the original MetaTrader "Cross Line Trader" expert by reacting to price interactions with user-defined synthetic lines. Instead of listening to manual chart objects, the StockSharp version receives all line descriptions through a single parameter, parses them at start and continuously monitors finished candles. When a candle open moves through an active line, the strategy places a market order in the corresponding direction and deactivates that line so it cannot trigger again.

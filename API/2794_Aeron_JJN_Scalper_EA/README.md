@@ -1,4 +1,5 @@
 # Aeron JJN Scalper EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level StockSharp port of the **Aeron JJN Scalper** expert advisor. It watches finished candles, identifies specific two-bar reversal situations, and places simulated stop orders at the open of the most recent opposite candle. When the market reaches the stored stop level the strategy enters with a market order, applies ATR-based risk targets, and manages the trade with a pip-based trailing stop.

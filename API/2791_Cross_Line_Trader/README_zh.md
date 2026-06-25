@@ -1,4 +1,5 @@
 # Cross Line Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 中的 “Cross Line Trader” 专家顾问，通过监控用户预先定义的合成线与价格的交互来下单。StockSharp 版本不再监听图表对象，而是从一个参数中读取所有线条描述，在启动时解析，并在每根收盘 K 线到来时持续监测。当新的 K 线开盘价穿越某条仍然有效的线时，策略会按照对应方向发送市价单，并将该线标记为不可再触发。

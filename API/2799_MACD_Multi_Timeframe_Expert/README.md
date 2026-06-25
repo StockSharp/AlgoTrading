@@ -1,4 +1,5 @@
 # MACD Multi-Timeframe Expert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the original "MACD Expert" MetaTrader robot inside the StockSharp framework. It synchronizes MACD trends across four timeframes—5 minutes, 15 minutes, 1 hour, and 4 hours—and only allows a new position when every timeframe points in the same direction. The goal is to capture multi-timeframe momentum alignment while filtering out periods of high spread.

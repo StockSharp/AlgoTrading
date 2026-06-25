@@ -1,4 +1,5 @@
 # Two MA RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Two MA RSI Strategy is a conversion of the original MetaTrader "2MA_RSI" expert advisor. It uses a fast and a slow exponential moving average (EMA) crossover confirmed by a Relative Strength Index (RSI) filter. Orders are sized with a martingale-style money management block that increases the next order volume after a loss. The StockSharp version works entirely on finished candles and reproduces the original take-profit and stop-loss behaviour in price points.
