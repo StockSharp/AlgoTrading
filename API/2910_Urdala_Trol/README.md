@@ -1,4 +1,5 @@
 # Urdala Trol Hedging Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Urdala Trol Hedging Grid Strategy** is a direct conversion of the MetaTrader 5 expert advisor `Urdala_Trol.mq5` into the StockSharp high-level API. The strategy continuously maintains exposure in both directions and scales positions using a martingale-like grid when stops are hit. It operates entirely on Level1 data (best bid/ask) without any indicators.

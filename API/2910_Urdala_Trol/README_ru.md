@@ -1,4 +1,5 @@
 # Сетка-хедж стратегия Urdala Trol
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Urdala Trol Hedging Grid Strategy** — прямой перенос советника MetaTrader 5 `Urdala_Trol.mq5` на высокоуровневый API StockSharp. Стратегия постоянно удерживает позиции в обе стороны и наращивает объёмы по принципу мартингейла, когда срабатывают стоп-приказы. Для работы достаточно данных Level1 (лучшие bid/ask); индикаторы не используются.

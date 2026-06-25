@@ -1,5 +1,5 @@
 # BykovTrend + ColorX2MA MMRec Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy reproduces the MQL5 expert `Exp_BykovTrend_ColorX2MA_MMRec`. It combines two independent modules:
 BykovTrend, which colours candles with a Williams %R filter, and ColorX2MA, which inspects the slope of a double-smoothed moving

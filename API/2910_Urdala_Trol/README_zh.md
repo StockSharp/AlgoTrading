@@ -1,4 +1,5 @@
 # Urdala Trol 对冲网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Urdala Trol Hedging Grid Strategy** 是 MetaTrader 5 智能交易系统 `Urdala_Trol.mq5` 的 StockSharp 高阶 API 版本。策略始终保持双向持仓，并在触发止损后以网格+马丁方式逐步加仓。策略仅依赖 Level1 最优买卖价数据，不使用任何技术指标。

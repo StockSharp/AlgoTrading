@@ -1,4 +1,5 @@
 # 全局止损与交易时段策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 MetaTrader 专家顾问 **Exp_GStopLoss_Tm** 的核心风控逻辑，用作其它交易模块之上的风险覆盖层。策略自身不产

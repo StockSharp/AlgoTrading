@@ -1,4 +1,5 @@
 # Стратегия глобального стоп-лосса и торгового окна
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия повторяет логику MetaTrader-советника **Exp_GStopLoss_Tm** и служит защитным слоем над любыми торговыми системами. Она не

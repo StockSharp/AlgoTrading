@@ -1,5 +1,5 @@
 # BykovTrend + ColorX2MA MMRec 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略在 StockSharp 平台上重现 MQL5 专家 `Exp_BykovTrend_ColorX2MA_MMRec` 的逻辑。它包含两个独立模块：
 BykovTrend 使用 Williams %R 为K线着色，而 ColorX2MA 通过双重平滑均线判断斜率。只要选定模块检测到新的颜色/

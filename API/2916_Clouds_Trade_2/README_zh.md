@@ -1,5 +1,5 @@
 # Clouds Trade 2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略为 Vladimir Karputov 的 "cloud's trade 2" EA 的 C# 版本。它结合了两次最近的比尔·威廉姆斯分形信号以及在超买/超卖区域的随机指标交叉来捕捉突破。风控部分复刻原始输入，提供固定止损止盈、带步长的移动止损以及按金额和点数锁定利润的功能。
 

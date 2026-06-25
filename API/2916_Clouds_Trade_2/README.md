@@ -1,5 +1,5 @@
 # Clouds Trade 2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of Vladimir Karputov's "cloud's trade 2" expert advisor. It trades breakouts confirmed by two recent Bill Williams fractals and an overbought/oversold crossover on the stochastic oscillator. Trade management mirrors the original inputs with configurable stop loss, take profit, trailing stop, and minimum profit locks.
 

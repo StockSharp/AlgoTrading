@@ -1,5 +1,5 @@
 # 全局止损计时策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 全局止损计时策略来源于 MetaTrader 专家顾问 `Exp_GStop_Tm`，用于账户级风险控制。
 策略在每根订阅蜡烛收盘时读取投资组合当前价值，并在达到预设的总盈利目标或总亏损限额后

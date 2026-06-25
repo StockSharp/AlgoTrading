@@ -1,5 +1,5 @@
 # Bollinger Band Two MA ZigZag 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该混合趋势策略结合了布林带反转、两个高周期均线以及 ZigZag 枢轴点。每次出现信号时会开启两笔仓位：第一笔按照计算出的止盈目标离场，第二笔作为“趋势持仓”依靠保本与移动止损进行管理。
 
