@@ -1,5 +1,5 @@
 # Dealers Trade MACD 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略移植自 MQL5 的 “Dealers Trade v7.74 MACD” 专家顾问。它是一套顺势加仓系统，通过 MACD 主线的斜率决定多空方向，并在价格沿趋势推进时逐步扩大仓位。作者建议用于 H4、D1 等较高周期，以过滤短周期噪音。
 

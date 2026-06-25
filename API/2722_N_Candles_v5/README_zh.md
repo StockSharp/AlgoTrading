@@ -1,4 +1,5 @@
 # N Candles v5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 N Candles v5 策略会寻找连续同向的蜡烛，并在满足条件时沿同一方向开仓。

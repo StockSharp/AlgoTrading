@@ -1,5 +1,5 @@
 # Larry Connors RSI-2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是经典 Larry Connors RSI-2 系统的 StockSharp 移植版本。它在小时线级别结合 2 周期 RSI、5 周期和 200 周期简单移动平均线，通过均值回归思路捕捉短期反弹，同时顺应长期趋势。可选的止损、止盈参数以点（pip）为单位，实现与 MetaTrader 原版一致的资金管理。
 

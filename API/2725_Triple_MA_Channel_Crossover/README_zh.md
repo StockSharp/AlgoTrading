@@ -1,4 +1,5 @@
 # 三均线通道交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **三均线通道交叉策略**（Triple MA Channel Crossover）在快速均线穿越中速与慢速均线时寻找趋势方向的突破，并借助

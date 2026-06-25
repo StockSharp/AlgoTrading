@@ -1,5 +1,5 @@
 # BeerGod EMA 定时策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 上的 BeerGodEA 迁移到 StockSharp 平台。它基于均值回归思想，仅在单一标的上操作，通过监控
 60 周期指数移动平均线 (EMA) 并比较上一根 K 线的收盘价来寻找机会。信号只会在每根 K 线开盘后经过指定的分钟数

@@ -1,4 +1,5 @@
 # Exp Blau CSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# conversion of the MetaTrader 5 expert adviser `Exp_BlauCSI`. It trades on the Blau Candle Stochastic Index (CSI) calculated on a selected candle series. The strategy can react either to zero-line breakdowns or to direction changes in the indicator and supports configurable stop-loss and take-profit levels measured in price steps.
 

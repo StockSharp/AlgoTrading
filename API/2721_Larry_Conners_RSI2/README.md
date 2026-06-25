@@ -1,5 +1,5 @@
 # Larry Connors RSI-2 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A faithful StockSharp port of the classic Larry Connors RSI-2 system. The strategy combines a fast 2-period RSI oscillator with moving-average filters on the hourly timeframe to capture short-term mean-reversion setups while staying aligned with the higher timeframe trend. Optional stop-loss and take-profit levels, expressed in pips, replicate the original MetaTrader money-management rules.
 

@@ -1,5 +1,5 @@
 # Стратегия BeerGod EMA Timing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит эксперта BeerGodEA из MetaTrader в экосистему StockSharp. Торговля ведётся на одном инструменте по
 сигналам возврата к среднему. Для фильтра направления используется экспоненциальная скользящая средняя (EMA) с периодом 60, а

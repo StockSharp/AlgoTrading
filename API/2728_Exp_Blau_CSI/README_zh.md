@@ -1,4 +1,5 @@
 # Exp Blau CSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 5 专家顾问 `Exp_BlauCSI` 的 C# 版本，利用 Blau Candle Stochastic Index（CSI）对所选 K 线序列进行分析。策略可以基于指标穿越零轴或趋势转折进行交易，并支持以最小价格步长定义的止损和止盈距离。
 

@@ -1,4 +1,5 @@
 # Стратегия Triple MA Channel Crossover
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Triple MA Channel Crossover** торгует направленные пробои в момент, когда быстрая скользящая средняя пересекает сверху или

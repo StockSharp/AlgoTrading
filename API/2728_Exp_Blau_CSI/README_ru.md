@@ -1,4 +1,5 @@
 # Стратегия Exp Blau CSI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данная стратегия представляет собой перенос советника MetaTrader 5 `Exp_BlauCSI` на платформу StockSharp. В основе лежит индикатор Blau Candle Stochastic Index (CSI), рассчитываемый по выбранному потоку свечей. Стратегия может работать по пробоям уровня ноль либо по разворотам индикатора и поддерживает фиксированные уровни стоп-лосса и тейк-профита в шагах цены.
 

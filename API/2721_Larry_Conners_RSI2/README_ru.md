@@ -1,5 +1,5 @@
 # Стратегия Larry Connors RSI-2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт стратегии Larry Connors RSI-2 для StockSharp. Алгоритм использует быструю RSI с периодом 2 и пару скользящих средних на часовом таймфрейме, чтобы отлавливать краткосрочные возвраты к среднему и фильтровать сделки в направлении долгосрочного тренда. Опциональные стоп-лосс и тейк-профит в пунктах повторяют логику оригинального эксперта для MetaTrader.
 

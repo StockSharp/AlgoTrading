@@ -1,4 +1,5 @@
 # VR ZVER 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 VR ZVER 策略是一套趋势跟随系统，同时使用三层确认：快速/慢速/超慢速 EMA 结构、随机指标和 RSI。只有当所有启用的过滤器同时满足方向条件时才会开仓，从而在行情震荡或信号矛盾时保持观望。本转换版保留了原有的盈亏平衡和保护性逻辑，并基于 StockSharp 的高级 API 实现。
