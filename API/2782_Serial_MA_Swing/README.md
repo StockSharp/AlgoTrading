@@ -1,4 +1,5 @@
 # Serial MA Swing Strategy (API/2782)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 - Converts the MetaTrader SerialMA expert advisor into a StockSharp high-level strategy using candle subscriptions and a custom serial moving average indicator.

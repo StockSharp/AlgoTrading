@@ -1,4 +1,5 @@
 # Patterns EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Patterns EA Strategy 是一套价形交易系统，会在每根新 K 线收盘时检查最近三根已完成的蜡烛。该实现是 MQL5 指标“Patterns_EA”的 StockSharp 版本，完整保留了原始脚本中 30 种蜡烛形态的可配置目录。每个形态都可以单独启用或禁用，并可指定做多或做空方向，从而复现原策略的主观配置能力。

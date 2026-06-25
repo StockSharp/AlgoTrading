@@ -1,5 +1,5 @@
 # Fractured Fractals 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自 MetaTrader 上的 “Fractured Fractals” 专家顾问。算法跟踪确认的威廉姆斯分形，在最新突破价位放置止损入场单，并使用相反方向的分形自动跟踪保护性止损单。
 

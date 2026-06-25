@@ -1,4 +1,5 @@
 # MACD EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 `MQL/20010` 目录中的 MetaTrader 5 专家顾问 `MACD EA (barabashkakvn's edition).mq5`，移植到 StockSharp 平台。转换后的版本完整保留了原始 EA 的 MACD 信号、分批止盈以及资金管理逻辑，并采用 StockSharp 的高级 API 实现。
 

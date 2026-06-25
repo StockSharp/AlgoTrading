@@ -1,4 +1,5 @@
 # Patterns EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Patterns EA Strategy is a price action system that scans the most recent three finished candles for a wide range of single, double, and triple-bar formations. The logic is a StockSharp port of the original MQL5 "Patterns_EA" expert advisor and preserves its configurable catalogue of 30 candlestick setups. Each pattern can be enabled or disabled independently and can be assigned to either long or short execution, allowing the strategy to mimic the discretionary rules from the source script.

@@ -1,4 +1,5 @@
 # Open Time Two Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Open Time Two Strategy** automates a time-scheduled trading plan that can manage two independent sessions during the trading day. Each session can be configured with its own direction, risk parameters, and optional forced closing window. The conversion follows the original MetaTrader logic but relies on StockSharp high-level APIs, candles, and parameter objects for configuration and optimization.

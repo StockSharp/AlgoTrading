@@ -1,4 +1,5 @@
 # 开盘时间双时段策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **开盘时间双时段策略** 通过预设的时间计划自动交易，可在同一交易日内管理两个独立的交易时段。每个时段都可以单独设置方向、风控参数以及可选的强制平仓窗口。该实现基于原始 MetaTrader 策略，使用 StockSharp 的高级 API、蜡烛数据和参数系统来完成配置与优化。

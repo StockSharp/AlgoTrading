@@ -1,4 +1,5 @@
 # Стратегия MACD EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой портирование советника MetaTrader 5 `MACD EA (barabashkakvn's edition).mq5` из папки `MQL/20010` на платформу StockSharp. Реализована вся логика оригинала: сигналы по MACD, частичная фиксация прибыли и управление объёмом, но с использованием высокоуровневого API StockSharp.
 

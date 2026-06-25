@@ -1,4 +1,5 @@
 # MA Crossover Multi Timeframe Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the idea of the original **MA Crossover** expert advisor for MetaTrader 4. It compares two moving averages that may come from different timeframes. A bullish crossover (fast MA above slow MA) opens a long position, while a bearish crossover opens a short position. Optional filters control the permitted trade direction, the active trading schedule and an equity guard. Internal stop-loss, take-profit and trailing logic emulate the "hidden" exits from the MQL version.
 

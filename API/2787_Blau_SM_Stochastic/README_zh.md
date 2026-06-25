@@ -1,5 +1,5 @@
 # Blau SM Stochastic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是将 MetaTrader 5 专家 `Exp_BlauSMStochastic` 迁移到 C# 的版本。核心使用 Blau SM Stochastic 振荡指标，通过测量价格相对于最近区间的位置并进行多次平滑来生成信号。策略仅在完全收盘的K线（默认 4 小时时间框架）上运作，可同时进行多头和空头交易。

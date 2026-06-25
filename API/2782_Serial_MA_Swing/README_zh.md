@@ -1,4 +1,5 @@
 # Serial MA Swing 策略 (API/2782)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 平台的 SerialMA 智能交易系统迁移到 StockSharp，高层 API 与自定义串行均线指标共同完成策略逻辑。

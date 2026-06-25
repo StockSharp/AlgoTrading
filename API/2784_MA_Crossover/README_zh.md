@@ -1,4 +1,5 @@
 # MA Crossover 多时间框架策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 MetaTrader 4 平台上的 **MA Crossover** 专家顾问。它比较来自两个时间框架的移动平均线：当快速均线上穿慢速均线时开多单，下穿时开空单。可以通过参数控制允许的交易方向、可交易时段以及权益保护。止损、止盈和跟踪止损在策略内部执行，以模拟 MQL 版本中的“隐藏”保护逻辑。
 

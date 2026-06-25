@@ -1,4 +1,5 @@
 # MACD EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor `MACD EA (barabashkakvn's edition).mq5` from folder `MQL/20010`. It recreates the same MACD crossover logic, partial profit taking, and money-management features while using the high-level StockSharp API.
 

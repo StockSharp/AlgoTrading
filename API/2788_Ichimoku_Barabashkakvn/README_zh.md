@@ -1,5 +1,5 @@
 # Ichimoku Barabashkakvn 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 平台上重现了 Vladimir Karputov（barabashkakvn 版本）的 Ichimoku 专家顾问。核心是 Tenkan/Kijun 的交叉配合云层位置，同时保留原始 EA 中的全部风控逻辑。
 

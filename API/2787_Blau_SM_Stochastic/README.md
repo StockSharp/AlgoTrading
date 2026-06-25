@@ -1,5 +1,5 @@
 # Blau SM Stochastic Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the original MetaTrader 5 expert `Exp_BlauSMStochastic` built around the Blau SM Stochastic oscillator. The indicator measures the distance between price and the recent trading range, applies multiple smoothing stages and compares the result with a smoothed reference line. The strategy works on completed candles (default 4-hour timeframe) and allows trading in both directions.
