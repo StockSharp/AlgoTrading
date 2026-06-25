@@ -1,4 +1,5 @@
 # 平盘通道策略 (2684)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 5 专家顾问 *Flat Channel (barabashkakvn 版本)* 的 C# 迁移版本。它通过 Standard Deviation 指标识别波动率持续下降的平盘区间，并在区间上下边界布置突破型止损单。当价格突破区间时，相应的止损单被触发，另一侧的挂单会立即取消，从而避免同时持有多空方向。
 

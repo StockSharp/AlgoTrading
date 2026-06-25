@@ -1,4 +1,5 @@
 # Flat Channel Strategy (2684)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# conversion of the MetaTrader 5 expert advisor *Flat Channel (barabashkakvn's edition)*. It detects periods of low volatility (a "flat" channel) using the Standard Deviation indicator and places breakout stop orders at the channel boundaries. When price breaks out of the flat range the corresponding stop order is triggered, while the opposite order is cancelled to avoid being trapped on both sides of the market.
 

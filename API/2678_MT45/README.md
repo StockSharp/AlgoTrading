@@ -1,4 +1,5 @@
 # MT45 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The MT45 strategy is a direct conversion of the original MetaTrader expert advisor. It alternates between long and short market positions on every completed bar, while protecting each trade with the same fixed take-profit and stop-loss distances that were used in the MQL implementation. Position sizing follows a martingale-style recovery rule so that the next trade increases its volume only after a losing result.

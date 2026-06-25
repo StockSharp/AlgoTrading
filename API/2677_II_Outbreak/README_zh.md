@@ -1,4 +1,5 @@
 # II Outbreak 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 II Outbreak 是一套最初在 MetaTrader 4 上实现的高频突破策略。它利用自研的时序振荡器和波动压力计捕捉方向性行情，并通过自适应跟踪止损与加仓机制管理持仓。本次移植将原始算法迁移到 StockSharp 的高层 API，同时保留对点差、波动性与日历的约束。

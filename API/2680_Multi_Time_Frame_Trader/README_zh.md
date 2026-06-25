@@ -1,5 +1,5 @@
 # Multi Time Frame Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 StockSharp 高级 API 复刻了原始 MQL 版本的「Multi Time Frame Trader」。策略同时使用 1 分钟、5 分钟
 和 1 小时三条多项式回归通道，只有在短周期触及通道边界且方向与小时通道斜率一致时才会开仓。

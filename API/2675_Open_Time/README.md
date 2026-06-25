@@ -1,4 +1,5 @@
 # Open Time Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Open Time Strategy is a time-scheduled trading system that replicates the behaviour of the MetaTrader 5 expert advisor *OpenTime*. The strategy watches the market clock on finished candles and opens trades only inside a configurable time window. It can close any active position during a dedicated exit window, apply an optional trailing stop, and enforce basic stop-loss and take-profit rules expressed in pips.

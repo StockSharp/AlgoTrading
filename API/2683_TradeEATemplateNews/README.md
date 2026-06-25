@@ -1,4 +1,5 @@
 # Trade EA Template for News Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Trade EA Template for News Strategy is a C# conversion of the MetaTrader 4 expert advisor "Trade EA Template for News". The original system paused trading around scheduled economic events downloaded from external websites. This StockSharp port keeps the core ideas while adapting them to the high-level API:

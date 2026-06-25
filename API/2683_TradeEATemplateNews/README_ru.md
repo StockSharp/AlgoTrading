@@ -1,4 +1,5 @@
 # Стратегия Trade EA Template for News
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Trade EA Template for News Strategy — это порт на C# экспертного советника MetaTrader 4 «Trade EA Template for News». Оригинальная версия отключала торговлю перед и после выхода макроэкономических новостей, которые подгружались с внешних сайтов. Реализация для StockSharp сохраняет идею фильтра новостей и переносит её на высокоуровневый API:

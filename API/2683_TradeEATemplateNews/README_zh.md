@@ -1,4 +1,5 @@
 # Trade EA Template for News 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Trade EA Template for News 策略是 MetaTrader 4 专家顾问“Trade EA Template for News”的 C# 版本。原始脚本会在重大经济新闻发布前后停止交易，本移植版在 StockSharp 高级 API 中复现这一思路：

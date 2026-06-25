@@ -1,5 +1,5 @@
 # Стратегия Multi Time Frame Trader
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воспроизводит оригинальную MQL-реализацию «Multi Time Frame Trader» на базе высокоуровневого API StockSharp. Она
 использует три полиномиальных регрессионных канала (M1, M5 и H1) и открывает сделки только тогда, когда младшие таймфреймы

@@ -1,4 +1,5 @@
 # Anubis Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Anubis strategy combines multi-timeframe volatility and momentum filters to capture reversals against strong countertrend spikes. The original expert advisor from MetaTrader 5 used H4 indicators to gate entries and M15 signals for timing. This conversion keeps the same structure while adapting the logic to StockSharp's high-level API and providing rich runtime telemetry.

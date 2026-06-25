@@ -1,4 +1,5 @@
 # II Outbreak Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The II Outbreak strategy is a high-frequency breakout system originally written for MetaTrader 4. It combines a proprietary timing oscillator with a volatility pressure gauge to enter strong directional moves, then manages trades using adaptive trailing stops and pyramiding. This conversion reproduces the original logic on top of the StockSharp high-level API and keeps the same guardrails for spread, volatility and calendar filters.

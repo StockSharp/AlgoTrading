@@ -1,4 +1,5 @@
 # MT45 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 MT45 策略是原始 MetaTrader 专家顾问的完整移植版本。系统在每根收盘的 K 线后交替开多单和空单，并使用与 MQL 版本相同的固定止盈和止损距离保护头寸。仓位管理遵循马丁式加仓逻辑：只有在上一笔交易亏损时才放大下一次的下单数量，并在达到上限后回落到基础手数。

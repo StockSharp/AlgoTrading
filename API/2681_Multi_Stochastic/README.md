@@ -1,4 +1,5 @@
 # Multi Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Multi Stochastic strategy is a high-level StockSharp implementation of the "Multi Stochastic (barabashkakvn's edition)" MetaTrader 5 expert advisor. It monitors up to four currency pairs simultaneously and relies on synchronized signals from Stochastic Oscillator readings (5, 3, 3). The strategy opens a single market position per symbol when an oversold or overbought crossover occurs and closes trades via fixed pip-based stop-loss and take-profit targets.

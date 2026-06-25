@@ -1,4 +1,5 @@
 # Multi Stochastic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Multi Stochastic 策略是 MetaTrader 5 指标「Multi Stochastic (barabashkakvn's edition)」的 StockSharp 高级 API 改写版本。策略最多可以同时跟踪四个外汇品种，为每个品种计算参数为 5、3、3 的随机指标。当随机指标在超卖或超买区域内发生交叉时，策略会开仓，且每个品种始终只持有一笔仓位，并通过固定的点数止损 / 止盈离场。

@@ -1,4 +1,5 @@
 # 多品种覆盖对冲策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 4 专家顾问 **“Multicurrency hedge example EA (overlay hedge)”** 转换为 StockSharp 高层 API 版本。
 

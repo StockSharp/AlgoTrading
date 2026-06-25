@@ -1,4 +1,5 @@
 # 开盘时间策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 开盘时间策略是基于时间计划的交易系统，移植自 MetaTrader 5 专家顾问 *OpenTime*。策略在每根完成的K线后检查市场时间，只在可配置的开仓时间窗口内下单。它可以在单独的平仓时间窗口中关闭已有仓位，支持可选的移动止损，并按照点数执行初始止损和止盈。

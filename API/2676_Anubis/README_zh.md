@@ -1,4 +1,5 @@
 # Anubis 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Anubis 策略结合了多周期波动率与动量过滤，用于捕捉强烈反向冲击后的反弹行情。原始的 MT5 专家顾问在 H4 周期上应用过滤指标，在 M15 周期上完成入场判定。移植到 StockSharp 后，保留了这一结构，并利用高阶 API 提供更清晰的状态管理与可视化。

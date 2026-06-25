@@ -1,4 +1,5 @@
 # Стратегия Flat Channel (2684)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос на C# советника MetaTrader 5 *Flat Channel (редакция barabashkakvn)*. Алгоритм выявляет периоды затухающей волатильности по индикатору Standard Deviation и строит ценовой коридор. При прорыве границ коридора выставленные отложенные ордера Buy Stop или Sell Stop активируются, а противоположный ордер снимается, чтобы не попасть в ловушку обеих сторон рынка.
 

@@ -1,5 +1,5 @@
 # Multi Time Frame Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the original MQL "Multi Time Frame Trader" logic with StockSharp high-level APIs. It combines three
 polynomial regression channels (M1, M5 and H1) and only trades when the lower time frames test their channel extremes in the
