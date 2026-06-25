@@ -1,5 +1,5 @@
 # CandleStop System Tm Plus
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Breakout strategy built around the CandleStop custom channel indicator. The system continuously calculates delayed highest-high and lowest-low bands, waits for a completed candle to close beyond those bands, and then reacts on the following bar. It optionally enforces a maximum position lifetime and uses point-based protective stops.
 

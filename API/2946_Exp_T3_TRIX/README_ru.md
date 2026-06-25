@@ -1,4 +1,5 @@
 # Стратегия Exp T3 TRIX (ID 2946)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Exp T3 TRIX повторяет одноимённого эксперта MetaTrader 5 и использует трижды сглаженный осциллятор TRIX. Две цепочки Tillson T3 формируют быструю и медленную линию, а торговые решения принимаются по трём режимам, определяющим развороты импульса.
 

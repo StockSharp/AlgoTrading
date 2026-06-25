@@ -1,4 +1,5 @@
 # Exp Digital MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp Digital MACD 策略在 StockSharp 框架中复刻了 MetaTrader 5 专家顾问 “Exp_Digital_MACD” 的逻辑。策略订阅指定周期的收盘 K 线，并根据 MACD 类振荡器的相对位置与斜率生成信号。源代码中的四种工作模式在此得到保留：

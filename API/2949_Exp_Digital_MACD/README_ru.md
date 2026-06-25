@@ -1,4 +1,5 @@
 # Стратегия Exp Digital MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Exp Digital MACD переносит логику экспертного советника MetaTrader 5 «Exp_Digital_MACD» в инфраструктуру StockSharp. Она подписывается на свечи выбранного таймфрейма и реагирует на форму и расположение MACD‑осциллятора. В коде сохранены четыре режима работы:

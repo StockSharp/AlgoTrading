@@ -1,4 +1,5 @@
 # Exp T3 TRIX 策略 (ID 2946)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Exp T3 TRIX 策略移植自 MetaTrader 5 的同名专家顾问，通过三重平滑的 TRIX 指标捕捉动量反转。策略利用 Tillson T3 平滑获得快慢两条 TRIX 曲线，并根据三种可选模式判定何时进出场。
 

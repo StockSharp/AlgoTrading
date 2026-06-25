@@ -1,4 +1,5 @@
 # MACD Sample Trend Filter 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 5 经典 **MACD Sample** 专家顾问的移植版本。它结合 MACD 指标交叉与 EMA 趋势过滤器。交易手数由策略的 `Volume` 属性控制，风险管理依赖可配置的 MACD 阈值、止盈距离以及跟踪止损距离（以点数计）。
 

@@ -1,4 +1,5 @@
 # Exp Digital MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Exp Digital MACD strategy recreates the behaviour of the original MetaTrader 5 expert advisor "Exp_Digital_MACD" inside the StockSharp framework. The system listens to completed candles from a dedicated timeframe and reacts to the relative position and slope of a MACD style oscillator. Four operating modes reproduce the decision rules of the source code:

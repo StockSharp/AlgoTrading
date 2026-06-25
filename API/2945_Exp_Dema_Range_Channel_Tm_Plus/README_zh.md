@@ -1,5 +1,5 @@
 # Exp DEMA Range Channel Tm Plus 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Exp DEMA Range Channel Tm Plus 策略将原版 MetaTrader 专家顾问迁移到 StockSharp 高级 API。它在每根 K 线的高点和低点上分别计算双指数移动平均线（DEMA），形成一个价格通道，然后根据通道生成的颜色判断是否出现向上或向下的突破。策略保留了原始脚本中的突破与持仓时间规则，同时将资金管理简化为使用 `Volume` 属性与可选的保护性止损/止盈。
 

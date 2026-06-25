@@ -1,4 +1,5 @@
 # Стратегия MACD Sample Trend Filter
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос классического советника **MACD Sample** из MetaTrader 5. Используются пересечения MACD, дополненные фильтрацией по EMA. Размер позиции задаётся свойством `Volume`, а управление риском основано на настраиваемых порогах MACD, дистанции тейк-профита и трейлинг-стопа (в пунктах).
 

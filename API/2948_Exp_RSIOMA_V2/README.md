@@ -1,4 +1,5 @@
 # Exp RSIOMA V2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Exp RSIOMA V2 is a conversion of the original MetaTrader 5 expert advisor that trades on the RSIOMA oscillator (Relative Strength Index of Moving Average). The strategy reproduces the same ideas inside the StockSharp high level API: price data are smoothed, converted into a momentum series and fed into an RSI style accumulator. Trading decisions are taken when the oscillator changes direction or crosses predefined zones.

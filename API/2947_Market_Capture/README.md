@@ -1,4 +1,5 @@
 # Market Capture Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Market Capture strategy reproduces the logic of the original MetaTrader 5 expert. The algorithm builds a dynamic grid around a moving center price and opens hedge-style trades whenever price swings around this center. Positions are distributed above and below the center with fixed profit targets, while account equity milestones control when to liquidate the worst losing trades.

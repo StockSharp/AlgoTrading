@@ -1,4 +1,5 @@
 # Стратегия Exp RSIOMA V2
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Exp RSIOMA V2 — конверсия оригинального советника MetaTrader 5 в инфраструктуру StockSharp. Стратегия использует осциллятор RSIOMA (Relative Strength Index of Moving Average): выбранная цена свечи сглаживается, из сглаженных значений рассчитывается импульс, после чего формируется RSI-подобная величина. Торговые решения принимаются, когда осциллятор меняет направление или выходит из ключевых зон.

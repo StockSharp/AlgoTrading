@@ -1,5 +1,5 @@
 # Exp DEMA Range Channel Tm Plus Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Exp DEMA Range Channel Tm Plus strategy ports the original MetaTrader expert advisor into StockSharp's high-level API. It builds a double exponential moving average (DEMA) channel around price extremes and interprets candle colors produced by the channel to decide when to trade. The implementation keeps the money management logic simple, relying on the platform `Volume` property and optional protective orders while reproducing the breakout and time-out rules of the source code.
 

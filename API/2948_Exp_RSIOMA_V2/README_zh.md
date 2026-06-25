@@ -1,4 +1,5 @@
 # Exp RSIOMA V2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp RSIOMA V2 策略基于 MetaTrader 5 平台的同名专家顾问，将其迁移到 StockSharp 高级 API。策略依旧围绕 RSIOMA（移动平均的 RSI）指标运行：先对价格进行平滑处理，再计算动量，随后构建 RSI 式的加权平均，以监测指标进入或离开关键区域时的交易机会。

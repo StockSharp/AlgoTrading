@@ -1,4 +1,5 @@
 # Exp T3 TRIX Strategy (ID 2946)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Exp T3 TRIX strategy replicates the MetaTrader 5 expert advisor built around the triple-smoothed TRIX oscillator. It applies Tillson T3 smoothing to generate a fast and slow TRIX stream and reacts to momentum reversals using three selectable modes. Each mode controls how the histogram or the relative position of the fast and slow components must behave before the strategy will enter or exit a position.
 

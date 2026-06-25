@@ -1,4 +1,5 @@
 # MACD Sample Trend Filter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a direct port of the classic MetaTrader 5 **MACD Sample** expert advisor. It uses MACD crossovers filtered by an EMA trend detector. Orders are sized with the standard `Volume` property, while risk management relies on configurable pip thresholds for the MACD histogram, take profit and trailing stop.
 

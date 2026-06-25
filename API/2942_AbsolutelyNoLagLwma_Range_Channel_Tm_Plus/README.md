@@ -1,4 +1,5 @@
 # AbsolutelyNoLagLWMA Range Channel TM Plus Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct port of the MetaTrader expert "Exp_AbsolutelyNoLagLwma_Range_Channel_Tm_Plus". It trades a price channel derived from a double-smoothed linear weighted moving average (LWMA) of the candle highs and lows. The StockSharp version keeps the original behaviour: signals are evaluated on finished candles of a selectable timeframe, the channel state is encoded in the same way as the MQL indicator, and position management follows the same priority order (time exit first, indicator exits second, new entries last).

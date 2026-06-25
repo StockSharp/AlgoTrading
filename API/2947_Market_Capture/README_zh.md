@@ -1,4 +1,5 @@
 # 市场捕捉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 市场捕捉策略复刻了原始 MetaTrader 5 专家的思路。算法围绕一个随价格移动的中心价位构建动态网格，只要价格在中心附近来回摆动就建立对冲式的仓位。头寸分布在中心之上和之下，并设置固定的盈利目标；同时根据账户权益的里程碑来决定何时平掉亏损最重的仓位。

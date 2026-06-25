@@ -1,4 +1,5 @@
 # AbsolutelyNoLagLWMA Range Channel TM Plus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略为 MetaTrader 专家顾问“Exp_AbsolutelyNoLagLwma_Range_Channel_Tm_Plus”的 StockSharp 版本。它使用对最高价和最低价进行双重线性加权移动平均（LWMA）平滑得到的价格通道，并在通道突破时执行交易。移植过程中保留了原有行为：仅在所选周期的已完成 K 线触发信号、通道状态与原指标完全一致、仓位管理按照“时间退出 → 指标退出 → 新开仓”的顺序执行。
