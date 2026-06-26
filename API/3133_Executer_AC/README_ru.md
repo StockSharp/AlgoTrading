@@ -1,4 +1,5 @@
 # Стратегия Executer AC
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Executer AC** — точный порт оригинального советника MetaTrader 5, использующего индикатор Билла Вильямса *Accelerator Oscillator (AC)*. Реализация на StockSharp полностью повторяет структуру сигналов MQL5-версии и добавляет удобные параметры для управления риском и визуализации на графике.
 

@@ -1,4 +1,5 @@
 # Executer AC 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Executer AC** 策略是 MetaTrader 5 版 "Executer AC" 专家的完整移植版本，核心依据 Bill Williams 的 *Accelerator Oscillator (AC)*。StockSharp 实现保持原脚本的交易逻辑，并提供参数化风险控制与可视化支持。
 

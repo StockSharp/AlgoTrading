@@ -1,4 +1,5 @@
 # Bronze Warrioir 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 5 智能交易系统 *Bronze Warrioir.mq5* 转写为 StockSharp 高级 API 版本。

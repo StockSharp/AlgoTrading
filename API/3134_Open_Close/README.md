@@ -1,4 +1,5 @@
 # Open Close
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Open Close is a port of the MetaTrader 5 expert advisor `Open Close.mq5` (ticket 23090). The strategy observes the relationship between the opens and closes of the two most recent finished candles. It trades a single position at a time: when the newer candle reverses relative to the previous one the strategy enters, and when both candles point in the same direction it exits. The C# version reproduces the original adaptive lot sizing that reduces exposure after a streak of losing trades.

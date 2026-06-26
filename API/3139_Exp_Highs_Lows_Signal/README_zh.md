@@ -1,4 +1,5 @@
 # Exp Highs Lows Signal
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp Highs Lows Signal 是 MetaTrader 5 专家顾问 `Exp_HighsLowsSignal` 的移植版本。策略依靠一个模式检测器，在所选周期内寻找若干根连续 K 线同时创出更高的高点和更高的低点（看涨序列）或更低的高点和更低的低点（看跌序列）。一旦检测到序列，策略会按照设定的已收盘 K 线数量延迟执行，先平掉相反方向的持仓，再根据需要开仓。止损和止盈以最小价格波动单位（point）表示，以复现原始算法的资金管理方式。

@@ -1,4 +1,5 @@
 # Flat Channel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Flat Channel Strategy** 是 MetaTrader 5 智能交易系统 *Flat Channel (barabashkakvn's edition)* 的 StockSharp 高级 API 版本。策略完整复刻原始流程：通过平滑后的标准差识别波动率收缩区间，区间内的最高价和最低价定义水平通道，并在通道两侧稍作偏移后挂出买入/卖出止损单。一旦市场向任一方向突破，策略即以预设的止损和止盈水平进场，并可根据利润情况启动移动止损。
 

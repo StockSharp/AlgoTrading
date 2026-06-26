@@ -1,4 +1,5 @@
 # Advanced EA Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the **Advanced EA Panel** utility from MQL5. The original expert advisor provided a manual trading dashboard with multi-timeframe analytics, pivot management, and quick trade buttons. The C# implementation re-creates those analytical capabilities inside an automated strategy so they remain available without an on-chart control panel.
 

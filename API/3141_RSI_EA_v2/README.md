@@ -1,4 +1,5 @@
 # RSI EA v2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor **"RSI EA v2"**. It automates trading around Relative Strength Index (RSI) threshold crossings while mirroring the original advisor's money-management, trailing-stop, and trading window controls. By default the strategy processes one-minute candles, but any candle type can be supplied through parameters.
 

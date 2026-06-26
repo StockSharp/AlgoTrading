@@ -1,5 +1,5 @@
 # 随机CG振荡器策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 **Exp_StochasticCGOscillator** MetaTrader 5 智能交易系统移植到 StockSharp。转换过程完整重建了随机重心振荡器及其触发线平滑算法，并使用 StockSharp 的高级策略 API 执行交易。
 

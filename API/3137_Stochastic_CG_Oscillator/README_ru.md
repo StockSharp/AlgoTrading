@@ -1,5 +1,5 @@
 # Стратегия Stochastic CG Oscillator
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит эксперт **Exp_StochasticCGOscillator** для MetaTrader 5 в экосистему StockSharp. Реализация заново создаёт индикатор Stochastic Center of Gravity, повторяет сглаживание сигнальной линии и использует высокоуровневый API StockSharp для торговых операций.
 

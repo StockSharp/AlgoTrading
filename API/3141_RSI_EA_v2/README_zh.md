@@ -1,4 +1,5 @@
 # RSI EA v2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 5 专家顾问 **“RSI EA v2”** 的 StockSharp 版本。它围绕 RSI 阈值突破自动化交易，并保留原始 EA 的资金管理、移动止损以及交易时间控制。默认使用 1 分钟 K 线，但可以通过参数替换为任何所需的烛图类型。
 

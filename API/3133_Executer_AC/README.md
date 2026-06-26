@@ -1,4 +1,5 @@
 # Executer AC Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Executer AC Strategy** is a faithful StockSharp port of the MetaTrader 5 "Executer AC" expert advisor. The original EA trades on the **Accelerator Oscillator (AC)** developed by Bill Williams and combines its momentum swings with a fixed stop/limit framework and a trailing stop module. This conversion keeps the behaviour of the MQL5 version while exposing user-friendly parameters that integrate with the high-level StockSharp API.
 

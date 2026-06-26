@@ -1,4 +1,5 @@
 # Exp Slow Stoch Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp high-level port of the MetaTrader 5 expert advisor **Exp_Slow-Stoch_Duplex**. It combines two slow stochastic oscillators that work on independent timeframes to generate coordinated long and short signals. Each oscillator delivers its own crossover signals, allowing the strategy to open or close directional positions while the protective orders emulate the original stop-loss and take-profit management.
 

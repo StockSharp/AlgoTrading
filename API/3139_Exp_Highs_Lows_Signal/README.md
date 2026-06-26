@@ -1,4 +1,5 @@
 # Exp Highs Lows Signal
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Exp Highs Lows Signal is a direct port of the MetaTrader 5 expert advisor `Exp_HighsLowsSignal`. The strategy relies on a pattern detector that searches for a configurable number of consecutive candles that print higher highs and higher lows (bullish sequence) or lower highs and lower lows (bearish sequence). Once a sequence is found, the strategy delays the reaction by the configured number of closed bars, closes any opposite exposure, and optionally opens a position in the detected direction. Protective stops are expressed in price steps to mirror the point-based money management used by the original robot.

@@ -1,4 +1,5 @@
 # Advanced EA Panel Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL5 的 **Advanced EA Panel** 手动交易面板移植到 StockSharp 平台。原始面板提供多周期指标、枢轴点、风险评估以及一键交易。现在所有计算都由 C# 策略自动完成，并通过日志与参数呈现，方便接入自动化流程或自建界面。
 

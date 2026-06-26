@@ -1,4 +1,5 @@
 # Open Close
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Open Close 是 MetaTrader 5 智能交易系统 `Open Close.mq5`（编号 23090）的移植版本。策略对比最近两根已完成 K 线的开盘价与收盘价关系，一次只持有一笔仓位：当最新 K 线相对于上一根出现反转时开仓，当两根 K 线同向运行时平仓。C# 实现保留了原版的自适应下单量逻辑，可在连续亏损后自动收缩仓位。

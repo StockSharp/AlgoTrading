@@ -1,4 +1,5 @@
 # Flat Channel Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Flat Channel Strategy** is a C# translation of the MetaTrader 5 expert advisor *Flat Channel (barabashkakvn's edition)*. It keeps the original workflow: a smoothed standard deviation highlights volatility squeezes, the highest and lowest prices inside the squeeze define a horizontal channel, and pending stop orders are placed just outside of that range. When the market breaks out the strategy joins the move with predefined stop-loss and take-profit levels and can optionally trail the stop as the position gains profit.
 

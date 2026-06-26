@@ -1,4 +1,5 @@
 # Exp Slow Stoch Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略基于 MetaTrader 5 专家顾问 **Exp_Slow-Stoch_Duplex**，在 StockSharp 高级 API 中重写。它同时跟踪两个独立时间框架上的慢速随机振荡器，协同生成多头和空头信号，并通过保护性订单复现原始 EA 的止盈止损管理。
 
