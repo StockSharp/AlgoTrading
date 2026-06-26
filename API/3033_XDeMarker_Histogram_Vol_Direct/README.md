@@ -1,5 +1,5 @@
 # XDeMarker Histogram Vol Direct Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader 5 expert **Exp_XDeMarker_Histogram_Vol_Direct** using StockSharp's high-level API. It
 multiplies the DeMarker oscillator by the chosen volume stream, smooths both the oscillator and the volume with the same moving

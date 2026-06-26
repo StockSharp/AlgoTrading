@@ -1,4 +1,5 @@
 # RSI & CCI Divergence Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **RSI & CCI Divergence Strategy** is a conversion of the MetaTrader expert advisor `RSI&CCI_DIVERGENCE.mq4` (MQL ID 22266). The system searches for bearish or bullish divergences between price highs and two oscillators (Commodity Channel Index and Relative Strength Index), filters them with a linear weighted moving average trend filter, validates the signal with MACD alignment on three different timeframes, and confirms momentum strength using a higher timeframe momentum oscillator. Optional absolute stop-loss and take-profit targets can be applied to manage open positions.

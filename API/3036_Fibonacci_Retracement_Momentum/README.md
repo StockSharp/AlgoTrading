@@ -1,4 +1,5 @@
 # Fibonacci Retracement Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Fibonacci Retracement Momentum Strategy** is a conversion of the original MetaTrader expert advisor "FIBONACCI.mq4" to the StockSharp high-level API. The strategy combines multi-timeframe Fibonacci retracement levels with momentum and MACD filters to time pullback entries in the direction of the prevailing trend. The primary trading logic is executed on the base timeframe, while confirmation data is derived from higher aggregation periods.

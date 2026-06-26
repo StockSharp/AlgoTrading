@@ -1,4 +1,5 @@
 # Pinbar 反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于原始 MQL 智能交易系统 `PINBAR.mq4`（目录 `MQL/22269`）转换。策略在主时间框识别针形线反转，并通过更高时间框的动量与 MACD 滤波确认信号。所有逻辑均使用 StockSharp 的高级 API 实现。
 

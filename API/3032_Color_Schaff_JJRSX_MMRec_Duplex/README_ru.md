@@ -1,4 +1,5 @@
 # Стратегия Color Schaff JJRSX MMRec Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Эта стратегия представляет собой порт MetaTrader-советника `Exp_ColorSchaffJJRSXTrendCycle_MMRec_Duplex` на платформу StockSharp. Исходный робот сочетает два осциллятора Schaff Trend Cycle на основе JJRSX и модуль MMRec (Money Management Recalculation), уменьшающий объём после серии убыточных сделок. В C# версии сохранена дуальная структура (лонг/шорт) и гибкие настройки управления риском, а недоступный индикатор JJRSX заменён надёжной аппроксимацией на базе встроенных инструментов.

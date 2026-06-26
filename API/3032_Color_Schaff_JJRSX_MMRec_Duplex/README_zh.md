@@ -1,4 +1,5 @@
 # Color Schaff JJRSX MMRec Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 智能交易系统 `Exp_ColorSchaffJJRSXTrendCycle_MMRec_Duplex` 在 StockSharp 平台上的移植版本。原始机器人将基于 JJRSX 的双重 Schaff Trend Cycle 振荡器与 MMRec（资金管理重算）模块结合，在出现连续亏损时自动降低头寸规模。C# 版本保留了多空双通道结构和灵活的风险参数，并使用平台内的组件实现对 JJRSX 指标的可靠近似。

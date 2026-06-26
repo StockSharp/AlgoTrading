@@ -1,4 +1,5 @@
 # Bollinger Band Squeeze Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the original MetaTrader 4 expert advisor "BOLINGER BAND SQUEEZE" using the StockSharp high level API. It looks for periods where Bollinger Bands contract and then enter trades once the bands expand, provided that momentum and trend filters confirm the move. The conversion keeps the multi-timeframe confirmation logic and transforms the money-management blocks into StockSharp idioms.

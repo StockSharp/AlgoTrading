@@ -1,4 +1,5 @@
 # Стратегия Exp Skyscraper Fix Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Exp Skyscraper Fix Duplex — порт советника MQL5 *Exp_Skyscraper_Fix_Duplex*. Стратегия строит каналы Skyscraper Fix для длинной и короткой стороны отдельно, поэтому для каждого направления можно выбрать свою таймфреймную серию, длину ATR и чувствительность. Это позволяет по-разному реагировать на фазу рынка, но использовать единый торговый модуль StockSharp.

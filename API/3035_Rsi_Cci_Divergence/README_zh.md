@@ -1,4 +1,5 @@
 # RSI 与 CCI 背离策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **RSI 与 CCI 背离策略** 是对 MetaTrader 专家顾问 `RSI&CCI_DIVERGENCE.mq4`（MQL ID 22266）的移植。策略在主图上寻找价格高点与两个震荡指标（CCI 与 RSI）之间的多空背离，通过线性加权移动平均线过滤趋势，再利用三个不同时间框架上的 MACD 排列确认信号，并借助更高周期的动量指标验证行情强度。策略还提供可选的绝对止损和止盈距离，以便在 StockSharp 中控制持仓风险。

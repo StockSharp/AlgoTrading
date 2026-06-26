@@ -1,4 +1,5 @@
 # Freeman ATR MA RSI Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader "freeman" expert advisor using StockSharp's high level API. It layers multiple market positions while a trend measured by a moving average slope stays aligned with an RSI confirmation. Every entry and exit distance is defined in pips and converted to price units using the instrument tick size so the behaviour matches the original forex implementation.

@@ -1,4 +1,5 @@
 # Color Schaff JCCX Trend Cycle MMRec Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 中的双向专家 "ColorSchaffJCCXTrendCycle_MMRec_Duplex" 迁移到 StockSharp 平台。

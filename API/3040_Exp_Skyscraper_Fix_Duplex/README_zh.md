@@ -1,4 +1,5 @@
 # Exp Skyscraper Fix Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp Skyscraper Fix Duplex 是 MQL5 专家顾问 *Exp_Skyscraper_Fix_Duplex* 的移植版本。策略分别为多头与空头侧构建 Skyscraper Fix 渠道，每一侧都可以使用不同的时间框架、ATR 窗口与灵敏度，从而在 StockSharp 内部以同一交易框架应对不同的市场状态。

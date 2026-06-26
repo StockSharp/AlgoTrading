@@ -1,4 +1,5 @@
 # Fibonacci Retracement Momentum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Fibonacci Retracement Momentum Strategy** 是将原始 MetaTrader 专家顾问 "FIBONACCI.mq4" 迁移到 StockSharp 高级 API 的版本。策略把多周期的斐波那契回撤位与 Momentum 和 MACD 过滤器结合起来，用于在趋势方向上寻找回调入场点。主要交易逻辑运行在基础周期，而确认信号来自更高的时间框架。

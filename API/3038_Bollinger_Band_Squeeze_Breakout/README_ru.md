@@ -1,4 +1,5 @@
 # Стратегия Bollinger Band Squeeze Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия представляет собой перенос советника MetaTrader 4 «BOLINGER BAND SQUEEZE» на высокоуровневый API StockSharp. Алгоритм ищет периоды сжатия полос Боллинджера на рабочем таймфрейме и входит в позиции при расширении полос, если движение подтверждается фильтрами тренда, импульса и макро-тренда. Дополнительно логика управления позициями адаптирована под инфраструктуру `Strategy`.

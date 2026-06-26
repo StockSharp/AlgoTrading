@@ -1,4 +1,5 @@
 # Freeman ATR MA RSI Grid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 的 "freeman" 专家顾问迁移到 StockSharp 的高级 API。策略在移动均线斜率与 RSI 过滤器方向一致时逐步加仓，所有距离均以点（pip）配置，并通过合约最小价格步长换算为价格差，以保持原始外汇版本的行为。

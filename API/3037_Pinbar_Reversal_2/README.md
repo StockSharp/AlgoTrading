@@ -1,4 +1,5 @@
 # Pinbar Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the original MQL expert advisor `PINBAR.mq4` (folder `MQL/22269`). The strategy detects pin bar reversals on the primary timeframe and confirms them with higher timeframe momentum and MACD filters. It reproduces the spirit of the source system while using StockSharp high-level API features.
 

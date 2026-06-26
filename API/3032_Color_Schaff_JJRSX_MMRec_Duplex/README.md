@@ -1,4 +1,5 @@
 # Color Schaff JJRSX MMRec Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor `Exp_ColorSchaffJJRSXTrendCycle_MMRec_Duplex`. The original robot combines two Schaff Trend Cycle oscillators driven by JJRSX momentum and an MMRec (Money Management Recalculation) module that reduces exposure after a sequence of losses. The C# conversion preserves the dual long/short layout and mirrors the adjustable risk controls while replacing the unavailable JJRSX indicator with a robust in-platform approximation.

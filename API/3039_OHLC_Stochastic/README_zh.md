@@ -1,5 +1,5 @@
 # OHLC 随机指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 OHLC 蜡烛图的动量跟随策略，核心为经典的 %K/%D 随机指标。
 当指标在超买/超卖区域内交叉时触发交易，并通过按价格步长移动的跟踪止损保护浮动利润。

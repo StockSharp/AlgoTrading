@@ -1,5 +1,5 @@
 # XDeMarker Histogram Vol Direct 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 中的 **Exp_XDeMarker_Histogram_Vol_Direct** 专家移植到 StockSharp 平台。它把 DeMarker 指标与选定的
 成交量流（tick 数或真实成交量）相乘，再用相同的移动平均对指标与成交量进行平滑处理，并与可调的上下动态区间进行比较。

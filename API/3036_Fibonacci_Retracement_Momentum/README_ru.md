@@ -1,4 +1,5 @@
 # Стратегия Fibonacci Retracement Momentum
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Fibonacci Retracement Momentum Strategy** — это порт оригинального советника MetaTrader "FIBONACCI.mq4" на высокоуровневый API StockSharp. Стратегия сочетает уровни Фибоначчи нескольких таймфреймов с фильтрами Momentum и MACD, чтобы находить откаты в направлении доминирующего тренда. Основная логика работает на базовом таймфрейме, а подтверждающие данные поступают из более крупных интервалов.

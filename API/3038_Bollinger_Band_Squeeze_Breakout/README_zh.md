@@ -1,4 +1,5 @@
 # Bollinger Band Squeeze Breakout 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 4 中的 “BOLINGER BAND SQUEEZE” 智能交易系统完整移植到 StockSharp 高级 API。策略在主周期上识别布林带收缩阶段，并在带宽重新扩张且多重滤波确认之后开仓。本实现保留了原脚本中的多周期动量确认，同时使用 StockSharp 的订单保护和参数系统。

@@ -1,4 +1,5 @@
 # Стратегия Pinbar Reversal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация из исходного советника MQL `PINBAR.mq4` (каталог `MQL/22269`). Стратегия ищет разворотные свечи типа «пин-бар» на основном таймфрейме и подтверждает их сигналами старшего таймфрейма по индикаторам Momentum и MACD. Реализация выполнена на высокоуровневом API StockSharp.
 
