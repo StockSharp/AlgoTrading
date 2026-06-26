@@ -1,4 +1,5 @@
 # Стратегия Ichimoku Retracement
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой конвертацию MetaTrader-советника **«ICHMOKU RETRACEMENT»** на платформу StockSharp. Основная идея заключается в поиске откатов к линиям Ichimoku внутри устойчивого тренда более высокого таймфрейма, подтверждённого импульсом и месячным MACD. Реализация использует высокоуровневый API StockSharp, поэтому стратегию легко запускать в Designer или в собственных проектах.
 

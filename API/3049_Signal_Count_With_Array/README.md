@@ -1,5 +1,5 @@
 # Signal Count With Array Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy reproduces the logic of the MetaTrader 4 expert advisor `Signal-COunt-with array.mq4`.
 It monitors Donchian channel extremes for a configurable set of price offsets and counts how often

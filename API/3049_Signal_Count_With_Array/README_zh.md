@@ -1,5 +1,5 @@
 # Signal Count With Array 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 4 指标机器人 `Signal-COunt-with array.mq4` 的诊断思路。
 它使用唐奇安通道在多个价格偏移上监测极值，并统计指标值变化、回到空值

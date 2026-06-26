@@ -1,4 +1,5 @@
 # Little EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Little EA 最初是为 MetaTrader 编写的移动均线交叉专家。策略会根据 **OHLC bar index** 参数选择特定的历史 K 线，并在该 K 线向上或向下穿越位移后的移动均线时做出反应。StockSharp 版本保留了原始系统的分批入场思想，通过对每个方向设置可配置的最大敞口来允许多笔仓位。

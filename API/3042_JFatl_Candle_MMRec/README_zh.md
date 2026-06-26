@@ -1,4 +1,5 @@
 # JFatl Candle MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 **Exp_JFatlCandle_MMRec.mq5** 的逻辑移植到 StockSharp 平台。
 它监测经 JFatl 滤波后的蜡烛颜色变化，并利用 MMRec 风险模块在出现连续亏损时自动缩减手数。

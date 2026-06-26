@@ -1,4 +1,5 @@
 # Стратегия JFatl Candle MMRec
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит логику советника **Exp_JFatlCandle_MMRec.mq5** в инфраструктуру StockSharp.
 Она отслеживает смену цветов свечей, построенных с помощью фильтра JFatl, и дополняет их блоком управления

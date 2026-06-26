@@ -1,5 +1,5 @@
 # Donchian 通道策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将经典的 "Donchian Channels" EA 移植到 StockSharp 高级 API。策略在较高周期上计算 Donchian 通道，并结合加权移动均线、动量过滤与 MACD 趋势确认，同时提供完整的风险管理模块（止损、止盈、保本、跟踪止损和权益风控）。
 

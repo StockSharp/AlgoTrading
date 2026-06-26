@@ -1,5 +1,5 @@
 # Virtual TradePad Signal 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 中的 VirtualTradePad 指标面板移植到 StockSharp。系统会监控 12 个趋势、通道与动量指标，
 只有在达到设定数量的同向信号时才进场，从而把原始面板的情绪矩阵转化为自动化交易逻辑。

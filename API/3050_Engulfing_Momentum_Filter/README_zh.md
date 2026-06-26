@@ -1,5 +1,5 @@
 # Engulfing Momentum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 上的 **ENGULFING** 顾问移植到 StockSharp 的高级 API。它在工作周期上寻找多头/空头吞没形态，并结合高周期动量确认以及近似月线（30 天）的 MACD 趋势过滤。止损、止盈、移动止损与保本逻辑全部使用价格步长实现，以匹配原始 EA 的行为。
 

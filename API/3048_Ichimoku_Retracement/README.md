@@ -1,4 +1,5 @@
 # Ichimoku Retracement Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp conversion of the MetaTrader expert advisor **"ICHMOKU RETRACEMENT"**. It keeps the original idea o
 f trading Ichimoku pullbacks that happen inside a higher timeframe trend while being filtered by long-term momentum and MACD read

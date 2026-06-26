@@ -1,5 +1,5 @@
 # Technical Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Technical Trader 策略是将 `MQL/22304/Technical_trader.mq5` 中的 MetaTrader 专家顾问迁移到 StockSharp 高级 API 的结果。策略利用两条简单移动平均线与自适应的价格聚类探测器，寻找当前买卖价附近被频繁触及的价位。当聚类方向与快慢均线的交叉一致时才会开仓，同时通过基于价格步长的止损和止盈距离来复制原始 MQL 配置的风险控制。
 

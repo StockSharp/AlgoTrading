@@ -1,5 +1,5 @@
 # Стратегия Engulfing Momentum
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник **ENGULFING** из MetaTrader в среду StockSharp на высокоуровневом API. Вход происходит по свечной модели «поглощение» на рабочем таймфрейме с подтверждением импульса на более крупном периоде и трендового фильтра MACD на «месячных» свечах (30 дней). Блок управления рисками воспроизводит перевод стопа в безубыток и трейлинг, используя шаги инструмента.
 

@@ -1,4 +1,5 @@
 # JFatl Candle MMRec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the behaviour of the original **Exp_JFatlCandle_MMRec.mq5** Expert Advisor inside the StockSharp framework.
 It analyses the colour changes produced by the JFatl candle filter and combines them with an adaptive money management block

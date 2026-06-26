@@ -1,5 +1,5 @@
 # Стратегия Signal Count With Array
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет логику советника MetaTrader 4 `Signal-COunt-with array.mq4`.
 Она отслеживает экстремумы канала Дончиана для набора ценовых смещений и подсчитывает,

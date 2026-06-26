@@ -1,4 +1,5 @@
 # Exp X2MA Candle MM Recovery Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader expert **Exp_X2MACandle_MMRec**. It observes the colour of a doubly smoothed candle, produced by the original X2MA custom indicator, to decide when to open or close positions. The StockSharp version recreates the dual smoothing pipeline and keeps a lightweight money management layer that cuts the trading volume after a configurable number of recent losses.

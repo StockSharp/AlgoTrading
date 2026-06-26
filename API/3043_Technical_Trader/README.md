@@ -1,5 +1,5 @@
 # Technical Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Technical Trader reimplements the MetaTrader expert advisor from `MQL/22304/Technical_trader.mq5` by combining two simple moving averages with an adaptive liquidity cluster detector. The strategy searches for repeatedly traded price levels near the current bid/ask and only opens trades when those clusters align with the direction of the fast/slow SMA crossover. Risk is controlled by price-step based stop-loss and take-profit offsets that mirror the original MQL configuration.
 

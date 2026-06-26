@@ -1,4 +1,5 @@
 # 一目均衡回调策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 专家顾问 **“ICHMOKU RETRACEMENT”** 的 StockSharp 版本。核心思想是在更高周期趋势中，利用价格回踩一目均衡线后的反弹/回落机会，同时结合动量偏离和月度 MACD 作为过滤条件。移植过程中完全使用 StockSharp 的高阶 API，以便在 Designer、Shell 或代码中直接复用。
 

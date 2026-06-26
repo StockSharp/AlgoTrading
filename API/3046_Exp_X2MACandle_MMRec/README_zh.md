@@ -1,4 +1,5 @@
 # Exp X2MA Candle MM Recovery 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略是 MetaTrader 专家顾问 **Exp_X2MACandle_MMRec** 的 C# 版本。它通过原始 X2MA 指标得到的双重平滑蜡烛颜色来管理仓位，当颜色发生变化时开仓或平仓。同时，策略记录最近的交易结果，在连续亏损时自动降低下单手数，实现一个简化的资金管理机制。

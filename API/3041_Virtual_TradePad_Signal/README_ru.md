@@ -1,5 +1,5 @@
 # Стратегия Virtual TradePad Signal
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит логику панели VirtualTradePad из MetaTrader в StockSharp. Она отслеживает двенадцать индикаторов
 (трендовых, каналовых и осцилляторов) и открывает сделку только тогда, когда заданное количество сигналов совпадает по

@@ -1,4 +1,5 @@
 # Little EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Little EA is a moving-average crossover expert originally written for MetaTrader. The strategy observes the candle selected by the **OHLC bar index** parameter and reacts when that candle crosses a shifted moving average from below or above. The StockSharp port keeps the original multi-entry idea by allowing several tranches per direction while respecting a configurable maximum exposure.
