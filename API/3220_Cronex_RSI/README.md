@@ -1,4 +1,5 @@
 # Cronex RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Cronex RSI Strategy** recreates the Exp_CronexRSI.mq5 expert advisor on the StockSharp high-level API. The indicator stack
 combines a classic Relative Strength Index (RSI) with two sequential moving averages in order to reduce noise. Trading decisions are

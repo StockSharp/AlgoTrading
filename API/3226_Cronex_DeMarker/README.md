@@ -1,5 +1,5 @@
 # Cronex DeMarker
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Cronex DeMarker Strategy** reproduces the classic Cronex expert advisor that combines the DeMarker oscillator with a double smoothing stack. First, the DeMarker values are smoothed by a fast simple moving average, then the result is smoothed once more by a slower average. The distance and relative order of these two lines provide reversal-style entry signals.
 

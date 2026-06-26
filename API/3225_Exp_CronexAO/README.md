@@ -1,4 +1,5 @@
 # Exp Cronex AO Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader expert advisor **Exp_CronexAO** to the StockSharp high-level API. The original robot trades crosses between the two lines of the Cronex Awesome Oscillator (AO). The StockSharp version subscribes to a configurable candle series, computes the AO, smooths it twice with moving averages to reproduce the Cronex lines, and opens or closes positions when the fast line crosses the slow line.
 

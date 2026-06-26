@@ -1,5 +1,5 @@
 # Heikin Ashi Trader Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader 4 expert "Heikin Ashi Trader" into StockSharp. It keeps the multi-indicator confirmation logic of the original robot and implements it with the high-level candle subscription API so every decision is based on finished bars only.
 

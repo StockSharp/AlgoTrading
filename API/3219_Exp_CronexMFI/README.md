@@ -1,4 +1,5 @@
 # Exp Cronex MFI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the **Exp_CronexMFI** expert advisor. It smooths the Money Flow Index (MFI) twice and trades **against** the crossover of the resulting lines. The port keeps the original contrarian philosophy while exposing every setting as a StockSharp strategy parameter.

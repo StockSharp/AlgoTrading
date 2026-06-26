@@ -1,4 +1,5 @@
 # Cronex AC
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Cronex AC strategy recreates the classic Cronex Acceleration/Deceleration (AC) expert advisor using the StockSharp high-level API. It smooths the Accelerator Oscillator with two consecutive moving averages and reacts when the fast line crosses the slow line. Bullish crossovers open long positions and close shorts, while bearish crossovers open shorts and close longs.
 

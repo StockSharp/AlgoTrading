@@ -1,4 +1,5 @@
 # Harami Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 HaramiStrategy converts the MetaTrader "Harami" expert advisor into StockSharp's high-level API. The strategy combines a bullish/bearish Harami pattern detected on a higher timeframe with momentum expansion and a long-term MACD filter. Only completed candles are processed and all trade management is handled through StockSharp's built-in protection engine.
