@@ -1,4 +1,5 @@
 # Neuro Nirvaman EA 2
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Neuro Nirvaman EA 2 is a multi-layer perceptron strategy that was originally written for MetaTrader 5. The logic combines four Laguerre-smoothed +DI streams with two SilverTrend breakout detectors. Each bar the strategy evaluates three perceptrons whose weights are controlled by the X parameters. A supervisor module chooses which perceptron output should be traded based on the selected pass mode. Trading is allowed only inside the configured session window and all positions are flattened once the window closes.

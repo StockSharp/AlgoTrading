@@ -1,4 +1,5 @@
 # Стратегия TrendManager TM Plus
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 TrendManager TM Plus — это конвертированная версия советника MetaTrader 5 `Exp_TrendManager_Tm_Plus.mq5`. В основе стратегии лежит индикатор TrendManager, сравнивающий две сглаженные скользящие средние и измеряющий расстояние между ними. При превышении заданного порога стратегия открывает позиции по направлению тренда, а при смене направления или срабатывании защитных условий закрывает сделки.

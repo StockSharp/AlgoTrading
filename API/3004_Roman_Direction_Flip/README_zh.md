@@ -1,5 +1,5 @@
 # Roman Direction Flip
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了最初以 `roman.mq5` 发布的 MQL 专家顾问。算法始终保持持仓状态，只有在关闭上一笔交易后才会改变方向。只要当前仓位仍处于盈利状态，就继续沿用同一方向；一旦触发止损，就切换到对立方向。StockSharp 版本依赖 Level 1 行情，使用最优买卖价来模拟 MetaTrader 中基于点值的止盈止损。
 

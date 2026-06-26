@@ -1,5 +1,5 @@
 # eInTradePanel 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 eInTradePanel 策略把 MetaTrader 版本的交易面板自动化。它支持八种下单方式（买入/卖出、止损、限价、止损限价），并根据当前点差和 55 周期 ATR 计算触发价、挂单价、止损和止盈。通过监控收盘 K 线来模拟保护单，因此即使经纪商不支持附带 SL/TP，也能正确处理风控。
 

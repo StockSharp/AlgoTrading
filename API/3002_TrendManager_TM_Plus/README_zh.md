@@ -1,4 +1,5 @@
 # TrendManager TM Plus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 TrendManager TM Plus 策略来自 MetaTrader 5 平台上的 `Exp_TrendManager_Tm_Plus.mq5` 智能交易系统。该策略使用 TrendManager 指标对两条平滑移动平均线之间的差值进行监控。当差值超过阈值时判定趋势方向，并在趋势反转或风险控制条件触发时平仓。

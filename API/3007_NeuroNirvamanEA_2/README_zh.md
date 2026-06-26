@@ -1,4 +1,5 @@
 # Neuro Nirvaman EA 2
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Neuro Nirvaman EA 2 源自 MetaTrader 5 的神经网络策略，核心思路是将四条 Laguerre 平滑的 +DI 曲线与两个 SilverTrend 突破信号组合成三层感知器。每根完成的 K 线都会重新计算三个感知器输出，并由 supervisor 选择在当前 `Pass` 模式下应该执行的信号。策略只会在设定的交易时段内开仓，并在时段结束时强制平仓。

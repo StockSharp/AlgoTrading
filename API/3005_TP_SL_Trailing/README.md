@@ -1,4 +1,5 @@
 # TP SL Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct conversion of the MetaTrader 5 expert advisor "TP SL Trailing". The strategy does not generate entries by itself. Instead, it manages existing positions by installing a protective stop-loss and take-profit and by trailing the stop once the trade becomes profitable. The pip-based configuration matches the parameters of the original script and allows the logic to be attached to any symbol supported by StockSharp.

@@ -1,5 +1,5 @@
 # Previous Candle Breakdown 2
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 专家顾问“Previous Candle Breakdown 2”的逻辑。算法在可配置的时间周期上追踪最新收盘的蜡烛，
 当价格上破其最高价或下破最低价并超过指定点差时触发交易。可选的均线过滤器、严格的交易时段限制、固定

@@ -1,4 +1,5 @@
 # Стратегия XCCI Histogram Vol Direct
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **XCCI Histogram Vol Direct Strategy** — портирование советника MQL5 `Exp_XCCI_Histogram_Vol_Direct`. Алгоритм умножает Commodity Channel Index (CCI) на объём, сглаживает обе серии выбранным типом скользящего среднего и анализирует знак наклона сглаженного осциллятора. Как только цвет гистограммы меняется, стратегия закрывает позиции против нового движения и открывает сделки в его сторону. Все расчёты выполняются только по завершённым свечам, поэтому поведение совпадает в тестере и в реальном времени.

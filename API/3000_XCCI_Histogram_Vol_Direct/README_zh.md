@@ -1,4 +1,5 @@
 # XCCI Histogram Vol Direct 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **XCCI Histogram Vol Direct Strategy** 是 MQL5 顾问 `Exp_XCCI_Histogram_Vol_Direct` 的移植版本。策略将商品通道指数（CCI）与成交量相乘，再使用可配置的移动平均对两条序列进行平滑，并观察平滑后震荡指标的斜率。当柱状图颜色翻转时，系统会先平掉逆势仓位，再按照新的方向开仓。所有计算仅在收盘后进行，因此在历史回测与实时运行中表现一致。

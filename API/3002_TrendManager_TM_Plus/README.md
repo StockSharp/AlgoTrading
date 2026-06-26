@@ -1,4 +1,5 @@
 # TrendManager TM Plus Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 TrendManager TM Plus is a trend-following strategy converted from the original MetaTrader 5 expert advisor `Exp_TrendManager_Tm_Plus.mq5`. The strategy relies on the TrendManager custom indicator, which compares two smoothed moving averages and highlights the distance between them. When the distance exceeds a configurable threshold the strategy opens positions in the direction of the prevailing trend and closes positions when the trend reverses or when protective rules are triggered.

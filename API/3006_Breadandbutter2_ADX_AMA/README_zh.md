@@ -1,4 +1,5 @@
 # Bread and Butter 2（ADX + AMA）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略移植自 Ron Thompson 编写的 MetaTrader 5 智能交易程序 *Breadandbutter2*。原版算法在每根新 K 线收盘后，比较最新的平均趋向指数（ADX）与上一根的数值，同时判断考夫曼自适应移动平均线（KAMA/AMA）是上升还是下降。当趋势强度减弱而价格动能增强时开多仓；当趋势强度增强而价格动能走弱时开空仓。StockSharp 版本在开仓前会先平掉相反方向的持仓，并按照脚本中定义的固定止损和止盈点差执行风险管理。

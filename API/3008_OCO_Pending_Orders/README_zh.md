@@ -1,4 +1,5 @@
 # OCO挂单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **OCO挂单策略** 将 MetaTrader4 专家顾问 `OCO_EA.mq4` 的逻辑迁移到 StockSharp 高级 API。交易者可以同时设定四个价格触发器（买入限价、买入止损、卖出限价、卖出止损），当实时最优买价或卖价触及任一触发价格时，策略立即发送市价单，并可在经典的一撤其他（OCO）模式下清除剩余触发器。

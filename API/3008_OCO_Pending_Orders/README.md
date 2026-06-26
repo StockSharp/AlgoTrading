@@ -1,4 +1,5 @@
 # OCO Pending Orders Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **OCO Pending Orders Strategy** replicates the behaviour of the MetaTrader4 expert advisor `OCO_EA.mq4` inside the StockSharp high-level API. The algorithm allows a trader to arm up to four independent price triggers (buy limit, buy stop, sell limit, sell stop). Whenever the live best bid or best ask touches the configured price level the strategy sends an immediate market order, optionally cancelling all other pending triggers in a classic "one-cancels-the-others" (OCO) fashion.

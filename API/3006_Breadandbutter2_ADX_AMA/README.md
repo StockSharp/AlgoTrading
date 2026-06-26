@@ -1,4 +1,5 @@
 # Bread and Butter 2 (ADX + AMA)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a port of the MetaTrader 5 expert advisor *Breadandbutter2* created by Ron Thompson. The original logic waits for a fresh bar, compares the latest Average Directional Index (ADX) value with the previous one, and checks whether the Kaufman Adaptive Moving Average (KAMA, also known as AMA) is rising or falling. A long position is opened when the trend strength weakens while price momentum improves, whereas a short position is opened when trend strength increases while momentum deteriorates. The StockSharp version keeps the behaviour of closing any opposite exposure before opening a new order, and applies the same fixed stop-loss and take-profit distances that were specified in pips in the original script.

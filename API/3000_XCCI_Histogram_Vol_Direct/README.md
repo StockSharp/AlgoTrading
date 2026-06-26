@@ -1,4 +1,5 @@
 # XCCI Histogram Vol Direct Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **XCCI Histogram Vol Direct Strategy** is a conversion of the MQL5 expert `Exp_XCCI_Histogram_Vol_Direct`. The system multiplies the Commodity Channel Index (CCI) by volume, smooths both series with a configurable moving average, and then evaluates the slope of the smoothed oscillator. When the directional coloring of the histogram flips, the strategy closes positions against the move and opens new trades in the emerging direction. The logic works on finished candles only and therefore behaves deterministically on historical and live data.

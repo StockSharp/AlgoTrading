@@ -1,4 +1,5 @@
 # TP SL Trailing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略是 MetaTrader 5 专家顾问 "TP SL Trailing" 的直接移植版本。策略本身不会产生入场信号，而是负责管理已经存在的头寸：按照设定的点数距离自动挂出止损和止盈，并在交易进入盈利状态后对止损进行跟踪。所有参数均以点（pip）为单位设置，可在 StockSharp 支持的任意品种上使用。
