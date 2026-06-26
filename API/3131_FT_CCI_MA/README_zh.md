@@ -1,4 +1,5 @@
 # FT CCI MA（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问“FT CCI MA”的直接移植。每当一根 K 线收盘时都会评估信号：策略把线性加权移动平均线（LWMA）与 CCI 指标阈值和可选的交易时段过滤器结合使用。StockSharp 实现保留了原始输入名称和默认值，同时利用高级 API（K 线订阅、指标绑定、仓位保护）。

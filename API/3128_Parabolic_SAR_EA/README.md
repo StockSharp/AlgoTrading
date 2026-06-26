@@ -1,4 +1,5 @@
 # Parabolic SAR EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Parabolic SAR EA Strategy** is the StockSharp high-level conversion of the MetaTrader expert advisor `Parabolic SAR EA.mq5` located in `MQL/23039`. The original MQL script reacts to Parabolic SAR reversals on a configurable timeframe, opening market positions with fixed stop-loss and take-profit distances expressed in MetaTrader "pips" (fractional pip support included). The C# port subscribes to candles, binds the built-in `ParabolicSar` indicator, and reproduces the same bar-by-bar decision process while respecting StockSharp best practices.

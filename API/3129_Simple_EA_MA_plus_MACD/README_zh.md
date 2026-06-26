@@ -1,5 +1,5 @@
 # Simple EA MA plus MACD
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略将 MetaTrader 5 的 **Simple EA MA plus MACD** 专家顾问移植到 StockSharp 高层 API。算法寻找满足两个条件的“信号柱”并等待突破：带有水平位移的移动平均线位于蜡烛最高价之下/之上，同时 MACD 柱线刚刚穿越零轴。当下一根蜡烛收盘价突破信号柱的高点或低点时，策略沿突破方向建仓。

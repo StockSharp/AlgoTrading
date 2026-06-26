@@ -1,4 +1,5 @@
 # Менеджер Breakeven v3
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Менеджер Breakeven v3 — порт советника MetaTrader 5 `Breakeven v3 (barabashkakvn's edition)`.

@@ -1,4 +1,5 @@
 # Стратегия Tengri (порт на StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данный проект переносит советник MetaTrader *Tengri* на высокоуровневый API StockSharp. Оригинальный советник торгует EURUSD и USDCHF, комбинируя RSI, фирменный индикатор «Silence» и EMA-фильтр тренда, а также использует сеточную схему наращивания позиций. Перенос сохраняет логику, но адаптирован к учёту нетто-позиций и инфраструктуре S#. 
 

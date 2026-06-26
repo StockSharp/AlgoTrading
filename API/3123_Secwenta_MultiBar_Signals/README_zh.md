@@ -1,4 +1,5 @@
 # Secwenta 多重K线信号策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 专家顾问 "Secwenta"（MQL 编号 22977）的 StockSharp 移植版本。算法会读取指定周期内已完成的 K 线，统计其中收盘价高于开盘价的阳线数量和收盘价低于开盘价的阴线数量。根据参数设置，策略可以仅做多、仅做空，或在多空之间自动反手。当累计的阳线或阴线数量达到阈值时，策略会按照原版 EA 的固定手数开仓或平仓。

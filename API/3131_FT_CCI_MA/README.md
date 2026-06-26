@@ -1,4 +1,5 @@
 # FT CCI MA (StockSharp port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct port of the MetaTrader expert "FT CCI MA". It trades the close of each finished candle, combining a linear weighted moving average (LWMA) with Commodity Channel Index (CCI) thresholds and an optional trading session filter. The StockSharp implementation keeps the same parameter names and default values, allowing you to reproduce the original behaviour while benefiting from the high-level API (candle subscriptions, indicator binding, position protection).

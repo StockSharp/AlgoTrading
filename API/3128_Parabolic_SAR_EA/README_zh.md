@@ -1,4 +1,5 @@
 # 抛物线SAR EA策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **抛物线SAR EA策略** 是对 `MQL/23039` 中 MetaTrader 专家顾问 `Parabolic SAR EA.mq5` 的 StockSharp 高层 API 移植版本。原始脚本在指定周期上追踪抛物线SAR指标的翻转，在出现条件时以市价开仓，并按照MetaTrader的“点”定义（包含三位和五位报价的小数调整）设置固定的止损和止盈。C# 版本通过蜡烛图订阅与 `ParabolicSar` 指标绑定，完整复刻了逐K线的决策流程，同时遵循项目的编码规范。

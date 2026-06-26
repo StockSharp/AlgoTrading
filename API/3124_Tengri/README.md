@@ -1,4 +1,5 @@
 # Tengri Strategy (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a high-level StockSharp recreation of the MetaTrader expert advisor *Tengri*. The original advisor trades EURUSD and USDCHF with a grid-and-scale approach driven by RSI, custom "Silence" volatility filters and an EMA trend gauge. The C# version keeps the behavioural core while adapting it to StockSharp conventions and net-position accounting.
 

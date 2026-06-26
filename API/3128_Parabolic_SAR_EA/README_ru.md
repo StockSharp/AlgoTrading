@@ -1,4 +1,5 @@
 # Стратегия Parabolic SAR EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Parabolic SAR EA Strategy** — это перенос эксперта MetaTrader `Parabolic SAR EA.mq5` из каталога `MQL/23039` на высокоуровневый API StockSharp. Исходный советник отслеживает разворот точек Parabolic SAR на заданном таймфрейме и открывает рыночные сделки с фиксированными уровнями Stop Loss и Take Profit, выраженными в «пунктах» MetaTrader (с поправкой на трёх- и пятизнаковую котировку). Версия на C# подписывается на свечи, подключает встроенный индикатор `ParabolicSar` и повторяет покадровую логику принятия решений с учётом требований проекта.

@@ -1,4 +1,5 @@
 # Secwenta Multi-Bar Signals Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor "Secwenta" (MQL ID 22977). The algorithm scans completed candles and counts how many of them closed bullish (close > open) or bearish (close < open) within a short rolling history. Depending on the configuration it can operate in buy-only, sell-only, or two-way reversal modes. When the required number of bullish or bearish bars appears, the strategy opens or closes market positions using a fixed volume that mirrors the original lot setting.

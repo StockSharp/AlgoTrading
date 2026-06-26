@@ -1,5 +1,5 @@
 # Pendulum Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A grid-based martingale system that swings between two price thresholds. The strategy opens a long position when price reaches the upper boundary of the grid and flips to a short position with increased volume when price moves to the lower boundary. It keeps alternating directions (up to a configurable number of layers) while expanding targets and reducing protective distances according to the original Pendulum expert advisor. After taking profit the engine resets the grid and schedules a fresh entry at the same level to keep the pendulum motion running.
 

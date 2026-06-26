@@ -1,5 +1,5 @@
 # Simple EA MA plus MACD
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MetaTrader 5 expert adviser **Simple EA MA plus MACD** to the StockSharp high-level API. It searches for a breakout from a “signal bar” that satisfies two conditions: a shifted moving average sits below/above the bar’s highs, and the MACD histogram has just crossed the zero line. When the next candle closes beyond the signal bar’s extremum the strategy enters in the breakout direction.

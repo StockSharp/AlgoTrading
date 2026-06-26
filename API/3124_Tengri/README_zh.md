@@ -1,4 +1,5 @@
 # Tengri 策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略基于 MetaTrader 顾问 *Tengri*，并使用 StockSharp 高阶 API 重新实现。原版顾问通过 RSI、私有的 “Silence” 波动过滤器以及 EMA 趋势判定，在 EURUSD 与 USDCHF 上构建网格并逐步加仓。移植过程中保留了主要逻辑，同时适配了 StockSharp 的净持仓模型。
 

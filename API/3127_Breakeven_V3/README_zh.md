@@ -1,4 +1,5 @@
 # Breakeven v3 管理器
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Breakeven v3 管理器移植自 MetaTrader 5 智能交易系统 `Breakeven v3 (barabashkakvn's edition)`。

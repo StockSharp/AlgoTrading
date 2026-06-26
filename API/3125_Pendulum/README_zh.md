@@ -1,5 +1,5 @@
 # Pendulum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 一个以网格和马丁格尔为核心的“钟摆”系统。价格触及上方阈值时建立多头，跌回下方阈值时反向加倍做空。策略最多叠加若干层，每当方向反转就放大头寸和止盈目标，同时缩小新的防守区间，以复刻原始 Pendulum 专家的节奏。获利离场后会在同一价格计划新的入场，让钟摆运动得以持续。
 

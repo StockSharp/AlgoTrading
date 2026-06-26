@@ -1,5 +1,5 @@
 # Vlado 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Larry Williams %R 指标的动量反转策略。系统等待指标进入深度超卖或超买区，然后在下一根收盘蜡烛上完成持仓翻转。此 StockSharp 版本完整保留 MetaTrader 脚本的核心思路，并把关键参数全部开放给使用者调整。
 

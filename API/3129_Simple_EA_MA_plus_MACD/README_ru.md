@@ -1,5 +1,5 @@
 # Simple EA MA plus MACD
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит советник MetaTrader 5 **Simple EA MA plus MACD** на высокоуровневый API StockSharp. Алгоритм ищет пробой "сигнальной свечи", для которой выполняются два условия: смещённая скользящая средняя располагается ниже/выше максимумов свечей, а гистограмма MACD пересекает нулевую линию. Когда следующая свеча закрывается за пределами экстремума сигнальной свечи, происходит вход в направлении пробоя.
