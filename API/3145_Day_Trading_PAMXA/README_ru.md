@@ -1,4 +1,5 @@
 # Стратегия Day Trading PAMXA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Day Trading PAMXA** — это порт на StockSharp популярного эксперта MetaTrader 5, который объединяет развороты осциллятора Awesome Oscillator и фильтр по стохастику. В версии для StockSharp сохранена многофреймовая структура:

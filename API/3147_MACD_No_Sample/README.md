@@ -1,4 +1,5 @@
 # MACD No Sample
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 MACD No Sample is a port of the MetaTrader 5 expert advisor `MACD No Sample`. The strategy combines a moving-average slope check with MACD signal line crossovers while enforcing a minimum MACD amplitude expressed in pips. When a bullish setup is confirmed, existing short exposure is closed before entering long; bearish setups do the opposite. Risk management mirrors the original EA with pip-based stop-loss, take-profit, and trailing logic, plus an optional risk-percentage position sizing mode.

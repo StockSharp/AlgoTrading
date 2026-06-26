@@ -1,4 +1,5 @@
 # Exp ColorMETRO MMRec Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MetaTrader 5 expert advisor `Exp_ColorMETRO_MMRec_Duplex` to StockSharp. The original robot runs two independent ColorMETRO indicator modules (one long, one short) and applies an MMRec (money management recalculation) overlay that shrinks the position size after repeated losses. The C# version mirrors that behaviour while using StockSharp's high-level API for candle subscriptions and order routing.

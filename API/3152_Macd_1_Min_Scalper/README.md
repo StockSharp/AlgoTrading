@@ -1,4 +1,5 @@
 # MACD 1 MIN SCALPER Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of the MetaTrader expert advisor **"MACD 1 MIN SCALPER"**. It combines weighted moving averages with multi-timeframe MACD confirmations and a momentum filter before opening trades. The goal is to trade in the direction of the trend when both lower and higher timeframe indicators are aligned and price momentum is sufficiently strong.
 

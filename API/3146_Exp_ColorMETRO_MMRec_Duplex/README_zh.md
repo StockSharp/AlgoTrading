@@ -1,4 +1,5 @@
 # Exp ColorMETRO MMRec Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是在 StockSharp 平台上对 MetaTrader 5 专家顾问 `Exp_ColorMETRO_MMRec_Duplex` 的实现。原始 EA 由两个独立的 ColorMETRO 模块组成（分别负责多头和空头），并附加 MMRec 资金管理模块，在连续亏损后降低下单手数。C# 版本复刻了该结构，并使用 StockSharp 的高级 API 完成行情订阅与下单。

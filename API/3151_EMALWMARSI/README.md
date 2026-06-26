@@ -1,4 +1,5 @@
 # EMA LWMA RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **EMA LWMA RSI Strategy** reproduces the MetaTrader expert advisor "EMA LWMA RSI" in StockSharp. It compares two moving averages that use the same applied price and optionally a forward shift, while a Relative Strength Index filter confirms the momentum. The algorithm only reacts to newly finished candles from the configured timeframe and trades a single net position: it closes any opposite exposure before opening a new order in the signalled direction. Stop-loss and take-profit distances are configured in pips and automatically scaled to the instrument's tick size.

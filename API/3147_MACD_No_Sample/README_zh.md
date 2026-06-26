@@ -1,4 +1,5 @@
 # MACD No Sample
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MACD No Sample 是将 MetaTrader 5 专家顾问 `MACD No Sample` 迁移到 StockSharp 的版本。策略使用移动平均线斜率检查和 MACD 信号线交叉，同时对 MACD 振幅设置以点（pip）表示的最小阈值。当满足做多条件时会先平掉空头仓位再开多单，做空逻辑完全对称。风险控制延续原策略，提供按点数计算的止损、止盈、移动止损，以及可选的按风险百分比动态计算下单手数。

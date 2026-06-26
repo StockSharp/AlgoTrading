@@ -1,4 +1,5 @@
 # Gap DM Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Gap DM is a contrarian gap-trading strategy that tracks the distance between the previous session close and the next session open. When the market opens with a visible gap, the strategy immediately trades in the opposite direction, expecting the price to revert and fill the gap. The implementation follows the original MetaTrader 5 algorithm "Gap DM" by cmillion, adapted to StockSharp's high-level API. All trading decisions are derived from completed candles of the selected timeframe, ensuring deterministic behaviour in backtests and live execution.

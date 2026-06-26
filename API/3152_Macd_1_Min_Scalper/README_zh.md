@@ -1,4 +1,5 @@
 # MACD 1 MIN SCALPER 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 **“MACD 1 MIN SCALPER”** 的 C# 移植版本。它在进场前联合使用加权移动平均线、多周期 MACD 过滤以及动量强度检测，目的是当多个周期的趋势一致并且价格动能充足时顺势交易。
 

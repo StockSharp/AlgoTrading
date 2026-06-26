@@ -1,4 +1,5 @@
 # BullsBearsEyes EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the **BullsBearsEyes EA** for MetaTrader 5. It rebuilds the custom indicator by combining the classic Bulls Power and Bears Power oscillators with the same four stage IIR smoothing used in the original code. The resulting ratio oscillates between 0 and 1 and reflects the dominance of sellers or buyers. Whenever the ratio collapses to **0** the market is considered washed out by bears and the strategy prepares a long entry. When the ratio spikes to **1** the bullish pressure is considered exhausted and the strategy looks for a short entry. All calculations are performed on fully closed candles only, mirroring the MQL implementation that evaluated `custom[1]` on the birth of each new bar.

@@ -1,4 +1,5 @@
 # Стратегия Exp ColorMETRO MMRec Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит на StockSharp советника MetaTrader 5 `Exp_ColorMETRO_MMRec_Duplex`. Оригинальный робот использует две независимые подсистемы индикатора ColorMETRO (для длин и для коротких позиций) и накладывает модуль MMRec, уменьшающий объём сделок после серии убыточных результатов. Перенос воспроизводит эту структуру и задействует высокоуровневый API StockSharp для подписки на свечи и выставления заявок.

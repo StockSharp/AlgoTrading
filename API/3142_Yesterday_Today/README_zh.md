@@ -1,5 +1,5 @@
 # Yesterday Today 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Yesterday Today 策略复制了经典的 MetaTrader 突破思路：将当前价格与昨天的最高价、最低价进行比较。当价格突破昨日区间时，策略立即执行方向交易。若需要反手，会先平掉当前持仓再开新仓，始终保持单一方向。
 

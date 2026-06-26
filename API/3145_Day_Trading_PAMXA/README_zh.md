@@ -1,4 +1,5 @@
 # Day Trading PAMXA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Day Trading PAMXA** 策略在 StockSharp 中还原了 MetaTrader 5 专家顾问的行为，核心思想是将 Bill Williams 的 Awesome Oscillator 零轴反转与随机指标过滤条件结合起来。移植版本保留了原策略的多周期结构：

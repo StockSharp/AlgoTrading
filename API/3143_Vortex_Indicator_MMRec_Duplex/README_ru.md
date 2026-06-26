@@ -1,4 +1,5 @@
 # Стратегия Vortex Indicator MMRec Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 - Конвертация советника MetaTrader 5 **Exp_VortexIndicator_MMRec_Duplex.mq5** (MQL ID 23180) на высокоуровневый API StockSharp.

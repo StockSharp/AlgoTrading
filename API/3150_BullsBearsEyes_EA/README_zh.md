@@ -1,4 +1,5 @@
 # BullsBearsEyes EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 5 **BullsBearsEyes EA** 的 StockSharp 移植版本。它重新组合 Bulls Power 和 Bears Power 指标，并使用与原始 EA 相同的四级 IIR 平滑流程来获得 0 到 1 之间的比值，用于衡量多空力量。当比值跌至 **0** 时，意味着空头力量耗尽，策略准备做多；当比值升至 **1** 时，视为多头动能衰竭，策略准备做空。所有计算都基于已经收盘的 K 线，与 MQL 代码在新柱生成时读取 `custom[1]` 的行为一致。

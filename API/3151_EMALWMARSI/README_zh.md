@@ -1,4 +1,5 @@
 # EMA LWMA RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **EMA LWMA RSI Strategy** 将 MetaTrader 专家顾问 “EMA LWMA RSI” 迁移到 StockSharp。策略比较两条使用相同价格类型（并可选向前平移）的均线，并通过 RSI 滤波确认动量。算法仅在指定周期的完整蜡烛形成后触发信号，而且始终只持有单一净持仓：在反向开仓前会先平掉已有仓位。止损和止盈距离以 pip 表示，并根据标的的最小价位自动换算。

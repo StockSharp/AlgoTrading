@@ -1,4 +1,5 @@
 # Gap DM 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Gap DM 是一种逆向跳空交易策略，通过比较上一根 K 线的收盘价与下一根 K 线的开盘价来捕捉开盘缺口。当市场出现明显跳空时，策略会立即向缺口反向建仓，期待价格回补。该实现基于 cmillion 的 MetaTrader 5 "Gap DM" EA，在 StockSharp 的高级 API 上重写，所有交易信号均来自所选周期的已完成 K 线，确保回测与实时执行的一致性。
