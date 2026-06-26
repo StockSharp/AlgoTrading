@@ -1,4 +1,5 @@
 # Стратегия Exp Skyscraper Fix ColorAML
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит логику экспертного советника MetaTrader 5 **Exp_Skyscraper_Fix_ColorAML** в инфраструктуру StockSharp. Она

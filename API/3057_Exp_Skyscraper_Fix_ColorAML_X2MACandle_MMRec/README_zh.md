@@ -1,4 +1,5 @@
 # Exp Skyscraper Fix + ColorAML + X2MA Candle MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 将 MetaTrader 专家顾问 **Exp_Skyscraper_Fix_ColorAML_X2MACandle_MMRec** 移植到 C# / StockSharp。

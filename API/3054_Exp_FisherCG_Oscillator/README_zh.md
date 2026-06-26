@@ -1,5 +1,5 @@
 # Exp Fisher CG Oscillator 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 **Exp_FisherCGOscillator** MetaTrader 5 智能交易程序迁移到 StockSharp 高阶 API。它重建 Fisher Center of Gravity 振荡器及其触发线，根据可配置的历史 K 线读取信号，并使用 StockSharp 订单复现原有的止损/止盈流程。
 

@@ -1,4 +1,5 @@
 # 趋势发现者策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 趋势发现者（Trend Finder）策略基于原始的 **TREND FINDER.mq4** 专家顾问改写，使用 StockSharp 的高级 API 重构核心逻辑。策略通过多周期的线性加权移动平均线、动量和 MACD 共振来识别突破行情，力求在价格突破并得到高周期趋势验证时顺势入场。

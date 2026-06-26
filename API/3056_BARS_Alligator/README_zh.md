@@ -1,4 +1,5 @@
 # BARS Alligator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BARS Alligator 策略是同名 MetaTrader 专家顾问的直接移植版本。策略通过比尔·威廉姆斯的 Alligator 指标识别“苏醒”的趋势——当绿色的 Lips 线上穿蓝色的 Jaw 线时被视为多头突破，反之则认为趋势转向下跌。平仓信号来自 Lips 与红色 Teeth 线的交叉，用于在动能减弱时退出。止损、止盈以及移动止损的距离以点（pip）为单位配置，并根据品种的最小报价步长和小数位数自动转换为价格距离。
 

@@ -1,4 +1,5 @@
 # Exp Skyscraper Fix Color AML MMRec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Exp Skyscraper Fix Color AML MMRec is the StockSharp port of the MQL5 expert advisor *Exp_Skyscraper_Fix_ColorAML_MMRec*. The original robot combines two independent indicators — **Skyscraper Fix** and **Color AML** — and applies the MMRec money management logic to reduce order size after consecutive losses. The C# implementation keeps both signal sources and the adaptive position sizing while using StockSharp's high-level API for order routing.
 

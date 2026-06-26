@@ -1,4 +1,5 @@
 # MA Envelopes Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the MetaTrader 5 expert "MA Envelopes". The strategy looks for price retracements towards a moving average that is wrapped by an envelope channel. When a completed candle closes between the moving average and one of the envelope bands during the configured trading window, the strategy places limit entries at the moving average with protective exit orders derived from the envelope.
 

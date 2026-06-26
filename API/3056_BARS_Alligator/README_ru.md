@@ -1,4 +1,5 @@
 # Стратегия BARS Alligator
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия BARS Alligator является прямым портом одноимённого эксперта MetaTrader. Она использует индикатор Alligator Билла Уильямса
 для определения момента «пробуждения» тренда: пересечение зелёной линии Lips выше синей линии Jaw трактуется как зарождение

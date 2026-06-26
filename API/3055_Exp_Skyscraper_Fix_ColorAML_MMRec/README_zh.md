@@ -1,4 +1,5 @@
 # Exp Skyscraper Fix Color AML MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Exp Skyscraper Fix Color AML MMRec 是 MQL5 专家顾问 *Exp_Skyscraper_Fix_ColorAML_MMRec* 的 StockSharp 版本。原始机器人将 **Skyscraper Fix** 与 **Color AML** 两个独立指标结合，并通过 MMRec 资金管理逻辑在连续亏损后自动降低下单手数。C# 实现完整保留了双信号源和自适应仓位管理，同时使用 StockSharp 的高级 API 完成委托执行。
 

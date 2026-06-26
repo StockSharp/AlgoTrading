@@ -1,5 +1,5 @@
 # ReInitChart 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把 MetaTrader 的 **ReInitChart** 工具移植到 StockSharp。原始脚本会在每个图表上放置一个按钮，并通过临时切换时间框架来迫使平台重新计算指标。StockSharp 版本通过 `ManualRefreshRequest` 参数与可选的 `AutoRefreshEnabled` 计时器保留这种思想：它们重置内部的 SMA 指标并在日志中记录刷新事件，同时示例性地使用简单的均线趋势策略来展示刷新后的交易行为。
 

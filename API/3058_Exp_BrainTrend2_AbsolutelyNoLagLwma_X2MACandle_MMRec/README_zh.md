@@ -1,4 +1,5 @@
 # Exp BrainTrend2 AbsolutelyNoLagLwma X2MACandle MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略把原始 MetaTrader 专家顾问的三段式结构移植到 StockSharp，并使用以下过滤器：

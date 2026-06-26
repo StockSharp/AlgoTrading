@@ -1,4 +1,5 @@
 # Trend Finder Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Trend Finder is a multi-timeframe trend-following strategy converted from the original **TREND FINDER.mq4** expert advisor. The logic now uses the high-level StockSharp API and keeps the core idea of combining linear weighted moving averages with confirmations from higher timeframe momentum and MACD filters. The strategy focuses on detecting breakouts that follow sustained highs or lows, aiming to enter in the direction of the breakout once momentum and long-term trend alignment are confirmed.

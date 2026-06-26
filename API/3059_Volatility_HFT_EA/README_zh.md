@@ -1,5 +1,5 @@
 # Volatility HFT EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 **Volatility HFT EA** MetaTrader 5 专家顾问移植到 StockSharp 的高级 API。策略复现原始脚本的思路：当收盘价远高于快速简单移动平均线时买入，并持仓等待价格回落到该均线。报单流程、指标管理以及风控逻辑均遵循 `AGENTS.md` 的要求，同时保留 MQL 脚本的核心行为。
 

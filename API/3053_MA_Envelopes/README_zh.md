@@ -1,4 +1,5 @@
 # MA包络线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略由MetaTrader 5专家顾问“MA Envelopes”移植而来。它利用均线与包络线构建的通道寻找价格回踩机会。当完成的K线收盘价位于均线与包络上/下轨之间，并且处于设定的交易时间窗口内时，策略会在均线位置挂出限价单，同时设置基于包络线的止损和止盈。
 

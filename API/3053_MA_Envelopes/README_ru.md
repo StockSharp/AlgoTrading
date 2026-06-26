@@ -1,4 +1,5 @@
 # Стратегия MA Envelopes
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация советника MetaTrader 5 «MA Envelopes». Стратегия ищет откаты цены к скользящей средней, обрамлённой каналом Envelopes. Когда закрывшаяся свеча попадает между средней и границей канала в рамках торгового окна, на уровне средней выставляются лимитные заявки с защитными ордерами, рассчитанными от линий Envelopes.
 

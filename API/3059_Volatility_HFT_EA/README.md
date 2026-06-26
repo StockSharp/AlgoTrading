@@ -1,5 +1,5 @@
 # Volatility HFT EA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **Volatility HFT EA** MetaTrader 5 expert advisor into the StockSharp high-level API. It reproduces the original logic that buys when the closing price jumps well above a fast simple moving average and waits for a pullback to that average. Order generation, indicator management, and protective exits all follow the guidelines from `AGENTS.md` while keeping the behaviour of the MQL script.
 

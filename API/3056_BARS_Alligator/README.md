@@ -1,4 +1,5 @@
 # BARS Alligator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The BARS Alligator strategy is a direct port of the MetaTrader expert advisor with the same name. It relies on Bill Williams'
 Alligator indicator to detect awakening trends: when the green lips line crosses above the blue jaw line the system treats it as
