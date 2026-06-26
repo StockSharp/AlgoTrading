@@ -1,4 +1,5 @@
 # Стратегия Accelerator Trailing TP & SL
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Accelerator Trailing TP & SL — это перенос советника "Accelerator Trailing TP&SL" с платформы MetaTrader на высокоуровневый API StockSharp. Стратегия сочетает осциллятор ускорения Билла Уильямса, подтверждение по импульсу старшего таймфрейма и месячный фильтр MACD. Сделки наращиваются геометрической прогрессией, а выходы объединяют фиксированные стоп/тейк, трейлинг и перенос стопа в безубыток.

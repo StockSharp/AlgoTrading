@@ -1,4 +1,5 @@
 # Back Kick 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Back Kick** 是从 MetaTrader 5 专家顾问 `Back kick.mq5` 移植而来的对冲突破策略。每当一根 K 线收盘时，系统会立即以相同的手数同时买入和卖出，从而保持双向敞口。每条腿都按照设定的点数间距应用对称的止损和止盈。由于 StockSharp 默认采用净头寸模式，移植版本通过内部状态对象分别跟踪多头和空头，使其表现尽可能接近 MT5 的对冲账户。
 

@@ -1,4 +1,5 @@
 # Risk Reward Ratio Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Risk Reward Ratio Strategy** is a high-level StockSharp port of the MetaTrader expert "Risk Reward Ratio". The strategy combines several momentum and trend confirmation filters with a disciplined risk-management module. Entries are generated from a confluence of stochastic oscillators, a linear weighted moving average (LWMA) crossover, a 14-period RSI filter, and a MACD trend check. Risk control is achieved through a pip-based stop-loss, an automatic reward-ratio take-profit, optional trailing stops and break-even logic, and an emergency flat switch that immediately liquidates the position.

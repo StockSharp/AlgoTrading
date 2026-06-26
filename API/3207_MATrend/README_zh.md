@@ -1,4 +1,5 @@
 # 3207 – MA 趋势策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MA Trend Strategy** 使用 StockSharp 高级 API 重现 MetaTrader 专家顾问 *MA Trend.mq5*。策略跟随一条可以向前平移的线性加权移动平均线。当收盘价上穿平移后的均线时做多，下穿时做空，并提供与原 MQL 版本相同的止损、止盈和移动止损管理。

@@ -1,4 +1,5 @@
 # ADX MACD Deev 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ADX MACD Deev Strategy** 是原版 MetaTrader 智能交易系统的 StockSharp 版本。它通过 Average Directional Index (ADX) 衡量趋势强度，并结合 Moving Average Convergence Divergence (MACD) 的动量信号。当两个指标同时确认方向时才开仓，并可选用移动止损和分批止盈来保护利润。

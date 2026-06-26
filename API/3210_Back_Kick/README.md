@@ -1,4 +1,5 @@
 # Back Kick Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Back Kick** strategy is a hedged breakout system converted from the MetaTrader 5 expert advisor `Back kick.mq5`. It continuously maintains a two-sided exposure by opening both a long and a short market position at the close of every bar. Each leg is protected with symmetrical stop-loss and take-profit distances expressed in pips. The StockSharp port keeps the paired positions independent by tracking their state manually instead of relying on the aggregated net position.
 

@@ -1,4 +1,5 @@
 # Стратегия ADX MACD Deev
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **ADX MACD Deev Strategy** — порт оригинального советника для MetaTrader. Стратегия объединяет силу тренда по индикатору Average Directional Index (ADX) и импульс по Moving Average Convergence Divergence (MACD). Сделки открываются только при одновременном согласии двух индикаторов, что помогает отсекать слабые сигналы и работать только с устойчивыми движениями.

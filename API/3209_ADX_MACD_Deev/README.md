@@ -1,4 +1,5 @@
 # ADX MACD Deev Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ADX MACD Deev Strategy** is a StockSharp port of the MetaTrader expert advisor with the same name. It combines the trend strength signal from the Average Directional Index (ADX) with momentum confirmation from the Moving Average Convergence Divergence (MACD). The strategy trades only when both indicators agree on the market direction and can optionally secure profits through trailing stops and partial position exits.

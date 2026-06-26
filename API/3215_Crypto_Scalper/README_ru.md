@@ -1,4 +1,5 @@
 # Стратегия Crypto Scalper
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Crypto Scalper переносит оригинальную логику эксперта MetaTrader в экосистему StockSharp с использованием высокоуровн
 евых компонент. Она отслеживает бычье или медвежье пересечение быстрой линейно-взвешенной скользящей средней на рабочем таймфрейме

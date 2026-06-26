@@ -1,4 +1,5 @@
 # Trend Is Your Friend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Trend Is Your Friend strategy is a multi-timeframe trend-following system inspired by the original MetaTrader expert advisor. It aligns intraday momentum with a higher timeframe MACD filter, while risk is managed via Bollinger Bands exits, classic stop-loss and take-profit targets, an optional break-even lock and trailing stop management.

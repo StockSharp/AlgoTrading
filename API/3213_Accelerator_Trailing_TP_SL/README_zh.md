@@ -1,4 +1,5 @@
 # Accelerator Trailing TP & SL 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Accelerator Trailing TP & SL 策略是将 MetaTrader 平台上的 "Accelerator Trailing TP&SL" 智能交易系统移植到 StockSharp 高级 API 的版本。策略结合了比尔·威廉姆斯的加速指标、多周期动量确认以及月线 MACD 趋势过滤。仓位按照几何级数逐步加码，退出部分则整合了固定止损止盈、移动止损以及保本移动。

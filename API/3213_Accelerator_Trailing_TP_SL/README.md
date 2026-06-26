@@ -1,4 +1,5 @@
 # Accelerator Trailing TP & SL Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Accelerator Trailing TP & SL strategy ports the "Accelerator Trailing TP&SL" Expert Advisor from MetaTrader to the StockSharp high-level API. The system blends Bill Williams' Accelerator Oscillator with multi-timeframe momentum confirmation and a monthly MACD trend filter. Entries are layered with geometric position sizing while exits combine classic stop/target distances, adaptive trailing and break-even logic.

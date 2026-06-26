@@ -1,4 +1,5 @@
 # Crypto Scalper 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Crypto Scalper 策略使用 StockSharp 的高级组件还原原始 MetaTrader 专家的逻辑。它在主时间框架上监测快速线性加权
 均线的向上或向下穿越，并借助更高时间框架的趋势过滤进行确认。当条件全部满足时，策略通过市价单入场，并用以

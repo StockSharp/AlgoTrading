@@ -1,4 +1,5 @@
 # Risk Reward Ratio 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Risk Reward Ratio Strategy** 是 MetaTrader 智能交易系统 “Risk Reward Ratio” 的 StockSharp 版本。该策略使用多重动量和趋势过滤器，并辅以严格的风险管理模块。入场条件要求快速/慢速随机指标、两条线性加权均线（LWMA）交叉、14 周期 RSI 以及 MACD 趋势方向全部一致。风控部分提供点值止损、按照固定盈亏比的止盈、可选的追踪止损与保本机制，以及紧急平仓开关。

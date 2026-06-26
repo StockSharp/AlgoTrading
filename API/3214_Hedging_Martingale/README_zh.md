@@ -1,4 +1,5 @@
 # 对冲马丁策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 智能交易系统 “Hedging Martingale”（目录 `MQL/23693`）的 StockSharp 版本。策略在每根新 K 线收盘时同时开多单和空单保持对冲，当价格向某一方向不利移动到指定点数时，在亏损方向上按倍数加仓，从而复制原始 EA 的马丁加仓逻辑。浮动收益可通过金额目标、百分比目标以及可选的跟踪锁定来管理。

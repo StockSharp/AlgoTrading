@@ -1,4 +1,5 @@
 # Crypto Scalper Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Crypto Scalper strategy reproduces the original MetaTrader expert logic with StockSharp high-level components. It watches for
 a bullish or bearish crossover of a fast linear weighted moving average on the primary timeframe and confirms the setup with trend

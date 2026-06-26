@@ -1,4 +1,5 @@
 # 趋势是你的朋友策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 “趋势是你的朋友”策略是受原始 MetaTrader 专家顾问启发的多周期趋势跟随系统。它将入场周期的动量与更高周期的 MACD 滤波相结合，并通过布林带离场、传统止损/止盈、可选保本锁定以及移动止损来控制风险。

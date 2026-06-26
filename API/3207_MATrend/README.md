@@ -1,4 +1,5 @@
 # 3207 – MA Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MA Trend Strategy** replicates the MetaTrader expert *MA Trend.mq5* using StockSharp's high-level API. The bot follows a single linear weighted moving average with a configurable forward shift. When the closing price rises above the shifted average the strategy goes long, while a drop below the average opens short positions. Optional stop-loss, take-profit, and trailing-stop rules mirror the risk controls from the original MQL implementation.

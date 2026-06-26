@@ -1,4 +1,5 @@
 # Hedging Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor "Hedging Martingale" (folder `MQL/23693`). It keeps a balanced hedge by opening both a long and a short position on every new bar and then applies a martingale averaging scheme. When price moves adversely by a configurable pip distance, the strategy adds a new position on the losing side with an increased volume while keeping the opposite hedge in place. Floating profit is managed using money- and percent-based targets together with an optional trailing lock.
