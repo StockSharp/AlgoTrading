@@ -1,4 +1,5 @@
 # Alligator Simple Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Alligator Simple strategy recreates the MetaTrader "Alligator Simple v1.0" expert advisor using StockSharp's high-level API. It reads the Bill Williams Alligator indicator on finished candles and opens a position when the Lips, Teeth, and Jaw lines expand in the same direction on the previous completed bar. Every trade can optionally include pip-based stop-loss, take-profit, and trailing stop management that mirrors the original MQL implementation.

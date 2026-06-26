@@ -1,4 +1,5 @@
 # 5MIN Scalping Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Conversion of the MT4 expert advisor **"5MIN SCALPING" (MQL ID 22828)** to the StockSharp high level API. The strategy searches for fast breakout setups on the primary timeframe and confirms them with higher timeframe momentum and monthly MACD direction before entering the market.
 

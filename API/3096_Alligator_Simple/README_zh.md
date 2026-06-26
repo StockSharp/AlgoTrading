@@ -1,4 +1,5 @@
 # Alligator Simple 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Alligator Simple 策略在 StockSharp 高级 API 中重现了 MetaTrader 的“Alligator Simple v1.0”专家顾问。策略只在已完成的 K 线中读取比尔·威廉姆斯的 Alligator 指标，并在上一根完成蜡烛的 Lips、Teeth、Jaw 三条线按照同一方向张开时建立仓位。每笔交易都可以按点值设置止损、止盈和移动止损，与原始 MQL 实现保持一致。

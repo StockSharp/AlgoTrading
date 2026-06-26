@@ -1,4 +1,5 @@
 # Hedge Any Positions Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Hedge Any Positions Strategy** is a direct conversion of the original *Hedge any positions (barabashkakvn's edition)* MQL5 expert. The StockSharp version keeps the core idea intact: it monitors every open leg created by the strategy and, once a leg loses a defined number of pips, immediately opens an opposite position with an amplified lot size. The implementation relies on the high-level StockSharp API, so hedge orders are placed through market orders and position tracking is handled internally without custom order-routing code.

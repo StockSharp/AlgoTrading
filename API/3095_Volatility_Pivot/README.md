@@ -1,4 +1,5 @@
 # Volatility Pivot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Volatility Pivot strategy is a high-level StockSharp port of the original **Exp_VolatilityPivot.mq5** expert advisor. It recreates the custom Volatility Pivot indicator by projecting two adaptive stop lines that trail price using either Average True Range (ATR) volatility or a fixed price deviation. When the trend flips, the indicator emits single-bar breakout arrows that trigger position reversals. The strategy can follow those signals (`WithTrend`) or trade against them (`CounterTrend`), providing flexibility for breakout or mean-reversion styles.

@@ -1,4 +1,5 @@
 # 波动枢轴策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 波动枢轴策略是原始 **Exp_VolatilityPivot.mq5** 智能交易程序的 StockSharp 高层 API 版本。策略重建了自定义的波动枢轴指标，通过 ATR 波动率或固定价差绘制一对自适应的跟踪线，并在趋势翻转时生成单根信号箭头。交易者可以选择顺势模式 (`WithTrend`) 追随突破，也可以选择逆势模式 (`CounterTrend`) 在枢轴点附近做反向交易。

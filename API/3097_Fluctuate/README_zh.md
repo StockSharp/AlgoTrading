@@ -1,4 +1,5 @@
 # Fluctuate 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Fluctuate Strategy** 是 MetaTrader 顾问 "Fluctuate" 的 StockSharp 版本。整套逻辑基于高层 API：通过 `SubscribeCandles` 监听蜡烛，使用 `BuyMarket` / `SellMarket` 完成入场，并通过止损单布置补仓订单。为了模拟 MetaTrader 的对冲账户，策略内部分别维护多头与空头敞口，而在 StockSharp 中显示的始终是净头寸。
 

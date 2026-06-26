@@ -1,4 +1,5 @@
 # Doubler 对冲跟踪策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Doubler 对冲跟踪策略** 是将 MetaTrader 5 智能交易系统 `Doubler.mq5` 迁移到 StockSharp 高阶 API 的版本。策略在没有持仓时立即同时开出一笔多单和一笔空单，并为两个方向分别维护止损、止盈与移动止损。所有风险控制均用“点（pip）”进行配置，并在内部根据交易品种的价格精度自动换算成价格步长，完全复刻原始 EA 的行为。

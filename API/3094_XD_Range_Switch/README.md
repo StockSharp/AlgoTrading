@@ -1,4 +1,5 @@
 # XD Range Switch Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The XD Range Switch strategy recreates the MetaTrader 5 expert advisor **Exp_XD-RangeSwitch** using the StockSharp high-level API. It relies on the custom XD-RangeSwitch channel indicator, which plots alternating upper and lower bands together with arrows whenever the dominant band flips. The strategy can either fade those arrows (counter-trend behaviour) or trade in the direction of the breakout depending on the `TradeDirection` parameter. Order sizing follows the base `Strategy.Volume` setting, while the original money-management formulas are replaced by StockSharp's position management helpers.

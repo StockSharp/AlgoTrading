@@ -1,4 +1,5 @@
 # Fluctuate Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Fluctuate Strategy** is a StockSharp port of the MetaTrader expert advisor "Fluctuate". It reproduces the original grid-like behaviour using the high-level API: a candle subscription drives all decisions, market entries are performed with `BuyMarket` / `SellMarket`, and recovery orders are placed with stop orders. Long and short exposure are tracked separately to mimic the hedging-style position accounting used in MetaTrader, while the actual StockSharp position remains netted.
 

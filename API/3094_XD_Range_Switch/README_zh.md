@@ -1,4 +1,5 @@
 # XD Range Switch 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 XD Range Switch 策略将 MetaTrader 5 顾问 **Exp_XD-RangeSwitch** 迁移到 StockSharp 高层 API。策略核心是自定义的 XD-RangeSwitch 通道指标，它会交替绘制上下包络线，并在主导方向切换时给出箭头提示。通过 `TradeDirection` 参数，策略既可以反向交易这些箭头（逆势模式），也可以顺势跟随通道突破。仓位规模由 `Strategy.Volume` 控制，原始 MT5 中的资金管理函数改由 StockSharp 的持仓管理逻辑完成。

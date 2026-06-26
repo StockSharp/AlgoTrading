@@ -1,4 +1,5 @@
 # 5MIN Scalping 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MT4 智能交易系统 **"5MIN SCALPING"（MQL ID 22828）** 迁移到 StockSharp 高级 API。策略在主时间框内捕捉快速突破形态，并利用更高周期的动量与月线 MACD 方向进行确认后才开仓。
 

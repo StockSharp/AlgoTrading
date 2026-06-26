@@ -1,4 +1,5 @@
 # Hedge Any Positions 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Hedge Any Positions Strategy** 是对原始 *Hedge any positions (barabashkakvn's edition)* MQL5 智能交易系统的 StockSharp 版本。核心思想保持不变：策略会跟踪其创建的每一条持仓腿，当价格朝不利方向移动达到指定的点数时，立即以放大的手数开立反向仓位对冲。实现完全依赖 StockSharp 的高级 API，因此对冲通过市价单完成，仓位状态使用内部列表维护，无需额外的底层交易代码。

@@ -1,4 +1,5 @@
 # Стратегия Fluctuate
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Fluctuate Strategy** — это порт эксперта MetaTrader "Fluctuate" на StockSharp. Алгоритм полностью реализован через высокоуровневое API: анализ свечей ведётся через `SubscribeCandles`, входы выполняются командами `BuyMarket` / `SellMarket`, а восстановительные ордера выставляются в виде стоп-заявок. Для имитации хеджевого режима MetaTrader внутри стратегии отдельно ведутся длинная и короткая экспозиции, хотя фактическая позиция в StockSharp остаётся нетто.
 

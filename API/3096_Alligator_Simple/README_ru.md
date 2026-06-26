@@ -1,4 +1,5 @@
 # Стратегия Alligator Simple
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Alligator Simple переносит советник MetaTrader «Alligator Simple v1.0» в экосистему StockSharp. Алгоритм анализирует индикатор Alligator Билла Уильямса только на закрытых свечах и открывает позицию, когда линии Lips, Teeth и Jaw на предыдущей свече выстраиваются в одном направлении. Для каждой сделки можно задать стоп-лосс, тейк-профит и трейлинг-стоп в пунктах, полностью повторяя оригинальную MQL-логику.

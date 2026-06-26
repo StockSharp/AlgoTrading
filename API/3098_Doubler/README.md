@@ -1,4 +1,5 @@
 # Doubler Hedged Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Doubler Hedged Trailing Strategy** is a direct StockSharp high-level API conversion of the MetaTrader 5 expert advisor `Doubler.mq5`. The algorithm instantly opens a symmetrical long and short market position whenever no exposure exists, then manages both legs with independent stop-loss, take-profit, and trailing-stop rules. The conversion preserves the hedging behaviour of the original MQL program while adapting risk management to StockSharp primitives (market orders, Level1 subscriptions, and strategy parameters).
