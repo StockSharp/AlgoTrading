@@ -1,4 +1,5 @@
 # AutoAdjustingStrategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AutoAdjustingStrategy переносит советник MetaTrader *Aouto Adjusting1* на высокоуровневый API StockSharp. Порт сохранил исходные фильтры: много таймфреймовый импульс, месячный MACD и тройку EMA, которые определяют откаты по тренду. Стопы и цели рассчитываются от актуальных экстремумов и автоматически обновляются после закрытия каждой свечи.
 

@@ -1,4 +1,5 @@
 # 蜡烛追踪止损策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Candle Trailing Stop** 策略是同名 MetaTrader 专家的 StockSharp 版本。原始 EA 通过多周期趋势过滤、动量确认以及基于
 蜡烛极值的激进追踪止损来管理仓位。本移植版完全采用 StockSharp 的高层 API，保留了原始逻辑，并以参数形式公开所有

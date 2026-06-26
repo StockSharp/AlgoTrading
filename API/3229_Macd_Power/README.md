@@ -1,4 +1,5 @@
 # MACD Power Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The MACD Power strategy is a multi-timeframe momentum system converted from the original MetaTrader expert advisor. The logic combines a pair of linear weighted moving averages (LWMA) calculated on the primary timeframe, two MACD variations, a higher timeframe momentum filter, and a monthly MACD bias. The strategy attempts to participate in impulsive moves once momentum and higher timeframe trend conditions align.

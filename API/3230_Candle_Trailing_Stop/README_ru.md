@@ -1,4 +1,5 @@
 # Стратегия Candle Trailing Stop
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Candle Trailing Stop** — это порт оригинального эксперта MetaTrader на платформу StockSharp. Алгоритм сочетает многофреймовый
 анализ тренда, фильтр по моментуму и агрессивный трейлинг стопов по экстремумам свечей. Перенос выполнен на высокоуровневом API

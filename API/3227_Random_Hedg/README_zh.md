@@ -1,4 +1,5 @@
 # Random Hedg 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Random Hedg Strategy** 是将 MetaTrader 顾问 "Random Hedg" 迁移到 StockSharp 高阶 API 的版本。原策略会同时开出一笔买单和一笔卖单，然后通过固定止损、止盈、保本和跟踪止损来管理这两个方向。迁移版完整保留了这种核心机制，并把所有设置暴露为策略参数，便于在 StockSharp Designer 中调试或优化。

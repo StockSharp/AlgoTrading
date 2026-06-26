@@ -1,4 +1,5 @@
 # 2DLimits
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 2DLimits is a direct port of the MetaTrader 4 expert advisor `2DLimits_EA_v2`. The strategy evaluates the last two completed daily candles and only participates when they form a stair-step pattern (higher highs/lows or lower highs/lows). When the pattern is valid, the strategy submits stop orders at the previous day's extreme and protects the position with a midpoint stop-loss and a target equal to the prior daily range.

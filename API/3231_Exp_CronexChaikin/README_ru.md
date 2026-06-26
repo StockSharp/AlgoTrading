@@ -1,4 +1,5 @@
 # Стратегия Exp Cronex Chaikin
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MetaTrader **Exp_CronexChaikin.mq5** на высокоуровневый API StockSharp. Оригинальный робот восстанавливает осциллятор Chaikin по кривой накопления/распределения, дважды сглаживает его фильтрами Cronex XMA и торгует пересечения между быстрой и сигнальной линиями. В версии StockSharp все этапы реализованы на индикаторах библиотеки и вынесены в настраиваемые параметры.
 

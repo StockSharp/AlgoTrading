@@ -1,4 +1,5 @@
 # Exp Cronex Chaikin 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 专家顾问 **Exp_CronexChaikin.mq5** 移植到 StockSharp 高级 API。原始机器人基于累积/派发数据重建 Chaikin 振荡指标，再通过 Cronex “XMA” 滤波器进行两次平滑，并在快慢线交叉时进行交易。StockSharp 版本复刻了相同的流程，并将每个阶段暴露为可配置参数。
 

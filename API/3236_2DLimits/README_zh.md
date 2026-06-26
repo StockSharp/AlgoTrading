@@ -1,4 +1,5 @@
 # 2DLimits
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 2DLimits 是 MetaTrader 4 智能交易系统 `2DLimits_EA_v2` 的直接移植版本。策略对最近两个已经完成的日线蜡烛进行评估，仅当它们呈现阶梯式结构（高点和低点同时抬升或下降）时才参与交易。一旦形态成立，就会在前一日的极值处挂入止损单，并使用日内中点作为止损、前一日区间作为止盈。

@@ -1,4 +1,5 @@
 # 随机指标卖出策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略移植自 MetaTrader 的 **stochSell** 专家顾问。策略只监听一种周期的蜡烛线，在满足三重随机指标确认以及波动率过滤后，先市价卖出，然后立即挂出一组卖出止损网格，以便在价格继续下跌时加仓。

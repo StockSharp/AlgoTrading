@@ -1,4 +1,5 @@
 # Three Breaky 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Three Breaky** 策略是 MetaTrader 4 专家顾问 `ThreeBreaky_v1.mq4` 的完整移植版本。StockSharp 实现保留了原始的三个突破子系统，将蜡烛图驱动的逻辑迁移到高级 API，并为每个模块维护独立的持仓状态。策略仅依赖一个可配置的时间框架，可以根据需要单独启用或关闭任意子系统。
 

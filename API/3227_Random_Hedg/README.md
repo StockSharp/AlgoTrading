@@ -1,4 +1,5 @@
 # Random Hedg Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Random Hedg Strategy** is a StockSharp high-level port of the MetaTrader expert advisor "Random Hedg". The original EA opens a market buy and market sell simultaneously, then manages both legs with a mixture of fixed stop loss, take profit, break-even and trailing logic. The conversion keeps that core behaviour while exposing every setting as a strategy parameter so the bot can be tuned or optimized directly inside StockSharp Designer.

@@ -1,4 +1,5 @@
 # AutoAdjustingStrategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AutoAdjustingStrategy replicates the MetaTrader expert *Aouto Adjusting1* using StockSharp's high-level API. The port keeps the original multi-timeframe momentum filter, monthly MACD trend confirmation, and three-layer EMA stack to detect with-trend pullbacks. Stops and targets are projected from recent swing extremes and automatically adjusted every completed candle.
 

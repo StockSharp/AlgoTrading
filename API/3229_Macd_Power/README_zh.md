@@ -1,4 +1,5 @@
 # MACD Power 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 MACD Power 是从 MetaTrader 智能交易顾问移植而来的多周期动量策略。算法在主周期上使用两条线性加权移动平均线（LWMA），结合两组 MACD 指标、高一级周期的动量过滤器以及月线级别的 MACD 趋势过滤器。当短期动量与长期趋势同时指向同一方向时，策略尝试跟随行情的强劲波动。

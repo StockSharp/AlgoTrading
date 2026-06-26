@@ -1,4 +1,5 @@
 # Exp Cronex Chaikin Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader expert advisor **Exp_CronexChaikin.mq5** to the StockSharp high-level API. The original robot rebuilds the Chaikin oscillator from accumulation/distribution values, smooths it twice with Cronex "XMA" filters, and trades crossovers between the fast and slow lines. The StockSharp version reproduces the same logic while exposing each stage as configurable parameters.
 

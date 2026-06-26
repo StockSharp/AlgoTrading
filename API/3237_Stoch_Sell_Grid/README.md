@@ -1,4 +1,5 @@
 # Stoch Sell Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the behaviour of the original **stochSell** MetaTrader expert. It listens to a single candle stream and waits for a triple stochastic confirmation combined with a volatility filter before sending an initial market sell order. Immediately after the short entry it deploys a ladder of pending sell stops to scale into the move if price keeps falling.

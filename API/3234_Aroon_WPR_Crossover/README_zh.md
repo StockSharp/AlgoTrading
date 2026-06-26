@@ -1,5 +1,5 @@
 # Aroon WPR Crossover 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 趋势跟随策略，将 Aroon 指标的交叉与 Williams %R 动能过滤器结合使用。当 Aroon Up 向上穿越 Aroon Down 且 Williams %R 落入超卖区时开多单；当 Aroon Down 向上穿越 Aroon Up 且 Williams %R 位于超买区时开空单。持仓可在 Williams %R 反向时或触发可选的止盈、止损（以价格步长衡量）时平仓。
 

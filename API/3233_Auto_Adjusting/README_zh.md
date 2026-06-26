@@ -1,4 +1,5 @@
 # AutoAdjustingStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AutoAdjustingStrategy 将 MetaTrader 专家顾问 *Aouto Adjusting1* 迁移到 StockSharp 的高级 API。策略保留了原始的多周期动量过滤、月线 MACD 趋势确认以及三重 EMA 结构，用于识别趋势内回调。止损与止盈基于最近摆动高低点计算，并在每根完成的 K 线后自动更新。
 

@@ -1,4 +1,5 @@
 # Three Breaky Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Three Breaky Strategy** is a full conversion of the MetaTrader 4 expert advisor `ThreeBreaky_v1.mq4`. The StockSharp version keeps the original trio of breakout subsystems, translates their candle-based logic to the high-level API, and adds clear position bookkeeping for each module. The strategy works on a single configurable timeframe and can enable or disable any subsystem without affecting the others.
 
