@@ -1,4 +1,5 @@
 # 线性回归通道策略（Fibo 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略基于 MetaTrader 专家顾问“linear regression channel”，在 StockSharp 平台上重新实现。策略利用更高周期的线性趋势、加权移动均线、动量指标以及月度 MACD 过滤器来判断方向，同时保留了原始 EA 中的资金管理逻辑，包括浮动盈利目标、盈利回撤保护、保本止损以及权益回撤止损。

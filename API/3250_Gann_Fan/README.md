@@ -1,4 +1,5 @@
 # Gann Fan Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy reproduces the **GANN_FAN** MetaTrader expert using the high-level API. It combines trend filters from linear weighted moving averages with momentum confirmation, a MACD direction gate, and a fractal-based reconstruction of the Gann fan to determine bullish or bearish bias. Risk management mirrors the original robot with stacked martingale-style entries, fixed stops, trailing protection, and optional break-even moves.
 

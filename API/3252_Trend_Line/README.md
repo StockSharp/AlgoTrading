@@ -1,4 +1,5 @@
 # Trend Line Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 The Trend Line strategy replicates the core trade management logic of the original MetaTrader expert by combining a fast and slow linear weighted moving average, a momentum filter and a MACD confirmation. The conversion focuses on high-level StockSharp components and keeps the same systematic approach that waits for momentum bursts in the direction of the trend before entering. Protective stops, profit targets and an optional trailing stop in price steps provide risk management similar to the source expert.

@@ -1,4 +1,5 @@
 # MultiTrader Currency Strength Strategy (3253)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level StockSharp port of the public "MultiTrader" MQL panel (code base #24786). The original Expert Advisor was a discretionary dashboard that displayed the relative strength of the eight major currencies, triggered visual/audio alerts when a currency became extremely strong or weak, and suggested which Forex pair to trade. The StockSharp version automates the same analytical workflow and optionally executes trades on the strongest-vs-weakest pair.

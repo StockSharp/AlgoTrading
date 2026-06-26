@@ -1,4 +1,5 @@
 # Стратегия Gann Line
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит логику советника MetaTrader 4 «Gann Line» (исходник 24877) на высокоуровневый API StockSharp. Сохранены те же фильтры тренда, импульса и долгосрочного MACD, а все блоки управления рисками переведены в шаги цены, что делает расчёты независимыми от брокера.
 

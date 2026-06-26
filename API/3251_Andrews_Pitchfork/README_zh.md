@@ -1,4 +1,5 @@
 # Andrew's Pitchfork 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是 MetaTrader 智能交易系统 “Andrew's Pitchfork” 的移植版本。原脚本需要交易者手工绘制安德鲁斯分叉线，再配合动量、高周期加权均线和 MACD 滤波。StockSharp 版本保留了指标组合，利用自动趋势判定代替手工分叉方向检查，同时还原了风险管理模块（限制加仓次数、止损止盈、保本和跟踪止损）。
 

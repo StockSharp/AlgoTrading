@@ -1,4 +1,5 @@
 # 江恩扇形策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 上复刻 MetaTrader 平台的 **GANN_FAN** 智能交易程序。策略通过线性加权移动均线判断趋势，结合动量振荡指标和 MACD 方向过滤，并利用分形高低点重建江恩扇形，从而确定做多或做空的倾向。风险管理部分继承了原始程序的阶梯加仓、固定止损/止盈、移动止损以及保本功能。
 

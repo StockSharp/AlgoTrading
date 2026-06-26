@@ -1,4 +1,5 @@
 # Gann Line 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 4 中的 “Gann Line” 专家顾问（源文件 24877）迁移到 StockSharp 高级 API。核心的趋势、动量以及慢速 MACD 过滤器全部保留，同时把所有风控参数统一为**价格步长**，从而避免经纪商差异造成的影响。
 

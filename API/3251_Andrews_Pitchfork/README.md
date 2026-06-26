@@ -1,4 +1,5 @@
 # Andrew's Pitchfork Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Port of the MetaTrader expert advisor "Andrew's Pitchfork". The original script expected a manually drawn Andrews' Pitchfork object and combined it with momentum, multi-timeframe moving averages and MACD filters. The StockSharp version keeps the indicator stack, replaces the manual drawing with automatic trend detection and recreates the protective logic (multi-entry limits, stop-loss, take-profit, break-even and trailing management).
 

@@ -1,4 +1,5 @@
 # MultiTrader 货币强度策略 (3253)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是公开 MQL 面板“MultiTrader”（代码 #24786）的 StockSharp 高级 API 版本。原始 EA 是一套人工交易面板，用来显示八大主要货币的相对强弱、在极端情况下弹出提醒，并提示潜在的交易货币对。移植后的 StockSharp 策略自动化了相同的分析流程，并在需要时对最强与最弱货币构成的货币对执行下单操作。

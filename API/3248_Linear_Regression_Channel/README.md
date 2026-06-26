@@ -1,4 +1,5 @@
 # Linear Regression Channel (Fibo) Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is the StockSharp conversion of the MetaTrader expert advisor **"linear regression channel"**. It trades in the direction of the higher-timeframe linear trend confirmed by a set of weighted moving averages, momentum readings, and a monthly MACD filter. Money-management rules replicate the original behaviour with floating profit targets, trailing of accumulated gains, break-even protection, and an equity stop.

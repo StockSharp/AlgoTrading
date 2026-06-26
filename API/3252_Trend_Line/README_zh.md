@@ -1,4 +1,5 @@
 # 趋势线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 趋势线策略复刻了原始 MetaTrader 专家顾问的核心逻辑：利用快慢线性加权移动平均线、动量过滤器与 MACD 组合信号，并在 StockSharp 中实现高阶 API 的风格。策略等待顺势方向上的动量爆发后才入场，同时通过止损、止盈以及可选的跟踪止损控制风险，从而保留了源代码的主要风格。

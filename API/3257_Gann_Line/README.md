@@ -1,4 +1,5 @@
 # Gann Line Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the core ideas of the MetaTrader 4 "Gann Line" expert advisor (source ID 24877) using the StockSharp high-level API. It keeps the same trend, momentum and long-term MACD filters while expressing all money-management tools in **price steps**, which makes the logic broker-independent.
 

@@ -1,5 +1,5 @@
 # 800BB 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略使用 StockSharp 的高级 API 复刻 MetaTrader 4 的 “800BB” 智能交易系统。价格突破超长周期的布林带后，只要下一根 K 线重新回到通道内，系统就执行均值回归交易。风险控制依靠 ATR 倍数的止损/止盈距离，并结合 `RiskPercent` 参数根据账户权益动态计算下单数量。
 
