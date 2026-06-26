@@ -1,4 +1,5 @@
 # EA Vishal EURGBP H4 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **EA Vishal EURGBP H4 Strategy** replicates the original MetaTrader expert advisor that combines a stochastic crossover entry filter with envelope-based exits. The logic operates on H4 candles by default and uses virtual risk management tools (stop-loss, take-profit, and optional trailing stop) defined in pips, closely mirroring the MT4 behaviour.

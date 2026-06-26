@@ -1,4 +1,5 @@
 # JBrainTrend1Stop Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **JBrainTrend1Stop Strategy** is a StockSharp port of the MetaTrader 5 expert advisor `Exp_JBrainTrend1Stop`. It combines two Average True Range measurements, a Stochastic oscillator and Jurik moving averages to detect BrainTrading trend reversals. Whenever the Jurik-smoothed price makes a sufficiently large swing and the Stochastic leaves its neutral zone, the strategy switches bias, updates the BrainTrend stop line and (optionally) reverses the net position after a configurable delay.
 

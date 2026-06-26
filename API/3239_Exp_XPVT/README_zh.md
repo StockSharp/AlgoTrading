@@ -1,4 +1,5 @@
 # Exp XPVT 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Exp XPVT 策略** 是 MetaTrader 5 专家顾问 *Exp_XPVT* 的移植版本。策略比较价格-成交量趋势（Price and Volume Trend，PVT）序列与其平滑曲线之间的交叉信号：当原始 PVT 线跌破平滑线时开多，当其重新上穿时开空。可选的止损与止盈距离用于复制原始 EA 的风险控制行为。
 

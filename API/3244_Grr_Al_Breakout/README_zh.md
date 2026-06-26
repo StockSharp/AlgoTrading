@@ -1,4 +1,5 @@
 # Grr AL Breakout 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Grr AL Breakout** 是 MetaTrader 专家顾问 `grr-al.mq5` 的移植版本。策略在每根新 K 线开始时记录开盘价，并等待市场向上或向下偏离该价格达到设定的点数。当价格波动超过阈值时，当前 K 线只触发一次交易，并且可以反转已有头寸。

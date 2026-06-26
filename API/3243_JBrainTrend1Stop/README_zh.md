@@ -1,4 +1,5 @@
 # JBrainTrend1Stop 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **JBrainTrend1Stop** 策略是 MetaTrader 5 专家顾问 `Exp_JBrainTrend1Stop` 在 StockSharp 平台上的移植版本。它将两条 Average True Range、Stochastic 振荡器以及三条 Jurik 移动平均线结合起来，用于识别 BrainTrading 趋势反转。当 Jurik 平滑后的价格出现足够大的摆动并且 Stochastic 脱离中性区间时，策略会切换方向、更新 BrainTrend 止损线，并且（在可选的情况下）在指定的延迟后反转净持仓。
 

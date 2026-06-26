@@ -1,5 +1,5 @@
 # Стратегия Personal Assistant MNS
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советника MetaTrader `personal_assistant_codeBase_MNS` в экосистему StockSharp. Она предназначена как «персональный помощник»: не генерирует автоматические сигналы, а предоставляет методы для ручного управления сделками (открытие/закрытие позиций, изменение объёма, фиксация прибыли). Кроме того, на каждой завершённой свече в лог выводится расширенная статистика по инструменту и активным ордерам.
 

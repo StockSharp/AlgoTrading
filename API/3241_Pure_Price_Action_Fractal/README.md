@@ -1,4 +1,5 @@
 # Pure Price Action Fractal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Pure Price Action Strategy** is a StockSharp port of the MetaTrader expert advisor "Pure Price Action" (MQL id 24291).

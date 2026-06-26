@@ -1,4 +1,5 @@
 # Day Trading Trend Pullback 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Day Trading 策略是对原始专家顾问 `MQL/24298/Day Trading.mq4` 的 StockSharp 实现。它通过 100 周期 EMA 趋势过滤、Momentum 动量偏离以及更高周期的 MACD 确认来寻找顺势的回调入场机会。所有关键输入都转化成可配置参数，便于针对不同品种进行调优。

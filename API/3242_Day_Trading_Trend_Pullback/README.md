@@ -1,4 +1,5 @@
 # Day Trading Trend Pullback Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Day Trading Strategy is a trend-following system that enters on pullbacks inside an established direction. The original expert advisor (MQL entry `MQL/24298/Day Trading.mq4`) mixes a 100-period EMA trend filter with momentum and a higher timeframe MACD confirmation. The StockSharp port keeps the same idea while exposing every important input as a strategy parameter.

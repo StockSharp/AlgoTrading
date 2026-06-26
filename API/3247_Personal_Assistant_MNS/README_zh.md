@@ -1,5 +1,5 @@
 # Personal Assistant MNS 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 中的 `personal_assistant_codeBase_MNS` 助手 EA 迁移到 StockSharp。它是一个人工辅助模块：不会主动生成信号，而是通过公开方法模拟原版热键（开/平仓、调整手数、在盈利时强制平仓）。此外，每根完结 K 线都会在日志中输出关于合约、活动委托和风险设置的详细信息。
 

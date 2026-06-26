@@ -1,4 +1,5 @@
 # Стратегия JBrainTrend1Stop
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **JBrainTrend1Stop** — порт советника MetaTrader 5 `Exp_JBrainTrend1Stop` на платформу StockSharp. Стратегия сочетает две оценки Average True Range, осциллятор Stochastic и три Jurik Moving Average для обнаружения разворотов BrainTrading. Когда сглаженная Jurik цена делает достаточно сильный импульс и Stochastic выходит из нейтральной зоны, стратегия переключает направление, обновляет линию BrainTrend и (при необходимости) переворачивает позицию после заданной задержки.
 

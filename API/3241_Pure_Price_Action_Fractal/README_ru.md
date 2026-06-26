@@ -1,4 +1,5 @@
 # Стратегия Pure Price Action Fractal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Pure Price Action Strategy** — порт MetaTrader-советника «Pure Price Action» (MQL №24291) на платформу StockSharp.

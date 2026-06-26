@@ -1,4 +1,5 @@
 # EA Vishal EURGBP H4 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **EA Vishal EURGBP H4 策略** 复刻原始 MetaTrader 智能交易系统：通过随机指标交叉入场，并结合包络线突破退出。默认基于 4 小时蜡烛，仅在蜡烛收盘后做出决策，同时使用以点（pip）为单位的虚拟风控工具（止损、止盈与可选的移动止损），最大限度还原 MT4 的表现。

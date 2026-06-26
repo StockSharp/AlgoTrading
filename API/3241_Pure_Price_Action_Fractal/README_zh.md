@@ -1,4 +1,5 @@
 # Pure Price Action Fractal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **纯价格行为策略** 是 MetaTrader 专家顾问“Pure Price Action”（MQL 编号 24291）的 StockSharp 版本。

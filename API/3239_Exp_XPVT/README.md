@@ -1,4 +1,5 @@
 # Exp XPVT Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Exp XPVT Strategy** is a conversion of the MetaTrader 5 expert advisor *Exp_XPVT*. The system trades crossovers between the Price and Volume Trend (PVT) indicator and a configurable moving average applied to the PVT series. When the raw PVT line drops below its smoothed variant the strategy opens long positions, while upward crosses trigger short entries. Optional stop-loss and take-profit distances emulate the original expert advisor behaviour.
 

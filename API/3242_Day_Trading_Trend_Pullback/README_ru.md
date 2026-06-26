@@ -1,4 +1,5 @@
 # Стратегия Day Trading Trend Pullback
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия Day Trading – это порт оригинального советника `MQL/24298/Day Trading.mq4` на платформу StockSharp. Алгоритм ищет сделки по тренду после отката к средней, комбинируя индикаторы EMA, Momentum и подтверждение по MACD на старшем таймфрейме. Все ключевые настройки вынесены в параметры стратегии и могут подстраиваться под инструмент.

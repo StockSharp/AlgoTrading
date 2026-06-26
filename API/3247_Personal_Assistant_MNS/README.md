@@ -1,5 +1,5 @@
 # Personal Assistant MNS Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader `personal_assistant_codeBase_MNS` expert advisor to StockSharp. It acts as a manual trading helper: instead of generating autonomous signals, it exposes C# methods that replicate the hotkey-driven actions from the original EA (open/close trades, adjust volume, or liquidate profitable positions). The helper also logs informative metrics about the symbol, active orders, and currently configured risk levels on every finished candle.
 

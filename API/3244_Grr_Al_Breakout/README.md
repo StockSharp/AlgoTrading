@@ -1,4 +1,5 @@
 # Grr AL Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Grr AL Breakout Strategy** is a direct port of the MetaTrader expert advisor `grr-al.mq5`. It observes the first price reached at the beginning of every candle and waits for the market to move a configurable distance away from that anchor level. When the movement exceeds the threshold, the strategy fires exactly one trade for that candle, optionally reversing existing exposure.
