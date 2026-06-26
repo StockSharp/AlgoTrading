@@ -1,4 +1,5 @@
 # RNN Probability 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 RNN Probability 策略移植自 MetaTrader 专家顾问 *RNN (barabashkakvn's edition)*。原始算法会采集三个间隔等于 RSI 周期的 RSI 数值，并将其送入一个手工构建的概率网络，模拟递归神经网络的判定逻辑。StockSharp 版本通过高级别的蜡烛订阅复现这一流程，并自动将 MetaTrader 中的手数、点值以及止损/止盈距离转换成 StockSharp 的概念。

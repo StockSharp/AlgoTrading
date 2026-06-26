@@ -1,5 +1,5 @@
 # Стратегия Constituents EA
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит советника **Constituents EA** из `MQL/22595` в высокоуровневый API StockSharp. Логика построена так,
 чтобы в заданный час размещать пару отложенных заявок вокруг последнего ценового диапазона и при этом использовать стандартные

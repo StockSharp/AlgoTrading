@@ -1,4 +1,5 @@
 # Стратегия Vortex Indicator Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является переносом советника **Exp_VortexIndicator_Duplex** из MetaTrader в высокоуровневый API StockSharp. Логика разделена на два независимых потока индикатора Vortex: один отвечает за длинные сделки, второй — за короткие. Для каждого потока задаётся собственный таймфрейм, период индикатора и смещение по закрытым свечам, поэтому поведение покупок и продаж можно настраивать отдельно.
 

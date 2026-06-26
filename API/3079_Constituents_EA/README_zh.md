@@ -1,5 +1,5 @@
 # Constituents EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把 `MQL/22595` 中的 **Constituents EA** 移植到 StockSharp 的高级 API。它会在指定的小时附近，围绕最近的价
 格区间自动挂出两张挂单，并利用 StockSharp 自带的风控工具来处理止损和止盈。

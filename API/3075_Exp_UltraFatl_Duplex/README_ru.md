@@ -1,4 +1,5 @@
 # Стратегия Exp UltraFATL Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Exp UltraFATL Duplex** – это порт MetaTrader 5 эксперта `Exp_UltraFatl_Duplex`, реализованный на C# для StockSharp. Стратегия использует две независимые ветки индикатора UltraFATL: одна анализирует потенциальные покупки, другая – продажи. Каждая ветка строит лестницу сглаженных значений FATL, подсчитывает количество растущих и падающих ступеней и на основе баланса формирует торговые сигналы.

@@ -1,4 +1,5 @@
 # 自适应 Renko Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Adaptive Renko Duplex Strategy** 是 `Exp_AdaptiveRenko_Duplex.mq5` 专家顾问在 StockSharp 平台上的移植版本。新版本保留了原策略的核心思想——**为多头和空头分别运行两套自适应 Renko 流**，并通过高层 API 暴露全部逻辑。每个流都会根据近期波动率动态调整砖块高度，从而在价格两侧构建支持/阻力轨道；策略监控这些轨道中出现的趋势反转，并允许对多空参数进行独立配置。

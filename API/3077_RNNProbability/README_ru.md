@@ -1,4 +1,5 @@
 # Стратегия RNN Probability
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия RNN Probability — это конвертация эксперта MetaTrader *RNN (barabashkakvn's edition)*. Оригинальный робот считывает три значения RSI, разделённых длиной индикатора, и прогоняет их через решётку вероятностей, имитирующую рекуррентную нейросеть. Порт на StockSharp воспроизводит ту же логику через подписку на свечи высокого уровня, автоматически переводя понятия MetaTrader (лоты, пункты, стопы) в объекты StockSharp.

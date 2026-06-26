@@ -1,4 +1,5 @@
 # Exp UltraFATL Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Exp UltraFATL Duplex Strategy** is a C# conversion of the MetaTrader 5 expert advisor `Exp_UltraFatl_Duplex`. The system runs two independent UltraFATL indicator pipelines: one dedicated to long opportunities and another tuned for short setups. Each pipeline evaluates a ladder of smoothed FATL values and counts how many stages are rising or falling. The balance between the bullish and bearish counters defines the direction of the next trade.

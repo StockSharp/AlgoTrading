@@ -1,4 +1,5 @@
 # Adaptive Renko Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Adaptive Renko Duplex Strategy** is a StockSharp port of the original `Exp_AdaptiveRenko_Duplex.mq5` expert advisor. The converted version keeps the idea of running **two independent Adaptive Renko streams** – one dedicated to bullish setups and another to bearish setups – while exposing the logic through the high-level API. Each stream builds Renko-style support and resistance rails whose brick height dynamically adapts to recent volatility. The strategy reacts to trend reversals detected inside these rails and can maintain asymmetric configurations for the long and short sides.

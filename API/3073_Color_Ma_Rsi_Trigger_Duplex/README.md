@@ -1,4 +1,5 @@
 # Color Ma RSI Trigger Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **Exp_ColorMaRsi-Trigger_Duplex.mq5** expert advisor to the StockSharp high level API.
 It drives two independent MaRsi-Trigger detectors: the **long block** decides when long positions should be

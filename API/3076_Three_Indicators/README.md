@@ -1,4 +1,5 @@
 # Three Indicators Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp conversion of the original **"Three indicators"** MQL5 expert. It evaluates three classical oscillators—MACD, Stochastic Oscillator, and RSI—on every finished candle of the selected timeframe. Only when all filters align does the strategy enter a position, ensuring that each trade follows a consistent multi-indicator confirmation.

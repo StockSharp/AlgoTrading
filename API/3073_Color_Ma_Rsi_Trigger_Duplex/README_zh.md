@@ -1,4 +1,5 @@
 # Color Ma RSI Trigger Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 **Exp_ColorMaRsi-Trigger_Duplex.mq5** 专家顾问迁移到 StockSharp 高级 API。
 系统包含两个彼此独立的 MaRsi-Trigger 模块：**多头模块** 负责管理多头仓位，**空头模块** 负责管理空头仓位。

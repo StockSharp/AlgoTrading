@@ -1,4 +1,5 @@
 # 三指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是将原始 MQL5 专家顾问 **“Three indicators”** 转换到 StockSharp 平台后的版本。在所选周期的每一根收盘 K 线时，策略会同时评估 MACD、随机指标和 RSI 三个经典震荡指标。只有当所有过滤条件朝同一方向时才会入场，从而保持与原脚本一致的信号确认逻辑。

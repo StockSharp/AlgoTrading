@@ -1,4 +1,5 @@
 # Vortex Indicator Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy converts the MetaTrader expert **Exp_VortexIndicator_Duplex** to the StockSharp high level API. Two independent Vortex indicator streams are maintained: one governs long trades and the other governs short trades. Each stream can use its own timeframe, indicator length and bar shift, allowing asymmetric behaviour between bullish and bearish setups.
 

@@ -1,4 +1,5 @@
 # Стратегия Color Ma RSI Trigger Duplex
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник **Exp_ColorMaRsi-Trigger_Duplex.mq5** на высокий уровень API StockSharp.
 Внутри работают два независимых блока MaRsi-Trigger: **длинный блок** отвечает за открытие и закрытие

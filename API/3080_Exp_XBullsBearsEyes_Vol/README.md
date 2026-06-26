@@ -1,4 +1,5 @@
 # Exp XBullsBearsEyes Vol Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader expert **Exp_XBullsBearsEyes_Vol**. The original advisor combines Bulls Power and Bears Power readings, multiplies the result by candle volume and colours the histogram according to the resulting momentum. Two independent position slots are maintained for both the long and the short side, allowing the system to scale in when the colour intensity increases. The StockSharp port recreates the multi-stage filter, colour logic and trade management while using high-level API calls for orders and risk control.

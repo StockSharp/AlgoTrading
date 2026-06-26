@@ -1,4 +1,5 @@
 # RNN Probability Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The RNN Probability strategy is a conversion of the MetaTrader expert *RNN (barabashkakvn's edition)*. The original robot collects three RSI snapshots separated by the RSI period and feeds them into a hand-crafted probability lattice that emulates a recurrent neural network. The StockSharp port replicates this behaviour with the high-level candle subscription API, automatically converting the MetaTrader lots, price steps, and stop/target distances into StockSharp concepts.

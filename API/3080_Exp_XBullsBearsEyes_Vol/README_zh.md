@@ -1,4 +1,5 @@
 # Exp XBullsBearsEyes Vol 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 专家顾问 **Exp_XBullsBearsEyes_Vol** 的 C# 版本。原始 EA 将 Bulls Power 与 Bears Power 指标结合，并把结果与K线成交量相乘，然后根据动量强弱对直方图着色。多头和空头各自维护两个独立的仓位槽位，以便在颜色强度增强时分批加仓。本移植版在 StockSharp 中重建了多级滤波、颜色逻辑与仓位管理，同时使用高级 API 完成下单与风险控制。

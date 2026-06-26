@@ -1,4 +1,5 @@
 # Exp UltraFATL 双向策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Exp UltraFATL 双向策略** 是对 MetaTrader 5 专家顾问 `Exp_UltraFatl_Duplex` 的 C# 版本。策略为多头和空头各自运行一套 UltraFATL 指标管线，计算平滑后的 FATL 梯形序列中有多少层向上或向下，从而判断买卖力量的相对强弱并生成交易信号。

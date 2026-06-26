@@ -1,4 +1,5 @@
 # Vortex Indicator Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 专家顾问 **Exp_VortexIndicator_Duplex** 迁移到 StockSharp 高级 API。策略维护两个独立的 Vortex 指标流：一个负责多头信号，另一个负责空头信号。每个流都可以配置自己的时间周期、指标周期以及信号偏移，从而实现对多空逻辑的差异化设置。
 
