@@ -1,5 +1,5 @@
 # Cidomo 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 5 的 "Cidomo" 专家顾问迁移到 StockSharp。策略在选定周期的每根完整 K 线上计算最近的价格区间，并在区间上方与下方分别挂出买入/卖出止损单。通过固定止损、止盈、阶梯式追踪止损以及两种仓位管理模式（固定手数或风险百分比）来控制风险。
 

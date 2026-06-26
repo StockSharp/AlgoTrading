@@ -1,4 +1,5 @@
 # TenPips Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **TenPips Strategy** is a StockSharp port of the MetaTrader "10PIPS" expert advisor. It combines fast/slow linear weighted moving averages calculated on the trading timeframe with a multi-timeframe momentum confirmation and a macro (monthly) MACD filter. The conversion mirrors the original money-management module, including break-even protection, pip-based trailing, and equity/absolute profit targets.
 

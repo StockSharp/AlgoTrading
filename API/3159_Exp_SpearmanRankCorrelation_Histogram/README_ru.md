@@ -1,4 +1,5 @@
 # Стратегия Exp Spearman Rank Correlation Histogram
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия StockSharp повторяет советник MetaTrader **Exp_SpearmanRankCorrelation_Histogram**. Она подписывается на выбранный таймфрейм, рассчитывает гистограмму ранговой корреляции Спирмена по каждому закрытому бару и реагирует на смену цветовых состояний. В зависимости от торгового режима алгоритм может закрывать противоположные позиции, переворачиваться или ждать экстремальных значений перед действием.
 

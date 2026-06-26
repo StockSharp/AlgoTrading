@@ -1,4 +1,5 @@
 # TenPips 动量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **TenPips** 策略是 MetaTrader "10PIPS" 智能交易系统的 StockSharp 高级 API 版本。它在交易周期上计算快/慢线性加权均线，并结合高周期动量确认以及月度 MACD 过滤器。风险管理模块保留了原有 EA 的功能：点差止损/止盈、移动止损、保本、资金追踪以及权益止损。
 

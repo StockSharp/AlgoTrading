@@ -1,4 +1,5 @@
 # Exp Spearman Rank Correlation Histogram Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This StockSharp strategy ports the MetaTrader expert **Exp_SpearmanRankCorrelation_Histogram**. It subscribes to a configurable candle series, calculates the Spearman rank correlation histogram for each completed bar, and reacts when the color-coded state changes. Depending on the trade mode the algorithm can close opposite positions, reverse into a new trade, or wait for extreme values before acting.
 

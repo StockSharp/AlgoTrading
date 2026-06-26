@@ -1,4 +1,5 @@
 # Exp Spearman Rank Correlation Histogram 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该 StockSharp 策略移植自 MetaTrader 专家顾问 **Exp_SpearmanRankCorrelation_Histogram**。策略订阅指定周期的 K 线，计算每个已收盘柱的斯皮尔曼秩相关系数直方图，并根据颜色状态的变化执行交易。不同的交易模式决定是平掉反向仓位、直接反手还是等待极值才动作。
 

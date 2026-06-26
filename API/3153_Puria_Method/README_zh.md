@@ -1,4 +1,5 @@
 # Puria Method 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Puria Method 是一套起源于 MetaTrader 的顺势策略，通过三条均线与 MACD 主线组合来识别动量突破。本转换版完整保留原始信号逻辑，同时提供止损、止盈、追踪止损以及分批止盈等风险控制功能，方便在 StockSharp 平台上直接使用。

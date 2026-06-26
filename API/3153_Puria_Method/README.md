@@ -1,4 +1,5 @@
 # Puria Method Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Puria Method strategy is a trend-following system originally designed for MetaTrader. It combines three moving averages with a MACD trend filter to detect momentum breakouts. The StockSharp conversion keeps the original entry logic and adds modern risk controls such as partial profit taking and automated trailing stops.

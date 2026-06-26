@@ -1,4 +1,5 @@
 # Cycle Market Order Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the MetaTrader 4 expert advisor "CycleMarketOrder_V181". The strategy organises a fixed number of slots inside a price ladder and opens market orders when the live bid/ask trades through an individual slot. Each slot carries its own volume, break-even threshold and trailing stop value so the grid can gradually scale into a position while protecting profits that already reached the required distance.
 

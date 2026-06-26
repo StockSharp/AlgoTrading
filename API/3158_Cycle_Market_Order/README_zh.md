@@ -1,4 +1,5 @@
 # 循环市价单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略由 MetaTrader 4 专家顾问“CycleMarketOrder_V181”转换而来。策略在价格梯度中维护固定数量的交易槽位，当实时买卖价进入槽位区间时立刻提交市价单。每个槽位都有自己的下单量、保本触发距离和追踪止损价，因此网格能够逐步扩大仓位，同时保护已经达到目标利润的仓位。
 
