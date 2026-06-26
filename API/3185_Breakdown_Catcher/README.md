@@ -1,4 +1,5 @@
 # Breakdown Catcher Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Breakdown Catcher strategy is a bar-by-bar breakout system ported from the MetaTrader expert advisor "Breakdown catcher". After each completed candle the strategy places virtual breakout levels above the previous high and below the previous low (optionally shifted by an indent). When the next candle pierces one of these levels the strategy enters a position in the breakout direction and immediately assigns stop-loss, take-profit and optional trailing protection expressed in pips.

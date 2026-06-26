@@ -1,4 +1,5 @@
 # Stochastic Momentum Filter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Stochastic Momentum Filter Strategy** is a StockSharp port of the MetaTrader expert advisor `Stochastic.mq4` (folder `MQL/23473`). The original robot combines two stochastic oscillators, linear weighted moving averages (LWMA), a momentum deviation filter, and a higher timeframe MACD trend check. This C# version recreates the same building blocks on top of the StockSharp high-level API and keeps the multi-layered confirmation workflow:

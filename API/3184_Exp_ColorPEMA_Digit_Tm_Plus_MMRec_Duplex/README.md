@@ -1,4 +1,5 @@
 # Exp Color PEMA Digit TM Plus MMRec Duplex (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy recreates the "Exp_ColorPEMA_Digit_Tm_Plus_MMRec_Duplex" Expert Advisor using StockSharp's high level API. It operates on two independent Pentuple Exponential Moving Average (PEMA) streams that can use different timeframes and price sources. The long module opens trades when the PEMA slope switches to bullish, while the short module reacts to bearish turns. Each side supports indicator driven exits and a safety timer that forces the position to close after a configurable amount of minutes.

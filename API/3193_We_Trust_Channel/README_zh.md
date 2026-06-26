@@ -1,4 +1,5 @@
 # WE TRUST 通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **WE TRUST 通道策略** 是 MetaTrader 5 专家顾问 “WE TRUST” 的 StockSharp 高层 API 移植版本。策略围绕一条线性加权移动平均线（LWMA）构建，并使用标准差带形成价格通道。当收盘价突破通道后，系统预期价格将回归均值并在通道内反向开仓。信号反转、可选的反向持仓平仓以及基于点值的风险参数完全复刻原始 EA。

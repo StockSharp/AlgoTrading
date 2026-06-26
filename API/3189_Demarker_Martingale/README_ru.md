@@ -1,4 +1,5 @@
 # Стратегия Demarker Martingale (StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Demarker Martingale Strategy** переносит эксперта MetaTrader «Demarker Martingale» на высокоуровневый API StockSharp. Система объединяет сигналы индикатора DeMarker на рабочем таймфрейме с фильтром тренда по MACD на более старшем периоде. После входа применяется мартингейл для объёмов, фиксированные стоп-лосс и тейк-профит, перевод в безубыток и трейлинг-стоп, повторяющие оригинальную логику.

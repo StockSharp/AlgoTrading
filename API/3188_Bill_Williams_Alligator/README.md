@@ -1,4 +1,5 @@
 # Bill Williams Alligator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader 5 expert advisor **"Bill Williams.mq5"** by Vladimir Karputov to the StockSharp high-level API. It subscribes to a single candle series, rebuilds Bill Williams fractal points, and evaluates breakouts relative to the shifted Alligator lines. When the current candle closes beyond the nearest up or down fractal and that fractal sits outside all three Alligator curves (Jaw, Teeth, Lips), the system opens a position. Optional money-management features reproduce the original inputs such as stop-loss, take-profit, trailing stop, signal reversal, and automatic closing of opposite positions.
 

@@ -1,4 +1,5 @@
 # Bill Williams Alligator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 5 专家顾问 **“Bill Williams.mq5”**（作者 Vladimir Karputov）完整移植到 StockSharp 高层 API。系统订阅单一 K 线序列，重建 Bill Williams 分形，并将其与向前平移的 Alligator 三条线（下颌、牙齿、嘴唇）进行比较。当最新完成的 K 线收盘价突破最近的向上或向下分形，且该分形位于所有 Alligator 线之外时，策略会开仓。额外的风控参数覆盖原始 EA 中的设置，包括止损、止盈、移动止损、信号反向以及强制平掉相反仓位。
 

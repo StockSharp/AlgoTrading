@@ -1,4 +1,5 @@
 # Exp Color PEMA Digit TM Plus MMRec Duplex (C#)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 平台上重现了 “Exp_ColorPEMA_Digit_Tm_Plus_MMRec_Duplex” 智能交易系统，并使用高层 API 实现。多头与空头模块各自维护一条五重指数移动平均线（PEMA）序列，可以分别设置时间框架与价格来源。当 PEMA 的斜率转为向上时开多单，斜率转为向下时开空单，同时提供基于时间的强制离场保护。

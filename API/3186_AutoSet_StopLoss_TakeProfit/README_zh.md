@@ -1,5 +1,5 @@
 # 自动止损与止盈策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该实用型策略会在指定品种的每一笔持仓上自动挂入止损和止盈保护单，重现 MetaTrader "AutoSet SL TP" 智能交易顾问的行为。策略持续监控当前持仓列表，在提交保护单之前先验证券商对最小距离的限制。
 

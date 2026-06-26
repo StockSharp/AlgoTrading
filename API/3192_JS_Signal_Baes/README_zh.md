@@ -1,4 +1,5 @@
 # JS Signal Baes 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MetaTrader 专家顾问 "JS Signal Baes" 移植到 StockSharp 平台。系统同时监控六个周期（默认 M1、M5、M15、M30、H1、H4），只有当所有指标都指向相同方向时才开仓。通过 **Reverse** 参数可以反向交易，在趋势判断为多头时做空，或在空头信号时做多。

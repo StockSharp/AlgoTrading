@@ -1,4 +1,5 @@
 # 随机动量过滤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Stochastic Momentum Filter Strategy** 是 MetaTrader 专家顾问 `Stochastic.mq4`（位于 `MQL/23473`）的 StockSharp 版本。原始 EA 同时使用两个随机指标、线性加权移动平均线（LWMA）、动量偏离过滤器以及高时间框 MACD。本 C# 实现依托 StockSharp 的高级 API 重建上述组件，并保留原策略的多重确认流程：

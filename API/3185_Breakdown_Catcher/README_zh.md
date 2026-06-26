@@ -1,4 +1,5 @@
 # Breakdown Catcher 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Breakdown Catcher 策略来自 MetaTrader 专家顾问“Breakdown catcher”，在每根 K 线收盘时记录该 K 线的高点和低点，并在其上下分别设置突破触发价（可选附加点差）。当下一根 K 线突破任一触发价时，策略按突破方向建立市价仓位，并按照设置的点数立即计算止损、止盈以及（可选的）跟踪止损。

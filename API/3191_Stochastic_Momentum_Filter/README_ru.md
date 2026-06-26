@@ -1,4 +1,5 @@
 # Стратегия Stochastic Momentum Filter
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Stochastic Momentum Filter Strategy** — порт на StockSharp эксперта `Stochastic.mq4` из папки `MQL/23473`. Оригинальный робот сочетает два стохастика, линейные взвешенные средние (LWMA), фильтр отклонения Momentum и MACD старшего таймфрейма. Версия на C# воспроизводит те же блоки на высокоуровневом API StockSharp и сохраняет многоступенчатую схему подтверждений:

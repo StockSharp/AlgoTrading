@@ -1,4 +1,5 @@
 # JS Signal Baes Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor "JS Signal Baes". It evaluates six different timeframes simultaneously (M1, M5, M15, M30, H1, H4 by default) and waits until all monitored indicators agree on the same market direction before opening a position. Signals can be inverted through the **Reverse** parameter for users who want to trade counter to the detected trend.

@@ -1,4 +1,5 @@
 # Demarker 马丁格尔策略（StockSharp）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Demarker 马丁格尔策略** 在 StockSharp 高级 API 上复刻了 MetaTrader 专家顾问 “Demarker Martingale”。系统使用中期的 DeMarker 振荡器信号结合更高周期的 MACD 趋势过滤器。开仓后应用马丁格尔式加仓、固定止损/止盈、保本保护以及与原始 EA 相同的移动止损。

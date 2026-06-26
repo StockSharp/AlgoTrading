@@ -1,4 +1,5 @@
 # WE TRUST Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **WE TRUST Channel Strategy** is a high-level StockSharp port of the MetaTrader 5 expert advisor "WE TRUST". The system trades pullbacks toward a linear weighted moving average that is surrounded by standard deviation bands. When price closes outside the bands the strategy anticipates mean reversion and opens a market position back toward the middle of the channel. Signal reversal, optional closing of opposite trades, and pip-based money management parameters mirror the original expert.

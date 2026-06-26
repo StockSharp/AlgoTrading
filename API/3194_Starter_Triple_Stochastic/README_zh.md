@@ -1,4 +1,5 @@
 # Starter 三重随机策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 专家顾问 **Starter.mq5** 移植到 StockSharp 高级 API。它在三个不同周期上计算移动平均线与
 随机指标（快线、常规线、慢线），只有当所有过滤条件指向同一方向且价格位于每条平移后的移动平均线
