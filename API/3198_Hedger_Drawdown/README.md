@@ -1,4 +1,5 @@
 # Hedger Drawdown Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 StockSharp port of the MetaTrader 5 expert advisor **hedger.mq5** (MQL #23511). The original system opens a protective hedge in the opposite direction when an existing position draws down by a specified number of pips. Once price retraces by a smaller amount, the hedge is closed even at a loss, allowing the original trade to recover. This conversion reproduces the behaviour with the StockSharp high level API and adapts the mechanics to the platform's net position model.
 

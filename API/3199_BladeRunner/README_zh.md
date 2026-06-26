@@ -1,4 +1,5 @@
 # BladeRunner 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 BladeRunner 策略源自 MetaTrader 智能交易系统，结合了威廉姆斯分形突破、趋势判定以及多周期动量过滤。StockSharp 版本保留了原脚本的多时间框架结构：主周期负责产生信号，高一级周期用于动量过滤，慢速周期提供 MACD 趋势确认。策略以市价单入场，可按配置进行加仓，并自动按照价格步长设置止损与止盈。

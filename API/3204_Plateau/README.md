@@ -1,4 +1,5 @@
 # Plateau Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Plateau strategy is a conversion of the original MetaTrader 5 expert advisor. It combines a pair of linear-weighted moving averages with Bollinger Bands to detect potential reversals when price trades near the lower band.
 

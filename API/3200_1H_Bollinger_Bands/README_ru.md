@@ -1,4 +1,5 @@
 # Стратегия 1H Bollinger Bands
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **1H Bollinger Bands Strategy** — адаптация советника MetaTrader «1H Bolinger Bands» под высокоуровневый API StockSharp. Идея состоит в торговле отскоков от дневных полос Боллинджера при условии, что часовой тренд направлен в ту же сторону, а месячный MACD подтверждает направление. По умолчанию рабочий таймфрейм — H1, дополнительно используются более старшие интервалы данных.

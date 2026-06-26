@@ -1,4 +1,5 @@
 # BladeRunner Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The BladeRunner strategy is a translation of the MetaTrader expert advisor that combines fractal breakouts with trend and momentum confirmation. The StockSharp port keeps the multi-timeframe structure of the original script by analysing three different candle feeds: a primary series for trade execution, a higher timeframe series for the momentum filter, and a slow series for the MACD trend filter. Orders are opened with configurable scaling, stop-loss and take-profit distances expressed in price steps.

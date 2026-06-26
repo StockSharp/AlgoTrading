@@ -1,4 +1,5 @@
 # Ilan iMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Ilan iMA Strategy** 是 MetaTrader 5 顾问 `Ilan iMA.mq5` 的 StockSharp 版本。原始 EA 通过一条带有前移的加权移动平均来

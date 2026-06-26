@@ -1,4 +1,5 @@
 # Plateau 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Plateau 策略是对原始 MetaTrader 5 专家的迁移版。策略通过一对线性加权移动平均线与布林带配合来捕捉价格在下轨附近的反转机会。
 

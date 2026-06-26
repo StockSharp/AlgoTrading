@@ -1,4 +1,5 @@
 # Ingrit
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Ingrit 源自 MetaTrader 5 智能交易系统 `Ingrit.mq5`。策略监控 5 分钟 K 线：当上一根 K 线与当前方向相反且收盘动量强劲，同时当前波动与 14 根之前的摆动之间的距离足够大时，触发突破信号。所有订单均以市价执行，止损、止盈以及移动止损均以点（pip）配置，可选地反转信号或在入场前平掉相反持仓。

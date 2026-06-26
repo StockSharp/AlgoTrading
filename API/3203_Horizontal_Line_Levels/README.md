@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Horizontal Line Levels Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Horizontal Line Levels** strategy emulates the MetaTrader 5 expert advisor of the same name. It continuously rebuilds two price levels around the current quote and notifies the user once the market crosses them. The implementation relies on Level1 (bid/ask) market data, mimicking the original OnTick/OnTimer workflow without submitting any orders.
 

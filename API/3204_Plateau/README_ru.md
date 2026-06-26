@@ -1,4 +1,5 @@
 # Стратегия Plateau
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Plateau — это перенос оригинального советника MetaTrader 5. Стратегия использует пару линейно-взвешенных скользящих средних и полосы Боллинджера, чтобы находить потенциальные развороты рядом с нижней полосой.
 

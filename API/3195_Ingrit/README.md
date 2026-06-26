@@ -1,4 +1,5 @@
 # Ingrit
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Ingrit is a conversion of the MetaTrader 5 expert advisor `Ingrit.mq5`. The strategy watches five-minute candles and reacts when a strong counter-trend candle is followed by a wide breakout measured against a swing from fourteen bars ago. Orders are placed at market with configurable stop-loss, take-profit, and trailing stop distances expressed in pips. Signals may optionally be reversed or forced to flatten the opposite exposure before entering a new trade.

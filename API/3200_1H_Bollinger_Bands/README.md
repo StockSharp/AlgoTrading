@@ -1,4 +1,5 @@
 # 1H Bollinger Bands Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **1H Bollinger Bands Strategy** adapts the MetaTrader expert "1H Bolinger Bands" to the StockSharp high-level API. The idea is to trade bounces from the daily Bollinger Bands while the hourly trend is aligned and the long-term monthly MACD confirms the direction. The strategy works on the H1 timeframe (default) and relies on additional higher-timeframe data streams for confirmation.

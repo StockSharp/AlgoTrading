@@ -1,4 +1,5 @@
 # Hedger 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 MetaTrader 5 专家顾问 **hedger.mq5**（MQL #23511）的 StockSharp 移植版。原始系统在已有仓位的浮亏达到指定点数时建立一个反向对冲头寸；价格回撤一段距离后，无论该对冲是否亏损都会被平掉，从而让原始方向继续恢复。本移植版本使用 StockSharp 的高级 API 实现相同的循环，并针对平台的净持仓模型进行了适配。
 

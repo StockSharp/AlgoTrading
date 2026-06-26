@@ -1,4 +1,5 @@
 # 555 Scalper 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 555 Scalper 策略是 MetaTrader "555 Scalper" 智能交易顾问的完整移植版本。策略可以运行在任何主周期上，同时使用更高周期的动量过滤和月线级别的 MACD 确认。主要信号由快慢线性加权移动平均交叉、结构性蜡烛条件以及动量/ MACD 过滤组合而成。风控模块保留了原始 EA 的特性，包括移动止损、保本保护、权益回撤止损以及以资金为单位的止盈/拖尾控制。

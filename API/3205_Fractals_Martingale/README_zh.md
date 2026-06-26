@@ -1,4 +1,5 @@
 # 分形马丁格尔策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本目录提供 MetaTrader 智能交易系统“Fractals Martingale”的 StockSharp 高阶 API 版本。策略将比尔·威廉姆斯分形、基于
 一目均衡表的趋势过滤器以及月度 MACD 确认结合在一起；持仓数量采用经典的马丁格尔序列，在连续亏损后放大仓位，

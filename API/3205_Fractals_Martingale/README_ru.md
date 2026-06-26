@@ -1,4 +1,5 @@
 # Стратегия Fractals Martingale
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 В данной папке находится порт советника MetaTrader «Fractals Martingale», реализованный на высокоуровневом API StockSharp.
 Алгоритм объединяет фракталы Билла Вильямса, трендовый фильтр на основе индикатора Ишимоку и подтверждение по месячному MACD.

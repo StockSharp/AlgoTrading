@@ -1,4 +1,5 @@
 # Fractals Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This folder contains the StockSharp port of the MetaTrader expert advisor "Fractals Martingale". The strategy mixes Bill Williams
 fractals, an Ichimoku-based trend filter and a monthly MACD confirmation. Position sizing follows a classic martingale sequence

@@ -1,4 +1,5 @@
 # 555 Scalper Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The 555 Scalper strategy is a direct port of the "555 Scalper" MetaTrader expert advisor. It operates on any primary timeframe while relying on higher timeframe filters and monthly momentum confirmation. The algorithm combines a fast/slow linear weighted moving average crossover with a higher timeframe momentum confirmation and a monthly MACD filter. Protective logic mirrors the original EA, including break-even movements, classic pip-based trailing, equity-based emergency stops, and money-based exits.

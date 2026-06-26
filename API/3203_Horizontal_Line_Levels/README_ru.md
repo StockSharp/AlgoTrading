@@ -1,4 +1,4 @@
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Horizontal Line Levels** — это конверсия одноимённого советника MetaTrader 5. Стратегия непрерывно перестраивает две горизонтальные линии вокруг текущей цены и сообщает пользователю, когда рынок их пересекает. Реализация в StockSharp опирается на поток Level1 (лучший бид/аск) и повторяет связку OnTick/OnTimer оригинала, не выставляя торговых заявок.
 

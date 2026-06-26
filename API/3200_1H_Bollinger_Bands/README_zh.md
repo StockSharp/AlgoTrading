@@ -1,4 +1,5 @@
 # 1H Bollinger Bands 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **1H Bollinger Bands Strategy** 将 MetaTrader 指标“1H Bolinger Bands”迁移到 StockSharp 高级 API。核心思想是在小时级别顺势交易，利用日线 Bollinger Bands 的回归信号，并通过月线 MACD 进行宏观方向过滤。默认基础周期为 H1，策略还会订阅更高周期的数据以完成确认。
