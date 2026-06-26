@@ -1,4 +1,5 @@
 # XCCI Histogram Vol 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略基于 MetaTrader 专家顾问 `Exp_XCCI_Histogram_Vol`，在 StockSharp 平台上重现其逻辑。核心思想是使用自定义的 “XCCI Histogram Vol” 指标：将 CCI 指标值乘以成交量，并通过可选择的移动平均线平滑，然后与根据成交量动态缩放的阈值比较。策略完全采用高阶 API，只处理收盘蜡烛，并保留原策略的双分批入场设计。

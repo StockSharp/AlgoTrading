@@ -1,5 +1,5 @@
 # Basic CCI RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Basic CCI RSI 策略重现了原始 MetaTrader 智能交易系统：只有当商品通道指数（CCI）和相对强弱指数（RSI）在连续两根收盘 K 线上同时给出同向信号时才入场。StockSharp 版本保留了以点数（pips）表示的资金管理规则，会自动把这些距离换算为价格步长，并实现了与 MQL5 代码中 `Trailing()` 函数一致的移动止损机制。
 

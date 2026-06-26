@@ -1,4 +1,5 @@
 # XCCI Histogram Vol Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor `Exp_XCCI_Histogram_Vol`. It reproduces the color-coded logic of the custom "XCCI Histogram Vol" indicator: a Commodity Channel Index (CCI) multiplied by volume, smoothed by a selectable moving average, and compared to dynamic thresholds. The implementation follows the high level API guidelines, processes closed candles only, and keeps the original dual-position structure by exposing separate volumes for the primary and secondary entries.

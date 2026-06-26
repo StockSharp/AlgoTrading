@@ -1,4 +1,5 @@
 # AMA Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 AMA Trader 策略再现了 MetaTrader 5 专家顾问 “AMA Trader” 的核心思想。该策略同时使用考夫曼自适应移动平均线（AMA）和 RSI 指标：当价格保持在 AMA 一侧时，策略会在短期回调出现时进行加仓。StockSharp 版本采用高级 API，通过蜡烛订阅和指标绑定重建原始逻辑，与原策略保持高度一致，同时符合 StockSharp 的交易模型。

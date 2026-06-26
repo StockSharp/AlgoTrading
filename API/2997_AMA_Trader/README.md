@@ -1,4 +1,5 @@
 # AMA Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The AMA Trader strategy replicates the behaviour of the original MetaTrader 5 expert "AMA Trader". It combines Kaufman's Adaptive Moving Average (AMA) with the Relative Strength Index (RSI) to average into trades against short-term pullbacks while the price remains on the prevailing side of the adaptive trend filter. The StockSharp implementation uses the high-level API with candle subscriptions and indicator binding to stay close to the original logic while remaining fully compatible with the StockSharp execution model.

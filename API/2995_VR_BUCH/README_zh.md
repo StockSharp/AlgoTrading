@@ -1,4 +1,5 @@
 # VR BUCH 移动平均策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **VR BUCH 移动平均策略** 是 MetaTrader 专家顾问 *VR---BUCH* 的直接移植版本。策略使用两条可配置的移动平均线和蜡烛价格过滤器来跟踪趋势反转。StockSharp 实现完全复刻原始信号流程：当出现反向条件时先平掉现有仓位，只有在净仓位归零后才考虑新的进场。

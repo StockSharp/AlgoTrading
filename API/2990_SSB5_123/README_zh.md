@@ -1,4 +1,5 @@
 # SSB5_123 多指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 5 专家顾问“ssb5_123”的 StockSharp 版本。原始 EA 出自 Yury V. Reshetov 的 SSB（Step by Step）系列，通过多种经典振荡指标共同确认趋势突破。移植后的实现完全采用 StockSharp 的高层蜡烛订阅 API 与内置指标，保留了所有判定逻辑。

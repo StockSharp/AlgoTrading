@@ -1,5 +1,5 @@
 # Basic CCI RSI Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Basic CCI RSI strategy reproduces the original MetaTrader expert advisor that waits for both the Commodity Channel Index (CCI) and Relative Strength Index (RSI) to confirm momentum for two consecutive closed candles before entering a trade. The StockSharp version keeps the pip-based money management rules, converts them into price steps automatically, and adds the same trailing-stop behaviour that was implemented with position modifications in MQL5.
 

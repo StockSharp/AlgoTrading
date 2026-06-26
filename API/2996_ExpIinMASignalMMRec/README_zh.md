@@ -1,5 +1,5 @@
 # Exp Iin MA Signal MMRec 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 这是 MetaTrader 专家顾问 “Exp_Iin_MA_Signal_MMRec” 的 StockSharp 版本。策略使用一对可配置的移动平均线（源自 Iin_MA_Signal 指标）的交叉信号，并结合基于亏损次数的动态仓位管理来调整交易手数。
 

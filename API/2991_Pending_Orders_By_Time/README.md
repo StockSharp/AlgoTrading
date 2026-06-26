@@ -1,4 +1,5 @@
 # Pending Orders By Time 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the behavior of the original MetaTrader "Pending orders by time 2" expert by scheduling breakout-style entry orders around a configurable opening hour. At the start of the trading session the algorithm places both a buy stop above the current ask price and a sell stop below the current bid price. Each pending entry carries its own stop-loss and take-profit levels expressed in instrument price steps, and once an entry fires the strategy maintains the open position with trailing stop logic and mutually exclusive exit orders. The code is designed for the StockSharp high-level API and uses tabs for indentation as required by the project guidelines.

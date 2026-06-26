@@ -1,4 +1,5 @@
 # VR BUCH Moving Average Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **VR BUCH Moving Average Strategy** is a direct port of the MetaTrader expert advisor *VR---BUCH*. It trades trend reversals using two configurable moving averages and a candle price filter. The StockSharp version keeps the original signal flow: the strategy closes open positions when an opposite setup appears and only opens a new position after the previous exposure is fully closed.

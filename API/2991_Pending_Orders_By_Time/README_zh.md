@@ -1,4 +1,5 @@
 # Pending Orders By Time 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 中的“Pending orders by time 2”专家顾问：在预先设定的开仓时刻同时挂出突破方向的 Buy Stop 和 Sell Stop。每个挂单都按照交易品种的最小报价步长计算止损与止盈，成交后再配合追踪止损与成对的保护性订单管理仓位。实现完全基于 StockSharp 的高级 API，遵循项目的编码规范（制表符缩进、参数通过 `Param()` 声明等）。

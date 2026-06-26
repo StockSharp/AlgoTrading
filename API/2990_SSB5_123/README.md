@@ -1,4 +1,5 @@
 # SSB5_123 Multi-Indicator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor "ssb5_123". The original code comes from the SSB (Step by Step) collection by Yury V. Reshetov and combines several classic oscillators to confirm directional breakouts. The StockSharp version keeps the same logic while using the high-level candle subscription API and native indicator implementations.
