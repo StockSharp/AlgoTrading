@@ -1,4 +1,5 @@
 # 回调系统策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 专家顾问 **“Rollback system”** 完整移植到 StockSharp 平台。它保留了原始脚本的核心理念：
 仅在新交易日开始时（午夜）评估最近 24 根小时 K 线，以寻找走出极端行情后可能出现的反向回调。

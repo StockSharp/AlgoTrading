@@ -1,4 +1,5 @@
 # Стратегия Color JJRSX Trend
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия представляет собой перенос советника MetaTrader `Exp_ColorJJRSX` на высокоуровневый API StockSharp. В оригинале применяется осциллятор ColorJJRSX, сочетающий сглаживания Jurik для выявления переломов тренда. В версии для StockSharp осциллятор реализован через стандартный Relative Strength Index (RSI) с периодом `JurxPeriod`, дополнительно сглаженным Jurik Moving Average (`JmaPeriod`). Наклон полученной кривой анализируется на нескольких прошедших барах (определяется `SignalBar`), что позволяет повторить логику сигналов исходного робота.

@@ -1,6 +1,6 @@
 # Tunnel Method 策略
 
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tunnel Method 策略是 MetaTrader 5 平台上同名专家顾问的 StockSharp 移植版本。策略通过三条具有正向偏移的简单移动平均线（SMA）构建价格“隧道”。当最快的均线突破隧道并满足最小间距条件时，触发入场信号。该实现完整保留了原始 MQL 逻辑：点值制的止损、止盈、按步进更新的追踪止损以及评估信号之间的最小等待时间。
 

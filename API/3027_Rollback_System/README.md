@@ -1,4 +1,5 @@
 # Rollback System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# conversion of the MetaTrader 5 expert advisor **"Rollback system"**. It keeps the original idea of
 trading at the very beginning of a new trading day, evaluating the last 24 hourly candles to detect whether the market delivered

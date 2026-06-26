@@ -1,4 +1,5 @@
 # EA Close Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **EA Close Strategy** is a direct StockSharp port of the original MQL5 expert advisor "EA Close" created by Vladimir Karputov. The strategy combines a Commodity Channel Index (CCI), a weighted moving average (WMA), and a Stochastic oscillator to detect exhaustion moves at the end of retracements. Orders are evaluated only once per completed candle to mimic the "new bar" logic used in the source EA.

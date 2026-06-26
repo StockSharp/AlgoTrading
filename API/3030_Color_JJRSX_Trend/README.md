@@ -1,4 +1,5 @@
 # Color JJRSX Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reimagines the MetaTrader expert advisor `Exp_ColorJJRSX` inside the StockSharp high-level framework. The original system relies on the proprietary ColorJJRSX oscillator, which combines Jurik smoothing techniques to detect trend changes. In this port the oscillator is approximated with a standard Relative Strength Index (RSI) that is further smoothed by a Jurik Moving Average (JMA). The slope of the smoothed oscillator is then evaluated over several historical bars to trigger entries and exits.

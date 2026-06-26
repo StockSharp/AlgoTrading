@@ -1,4 +1,5 @@
 # Control Panel Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Control Panel Strategy** 将原始 MQL5 脚本中的手动交易控制面板移植到 StockSharp 的高级 API。该类公开的方法覆盖了面板上的全部按钮：体积预设开关、买入/卖出市价单、平仓、反手以及独立的保本移动逻辑。策略还可以围绕平均持仓价格自动生成保护性止损和止盈订单，保留了原专家顾问的安全特性。

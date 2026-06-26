@@ -1,4 +1,5 @@
 # Exp MA Rounding Candle MMRec Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Exp MA Rounding Candle MMRec Strategy** is the StockSharp port of the MQL5 expert advisor `Exp_MA_Rounding_Candle_MMRec`. The original system relies on a custom "MA Rounding Candle" indicator that converts every market candle into a smoothed synthetic candle and tracks its color changes. The C# version reproduces the same behaviour by rebuilding the indicator logic on the fly and reacting to the resulting color stream.

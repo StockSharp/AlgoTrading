@@ -1,4 +1,5 @@
 # 前一根K线突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻了 MetaTrader 上的“Previous Candle Breakdown”专家顾问。策略在价格突破上一根参考K线的高点或低点时进场，并可为突破位置增加基于价格步长的偏移。实现完全基于 StockSharp 的高级 API：使用K线订阅计算突破区间，使用逐笔成交订阅监控入场与风控。

@@ -1,4 +1,5 @@
 # EA Close 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **EA Close 策略** 是将 Vladimir Karputov 编写的 MQL5 智能交易顾问「EA Close」直接移植到 StockSharp 平台的版本。策略组合使用商品通道指数（CCI）、加权移动平均线（WMA）以及随机振荡指标，旨在捕捉回调末端的动量衰竭。为了复现原始 EA 的“新 K 线”逻辑，所有计算仅在已完成的 K 线上执行。

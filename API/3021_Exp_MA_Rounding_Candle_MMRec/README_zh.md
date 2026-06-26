@@ -1,4 +1,5 @@
 # Exp MA Rounding Candle MMRec 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Exp MA Rounding Candle MMRec 策略** 是 MQL5 专家顾问 `Exp_MA_Rounding_Candle_MMRec` 的 StockSharp 版本。原始系统依赖自定义的 “MA Rounding Candle” 指标，该指标会把每根市场 K 线转换为经过平滑处理的合成蜡烛，并根据颜色变化发出信号。C# 实现通过实时重建该指标逻辑并监控颜色流，从而复刻原始策略的行为。

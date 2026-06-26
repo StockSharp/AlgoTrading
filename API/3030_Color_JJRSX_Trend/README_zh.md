@@ -1,4 +1,5 @@
 # Color JJRSX 趋势策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 中的 `Exp_ColorJJRSX` 专家顾问迁移到 StockSharp 的高级框架。原始版本依赖专有的 ColorJJRSX 指标来捕捉趋势拐点。在此实现中，我们使用 `JurxPeriod` 周期的 RSI 作为 JurX 的近似值，并通过 `JmaPeriod` 周期的 Jurik Moving Average 进行平滑处理。策略会保存最近数个平滑值，并依据其斜率变化来生成交易信号，从而忠实地复现了原始逻辑。

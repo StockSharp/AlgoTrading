@@ -1,6 +1,6 @@
 # Tunnel Method Strategy
 
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Tunnel Method Strategy is a StockSharp port of the "Tunnel Method" expert advisor originally published for MetaTrader 5. It uses three displaced simple moving averages (SMA) to detect directional breakouts. The fast average must pierce a price "tunnel" created by the slow and middle averages with a configurable indentation in order to confirm a trade. The strategy includes position management rules identical to the MQL version, including fixed pip-based stop-loss and take-profit levels, a trailing stop that locks in profit with a step filter, and a minimum waiting time between entry evaluations.
 

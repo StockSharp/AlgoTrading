@@ -1,4 +1,5 @@
 # Previous Candle Breakdown Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the "Previous Candle Breakdown" MetaTrader expert advisor. It waits for the price to break above or below the previous reference candle with a configurable indent measured in price steps. The implementation relies on high-level StockSharp APIs with candle subscriptions for level calculations and tick subscriptions for execution decisions.

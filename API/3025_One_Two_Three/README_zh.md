@@ -1,5 +1,5 @@
 # One Two Three 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 One Two Three 策略在长时间的震荡积累之后，利用 Chaikin 振荡指标的突破信号入场。该实现与原始 MetaTrader 5 专家顾问的逻辑一致：先使用成交量构建累积/派发线，再分别用快、慢 EMA 进行平滑，确认振荡器在过去的大部分时间保持在零轴附近，随后在出现强劲突破时顺势建仓。StockSharp 版本保留了手数、止损与移动止损等全部参数配置。
 

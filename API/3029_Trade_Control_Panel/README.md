@@ -1,4 +1,5 @@
 # Control Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Control Panel Strategy** ports the manual trading panel from the original MQL5 script into the StockSharp high-level API. The class exposes helper methods that replicate every button from the panel: volume preset toggles, market buy/sell actions, closing the current position, reversing exposure, and a dedicated break-even routine. Protective stop-loss and take-profit orders can be generated automatically around the average entry price, mirroring the safety features of the source expert advisor.
