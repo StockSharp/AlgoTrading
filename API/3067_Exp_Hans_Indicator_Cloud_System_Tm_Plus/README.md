@@ -1,4 +1,5 @@
 # Exp Hans Indicator Cloud System Tm Plus Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Exp Hans Indicator Cloud System Tm Plus is a session-based breakout strategy that reproduces the behaviour of the original MQL5 expert advisor. The algorithm monitors the colour states produced by the Hans indicator on a configurable timeframe. It opens a new position after a bullish (colours 0/1) or bearish (colours 3/4) breakout finishes and price returns inside the channel. The implementation keeps all trading decisions on closed candles, uses pip-based risk limits, and mirrors the time-based liquidation rule from the MQL version.

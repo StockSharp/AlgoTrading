@@ -1,4 +1,5 @@
 # Стратегия Autotrader Momentum
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Autotrader Momentum** — это перенос советника MetaTrader 5 *Autotrader Momentum (редакция barabashkakvn)* на платформу StockSharp. Алгоритм оценивает импульс, сравнивая цену закрытия контролируемой свечи с закрытием исторической свечи. Если текущий закрытие выше выбранного эталона, открывается длинная позиция; если ниже — короткая. Сделки исполняются рыночными заявками через высокоуровневый API StockSharp, что полностью повторяет логику оригинального эксперта «по новой свече».

@@ -1,4 +1,5 @@
 # Стратегия Time Zone Pivots Open System
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос на StockSharp (высокоуровневый API) эксперта MetaTrader `Exp_TimeZonePivotsOpenSystem`. Как и оригинал, она строит симметричный ценовой канал вокруг цены открытия свечи в заданный час и реагирует на закрытие свечей выше или ниже границ канала. Все сделки исполняются рыночными ордерами, а защитные стопы и тейк-профиты подключаются через `StartProtection`.
 

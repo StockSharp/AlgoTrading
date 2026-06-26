@@ -1,5 +1,5 @@
 # Стратегия Exp TimeZone Pivots Open System Tm Plus
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос советника **Exp_TimeZonePivotsOpenSystem_Tm_Plus** на высокоуровневый API StockSharp. В коде восстановлен индикатор *TimeZonePivotsOpenSystem*: на основе цены открытия сессии строятся верхняя и нижняя зоны пробоя, а сделки выполняются при возврате цены после выхода за границы. Все элементы оригинала — задержка сигнала, ограничение по времени удержания, асимметричное закрытие позиций и режимы мани-менеджмента — вынесены в параметры, что позволяет добиться поведения, максимально близкого к версии MQL5.
 

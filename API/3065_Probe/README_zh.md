@@ -1,4 +1,5 @@
 # Probe 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Probe 策略在 StockSharp 高层框架中复刻了 MetaTrader 5 专家顾问 “Probe”。策略在可配置的时间框架上计算商品通道指数（CCI），当振荡指标突破对称通道时做出反应。出现突破信号后，策略会以设定的点距在当前价格附近挂出止损单，试图跟随突破后的动量，同时利用点距参数化的止损和跟踪止损来限制风险。

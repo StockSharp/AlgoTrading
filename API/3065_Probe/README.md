@@ -1,4 +1,5 @@
 # Probe Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Probe strategy reproduces the MetaTrader 5 expert advisor "Probe" inside the StockSharp high level framework. It monitors the Commodity Channel Index (CCI) on a configurable timeframe and reacts when the oscillator breaks out of a symmetric channel. When a breakout happens the strategy places a stop order offset from the current market price by a pip based indent. The approach seeks to capture momentum continuation following the breakout while keeping risk limited by pip based protective levels and an adaptive trailing stop.

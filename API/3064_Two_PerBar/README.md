@@ -1,5 +1,5 @@
 # Two Per Bar Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original MetaTrader expert "Two PerBar" opens a long and a short position at the very beginning of every new bar, closes the entire basket on the next bar, and optionally applies a martingale-like volume multiplier. The StockSharp port keeps the same rhythm by tracking both hedged legs explicitly and by reacting once per finished candle. All orders are created through the high-level API and respect the instrument metadata (price step, volume step, and min/max lot constraints).

@@ -1,4 +1,5 @@
 # 时区枢轴开盘系统策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MetaTrader 智能交易系统 `Exp_TimeZonePivotsOpenSystem`，使用 StockSharp 的高级 API 重新实现。策略会在每天指定小时的开盘价处建立一个对称价格通道，并在收盘蜡烛突破上下轨时做出响应。所有交易均以市价单执行，并通过 `StartProtection` 配置可选的止损与止盈。
 

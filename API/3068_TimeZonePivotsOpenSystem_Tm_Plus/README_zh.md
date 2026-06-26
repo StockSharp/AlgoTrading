@@ -1,5 +1,5 @@
 # Exp TimeZone Pivots Open System Tm Plus 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是将 **Exp_TimeZonePivotsOpenSystem_Tm_Plus** MQL5 专家顾问完整移植到 StockSharp 高级 API 的版本。代码中重建了 *TimeZonePivotsOpenSystem* 指标：在每日会话开盘价附近绘制上下两个突破带，并在价格突破后回撤时寻找进场机会。原脚本中的信号延迟、持仓时间限制、方向性平仓和多种资金管理模式全部保留，并以参数形式暴露，方便与原版保持一致。
 

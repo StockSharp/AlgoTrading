@@ -1,4 +1,5 @@
 # Стратегия Hans Indicator Cloud System
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия является портом советника MQL5 `Exp_Hans_Indicator_Cloud_System` на высокоуровневый API StockSharp. Она восстанавливает

@@ -1,4 +1,5 @@
 # Autotrader Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Autotrader Momentum Strategy** is a conversion of the MetaTrader 5 expert advisor *Autotrader Momentum (barabashkakvn's edition)*. The algorithm evaluates recent momentum by comparing the closing price of the monitoring bar with the closing price of a historical reference bar. When a bullish momentum shift is detected, the strategy buys; when a bearish shift appears, it sells. All orders are executed at market price using StockSharp's high-level trading API.

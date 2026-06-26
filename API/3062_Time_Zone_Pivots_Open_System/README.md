@@ -1,4 +1,5 @@
 # Time Zone Pivots Open System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp high-level API port of the MetaTrader expert `Exp_TimeZonePivotsOpenSystem`. It reproduces the original logic that anchors a symmetric price channel to the daily opening price at a configurable hour and reacts when completed candles break above or below that band. All orders are sent as market orders and optional stop-loss / take-profit protection is configured through `StartProtection`.
 

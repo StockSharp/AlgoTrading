@@ -1,5 +1,5 @@
 # Two Per Bar 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原始的 MetaTrader 专家顾问 “Two PerBar” 会在每根新 K 线开始时同时开多头和空头，在下一根 K 线开始时强制平仓整个组合，并可选择按照倍数放大仓位。StockSharp 版本延续了这一节奏：策略只在每根收盘 K 线时触发，显式跟踪两个对冲腿，并通过高层 API 下单，自动遵循品种的价格步长、数量步长以及最小/最大手数限制。

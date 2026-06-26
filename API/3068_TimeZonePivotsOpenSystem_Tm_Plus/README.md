@@ -1,5 +1,5 @@
 # Exp TimeZone Pivots Open System Tm Plus Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a high level StockSharp port of the **Exp_TimeZonePivotsOpenSystem_Tm_Plus** expert advisor. It recreates the proprietary *TimeZonePivotsOpenSystem* indicator that projects two breakout zones around the daily session open and trades the pullbacks that follow a breakout. Every component from the original script—signal delay, time filter, asymmetric exit logic and the money-management presets—was mapped to explicit parameters so the behaviour stays consistent with the MQL5 implementation.
 

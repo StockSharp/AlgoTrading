@@ -1,4 +1,5 @@
 # Exp Hans Indicator Cloud System Tm Plus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp Hans Indicator Cloud System Tm Plus 是一套基于交易时段的突破策略，用于复刻原始 MQL5 智能交易系统。算法在指定周期的 K 线上跟踪 Hans 指标的颜色状态：当出现多头颜色（0/1）后又恢复到通道内部时开多仓；当出现空头颜色（3/4）后又回到通道内部时开空仓。所有决策都基于已完成的 K 线，并保留了 MQL 版本中的点数止损/止盈和持仓时间限制。

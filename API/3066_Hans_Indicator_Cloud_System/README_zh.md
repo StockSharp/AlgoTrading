@@ -1,4 +1,5 @@
 # Hans Indicator Cloud System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MQL5 智能交易系统 `Exp_Hans_Indicator_Cloud_System` 迁移到 StockSharp 的高级 API。它重新构建 Hans 指标的

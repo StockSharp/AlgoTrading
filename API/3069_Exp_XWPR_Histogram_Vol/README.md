@@ -1,4 +1,5 @@
 # Exp XWPR Histogram Vol Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader expert **Exp_XWPR_Histogram_Vol**. It trades on the colour changes of the

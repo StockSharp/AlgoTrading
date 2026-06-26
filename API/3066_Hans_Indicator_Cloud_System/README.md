@@ -1,4 +1,5 @@
 # Hans Indicator Cloud System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MQL5 expert advisor `Exp_Hans_Indicator_Cloud_System` to the StockSharp high-level API. It reproduces the

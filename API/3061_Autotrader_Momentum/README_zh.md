@@ -1,4 +1,5 @@
 # Autotrader Momentum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Autotrader Momentum 策略** 是对 MetaTrader 5 专家顾问 *Autotrader Momentum (barabashkakvn 版本)* 的移植。策略通过比较监控 K 线与历史参考 K 线的收盘价来识别动量方向：当收盘价高于参考值时判定为多头动量，低于参考值时判定为空头动量，并立即在市场价执行订单。实现完全基于 StockSharp 的高级 API，保持了原脚本“新 K 线触发”的处理方式。
