@@ -1,4 +1,5 @@
 # FitFul 13
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 FitFul 13 策略基于上一交易周计算一组枢轴（Pivot）水平，并观察当前工作周期（默认 H1）价格对这些水平的反应。当 H1 蜡烛的实体穿越某个枢轴并得到较低周期（默认 M15）两根蜡烛的确认时，策略以预设的止损与止盈水平开仓。随后虚拟拖尾止损在价格推进到足够距离后保护盈利。

@@ -1,4 +1,5 @@
 # Exp Color PEMA Digit Tm Plus Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Exp Color PEMA Digit Tm Plus Strategy** is a direct port of the MetaTrader 5 expert advisor "Exp_ColorPEMA_Digit_Tm_Plus". The strategy rebuilds the original Pentuple Exponential Moving Average (PEMA) indicator and reproduces every trading permission flag present in the EA. Orders are executed on the selected candle series only after the indicator confirms a color flip and the optional waiting period (`Signal Bar`) has elapsed.

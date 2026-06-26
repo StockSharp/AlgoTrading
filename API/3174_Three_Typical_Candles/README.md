@@ -1,4 +1,5 @@
 # Three Typical Candles Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Three Typical Candles Strategy** recreates the MetaTrader Expert Advisor "Three Typical Candles" inside the StockSharp high-level API. The system observes the typical price of the last three completed candles and trades when it detects a strictly monotonic sequence. Typical price is defined as the arithmetic mean of the high, low, and close of a candle. When the three most recent finished candles form a rising sequence of typical prices, the strategy enters long. Conversely, a falling sequence triggers a short entry.

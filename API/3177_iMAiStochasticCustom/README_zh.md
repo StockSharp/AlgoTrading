@@ -1,4 +1,5 @@
 # iMA iStochastic Custom 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略在 StockSharp 环境中复刻 MetaTrader 专家顾问 **“iMA iStochastic Custom”**。它将移动平均包络与随机振荡器相结合，只在所选时间框架（`CandleType`）的完整 K 线收盘后评估信号。下文使用与原始 EA 相同的术语。

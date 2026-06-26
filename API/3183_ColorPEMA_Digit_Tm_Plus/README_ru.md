@@ -1,4 +1,5 @@
 # Стратегия Exp Color PEMA Digit Tm Plus
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Exp Color PEMA Digit Tm Plus** — порт советника MetaTrader 5 «Exp_ColorPEMA_Digit_Tm_Plus». Стратегия воссоздаёт оригинальный индикатор Pentuple Exponential Moving Average (PEMA) и сохраняет все флаги доступа к торговым операциям. Сделки выполняются по выбранной серии свечей только после смены цвета индикатора и выдержки, заданной параметром `Signal Bar`.

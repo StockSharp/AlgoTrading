@@ -1,4 +1,5 @@
 # 三根典型价格蜡烛策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **三根典型价格蜡烛策略** 在 StockSharp 高级 API 中重现了 MetaTrader 的 "Three Typical Candles" 专家顾问。策略对每根已完成蜡烛的典型价格（高、低、收盘价的平均值）进行跟踪，只要最近三根蜡烛的典型价格呈现严格单调的上升或下降序列，就会入场交易。

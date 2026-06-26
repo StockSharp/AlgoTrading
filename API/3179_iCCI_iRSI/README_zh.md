@@ -1,4 +1,5 @@
 # iCCI iRSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **iCCI iRSI Strategy** 源自 MetaTrader 5 智能交易程序 `iCCI iRSI.mq5`。原版策略结合 CCI 与 RSI 两个振荡指标，在两者同时进入超买或超卖区域时发出信号，并立即设置止损、止盈以及可选的移动止损。本次移植在 StockSharp 中复现了所有核心要素：以“点”（pip）为单位的参数、自动平掉反向仓位以及可选的信号反转模式。

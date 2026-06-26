@@ -1,4 +1,5 @@
 # Exp Adaptive Renko MMRec Duplex 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 智能交易系统 **Exp_AdaptiveRenko_MMRec_Duplex.mq5** 迁移到 StockSharp 的高级 API。策略维护两条互不干扰的 Adaptive Renko 流：多头流跟踪新的支撑，空头流跟踪新的阻力。当多头通道出现新的支撑而空头通道失去阻力（或反过来）时，系统会开立相应方向的市价单。C# 实现保留了原始 EA 的 “MM Recounter” 资金管理模块——在连续亏损达到阈值后自动降低下单量，并在盈利恢复后恢复默认规模。
 

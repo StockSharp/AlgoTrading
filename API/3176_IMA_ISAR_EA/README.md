@@ -1,4 +1,5 @@
 # iMA iSAR EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the "iMA iSAR EA" Expert Advisor from MetaTrader 5 using StockSharp's high-level API. It combines a triple weighted moving average filter with two Parabolic SAR trails to identify momentum breakouts. A long position is opened when the fastest weighted moving average stays above the other two averages and both SAR trails sit below the candle close. A mirrored condition generates short entries. Protective stops, profit targets, and an optional trailing stop are managed in price points (pips).

@@ -1,4 +1,5 @@
 # iMA iSAR EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用 StockSharp 高级 API 复刻 MetaTrader 5 中的 "iMA iSAR EA" 智能交易系统。它结合三条加权移动平均线与两条抛物线 SAR 轨迹，在动量突破时建立仓位。当最快的加权均线位于另外两条均线之上，并且两条 SAR 都位于收盘价下方时开多；条件反向时开空。策略以点（pips）为单位管理止损、止盈以及可选的跟踪止损。

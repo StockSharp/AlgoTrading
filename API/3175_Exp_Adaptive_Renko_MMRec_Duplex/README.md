@@ -1,4 +1,5 @@
 # Exp Adaptive Renko MMRec Duplex Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader 5 expert advisor **Exp_AdaptiveRenko_MMRec_Duplex.mq5** to the StockSharp high level API. Two independent Adaptive Renko streams – one configured for long opportunities and one for shorts – watch how the custom brick channels flip between support and resistance. When the long channel reports fresh support while the short channel drops resistance (or vice versa), the strategy opens the corresponding market position. The C# version keeps the original "MM Recounter" money-management block that cuts the trade size after a configurable series of losses and restores it once the streak ends.
 

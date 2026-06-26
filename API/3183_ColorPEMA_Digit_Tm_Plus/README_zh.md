@@ -1,4 +1,5 @@
 # Exp Color PEMA Digit Tm Plus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Exp Color PEMA Digit Tm Plus** 是 MetaTrader 5 智能交易系统 "Exp_ColorPEMA_Digit_Tm_Plus" 的移植版本。策略完整重建 Pentuple Exponential Moving Average (PEMA) 指标，并保留原始 EA 中的全部交易许可开关。只有当指标颜色发生翻转且等待条数 (`Signal Bar`) 条件满足时，才会在所选的蜡烛序列上执行交易。

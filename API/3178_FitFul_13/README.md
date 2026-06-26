@@ -1,4 +1,5 @@
 # FitFul 13 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The FitFul 13 expert advisor works around weekly pivot levels derived from the previous trading week. It waits for the current H1 candle (default timeframe) to react to one of the pivot bands and confirms the move with two older candles from an M15 confirmation series. When the confirmation is present the strategy opens a position with pre-calculated stop-loss and take-profit levels derived from the same pivot structure. A trailing stop protects profitable trades once price travels far enough.

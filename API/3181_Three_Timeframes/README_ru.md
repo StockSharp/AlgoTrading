@@ -1,4 +1,5 @@
 # Стратегия Three Timeframes
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Three Timeframes Strategy** переносит эксперта MetaTrader `Three timeframes.mq5` на платформу StockSharp с использованием высокоуровневого API. Алгоритм объединяет сигналы с трёх таймфреймов:

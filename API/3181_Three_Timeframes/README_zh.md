@@ -1,4 +1,5 @@
 # 三重时间框架策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Three Timeframes Strategy** 使用 StockSharp 高阶 API 重现 MetaTrader 专家顾问 `Three timeframes.mq5`。系统在三个时间框架上结合动量与趋势过滤条件：

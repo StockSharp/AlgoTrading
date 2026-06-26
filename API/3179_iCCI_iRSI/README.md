@@ -1,4 +1,5 @@
 # iCCI iRSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **iCCI iRSI Strategy** is a direct conversion of the MetaTrader 5 expert advisor `iCCI iRSI.mq5`. The original system blends the Commodity Channel Index (CCI) and the Relative Strength Index (RSI) to detect exhaustion zones. When both oscillators agree on an oversold or overbought state the advisor opens a position, attaches protective orders and optionally trails the stop as the trade moves into profit. This StockSharp port mirrors that behaviour with high-level APIs, including pip-based inputs, auto-closing of opposite positions and a reversible signal mode.
