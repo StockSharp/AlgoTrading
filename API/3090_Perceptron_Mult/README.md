@@ -1,4 +1,5 @@
 # Perceptron Mult Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **Peceptron_Mult.mq5** expert advisor to the StockSharp high-level API. It simultaneously monitors up to three independent markets and applies the Acceleration/Deceleration (AC) oscillator inside a perceptron model. Each market receives its own weight configuration, position sizing, and protective exits so the behaviour of the original multi-symbol advisor is preserved.
 

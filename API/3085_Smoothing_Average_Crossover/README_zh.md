@@ -1,4 +1,5 @@
 # 平滑均线突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 平滑均线突破策略再现了原始 MQL5 专家顾问 **Smoothing Average (barabashkakvn's edition)** 的逻辑。策略将可配置的移动平均线与按点数衡量的距离过滤器结合使用。当价格偏离均线达到设定的点数时，系统会顺势开仓（若启用反向模式，则反向开仓）。当价格穿越扩大后的均线通道时，仓位被平仓。

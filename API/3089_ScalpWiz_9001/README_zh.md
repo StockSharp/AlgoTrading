@@ -1,4 +1,5 @@
 # ScalpWiz 9001 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ScalpWiz 9001 是一个多层次的突破反转系统，移植自同名 MetaTrader 专家顾问。策略会评估最新 K 线的收盘价相对布林带边界的突破幅度，当出现剧烈扩张时，会在价格上下方布置多笔挂单。原版的资金管理方案得以保留：每一层挂单既可以使用固定手数，也可以按照账户权益的百分比计算风险。

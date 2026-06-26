@@ -1,5 +1,5 @@
 # Tunnel Gen4 Hedged Grid Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the logic of the MetaTrader "Tunnel gen4" expert advisor using the StockSharp high-level API. It maintains a market neutral hedge by opening an initial buy/sell pair, doubles the position in the direction of the break-out once the price travels a configurable number of pips, and exits the entire basket when the same distance is covered again beyond the second anchor.
 

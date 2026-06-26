@@ -1,4 +1,5 @@
 # Starter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Starter Strategy** is a conversion of the MetaTrader 5 expert advisor "Starter (barabashkakvn's edition)". The system waits for the Commodity Channel Index (CCI) to rebound from extreme oversold or overbought territory and confirms the move with the slope of a long-term moving average. When the momentum agrees with the trend filter, the strategy opens a single market position whose size is determined by a configurable risk percentage of the portfolio. Protective stops and an optional trailing mechanism reproduce the money-management rules from the original expert.
 

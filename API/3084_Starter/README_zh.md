@@ -1,4 +1,5 @@
 # Starter 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Starter 策略** 是对 MetaTrader 5 专家顾问“Starter (barabashkakvn's edition)”的移植。系统等待商品通道指数（CCI）从极端超卖或超买区间反弹，并结合长周期移动平均线的斜率来确认突破。当动量与趋势过滤器方向一致时，策略按照账户权益的固定风险百分比开仓，仅持有一笔市场头寸。初始止损和可选的跟踪止损完全复刻原始 EA 的资金管理规则。
 

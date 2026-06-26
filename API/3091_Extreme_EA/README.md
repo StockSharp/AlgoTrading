@@ -1,4 +1,5 @@
 # Extreme EA (StockSharp Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Extreme EA** strategy is a trend-following Expert Advisor originally written for MetaTrader. It combines two moving averages with a Commodity Channel Index (CCI) filter and an adaptive money-management module. This port keeps the trading logic intact while exposing all important knobs through StockSharp's high-level API. The strategy operates on finished candles only and is compatible with multiple timeframes by running the moving averages and CCI on independent candle subscriptions.
 

@@ -1,4 +1,5 @@
 # Exp XBullsBearsEyes Vol Direct 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 专家顾问 **Exp_XBullsBearsEyes_Vol_Direct** 的 C# 版本。它重建了由 Bulls Power 与 Bears Power

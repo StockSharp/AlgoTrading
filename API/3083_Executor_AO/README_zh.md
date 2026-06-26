@@ -1,4 +1,5 @@
 # Executor AO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Executor AO 策略来源于 MetaTrader 平台上的 “Executor AO” 专家顾问。StockSharp 版本保留了基于 Awesome Oscillator

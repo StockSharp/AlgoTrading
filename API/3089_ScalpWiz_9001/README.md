@@ -1,4 +1,5 @@
 # ScalpWiz 9001 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 ScalpWiz 9001 is a layered breakout scalping system that replicates the behaviour of the MetaTrader expert advisor with the same name. The strategy measures how far the latest candle closes beyond the Bollinger Bands envelope and, when volatility expands sharply, it deploys a grid of pending stop orders above or below the market. The original money-management module is preserved: each pending order can either use a fixed lot or risk a configurable percentage of account equity.

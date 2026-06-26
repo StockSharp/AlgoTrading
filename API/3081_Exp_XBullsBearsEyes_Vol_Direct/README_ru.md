@@ -1,4 +1,5 @@
 # Стратегия Exp XBullsBearsEyes Vol Direct
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Данная стратегия представляет собой порт MetaTrader-советника **Exp_XBullsBearsEyes_Vol_Direct** на язык C# и платформу

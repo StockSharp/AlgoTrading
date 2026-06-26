@@ -1,5 +1,5 @@
 # RSI RFTL Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **RSI RFTL EA** from MetaTrader 5 to the StockSharp high-level API. It keeps the original idea of trading RSI swing trendlines, enhanced with the Recursive Filter Trend Line (RFTL) as a directional filter. The implementation reproduces the bar-by-bar decision making of the expert advisor while using idiomatic StockSharp constructs such as `StrategyParam`, indicator bindings and candle subscriptions.
 

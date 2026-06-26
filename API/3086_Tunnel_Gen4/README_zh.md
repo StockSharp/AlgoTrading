@@ -1,5 +1,5 @@
 # Tunnel Gen4 对冲网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复刻 MetaTrader "Tunnel gen4" 智能交易系统的逻辑。策略通过建立买卖对冲头寸来保持市场中性，当价格沿突破方向运行预设的点数时会按两倍基础手数加仓，并在第二个锚点之外再走出同样的距离后平掉整套仓位。
 

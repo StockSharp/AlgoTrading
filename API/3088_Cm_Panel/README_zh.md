@@ -1,4 +1,5 @@
 # CM面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **CM面板策略** 是对 MetaTrader 5 脚本“cm panel”的人工挂单面板的还原。StockSharp 版本不再绘制界面元素，而是通过一组交互式参数模拟按钮：将布尔参数切换为 `true` 就会发送或取消挂单，随后参数会自动恢复为 `false`，与原始面板的“按下即执行”体验一致。策略为买入和卖出分别保留距离、手数和止盈止损等配置，并以“点”为统一单位。

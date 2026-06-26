@@ -1,4 +1,5 @@
 # Smoothing Average Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Smoothing Average Crossover strategy replicates the logic of the original **Smoothing Average (barabashkakvn's edition)** MQL5 Expert Advisor. It combines a configurable moving average with a price distance filter measured in pips. When the market moves far enough away from the smoothed average, the strategy opens a position in the direction of the move (or the opposite side if reversal mode is enabled). Positions are closed once price reverts through an expanded channel around the moving average.

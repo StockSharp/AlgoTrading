@@ -1,4 +1,5 @@
 # CM Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **CM Panel Strategy** is a manual pending-order helper that recreates the behaviour of the original MetaTrader 5 script "cm panel". Instead of drawing on-screen controls, the StockSharp port exposes interactive parameters that work like buttons: setting a flag to `true` places or cancels pending stop orders and the flag immediately resets to `false`, mimicking the push-button workflow of the panel. The strategy keeps separate configuration for buy and sell orders, including distances, volumes, and protective targets expressed in points.

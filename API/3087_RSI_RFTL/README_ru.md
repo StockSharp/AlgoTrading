@@ -1,5 +1,5 @@
 # Стратегия RSI RFTL
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник **RSI RFTL EA** из MetaTrader 5 на высокоуровневый API StockSharp. Логика торговли основана на построении трендовых линий по разворотам RSI с дополнительной фильтрацией через Recursive Filter Trend Line (RFTL). Реализация повторяет пошаговые решения оригинального советника, используя типичные для StockSharp сущности: `StrategyParam`, подписки на свечи и связывание индикаторов.
 

@@ -1,4 +1,5 @@
 # Extreme EA（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Extreme EA** 是一套基于趋势的自动交易系统，原始实现来自 MetaTrader。策略使用两条移动平均线与 CCI（顺势指标）组合，并附带自适应的资金管理模块。本移植版完全依托 StockSharp 高阶 API，在保持原始逻辑的同时，使所有关键参数都能在界面中调节。策略仅处理已完成的 K 线，并通过独立的订阅支持多周期数据输入。
 

@@ -1,4 +1,5 @@
 # Exp XBullsBearsEyes Vol Direct Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader expert **Exp_XBullsBearsEyes_Vol_Direct**. It recreates the custom oscillator

@@ -1,4 +1,5 @@
 # Perceptron Mult 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 **Peceptron_Mult.mq5** 专家顾问迁移到 StockSharp 高级 API。它最多同时监控三个交易品种，并在一个四输入感知机中使用 Acceleration/Deceleration (AC) 指标。每个品种拥有独立的权重、下单量与风控参数，从而完整复刻原始多品种 EA 的行为。
 

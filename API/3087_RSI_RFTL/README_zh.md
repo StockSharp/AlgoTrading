@@ -1,5 +1,5 @@
 # RSI RFTL 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 的 **RSI RFTL EA** 迁移到 StockSharp 的高级 API。核心思想仍然是利用 RSI 的摆动高低点绘制趋势线，并借助 Recursive Filter Trend Line（RFTL）做方向过滤。实现过程中保留了原始智能交易系统的逐棒判断，同时采用 `StrategyParam`、蜡烛订阅和指标绑定等 StockSharp 原生组件。
 
