@@ -1,4 +1,5 @@
 # ASCV BrainTrend Signal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **ASCV BrainTrend Signal Strategy** is a conversion of the MetaTrader expert that trades on BrainTrend1 indicator signals. The StockSharp version relies on high-level indicator bindings to combine the Average True Range (ATR), Stochastic Oscillator, and Jurik Moving Average (JMA) in order to detect momentum reversals and place trades with optional protective stops.
 

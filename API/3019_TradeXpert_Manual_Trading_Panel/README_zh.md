@@ -1,4 +1,5 @@
 # TradeXpert 手动交易面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原始的 TradeXpert MQL5 专家顾问是一款手动操作的交易面板，通过一组按钮完成开仓、挂单、设置防护止损/止盈以及一键反手等功能。本移植版本在 StockSharp 中通过策略参数重现这些工具。策略本身不会产生交易信号，而是监听用户输入的指令，按需发送订单，并在新的 K 线到达时持续监控防护退出。

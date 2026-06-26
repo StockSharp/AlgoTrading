@@ -1,4 +1,5 @@
 # Стратегия ASCV BrainTrend Signal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ASCV BrainTrend Signal** — конвертированная версия советника MetaTrader, торгующего по сигналам индикатора BrainTrend1. В реализации на StockSharp используются высокоуровневые бинды индикаторов: ATR, стохастического осциллятора и сглаживания Jurik Moving Average. Такой набор позволяет отслеживать развороты импульса и оформлять сделки с фиксированными и трейлинг-стопами.
 

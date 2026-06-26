@@ -1,5 +1,5 @@
 # Стратегия XDeMarker Histogram Vol
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет оригинального советника MetaTrader **Exp_XDeMarker_Histogram_Vol** и переносит его на высокоуровневый API StockSharp. Осциллятор DeMarker превращается в объёмно-взвешенную гистограмму, обе серии сглаживаются выбранным типом скользящей средней, а торговые решения принимаются при переходах гистограммы между заданными зонами.
 

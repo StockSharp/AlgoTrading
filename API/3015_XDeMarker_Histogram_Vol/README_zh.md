@@ -1,5 +1,5 @@
 # XDeMarker Histogram Vol 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 原版 **Exp_XDeMarker_Histogram_Vol** 顾问迁移到 StockSharp 的高级 API。它把 DeMarker 指标转换为带权重的柱状图，使用可配置的移动平均线同时平滑指标与成交量，并在柱状图进入不同区间时做出交易决策。
 

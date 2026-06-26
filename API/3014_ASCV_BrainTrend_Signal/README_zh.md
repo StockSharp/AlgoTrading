@@ -1,4 +1,5 @@
 # ASCV BrainTrend Signal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ASCV BrainTrend Signal** 策略是原始 MetaTrader Expert Advisor 的移植版本，基于 BrainTrend1 指标的信号执行交易。StockSharp 实现通过高层 API 结合 ATR、随机振荡指标以及 Jurik 移动平均 (JMA)，用于识别动量反转并设置可选的止损、止盈和跟踪止损。
 

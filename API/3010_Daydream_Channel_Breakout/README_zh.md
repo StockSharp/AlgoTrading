@@ -1,5 +1,5 @@
 # Daydream Channel Breakout
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Daydream Channel Breakout 是 MetaTrader 平台上 Daydream EA 的 StockSharp 高级 API 版本。策略属于逆势思路：当价格跌破前一周期的唐奇安通道下轨时买入，突破上轨时做空，并且通过以点数为单位的“虚拟”止盈来平仓，因此不会在交易所保留挂单。
 

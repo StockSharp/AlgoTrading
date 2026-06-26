@@ -1,4 +1,5 @@
 # Para Retrace 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Para Retrace Strategy** 是将 MetaTrader 4 指标专家 `Para_Retrace.mq4` 转换为 C# 的版本。策略核心仍然是利用 Parabolic SAR 指标作为动态锚点，当价格回撤到该水平附近时才入场。实现中使用了 StockSharp 的高级 API，方便地完成行情订阅、指标绑定以及订单执行。

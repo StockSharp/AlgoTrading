@@ -1,4 +1,5 @@
 # Para Retrace Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Para Retrace Strategy** is a C# conversion of the original MetaTrader 4 expert advisor `Para_Retrace.mq4`. It reproduces the idea of using the Parabolic SAR indicator as a dynamic anchor and waiting for price retracements back toward that level before entering the market. The conversion leverages the high-level StockSharp API to manage market data subscriptions, indicator updates, and order execution.

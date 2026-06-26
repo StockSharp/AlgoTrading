@@ -1,4 +1,5 @@
 # Стратегия Sprut Pending Order Grid
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Sprut Pending Order Grid Strategy** переносит советник MetaTrader 5 *Sprut (barabashkakvn's edition)* в экосистему StockSharp. Стратегия строит настраиваемую сетку отложенных заявок вокруг текущей цены, управляет жизненным циклом каждой заявки, масштабирует объёмы и после исполнения выставляет защитные приказы с помощью высокоуровневых методов StockSharp (`BuyStop`, `SellStop`, `BuyLimit`, `SellLimit`).

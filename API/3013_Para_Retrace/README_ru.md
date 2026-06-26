@@ -1,4 +1,5 @@
 # Стратегия Para Retrace
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Para Retrace Strategy** — это портированная на C# версия советника MetaTrader 4 `Para_Retrace.mq4`. Логика основана на индикаторе Parabolic SAR, который используется как динамический ориентир: стратегия ожидает возврата цены к значению SAR и только затем входит в сделку. Для работы применяется высокоуровневый API StockSharp, что упрощает подписку на данные, вычисление индикаторов и выставление заявок.

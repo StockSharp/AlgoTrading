@@ -1,4 +1,5 @@
 # Sensitive MACD Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct StockSharp conversion of the "Sensitive" MACD expert advisor for MetaTrader 5. It combines MACD crossovers with configurable risk management tools (fixed stop loss, take profit, and pip-based trailing stops). The algorithm works exclusively on completed candles and uses the high-level API to subscribe to the desired timeframe.

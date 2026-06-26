@@ -1,4 +1,5 @@
 # Ketty Channel Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Ketty Channel Breakout Strategy is a direct C# conversion of the original Ketty.mq5 expert advisor. It builds a short-term price channel during a configurable pre-market window and waits for the market to spike outside of that range. When a spike happens, the strategy places a stop order on the opposite side of the channel with optional stop-loss and take-profit protection, mirroring the pending order workflow implemented in the MQL5 script.

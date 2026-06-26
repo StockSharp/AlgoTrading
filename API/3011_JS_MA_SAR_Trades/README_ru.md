@@ -1,4 +1,5 @@
 # Стратегия JS MA SAR Trades
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 JS MA SAR Trades — это конвертация советника MetaTrader 5 «JS MA SAR Trades» на высокоуровневый API StockSharp. Стратегия ищет
 последовательности более высоких минимумов или более низких максимумов через упрощённый ZigZag, подтверждает импульс двумя

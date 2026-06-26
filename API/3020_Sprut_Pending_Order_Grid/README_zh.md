@@ -1,4 +1,5 @@
 # Sprut Pending Order Grid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Sprut Pending Order Grid Strategy** 将 MetaTrader 5 智能交易系统 *Sprut (barabashkakvn's edition)* 移植到 StockSharp 的高层策略框架中。策略会在当前价格附近构建可配置的买卖挂单网格，管理每一笔订单的生命周期，按照原始公式放大手数，并在成交后通过 `BuyStop`、`SellStop`、`BuyLimit`、`SellLimit` 等高层方法自动挂出保护单。

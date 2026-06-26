@@ -1,4 +1,5 @@
 # 敏感型 MACD 跟踪策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 平台上 “Sensitive” MACD 智能交易系统的 StockSharp 版实现。策略结合了 MACD 金叉/死叉信号与可配置的风控模块（固定止损、止盈以及按点数计算的移动止损）。所有决策仅基于已完成的 K 线，并通过高级 API 订阅所需周期。

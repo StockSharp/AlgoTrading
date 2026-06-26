@@ -1,5 +1,5 @@
 # Daydream Channel Breakout
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Daydream Channel Breakout is a direct conversion of the original MetaTrader "Daydream" expert advisor into the StockSharp high-level strategy framework. The logic trades against extreme moves: when price pierces the lower Donchian channel band the algorithm buys expecting a rebound, and when price extends above the upper band it opens short exposure. All exits are handled through a "virtual" take profit expressed in pips, so no native exchange orders remain in the book.
 

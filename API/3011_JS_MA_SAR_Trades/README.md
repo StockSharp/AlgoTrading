@@ -1,4 +1,5 @@
 # JS MA SAR Trades Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 JS MA SAR Trades converts the MetaTrader 5 expert "JS MA SAR Trades" into the StockSharp high-level API. The strategy looks for
 higher swing lows or lower swing highs detected via a ZigZag-style filter, confirms momentum with two moving averages, and then

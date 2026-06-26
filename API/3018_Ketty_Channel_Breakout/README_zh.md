@@ -1,4 +1,5 @@
 # Ketty 通道突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Ketty 通道突破策略是 Ketty.mq5 专家的 C# 版本复刻。策略在可配置的盘前时间段构建一个短期价格通道，并等待价格向通道外剧烈波动。一旦出现剧烈波动，就在通道的另一侧挂入止损单，同时配合可选的止损和止盈订单，完全复现原始 MQL5 方案的挂单流程。

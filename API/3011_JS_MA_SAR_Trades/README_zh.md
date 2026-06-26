@@ -1,4 +1,5 @@
 # JS MA SAR Trades 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 JS MA SAR Trades 将 MetaTrader 5 专家顾问 "JS MA SAR Trades" 转换为 StockSharp 的高级 API。策略通过类 ZigZag 的摆动过滤器寻找更高的低点或更低的高点，使用两条移动平均线确认动量，并在价格突破 Parabolic SAR 时入场。仓位由传统止损、止盈、可选的移动止损以及明确的交易时段进行保护。
 

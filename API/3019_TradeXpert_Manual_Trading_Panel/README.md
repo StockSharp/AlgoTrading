@@ -1,4 +1,5 @@
 # TradeXpert Manual Trading Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original TradeXpert MQL5 expert advisor is a manually operated trading panel that exposes a collection of buttons for opening positions, placing pending orders, applying protective stops, and quickly reversing or closing an existing trade. This C# port reproduces the same toolkit inside StockSharp by turning every panel action into a strategy parameter. The strategy itself does not generate trading signals; instead it listens to your manual instructions, executes the requested orders, and supervises protective exits on the incoming candle flow.
