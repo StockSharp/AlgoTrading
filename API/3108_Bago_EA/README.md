@@ -1,4 +1,5 @@
 # Bago EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the MetaTrader "Bago EA" expert advisor. It trades trend-following breakouts confirmed by both moving-average and RSI crosses, while the Vegas tunnel (144/169 EMA pair) provides spatial filters and trailing anchors.
 

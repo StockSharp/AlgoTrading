@@ -1,4 +1,5 @@
 # Exp i-KlPrice Vol 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 专家 **Exp_i-KlPrice_Vol.mq5** 的 C# 版本。策略重新实现 KlPrice 振荡器：它衡量价格相对于波动带的位置，将结果乘以蜡烛成交量，并根据自适应阈值的颜色切换生成信号。每个方向都包含两个独立的持仓槽位，以模拟原始 EA 中两个 magic 编号的行为。

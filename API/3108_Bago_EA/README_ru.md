@@ -1,4 +1,5 @@
 # Стратегия Bago EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воспроизводит эксперт MetaTrader «Bago EA». Торговля ведётся по тренду: сигналы подтверждаются пересечениями EMA и RSI, а туннель Vegas (EMA 144 и 169) фильтрует входы и задаёт уровни для трейлинга.
 

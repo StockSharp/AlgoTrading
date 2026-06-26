@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# One Minute Scalper 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 **1 MINUTE SCALPER** MetaTrader 4 智能交易系统迁移到 StockSharp 的高级 API。策略保留了原始 EA 的多级趋势确认、跨周期动量筛选以及月度 MACD 过滤，同时按照 StockSharp 的净持仓模式重写风险控制。
 

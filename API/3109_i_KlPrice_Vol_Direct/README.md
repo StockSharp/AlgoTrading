@@ -1,4 +1,5 @@
 # Exp i-KlPrice Vol Direct Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Exp i-KlPrice Vol Direct Strategy** is a StockSharp adaptation of the MetaTrader 5 expert advisor `Exp_i-KlPrice_Vol_Direct`. The original system multiplies a custom KlPrice oscillator by volume, smooths it with several moving-average stages, and reacts to changes in the slope of the resulting line. The port keeps the multi-stage processing chain, exposes the same configurable parameters, and executes trades through StockSharp’s high-level API on completed candles.

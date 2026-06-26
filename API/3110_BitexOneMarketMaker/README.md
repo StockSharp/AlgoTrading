@@ -1,4 +1,5 @@
 # Bitex One Market Maker Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Bitex One Market Maker Strategy** reproduces the asynchronous quoting robot from the original `BITEX.ONE MarketMaker.mq5` source. The algorithm continuously places pairs of limit orders around a reference price and maintains an equal number of levels on the bid and ask sides. The strategy was rewritten for StockSharp using the high-level API: quote management is driven by order book and level 1 subscriptions, while risk and volume normalisation rely on instrument metadata (`PriceStep`, `VolumeStep`, and `MinVolume`).

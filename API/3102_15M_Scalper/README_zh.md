@@ -1,5 +1,5 @@
 # 十五分钟剥头皮策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 **15M Scalper** MetaTrader 智能交易系统移植到 StockSharp 高层 API。移植版本保留了原始 EA 的所有筛选器
 （加权移动平均、随机指标、Parabolic SAR、更高周期的 Momentum 以及月度 MACD）以及复杂的风险控制模块，包括点数

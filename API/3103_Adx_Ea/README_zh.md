@@ -1,4 +1,5 @@
 # 3103 — ADX EA (C#)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原版 MetaTrader “ADX EA” 通过 ADX 突破、+DI/−DI 交叉、上位周期动量确认以及月度 MACD 滤波来产生信号。C# 版本在 StockSharp 高层 API 上重现了这一多重过滤流程，并订阅三种蜡烛序列：

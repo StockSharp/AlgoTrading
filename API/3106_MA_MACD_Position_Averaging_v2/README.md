@@ -1,4 +1,5 @@
 # MA MACD Position Averaging v2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MA MACD Position Averaging v2 Strategy** is a direct translation of Vladimir Karputov's MetaTrader expert advisor. It combines a weighted moving average filter, a MACD confirmation block, and an averaging module that increases exposure when existing trades move against the position. The StockSharp version keeps the original signal hierarchy, processes indicators on finished candles, and manages protective logic (stop loss, take profit, trailing) in code to reproduce broker-side behaviour from MQL.

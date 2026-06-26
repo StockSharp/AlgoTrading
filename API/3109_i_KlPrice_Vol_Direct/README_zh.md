@@ -1,4 +1,5 @@
 # Exp i-KlPrice Vol Direct 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Exp i-KlPrice Vol Direct** 是 MetaTrader 5 专家顾问 `Exp_i-KlPrice_Vol_Direct` 的 StockSharp 版本。原始系统会构建 KlPrice 指标、乘以成交量、经过多层平滑，然后根据平滑曲线的斜率变化执行交易。移植版本保留了整条处理链，暴露相同的输入参数，并在每根 K 线收盘后通过 StockSharp 高级 API 下单。

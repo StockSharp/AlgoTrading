@@ -1,4 +1,5 @@
 # MA MACD Position Averaging
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a faithful conversion of the MetaTrader expert advisor **"MA MACD Position averaging"**. It combines a weighted moving average filter with a MACD ratio check and adds a martingale-style averaging module that increases the position size whenever price moves adversely by a configurable number of pips. All risk parameters are configured in pip units and internally converted to price offsets using the instrument metadata provided by StockSharp.
 

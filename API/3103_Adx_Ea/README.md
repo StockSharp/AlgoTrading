@@ -1,4 +1,5 @@
 # 3103 — ADX EA (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original MetaTrader "ADX EA" combines Average Directional Index breakouts with +DI/−DI crossovers, higher timeframe momentum confirmation, and a monthly MACD filter. The C# port replicates that multi-filter workflow on top of the StockSharp high-level API. The strategy subscribes to three candle streams:

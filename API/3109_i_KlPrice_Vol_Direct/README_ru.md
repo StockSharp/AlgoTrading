@@ -1,4 +1,5 @@
 # Стратегия Exp i-KlPrice Vol Direct
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Exp i-KlPrice Vol Direct** — портирование советника MetaTrader 5 `Exp_i-KlPrice_Vol_Direct` на платформу StockSharp. Исходная система строит осциллятор KlPrice, умножает его на объём, выполняет несколько этапов сглаживания и реагирует на смену наклона полученной кривой. В версии для StockSharp сохранена вся цепочка расчётов, те же параметры входа и выходов, а торговые команды отправляются через высокоуровневый API после закрытия свечи.

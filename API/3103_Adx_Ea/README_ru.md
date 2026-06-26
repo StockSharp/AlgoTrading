@@ -1,4 +1,5 @@
 # 3103 — ADX EA (C#)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Оригинальный советник MetaTrader «ADX EA» сочетает пробои по индикатору ADX, пересечения линий +DI/−DI, подтверждение по моментуму старшего таймфрейма и месячный фильтр MACD. Порт на C# воспроизводит эту многоступенчатую схему на высокоуровневом API StockSharp. Стратегия подписывается на три потока свечей:

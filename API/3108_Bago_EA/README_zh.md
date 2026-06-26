@@ -1,4 +1,5 @@
 # Bago EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略复刻 MetaTrader 上的 “Bago EA” 专家。它利用 EMA 与 RSI 的同向突破捕捉趋势行情，并借助 Vegas 隧道（144/169 EMA 组合）来过滤噪音与设置分层追踪止损。
 

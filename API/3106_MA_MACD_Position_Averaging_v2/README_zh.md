@@ -1,4 +1,5 @@
 # MA MACD Position Averaging v2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MA MACD Position Averaging v2** 策略源自 Vladimir Karputov 的 MetaTrader 专家顾问。它将加权移动平均线过滤器、MACD 确认模块以及在行情不利时扩大量的网格化加仓模块组合在一起。StockSharp 版本完整保留原始信号顺序，在每根完成的 K 线上计算指标，并在代码中实现止损、止盈和追踪止损，以模拟 MQL 端的券商逻辑。

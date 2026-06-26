@@ -1,5 +1,5 @@
 # Fifteen Minute Scalper Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **15M Scalper** MetaTrader expert advisor to the StockSharp high level API. It recreates the multi-filter
 entry logic (weighted moving averages, stochastic oscillator, Parabolic SAR, multi-timeframe momentum and monthly MACD) and the

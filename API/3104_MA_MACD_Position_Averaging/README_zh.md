@@ -1,4 +1,5 @@
 # MA MACD Position Averaging
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略忠实移植自 MetaTrader 专家顾问 **“MA MACD Position averaging”**。它使用加权移动平均线与 MACD 比值过滤信号，并在行情对持仓不利时按设定的点数间隔执行“金字塔式”加仓。所有风险参数均以点（pip）为单位配置，并根据 StockSharp 提供的品种属性自动换算为价格偏移量。
 

@@ -1,4 +1,5 @@
 # Bitex One 做市策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Bitex One 做市策略** 复刻自原始的 `BITEX.ONE MarketMaker.mq5` 程序。策略会围绕参考价格持续挂出买卖两侧的限价单，并保持每侧相同的级数。该版本基于 StockSharp 高层 API 实现：行情数据通过盘口与 Level1 订阅驱动，价格和数量的归一化依赖于品种参数（`PriceStep`、`VolumeStep`、`MinVolume`）。

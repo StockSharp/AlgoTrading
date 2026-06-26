@@ -1,4 +1,5 @@
-[English](README.md) | [中文](README_zh.md)
+# Стратегия One Minute Scalper
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия переносит советник **1 MINUTE SCALPER** из MetaTrader 4 на высокоуровневый API StockSharp. Логика сохраняет многоуровневую фильтрацию тренда, подтверждение импульса на старшем таймфрейме и месячный фильтр MACD, но управление риском адаптировано под модель неттинговых позиций StockSharp.
 
