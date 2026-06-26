@@ -1,5 +1,5 @@
 # Bruno 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bruno 策略来源于 MetaTrader 5 平台，是一个典型的趋势追踪系统。本移植版本沿用了全部过滤条件：带有方向性指标线的 ADX、两条指数移动平均线（EMA 8 与 EMA 21）、MACD（13、34、8）、随机指标（21、3、3）以及参数为 0.055/0.21 的抛物线 SAR 斜率。每当某个过滤器支持当前方向时，就会把基础手数乘以预设倍数。如果同一根 K 线上多空信号同时被放大，则放弃交易以避免冲突。
 

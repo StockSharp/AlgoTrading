@@ -1,5 +1,5 @@
 # Bruno Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Bruno expert advisor is a trend-following system originally written for MetaTrader 5. The port keeps the same confirmation chain: Average Directional Index (ADX) with directional movement, a pair of exponential moving averages (EMA 8/21), MACD (13, 34, 8), a Stochastic Oscillator (21, 3, 3) and the slope of a Parabolic SAR (0.055, 0.21). Every filter that agrees with the direction multiplies the order size by a configurable factor. If both long and short signals are amplified on the same candle, trading is skipped to avoid conflicting orders.
 

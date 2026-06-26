@@ -1,4 +1,5 @@
 # Стратегия GlamTrader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **GlamTrader** — перенос на высокоуровневый API StockSharp экспертного советника MetaTrader `GlamTrader.mq5`. Оригинальный алгоритм сочетает смещённую скользящую среднюю, осциллятор Laguerre RSI и Awesome Oscillator, чтобы отфильтровать импульс перед открытием единственной рыночной позиции. Перенос сохраняет схему принятия решений и правила управления риском, добавляя нативную для StockSharp отправку заявок, визуализацию и защиту позиций.
 

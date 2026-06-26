@@ -1,5 +1,5 @@
 # Contrarian Trade MA Monday 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 上重现了 MetaTrader 顾问 **“Contrarian trade MA”** 的逻辑。它结合周线背景与仅限周一入场的过滤器，以对抗极端行情。系统等待新交易周的到来，衡量上一周的收盘价是否突破了回溯区间的最高价或最低价，并检查上一周期的移动平均值是否位于当前周开盘价的另一侧。当周一的第一根日线收盘后，只要满足任一条件，就建立逆势头寸。
 

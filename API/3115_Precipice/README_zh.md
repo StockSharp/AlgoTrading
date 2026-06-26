@@ -1,4 +1,5 @@
 # Precipice 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Precipice 策略直接移植自 MetaTrader 专家顾问 *Precipice (barabashkakvn's edition)*。系统不会分析市场结构或使用任何指标，而是等待上一笔仓位平仓后抛硬币决定做多还是做空。如果同时允许多空方向，在账户处于空仓状态时，每根已结束的蜡烛都有 50% 的概率生成一笔新的开仓。可选的保护性订单会为每笔交易附加相同的止损和止盈距离，以 "点" 为单位，完全对齐原始 EA 的资金管理逻辑。

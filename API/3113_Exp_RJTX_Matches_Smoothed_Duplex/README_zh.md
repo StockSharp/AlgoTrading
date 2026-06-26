@@ -1,4 +1,5 @@
 # Exp RJTX Matches Smoothed Duplex
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 MetaTrader 5 专家顾问 `Exp_RJTX_Matches_Smoothed_Duplex.mq5`。它包含两个独立的 RJTX 模块，在各自的时间框架上对开盘价和收盘价的平滑序列进行分析。每根完成的 K 线都会根据“当前平滑收盘价是否高于 `Period` 根之前的平滑开盘价”被判定为多头或空头火柴。多头火柴驱动多头模块，空头火柴由空头模块处理。

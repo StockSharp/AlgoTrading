@@ -1,4 +1,5 @@
 # Exp RJTX Matches Smoothed Duplex
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy recreates the behaviour of the MetaTrader 5 expert advisor `Exp_RJTX_Matches_Smoothed_Duplex.mq5`. Two independent RJTX signal blocks analyse smoothed open and close prices on their respective time-frames. Each block classifies every finished candle as bullish or bearish depending on whether the smoothed close rises above the smoothed open from `Period` bars ago. Bullish "matches" trigger entries for the long module, while bearish matches manage the short module.

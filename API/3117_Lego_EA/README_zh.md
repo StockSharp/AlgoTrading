@@ -1,5 +1,5 @@
 # Lego EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Lego EA Strategy** 将 MetaTrader 的 Lego EA 专家顾问迁移到 StockSharp。策略可以按“积木”方式组合多个过滤器（CCI、双均线、随机指标、加速指标、DeMarker、Awesome Oscillator），并且可以分别为开仓和平仓启用或禁用每个过滤器，从而灵活重现原始逻辑或构建自定义版本。
 

@@ -1,4 +1,5 @@
 # Exp XFisher org v1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略重现了 MetaTrader 5 专家顾问 **Exp_XFisher_org_v1**。它基于 Fisher 变换寻找价格反转，并使用可配置的移动平均线对

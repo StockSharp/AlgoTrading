@@ -1,4 +1,5 @@
 # LBS Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **LBS Strategy** is a direct conversion of the MetaTrader 5 expert advisor "LBS (barabashkakvn's edition)". The original system watches for breakouts of the previous candle during a configurable trading window and places stop orders at both extremes. The StockSharp port keeps the same trade management rules while using the high-level API (`SubscribeCandles`, `SubscribeLevel1`, `BuyStop`/`SellStop`) for clarity and reliability.
 

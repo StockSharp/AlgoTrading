@@ -1,4 +1,5 @@
 # Exp XFisher org v1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the MetaTrader 5 expert **Exp_XFisher_org_v1**. It trades reversals detected on the Fisher transform of

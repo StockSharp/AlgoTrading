@@ -1,4 +1,5 @@
 # GlamTrader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **GlamTrader Strategy** is a StockSharp high-level API conversion of the MetaTrader expert advisor `GlamTrader.mq5`. The original robot blends a shifted moving average with the Laguerre RSI oscillator and the Awesome Oscillator to filter momentum before opening a single market position. The port preserves the exact decision tree and money-management rules while adapting order execution, charting, and risk controls to StockSharp conventions.
 

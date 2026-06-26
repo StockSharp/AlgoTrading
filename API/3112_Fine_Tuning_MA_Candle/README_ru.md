@@ -1,4 +1,5 @@
 # Стратегия Exp Fine Tuning MA Candle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 - Конвертация эксперта MetaTrader 5 `Exp_FineTuningMACandle.mq5`, который торгует по изменению цвета индикатора *Fine Tuning MA Candle*.

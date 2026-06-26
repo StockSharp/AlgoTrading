@@ -1,4 +1,5 @@
 # Precipice Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Precipice strategy is a direct conversion of the MetaTrader expert advisor *Precipice (barabashkakvn's edition)*. The system does not analyse market structure or use indicators; instead it waits for the previous position to close and then flips a coin to decide whether to enter long or short. If the trader enables both directions, every finished candle has a 50% chance of spawning a new position provided the account is currently flat. Optional protective orders mirror the MetaTrader behaviour by attaching the same stop-loss and take-profit distance in "pips" to every trade.

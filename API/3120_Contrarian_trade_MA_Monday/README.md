@@ -1,5 +1,5 @@
 # Contrarian Trade MA Monday Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the MetaTrader expert advisor **"Contrarian trade MA"** using the StockSharp high-level API. It combines weekly context with a Monday-only entry filter to trade against extremes. The system waits for a new trading week, measures how far the previous week closed relative to the highest high and lowest low over the lookback window, and checks whether price opened the new week on the opposite side of a shifted moving average. If the market finishes the first daily candle of the week outside those thresholds, a contrarian position is opened.
 

@@ -1,4 +1,5 @@
 # LBS 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **LBS 策略** 是 MetaTrader 5 顾问 "LBS (barabashkakvn's edition)" 的 StockSharp 版本。原始程序在指定的交易时段内监测前一根 K 线的高低点，并在突破时放置止损买入/卖出单。本移植使用 StockSharp 的高级 API（`SubscribeCandles`、`SubscribeLevel1`、`BuyStop`/`SellStop` 等）实现同样的交易逻辑和资金管理规则。
 

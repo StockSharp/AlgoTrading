@@ -1,4 +1,5 @@
 # GlamTrader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **GlamTrader 策略** 将 MetaTrader 专家顾问 `GlamTrader.mq5` 移植到 StockSharp 的高级 API。原版算法结合了位移移动平均线、Laguerre RSI 振荡器和 Awesome Oscillator，只在动量满足条件时打开单向仓位。移植版本完整保留决策流程与资金管理，并使用 StockSharp 提供的下单、图表和保护功能。
 
