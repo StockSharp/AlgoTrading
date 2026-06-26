@@ -1,5 +1,5 @@
 # DynamicRS_C Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert advisor **Exp_DynamicRS_C** using the StockSharp high-level API. It evaluates the color transitions of the custom DynamicRS_C indicator to detect dynamic support and resistance. When the line turns magenta (color index `0`) it favours bullish setups, and when it turns blue-violet (color index `2`) it favours bearish setups. The StockSharp port keeps the same signal timing, permission flags, and stop/take structure as the source robot.
 

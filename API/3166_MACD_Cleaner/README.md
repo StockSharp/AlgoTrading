@@ -1,4 +1,5 @@
 # MACD Cleaner Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MACD Cleaner** strategy is a conversion of the "MACD Cleaner" MetaTrader 5 expert advisor. It analyses completed candles from a single timeframe and places trades when the MACD main line increases or decreases monotonically during three consecutive closed bars. The system always keeps at most one directional position and flips when the momentum reverses.

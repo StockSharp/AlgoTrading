@@ -1,4 +1,5 @@
 # Four Hour Swing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Four Hour Swing Strategy** ports the MetaTrader "4H swing" expert advisor to the StockSharp high level API. The original system mixes trend following and oscillator confirmations taken from higher time frames. This C# version subscribes to three time frames (entry, confirmation, and macro filter) and recreates the indicator stack with StockSharp components.

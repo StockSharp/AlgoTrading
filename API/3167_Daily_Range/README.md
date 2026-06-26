@@ -1,4 +1,5 @@
 # Daily Range Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp conversion of the MetaTrader 5 expert advisor `MQL/23334/Daily range.mq5`. The original EA tracks the highest and lowest prices reached over the last few days, offsets these levels by a configurable percentage of the daily range, and trades breakouts. The C# port preserves the behaviour while adopting StockSharp's high-level strategy API.

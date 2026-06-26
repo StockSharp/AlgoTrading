@@ -1,4 +1,5 @@
 # Spearman Rank Correlation Histogram Time Window Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the MetaTrader expert **Exp_SpearmanRankCorrelation_Histogram_TimeWeekPeriod** on the StockSharp high-level API. It subscribes to a single candle stream (default: 4-hour bars) and evaluates the Spearman rank correlation histogram published in the original MQL indicator. The histogram color determines whether the short-term trend is bullish (values above zero) or bearish (values below zero). A dedicated trading window keeps activity between a configurable weekday/time range, mirroring the `TimeTrade` controls of the source code.

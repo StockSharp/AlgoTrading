@@ -1,4 +1,5 @@
 # Price Action Fractal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of the MetaTrader "PRICE_ACTION" expert advisor. It combines Williams fractals with weighted moving averages, momentum and MACD filters to trade breakouts confirmed by price action on the selected timeframe.
 
