@@ -1,4 +1,5 @@
 # Pair Trading Strategy Schema
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This schema presents a pair trading strategy based on the relative value of two securities. It incorporates a unique approach to identify and capitalize on price discrepancies between two correlated assets.
 

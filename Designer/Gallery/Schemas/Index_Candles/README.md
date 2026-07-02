@@ -1,4 +1,5 @@
 # Index Creation from Multiple Candle Series Diagram
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This diagram file illustrates a strategy for creating a composite index from candle series of different financial instruments using the Designer platform's Strategy Gallery. The strategy aggregates data from various securities to form a unified index, which can be used to gauge the overall market sentiment or sector performance.
 
@@ -35,4 +36,4 @@ This strategy diagram is especially valuable for educational purposes, providing
 
 Users can import this diagram into the Designer platform to explore and modify the approach, adapt it to different sets of securities, or enhance the complexity of the index calculation methodology.
 
-This file forms part of a diverse collection of strategies available in the Designer platform, intended to improve users� understanding of financial data aggregation and index construction.
+This file forms part of a diverse collection of strategies available in the Designer platform, intended to improve users� understanding of financial data aggregation and index construction.

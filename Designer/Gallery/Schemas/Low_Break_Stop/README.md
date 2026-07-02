@@ -1,4 +1,5 @@
 # Low Break with Stop Strategy Example in StockSharp Strategy Designer
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -18,7 +19,7 @@ The schema provided in the JSON file outlines a detailed workflow for trading ba
 
 4. **Comparison Nodes**: These are used to [compare](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) the current price with the historical low, triggering trading signals when the current price falls below the set threshold, indicating a bearish breakout.
 
-5. **Chart Panel Node**: Visualizes the trading data and indicators, providing a [graphical representation](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) of the strategy�s operations, which is essential for real-time monitoring and strategy adjustments.
+5. **Chart Panel Node**: Visualizes the trading data and indicators, providing a [graphical representation](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) of the strategy�s operations, which is essential for real-time monitoring and strategy adjustments.
 
 6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) based on the strategy's logic. In this case, a sell order may be executed to capitalize on the expected downward price movement.
 
@@ -32,7 +33,7 @@ The schema provided in the JSON file outlines a detailed workflow for trading ba
 - **Comparison Nodes** monitor the current market price in comparison to these lows, activating trades when the price drops below the historical low point.
 - The **Trade Execution Nodes** utilize these signals to execute sell orders assuming a continuation of the downward trend.
 - Concurrently, **Stop Order Nodes** set stop-loss orders based on predefined criteria to manage potential losses.
-- The **Chart Panel Node** displays all transactions and price movements, providing visual feedback on the strategy�s performance.
+- The **Chart Panel Node** displays all transactions and price movements, providing visual feedback on the strategy�s performance.
 
 ## Practical Application
 

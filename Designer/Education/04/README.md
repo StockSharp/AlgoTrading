@@ -1,4 +1,5 @@
 # Simple Strategy Schema for Designer
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This document accompanies a schematic file that outlines a simple trading strategy using the Designer tool from StockSharp. The schema provides a visual representation of the strategy's workflow and components, allowing users to understand and replicate its functionality within their own trading environment.
 

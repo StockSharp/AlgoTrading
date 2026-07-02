@@ -1,4 +1,5 @@
 # Position Protection Cubes: Take Profit and Stop Loss
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This file contains a visual strategy designed in the StockSharp Designer, demonstrating the use of position protection cubes specifically for take profit and stop loss operations. The strategy provides a clear example of how to set up and utilize these critical trading tools within the Designer environment to manage and protect trading positions effectively.
 

@@ -1,4 +1,5 @@
 # Composite Cube Integration: "Position Closure" Example
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This schema file explores the functionalities of the "Merge" cube and demonstrates the construction and integration of a composite cube, specifically focusing on creating and utilizing a "Position Closure" cube within an existing trading strategy.
 
@@ -17,7 +18,7 @@ The schema details the process of building composite cubes, which are crucial fo
 - The process involves defining the logic that identifies the conditions under which a position should be closed, either for risk management or to capture profits.
 
 ### Integration into an Existing Strategy
-- **Lesson 9 Strategy Adaptation**: Demonstrates how the newly created "Position Closure" cube can be seamlessly integrated into an existing strategy framework from lesson 9. This integration highlights the cube�s utility in enhancing strategy functionality without extensive modifications to the original codebase.
+- **Lesson 9 Strategy Adaptation**: Demonstrates how the newly created "Position Closure" cube can be seamlessly integrated into an existing strategy framework from lesson 9. This integration highlights the cube�s utility in enhancing strategy functionality without extensive modifications to the original codebase.
 
 ## Practical Application
 

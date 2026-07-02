@@ -1,4 +1,5 @@
 # Advanced Timeframe Strategy Schema
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This file illustrates a complex strategy schema using candles from different timeframes, specifically designed with the Designer platform from StockSharp. This example utilizes varying conditions across multiple branches to execute trades based on historical price data.
 

@@ -1,4 +1,5 @@
 # Basic Data Source and Chart Cube Usage Diagram
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This diagram provides a straightforward demonstration of how to use the "Candles" data source and "Chart" cube within the Designer platform. It is designed to help users understand the fundamentals of fetching market data and visualizing it in a chart format.
 

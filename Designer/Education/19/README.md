@@ -1,4 +1,5 @@
 # Pyramiding Strategy Schema
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This schema explores a pyramiding strategy that builds upon the principles outlined in the previous lesson's trading strategy. It focuses on increasing a position's size in a winning trade to maximize potential gains.
 

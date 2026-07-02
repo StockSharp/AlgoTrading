@@ -1,4 +1,5 @@
 # Mathematical Cubes and Formulas Schema
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This schema file demonstrates the utilization of mathematical cubes and formulas from the "Mathematics" section in the Designer tool, specifically focusing on how to employ these elements in trading strategies.
 

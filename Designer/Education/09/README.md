@@ -1,4 +1,5 @@
 # Working Time and Time-Based Strategy Schema
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This schema file demonstrates the application of the "Working Time" cube along with other relevant cubes in the Designer platform to implement time-based trading strategies.
 

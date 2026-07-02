@@ -1,4 +1,5 @@
 # Moving Averages Strategy Diagram
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This file contains a diagrammatic representation of a trading strategy based on moving averages, designed using the Designer platform's Strategy Gallery. The strategy utilizes the concept of moving averages to generate buy and sell signals based on their crossovers, a popular method used in financial markets to gauge momentum and confirm trends.
 

@@ -1,4 +1,5 @@
 # Three White Soldiers Pattern Detection Example in StockSharp Strategy Designer
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -16,7 +17,7 @@ The schema outlines a complex workflow designed to detect the "Three White Soldi
 
 3. **Pattern Detection Node**: Specifically configured to detect the "Three White Soldiers" [pattern](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) via [indicator](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). This node analyzes the candle data and triggers an action when the pattern is identified.
 
-4. **Chart Panel Node**: Visualizes the trading data, including candlestick patterns and possibly trades executed by the strategy. This [component](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) helps in monitoring the strategy�s performance and understanding how the pattern influences trading decisions.
+4. **Chart Panel Node**: Visualizes the trading data, including candlestick patterns and possibly trades executed by the strategy. This [component](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) helps in monitoring the strategy�s performance and understanding how the pattern influences trading decisions.
 
 5. **Trading Nodes (Buy, Sell)**: These [nodes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) are configured to execute trades when the pattern is detected. The actions can vary based on additional conditions set within the strategy, such as market conditions or other technical indicators.
 
@@ -24,8 +25,8 @@ The schema outlines a complex workflow designed to detect the "Three White Soldi
 
 - The **Security Node** feeds market data into the **TimeFrameCandle Node** where the data is transformed into candlesticks.
 - These candlesticks are then passed to the **Pattern Detection Node**, which is configured to identify the "Three White Soldiers" pattern.
-- Upon detecting the pattern, the node can trigger one or more **Trading Nodes** to execute buy or sell orders depending on the strategy�s design.
-- The **Chart Panel Node** provides a real-time visualization of the candlesticks and any trades executed, which helps in assessing the strategy�s effectiveness and making adjustments if necessary.
+- Upon detecting the pattern, the node can trigger one or more **Trading Nodes** to execute buy or sell orders depending on the strategy�s design.
+- The **Chart Panel Node** provides a real-time visualization of the candlesticks and any trades executed, which helps in assessing the strategy�s effectiveness and making adjustments if necessary.
 
 ## Practical Application
 

@@ -1,4 +1,5 @@
 # Designer Video Tutorials Directory
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Welcome to the Designer Video Tutorials Directory. This folder contains links and resources related to video tutorials available on the StockSharp YouTube channel. These tutorials are focused on educating users about using the Designer program effectively, covering everything from basic setup to advanced strategy design.
 

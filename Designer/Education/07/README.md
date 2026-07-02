@@ -1,4 +1,5 @@
 # Strategy Example with Mathematical Formulas and Expressions
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This file contains a detailed example of a trading strategy designed using the Designer platform from StockSharp. The strategy integrates mathematical expressions and formulas to execute trades based on specific conditions met by technical indicators.
 

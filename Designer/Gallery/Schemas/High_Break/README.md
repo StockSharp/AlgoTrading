@@ -1,4 +1,5 @@
 # High Break Strategy Example in StockSharp Strategy Designer
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -27,7 +28,7 @@ The schema provided outlines a sequence of interconnected components designed to
 - The **Security Node** feeds market data into the **TimeFrameCandle Node** to create a structured time-based candlestick dataset.
 - The **Highest Node** calculates the highest price from these candles over a defined period.
 - The **Comparison Node** continuously compares the current price against this high. If the current price exceeds the historical high, it suggests a bullish breakout, potentially triggering a buy signal.
-- The **Chart Panel Node** provides real-time visualization, allowing for immediate visual feedback on the strategy�s performance and market conditions.
+- The **Chart Panel Node** provides real-time visualization, allowing for immediate visual feedback on the strategy�s performance and market conditions.
 - When the buy condition is met, the **Trade Execution Node** (Buy) initiates a trade, capitalizing on the expected upward momentum.
 
 ## Practical Application
