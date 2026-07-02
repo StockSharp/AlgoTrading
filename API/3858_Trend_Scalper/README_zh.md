@@ -1,4 +1,5 @@
 # 趋势剥头皮策略（API/3858）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **TrendScalperStrategy** 是 MetaTrader 4 专家顾问 `Currencyprofits_01_1.mq4` 的 StockSharp 移植版本。原始脚本是一套轻量的趋势型剥头皮系统：通过 EMA/SMA 交叉确认趋势，并利用最近几个高点和低点的突破来寻找入场机会。本移植版本保持原有交易逻辑，同时使用 StockSharp 的高级蜡烛订阅与指标管线实现。

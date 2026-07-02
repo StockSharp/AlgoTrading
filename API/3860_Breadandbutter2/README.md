@@ -1,4 +1,5 @@
 # Breadandbutter2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Breadandbutter2 strategy is a direct conversion of the MT4 expert advisor from `MQL/7710/Breadandbutter2.mq4`. The system monitors one-hour candles and tracks three linear weighted moving averages (LWMA) built on the candle open prices. A synchronized crossover of the three averages indicates a trend reversal. The strategy immediately flips the position to align with the new direction and optionally pyramids additional orders while the trend persists.

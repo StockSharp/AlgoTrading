@@ -1,4 +1,5 @@
 # E-Friday 会话策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 E-Friday 策略复刻了经典的 MetaTrader 专家顾问，它只在星期五交易。策略观察上一日的日线蜡烛，并在设定的时间于星期五开盘时入场。方向采取反向思路：若上一日收于开盘价下方（阴线），则在星期五做多；若上一日收于开盘价上方（阳线），则在星期五做空。仓位仅在当日管理，可在预设时间后自动平仓，也可通过保护性止损退出。

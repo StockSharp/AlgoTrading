@@ -1,4 +1,5 @@
 # MultiTimeframeEmaAlignmentStrategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **MultiTimeframeEmaAlignmentStrategy** — портирование советника `1h-4h-1d.mq4` из папки `MQL/7713` на платформу StockSharp. Исходный робот анализирует три таймфрейма и проверяет, чтобы быстрая EMA находилась по одну сторону от медленной EMA, дополняя логику фиксированным стоп-лоссом, тейк-профитом и трейлинг-стопом. Реализация на C# использует высокоуровневые возможности StockSharp: подписку на свечи, привязку индикаторов и рыночные приказы.

@@ -1,4 +1,5 @@
 # 5/8 EMA Cross Protect Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **5/8 EMA Cross Protect Strategy** replicates the MetaTrader expert advisor `5_8macrossv2.mq4` by comparing two configurable moving averages on the same symbol. A bullish crossover of the fast moving average above the slow one opens long positions, while a bearish crossover opens short positions. The ported version follows StockSharp high-level patterns and adds optional take-profit, stop-loss, and trailing-stop management.

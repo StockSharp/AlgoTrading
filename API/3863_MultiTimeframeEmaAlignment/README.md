@@ -1,4 +1,5 @@
 # MultiTimeframeEmaAlignmentStrategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MultiTimeframeEmaAlignmentStrategy** is a StockSharp port of the MetaTrader 4 expert advisor `1h-4h-1d.mq4` from the folder `MQL/7713`. The original robot aligns fast and slow exponential moving averages across three timeframes and applies protective money management via fixed stop loss, take profit and trailing stop levels. This C# version follows the same high-level idea while leveraging StockSharp's indicator bindings and high-level order helpers.

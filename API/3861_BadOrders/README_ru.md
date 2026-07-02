@@ -1,4 +1,5 @@
 # Стратегия BadOrders
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **BadOrders Strategy** — это точный перенос советника MetaTrader 4 `BadOrders.mq4`. Первоначальный скрипт задумывался как демонстрация неправильной работы с заявками и специально провоцирует ошибки брокера:

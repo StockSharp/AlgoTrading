@@ -1,4 +1,5 @@
 # BadOrders 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **BadOrders 策略** 是 MetaTrader 4 专家顾问 `BadOrders.mq4` 的完整移植版本。原始脚本的目的就是展示「错误」的下单流程：

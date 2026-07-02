@@ -1,4 +1,5 @@
 # Стратегия Trend Scalper (API/3858)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **TrendScalperStrategy** — порт экспертного советника MetaTrader 4 `Currencyprofits_01_1.mq4` на платформу StockSharp. Исходный робот представляет собой трендового скальпера: он проверяет пересечение быстрой EMA и медленной SMA, а затем ищет ложные проколы недавних экстремумов, чтобы войти в сделку. Переписанная версия сохраняет ту же логику, используя свечные подписки и индикаторы высокого уровня StockSharp.

@@ -1,4 +1,5 @@
 # DLM v1.4 Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of Alejandro Galindo's MetaTrader 4 expert advisor "DLM v1.4". The original robot combines a Fisher Transform signal filter with a martingale-style averaging scheme that progressively builds a grid of positions whenever price moves against the last entry. The StockSharp version keeps the same money-management ideas while adapting the execution and protection logic to the high-level API (candle subscriptions, indicator bindings and market/limit helpers).

@@ -1,4 +1,5 @@
 # MultiTimeframeEmaAlignmentStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MultiTimeframeEmaAlignmentStrategy** 是来自 `MQL/7713` 目录下 `1h-4h-1d.mq4` EA 的 StockSharp 版本。原始 EA 通过在三个时间框架上比较快速与慢速指数移动平均线（EMA），并结合固定止损、止盈和移动止损来管理风险。本策略沿用这一核心思想，但使用 StockSharp 的高阶 API 完成指标绑定与交易管理。

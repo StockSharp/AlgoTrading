@@ -1,4 +1,5 @@
 # Breadandbutter2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Breadandbutter2 策略来源于 `MQL/7710/Breadandbutter2.mq4` 的 MT4 智能交易程序。本实现订阅 1 小时 K 线，并基于开盘价计算三条线性加权移动平均线（LWMA）。当三条均线同时完成顺序反转时，被视为趋势切换，策略立即调整持仓方向，并在趋势持续时按设定节奏加仓。

@@ -1,4 +1,5 @@
 # Bronze Pan 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 4 的 "Bronzew_pan" 专家顾问移植到 StockSharp。它只针对一支证券，在 K 线收盘后运行，通过自定义的 DayImpuls 振荡器配合 Williams %R 与 CCI 来捕捉动能反转。
 

@@ -1,4 +1,5 @@
 # E-Friday Session Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The E-Friday Session strategy replicates the classic MetaTrader expert advisor that trades only on Fridays. It observes the previous daily candle and opens a position at a configured hour at the start of Friday's session. The direction is contrarian: if the previous day closed below its open (bearish candle), the strategy buys; if the previous day closed above its open (bullish candle), the strategy sells. Positions are managed intraday and can be closed automatically after a configurable hour or by protective stops.

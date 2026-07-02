@@ -1,5 +1,5 @@
 # TwoPerBar Ron 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原始的 MetaTrader 专家顾问 “TwoPerBar” （作者 Ron Thompson）在每根新 K 线开始时会同时开出 **两笔市价单**：一多一空。当其中任意一条腿达到固定的利润目标（MQL 代码中的 `ProfitMade * Point`）时立即平仓；下一根 K 线开始前会强制关闭剩余仓位，再重新建立新的对冲组合。如果上一根 K 线结束时仍有持仓，则按照 `LotLimit` 设定的上限将手数加倍。StockSharp 版本通过高级策略 API、Level 1 报价以及对两条腿的显式跟踪来复刻这一节奏。

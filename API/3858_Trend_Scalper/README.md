@@ -1,4 +1,5 @@
 # Trend Scalper Strategy (API/3858)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **TrendScalperStrategy** is a C# conversion of the MetaTrader 4 expert advisor `Currencyprofits_01_1.mq4`. The original robot is a lightweight trend-following scalper that combines a short-term EMA/SMA crossover filter with breakout entries around the most recent swing highs and lows. The StockSharp port keeps the same decision rules while embracing the framework's high-level candle subscription and indicator pipeline.

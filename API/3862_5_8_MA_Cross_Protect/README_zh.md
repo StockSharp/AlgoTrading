@@ -1,4 +1,5 @@
 # 5/8 EMA 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **5/8 EMA 交叉策略** 复刻了 MetaTrader 智能交易系统 `5_8macrossv2.mq4`，通过比较同一标的上的两条可配置均线生成交易信号。快速均线向上穿越慢速均线时开多单，向下穿越时开空单。本移植版本遵循 StockSharp 的高级 API，并提供可选的止盈、止损和移动止损管理。

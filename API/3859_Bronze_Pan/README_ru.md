@@ -1,4 +1,5 @@
 # Стратегия Bronze Pan
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт MetaTrader 4 советника «Bronzew_pan» на платформу StockSharp. Работает по одной бумаге, анализируя только завершённые свечи, и комбинирует осциллятор DayImpuls с индикаторами Williams %R и CCI для поиска импульсных разворотов.
 

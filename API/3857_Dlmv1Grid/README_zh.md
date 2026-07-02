@@ -1,4 +1,5 @@
 # DLM v1.4 网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是对 Alejandro Galindo 开发的 MetaTrader 4 专家顾问 “DLM v1.4” 的 StockSharp 版本。原始机器人利用 Fisher 变换信号过滤与马丁格尔加仓体系，当价格朝不利方向移动时逐步构建网格头寸。移植版本保留了原策略的资金管理思想，并将执行与保护逻辑改写为使用 StockSharp 的高级 API（K 线订阅、指标绑定以及市价/限价下单辅助方法）。
