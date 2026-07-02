@@ -1,4 +1,5 @@
 # Burg Extrapolator Forecast Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Burg Extrapolator Strategy is a StockSharp port of the MetaTrader 4 expert advisor "Burg Extrapolator". The original system fits a Burg autoregressive (AR) model to a sliding window of open prices (or their momentum/ROC transforms) and projects a path of future prices. Trading decisions are derived from the most extreme forecast values: if the predicted excursion in one direction is large enough the strategy either stacks new positions or liquidates exposure in the opposite direction. The conversion keeps the same modelling blocks while mapping position management and money management to StockSharp primitives.

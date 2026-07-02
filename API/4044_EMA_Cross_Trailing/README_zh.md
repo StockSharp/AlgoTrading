@@ -1,4 +1,5 @@
 # EMA Cross Trailing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 智能交易系统 `MQL/8606/EMA_CROSS_2.mq4` 的 StockSharp 版本。它保留了原始 EA 的核心思想：监控慢速与快速指数移动平均线的相对位置，并在出现交叉时开立单一仓位。止盈、止损以及跟踪止损全部交由高层 API `StartProtection` 处理，从而在 StockSharp 框架内复现原策略的退出管理。

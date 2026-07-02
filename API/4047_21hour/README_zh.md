@@ -1,4 +1,5 @@
 # 21hour 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **21hour** 策略复刻了 MQL4 专家顾问 `21hour.mq4` 的逻辑。它围绕每日的时间窗口运行：在设定的启动小时放置一对突破型止损挂单，并在设定的结束小时撤销所有敞口。StockSharp 版本保持“双向止损挂单包围价格”的思路，同时借助高级 API 处理行情订阅、下单及自动化的止盈管理。

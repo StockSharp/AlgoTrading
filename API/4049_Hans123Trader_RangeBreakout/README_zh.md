@@ -1,4 +1,5 @@
 # Hans123Trader 策略（StockSharp 实现）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略简介
 **Hans123Trader** 策略使用 StockSharp 高级 API 重构了 MetaTrader 专家顾问 “Hans123Trader v1”。系统每天在两个固定时段预挂突破方向的止损单，依据最近 80 根 5 分钟 K 线形成的价格区间。该方案主要面向外汇品种，默认假设 `PriceStep` 对应于小数点后最小报价单位。每天开盘前都会刷新挂单，并在跨日时强制平掉未结的仓位。

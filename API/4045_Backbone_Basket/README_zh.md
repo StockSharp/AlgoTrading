@@ -1,4 +1,5 @@
 # Backbone 篮子策略（StockSharp）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Backbone 篮子策略** 将 MetaTrader 4 的 "Backbone.mq4" 专家顾问迁移到 StockSharp 高层 API。系统先记录买卖价的极值以推断初始方向，然后在后续的每根已完成K线中逐步累积同向仓位。每根K线最多追加一笔市价单，直到达到 `MaxTrades` 限制，或是由止损/止盈订单结束整组仓位。仓位规模通过分数风险模型控制——以账户价值与止损距离计算可承受风险。

@@ -1,3 +1,5 @@
+# Hans123Trader RangeBreakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## Overview
 The **Hans123Trader Strategy** recreates the MetaTrader expert advisor "Hans123Trader v1" using the StockSharp high-level API. The system arms stop orders twice per day based on the break of the most recent 5-minute trading range. It is tailored for Forex-style symbols where price steps correspond to fractional pips. Pending orders are refreshed each trading day and any open position is forcefully closed when the calendar rolls over.
 

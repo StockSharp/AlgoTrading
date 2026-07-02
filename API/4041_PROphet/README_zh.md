@@ -1,4 +1,5 @@
 # PROphet 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 专家顾问“PROphet”的 StockSharp 版本。原始 EA 通过四根历史 K 线的权重区间来生成信号，仅在欧盘和美盘时段持仓，并在价格朝有利方向移动时不断上移（或下移）止损。移植版本完整保留这些逻辑，并针对 StockSharp 投资组合的净额模式进行了调整。

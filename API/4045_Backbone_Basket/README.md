@@ -1,4 +1,5 @@
 # Backbone Basket Strategy (StockSharp)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Backbone Basket Strategy** ports the original MetaTrader 4 "Backbone.mq4" expert advisor to the StockSharp high level API. The system collects bid/ask extremes to determine the initial trading direction and then alternates between long and short baskets. Each basket is built gradually, adding one market order per completed candle until either the configured `MaxTrades` count is reached or protective orders close the position. Risk control is retained through a fractional risk model that scales the trade volume by the account value and stop-loss distance.

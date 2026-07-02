@@ -1,4 +1,5 @@
 # Burg Extrapolator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Burg Extrapolator 策略是 MetaTrader 4 专家顾问“Burg Extrapolator”的 StockSharp 版本。原始脚本使用 Burg 自回归模型对一段滑动窗口的开盘价（或其动量/变化率转换）进行拟合，并生成未来价格路径的预测。交易决策来自预测路径中的极值：当预计的单向波动足够大时，策略会增加该方向的仓位；如果相反方向先出现极值，则平掉当前持仓。本移植保留了原算法结构，同时把仓位管理和资金管理改写为 StockSharp 的高层 API 风格。
@@ -45,6 +46,6 @@ Burg Extrapolator 策略是 MetaTrader 4 专家顾问“Burg Extrapolator”的 
 - Burg 算法按照 MT4 版本的递推关系用 C# 重写，内部计算使用 `double`，最终信号判断前再转换为 `decimal`。
 - 原脚本依赖账户可用保证金计算手数。StockSharp 版本改为基于 `Volume` 和 `MaxRisk` 的线性放大：把 `Volume` 设为基础手数，后续加仓会按风险系数增量。
 - 止损、止盈与跟踪止损都通过发送市价单实现，以符合 StockSharp 的高层 API，并避免在仿真环境中保留挂单状态。
-  
+
 - 调整 `PastBars` 或 `ModelOrder` 时会重新创建内部数组，因此运行中修改参数会立即影响预测模型。
 - 策略默认在图表上绘制 K 线和成交，可在 Designer 中进一步添加自定义序列来展示预测曲线。

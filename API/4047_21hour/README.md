@@ -1,4 +1,5 @@
 # 21hour Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **21hour** strategy reproduces the behaviour of the MQL4 expert advisor `21hour.mq4`. It operates around a daily time window: pending breakout orders are created at a configurable start hour and all exposure is removed at a configurable stop hour. The StockSharp version keeps the same "two stop orders around the price" idea while leveraging the high-level API for order management, market data subscriptions and protective take-profit handling.

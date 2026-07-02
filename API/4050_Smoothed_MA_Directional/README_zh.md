@@ -1,5 +1,5 @@
 # 平滑均线方向策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 重写 MetaTrader 4 专家顾问 `oc08_vy_m0moqesu15`（位于 `MQL/8615`）。原始 EA 通过一条平滑移动平均线（SMMA）来确定方向，并为每笔交易设置固定的止损和止盈。C# 版本沿用相同的思路，同时采用 StockSharp 框架提供的标准组件。
 

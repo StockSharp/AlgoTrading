@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# Center Of Gravity Mean Reversion 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略通过对最近的蜡烛进行多项式回归来重建原始 MQL4 专家使用的 Center of Gravity 通道。回归中心来自最小二乘解的常数项，通道宽度则来自同一观察窗口内的收盘价标准差。下轨等于中心减去放大后的标准差，对应于源码中调用的 `stdl` 缓冲区。
 

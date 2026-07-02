@@ -1,4 +1,5 @@
 # EMA Cross Trailing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is the StockSharp conversion of the MetaTrader 4 expert advisor located at `MQL/8606/EMA_CROSS_2.mq4`. It preserves the original idea of tracking the relationship between a slow and a fast exponential moving average and opening a single market position when a crossover occurs. Protective exits (take profit, stop loss and trailing stop) are handled through the high-level `StartProtection` helper so the behaviour mirrors the MetaTrader implementation while using StockSharp best practices.

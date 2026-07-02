@@ -1,4 +1,5 @@
 # MA Reverse Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The MA Reverse Strategy is a StockSharp conversion of the simple MetaTrader 4 expert advisor "MA_Reverse". The original robot
