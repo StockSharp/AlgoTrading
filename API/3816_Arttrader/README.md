@@ -1,4 +1,5 @@
 # Arttrader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Arttrader is a conversion of the MetaTrader 4 expert advisor `Arttrader_v1_5`. The system operates on hourly candles and attempts to capture smooth directional moves measured by an exponential moving average (EMA) of the open price. Entries are filtered by both the EMA slope and a strict intrabar price position check, while a dedicated volatility guard blocks trades after large opening gaps. Positions are managed through a timed stop-loss procedure, fixed emergency stop and take-profit levels, and a volume-based fail-safe.

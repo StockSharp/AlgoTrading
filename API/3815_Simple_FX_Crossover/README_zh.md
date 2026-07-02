@@ -1,4 +1,5 @@
 # Simple FX 趋势交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 - 基于 MetaTrader 4 专家顾问 *simplefx2.mq4*（Simple FX 2.0）的高层 API 移植版本。

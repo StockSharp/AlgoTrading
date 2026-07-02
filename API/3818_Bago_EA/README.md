@@ -1,4 +1,5 @@
 # Bago EA Classic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a faithful StockSharp port of the MetaTrader expert from `MQL/7656/Bago_ea.mq4`. It keeps the original trend-following philosophy: entries are triggered only when exponential moving averages and RSI break the neutral zone in the same direction, while the Vegas tunnel acts as a spatial filter and as the anchor for step-by-step trailing.
 

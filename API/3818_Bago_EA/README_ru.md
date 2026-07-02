@@ -1,4 +1,5 @@
 # Стратегия Bago EA Classic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт на StockSharp повторяет советник MetaTrader из файла `MQL/7656/Bago_ea.mq4`. Вся логика трендовой торговли сохранена: входы появляются только при синхронных пробоях EMA и RSI в сторону тренда, а туннель Vegas (EMA 144/169) фильтрует ложные сигналы и служит основой для поэтапного трейлинг-стопа.
 

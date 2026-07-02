@@ -1,4 +1,5 @@
 # Simple FX Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 - High-level port of the MetaTrader 4 expert advisor *simplefx2.mq4* (Simple FX 2.0).

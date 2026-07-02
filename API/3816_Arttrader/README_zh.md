@@ -1,4 +1,5 @@
 # Arttrader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Arttrader 是 MetaTrader 4 顾问 `Arttrader_v1_5` 的移植版本。策略基于小时级别 K 线运行，通过计算开盘价的指数移动平均线（EMA）斜率来捕捉平稳的方向性行情。只有在满足 EMA 斜率与蜡烛内部位置条件时才允许入场，而专门的波动率防护在出现大幅跳空后会阻止交易。仓位管理由延时止损、硬性紧急止损与固定止盈以及基于成交量的保护机制共同完成。

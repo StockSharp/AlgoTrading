@@ -1,4 +1,5 @@
 # Bollinger Band Pending Stops Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This sample converts the original MQL "Bb_0_1" expert advisor into the StockSharp high level API. The strategy listens to one candle subscription and uses Bollinger Bands to bracket the current price. When the market sits between the upper and lower bands, the algorithm places three layered buy stop orders above price and three layered sell stop orders below price. Each layer is configured with individual take-profit distances while sharing the same stop reference taken from the opposite band.

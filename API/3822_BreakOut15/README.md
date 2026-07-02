@@ -1,4 +1,5 @@
 # BreakOut15 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 BreakOut15 is a 15-minute breakout strategy converted from the MetaTrader 4 expert advisor "BreakOut15.mq4". The strategy combines a moving-average crossover filter with breakout execution and multi-stage trailing protection. Orders are sent through the high-level StockSharp API and rely on finished candles only.

@@ -1,4 +1,5 @@
 # BreakOut15 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 BreakOut15 策略由 MetaTrader 4 的 "BreakOut15.mq4" 专家顾问转换而来，适用于 15 分钟周期。策略通过高低周期均线交叉来确认趋势，再等待价格突破设定的距离后入场，并使用多阶段移动止损来保护利润。全部订单都通过 StockSharp 的高级 API 提交，只处理收盘完成的 K 线。

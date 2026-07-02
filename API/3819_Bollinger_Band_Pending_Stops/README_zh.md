@@ -1,4 +1,5 @@
 # 布林带分层挂单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本示例将 MQL 顾问 "Bb_0_1" 迁移到 StockSharp 的高级 API。策略订阅一组蜡烛数据，根据设定的周期和偏差计算布林带。当价格位于上下轨之间时，算法会在上轨放置三张分层 Buy Stop 挂单，并在下轨放置三张分层 Sell Stop 挂单。每一层都有独立的止盈距离，而止损都引用相反一侧的布林带。

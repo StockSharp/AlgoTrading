@@ -1,4 +1,5 @@
 # Bago EA Classic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是对 `MQL/7656/Bago_ea.mq4` MetaTrader 专家的完整移植。它保持原始趋势交易思想：只有当 EMA 与 RSI 同向突破中性区间时才入场，而 Vegas 隧道（144/169 EMA 组合）既过滤噪音又为分段追踪止损提供参照。
 
