@@ -1,4 +1,5 @@
 # Parabolic SAR Bug 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Parabolic SAR Bug 2 Strategy** is the StockSharp high-level conversion of the MetaTrader expert advisor `pSAR_bug2` from the folder `MQL/9503`. The original EA reacts to the very first Parabolic SAR dot that appears on the opposite side of the price. When the dot flips below the close, the system closes any short trades and immediately opens a long position; when the dot jumps above the close, the logic mirrors the behaviour on the short side. Protective stop-loss and take-profit levels are calculated in raw price points, exactly like in MetaTrader where the values are multiplied by the instrument `Point` size.

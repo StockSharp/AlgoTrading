@@ -1,4 +1,5 @@
 # TDSGlobal 4
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 TDSGlobal 4 是 MetaTrader 4 专家顾问 “TDSGlobal 4” 的 StockSharp 版本。原始系统遵循 Alexander Elder 的三重筛选理念，

@@ -1,4 +1,5 @@
 # TDSGlobal 4
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 TDSGlobal 4 is a conversion of the MetaTrader 4 expert advisor "TDSGlobal 4". The original system applies Alexander Elder's triple

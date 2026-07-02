@@ -1,4 +1,5 @@
 # Multi Strategy Combo 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Multi Strategy Combo Strategy** 是 MetaTrader 4「Multi-Strategy iFSF」EA 的 C# 版本。该策略将 MA、RSI、MACD、Stochastic、Parabolic SAR 等指标的信号进行合成，并辅以 ADX 趋势过滤、布林带区间过滤以及噪音过滤器。所有逻辑均使用 StockSharp 的高阶 `SubscribeCandles().Bind(...)` API 完成，不再需要手动维护指标缓冲区。只有当所有启用的指标同时给出 BUY/SELL 信号时才会触发下单，随后再通过组合过滤器确认。

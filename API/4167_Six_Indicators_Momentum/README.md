@@ -1,4 +1,5 @@
 # Six Indicators Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the MetaTrader 4 expert advisor **6xIndics_M** using the StockSharp high-level API. It mixes six momentum inputs derived from Bill Williams' Accelerator Oscillator (AC) and Awesome Oscillator (AO) and feeds them through a selectable decision matrix. A slow stochastic oscillator acts as the final filter. Only one position is open at a time; martingale money management, stop-loss/take-profit and optional trailing stops emulate the original behaviour.
 

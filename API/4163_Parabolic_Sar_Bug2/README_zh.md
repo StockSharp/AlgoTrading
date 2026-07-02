@@ -1,4 +1,5 @@
 # 抛物线转向 Bug 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **抛物线转向 Bug 2 策略** 是将 MetaTrader 专家顾问 `pSAR_bug2`（位于 `MQL/9503` 目录）移植到 StockSharp 高层 API 的结果。原始 EA 在抛物线 SAR 第一次翻到价格另一侧时立即采取操作：当指标点跳到收盘价下方时，系统会平掉所有空头并开立多头；当指标点跳到收盘价上方时，则执行相反的逻辑。止损和止盈距离都以价格点为单位计算，与 MetaTrader 中使用 `Point` 值的方式完全一致。

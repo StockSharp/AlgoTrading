@@ -1,4 +1,5 @@
 # Multi Strategy Combo Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Multi Strategy Combo Strategy** is a C# conversion of the MetaTrader 4 "Multi-Strategy iFSF" expert advisor. The original EA combines multiple indicators (MA, RSI, MACD, Stochastic, SAR) and wraps them with trend, Bollinger range and noise filters. The StockSharp port preserves the same idea using high-level `SubscribeCandles().Bind(...)` streams and indicator classes. Every enabled indicator produces a BUY/SELL vote; only when all votes agree does the strategy execute an order. Additional filters emulate the EA's combo modes.

@@ -1,4 +1,5 @@
 # Grail Expert MA
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Grail Expert MA is a StockSharp port of the MetaTrader 4 expert advisor `_GrailExpertMAV1_0`. The system searches for fresh breakouts beyond the recent high/low channel and waits for a pullback before joining the move. An exponential moving average of the typical price provides the directional bias: trades are only allowed when the EMA has gained or lost a configurable number of pips across the last two completed candles. Risk management mirrors the original expert with pip-based stop-loss and take-profit distances and ignores new entries while a position is active.

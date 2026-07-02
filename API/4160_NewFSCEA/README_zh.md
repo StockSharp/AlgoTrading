@@ -1,4 +1,5 @@
 # New FSCEA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 New FSCEA 策略源自 MetaTrader 4 专家顾问 `new_fscea.mq4`，属于典型的 MACD 趋势追踪系统。策略将 MACD 信号线交叉、带位移的 EMA 斜率过滤、固定点数止盈以及跟踪止损结合在一起，仅在市场中保持一笔持仓。

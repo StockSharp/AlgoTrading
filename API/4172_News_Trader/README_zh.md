@@ -1,4 +1,5 @@
 # News Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了原始的 **NewsTrader.mq4** 脚本：在重要新闻发布前同时布设多空方向的突破挂单。一旦进入预设的倒计时（默认提前 10 分钟），策略会发送买入止损和卖出止损委托，并在任一方向成交后立即附加止损/止盈保护。
 

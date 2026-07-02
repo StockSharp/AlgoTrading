@@ -1,4 +1,5 @@
 # New FSCEA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The New FSCEA strategy is a MACD-based trend following system that was ported from the original MetaTrader 4 expert advisor `new_fscea.mq4`. The strategy combines a classic MACD crossover confirmation with an EMA slope filter, static take-profit targets, and a trailing stop to manage open positions. It trades a single symbol at a time and opens only one position in the market.

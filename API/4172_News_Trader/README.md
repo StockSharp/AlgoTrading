@@ -1,4 +1,5 @@
 # News Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the behavior of the original **NewsTrader.mq4** script by arming both sides of the market shortly before a scheduled macroeconomic release. Ten minutes ahead of the configured news timestamp the bot submits a pair of breakout stop orders and immediately attaches protective exits when one side is triggered.
 

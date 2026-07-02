@@ -1,4 +1,5 @@
 # 六指标动量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复刻 MetaTrader 4 专家顾问 **6xIndics_M**。它将来自比尔·威廉姆斯 Accelerator Oscillator（AC）和 Awesome Oscillator（AO）的六个动量输入组合在一起，通过可配置的判定矩阵生成交易信号，并用慢速随机指标作为最终过滤器。策略始终只保持一笔仓位，并提供马丁格尔加仓、止损/止盈以及可选的追踪止损，以完全对应原始 EA 的行为。
 

@@ -1,4 +1,5 @@
 # Envelope MA 空头策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Envelope MA 空头策略** 是将 MetaTrader 专家顾问 `EnvelopeMA.mq4`（编号 9533）移植到 StockSharp 的 C# 实现。策略在 15 分钟蜡烛图上运行，只做空头方向。它使用高价的指数移动平均（EMA）生成包络线，同时计算两条基于低价的 EMA，并通过三组不同参数的抛物线 SAR 进行过滤。当价格回调至包络下半部分时，策略会在包络下轨附近挂出卖出止损单；订单成交后，使用固定的止损/止盈距离和指标条件管理仓位。

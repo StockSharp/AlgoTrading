@@ -1,4 +1,5 @@
 # Envelope MA Short Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Envelope MA Short Strategy** is a C# port of the MetaTrader expert advisor `EnvelopeMA.mq4` (ID 9533). It recreates the original short-only breakout logic on 15-minute candles by combining an exponential moving average envelope with two additional EMAs and a trio of Parabolic SAR filters. The strategy watches for pullbacks of price and the fast EMA into the lower half of the envelope, then arms a pending sell-stop order at the envelope's lower boundary. When the order fills, it manages the short position with fixed stop-loss and take-profit levels as well as indicator-based exit rules.

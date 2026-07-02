@@ -1,4 +1,5 @@
 # Grail Expert MA
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Grail Expert MA 是 MetaTrader 4 专家 `_GrailExpertMAV1_0` 在 StockSharp 平台上的移植版本。策略跟踪最近若干根 K 线的高点和低点通道，当行情突破该通道并形成足够的空间后，等待价格回撤到预设水平再入场。典型价格（(最高价 + 最低价 + 收盘价)/3）的指数移动平均线提供方向过滤——只有当最近两根已完成 K 线之间的 EMA 变化超过指定点数时才允许交易。风险控制与原策略一致，使用固定点差的止损、止盈，并且在已有持仓时禁止生成新的订单。

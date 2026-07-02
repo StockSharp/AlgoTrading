@@ -1,4 +1,5 @@
 # Стратегия Multi Strategy Combo
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Multi Strategy Combo Strategy** — порт на C# оригинального советника MetaTrader 4 «Multi-Strategy iFSF». Стратегия объединяет сигналы индикаторов MA, RSI, MACD, Stochastic и Parabolic SAR, а также дополняет их фильтрами тренда, диапазона по Боллинджеру и шумовым фильтром. В StockSharp логика реализована через высокоуровневые подписки `SubscribeCandles().Bind(...)`, что исключает ручную работу с буферами индикаторов. Сделки совершаются только тогда, когда все задействованные индикаторы единогласно подают сигнал BUY или SELL, после чего применяются дополнительные фильтры-комбинации.
