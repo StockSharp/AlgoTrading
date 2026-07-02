@@ -1,4 +1,5 @@
 # ErrorEA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ErrorEA Strategy** is a StockSharp port of the MetaTrader advisor `errorEA.mq4`. The original expert compared the +DI and -DI components of the Average Directional Index and kept stacking market orders in the detected trend direction while applying a very large safety stop-loss and a tight scalping take-profit. This C# version recreates the same idea with StockSharp's high-level API, adds clear parameter controls, and documents the risk model explicitly.

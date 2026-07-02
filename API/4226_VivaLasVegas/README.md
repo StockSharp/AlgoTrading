@@ -1,4 +1,5 @@
 # Viva Las Vegas Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Viva Las Vegas is a playful money-management expert that randomly buys or sells the attached instrument and then lets one of five staking systems decide the size of the next wager. The StockSharp port keeps the original MetaTrader behaviour by:

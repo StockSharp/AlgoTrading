@@ -1,4 +1,5 @@
 # 4218 RSI MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# port of the original MetaTrader expert advisor located in `MQL/9925`. It recreates the RSI_MA momentum oscillator by combining a classic RSI with the slope of an exponential moving average built on the weighted price `(High + Low + 2 * Close) / 4`. Signals are generated on completed candles only, keeping the behaviour identical to the source implementation.

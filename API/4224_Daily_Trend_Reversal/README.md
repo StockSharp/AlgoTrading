@@ -1,4 +1,5 @@
 # Daily Trend Reversal
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Daily Trend Reversal is a port of the MetaTrader 4 expert advisor `dailyTrendReversal_D1`. The strategy anchors intraday trades to the current day's open, high, and low, and only participates when both price action and the Commodity Channel Index (CCI) confirm the same directional bias. Trading is limited to a configurable GMT session, optionally halts after reaching a daily profit goal, and can exit positions immediately when the filters flip to the opposite side.

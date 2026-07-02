@@ -1,4 +1,5 @@
 # Daily Trend Reversal
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Daily Trend Reversal 是 MetaTrader 4 策略 `dailyTrendReversal_D1` 的移植版本。策略以当日的开盘价、最高价和最低价为参照，只在价格行为与商品通道指数（CCI）共同指向同一方向时参与交易。策略限定在可配置的 GMT 交易时段内执行，达到每日盈利目标后可以自动停止，并在过滤条件反向时立即平仓。

@@ -1,4 +1,5 @@
 # X Bug Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **X Bug Strategy** is a moving average crossover system converted from the MQL4 expert advisor with the same name. It compares two simple moving averages calculated on the median candle price. When the fast average crosses above or below the slow average, the strategy opens a position in the direction of the crossover. The implementation reproduces the original Expert Advisor features including optional signal reversal, automatic position closing on opposite signals, and pip-based protective orders.

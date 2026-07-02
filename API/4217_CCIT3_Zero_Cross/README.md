@@ -1,4 +1,5 @@
 # CCIT3 Zero Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The CCIT3 Zero Cross strategy is a StockSharp port of the MetaTrader 5 expert advisor that trades zero-line reversals of the CCIT3 oscillator. The indicator is built by applying the Tillson T3 smoothing chain to a Commodity Channel Index (CCI). Whenever the smoothed oscillator switches sign the strategy either opens a new position in the direction of the flip or, if configured, closes the current position and reverses it.

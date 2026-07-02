@@ -1,4 +1,5 @@
 # CCIT3 零轴反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 CCIT3 Zero Cross 策略是 MetaTrader 5 专家顾问的 StockSharp 版本，核心思想是交易 CCIT3 振荡指标穿越零轴的时刻。该指标通过将 Tillson T3 平滑链应用到商品通道指数（CCI）上构建。当平滑后的数值改变正负号时，策略会按照信号方向开仓，或者在启用了反向模式时先平掉当前头寸并建立反向仓位。

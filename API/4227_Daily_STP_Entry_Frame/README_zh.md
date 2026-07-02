@@ -1,4 +1,5 @@
 # 日线 STP 入场框架策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略简介
 该策略基于 MetaTrader EA “Daily STP Entry Frame”，使用 StockSharp 高级 API 重新实现。系统在每天开盘后，根据上一交易日的高点和低点预先放置突破方向的止损挂单，并通过多重过滤条件确保当前价格已经接近关键区间。策略特别适用于外汇品种，默认把“基点”视为五位报价下的 0.0001。
@@ -66,4 +67,3 @@
 - 在真实交易前，通过 StockSharp Designer 进行参数回测与优化。
 - 确保所选品种已正确设置 `PriceStep`、`StepPrice` 与 `VolumeStep`，否则点值换算会出现误差。
 - 可结合平台的组合风控、滑点模拟等功能强化风险控制。
-

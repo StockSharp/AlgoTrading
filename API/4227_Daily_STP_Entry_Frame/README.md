@@ -1,4 +1,5 @@
 # Daily STP Entry Frame Strategy (StockSharp)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Daily STP Entry Frame Strategy** replicates the behaviour of the original MetaTrader expert advisor "Daily STP Entry Frame" using the StockSharp high level API. The system prepares breakout stop orders at the start of each new trading day. Entry prices are derived from the previous day's high and low, with additional filters to ensure the market is positioned near these extremes before arming orders. The logic is tailored for Forex-style instruments where "base points" correspond to one tenth of a pip for five-digit quotes.
@@ -67,4 +68,3 @@ The **Daily STP Entry Frame Strategy** replicates the behaviour of the original 
 - Assign a Forex instrument with properly configured `PriceStep`, `StepPrice`, and `VolumeStep` values to ensure accurate sizing.
 - Combine the strategy with StockSharp risk controls (portfolio limits, connector-level protections) when running live.
 - Optimise `ThresholdPoints`, `TrailingSlope`, and `PercentOfProfit` using Designer or Runner to adapt the breakout sensitivity to specific symbols.
-

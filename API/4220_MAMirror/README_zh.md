@@ -1,4 +1,5 @@
 # MA Mirror 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MA Mirror 策略是 MetaTrader 专家顾问 *MA_MirrorEA* 的移植版本。系统比较两个使用同一周期的简单移动平均线，但

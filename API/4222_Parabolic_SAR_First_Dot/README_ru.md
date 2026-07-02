@@ -1,4 +1,5 @@
 # Стратегия Parabolic SAR First Dot
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Parabolic SAR First Dot Strategy** — это конвертация MetaTrader-советника `pSAR_bug_4` из папки `MQL/9954` на высокоуровневый API StockSharp. Система реагирует на самый первый разворот Parabolic SAR на противоположную сторону цены. Когда точки SAR перемещаются под цену закрытия, открывается длинная позиция; если точки оказываются над закрытием, открывается короткая сделка. Каждая позиция защищена фиксированными стоп-лоссом и тейк-профитом, выраженными в «пунктах» Parabolic SAR по аналогии с оригиналом.

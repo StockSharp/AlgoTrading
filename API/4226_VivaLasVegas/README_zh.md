@@ -1,4 +1,5 @@
 # Viva Las Vegas 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Viva Las Vegas 是一个充满娱乐性的资金管理专家顾问，它会在每次机会随机选择做多或做空，然后交由五种经典的倍投系统之一来决定下一笔仓位的大小。StockSharp 版本完整保留了原始 MetaTrader 行为：

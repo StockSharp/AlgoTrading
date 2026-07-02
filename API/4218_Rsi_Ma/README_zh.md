@@ -1,4 +1,5 @@
 # 4218 RSI MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 `MQL/9925` 中 MetaTrader 专家的 C# 移植版本。它通过 `(High + Low + 2 * Close) / 4` 的加权价格计算 EMA 斜率，并将其与传统 RSI 相乘，从而重建 RSI_MA 动量指标。仅使用收盘完成的 K 线参与计算，以保持与原始 EA 一致的信号节奏。

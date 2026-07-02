@@ -1,4 +1,5 @@
 # DVD 100-50 Cent 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 DVD 100-50 cent 是一个从 MT4 专家顾问移植而来的逆势限价策略。算法同时观察 M1、M30、H1、D1 四个周期，对潜在交易机会打分，然后在最近的“100 价位”附近挂出买入或卖出限价单。当挂单成交后，策略会按照预先计算好的止损与止盈水平管理仓位。

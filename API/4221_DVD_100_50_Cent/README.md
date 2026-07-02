@@ -1,4 +1,5 @@
 # DVD 100-50 Cent Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The DVD 100-50 cent strategy is a contrarian limit-order system ported from the original MT4 expert advisor. The logic evaluates the market across four timeframes (M1, M30, H1, D1) and scores potential setups before parking buy or sell limit orders around the nearest "100 level" price grid. When the limit order is filled the strategy manages the position with pre-calculated stop-loss and take-profit levels.

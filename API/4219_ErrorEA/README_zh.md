@@ -1,4 +1,5 @@
 # ErrorEA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ErrorEA** 是 MetaTrader 专家顾问 `errorEA.mq4` 的 StockSharp 移植版本。原始 EA 通过比较 Average Directional Index 指标的 +DI 与 -DI 线，在确认趋势方向后不断加仓，同时放置一个非常远的止损与一个很小的剥头皮止盈。C# 版本沿用了同样的思路，使用 StockSharp 的高级 API 实现下单，并在文档中详细说明风险控制规则。

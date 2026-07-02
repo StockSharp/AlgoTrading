@@ -1,4 +1,5 @@
 # Parabolic SAR First Dot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Parabolic SAR First Dot Strategy** 是对 `MQL/9954` 目录中 MetaTrader 专家顾问 `pSAR_bug_4` 的高层 API 迁移。策略关注 Parabolic SAR 第一次跳到价格另一侧的时刻：当 SAR 点位从价格上方翻到下方时买入，从下方翻到上方时卖出。每笔仓位都使用固定的止损和止盈距离进行保护，与原始 MQL 版本保持一致。
@@ -31,4 +32,4 @@
 ## 转换说明
 - MetaTrader 中的止损与止盈是由经纪商托管的挂单；在 StockSharp 中通过监控蜡烛高低价并在突破时发送市价单来模拟。
 - 原策略在 `StopMult` 为真时会把距离乘以 10，以适应带小数点报价的经纪商。本实现通过 `UseStopMultiplier` 保留了该开关。
-- 代码完全使用高层 API（`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`），遵循项目要求。本任务不创建 Python 版本。 
+- 代码完全使用高层 API（`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`），遵循项目要求。本任务不创建 Python 版本。

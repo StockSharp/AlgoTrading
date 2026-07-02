@@ -1,4 +1,5 @@
 # X Bug 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **X Bug 策略** 源自同名的 MQL4 智能交易系统，是一套基于移动平均线交叉的趋势跟随方案。策略使用蜡烛图的中价来计算快、慢两条简单移动平均线，当快线向上或向下穿越慢线时，按照交叉方向建立仓位。本实现保留了原版 EA 的核心特性，包括信号反向、反向信号时自动平仓以及以点（pip）为单位的风控设置。

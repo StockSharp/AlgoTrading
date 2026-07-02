@@ -1,4 +1,5 @@
 # Parabolic SAR First Dot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Parabolic SAR First Dot Strategy** is the StockSharp high-level conversion of the MetaTrader expert advisor `pSAR_bug_4` from the folder `MQL/9954`. The system reacts to the very first dot of the Parabolic SAR that appears on the opposite side of price. When the SAR flips below the close, a long trade is opened; when the SAR jumps above the close, a short trade is executed. Every position is protected with fixed stop-loss and take-profit distances expressed in Parabolic SAR "points", just like in the original MQL version.
