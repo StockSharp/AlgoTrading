@@ -1,5 +1,5 @@
 # ABE BE Stochastic Engulfing Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader Expert Advisor **Expert_ABE_BE_Stoch** to the StockSharp high-level API. It mixes Japanese candlestick analysis with momentum confirmation to time reversals around oversold and overbought zones. The primary signal looks for a bullish engulfing candle backed by a deeply oversold stochastic oscillator, or a bearish engulfing candle confirmed by an overbought oscillator reading. Once a position is open, the strategy relies on stochastic threshold crosses to manage exits, replicating the "vote" mechanics of the original expert.
 

@@ -1,4 +1,5 @@
 # Стратегия FiveMinuteRsiCci
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 `FiveMinuteRsiCciStrategy` — порт советника MetaTrader 4 **5Mins Rsi Cci EA.mq4** на платформу StockSharp. Оригинальный алгоритм торгует пятиминутные свечи, комбинируя пробой уровней RSI с фильтром из сглаженной/экспоненциальной средних по цене открытия и полярностью двух индикаторов CCI. Перенос сохраняет торговые правила и использует высокоуровневый API StockSharp для подписки на данные, расчёта индикаторов и управления рисками.
 

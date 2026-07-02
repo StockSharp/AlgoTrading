@@ -1,4 +1,5 @@
 # Стратегия Range Breakout Weekly (ID 3412)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Range Breakout Weekly** — это реализация эксперта MetaTrader 5 `RangeBreakout.mq5`, переписанная на высокоуровневый API StockSharp. Алгоритм еженедельно подготавливает торговый диапазон для заданного дня недели и часа, а затем открывает единственную позицию при пробое верхней или нижней границы. Маркетинговое масштабирование объёма и механизм компенсации убытков сохранены, при этом используются подписки StockSharp на свечи, котировки Level1 и индикаторы.
 

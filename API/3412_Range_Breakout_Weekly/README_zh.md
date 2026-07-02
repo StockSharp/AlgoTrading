@@ -1,4 +1,5 @@
 # 每周区间突破策略（ID 3412）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **每周区间突破策略** 是 MetaTrader 5 专家顾问 `RangeBreakout.mq5` 的 StockSharp 高级 API 复刻版本。策略会在每周指定的交易日和小时收盘后计算突破区间，当后续价格向上或向下突破该区间时开仓，仅维持一笔仓位。马丁格尔加仓与亏损补偿机制完整保留，同时借助 StockSharp 的蜡烛、Level1 行情与指标绑定接口实现。
 

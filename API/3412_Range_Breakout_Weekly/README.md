@@ -1,4 +1,5 @@
 # Range Breakout Weekly Strategy (ID 3412)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Range Breakout Weekly Strategy** is a StockSharp high-level API conversion of the MetaTrader 5 expert advisor `RangeBreakout.mq5`. The system prepares breakout levels once per week using a configurable weekday and hour, then opens a single trade when price breaks above or below the calculated range. Martingale-style position sizing and loss-compensation logic mirror the original script, while the implementation leverages StockSharp subscriptions for candles, Level 1 quotes, and indicator binding.
 

@@ -1,4 +1,5 @@
 # Potential Entries 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Potential Entries Strategy** 复刻了 `EA_PotentialEntries.mq5` 智能交易系统的思想。策略每次评估最近两根已经收盘的蜡烛，寻找反转或动能累积形态。当检测到预设模式时，只在选定方向（做多或做空）开仓，对应模式通过 `Pattern Side` 参数切换。入场后会根据两根蜡烛的极值重新计算保护价位，从而与原始 MetaTrader 版本的止损设置保持一致。

@@ -1,4 +1,5 @@
 # NNFX Auto Trade Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **NNFX Auto Trade Strategy** replicates the risk-sizing and management workflow of the original NNFX MetaTrader 4 panel inside StockSharp. Instead of a graphical interface, the strategy exposes manual commands through parameters. Traders can request long or short entries, instantly flatten exposure, or apply breakeven and trailing logic that mirrors the expert advisor.

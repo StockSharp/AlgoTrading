@@ -1,4 +1,5 @@
 # NNFX Auto Trade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **NNFX Auto Trade Strategy** 将原始 NNFX MetaTrader 4 面板移植到 StockSharp，通过参数而不是图形界面执行手动命令。交易者可以触发多空入场、立即平仓或单次执行保本与拖尾规则，完全遵循原策略的风险管理流程。

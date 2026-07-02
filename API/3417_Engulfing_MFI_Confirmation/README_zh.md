@@ -1,4 +1,5 @@
 # Engulfing MFI Confirmation 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 专家顾问 "Expert_ABE_BE_MFI" 的交易逻辑。通过检测日式蜡烛图的吞没形态，并辅以资金流量指标（Money Flow Index，MFI）确认信号。当出现看涨吞没且 MFI 位于超卖区域时开多；当出现看跌吞没且 MFI 处于超买区域时开空。MFI 穿越关键阈值时表示动能反转，用于平仓。
 

@@ -1,4 +1,5 @@
 # Стратегия NNFX Auto Trade
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **NNFX Auto Trade Strategy** переносит панель ручной торговли NNFX из MetaTrader 4 в StockSharp. Вместо графического интерфейса используются параметры стратегии: трейдер включает входы, переводит позицию в безубыток и запускает трейлинг одним кликом.

@@ -1,5 +1,5 @@
 # 5Mins Envelopes
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **5Mins Envelopes** 策略复刻自 MetaTrader 专家顾问，围绕线性加权移动平均线 (LWMA) 构建包络，在 5 分钟周期上捕捉价格的极端偏离并逆向进场。
 策略检测价格是否远离包络带并期待回归均值，同时保留原策略中的点差过滤、固定止损、可选止盈以及移动止损管理。

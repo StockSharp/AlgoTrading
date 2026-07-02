@@ -1,5 +1,5 @@
 # ABE BE CCI 吞没策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 5 专家顾问 **Expert_ABE_BE_CCI**（目录 `MQL/306`）移植到 StockSharp。原始 EA 结合了看涨/看跌吞没形态与 Commodity Channel Index (CCI) 指标，并使用固定手数管理。C# 版本保留相同的判定规则，同时利用 StockSharp 的高层订阅与指标绑定功能，使实现更加清晰。
 

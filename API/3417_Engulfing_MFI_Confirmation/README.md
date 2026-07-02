@@ -1,4 +1,5 @@
 # Engulfing MFI Confirmation Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert "Expert_ABE_BE_MFI" by combining Japanese candlestick engulfing patterns with confirmation from the Money Flow Index (MFI) oscillator. A long position is opened when a bullish engulfing candle appears while money flow stays in an oversold zone. A short position is opened when a bearish engulfing candle forms under overbought money-flow conditions. Positions are closed when MFI crosses dynamic exit thresholds, signalling momentum reversals.
 

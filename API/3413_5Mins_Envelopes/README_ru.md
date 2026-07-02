@@ -1,5 +1,5 @@
 # 5Mins Envelopes
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **5Mins Envelopes** повторяет оригинального советника MetaTrader, торгующего пятиминутные свечи относительно конвертов на основе линейно-взвешенной скользящей средней.
 Стратегия ищет экстремальные выбросы цены за пределы полос и входит в направлении возврата к среднему значению.

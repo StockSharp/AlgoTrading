@@ -1,5 +1,5 @@
 # ABE BE 随机指标吞没策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把 MetaTrader 顾问 **Expert_ABE_BE_Stoch** 迁移到 StockSharp 的高级 API。它结合日本蜡烛图与随机指标动量，用于捕捉超买/超卖区域附近的反转。当检测到被随机指标 `%D` 线强力确认的看涨吞没或看跌吞没形态时触发开仓；仓位建立后，再利用随机指标越过 20 与 80 的阈值来管理离场，完整复刻原始 MQL 专家的“投票”机制。
 

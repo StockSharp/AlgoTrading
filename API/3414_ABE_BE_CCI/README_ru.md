@@ -1,5 +1,5 @@
 # Стратегия ABE BE CCI Engulfing
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Данный проект переносит эксперта MetaTrader 5 **Expert_ABE_BE_CCI** (папка `MQL/306`) в экосистему StockSharp. Исходный робот использует свечные модели «Bullish/Bearish Engulfing», подтверждённые индикатором Commodity Channel Index (CCI), и торгует фиксированным объёмом. C# версия полностью воспроизводит логику принятия решений, но реализована через высокоуровневые подписки и индикаторы StockSharp, поэтому код становится компактнее и прозрачнее.
 

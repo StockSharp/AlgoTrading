@@ -1,4 +1,5 @@
 # Peter Panel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Peter Panel 策略** 将 MetaTrader 5 上的手动交易面板 “Peter Panel” 移植到 StockSharp。原始 EA 在图表上绘制三条水平线（入场、止盈、止损）以及一个按钮矩阵，交易者只需点击按钮即可利用这些价格快速下单。本 C# 版本保留原有的决策流程，但通过策略参数来模拟面板按钮。只要将某个布尔参数设为 `true`，对应的操作就会立即执行，随后参数自动回到 `false`。
 

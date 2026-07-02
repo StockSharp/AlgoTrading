@@ -1,4 +1,5 @@
 # FiveMinuteRsiCci 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 `FiveMinuteRsiCciStrategy` 是 MetaTrader 4 专家顾问 **5Mins Rsi Cci EA.mq4** 的 StockSharp 版本。原脚本在 5 分钟周期上运行，通过 RSI 阈值突破、开盘价的平滑/指数均线过滤以及快慢 CCI 的正负性来决定方向。C# 移植版沿用相同逻辑，同时利用 StockSharp 的高级 API 完成数据订阅、指标绑定与风控管理。
 

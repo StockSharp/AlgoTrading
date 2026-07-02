@@ -1,4 +1,5 @@
 # FiveMinuteRsiCci Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 `FiveMinuteRsiCciStrategy` is a StockSharp port of the MetaTrader 4 expert advisor **5Mins Rsi Cci EA.mq4**. The original script trades five-minute candles by combining an RSI threshold cross with a smoothed/EMA moving-average filter and the polarity of two CCI indicators. The C# version keeps the same decision logic while using StockSharp's high-level API for data subscriptions, indicator binding, and risk management.
 

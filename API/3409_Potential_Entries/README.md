@@ -1,4 +1,5 @@
 # Potential Entries Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Potential Entries Strategy** replicates the logic of the original `EA_PotentialEntries.mq5` expert advisor. It analyses pairs of the most recent finished candles and issues trades when specific two-candle reversal or momentum patterns appear. The strategy works in one direction at a time (bullish or bearish), selectable through the `Pattern Side` parameter. Protective stop levels are recalculated on every entry to mirror the original MetaTrader stop placement at the extreme of the analysed candle pair.

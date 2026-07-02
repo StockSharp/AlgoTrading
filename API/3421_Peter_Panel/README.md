@@ -1,4 +1,5 @@
 # Peter Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Peter Panel Strategy** ports the discretionary MetaTrader 5 control panel "Peter Panel" into StockSharp. The original expert advisor drew three horizontal lines (entry, take-profit, and stop-loss) and a button matrix that let the trader instantly submit market or pending orders using those levels. This C# strategy keeps the decision flow intact while replacing the graphical panel with interactive strategy parameters. Every toggle behaves like the original button: setting the parameter to `true` performs the action immediately and the flag resets back to `false`.
 
