@@ -1,4 +1,5 @@
 # Two MA Four Level 分层策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 专家顾问 `ytg_2MA_4Level`。它比较一条快速均线与一条慢速均线，当快速线直接或在四个可调的偏移带内穿越慢速线时进场。止损和止盈距离以点（pip）表示，并通过 StockSharp 的保护模块对称设置，完全沿用原始 EA 的风险控制。

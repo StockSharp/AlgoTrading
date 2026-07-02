@@ -1,5 +1,5 @@
 # Alliheik Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略来自 MetaTrader 4 专家顾问 **alliheik.mq4** 的转换。它将双重平滑的 Heiken Ashi 蜡烛与前移的鳄鱼指标下颚线结合使用。当平滑后的 Heiken Ashi 缓冲区交叉时入场，离场依靠下颚过滤、固定止盈以及基于价格的移动止损。
 

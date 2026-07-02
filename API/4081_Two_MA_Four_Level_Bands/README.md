@@ -1,4 +1,5 @@
 # Two MA Four Level Bands Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy recreates the MetaTrader expert advisor `ytg_2MA_4Level`. It compares a fast moving average with a slower one and triggers entries when the fast curve crosses the slow curve either directly or within four configurable offset bands. Positions are protected by symmetric stop-loss and take-profit distances expressed in pips, just like in the original implementation.

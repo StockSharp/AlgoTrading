@@ -1,4 +1,5 @@
 # Шаблон торгового робота AIS3
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Шаблон AIS3 — это прорывная стратегия MetaTrader, использующая два согласованных таймфрейма. Основной таймфрейм (по умолчанию 15

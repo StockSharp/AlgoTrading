@@ -1,4 +1,5 @@
 # Open Time Daily Window Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the behaviour of the MetaTrader expert "OpenTime". It places market orders at a configurable time of day, optionally closes all exposure during a dedicated exit window, and applies simple money-management rules such as fixed stop-loss, take-profit, and trailing protection. The port uses the high-level StockSharp `Strategy` API, so the strategy can be combined with other components inside the framework.

@@ -1,5 +1,5 @@
 # Parabolic SAR Limit
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Parabolic SAR Limit 是 MT4 指标机器人 **ytg_Parabolic_exp.mq4** 的 StockSharp 版本。策略始终将买入和卖出限价单锁定在 Parabolic SAR 的数值附近，让价格“拉”单入场；成交后，再根据 K 线的最高价和最低价模拟原脚本中的止损/止盈退出流程。
 

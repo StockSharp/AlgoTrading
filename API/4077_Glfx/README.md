@@ -1,4 +1,5 @@
 # GLFX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MetaTrader 4 expert advisor **GLFX** rewritten for StockSharp's high-level API. The port preserves the original idea of combining higher-timeframe confirmations with strict money-management gates while removing the massive collection of rarely-used filters that depended on external indicators.
 

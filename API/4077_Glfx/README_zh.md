@@ -1,4 +1,5 @@
 # GLFX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 4 的 **GLFX** 专家顾问移植到 StockSharp 高阶 API。保留了原版“先通过高一级别图表确认、再开仓”的核心思想，同时剔除了依赖外部指标的大量附加模块，使策略更易维护。
 

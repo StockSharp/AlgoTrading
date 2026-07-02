@@ -1,4 +1,5 @@
 # AIS4 Trade Machine 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **AIS4 Trade Machine Strategy** 将 MetaTrader 上的手动专家顾问“AIS4 Trade Machine”移植到 StockSharp。它延续原始脚本“一次仅持有一笔仓位”的理念：操作者给出绝对的止损和止盈价格，选择要执行的指令，策略会根据当前账户权益和品种参数自动估算下单量。市价单成交后，策略会立即挂出成对的保护性委托（止损 + 限价），把既定的风险与目标直接锁定在交易所。

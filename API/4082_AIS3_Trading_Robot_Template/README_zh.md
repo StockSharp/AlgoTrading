@@ -1,4 +1,5 @@
 # AIS3 交易机器人模板
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AIS3 交易机器人模板是一个使用双时间框架的突破策略。主时间框架（默认 15 分钟）负责记录上一根蜡烛的高低点、收盘价和区间，副时间框架（默认 1 分钟）度量即时波动以控制跟踪止损。本策略在 StockSharp 高级 API 上重写了原始 MetaTrader 模板中的入场、仓位管理与风控规则，可直接在 Designer、Shell 或自定义宿主中运行。

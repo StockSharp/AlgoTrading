@@ -1,4 +1,5 @@
 # 定时开仓策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略重现了 MetaTrader 专家顾问 “OpenTime” 的核心逻辑。它会在每天指定的时间窗口内提交市价单，在单独的平仓窗口中选择性地退出全部仓位，并通过固定止损、止盈以及追踪止损等简易风控规则保护资金。移植版本完全基于 StockSharp 的高级 `Strategy` API，可方便地与平台内的其他组件组合使用。

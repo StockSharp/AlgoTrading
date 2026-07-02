@@ -1,5 +1,5 @@
 # Стратегия Alliheik Trader
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация советника MetaTrader 4 **alliheik.mq4**. Стратегия сочетает двойное сглаживание свечей Heiken Ashi с линией челюсти аллигатора, смещённой вперёд. Входы формируются на пересечении сглаженных буферов Heiken Ashi, а выходы зависят от пересечения цены с челюстью, фиксированных целей и трейлинг-стопа.
 

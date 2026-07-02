@@ -1,4 +1,5 @@
 # AIS2 Trading Robot 20005 (StockSharp port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -55,4 +56,3 @@ All numeric parameters expose `SetCanOptimize()` (where meaningful) so they can 
 - `README.md` – English description (this file).
 - `README_zh.md` – Chinese translation.
 - `README_ru.md` – Russian translation.
-

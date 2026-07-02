@@ -1,4 +1,5 @@
 # ADX System DI 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ADX System 策略是 MetaTrader 4 专家顾问 `ADX_System.mq4` 的 StockSharp 版本。原始 EA 会比较最近两根收盘蜡烛的

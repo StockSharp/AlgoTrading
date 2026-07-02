@@ -1,4 +1,5 @@
 # AIS4 Trade Machine Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **AIS4 Trade Machine Strategy** is a manual trading assistant that ports the original MetaTrader "AIS4 Trade Machine" expert advisor to StockSharp. It keeps the one-position workflow from the script: the operator supplies absolute stop-loss and take-profit levels, issues a command, and the strategy calculates the trade size based on the current account equity and instrument specifications. After the market order is filled the strategy immediately submits paired protective orders (stop + limit) so the requested risk and reward levels are enforced on the exchange side.
