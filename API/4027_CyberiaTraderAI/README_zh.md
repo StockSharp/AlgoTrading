@@ -1,4 +1,5 @@
 # Cyberia Trader AI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 **CyberiaTrader.mq4 (build 8553)** 智能交易系统的 StockSharp 版本。原始 MQL 程序由一个概率模型和多种趋势过滤器组成。本转换保持同样的结构：概率模型会在不同的采样周期之间搜索最佳结果，随后 MACD、EMA 与反转检测器可以阻止或允许交易。
 

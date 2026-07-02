@@ -1,4 +1,5 @@
 # App Price Level Cross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 4 专家顾问 **BT_v4**（位于 `MQL/8543/BT_v4.mq4`）转换到 StockSharp 平台。
@@ -18,11 +19,11 @@
 ## 仓位管理
 - 当 `EnableMoneyManagement = false` 时，始终下单 `FixedVolume` 手数（等价于 MQL 中的 `Lots`）。
 - 当 `EnableMoneyManagement = true` 时，按原脚本公式计算手数：
-  
+
   \[
   \text{lot} = \text{round}_{\text{LotPrecision}} \left( \frac{\text{LotBalancePercent}}{100} \times \frac{\text{Balance}}{\text{divisor}} \right)
   \]
-  
+
   - 当 `LotPrecision = 1` 时 `divisor = 1000`，当 `LotPrecision = 2` 时 `divisor = 100`，完全复刻 `LotPrec` 的处理方式。
   - 计算结果会被约束在 [`MinLot`, `MaxLot`] 区间内，然后再次按照品种的 `VolumeStep`、`VolumeMin`、`VolumeMax` 对齐。
   - 若投资组合暂未返回余额数据，则自动回退到固定手数。

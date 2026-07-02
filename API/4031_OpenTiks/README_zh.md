@@ -1,4 +1,5 @@
 # OpenTiks 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 OpenTiks 策略将 MetaTrader 顾问 `OpenTiks.mq4` 迁移到 StockSharp 平台。原始机器人通过寻找高点和开盘价都严格

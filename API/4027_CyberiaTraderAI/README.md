@@ -1,4 +1,5 @@
 # Cyberia Trader AI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp conversion of the **CyberiaTrader.mq4 (build 8553)** expert advisor. The original MQL program mixes a
 probability engine with a collection of optional trend filters. The C# port keeps the same structure: a probability model searches

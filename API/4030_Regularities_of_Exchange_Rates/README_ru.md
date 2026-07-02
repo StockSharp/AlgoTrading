@@ -1,5 +1,5 @@
 # Стратегия Regularities of Exchange Rates
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия для StockSharp является дословной конверсией советника MetaTrader 4 **Strategy_of_Regularities_of_Exchange_Rates.mq4**. Идея проста: в заданный час формируется «коридор» из симметричных отложенных стоп-заявок, а в ночной час закрытия все позиции и заявки принудительно снимаются. Таким образом реализуется дневной брейкаут-стреддл, который живёт строго в пределах одной торговой сессии.
 

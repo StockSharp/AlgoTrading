@@ -1,5 +1,5 @@
 # 汇率规律策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 4 专家顾问 **Strategy_of_Regularities_of_Exchange_Rates.mq4** 的 StockSharp 版本。它实现了一种典型的日内突破对敲：在指定的时间同时挂出多、空方向的止损单，到了夜间的收盘时间则无条件撤单并平掉所有仓位。这样可以确保交易活动完全限制在一个交易日之内。
 

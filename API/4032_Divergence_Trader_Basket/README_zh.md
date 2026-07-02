@@ -1,4 +1,5 @@
 # Divergence Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader "Divergence Trader" 专家的 StockSharp 版本。算法比较两个可配置价格源的简单移动平均线，监测快

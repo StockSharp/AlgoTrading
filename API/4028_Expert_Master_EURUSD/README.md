@@ -1,9 +1,10 @@
 # Expert Master EURUSD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
-The Expert Master EURUSD strategy replicates the MetaTrader 4 Expert Advisor *Expert Master*.  
-It evaluates a four-candle pattern on the MACD main and signal lines (fast EMA = 5, slow EMA = 15, signal EMA = 3).  
+The Expert Master EURUSD strategy replicates the MetaTrader 4 Expert Advisor *Expert Master*.
+It evaluates a four-candle pattern on the MACD main and signal lines (fast EMA = 5, slow EMA = 15, signal EMA = 3).
 The algorithm expects the indicator to build momentum in one direction before triggering a breakout entry in the opposite direction.
 
 ## Trading Logic
@@ -22,15 +23,15 @@ The algorithm expects the indicator to build momentum in one direction before tr
 
 ## Position Management
 
-- **Exit on Momentum Loss:** A long position is closed when the current MACD main value falls below the previous one.  
+- **Exit on Momentum Loss:** A long position is closed when the current MACD main value falls below the previous one.
   Short positions are closed when the current MACD main value rises above the previous one.
-- **Trailing Stop:** After price moves by the configured number of points in favor of the trade, a trailing stop is activated.  
-  The stop is updated on every finished candle using the candle close minus/plus the trailing distance.  
+- **Trailing Stop:** After price moves by the configured number of points in favor of the trade, a trailing stop is activated.
+  The stop is updated on every finished candle using the candle close minus/plus the trailing distance.
   If the price retraces to the trailing stop, the strategy exits via a market order.
 
 ## Risk Management
 
-- Trade volume defaults to the fixed lot size but can be adjusted dynamically through the **Risk Percent** parameter.  
+- Trade volume defaults to the fixed lot size but can be adjusted dynamically through the **Risk Percent** parameter.
   When risk sizing is enabled, the strategy risks a fraction of the portfolio value on every entry, mimicking the original EA behaviour.
 
 ## Parameters
@@ -50,5 +51,5 @@ The algorithm expects the indicator to build momentum in one direction before tr
 
 ## Notes
 
-- Trade only on finished candles to stay aligned with the high-level StockSharp API.  
+- Trade only on finished candles to stay aligned with the high-level StockSharp API.
 - The conversion keeps the original EA logic, including risk-based lot sizing and trailing-stop behaviour, while adding extensive parameterization for easier optimization.

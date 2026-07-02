@@ -1,4 +1,5 @@
 # Стратегия Cyberia Trader AI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой порт на StockSharp исходного советника **CyberiaTrader.mq4 (build 8553)**. В оригинале алгоритм
 сочетает вероятностную модель и набор дополнительных фильтров. В переводе сохранена та же логика: модель подбирает лучший

@@ -1,4 +1,5 @@
 # Rabbit M3
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Rabbit M3 是 MetaTrader 4 智能交易系统 `RabbitM3`（又名“Petes Party Trick”）的移植版本。策略通过一对一小时指数移动平均线判断市场处于只做多还是只做空的状态；当快线在慢线之上时只寻找多头信号，在其之下时只允许空头信号。入场需要 Williams %R 动能穿越配合 CCI 水平过滤，而一个超长的唐奇安通道用于侦测价格是否突破原有趋势。策略还保留了原程序在大额盈利后提升下次手数的规则。

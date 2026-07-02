@@ -1,4 +1,5 @@
 # Стратегия App Price Level Cross
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 - Перенос эксперта MetaTrader 4 **BT_v4** (файл `MQL/8543/BT_v4.mq4`) на платформу StockSharp.
@@ -18,11 +19,11 @@
 ## Управление объёмом
 - При `EnableMoneyManagement = false` отправляется фиксированный объём `FixedVolume` (полный аналог параметра `Lots`).
 - При `EnableMoneyManagement = true` объём рассчитывается по формуле исходного эксперта:
-  
+
   \[
   \text{lot} = \text{round}_{\text{LotPrecision}} \left( \frac{\text{LotBalancePercent}}{100} \times \frac{\text{Balance}}{\text{divisor}} \right)
   \]
-  
+
   - Делитель `divisor = 1000` для одной десятичной позиции и `100` для двух (точно как `LotPrec` в MQL).
   - Результат ограничивается диапазоном [`MinLot`, `MaxLot`] и дополнительно приводится к биржевым ограничениям (`VolumeStep`, `VolumeMin`, `VolumeMax`).
   - Если данные о балансе портфеля недоступны, стратегия автоматически возвращается к фиксированному объёму.

@@ -1,4 +1,5 @@
 # App Price Level Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 - Conversion of the MetaTrader 4 expert advisor **BT_v4** (`MQL/8543/BT_v4.mq4`).
@@ -18,11 +19,11 @@
 ## Position Sizing
 - `EnableMoneyManagement = false` → use `FixedVolume` (equivalent to the MQL `Lots` input).
 - `EnableMoneyManagement = true` → compute the lot using the original formula:
-  
+
   \[
   \text{lot} = \text{round}_{\text{LotPrecision}} \left( \frac{\text{LotBalancePercent}}{100} \times \frac{\text{Balance}}{\text{divisor}} \right)
   \]
-  
+
   - `divisor = 1000` for one-decimal lots and `100` for two-decimal lots (same rule as `LotPrec` in MQL).
   - The result is clamped to [`MinLot`, `MaxLot`] and then aligned with the security `VolumeStep`, `VolumeMin`, and `VolumeMax` constraints.
   - If portfolio balance data is unavailable the strategy falls back to `FixedVolume`.

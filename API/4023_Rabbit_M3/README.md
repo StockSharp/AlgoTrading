@@ -1,4 +1,5 @@
 # Rabbit M3
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Rabbit M3 is a port of the MetaTrader 4 expert advisor `RabbitM3` (also released under the name "Petes Party Trick"). The system flips between long-only and short-only regimes using a pair of hourly exponential moving averages. Momentum confirmation comes from a Williams %R cross combined with a CCI level filter, while an extremely long Donchian channel watches for price breakouts that invalidate the current trend bias. Position size can optionally grow after large winners, replicating the lot-scaling rule contained in the original code.
