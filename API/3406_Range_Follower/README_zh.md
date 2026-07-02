@@ -1,4 +1,5 @@
 # 区间跟随策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 区间跟随策略在 StockSharp 高级 API 上复现了 MetaTrader 5 专家顾问 “Range Follower”。策略利用日线的平均真实波幅 (ATR) 作为波动性基准，只要价格在当日内远离日内高点或低点达到指定阈值，便开立一次突破交易。ATR 被划分为触发段与剩余段，触发段用于判断是否入场，剩余段用于设置止盈距离，从而完整保留了原始 EA 的设计。

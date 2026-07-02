@@ -1,4 +1,5 @@
 # Стратегия CDC PL MFI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **CDC PL MFI** — перенос на StockSharp советника MetaTrader `Expert_ADC_PL_MFI` (MQL/299). Стратегия отслеживает разворотные свечные модели **Dark Cloud Cover** и **Piercing Line** и подтверждает каждую из них осциллятором **Money Flow Index (MFI)**. Реализованы исходные периоды индикаторов и пороги, добавлены опциональные стоп-лосс и тейк-профит в пунктах, а выход из позиции происходит при пересечении MFI заданных уровней разворота.

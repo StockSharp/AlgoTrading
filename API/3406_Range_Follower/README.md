@@ -1,4 +1,5 @@
 # Range Follower Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Range Follower strategy reproduces the MetaTrader 5 expert advisor "Range Follower" using the StockSharp high-level API. It monitors the current day's price range relative to a daily Average True Range (ATR) benchmark and opens a single breakout trade when price travels far enough away from the session high or low. The conversion keeps the original approach of splitting the ATR into a trigger portion and a residual portion that becomes the take-profit distance.

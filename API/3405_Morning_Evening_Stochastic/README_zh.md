@@ -1,5 +1,5 @@
 # 晨星暮星配合随机指标策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 5 专家顾问 **Expert_AMS_ES_Stoch**（晨星/暮星形态结合随机指标确认）移植到 StockSharp。代码沿用了原始的蜡烛形态识别与随机指标过滤规则，并利用高级的蜡烛订阅 API，确保所有决策都基于已经收盘的K线。
 

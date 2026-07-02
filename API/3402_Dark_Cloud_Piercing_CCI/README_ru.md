@@ -1,4 +1,5 @@
 # Стратегия Dark Cloud Piercing CCI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия является портом советника MetaTrader Expert_ADC_PL_CCI на платформу StockSharp. Алгоритм ищет на графике свечные разворотные комбинации «Пронзание» и «Темное облако» и подтверждает их с помощью индикатора Commodity Channel Index (CCI). После появления корректного паттерна и экстремального значения CCI стратегия открывает позицию в направлении разворота, а закрывает её, когда CCI выходит из зоны экстремума.

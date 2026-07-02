@@ -1,4 +1,5 @@
 # CDC PL RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **CDC PL RSI Strategy** 将 MetaTrader 专家顾问 *Expert_ADC_PL_RSI* 移植到 StockSharp 平台。策略仅分析已完成的 K 线，识别日本蜡烛图反转形态，并结合 RSI 指标进行确认。当 RSI 处于超卖区 (`RSI < 40`) 且出现 *Piercing Line* 形态时开多；当 RSI 处于超买区 (`RSI > 60`) 且出现 *Dark Cloud Cover* 形态时开空。仓位大小沿用 StockSharp 的 `Volume` 设置，保持原策略的固定手数思想。

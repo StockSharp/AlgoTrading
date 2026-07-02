@@ -1,4 +1,5 @@
 # Dark Cloud Piercing CCI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader Expert_ADC_PL_CCI advisor. It scans the price action for Piercing Line and Dark Cloud Cover candlestick reversals and uses the Commodity Channel Index (CCI) as confirmation. Once a valid pattern is detected together with an extreme CCI reading, the strategy opens a market position in the direction of the reversal and later exits when the CCI moves out of its extreme zone.

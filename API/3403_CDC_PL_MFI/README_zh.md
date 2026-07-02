@@ -1,4 +1,5 @@
 # CDC PL MFI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **CDC PL MFI 策略** 将 MetaTrader 专家顾问 `Expert_ADC_PL_MFI`（MQL/299）移植到 StockSharp 平台。策略识别两根 K 线组成的 **Dark Cloud Cover** 与 **Piercing Line** 形态，并使用 **资金流量指数（MFI）** 对信号进行确认。实现沿用了原策略的指标周期与阈值，并提供以点数表示的可选止损/止盈，同时在 MFI 穿越设定的反转水平时平仓。

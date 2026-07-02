@@ -1,4 +1,5 @@
 # CDC PL RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **CDC PL RSI Strategy** replicates the MQL Expert Advisor *Expert_ADC_PL_RSI* inside the StockSharp ecosystem. The system scans finished candles for Japanese candlestick reversal patterns and confirms entries with the Relative Strength Index (RSI). Long trades rely on the *Piercing Line* pattern during oversold RSI conditions, while short trades require the *Dark Cloud Cover* pattern combined with overbought RSI readings. The approach keeps the original money-management concept simple by using the strategy volume and letting StockSharp handle position sizing.

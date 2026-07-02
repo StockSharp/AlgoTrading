@@ -1,4 +1,5 @@
 # Basket Close Utility
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Basket Close Utility strategy mirrors the behaviour of the MetaTrader expert "Basket Close 2". It continuously monitors the floating profit and loss of every open position in the connected portfolio. When either a configurable profit objective or a loss limit is reached, the strategy sends market orders to flatten **all** exposures in every instrument involved. Optionally, it can automatically open a small test position whenever the book is flat, which is useful inside backtests for validating that the protection logic works as expected.

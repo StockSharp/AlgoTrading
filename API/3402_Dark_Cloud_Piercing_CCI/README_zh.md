@@ -1,4 +1,5 @@
 # 暗云压顶与刺透形态 CCI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader Expert_ADC_PL_CCI 顾问在 StockSharp 平台上的移植版本。它识别价格中的刺透形态和暗云压顶蜡烛反转信号，并使用商品通道指数（CCI）作为过滤与确认。当出现合格的形态并伴随极值的 CCI 读数时，策略会顺势开仓；随后当 CCI 脱离极值区域时平仓离场。

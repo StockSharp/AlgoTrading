@@ -1,4 +1,5 @@
 # CDC PL MFI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **CDC PL MFI Strategy** reproduces the MetaTrader expert advisor `Expert_ADC_PL_MFI` (MQL/299) in StockSharp. It searches for the **Dark Cloud Cover** and **Piercing Line** two-candle reversal patterns and validates each signal with the **Money Flow Index (MFI)** oscillator. The strategy uses the same indicator periods and level thresholds as the original expert, adds optional stop-loss and take-profit protection in pip units, and closes positions when the MFI crosses configurable reversal levels.

@@ -1,4 +1,5 @@
 # 篮子平仓工具
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 篮子平仓工具策略还原了 MetaTrader 专家顾问“Basket Close 2”的逻辑。策略会持续监控投资组合中所有持仓的浮动盈亏，当达到设定的盈利目标或亏损阈值时，它会向涉及的每个品种发送市价单，从而完全平掉所有仓位。为了在回测中验证风控是否正常运作，还可以在账户为空仓时自动下达一笔测试订单。
