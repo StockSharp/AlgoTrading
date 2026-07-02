@@ -1,4 +1,5 @@
 # FT TIME BIGDOG Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **FT TIME BIGDOG** strategy is a London-session breakout system converted from the MetaTrader 4 expert advisor `FT_TIME_BIGDOG.mq4` (directory `MQL/9259`).

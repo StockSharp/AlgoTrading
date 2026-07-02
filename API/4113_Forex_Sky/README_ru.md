@@ -1,4 +1,5 @@
 # Стратегия Forex Sky
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Forex Sky** — это порт советника MetaTrader `Forex_SKY.mq4`. Стратегия торгует импульсами MACD и строго придерживается исходных ограничений: не больше одной сделки на свечу и не больше одного входа в сутки. Реализация на StockSharp полностью повторяет числовые пороги и переносит логику проверки из оригинального MQL-кода.

@@ -1,4 +1,5 @@
 # Forex Sky Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Forex Sky Strategy** is a direct port of the MetaTrader expert advisor `Forex_SKY.mq4`. It trades MACD momentum swings and strictly limits itself to a single position per trading day. The StockSharp implementation keeps the original MACD thresholds and the safety check that prevents more than one order per candle.

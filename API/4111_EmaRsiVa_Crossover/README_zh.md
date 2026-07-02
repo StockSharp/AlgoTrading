@@ -1,5 +1,5 @@
 # EMA RSI 波动自适应均线交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 专家顾问 **EA_MARSI_1-02** 的直接移植版本。它监听两条 *EMA_RSI_VA* 指标线的交叉情况 —— 该指
 标由 Integer 编写，利用 RSI 推动 EMA 的自适应周期。每当慢线与快线交叉，策略都会立即翻转净头寸，以完全再现原始

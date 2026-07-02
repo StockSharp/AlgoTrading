@@ -1,4 +1,5 @@
 # Forex Sky 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Forex Sky 策略** 是 MetaTrader 智能交易系统 `Forex_SKY.mq4` 的直接移植版本。它依旧以 MACD 动能反转为核心，并保持“每天仅允许一笔交易、每根 K 线最多一笔”的原始限制。StockSharp 版本保留了所有阈值，同时使用高层 API 完成指标绑定与订单管理。

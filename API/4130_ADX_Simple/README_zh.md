@@ -1,5 +1,5 @@
 # ADX 简单趋势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 **ADX 简单趋势策略** 来自 MetaTrader 平台上的 “ADX Simple” EA。策略通过平均趋向指标（Average Directional Index，ADX）判断趋势是否增强，并利用正向/负向动向指标（DI+、DI-）确定做多或做空。只有当 ADX 主线抬升时才允许开仓，从而避免在没有趋势的市场中频繁交易。移植到 StockSharp 后，逻辑保持简洁，同时完全遵循平台的高阶 API 规范。

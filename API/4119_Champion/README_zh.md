@@ -1,4 +1,5 @@
 # 4119 Champion 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略是位于 `MQL/919/champion.mq5` 的 MetaTrader 专家顾问的 C# 高级 API 改写版。原始 EA 在 RSI 指标出现信号后同步挂出三个止损单，并为每个挂单预先设置止损/止盈；价格朝有利方向移动时再跟踪止损。本移植版本完全依赖 StockSharp 的高级接口（`SubscribeCandles`、`Bind`、`BuyStop`、`SellStop` 等）实现相同的流程。

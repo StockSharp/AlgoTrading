@@ -1,4 +1,5 @@
 # 4119 Champion Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level C# port of the MetaTrader Expert Advisor located in `MQL/919/champion.mq5`. The original EA waits for a Relative Strength Index (RSI) signal and places three stop orders in the direction of the anticipated breakout. Every pending order already includes a stop-loss and take-profit and the stop-loss is trailed whenever price moves favourably. The StockSharp version keeps the same behaviour while relying exclusively on high-level API calls (`SubscribeCandles`, `Bind`, `BuyStop`, `SellStop`, etc.).

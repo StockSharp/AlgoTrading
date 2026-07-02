@@ -1,4 +1,5 @@
 # EXP FIBO ZZ 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 EXP FIBO ZZ 策略是 MetaTrader 4 智能交易系统 `EXP_FIBO_ZZ_V1en` 的 C# 版本。它完整复刻了原始的区间突破思路：

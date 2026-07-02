@@ -1,4 +1,5 @@
 # ComFracti Fractal RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 ComFracti Fractal RSI Strategy is a StockSharp port of the MetaTrader expert *ComFracti*. The algorithm searches for directional bias using Bill Williams fractals on two timeframes and filters the signals with a fast RSI calculated on daily candles. Once a valid setup appears, the strategy opens a single position, protects it with configurable stop-loss and take-profit distances, and can optionally exit when the signal reverses or when a holding time limit is reached.

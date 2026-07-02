@@ -1,4 +1,5 @@
 # Rubberbands 3 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor **RUBBERBANDS_3**. It maintains two running price extremes, opens additional positions whenever price expands by a configurable distance, and liquidates the entire sequence once a counter-move of a given size occurs. After a retracement the strategy optionally flips to the opposite direction while monitoring a session-level profit and loss target.
 
@@ -48,4 +49,3 @@ Orders are generated from finished candles of the configured `CandleType`. The d
 - Because orders are netted, the strategy executes closing trades before opening the opposite direction. When migrating legacy data, be aware that the order history may differ from hedged platforms.
 - The `DoNow` flag only opens the very first long position. Additional entries follow the regular breakout conditions.
 - Use `QuiesceNow` when you want to leave the strategy loaded but inactive after it flattens the book.
-

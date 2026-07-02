@@ -1,5 +1,5 @@
 # Стратегия пересечения EMA RSI Volatility Adaptive
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является прямым портом советника MetaTrader **EA_MARSI_1-02**. Торговля ведётся по пересечениям двух копий
 пользовательского индикатора *EMA_RSI_VA* от Integer — это волатильно-адаптивная EMA, управляемая RSI. При каждом пересечении

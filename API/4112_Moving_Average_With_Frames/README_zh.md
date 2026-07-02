@@ -1,5 +1,5 @@
 # 移动平均与帧
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 移植自 MetaTrader 5 专家顾问 **“Moving Average with Frames”**。原版通过比较每根 K 线的开盘价和收盘价与向前平移的简单移动平均线（SMA）来生成信号，并在优化后绘制多条权益曲线。本移植版聚焦交易逻辑：仅在每根完成的 K 线后响应，在净额制度下维持单一仓位，并完整保留原策略的资金管理规则。
 

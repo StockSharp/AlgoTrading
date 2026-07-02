@@ -1,5 +1,5 @@
 # EMA RSI Volatility Adaptive Crossover Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a direct port of the MetaTrader expert advisor **EA_MARSI_1-02**. It trades crossovers between two copies of
 Integer's custom *EMA_RSI_VA* indicator, a volatility-adaptive moving average driven by the Relative Strength Index (RSI).

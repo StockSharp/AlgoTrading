@@ -1,5 +1,5 @@
 # Moving Average with Frames
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Conversion of the MetaTrader 5 expert advisor **"Moving Average with Frames"**. The original system evaluates the relationship between each candle's open/close prices and a shifted simple moving average (SMA) while displaying multiple optimization "frames" on charts. This StockSharp port focuses on the trading logic: it reacts only once per completed bar, opens a single netting position, and mirrors the money-management rules from the source code.
 

@@ -1,4 +1,5 @@
 # Rubberbands 3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 4 专家顾问 **RUBBERBANDS_3** 的 StockSharp 版本。算法跟踪价格的最高值与最低值，当价格按设定的点数向外扩张时逐步加仓，并在出现指定幅度的回撤时一次性平掉整组仓位。如果触发了反向信号，策略会在平仓后尝试在相反方向重新建立仓位，同时监控本交易日的累计盈亏。
 
@@ -48,4 +49,3 @@
 - 由于净持仓机制，策略会先平仓再在反向方向开仓，因此报表可能与原版的对冲模式存在差异。
 - `DoNow` 仅影响第一笔交易，后续加仓完全遵循价格突破逻辑。
 - 若需要在平仓后暂时停用策略，可将 `QuiesceNow` 设置为 `true`。
-

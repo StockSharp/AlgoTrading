@@ -1,4 +1,5 @@
 # ComFracti分形RSI策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ComFracti分形RSI策略是MetaTrader专家顾问*ComFracti*的StockSharp移植版本。算法通过两个时间框架的比尔·威廉姆斯分形来判断方向性偏好，并使用基于日线的快速RSI过滤信号。一旦出现有效条件，策略将开立单一头寸，使用可配置的止损/止盈距离保护仓位，并且可选地在信号反转或持仓时间超过阈值时退出。
