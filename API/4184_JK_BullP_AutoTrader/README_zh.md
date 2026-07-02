@@ -1,4 +1,5 @@
 # JK BullP AutoTrader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 JK BullP AutoTrader 最初是 MetaTrader 4 上的一个动量型专家顾问，依赖 Elder Bulls Power 指标来识别买方力度的变化。

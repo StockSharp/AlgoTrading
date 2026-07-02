@@ -1,4 +1,5 @@
 # EMA WMA RSI
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 EMA WMA RSI is a conversion of the MetaTrader 4 expert advisor "EMA WMA RSI" created by cmillion. The original robot compares an exponential moving average (EMA) and a linear weighted moving average (WMA) calculated from candle opens, and filters every crossover with a Relative Strength Index (RSI) threshold. The StockSharp port keeps the same indicator logic, operates on finished candles, and reproduces the money-management options: optional counter-position flattening, point-based stop-loss/take-profit levels, and a trailing stop that can follow fixed distances, the latest fractal, or recent candle extremes.

@@ -1,4 +1,5 @@
 # MO Bidir 对冲策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MO Bidir 对冲策略** 是 MetaTrader 4 智能交易程序 `mo_bidir_v0_1` 的 StockSharp 移植版本。原始 EA 在 5 分钟图上运行，每根新 K 线都会同时开多、开空并附带固定的止损/止盈距离，以维持一个完全对冲的仓位结构。移植版本在遵循项目“仅处理收盘 K 线”的约束下，使用高层 API 和点值参数重新实现这一思路。

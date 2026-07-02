@@ -1,4 +1,5 @@
 # Nevalyashka Breakdown Level 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Nevalyashka Breakdown Level 策略是 MT4 智能交易系统 *Nevalyashka_BreakdownLevel* 的直接移植版本。策略在两个可配置时间之间构建开盘区间，并在价格突破该区间时入场。当突破失败并触发止损后，系统会立即反向下单，并按马丁系数放大手数以尝试弥补亏损。只要当日出现盈利平仓，策略便会停止当日剩余时间的所有新交易，与原始 EA 的逻辑完全一致。

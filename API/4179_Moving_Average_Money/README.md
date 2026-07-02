@@ -1,4 +1,5 @@
 # Moving Average Money Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy is a StockSharp conversion of the MetaTrader expert advisor "Moving Average Money". It evaluates completed candles and reacts when the previous bar crosses a shifted simple moving average. The system supports both long and short trades and keeps every decision synchronized with the high-level candle subscription API.

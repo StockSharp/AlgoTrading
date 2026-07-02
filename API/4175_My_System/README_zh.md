@@ -1,4 +1,5 @@
 # My System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **My System 策略** 是 MetaTrader 4 智能交易系统 `MySystem.mq4`（位于 `MQL/9601`）的 StockSharp 版本。原始脚本通过 Bulls Power 与 Bears Power 指标计算合成动能信号，当动能翻转时建立反转方向仓位。本 C# 版本完整还原这一决策流程，引入显式的风险管理状态，并将所有可调常量暴露为策略参数，便于在 StockSharp 中优化。

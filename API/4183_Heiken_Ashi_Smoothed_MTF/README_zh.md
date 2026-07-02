@@ -1,4 +1,5 @@
 # Heiken Ashi Smoothed MTF 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Heiken Ashi Smoothed MTF 策略移植自 MetaTrader 上的 “HASNEWJ” 专家顾问。策略在 M1、M5、M15、M30、H1、H4 六个周期上重新计算自定义的平滑 Heiken Ashi 指标，并等待高周期趋势完全同向。当 M5 周期出现最新的回调而更长周期的平滑蜡烛仍维持强势时入场。手动的止损与止盈模块复刻了原版 EA 的行为，包括在上一笔交易亏损后自动放宽止损距离。

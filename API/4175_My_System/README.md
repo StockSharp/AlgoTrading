@@ -1,4 +1,5 @@
 # My System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **My System Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `MySystem.mq4` (directory `MQL/9601`). The original script evaluates the Bulls Power and Bears Power indicators, combines their values into a composite momentum signal, and opens reversal-style positions when momentum flips sign. This C# version reproduces the core decision process, adds explicit risk management state, and exposes every tunable constant through strategy parameters for optimization.

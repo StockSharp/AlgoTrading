@@ -1,4 +1,5 @@
 # Stoch Levels Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Stoch Levels Strategy** is a direct conversion of the MetaTrader 4 expert advisor `Stoch.mq4`. The original script relies on daily session boundaries, calculates custom price levels from the previous candle and places two pending orders for the upcoming session. This C# version keeps the same trading idea and implements it with StockSharp's high-level strategy API.

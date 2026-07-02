@@ -1,4 +1,5 @@
 # MACD 信号 ATR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MACD 信号策略** 是 MetaTrader 专家顾问 `MACD_signal.mq4` 的 StockSharp 版本。原始脚本通过比较 MACD 直方图与基于

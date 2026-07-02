@@ -1,4 +1,5 @@
 # MO Bidir Hedge Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MO Bidir Hedge Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `mo_bidir_v0_1`. The original robot was designed for the five-minute chart and always kept a hedged market exposure: every new bar opened both a long and a short position with pre-defined stop-loss and take-profit distances. The StockSharp version reproduces this behaviour using finished candles, high-level order helpers, and explicit risk parameters measured in instrument points.

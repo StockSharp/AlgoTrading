@@ -1,4 +1,5 @@
 # 移动平均资金策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 MetaTrader 专家顾问“Moving Average Money”的 StockSharp 版本。策略只在蜡烛完全收盘后进行评估，当上一根蜡烛与带有可视化位移的简单移动平均线发生交叉时发出信号。系统同时支持多头与空头交易，并且全部逻辑都通过高级蜡烛订阅 API 执行。

@@ -1,4 +1,5 @@
 # MARE5.1 Shift Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The MARE5.1 strategy is a C# port of the MetaTrader 4 expert advisor `MARE5_1.mq4`. The original robot traded on M1 data and relied on a pair of simple moving averages evaluated at three different historical offsets to detect regime changes. This StockSharp implementation reproduces the behaviour with configurable parameters, attaches MetaTrader-style protective orders, and exposes a detailed trading window filter.

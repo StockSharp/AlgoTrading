@@ -1,4 +1,5 @@
 # Nevalyashka Breakdown Level Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Nevalyashka Breakdown Level strategy is a direct conversion of the MT4 expert advisor *Nevalyashka_BreakdownLevel*. The system builds an opening range between two configurable times and trades breakouts of that range. When a breakout fails and the trade is stopped out, the strategy immediately reverses direction using a martingale multiplier to recover the loss. Profitable trades block any further entries for the rest of the trading day, matching the original EA behaviour.

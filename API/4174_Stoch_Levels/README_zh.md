@@ -1,4 +1,5 @@
 # Stoch Levels 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Stoch Levels 策略** 是 MetaTrader 4 EA `Stoch.mq4` 的直接移植版本。原始脚本依赖于日内切换，在每个交易日开始之前利用上一根 K 线的最高价与最低价计算自定义挂单价格。本 C# 版本遵循完全相同的逻辑，并利用 StockSharp 的高级策略 API 来实现。

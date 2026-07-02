@@ -1,4 +1,5 @@
 # MARE5.1 位移交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MARE5.1 位移交叉策略是 MetaTrader 4 专家顾问 `MARE5_1.mq4` 的 StockSharp 移植版本。原始 EA 在 1 分钟级别运行，通过比较两条在多个历史偏移处的简单移动平均线来判断趋势反转。C# 实现保留了所有核心思想，提供可配置的参数、以 MetaTrader “点”为单位的保护性订单设置，并增加了详细的交易时间过滤器。

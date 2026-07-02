@@ -1,4 +1,5 @@
 # Heiken Ashi Smoothed MTF Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Heiken Ashi Smoothed MTF strategy is a port of the "HASNEWJ" MetaTrader expert advisor. It rebuilds the custom smoothed Heiken Ashi indicator on six timeframes (M1, M5, M15, M30, H1, H4) and waits for trend alignment across the higher frames. A trade is opened when the lower M5 stream shows a fresh pullback while the longer-term smoothed candles remain strongly bullish or bearish. Manual stop-loss and take-profit logic replicates the behaviour of the original EA, including the ability to widen the stop slightly after a losing trade.

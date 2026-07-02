@@ -1,4 +1,5 @@
 # Стратегия MACD Signal ATR
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Стратегия MACD Signal** — это порт советника MetaTrader `MACD_signal.mq4` на платформу StockSharp. В исходном коде

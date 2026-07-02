@@ -1,4 +1,5 @@
 # EMA WMA RSI
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 EMA WMA RSI 是 MetaTrader 4 专家顾问“EMA WMA RSI”（作者 cmillion）的 StockSharp 版本。原始 EA 在每根 K 线的开盘价上计算指数移动平均线（EMA）与线性加权移动平均线（WMA），并使用相同价格源计算的相对强弱指标（RSI）作为方向过滤器。移植后的策略保留了原有指标逻辑，只在已完成的蜡烛上运作，同时复刻了资金管理选项：可选的反向仓位平仓、以点为单位的止损/止盈，以及三种拖尾止损方式（固定距离、最近分形或近期蜡烛极值）。
