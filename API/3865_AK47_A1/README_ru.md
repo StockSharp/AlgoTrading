@@ -1,5 +1,5 @@
 # AK47 A1
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт советника «AK47_A1». Стратегия сочетает Аллигатор Билла Уильямса, осцилляторы DeMarker и Williams %R, а также фракталы, чтобы открывать позиции только при выходе рынка из флэта.
 

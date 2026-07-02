@@ -1,5 +1,5 @@
 # MA2CCI Classic 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA2CCI 策略移植自 MetaTrader 顾问，核心由两条简单移动平均线（SMA）与商品通道指数（CCI）组合而成。CCI 的零轴过滤用于确认方向，平均真实波幅（ATR）提供保护性止损距离，因此策略保持趋势跟随特性并能快速响应反转。
 

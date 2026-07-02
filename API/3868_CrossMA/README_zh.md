@@ -1,5 +1,5 @@
 # Cross MA ATR Notification 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 4 «CrossMA» 专家的 StockSharp 版本。策略基于快慢简单移动平均线的交叉进行交易，并使用平均真实波幅（ATR）计算止损距离。与原版发送电子邮件不同，本实现会在触发交易动作时写入详细日志。

@@ -1,4 +1,5 @@
 # Trade Channel
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Trade Channel is a channel-reversion strategy converted from the MetaTrader "TradeChannel" expert advisor. The system draws a price channel from the highest high and lowest low over a configurable number of completed candles. When the channel stops expanding and price retests one of its borders, the strategy opens a position in the opposite direction, expecting a reversion back inside the range.

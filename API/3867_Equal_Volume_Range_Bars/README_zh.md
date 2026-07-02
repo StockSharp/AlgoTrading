@@ -1,4 +1,5 @@
 # 等量成交与区间柱
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 等量成交与区间柱策略把 MetaTrader 4 脚本 `equalvolumebars.mq4` 移植到 StockSharp。原脚本用于生成离线图表：蜡烛在累计到固定笔数或价格走完指定点数时收盘。该策略在 StockSharp 中复刻同样的蜡烛构建流程——订阅实时成交，按需回放历史 M1 蜡烛，并在每根合成柱完成时输出详细日志。

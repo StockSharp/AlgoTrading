@@ -1,5 +1,5 @@
 # AK47 A1
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 移植自 MetaTrader 专家顾问“AK47_A1”。策略通过比尔·威廉姆斯的鳄鱼指标、DeMarker 振荡器、威廉指标以及分形信号，在市场脱离盘整时才参与交易。
 

@@ -1,4 +1,5 @@
 # MA2CCI Adaptive Volume 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MA2CCI 策略直接移植自 MetaTrader 4 智能交易系统“MA2CCI.mq4”。该系统利用快慢两条简单移动平均线 (SMA) 的金叉/死叉，并要求商品通道指数 (CCI) 同时穿越零轴作为确认信号。每次满足条件时都会开立单向市价仓位，并根据平均真实波幅 (ATR) 设置波动性止损。仓位管理遵循原始脚本的逻辑：按账户权益动态调整下单手数，并在连续亏损后削减仓位。

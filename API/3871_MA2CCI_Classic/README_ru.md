@@ -1,5 +1,5 @@
 # Стратегия MA2CCI Classic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA2CCI переносит классический советник MetaTrader, построенный на взаимодействии двух скользящих средних и индикатора CCI. Фильтрация сделок происходит через пересечение нулевой линии CCI, а защитные стопы рассчитываются по ATR. Получается трендовая система с быстрой реакцией на смену направления.
 

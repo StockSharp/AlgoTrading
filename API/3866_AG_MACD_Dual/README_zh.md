@@ -1,4 +1,5 @@
 # AG 双重 MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 4 专家顾问 **AG.mq4** 的 StockSharp 移植版。机器人同时计算两组不同参数的 MACD 指标：第一组作为入场触发器，第二组放大后的 MACD 用来过滤趋势并控制离场。策略仅在 K 线收盘后评估信号，从而还原原始 EA 的行为。

@@ -1,4 +1,5 @@
 # Equal Volume & Range Bars
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Equal Volume & Range Bars ports the MetaTrader 4 script `equalvolumebars.mq4` to StockSharp. The original script generated off-line charts whose candles closed after either a fixed number of ticks or after the price had traversed a configurable point range. The strategy reproduces the same candle-building logic inside the StockSharp environment: it listens to live ticks, optionally preloads historical M1 candles, and emits detailed log entries whenever a synthetic bar is completed.

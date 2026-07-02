@@ -1,4 +1,5 @@
 # AG Dual MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert **AG.mq4**. The robot operates with two Moving Average Convergence Divergence (MACD) calculations that use different parameter sets. The primary MACD produces entry triggers, while the secondary (scaled) MACD acts as a directional filter to avoid counter-trend trades and to control exits. The logic mirrors the original MQL4 expert by evaluating only closed candles and by reusing the signal line sign checks that gated the original orders.

@@ -1,4 +1,5 @@
 # Trade Channel
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Trade Channel 策略源自 MetaTrader 平台的 “TradeChannel” 智能交易系统。策略利用最近若干根已完成 K 线的最高价与最低价构建价格通道，当通道停止扩张而价格再次触及其边界时，反向开仓，期望价格回到通道内部。

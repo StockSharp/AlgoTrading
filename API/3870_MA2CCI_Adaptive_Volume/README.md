@@ -1,4 +1,5 @@
 # MA2CCI Adaptive Volume Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The MA2CCI strategy is a direct port of the MetaTrader 4 expert advisor originally distributed as "MA2CCI.mq4". The system combines a fast/slow simple moving average (SMA) crossover with a Commodity Channel Index (CCI) zero-line confirmation. Every validated crossover opens a single market position and immediately places an Average True Range (ATR) based protective stop. Position sizing follows the original money-management logic by scaling the order size relative to equity and reducing it after streaks of losing trades.
