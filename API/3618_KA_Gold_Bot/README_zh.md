@@ -1,4 +1,5 @@
 # KA-Gold Bot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **KA-Gold Bot 策略** 是 MetaTrader 4「KA-Gold Bot」EA 的 StockSharp 高阶版移植。策略结合 Keltner 通道、双 EMA 趋势过滤与多阶段风险管理：固定止损/止盈、分段追踪止损，以及基于实时报价的点差过滤。只有在指定的交易时段内且实时点差满足要求时，才会开仓。
 

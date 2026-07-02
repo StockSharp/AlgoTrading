@@ -1,4 +1,5 @@
 # RSI Martingale
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 RSI Martingale 是 MetaTrader 5 智能交易系统 `RSI&Martingale1.5` 的移植版本。策略等待相对强弱指标（RSI）在可配置的历史窗口内创出极值，以捕捉动能反转。当出现新低或新高时，系统沿着预期的均值回归方向建仓，并在 RSI 穿越 50 中轴或触及固定止盈/止损时离场。可选的马丁格尔模块会在出现亏损后，以更大的手数在反向重新入场。每日盈亏限制以及按小时的时间过滤器，可以在高风险时段或达到收益目标后暂停交易。

@@ -1,4 +1,5 @@
 # Стратегия BandOsMa
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **BandOsMa** — перенос эксперта MetaTrader 5 "BandOsMA" на платформу StockSharp. Стратегия анализирует гистограмму MACD (OsMA), строит на ней полосы Боллинджера и отслеживает пробои за пределы канала. Дополнительное скользящее среднее по OsMA помогает определить, когда сигнал перестаёт быть актуальным.

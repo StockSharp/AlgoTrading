@@ -1,5 +1,5 @@
 # Random Bias Trader
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Random Bias Trader повторяет работу советника «random trader» из MetaTrader, используя высокоуровневый API StockSharp.
 На закрытии каждой свечи стратегия подбрасывает виртуальную монету и открывает позицию в выпавшую сторону, если текущих сделок нет.

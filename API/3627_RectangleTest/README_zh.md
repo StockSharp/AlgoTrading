@@ -1,4 +1,5 @@
 # Rectangle Test 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Rectangle Test 策略将 MetaTrader 的「RectangleTest」专家顾问迁移到 StockSharp 高阶 API。策略在所选周期上识别矩形形态，检查两条移动平均线与当前收盘价是否同时处于矩形内部，并按照快速 EMA 的方向在区间外进行突破交易。所有计算均基于已完成的 K 线。

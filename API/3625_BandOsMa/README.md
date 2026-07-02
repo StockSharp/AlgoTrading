@@ -1,4 +1,5 @@
 # BandOsMa Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **BandOsMa Strategy** converts the MetaTrader 5 "BandOsMA" expert advisor into a StockSharp strategy. It evaluates the MACD histogram (OsMA) using Bollinger Bands built directly on the histogram values. Breakouts above or below the bands create entry signals, while an additional moving average of the histogram manages signal exits.

@@ -1,5 +1,5 @@
 # Random Bias Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Random Bias Trader 策略通过 StockSharp 高层 API 复刻 MetaTrader 的“random trader”专家顾问。
 每根已完成的K线都会抛掷一次虚拟硬币，在没有持仓时按照结果开多或开空。

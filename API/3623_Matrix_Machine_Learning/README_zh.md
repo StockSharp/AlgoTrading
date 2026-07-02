@@ -1,4 +1,5 @@
 # 矩阵机器学习策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 矩阵机器学习策略源自 MetaTrader 5 平台上的 "MQL5Book" 教程脚本。原版程序收集一段最新报价，将相邻价格差分转换成二进制序列，并使用霍普菲尔德递归神经网络进行训练。训练好的网络会在样本内与样本外片段上进行验证，最终根据预测向量的第一个元素（`+1` 代表看涨，`-1` 代表看跌）决定交易方向。

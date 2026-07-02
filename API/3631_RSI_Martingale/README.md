@@ -1,4 +1,5 @@
 # RSI Martingale
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 RSI Martingale is a port of the MetaTrader 5 expert advisor `RSI&Martingale1.5`. The strategy searches for momentum reversals by waiting until the Relative Strength Index (RSI) reaches an extreme value within a configurable lookback window. When an extreme appears, it opens a trade in the direction of the expected mean reversion and exits when RSI crosses the 50 midline or when a fixed stop/take target is reached. A martingale module can optionally reopen the position in the opposite direction with an increased volume after a losing trade. Daily profit and loss limits, along with hourly filters, make it possible to suspend trading during riskier sessions or after meeting capital preservation goals.

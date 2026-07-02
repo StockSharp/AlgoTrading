@@ -1,4 +1,5 @@
 # Matrix Machine Learning Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Matrix Machine Learning is a neural-network-based approach originally published for MetaTrader 5 inside the "MQL5Book" educational project. The expert script collects a window of tick prices, converts consecutive price differences into a binary sequence, and trains a Hopfield recurrent neural network. The trained network is evaluated on an in-sample segment, validated on an out-of-sample segment, and finally used to infer the direction of the next movements. Positions are opened when the first element of the forecasted binary vector shows a bullish (`+1`) or bearish (`-1`) direction.

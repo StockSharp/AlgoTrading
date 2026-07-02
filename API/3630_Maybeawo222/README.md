@@ -1,4 +1,5 @@
 # Maybeawo222 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Maybeawo222 strategy replicates the MetaTrader expert advisor "maybeawo222" using StockSharp's high-level API. It trades a single instrument with a simple moving average (SMA) crossover on the previous candle and limits activity to a configurable time window. The conversion keeps the staged breakeven management that attempts to lock in profits as soon as the price advances by predefined distances.

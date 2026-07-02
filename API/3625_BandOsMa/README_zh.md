@@ -1,4 +1,5 @@
 # BandOsMa 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **BandOsMa 策略** 将 MetaTrader 5 的 “BandOsMA” 智能交易系统迁移到 StockSharp 平台。策略在 MACD 直方图（OsMA）上构建布林带，用来识别极值突破；直方图再经过一条可调移动平均线过滤，帮助判断信号是否仍然有效。

@@ -1,4 +1,5 @@
 # KA-Gold Bot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **KA-Gold Bot Strategy** is a high-level StockSharp conversion of the original MetaTrader 4 "KA-Gold Bot" expert advisor. It combines a Keltner-style channel with trend filters and aggressive risk management that includes fixed stop-loss, take-profit, and multi-stage trailing protection. Trading is allowed only during a configurable intraday window and new positions are blocked when the live spread exceeds a threshold.
 

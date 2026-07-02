@@ -1,4 +1,5 @@
 # Resonance Hunter 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Resonance Hunter 是 MetaTrader 专家顾问 `Exp_ResonanceHunter` 的 StockSharp 版本。每个插槽都会跟踪三组相关货币对的 Stochastic 振荡器，当三个振荡器的动能同向共振时，在主交易品种上建立仓位，另外两组品种用来过滤假信号。一旦主品种的动能反转或触及设定的止损，仓位会被立即平掉。

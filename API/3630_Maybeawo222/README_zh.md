@@ -1,4 +1,5 @@
 # Maybeawo222 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Maybeawo222 策略是对 MetaTrader 专家顾问 “maybeawo222” 的 StockSharp 高级 API 版本。策略基于单一品种的简单移动平均线（SMA）穿越信号，并只在设定的交易时段内开新仓，同时保留了原版的分阶段保本逻辑。

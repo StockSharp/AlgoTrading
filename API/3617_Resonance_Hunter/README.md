@@ -1,4 +1,5 @@
 # Resonance Hunter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Resonance Hunter strategy is the StockSharp port of the MetaTrader expert advisor `Exp_ResonanceHunter`. It monitors three correlated currency pairs per slot and looks for synchronous momentum in their Stochastic oscillators. When the oscillators resonate in the same direction the strategy opens a position on the primary symbol while the secondary and confirmation symbols act as filters. The trade is closed as soon as the leading instrument loses momentum or when the configured stop loss is reached.

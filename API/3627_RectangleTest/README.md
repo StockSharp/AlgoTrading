@@ -1,4 +1,5 @@
 # Rectangle Test Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Rectangle Test strategy reproduces the MetaTrader "RectangleTest" expert using StockSharp's high-level API. It detects sideways ranges on an intraday time frame, checks whether two moving averages and the current price stay inside the detected range, and then trades breakouts away from the rectangle in the direction of the faster EMA. All logic is executed on completed candles received from a configurable candle source.
