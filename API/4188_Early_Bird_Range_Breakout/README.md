@@ -1,4 +1,5 @@
 # Early Bird Range Breakout
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Early Bird Range Breakout is a C# port of the MetaTrader 4 expert advisor `earlyBird1`. The system tracks the high and low of a configurable pre-market range, applies a 14-period RSI filter to decide the trade bias, and enters on the first breakout once the regular session opens. It preserves the original expert advisor's single-trade-per-direction constraint, volatility-controlled trailing logic, and daily closing discipline.

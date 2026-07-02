@@ -1,4 +1,5 @@
 # Colibri Grid Manager Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Colibri Grid Manager is a StockSharp port of the MetaTrader 4 expert advisor `Colibri.mq4` (original folder `MQL/9713`). The strategy focuses on discretionary grid trading: it prepares layered pending orders on demand, sizes each order using the configured risk budget, attaches protective exits, and enforces a daily drawdown limit before disabling further trading.

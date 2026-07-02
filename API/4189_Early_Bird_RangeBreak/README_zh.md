@@ -1,4 +1,5 @@
 # 早鸟区间突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **早鸟区间突破策略** 是 MetaTrader "earlyBird3" 专家顾问的 C# 版本。策略关注欧洲时段开盘后形成的早盘整理区间，使用 14 周期 RSI 作为趋势过滤，在价格向上或向下突破区间时立即分批进场（默认 3 笔市价单）。每笔仓位都绑定预设止盈、统一止损，并在波动度放大时启用可选的移动止损。
@@ -61,4 +62,3 @@
 - 根据所用市场的时区调整 `RangeStartHour`、`RangeEndHour` 与交易窗口，保持与原 MT4 策略相同的早盘区间。
 - 优化时可重点关注突破缓冲、止盈阶梯以及波动度过滤，它们决定了假突破与错失行情之间的平衡。
 - 若希望更紧凑的移动止损，可降低 `TrailingRiskMultiplier` 或 `StopLossPoints`，让止损更快贴近价格。
-

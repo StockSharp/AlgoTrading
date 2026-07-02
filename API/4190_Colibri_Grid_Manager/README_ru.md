@@ -1,4 +1,5 @@
 # Стратегия Colibri Grid Manager
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Colibri Grid Manager — это перенос советника MetaTrader 4 `Colibri.mq4` (каталог `MQL/9713`) в экосистему StockSharp. Стратегия рассчитана на полуавтоматическую работу с сеткой заявок: формирует уровни по требованию, рассчитывает объём исходя из заданного риска, выставляет защитные стопы/тейк-профиты и блокирует дальнейшую торговлю при превышении дневного лимита убытков.

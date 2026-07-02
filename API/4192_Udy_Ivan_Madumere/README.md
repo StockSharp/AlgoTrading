@@ -1,4 +1,5 @@
 # Udy Ivan Madumere Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Udy Ivan Madumere expert advisor opens a single market position once per day when a specific hourly candle appears. The StockSharp port keeps this behaviour intact by watching the configured candle series, comparing historic open prices, and reacting immediately after the target bar closes. All execution decisions, position management, and volume handling are reproduced so that the strategy behaves like the MetaTrader 4 original inside the StockSharp environment.

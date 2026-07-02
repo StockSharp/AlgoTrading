@@ -1,4 +1,5 @@
 # Speed MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Speed MA 策略** 是对 MetaTrader 4 智能交易系统 `ytg_Speed_MA_ea` 的 StockSharp 版本移植。原始 EA 通过比较简单移动平均线在相邻柱子间的差值来衡量 "速度"，当斜率超过设定门槛时就按照对应方向开仓。本策略使用 StockSharp 的高级 API 完整复刻该逻辑：订阅指定的蜡烛类型、计算带位移的简单移动平均线，并在相邻位移值的差异足够大时发出交易信号。为了忠实于源码，交易量、止盈、止损都仍然以 MetaTrader 的 "point"（最小报价单位）表示。

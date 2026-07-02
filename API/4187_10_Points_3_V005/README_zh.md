@@ -1,4 +1,5 @@
 # Ten Points 3 v005 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 4 的「10points 3 v005」专家顾问移植到 StockSharp。通过比较 MACD 主线的当前值与前一值来判断做多或做空，当价格朝不利方向移动指定点数时追加马丁格尔订单。v005 版本额外提供交易时间窗口、账户权益保护以及独立关闭多头或空头循环的功能。

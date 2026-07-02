@@ -1,4 +1,5 @@
 # Speed MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Speed MA Strategy** is a direct StockSharp port of the MetaTrader 4 expert advisor `ytg_Speed_MA_ea`. The original system measures how quickly a simple moving average changes from one bar to the next. When the slope of the moving average exceeds a user-defined threshold, the expert opens a market position in the corresponding direction. This C# implementation reproduces that behaviour with StockSharp's high-level API: it subscribes to candles, evaluates a shifted simple moving average, and triggers trades when the difference between consecutive shifted values is large enough. The strategy keeps the order volume, profit targets, and stop losses expressed in MetaTrader "points" to remain faithful to the source code.

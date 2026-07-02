@@ -1,4 +1,5 @@
 # Parabolic SAR Bug 3 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Parabolic SAR Bug 3 Strategy** is a StockSharp high-level port of the MetaTrader 4 expert advisor `pSAR_bug_3.mq4` located in `MQL/9786`. The robot reacts to the very first Parabolic SAR dot that appears on the opposite side of the price. When the SAR flips below the candle close, the strategy opens a long position after closing any short exposure. When the SAR jumps above the close, it reverses to a short position. Each trade is guarded by fixed stop-loss and take-profit levels measured in Parabolic SAR points and scaled by the same multiplier as in the original MQL program.

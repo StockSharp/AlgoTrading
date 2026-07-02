@@ -1,4 +1,5 @@
 # 抛物线SAR Bug 3策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Parabolic SAR Bug 3 Strategy** 是位于 `MQL/9786` 中 MetaTrader 4 智能交易系统 `pSAR_bug_3.mq4` 的 StockSharp 高级接口移植版本。系统专注于捕捉抛物线SAR第一次翻转到价格另一侧的信号。当SAR落到收盘价下方时，策略会在平掉空头头寸后建立多头；当SAR跳到收盘价上方时，立即翻转为做空。每一笔交易都使用以抛物线SAR点数表示的固定止损和止盈距离，并乘以与原始MQL程序相同的倍数。

@@ -1,4 +1,5 @@
 # Early Bird Range Break Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Early Bird Range Break Strategy** is a C# port of the MetaTrader "earlyBird3" expert advisor. It targets range breakouts that happen shortly after the European trading session opens. The algorithm observes an early-morning consolidation range, filters potential breakouts with a 14-period RSI, and enters up to three market orders in the direction of the breakout. Each order uses pre-defined take-profit levels, a shared stop-loss, and an optional trailing mechanism that is enabled only when volatility expands beyond its recent average.
@@ -61,4 +62,3 @@ The **Early Bird Range Break Strategy** is a C# port of the MetaTrader "earlyBir
 - Align the candle time-frame with the trading venue used in the original EA (M5 to H1 in MetaTrader). Adjust `RangeStartHour`, `RangeEndHour`, and the trading window to reflect the local market schedule of your data feed.
 - When optimizing, focus on the breakout buffer, take-profit ladder, and volatility filter because they define the balance between false breakouts and missed moves.
 - Trailing is intentionally conservative—if you need tighter exits, consider reducing `TrailingRiskMultiplier` or `StopLossPoints` so that the trailing adjustments occur more frequently.
-

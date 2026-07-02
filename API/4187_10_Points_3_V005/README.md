@@ -1,4 +1,5 @@
 # Ten Points 3 v005 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor "10points 3 v005". It follows the MACD slope to decide whether the current averaging basket should be long or short and keeps opening martingale orders every time price moves against the active position by a configurable distance. The enhanced "v005" release adds equity based protection rules, day and time filters and the option to disable either the long or the short cycle.

@@ -1,4 +1,5 @@
 # 早鸟区间突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 早鸟区间突破策略是 MetaTrader 4 专家顾问 `earlyBird1` 的 C# 版本。策略在交易日开盘前统计指定时段的最高价和最低价，使用 14 周期 RSI（基于开盘价）判断做多或做空方向，并在常规交易时段开启后捕捉首次突破。该移植版本完整保留了原始 EA 的每日单向一次交易限制、基于波动率的跟踪止损以及收盘平仓逻辑。

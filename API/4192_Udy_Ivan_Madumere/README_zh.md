@@ -1,4 +1,5 @@
 # Udy Ivan Madumere 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Udy Ivan Madumere 是一个典型的日内时段策略：每天只在指定小时评估一次信号，并且始终保持最多一笔持仓。StockSharp 版本完整复制了这一行为，通过订阅蜡烛序列、对比历史开盘价，并在目标蜡烛收盘后立即执行交易指令，从而在 API 环境中再现 MetaTrader 4 的运行方式。

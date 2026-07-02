@@ -1,5 +1,5 @@
 # ARD Order Management Command 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 **ARD Order Management** 策略将 MetaTrader 4 专家顾问 `ARD_ORDER_MANAGEMENT_.mq4` 迁移到 StockSharp 的高级框架。原始脚本提供了四个手动命令（买入、卖出、关闭、修改），每个命令都会根据账户可用保证金重新计算下单手数，开/反转市价单，并按照固定的点数距离设置止损和止盈。

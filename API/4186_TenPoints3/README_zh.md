@@ -1,4 +1,5 @@
 # Ten Points 3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 - 将 MetaTrader 4 专家顾问 **10p3v004（“10points 3”）** 移植到 StockSharp 高级策略框架。

@@ -1,4 +1,5 @@
 # Colibri 网格管理策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Colibri 网格管理策略将 MetaTrader 4 智能交易系统 `Colibri.mq4`（源目录 `MQL/9713`）迁移到 StockSharp。策略面向半自动网格交易：根据需要批量挂出分层委托、按照风险预算调整手数、自动附加保护性止损/止盈，并在达到日度亏损阈值后停止下单。
