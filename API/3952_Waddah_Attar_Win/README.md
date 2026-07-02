@@ -1,5 +1,5 @@
 # Waddah Attar Win Grid Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Waddah Attar Win Grid Strategy** replicates the MetaTrader 4 expert advisor from the `MQL/8210` script. It continuously maintains a symmetric ladder of buy- and sell-limit orders around the current bid/ask. When price drifts toward the most recent grid level the strategy automatically stacks a new pending order one step farther away, optionally increasing the volume of each additional order. Floating profit is monitored on every order book update and, once the configured equity gain is reached, all positions and working orders are closed simultaneously.
 

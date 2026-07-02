@@ -1,4 +1,5 @@
 # RndTrade Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Conversion of the original MQL4 "RndTrade" expert advisor into a StockSharp high-level strategy that performs fully random market entries and exits them after a fixed holding period.
 

@@ -1,5 +1,5 @@
 # Waddah Attar Win Grid Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Waddah Attar Win Grid Strategy** 重现了 `MQL/8210` 中的 MetaTrader 4 专家顾问。策略在当前买价和卖价周围维持对称的限价单网格，当价格逼近最近的网格层级时，会在更远一个步长的位置自动补挂新的限价单，并且可以选择对每个新订单增加手数。每次收到盘口更新都会重新计算浮动盈亏，一旦账户权益相对于基准值的增长达到设定阈值，系统会同时平掉所有仓位并撤销全部挂单。
 

@@ -1,4 +1,5 @@
 # AMA Trader v2.1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 AMA Trader v2.1 策略移植自 MetaTrader 4 专家顾问 **AMA_TRADER_v2_1.mq4**。它将考夫曼自适应移动平均线（Kaufman AMA）的爆发行情与双重平滑的 Heiken Ashi 过滤器、RSI 动量确认结合在一起。
 

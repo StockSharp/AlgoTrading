@@ -1,4 +1,5 @@
 # Macd Pattern Trader v02（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略基于 MetaTrader 专家顾问 **MacdPatternTraderv02.mq4**（目录 `MQL/8194`）移植到 StockSharp 高级 API。它保留了原有的 MACD 形态识别以及分批平仓逻辑，同时提供结构化参数以便优化。
 

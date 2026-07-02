@@ -1,5 +1,5 @@
 # Kloss Simple Strategy
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Kloss Simple Strategy** 是将 MetaTrader 4 指标顾问 `Kloss_.mq4` 迁移到 StockSharp 平台的版本。策略完全保留原有思路：使用基于加权收盘价的指数移动平均线（EMA）、商品通道指数（CCI）以及随机指标（Stochastic）。所有信号均依据上一根完成的 K 线计算，从而复现 MQL 代码中的一根柱偏移逻辑。仓位规模既可以固定，也可以按照账户权益的百分比动态调整，对应原策略的“Lots == 0”机制。
 

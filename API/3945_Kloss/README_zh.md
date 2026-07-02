@@ -1,5 +1,5 @@
 # Kloss MQL/8186 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Kloss MQL/8186 策略** 是 MetaTrader 4 专家顾问 `Kloss.mq4` 的 StockSharp 移植版本。策略结合 CCI 指标、随机振荡器以及向后平移的典型价格过滤器，通过单一仓位的方式完成反转。该实现保留了原始入场阈值、止损与止盈距离以及固定手数/资金百分比的仓位管理逻辑，并使用 StockSharp 的高级蜡烛订阅 API。
 
@@ -25,7 +25,7 @@
 ## 仓位大小
 
 - **固定手数**：当 `FixedVolume > 0` 时，始终以该数量下单（会按照 `VolumeStep` 和 `MinVolume` 调整）。
-  
+
 - **资金百分比**：当 `FixedVolume = 0` 时，按照账户权益的 `RiskPercent`（默认 0.2）除以最新收盘价估算下单量，并通过 `MaxVolume`（默认 5）限制并根据成交量步长取整。
 - **安全措施**：如果账户信息缺失或计算结果 ≤ 0，则退回到最小可交易量。
 
@@ -61,4 +61,3 @@
 2. 结合品种的最小跳动单位检查止损和止盈距离，必要时调整参数。
 3. 若需固定手数，将 `FixedVolume` 设为目标数量并把 `RiskPercent` 设为 0。
 4. 在新的标的上部署前，可开启参数优化以重新校准指标阈值。
-

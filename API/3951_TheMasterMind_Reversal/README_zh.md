@@ -1,4 +1,5 @@
 # MasterMind 反转策略（StockSharp移植版）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 将MetaTrader 4专家顾问“TheMasterMind”移植到StockSharp高阶API，使用随机指标与威廉指标配合捕捉极端反转。

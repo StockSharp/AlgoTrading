@@ -1,4 +1,5 @@
 # Стратегия AMA Trader v2.1
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия AMA Trader v2.1 представляет собой перенос эксперта MetaTrader 4 **AMA_TRADER_v2_1.mq4**. Она объединяет импульсные скачки адаптивной средней Кауфмана (Kaufman AMA), двойное сглаживание свечей Heiken Ashi и фильтр RSI.
 

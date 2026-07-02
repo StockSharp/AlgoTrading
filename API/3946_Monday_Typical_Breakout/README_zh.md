@@ -1,4 +1,5 @@
 # 周一典型突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -53,4 +54,3 @@
 - MQL 中基于魔术号的订单过滤被 `Position` 和 `ActiveOrders` 检查取代。
 - 时间比较使用蜡烛的 `DateTimeOffset` 并调用 `.ToLocalTime()`，以保持与图表时区一致。
 - 止损/止盈由 StockSharp 的 `StartProtection` 高级接口管理，省去手工下单。
-

@@ -1,4 +1,5 @@
 # ZigAndZag Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ZigAndZag Trader Strategy** is the StockSharp port of the MetaTrader expert *ZigAndZag_trader.mq4*. The system layers two ZigZag-inspired swing detectors:

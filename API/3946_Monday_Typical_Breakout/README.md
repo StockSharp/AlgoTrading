@@ -1,4 +1,5 @@
 # Monday Typical Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -53,4 +54,3 @@ The strategy never opens short positions and will only place one trade per quali
 - MQL magic-number filtering is replaced with StockSharp's position and order checks (`Position` and `ActiveOrders`).
 - Time comparisons leverage `DateTimeOffset` from the candle open time with `.ToLocalTime()` to stay aligned with chart time.
 - Protective orders are handled by the high-level `StartProtection` helper instead of manual order placement.
-

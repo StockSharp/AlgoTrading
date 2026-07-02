@@ -1,4 +1,5 @@
 # Стратегия Monday Typical Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 
@@ -53,4 +54,3 @@
 - Проверка магического номера в MQL заменена контролем позиции (`Position`) и списком активных заявок (`ActiveOrders`).
 - Временные условия используют `DateTimeOffset.OpenTime.ToLocalTime()`, что обеспечивает соответствие локальному времени графика.
 - Постановка защитных ордеров реализована через высокоуровневый метод `StartProtection` вместо ручной регистрации лимитных заявок.
-

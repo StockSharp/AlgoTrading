@@ -1,4 +1,5 @@
 # Macd Pattern Trader v02 (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp high-level API conversion of the MetaTrader expert **MacdPatternTraderv02.mq4** (directory `MQL/8194`). It reproduces the original MACD pattern detection and the active position management rules while exposing convenient parameters for further optimization.
 

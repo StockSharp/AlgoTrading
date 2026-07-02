@@ -1,4 +1,5 @@
 # AMA Trader v2.1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The AMA Trader v2.1 strategy is a conversion of the MetaTrader 4 expert advisor **AMA_TRADER_v2_1.mq4** that combines Kaufman's Adaptive Moving Average (AMA) bursts with a double-smoothed Heiken Ashi filter and RSI momentum checks.
 

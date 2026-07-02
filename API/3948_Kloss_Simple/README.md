@@ -1,5 +1,5 @@
 # Kloss Simple Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Kloss Simple Strategy** is a direct conversion of the MetaTrader 4 expert advisor `Kloss_.mq4`. It reconstructs the original trading idea using StockSharp's high-level API and keeps the indicator set identical: an exponential moving average (EMA) calculated on weighted close prices, the Commodity Channel Index (CCI), and the Stochastic oscillator. Signals are generated from the previous completed candle, mirroring the one-bar shift logic in the MQL version. Position sizing can either rely on a fixed order volume or on a risk percentage of the portfolio value, just like the original lot calculation rules.
 

@@ -1,5 +1,5 @@
 # Kloss MQL/8186 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Kloss MQL/8186 Strategy** is a direct conversion of the MetaTrader 4 expert advisor `Kloss.mq4`. It combines a Commodity Channel Index (CCI), a Stochastic oscillator, and a shifted typical price filter to time single-position reversals. The StockSharp version keeps the original entry thresholds, stop-loss and take-profit distances, and volume logic (fixed lot size or percentage-based sizing) while using the high-level candle subscription API.
 
@@ -60,4 +60,3 @@ The **Kloss MQL/8186 Strategy** is a direct conversion of the MetaTrader 4 exper
 2. Review stop distances relative to tick size; point-to-price conversion happens automatically but the values may need tuning for non-forex instruments.
 3. For fixed contract sizes, set `FixedVolume` to the desired lot and `RiskPercent` to zero.
 4. Enable optimization for the indicator thresholds when calibrating the strategy on new symbols.
-

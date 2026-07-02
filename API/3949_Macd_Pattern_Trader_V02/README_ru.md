@@ -1,4 +1,5 @@
 # Macd Pattern Trader v02 (порт StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос советника **MacdPatternTraderv02.mq4** (каталог `MQL/8194`) на высокоуровневый API StockSharp. Логика поиска паттерна MACD и алгоритм активного сопровождения позиции полностью соответствуют оригиналу, но параметры удобно вынесены для оптимизации.
 

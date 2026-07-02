@@ -1,4 +1,5 @@
 # ZigAndZag Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ZigAndZag Trader** 是 MetaTrader 专家 *ZigAndZag_trader.mq4* 在 StockSharp 平台上的移植版本。策略同时运行两个 ZigZag 风格的摆动检测器：

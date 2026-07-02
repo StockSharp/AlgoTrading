@@ -1,4 +1,5 @@
 # RndTrade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将原始的 MQL4 "RndTrade" 智能交易系统迁移到 StockSharp 高级 API，实现完全随机的市价进场，并在固定持有时间后离场。
 
