@@ -1,4 +1,5 @@
 # Crypto Analysis Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor "Crypto Analysis". It hunts for breakouts that occur after price tags the outer Bollinger Band on the main trading timeframe while the market structure remains bearish (fast LWMA below the slow LWMA). The system only allows trades when a higher timeframe momentum burst and a monthly MACD filter both agree with the desired direction. Once in the market, the position is managed by a layered protection block that mirrors the original EA: pip-based stops, money-based trailing, break-even relocation, and portfolio drawdown controls.

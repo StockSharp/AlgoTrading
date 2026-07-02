@@ -1,4 +1,5 @@
 # 针形反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问 **“Reversals With Pin Bars”** 的 C# 版本。原始 EA 通过识别长影线的拒绝形态

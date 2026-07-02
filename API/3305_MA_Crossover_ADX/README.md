@@ -1,4 +1,5 @@
 # MA Crossover ADX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MA Crossover ADX** strategy is a direct port of the MetaTrader expert advisor `MA_Crossover_ADX`. It combines the slope of an exponential moving average (EMA) with confirmation from the Average Directional Index (ADX) to participate only in trending environments. The StockSharp implementation processes completed candles from a configurable timeframe and synchronizes EMA and ADX updates before issuing signals. Protective stop loss and take profit distances are automatically attached to every new position using the strategy's point-based risk parameters.

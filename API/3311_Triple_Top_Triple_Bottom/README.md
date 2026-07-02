@@ -1,4 +1,5 @@
 # Triple Top Triple Bottom Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Triple Top Triple Bottom Strategy** is a port of the MetaTrader Expert Advisor with the same name. The original system
 combines several confirmation layers (trend direction, momentum strength and a MACD filter) before entering the market. This

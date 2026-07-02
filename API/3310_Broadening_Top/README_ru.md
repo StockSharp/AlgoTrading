@@ -1,4 +1,5 @@
 # Стратегия Broadening Top
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Broadening Top Strategy — это трендовая система, основанная на оригинальном советнике MetaTrader «Broadening top». Стратегия стремится поймать пробой после расширяющейся формации. Для фильтрации сигналов используются две линейно взвешенные скользящие средние (LWMA), индикатор Momentum и фильтр MACD.

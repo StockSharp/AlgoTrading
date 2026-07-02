@@ -1,4 +1,5 @@
 # Crypto Analysis 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 4 智能交易系统「Crypto Analysis」的 StockSharp 移植版。它关注价格触碰主图时间框架的布林带外轨后出现的突破，同时要求结构保持空头倾向（快线 LWMA 低于慢线 LWMA）。只有当高一级时间框架的动量和月度 MACD 同时给出同向信号时才允许开仓。持仓管理沿用了原 EA 的多层防护：点差止损、资金追踪、移动到保本以及账户回撤限制。

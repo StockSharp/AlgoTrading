@@ -1,4 +1,5 @@
 # Стратегия Cryptocurrency Divergence
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Cryptocurrency Divergence Strategy** выявляет классические дивергенции между ценой и индексом относительной силы (RSI), одновременно подтверждая направление тренда с помощью скользящих средних и MACD. Оригинальный советник MetaTrader использовал многопериодный анализ импульса, сложное сопровождение позиций и денежные фильтры. Порт на StockSharp сохраняет задумку:

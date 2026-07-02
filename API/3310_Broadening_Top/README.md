@@ -1,4 +1,5 @@
 # Broadening Top Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Broadening Top Strategy is a trend-following system inspired by the original MetaTrader "Broadening top" expert advisor. The strategy focuses on catching breakouts that appear after a broadening formation by combining trend direction and momentum confirmation. Two linear weighted moving averages, a momentum oscillator and a MACD filter work together to detect bullish and bearish breakouts.

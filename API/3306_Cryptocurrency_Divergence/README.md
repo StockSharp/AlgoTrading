@@ -1,4 +1,5 @@
 # Cryptocurrency Divergence Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Cryptocurrency Divergence Strategy** searches for classical momentum divergences between price action and the Relative Strength Index (RSI) while confirming trend direction with moving averages and MACD. The original MetaTrader expert advisor relied on multi-timeframe momentum checks, money management, and extensive trailing logic. This StockSharp port keeps the spirit of the system by:

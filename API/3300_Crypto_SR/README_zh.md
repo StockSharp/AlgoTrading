@@ -1,4 +1,5 @@
 # Crypto SR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Crypto SR 策略将 MetaTrader 4 的 "Crypto S&R" 专家顾问迁移到 StockSharp 的高级 API。该实现保留了原始系统的多重过滤结构：主周期使用两条线性加权移动平均线（LWMA）识别趋势，高阶时间框架上的 Momentum 提供动量确认，长周期 MACD 过滤宏观方向，同时通过比尔·威廉姆斯的分形构建支撑/阻力水平。策略使用市价单入场，并通过固定止损/止盈、移动到保本以及按点数计算的跟踪止损管理持仓。
 

@@ -1,4 +1,5 @@
 # Стратегия Triple Top Triple Bottom
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Triple Top Triple Bottom** — это адаптация одноимённого советника MetaTrader. Исходная логика сочетает фильтрацию тренда,
 подтверждение силы импульса и проверку MACD перед открытием позиции. Версия на StockSharp сохраняет ключевые элементы и позволяет

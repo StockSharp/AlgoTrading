@@ -1,4 +1,5 @@
 # MA Crossover ADX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MA Crossover ADX** 策略源自 MetaTrader 专家顾问 `MA_Crossover_ADX`，在 StockSharp 平台上复刻其逻辑。策略通过 EMA 斜率与 ADX 趋势强度的组合，过滤掉震荡行情，只在确认的趋势阶段建仓。所有计算基于可配置的时间框架蜡烛，并在同一根蜡烛完成后同步处理 EMA 与 ADX，以避免信号错位。策略还会按照点数参数自动附加止损与止盈保护。

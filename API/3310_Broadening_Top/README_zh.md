@@ -1,4 +1,5 @@
 # Broadening Top 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Broadening Top 策略源自 MetaTrader 平台上的 "Broadening top" 智能交易系统。该策略通过趋势过滤、动量确认和 MACD 指示，在价格形成扩张形态后寻找突破机会。核心组件包括两条线性加权移动平均线（LWMA）、Momentum 指标以及 MACD 过滤器。

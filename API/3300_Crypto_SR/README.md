@@ -1,4 +1,5 @@
 # Crypto SR Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Crypto SR strategy ports the MetaTrader 4 expert advisor "Crypto S&R" to the StockSharp high-level API. The implementation keeps the layered confirmation logic of the original system: a trend filter based on linear weighted moving averages (LWMA), a higher timeframe momentum check, a long-term MACD trend filter and fractal-derived support/resistance levels. Orders are submitted with market execution and the position is managed via fixed stop-loss/take-profit levels, break-even adjustments and a trailing stop measured in pips.
 

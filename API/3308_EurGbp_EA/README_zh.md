@@ -1,4 +1,5 @@
 # EurGbp EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 EurGbp EA 策略重现了原始 MetaTrader 智能交易的思路：比较 EUR/USD 与 GBP/USD 在选定小时周期上的 MACD 动量，并在主要交易品种（通常为 EUR/GBP）上开仓。策略利用欧元与英镑主要货币对之间的相对强弱，提前捕捉交叉盘的潜在走势。

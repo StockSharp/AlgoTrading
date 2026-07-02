@@ -1,4 +1,5 @@
 # 三重顶与三重底策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **三重顶与三重底策略**移植自同名的 MetaTrader 智能交易系统。原始版本在开仓前会同时检查趋势方向、动量强度以及
 MACD 过滤。本移植版本保留了相同的核心思想，并将关键阈值暴露为可配置参数，方便在 StockSharp 框架中进行优化

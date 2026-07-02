@@ -1,4 +1,5 @@
 # 加密货币背离策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **加密货币背离策略** 利用价格与相对强弱指标（RSI）之间的传统动量背离，同时用快慢均线和 MACD 验证趋势方向。原始 MetaTrader 智能交易系统依赖多周期动量、资金管理以及复杂的拖尾处理。本移植版本保留了策略精神：

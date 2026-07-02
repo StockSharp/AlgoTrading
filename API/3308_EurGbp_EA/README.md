@@ -1,4 +1,5 @@
 # EurGbp EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The EurGbp EA strategy mirrors the original MetaTrader expert advisor by comparing hourly MACD momentum of EUR/USD and GBP/USD while placing trades on the configured primary instrument (typically EUR/GBP). The approach exploits relative strength between euro and pound majors to anticipate moves in the cross pair.

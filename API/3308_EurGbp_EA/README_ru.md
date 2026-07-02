@@ -1,4 +1,5 @@
 # Стратегия EurGbp EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия EurGbp EA повторяет оригинального советника MetaTrader: она сравнивает часовые значения MACD по парам EUR/USD и GBP/USD и совершает сделки по основному инструменту (чаще всего EUR/GBP). Таким образом отслеживается относительная сила евро и фунта, что помогает раньше увидеть движение на кроссе.
