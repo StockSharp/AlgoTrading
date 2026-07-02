@@ -1,5 +1,5 @@
 # TrueSort 1001 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TrueSort 1001 是对原始 MQL 智能交易顾问的严格趋势化改写。策略同时监控五条简单移动平均线，只有在最近三根收盘K线上保持严格顺序时才会动作。与此同时，ADX 必须上升并高于设定阈值以确认趋势强度。入场后使用按价格步长计算的移动止损来保护头寸，只要均线排序被破坏就立即平仓。
 

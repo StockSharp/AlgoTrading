@@ -1,4 +1,5 @@
 # Wave Power EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Wave Power EA Strategy** 是 MQL4 顾问程序 “Wave Power EA1” 的 C# 版本。原始程序根据随机指标或 MACD 的方向建仓，
 并在价格每走固定点数时加仓，同时调整统一的止盈。StockSharp 版本使用高级策略 API、指标绑定和封装好的下单工具重现

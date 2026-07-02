@@ -1,4 +1,5 @@
 # Стратегия Wave Power EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Wave Power EA Strategy** — это порт советника MQL4 «Wave Power EA1» на C#. Оригинальный робот строит позицию по сигналу
 стохастика или MACD, а затем добавляет новые рыночные ордера через фиксированное число пунктов, одновременно переставляя

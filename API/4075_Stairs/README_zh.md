@@ -1,4 +1,5 @@
 # 楼梯策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **楼梯策略** 完全复刻了最初的 MetaTrader 专家顾问。策略先在当前卖价上下放置对称的止损挂单，然后始终围绕最近一次成交重新搭建网格。未实现利润按照价格跳动（点）累积，而不按照成交量加权，这与源码的做法一致。当达到利润目标时，策略会通过市价单平掉全部仓位，删除所有挂单并重新开始。
 

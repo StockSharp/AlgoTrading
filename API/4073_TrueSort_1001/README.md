@@ -1,5 +1,5 @@
 # TrueSort 1001 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 TrueSort 1001 is a strict trend-following system that mirrors the original MQL expert advisor. The strategy watches five simple moving averages and only acts when they stay perfectly ordered for three consecutive completed candles. A rising Average Directional Index (ADX) confirms momentum before any trade is opened. Once in the market the position is protected by an adaptive trailing stop measured in price steps and the trade is closed as soon as the moving averages lose their alignment.
 

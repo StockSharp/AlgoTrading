@@ -1,4 +1,5 @@
 # AIS1 交易机器人（MQL/8700 转换版）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **AIS1 Trading Robot** 源自 `MQL/8700/AIS1.MQ4` 的 MetaTrader 4 智能交易系统。原策略面向 EURUSD 日线突破交易，并使用多周期区间来计算止损、止盈和跟踪止损。本 C# 实现完全保留了原始结构，同时通过 StockSharp 参数接口公开了所有关键设置，便于调优与自动化运行。
@@ -54,4 +55,3 @@
 ## 环境要求
 - 可访问日线与 4 小时蜡烛数据的 StockSharp 高级 API。
 - 已配置的交易连接，用于报单与获取账户权益。
-

@@ -1,4 +1,5 @@
 # Very Blondie System
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Very Blondie System 是一个短线均值回归网格策略，原始版本是 MetaTrader 4 上的 "VBS - Very Blondie System" 智能交易系统。移植版完全保留了原有思想：一旦价格远离最近 `PeriodX` 根 K 线的区间极值，策略立即用市价单入场，并在趋势继续延伸时通过四个加倍的限价单逐级加仓。

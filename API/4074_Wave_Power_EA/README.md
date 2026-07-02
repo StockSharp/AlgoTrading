@@ -1,4 +1,5 @@
 # Wave Power EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Wave Power EA Strategy** is a C# port of the MQL4 expert advisor "Wave Power EA1". The original robot builds a position in
 direction of a stochastic or MACD signal and then adds additional market orders every fixed number of pips while adjusting the

@@ -1,4 +1,5 @@
 # Spazm 波动性突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 - 将 MetaTrader 4 智能交易系统 **Spazm (8683)** 转换到 StockSharp 高层 API。

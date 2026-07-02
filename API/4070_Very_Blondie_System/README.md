@@ -1,4 +1,5 @@
 # Very Blondie System
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Very Blondie System is a short-term mean-reversion grid strategy originally distributed as the MetaTrader 4 expert advisor "VBS - Very Blondie System". The port keeps the original idea of fading a breakout from the recent trading range: when price moves far enough away from the highest high or lowest low seen over the last `PeriodX` candles, the strategy enters immediately with a market order and adds four martingale-style limit orders to scale into the move if price keeps extending.

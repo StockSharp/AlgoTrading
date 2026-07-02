@@ -1,4 +1,5 @@
 # Stairs Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Stairs Strategy** reproduces the behaviour of the original MetaTrader expert. It starts by placing symmetrical stop orders around the current ask price and then continuously rebuilds the grid around the most recent fill. Profits are accumulated in price steps (pips) without weighting by volume, exactly as in the source script. When a profit target is hit, the strategy liquidates all positions by market order, removes any pending stops, and resets the grid.
 

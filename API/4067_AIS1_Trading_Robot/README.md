@@ -1,4 +1,5 @@
 # AIS1 Trading Robot (MQL/8700 Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **AIS1 Trading Robot** is a direct C# conversion of the MetaTrader 4 expert advisor from `MQL/8700/AIS1.MQ4`. The original system is tailored for EURUSD daily breakouts and uses multi-timeframe ranges for stop, target, and trailing calculations. This StockSharp implementation preserves the structure of the legacy robot while exposing every configurable element as strategy parameters.
@@ -54,4 +55,3 @@ The **AIS1 Trading Robot** is a direct C# conversion of the MetaTrader 4 expert 
 ## Requirements
 - StockSharp high-level API with access to candle subscriptions and order book data.
 - Properly configured trading connection for order placement and portfolio valuation.
-

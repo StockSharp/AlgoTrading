@@ -1,5 +1,5 @@
 # Sidus EMA RSI 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 4 专家顾问 **Exp_Sidus.mq4** 在 StockSharp 平台上的移植版本。它保留了原始机器人“快速/慢速 EMA 交叉 + RSI 过滤”的全部交易规则，所有判断均在收盘完成的 K 线后执行，并确保每根信号 K 线最多只触发一次下单，与 MQL 版本完全一致。
 

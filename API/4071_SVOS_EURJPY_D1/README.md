@@ -1,4 +1,5 @@
 # SVOS EURJPY D1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# conversion of the MetaTrader 4 expert advisor **SVOS_EURJPY_D1**. It operates on daily candles for EURJPY and

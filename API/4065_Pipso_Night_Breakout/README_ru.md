@@ -1,4 +1,5 @@
 # Стратегия Pipso
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Pipso — это ночная пробойная система, перенесённая из советника MetaTrader `Pipso.mq4`. Стратегия отслеживает максимум и минимум

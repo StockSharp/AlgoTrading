@@ -1,4 +1,5 @@
 # SVOS EURJPY D1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MetaTrader 4 上的 **SVOS_EURJPY_D1** 专家顾问移植到 C#。它基于 EURJPY 的日线数据，通过市场状态划分、

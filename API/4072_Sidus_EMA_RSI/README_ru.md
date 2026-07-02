@@ -1,5 +1,5 @@
 # Стратегия Sidus EMA RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос эксперта MetaTrader 4 **Exp_Sidus.mq4** на платформу StockSharp. В логике сохранено
 сочетание пересечения быстрой и медленной EMA с фильтрацией по уровню 50 индикатора RSI. Все расчёты выполняются только по

@@ -1,4 +1,5 @@
 # Pipso 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Pipso 是从 MetaTrader 专家顾问 `Pipso.mq4` 移植而来的夜盘突破策略。该算法跟踪上一批已经完成的 K 线最高价
