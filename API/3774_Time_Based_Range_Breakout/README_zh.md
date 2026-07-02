@@ -1,4 +1,5 @@
 # 基于时间的区间突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略移植自 MetaTrader 4 智能交易程序 `Tttttt_www_forex-instruments_info.mq4`。它在每天的指定时间截取当日的最高价和最低价，依据历史区间的平均值构建上下突破带。之后若收盘价突破这些带，则顺势开仓，并按照动态盈亏目标在蜡烛收盘时平仓。

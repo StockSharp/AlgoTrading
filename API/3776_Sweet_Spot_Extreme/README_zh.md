@@ -1,4 +1,5 @@
 # Sweet Spot Extreme 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sweet Spot Extreme 是基于 StockSharp 高层 API 重写的 MetaTrader 4 专家顾问 “Sweet_Spot_Extreme.mq4”。策略通过 15 分钟 K 线上的两条指数移动平均线确认趋势，再结合 30 分钟 CCI 过滤信号，从而在趋势中捕捉极端回调。资金管理沿用了原始 EA 的思路，包括连续亏损后的手数缩减。
 

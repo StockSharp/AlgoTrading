@@ -1,4 +1,5 @@
 # SMC Hilo MaxMin 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 MetaTrader 专家顾问 *SMC MaxMin at 1200* 的行为。到达设定的终端小时 (`SetHour`) 时，策略会在上一根完结

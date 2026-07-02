@@ -1,4 +1,5 @@
 # Suffic369 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Suffic369 strategy is a trend-following breakout system that combines two short moving averages with wide Bollinger Bands. The expert advisor enters long positions when the fast simple moving average (SMA) of closing prices crosses above the SMA of recent highs while the market trades near the lower Bollinger Band. Short positions are opened when the fast SMA crosses below the SMA of recent lows while the price is pressing against the upper band. The converted StockSharp version keeps the original MQL logic but expresses it with high-level candle subscriptions and indicator bindings.

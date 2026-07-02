@@ -1,4 +1,5 @@
 # Simple Pivot Flip Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level C# port of the MetaTrader 4 Expert Advisor stored in `MQL/7610/Simplepivot_www_forex-instruments_info.mq4`. The original program checks the open price of each new candle against the previous candle range and flips between long and short market positions. The StockSharp version keeps the same behaviour by relying exclusively on high-level helpers such as `SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`, and `ClosePosition`.

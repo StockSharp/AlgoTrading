@@ -1,4 +1,5 @@
 # Suffic369 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Suffic369 是一套趋势突破策略，结合两条短周期移动平均线和宽幅布林带。策略在快速收盘价 SMA 上穿最近高点 SMA 且收盘价落在布林下轨附近时做多；在快速 SMA 下穿最近低点 SMA 且收盘价触及布林上轨时做空。移植到 StockSharp 后沿用了原始 MQL 逻辑，并通过高层蜡烛订阅与指标绑定实现。

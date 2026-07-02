@@ -1,4 +1,5 @@
 # SurefireThing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The SurefireThing strategy is a StockSharp high-level port of the MetaTrader 4 expert advisor *Surefirething*. It operates on completed candles, computes pending order levels from the previous session range, and resets exposure at the turn of each trading day. The logic is centred on deploying a symmetrical pair of limit orders that attempt to capture mean reversion around the prior close.

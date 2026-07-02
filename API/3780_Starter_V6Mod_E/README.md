@@ -1,4 +1,5 @@
 # Starter V6 Mod E
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Starter V6 Mod E** is a high-level StockSharp conversion of the MetaTrader 4 expert advisor `Starter_v6mod_e_www_forex-instruments_info.mq4`. The port keeps the original combination of Laguerre oscillator extremes, dual EMA momentum confirmation, CCI filtering, and EMA-angle gating while adapting execution to StockSharp's event-driven architecture.
 

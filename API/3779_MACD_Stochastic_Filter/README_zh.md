@@ -1,5 +1,5 @@
 # MACD + 随机趋势过滤策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略重现 `MQL/7604` 目录中的 MetaTrader 智能交易系统。原脚本调用了一个返回“绿色/红色”缓冲区的自定义指标。参数组合 `(15, 3, 3)` 与经典随机指标完全一致，因此在 StockSharp 版本中我们使用平台自带的 `Stochastic` 作为过滤器，同时辅以 MACD 与指数移动平均线 (EMA) 判断趋势。
 

@@ -1,4 +1,5 @@
 # Sweet Spot Extreme Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sweet Spot Extreme is a direct port of the MetaTrader 4 expert advisor "Sweet_Spot_Extreme.mq4" built on StockSharp's high-level API. The strategy hunts for strong pullbacks inside an existing trend by combining two exponential moving averages on 15-minute candles with a 30-minute Commodity Channel Index (CCI) filter. Position sizing mirrors the original risk controls, including MetaTrader-style lot reduction after losing streaks.
 

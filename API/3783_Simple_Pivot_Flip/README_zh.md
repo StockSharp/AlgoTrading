@@ -1,4 +1,5 @@
 # 简易枢轴反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是对 `MQL/7610/Simplepivot_www_forex-instruments_info.mq4` 中 MetaTrader 4 EA 的高级 C# 改写。原版程序比较每根新蜡烛的开盘价与上一根蜡烛的高低范围，从而在多空头寸之间切换。移植后的 StockSharp 版本完全依赖高级 API（例如 `SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`、`ClosePosition`）来复现同样的流程。

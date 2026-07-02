@@ -1,4 +1,5 @@
 # Starter V6 Mod E
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Starter V6 Mod E** 是将 MetaTrader 4 专家顾问 `Starter_v6mod_e_www_forex-instruments_info.mq4` 移植到 StockSharp 高阶 API 的版本。该策略保留了原始系统的 Laguerre 极值判定、双 EMA 动量过滤、CCI 过滤以及 EMA 角度门限逻辑，同时按照 StockSharp 事件驱动模型实现交易执行。
 

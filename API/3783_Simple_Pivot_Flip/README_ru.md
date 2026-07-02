@@ -1,4 +1,5 @@
 # Простая стратегия разворота по пивоту
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия представляет собой высокоуровневый порт советника MetaTrader 4 из файла `MQL/7610/Simplepivot_www_forex-instruments_info.mq4`. В оригинале на каждом новом баре берётся его цена открытия и сравнивается с диапазоном предыдущей свечи, после чего советник открывает или переворачивает позицию. В версии для StockSharp та же логика реализована с помощью высокоуровневых вызовов `SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket` и `ClosePosition`.

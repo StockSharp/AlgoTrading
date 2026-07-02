@@ -1,4 +1,5 @@
 # Time-Based Range Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct port of the MetaTrader 4 expert advisor `Tttttt_www_forex-instruments_info.mq4`. It builds intraday breakout levels once per day at a configurable time. Whenever price closes beyond those levels, the strategy opens a position in the breakout direction. Exits are managed by dynamic profit and loss distances that are derived from an average of historical day ranges.

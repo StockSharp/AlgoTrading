@@ -1,4 +1,5 @@
 # Sweet Spot Extreme стратегия
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sweet Spot Extreme — перенос эксперта MetaTrader 4 «Sweet_Spot_Extreme.mq4» на высокоуровневый API StockSharp. Алгоритм ищет резкие откаты внутри сформированного тренда: две экспоненциальные средние на 15-минутных свечах подтверждают направление, а 30-минутный индикатор CCI фильтрует точки входа. Расчёт объёма повторяет логику MQL, включая уменьшение лота после серии убытков.
 

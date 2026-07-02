@@ -1,4 +1,5 @@
 # SurefireThing 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 SurefireThing 策略是 MetaTrader 4 专家顾问 *Surefirething* 的 StockSharp 高级 API 移植版本。策略仅在收盘后的完整 K 线数据上工作，根据前一交易日的价格区间计算挂单水平，并在每天结束时清空持仓。核心思想是利用前收盘价周围的对称限价挂单，捕捉可能的均值回归。

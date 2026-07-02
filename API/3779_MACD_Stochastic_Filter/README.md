@@ -1,5 +1,5 @@
 # MACD + Stochastic Trend Filter Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the behaviour of the MetaTrader expert advisor from folder `MQL/7604`. The original script relied on a custom oscillator that produced green and red buffers. In practice the numbers `(15, 3, 3)` match a classical stochastic oscillator, therefore the StockSharp port uses the built-in `Stochastic` indicator for the signal confirmation while MACD and an EMA trend filter manage direction.
 
