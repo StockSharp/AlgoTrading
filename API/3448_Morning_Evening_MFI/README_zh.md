@@ -1,4 +1,5 @@
 # MFI 确认的晨星/暮星策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 MetaTrader 专家顾问 `Expert_AMS_ES_MFI` 的核心思想，将多根 K 线反转形态与资金流量指数（MFI）动量确认结合在一起。策略在选定周期上监控三根蜡烛组成的晨星与暮星形态，并使用 MFI 阈值过滤信号，确认当前波段衰竭后再进场。MFI 的穿越信号也用于提前离场。

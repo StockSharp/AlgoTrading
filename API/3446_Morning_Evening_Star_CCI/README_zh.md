@@ -1,4 +1,5 @@
 # 晨星/暮星 CCI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略基于 MetaTrader 5 的 **Expert_AMS_ES_CCI** 智能交易系统，在 StockSharp 高级 API 上复刻其逻辑。策略通过识别“晨星”和“暮星”三根蜡烛的反转形态，并结合商品通道指数（CCI）的确认信号，在主图表的已完成K线上做出交易决策。

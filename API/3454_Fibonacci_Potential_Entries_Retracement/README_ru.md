@@ -1,4 +1,5 @@
 # Стратегия Fibonacci Potential Entries Retracement
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Fibonacci Potential Entries Retracement Strategy** повторяет эксперт `EA_PUB_FibonacciPotentialEntries` для MetaTrader. Стратегия подписывается на стакан уровня 1, после получения положительных бид/аск размещает две отложенные заявки возле заданных уровней Фибоначчи. При достижении общего целевого уровня каждая позиция сокращается на 50%, а стоп-приказ переносится в безубыток для оставшегося объёма.

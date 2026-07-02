@@ -1,4 +1,5 @@
 # Simplest DeMarker Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Simplest DeMarker Strategy reproduces the logic of the original MetaTrader expert advisor. It tracks the DeMarker oscillator to detect when price momentum leaves overbought or oversold zones. When the oscillator crosses back inside the neutral range, the strategy opens a position in the direction of the expected reversal while managing risk via configurable stop-loss and take-profit distances.

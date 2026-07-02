@@ -1,4 +1,5 @@
 # Стратегия Morning/Evening Star CCI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия повторяет логику советника MetaTrader 5 **Expert_AMS_ES_CCI**, реализованную на высокоуровневом API StockSharp. Алгоритм ищет разворотные свечные модели «Утренняя звезда» и «Вечерняя звезда» и подтверждает их сигналом индикатора Commodity Channel Index (CCI). Все расчёты выполняются по закрытым свечам базового инструмента.

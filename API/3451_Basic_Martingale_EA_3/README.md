@@ -1,4 +1,5 @@
 # Basic Martingale EA 3
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Basic Martingale EA 3** strategy replicates the MetaTrader 5 expert advisor that combines a trend filter based on the Triple Exponential Moving Average (TEMA) with ATR-driven martingale averaging. The converted StockSharp version keeps the same risk parameters, trading window and money management logic while exposing everything through strategy parameters for optimisation.

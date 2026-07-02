@@ -1,4 +1,5 @@
 # Стратегия «Morning/Evening Star + MFI»
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия воспроизводит логику советника MetaTrader `Expert_AMS_ES_MFI`, сочетая свечные разворотные модели и подтверждение импульса индикатором Money Flow Index (MFI). На выбранном таймфрейме анализируются трехсвечные фигуры «Morning Star» и «Evening Star», после чего сигнал фильтруется порогами MFI, чтобы подтвердить исчерпанность текущего движения. Пересечения уровней MFI также используются для выхода из позиции.

@@ -1,4 +1,5 @@
 # Стратегия AML RSI Meeting Lines
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **AML RSI Meeting Lines Strategy** — порт на StockSharp советника MetaTrader 5 `Expert_AML_RSI.mq5`. Исходная система сочетает распознавание японских свечных моделей «Meeting Lines» и индикатор RSI. В процессе конвертации сохранены ключевые торговые правила, а выполнение перенесено на высокоуровневый API StockSharp с подписками на свечи и встроенными индикаторами.

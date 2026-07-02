@@ -1,4 +1,5 @@
 # Fibonacci Potential Entries Retracement Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Fibonacci Potential Entries Retracement Strategy** recreates the MetaTrader expert `EA_PUB_FibonacciPotentialEntries`. The algorithm waits for live Level 1 quotes, then places two pending orders around manually supplied Fibonacci retracement levels. When the shared profit target is reached the strategy scales out of each position by 50% and moves the protective stop to break-even for the remaining quantity.

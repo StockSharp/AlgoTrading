@@ -1,4 +1,5 @@
 # Simple Martingale Template Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the original MetaTrader "Simple Martingale Template" idea in StockSharp. It analyzes finished candles of a configurable timeframe using a pair of simple moving averages (SMA). A breakout filter checks whether the previous candle's close breaks the high or low of an even earlier candle to confirm direction. The position size follows a martingale sequence: after each losing cycle the next trade volume is multiplied, while profitable cycles reset the volume to the configured base size.

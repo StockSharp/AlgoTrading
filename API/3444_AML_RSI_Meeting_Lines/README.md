@@ -1,4 +1,5 @@
 # AML RSI Meeting Lines Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **AML RSI Meeting Lines Strategy** is a StockSharp port of the MetaTrader 5 expert advisor `Expert_AML_RSI.mq5`. The original system combines Japanese candlestick pattern recognition with the Relative Strength Index (RSI) to trade bullish and bearish "Meeting Lines" reversals. This conversion keeps the core trading logic while adapting it to StockSharp's high-level API with candle subscriptions and built-in indicators.

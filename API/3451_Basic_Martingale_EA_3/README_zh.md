@@ -1,4 +1,5 @@
 # 基础马丁格尔 EA 3
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Basic Martingale EA 3** 策略移植自 MetaTrader 5 智能交易系统，核心思路是使用三重指数移动平均线（TEMA）定义趋势方向，并结合基于 ATR 的马丁格尔加仓网格。移植到 StockSharp 后，原有的风险参数、交易时段与资金管理逻辑全部通过策略参数暴露，便于回测与优化。

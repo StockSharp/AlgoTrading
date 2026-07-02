@@ -1,4 +1,5 @@
 # Morning/Evening Star CCI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader 5 Expert Advisor **Expert_AMS_ES_CCI** using the StockSharp high-level API. It scans for Morning Star and Evening Star three-candle reversal patterns and requires confirmation from the Commodity Channel Index (CCI) before opening new positions. The logic works with finished candles only and operates on the primary security specified in the strategy settings.

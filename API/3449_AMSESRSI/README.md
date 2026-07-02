@@ -1,4 +1,5 @@
 # AMS ES RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 The AMS ES RSI strategy replicates the behaviour of the MetaTrader expert `Expert_AMS_ES_RSI` inside StockSharp. It combines morning/evening star candlestick formations with a Relative Strength Index (RSI) confirmation filter. Long trades are opened when a bullish morning star appears while RSI indicates oversold conditions. Short trades are taken when a bearish evening star forms in conjunction with an overbought RSI. Positions are closed when RSI crosses back through configurable threshold levels.

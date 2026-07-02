@@ -1,4 +1,5 @@
 # Morning/Evening Star with MFI Confirmation Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the logic of the MetaTrader expert `Expert_AMS_ES_MFI`, combining multi-candle reversal patterns with momentum confirmation from the Money Flow Index (MFI). It monitors three-candle Morning Star and Evening Star formations on the selected timeframe and filters the signals using MFI thresholds to confirm exhaustion of the current swing before entering trades. Momentum reversals detected by MFI crossings are also used to close open positions.

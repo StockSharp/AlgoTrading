@@ -1,4 +1,5 @@
 # AML RSI Meeting Lines 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **AML RSI Meeting Lines Strategy** 是将 MetaTrader 5 专家顾问 `Expert_AML_RSI.mq5` 迁移到 StockSharp 的版本。原始策略结合日本蜡烛形态 “Meeting Lines” 与 RSI 指标来捕捉反转。本次转换完全基于 StockSharp 的高级 API：使用蜡烛订阅、内置指标以及标准化的交易辅助方法。

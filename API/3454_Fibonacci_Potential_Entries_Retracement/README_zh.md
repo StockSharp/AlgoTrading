@@ -1,4 +1,5 @@
 # 斐波那契回撤入场策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Fibonacci Potential Entries Retracement Strategy** 重现了 MetaTrader 专家顾问 `EA_PUB_FibonacciPotentialEntries`。策略订阅 Level 1 行情，在获取到正的买价和卖价后，于人工输入的斐波那契回撤价位附近布置两笔挂单。当行情触及公共的目标价位时，每笔仓位都会减仓 50%，并把止损移动到盈亏平衡点。

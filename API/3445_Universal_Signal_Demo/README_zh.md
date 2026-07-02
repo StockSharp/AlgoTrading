@@ -1,5 +1,5 @@
 # 通用信号演示
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 的 “Universal Signal” 专家顾问迁移到 StockSharp 的高级 API。它评估八个带权重的市场模式，将其合成为一个综合得分。当得分越过可配置的阈值时，策略会开仓或平仓多空头寸；如果需要，还会按设定距离提交限价挂单，并在若干根 K 线后自动取消。
 

@@ -1,4 +1,5 @@
 # AMS ES RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AMS ES RSI 策略在 StockSharp 中复刻了 MetaTrader 顾问 `Expert_AMS_ES_RSI` 的逻辑。策略将晨星/暮星形态与 RSI 指标结合使用：当出现多头晨星并且 RSI 处于超卖区域时做多；当出现空头暮星且 RSI 显示超买时做空。只要 RSI 回落/回升穿越预设阈值，就立即平仓。

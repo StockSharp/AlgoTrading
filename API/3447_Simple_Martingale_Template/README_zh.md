@@ -1,4 +1,5 @@
 # 简单马丁模板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MT4 的 “Simple Martingale Template” 概念迁移到 StockSharp 平台。策略处理所选 `CandleType` 周期的已完成 K 线，利用一快一慢两条简单移动平均线（SMA）结合突破过滤条件进行入场判定。仓位规模采用马丁格尔资金管理：每次亏损后下笔交易的手数乘以系数，盈利后恢复为基础手数。

@@ -1,4 +1,5 @@
 # Simplest DeMarker 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Simplest DeMarker 策略复刻了原始 MetaTrader 智能交易系统的逻辑。它监测 DeMarker 振荡指标，以判断价格动量是否离开超买或超卖区域。当指标重新回到中性区间时，策略按照预期的反转方向建立仓位，并通过可配置的止损和止盈距离来控制风险。
