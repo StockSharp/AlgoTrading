@@ -1,4 +1,5 @@
 # Scalpel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Scalpel Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `Scalpel.mq4`. The system searches for momentum breakouts on the base timeframe, confirms the move with higher-timeframe lows/highs, and filters the entries using a directional volume study built on 1-minute candles. Position management mirrors the original EA: profits are harvested with a fixed take-profit that shrinks over time, the stop-loss can trail once price has moved in favour of the trade, and every position can be force-closed after a configurable lifetime or on Friday evening.

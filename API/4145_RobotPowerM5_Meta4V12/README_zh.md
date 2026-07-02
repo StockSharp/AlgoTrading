@@ -1,4 +1,5 @@
 # RobotPowerM5 Meta4 V12 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 RobotPowerM5 Meta4 V12 策略是 MetaTrader 4 顾问 `RobotPowerM5_meta4V12.mq4` 的 C# 移植版本。原始脚本运行在 5 分钟外汇

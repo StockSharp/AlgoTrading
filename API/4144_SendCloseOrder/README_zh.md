@@ -1,4 +1,5 @@
 # Send Close Order 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Send Close Order 是 2009 年由 Vladimir Hlystov 编写的 MetaTrader 4 专家顾问 “SendCloseOrder” 的移植版本。原始脚本基于比尔·威廉姆斯分形在图表上绘制四条趋势线，只要价格触及这些预测水平就会开仓或平仓。StockSharp 版本保留了决策流程，并自动维护这些线条，可用于任何蜡烛序列。
 

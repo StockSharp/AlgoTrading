@@ -1,4 +1,5 @@
 # Scalpel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Scalpel 策略** 是 MetaTrader 4 智能交易系统 `Scalpel.mq4` 的 StockSharp 版本。策略在基础周期上寻找突破行情，结合 H4/H1/M30 更高周期的高低点来确认趋势，同时利用 1 分钟波动周期的方向性成交量进行过滤。持仓管理完全复刻原版 EA：固定止盈会随着时间缩短，价格走出足够利润后启用跟踪止损，并可以在设置的持仓时长或周五晚间强制平仓。

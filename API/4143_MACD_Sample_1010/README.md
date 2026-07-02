@@ -1,4 +1,5 @@
 # MACD Sample 1010 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This module ports the MetaTrader expert advisor **macd_sample_1010.mq4** to the StockSharp high-level API. The original script combined Bollinger Bands with simple money-management rules: when the close price finished above the upper band plus a configurable buffer it opened a sell order, while a close below the lower band minus the buffer triggered a buy order. Positions were closed once a fixed profit or loss amount (expressed in pips) was reached. The StockSharp version reproduces the same logic by subscribing to the requested candle series, binding a `BollingerBands` indicator, and issuing market orders and position management calls from the candle callback.

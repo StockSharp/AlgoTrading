@@ -1,4 +1,5 @@
 # For Max V2
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 For Max V2 is a port of the MetaTrader 4 expert advisor `for_max_v2.mq4`. The strategy waits for specific two-candle engulfing patterns and then places a symmetrical pair of buy-stop and sell-stop orders around the most recent candle. Once a breakout order fills, the opposite pending order is removed and the position is managed with fixed stops, optional take-profit levels, and a trailing routine that first locks in a small profit at break-even and then follows price.

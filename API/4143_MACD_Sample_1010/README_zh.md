@@ -1,4 +1,5 @@
 # MACD Sample 1010 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本模块将 MetaTrader 专家顾问 **macd_sample_1010.mq4** 迁移到 StockSharp 的高级 API。原始脚本在布林带的基础上叠加了简单的资金管理：当收盘价突破上轨并超过指定缓冲时开空单，跌破下轨并超过缓冲时开多单；随后在达到固定的盈利或亏损（以点数表示）时平仓。移植后的 StockSharp 策略订阅所选 K 线序列，绑定 `BollingerBands` 指标，并在回调中发送市价单与管理仓位，以完整复现上述流程。

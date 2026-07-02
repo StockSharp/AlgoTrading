@@ -1,4 +1,5 @@
 # Стратегия RobotPowerM5 Meta4 V12
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 RobotPowerM5 Meta4 V12 — это порт на C# советника MetaTrader 4 `RobotPowerM5_meta4V12.mq4`. Изначально робот работал на

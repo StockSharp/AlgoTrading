@@ -1,4 +1,5 @@
 # RobotPowerM5 Meta4 V12 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The RobotPowerM5 Meta4 V12 strategy is a C# port of the MetaTrader 4 expert advisor `RobotPowerM5_meta4V12.mq4`. The original EA

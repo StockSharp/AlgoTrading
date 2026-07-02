@@ -1,4 +1,5 @@
 # For Max V2
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 For Max V2 是 MetaTrader 4 智能交易系统 `for_max_v2.mq4` 的移植版本。策略等待特定的两根 K 线吞没形态出现，然后在最新一根收盘 K 线的上下方同时挂出买入止损和卖出止损订单。一旦突破方向被触发，反向挂单会被撤销，持仓则由固定止损、可选止盈以及一套先锁定保本、再跟随价格的拖尾机制进行管理。

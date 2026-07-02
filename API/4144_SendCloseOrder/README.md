@@ -1,4 +1,5 @@
 # Send Close Order Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Send Close Order is a port of the 2009 MetaTrader 4 expert advisor "SendCloseOrder" by Vladimir Hlystov. The original script draws four manual trendlines based on Bill Williams fractals and opens or closes market orders whenever price touches one of those projected levels. The StockSharp version replicates the decision logic with fully automated line management and works on any candle series provided by the platform.
 

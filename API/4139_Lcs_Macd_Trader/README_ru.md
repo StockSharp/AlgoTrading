@@ -1,4 +1,5 @@
 # Стратегия LCS MACD Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой портирование советника "LCS-MACD-Trader" для MetaTrader 4 на StockSharp. Торговля ведётся по пересечениям MACD ниже/выше нулевой линии с опциональным подтверждением индикатором Стохастик. Реализованы исходные торговые сессии и логика трейлинга/перевода в безубыток, характерная для MetaTrader.
 

@@ -1,4 +1,5 @@
 # FiftyFiveMedianSlopeStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 来源
 - 由 MetaTrader 4 智能交易系统 **55_MA_med_FIN.mq4** 转换而来。

@@ -1,4 +1,5 @@
 # LCS MACD Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the "LCS-MACD-Trader" MetaTrader 4 expert advisor. It trades MACD crossovers that occur below/above the zero line and optionally requires a confirmation from the Stochastic Oscillator. The logic also mirrors the original time-of-day filters and MetaTrader-style trailing stop/break-even management.
 

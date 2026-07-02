@@ -1,4 +1,5 @@
 # LCS MACD Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MetaTrader 4 平台的 "LCS-MACD-Trader" 专家顾问，使用 StockSharp 高级 API 重新实现。策略在 MACD 线与信号线于零轴下方/上方发生交叉时开仓，并可选地要求随机指标提供确认，同时保留原系统的时间窗口与类 MetaTrader 的保本及跟踪止损管理。
 
