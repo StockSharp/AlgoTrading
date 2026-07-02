@@ -1,4 +1,5 @@
 # Elite eFibo Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Elite eFibo Trader 复刻了经典的马丁网格专家顾问：在趋势过滤条件满足时，以斐波那契序列的手数逐级加仓。该 StockSharp 版本保留了原始的分批建仓结构——首单以市价成交，其余订单按照设定的点距挂入止损单；每当上一级被触发后，下一层继续排队。策略在浮动盈亏达到现金目标或趋势过滤器转向时关闭整篮仓位。

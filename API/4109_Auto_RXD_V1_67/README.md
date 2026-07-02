@@ -1,4 +1,5 @@
 # Auto RXD v1.67 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Auto RXD v1.67 is a rule-based strategy that emulates the MetaTrader expert advisor of the same name. The approach uses three linear perceptrons: a supervisor that decides whether to look for bullish or bearish signals, plus a dedicated perceptron for each direction. Every perceptron operates on linear weighted moving averages (LWMAs) calculated from candle close and Robbie Ruan's "weighted price" (high + low + 2 × close) inputs. The StockSharp port executes on completed candles only and uses the high-level `BindEx` data flow to keep the indicator calculations synchronized with the trading loop.

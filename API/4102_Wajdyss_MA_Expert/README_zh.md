@@ -1,4 +1,5 @@
 # Wajdyss MA Expert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Wajdyss MA Expert 策略** 是 MetaTrader 4 专家顾问 “wajdyss MA expert v3” 的 C# 版本。它比较两条可分别设置周期、算法、偏移以及价格类型的移动平均线。当快线向上穿越慢线时开多单，向下穿越时开空单。移植版本完整保留了原始 EA 的资金管理、可选的反向仓位自动平仓以及日末/周末强制平仓功能。

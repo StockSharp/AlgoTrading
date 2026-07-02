@@ -1,4 +1,5 @@
 # JMaster RSX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The JMaster RSX strategy is a straight conversion of the MetaTrader 4 expert advisor **jMasterRSXv1**. The system aligns Jurik RSX oscillator values calculated on a fast (M5) and a slow (M30) timeframe. When the higher timeframe points in a bullish or bearish direction and the fast oscillator reaches oversold/overbought territory, the strategy enters a position in the corresponding direction. All signals are evaluated on the open of the new bar using the previous fully closed candles, matching the MT4 implementation that referenced `shift = 1` values.

@@ -1,4 +1,5 @@
 # Auto RXD v1.67 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Auto RXD v1.67 为同名 MetaTrader 智能交易系统的 StockSharp 版本。策略由三个线性感知机组成：监督感知机负责判定多空方向，另外两个分别寻找做多或做空机会。所有感知机都依赖线性加权移动平均（LWMA），该平均值根据 K 线收盘价以及 Robbie Ruan 提出的加权价格（高 + 低 + 2 × 收）计算。移植版本仅处理已经完成的 K 线，并使用高阶 `BindEx` 数据流确保指标与交易逻辑保持同步。

@@ -1,4 +1,5 @@
 # NTOqF Multi-Filter
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The NTOqF Multi-Filter strategy ports the MetaTrader 4 expert advisor "NTOqF" (versions V1–V3) to StockSharp's high-level API. The original robot combines multiple oscillators and trend-following filters, each of which can be enabled or disabled independently. This C# version preserves the same configurability, supports separate timeframes for every indicator, and applies trade management through fixed stops, take-profit targets, and an optional trailing stop expressed in pips.

@@ -1,4 +1,5 @@
 # Elite eFibo Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Elite eFibo Trader reproduces the averaging expert advisor that opens a Fibonacci progression of orders while monitoring a moving-average crossover and an optional RSI filter. The StockSharp port keeps the original basket logic: a market entry triggers a stack of pending stop orders spaced by configurable pip distances, and every additional fill increases exposure following the Fibonacci sequence. The strategy automatically flattens the basket once the floating profit reaches a cash target or when the trend filter turns against the current exposure.

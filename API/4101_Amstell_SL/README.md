@@ -1,5 +1,5 @@
 # Amstell SL Averaging Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Conversion of the MetaTrader expert advisor `exp_Amstell-SL`. The system opens both a long and a short immediately, adds new orders every time price moves against the most recent entry by a fixed number of points, and relies on virtual (software-managed) take-profit and stop-loss levels to exit each ticket individually.
 

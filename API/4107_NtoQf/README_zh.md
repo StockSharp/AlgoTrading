@@ -1,4 +1,5 @@
 # NTOqF 多过滤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 NTOqF 多过滤策略是对 MetaTrader 4 专家顾问“NTOqF”（V1–V3 版本）的 StockSharp 高级 API 移植版本。原始 EA 可以独立启用或禁用多个震荡指标和趋势过滤器。本实现保留了相同的可配置性，为每个指标提供独立的时间框，并通过固定止损/止盈以及以点数表示的可选移动止损来管理仓位。

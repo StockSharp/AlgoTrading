@@ -1,5 +1,5 @@
 # Rubberbands Safety Net 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 将 MetaTrader 平台上的 RUBBERBANDS 1.6 专家顾问移植到 StockSharp 高级 API。原始版本始终持有一多一空两笔单，并在获利后立即替换该方向，同时在浮亏达到指定金额时启动安全加仓网格。由于 StockSharp 采用净持仓模型，本移植版保留交替循环，但在安全模式下改为沿当前方向进行加仓，从而在保持原有现金阈值的同时符合净头寸逻辑。
 

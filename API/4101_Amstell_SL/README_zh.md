@@ -1,5 +1,5 @@
 # Amstell SL 平均策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 MetaTrader 顾问 `exp_Amstell-SL` 的移植版本。策略启动后立即同时开出一笔买单和卖单，当价格相对于最近一次进场逆向移动到达设定的点数时继续加仓，并通过程序化的虚拟止盈与止损来逐笔平仓。
 

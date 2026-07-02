@@ -1,4 +1,5 @@
 # Pinball Machine 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略是 MetaTrader 4 专家顾问 `Pinball_machine.mq4` 的 StockSharp 翻译版本。原始 EA 会在每个到来的报价上生成随机整数，只要其中一对数值相同就立刻开仓。移植后的 StockSharp 版本保留了这种类似“弹球机”的随机玩法：在所选时间框架的每根已完成K线上执行两组随机抽签，只要对应的一对数字相等，就分别开出做多或做空的市价单。止损和止盈距离同样在每次评估时重新随机化，从而还原原程序那种不可预测的弹跳效果。

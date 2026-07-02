@@ -1,4 +1,5 @@
 # SuperForexV2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 SuperForexV2 是将 MetaTrader 4 专家顾问 `SuperForexV2.mq4` 迁移到 StockSharp 平台的版本。原始 EA 通过短周期 RSI 指标

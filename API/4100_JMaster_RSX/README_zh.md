@@ -1,4 +1,5 @@
 # JMaster RSX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 JMaster RSX 策略是 MetaTrader 4 智能交易系统 **jMasterRSXv1** 的直接移植版本。系统在快速（M5）与慢速（M30）两个时间框架上计算 Jurik RSX 振荡指标，并在高周期方向与低周期超买/超卖条件一致时开仓。所有判断都在新 K 线开盘时使用上一根已完成的蜡烛数据，完全复制原始 EA 使用 `shift = 1` 的做法。

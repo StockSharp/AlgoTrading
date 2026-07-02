@@ -1,4 +1,5 @@
 # Wajdyss MA Expert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Wajdyss MA Expert Strategy** is a C# port of the MetaTrader 4 expert advisor "wajdyss MA expert v3". It compares two moving averages configured with independent periods, calculation modes, shifts, and applied prices. A bullish crossover of the fast average above the slow average opens long exposure, while a bearish crossover opens short exposure. The conversion reproduces the original money-management rules, optional automatic closing of opposing trades, and end-of-day / end-of-week liquidation filters.
