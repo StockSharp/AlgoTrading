@@ -1,4 +1,5 @@
 # Alexav D1 Profit GBPUSD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Alexav D1 Profit GBPUSD 是从 MetaTrader 4 智能交易系统 *Alexav_d1_profit_gbpusd.mq4* 转换而来的日线突破策略。该策略基于 GBP/USD 的日线 K 线运行，每个交易日（周二至周五）只评估一次已经完成的蜡烛。RSI 和 MACD 提供动量过滤，ATR 用于生成波动率自适应的止损和分级止盈目标。

@@ -1,4 +1,5 @@
 # AOCCI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AOCCI 策略是 MetaTrader 4 “AOCCI” 智能交易系统的直接移植版。该策略通过结合强势指标 Awesome Oscillator (AO)、商品通道指数 (CCI) 以及上一交易日的枢轴点来过滤信号。此版本基于 StockSharp 的高级 API，并保留了原始脚本的风险控制逻辑。

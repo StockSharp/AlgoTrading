@@ -1,4 +1,5 @@
 # L3H3 Pivot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -46,4 +47,3 @@ The **L3H3 Pivot Strategy** is a StockSharp port of the MetaTrader expert "L3_H3
 - Ensure that the underlying security exposes a valid `PriceStep`. The strategy throws an exception on start if the broker connection does not provide pip size information.
 - To replicate the original behaviour more closely, set the `PivotCandleType` to an hourly candle series aggregated over your desired session and adjust the offset/stop parameters accordingly.
 - As with any pending-order strategy, consider the broker's minimum distance and pending-order expiration policies when deploying live.
-

@@ -1,4 +1,5 @@
 # Alexav D1 Profit GBPUSD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Alexav D1 Profit GBPUSD is a daily breakout system converted from the MetaTrader 4 expert advisor *Alexav_d1_profit_gbpusd.mq4*. The strategy operates on daily candles of GBP/USD and evaluates the completed session once per day (Tuesday through Friday). Momentum confirmation is provided by RSI and MACD while volatility-adjusted stops and staggered profit targets are derived from ATR.

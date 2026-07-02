@@ -1,4 +1,5 @@
 # AOCCI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The AOCCI strategy is a direct conversion of the MetaTrader 4 "AOCCI" expert advisor. It combines momentum and mean reversion filters by using the Awesome Oscillator (AO) and the Commodity Channel Index (CCI) together with a daily floor pivot. The converted version works on StockSharp's high level API and keeps the same protective logic as the original script.

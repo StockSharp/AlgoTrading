@@ -1,4 +1,5 @@
 # 3MA Bunny Cross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ThreeMaBunnyCrossStrategy** 是 MetaTrader 4 专家顾问 “3MA Bunny Cross” 的移植版本。该策略通过监控两个线性加权移动平均线（LWMA）在所选周期收盘价上的交叉来捕捉趋势反转。StockSharp 版本保留了原始策略在交叉后立即反向持仓的思想，并借助高级 API 提供的指标绑定与内置保护功能简化实现。

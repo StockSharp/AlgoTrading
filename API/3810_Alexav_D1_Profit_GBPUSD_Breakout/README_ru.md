@@ -1,4 +1,5 @@
 # Стратегия Alexav D1 Profit GBPUSD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Alexav D1 Profit GBPUSD — это дневная стратегия пробоя, конвертированная из советника MetaTrader 4 *Alexav_d1_profit_gbpusd.mq4*. Алгоритм работает на дневных свечах GBP/USD и оценивает завершившуюся сессию один раз в день (со вторника по пятницу). Моментум подтверждается при помощи RSI и MACD, а уровни стоп-лоссов и поэтапных тейк-профитов рассчитываются на основе ATR.

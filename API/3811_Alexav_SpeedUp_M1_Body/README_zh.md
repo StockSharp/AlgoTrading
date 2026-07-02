@@ -1,4 +1,5 @@
 # Alexav SpeedUp M1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Alexav SpeedUp M1 策略** 是 MetaTrader 4 智能交易系统 "Alexav_SpeedUp_M1" 的直接移植版本。策略针对已经收盘的日内 K 线主体进行评估，只要实体长度超过可配置的阈值便立即市价入场。建仓之后，它会按照 MetaTrader 的习惯为持仓附加止损、止盈以及追踪止损单。

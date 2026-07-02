@@ -1,4 +1,5 @@
 # 3808 阿努比斯
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 4 专家顾问 "Anubis" 移植到 StockSharp 高级 API。

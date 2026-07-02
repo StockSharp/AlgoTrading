@@ -1,4 +1,5 @@
 # Triple SMA Crossover 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Triple SMA Crossover 策略复刻了原始 MQL 专家顾问 `3sma.mq4`。策略基于收盘价计算三条简单移动平均线（SMA），当短期趋势与中长期趋势一致时进行交易。本次转换保留了原有规则，并使用 StockSharp 的高级策略 API 实现。

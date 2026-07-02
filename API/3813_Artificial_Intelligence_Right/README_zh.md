@@ -1,4 +1,5 @@
 # Artificial Intelligence Right 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略来源于 MetaTrader 4 的专家顾问 **ArtificialIntelligence_Right.mq4**。它通过对加速/减速振荡指标

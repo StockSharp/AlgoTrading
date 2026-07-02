@@ -1,4 +1,5 @@
 # Above Below MA 回归策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Above Below MA 策略是 MetaTrader 4 专家顾问 “AboveBelowMA” 的 StockSharp 版本。原始脚本在 15 分钟 GBP/USD 图表上运行，并使用典型价 `(最高价 + 最低价 + 收盘价) / 3` 计算 1 周期指数移动平均线（EMA）。当价格在 EMA 上下方偏离且均线斜率反向时，策略尝试顺着 EMA 的方向重新入场。本移植版本完全保留信号结构，并使用 StockSharp 的高级 API（`SubscribeCandles` + `Bind`）。

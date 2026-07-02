@@ -1,4 +1,5 @@
 # Above Below MA Rejoin Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Above Below MA Rejoin strategy is a StockSharp conversion of the MetaTrader 4 expert advisor "AboveBelowMA". The original script monitors the 15-minute chart of GBP/USD and compares the current price with a one-period exponential moving average (EMA) calculated on the typical price. When price trades on the opposite side of a rising or falling average, the strategy attempts to fade that excursion and rejoin the underlying direction of the EMA. This port keeps the signal structure intact while leveraging StockSharp high-level APIs (`SubscribeCandles` + `Bind`).

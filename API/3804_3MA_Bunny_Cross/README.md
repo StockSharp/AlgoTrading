@@ -1,4 +1,5 @@
 # 3MA Bunny Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ThreeMaBunnyCrossStrategy** is a conversion of the MetaTrader 4 expert advisor "3MA Bunny Cross". It trades trend reversals based on the crossover between two linear weighted moving averages (LWMAs) calculated on the closing prices of the selected timeframe. The StockSharp version keeps the original idea of reversing the position immediately after a crossover and adds high-level API conveniences such as indicator binding and built-in risk protection.

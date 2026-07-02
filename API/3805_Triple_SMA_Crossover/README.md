@@ -1,4 +1,5 @@
 # Triple SMA Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Triple SMA Crossover strategy replicates the original MQL expert advisor `3sma.mq4`. The system analyses three simple moving averages (SMA) calculated on the closing price and trades when the short-term trend aligns with the medium- and long-term averages. The conversion keeps the original trading rules while adapting them to the StockSharp high-level strategy API.

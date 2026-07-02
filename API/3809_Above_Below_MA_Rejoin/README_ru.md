@@ -1,4 +1,5 @@
 # Стратегия возврата Above Below MA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Above Below MA — это порт на StockSharp советника MetaTrader 4 «AboveBelowMA». Оригинал работает на 15-минутном графике GBP/USD, вычисляет экспоненциальную скользящую среднюю (EMA) длиной 1 по типичной цене `(High + Low + Close) / 3` и отслеживает моменты, когда цена отклоняется от EMA против её текущего наклона. Стратегия стремится закрыть противоположные позиции и открыть сделку в сторону наклона EMA. Реализация использует высокоуровневые API StockSharp (`SubscribeCandles` и `Bind`).

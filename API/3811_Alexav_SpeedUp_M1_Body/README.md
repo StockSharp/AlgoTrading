@@ -1,4 +1,5 @@
 # Alexav SpeedUp M1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Alexav SpeedUp M1 Strategy** is a direct port of the MetaTrader 4 expert advisor "Alexav_SpeedUp_M1". It evaluates the bodies of completed intraday candles and immediately reacts with market orders whenever the candle body exceeds a configurable threshold. After an entry the strategy emulates MetaTrader-style risk management by attaching stop-loss, take-profit and trailing stop orders to the open position.

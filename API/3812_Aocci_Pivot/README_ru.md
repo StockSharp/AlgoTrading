@@ -1,4 +1,5 @@
 # Стратегия AOCCI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 AOCCI — это прямой перенос советника MetaTrader 4 «AOCCI». Стратегия комбинирует индикаторы импульса (Awesome Oscillator) и отклонения от среднего (Commodity Channel Index) с дневным пивотом предыдущей сессии. Перенос выполнен на высокоуровневом API StockSharp и сохраняет защитные механизмы оригинала.

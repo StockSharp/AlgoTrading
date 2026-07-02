@@ -1,4 +1,5 @@
 # L3H3 枢轴策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -46,4 +47,3 @@
 - 运行前请确认标的证券提供有效的 `PriceStep`（最小价格变动）。如果缺失，该策略会在启动时抛出异常。
 - 若想更贴近原始时段划分，可将 `PivotCandleType` 设置为小时级别并结合聚合器计算，再配合自定义偏移与止损。
 - 在真实账户中部署挂单策略时，请考虑券商的最小距离和挂单有效期等限制。
-
