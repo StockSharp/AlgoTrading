@@ -1,4 +1,5 @@
 # Connect Disconnect Sound Alert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Connect Disconnect Sound Alert Strategy** continuously monitors the connection status of the strategy connector and logs every transition between online and offline states. The original MQL5 expert played audio files when the MetaTrader terminal was connected or disconnected. This C# conversion keeps the core logic – detecting connection changes – and exposes hooks that allow the StockSharp runtime to record events and durations. The strategy can be used as a lightweight watchdog that informs the operator about connectivity problems without placing any orders.

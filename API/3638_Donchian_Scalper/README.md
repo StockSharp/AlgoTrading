@@ -1,4 +1,5 @@
 # Donchian Scalper
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Donchian Scalper is a StockSharp port of the MetaTrader 4 expert advisor `DonchianScalperEA`. The strategy monitors Donchian channel boundaries and the exponential moving average (EMA) of the same length. A pending stop order is armed only after price pulls back through the EMA, signalling that momentum has reset before a potential breakout. Entries are executed with stop orders placed at the current Donchian extremes and protected by the opposite band. Profits are managed either by a fixed take-profit distance or by adaptive trailing stops that track the chosen market structure.

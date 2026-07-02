@@ -1,4 +1,5 @@
 # Moving Average Crossover Spread 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将 MQL4 智能交易系统 **“EA - Moving Average”** 移植到 StockSharp 平台的版本。
 它在选定的K线数据上跟踪两条指数移动平均线（EMA），在每根新K线开始时检查是否出现交叉信号，并据此开仓。

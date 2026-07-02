@@ -1,4 +1,5 @@
 # Donchian Scalper
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Donchian Scalper 是 MetaTrader 4 专家顾问 `DonchianScalperEA` 的 StockSharp 版本。策略跟踪与指数移动平均线（EMA）具有相同期数的 Donchian 通道边界。只有当价格穿越 EMA 形成回调后，才会准备突破方向的挂单。挂单放置在当前 Donchian 极值位置，并以对侧通道作为初始保护。盈利可以通过固定止盈距离或自适应的追踪止损来管理。

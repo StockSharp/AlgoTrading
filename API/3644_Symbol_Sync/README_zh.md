@@ -1,4 +1,5 @@
 # 符号同步策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Symbol Sync Strategy** 在 StockSharp 平台中复刻 MetaTrader 工具 `SymbolSyncEA` 的行为。策略会监控主策略当前使用的品种，并把该证券同步到所有已注册的从属策略，使整个工作空间始终聚焦同一个标的。

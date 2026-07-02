@@ -1,4 +1,5 @@
 # Moving Average Crossover Spread Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MQL4 expert advisor **"EA - Moving Average"** (file `EA - Moving Average.mq4`).
 It trades a single instrument by reacting to moving average crossovers that are detected at the open of every new candle.

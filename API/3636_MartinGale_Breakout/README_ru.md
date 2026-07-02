@@ -1,4 +1,5 @@
 # Стратегия MartinGale Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **MartinGale Breakout Strategy** — это портированный в StockSharp советник MetaTrader 4 *MartinGaleBreakout*. Алгоритм отслеживает аномальные свечи и после их появления открывает позицию по направлению пробоя. При достижении определённого убытка включается режим восстановления: целевой профит увеличивается так, чтобы компенсировать предыдущие потери, что воспроизводит мартингейл-подход оригинала.

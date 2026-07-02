@@ -1,4 +1,5 @@
 # Symbol Sync Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Symbol Sync Strategy** replicates the MetaTrader utility `SymbolSyncEA` inside the StockSharp environment. The strategy keeps the main strategy symbol and all registered linked strategies synchronized. Whenever the primary symbol changes, the strategy automatically propagates the new security to every linked strategy, ensuring that the entire workspace follows the same instrument without manual intervention.

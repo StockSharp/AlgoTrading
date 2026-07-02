@@ -1,4 +1,5 @@
 # MartinGale Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MartinGale Breakout Strategy** is a breakout-following system converted from the MetaTrader 4 expert advisor *MartinGaleBreakout*. The original robot enters positions after detecting abnormally large candles and applies a martingale-style recovery mechanism to regain previous losses. This StockSharp port reproduces the behaviour using the high-level strategy API with candle subscriptions and money-management parameters.

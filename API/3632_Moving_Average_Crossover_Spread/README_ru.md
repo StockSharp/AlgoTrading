@@ -1,4 +1,5 @@
 # Стратегия Moving Average Crossover Spread
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит MQL4-советник **«EA - Moving Average»** (файл `EA - Moving Average.mq4`) в инфраструктуру StockSharp.
 Она отслеживает пересечения двух экспоненциальных скользящих средних (EMA) и открывает сделку в начале каждой новой свечи, если условия входа выполняются.

@@ -1,4 +1,5 @@
 # Connect Disconnect Sound Alert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Connect Disconnect Sound Alert Strategy** 持续检测策略连接器的在线状态，并在每次连接或断开时记录详细日志。原始的 MQL5 专家在 MetaTrader 终端连接状态变化时播放声音。C# 版本保留了这一核心思想——发现连接变化——并利用 StockSharp 的日志系统提供更加丰富的诊断信息，因此可以作为监控连接稳定性的轻量级工具。

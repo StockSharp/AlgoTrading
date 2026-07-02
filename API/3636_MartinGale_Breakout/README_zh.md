@@ -1,4 +1,5 @@
 # MartinGale 突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **MartinGale Breakout Strategy** 是从 MetaTrader 4 专家顾问 *MartinGaleBreakout* 移植到 StockSharp 的策略。策略监控选定周期内的价格区间，一旦发现异常放大的 K 线并出现单边收盘，就顺势开仓。若浮亏超过设定阈值，将进入恢复模式，通过拉大止盈距离来补回之前的亏损，模拟原始 EA 的马丁式资金管理。
