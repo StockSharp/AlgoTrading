@@ -1,4 +1,5 @@
 # Gazonkos Expert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略移植自 MetaTrader 4 上的 "gazonkos expert" 智能交易系统，原版运行在 EUR/USD 的 1 小时周期。算法在确认出现强劲的单根 K 线动量后，等待价格出现固定幅度的回调再顺势进场，并为仓位设置固定点差的止损与止盈。

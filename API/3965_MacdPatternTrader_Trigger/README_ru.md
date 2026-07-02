@@ -1,4 +1,5 @@
 # Macd Pattern Trader Trigger Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Macd Pattern Trader Trigger Strategy — порт советника MetaTrader 4 `MacdPatternTraderv05cb` на высокоуровневый API StockSharp. Стратегия торгует чистые паттерны гистограммы MACD: двойная вершина ниже нулевой линии открывает короткие позиции, зеркальное двойное дно выше нуля — длинные. Управление сделками полностью повторяет исходного советника: входы по рынку с фиксированным стоп-лоссом и тейк-профитом, задаваемыми в пунктах инструмента.

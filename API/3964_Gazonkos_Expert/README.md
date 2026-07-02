@@ -1,4 +1,5 @@
 # Gazonkos Expert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor "gazonkos expert" that was designed for the EUR/USD H1 chart. The EA waits for a strong one-hour momentum move, then enters in the direction of that move after a configurable pullback. Protective stop loss and take profit levels are applied as fixed distances measured in pips.

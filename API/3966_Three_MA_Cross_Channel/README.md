@@ -1,4 +1,5 @@
 # Three MA Cross Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Three MA Cross Channel Strategy** converts the MetaTrader Expert Advisor `3MaCross_EA` into the StockSharp high-level API. It monitors three configurable moving averages and opens trades when the faster averages cross the slower one. A Donchian price channel is optionally used to manage exits, closely mimicking the original EA that referenced the "Price Channel" indicator.

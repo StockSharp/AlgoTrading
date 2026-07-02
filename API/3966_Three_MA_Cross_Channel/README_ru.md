@@ -1,4 +1,5 @@
 # Стратегия «Three MA Cross Channel»
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Three MA Cross Channel** — конвертация советника MetaTrader `3MaCross_EA` на платформу StockSharp. Стратегия отслеживает три настраиваемые скользящие средние и открывает сделки, когда быстрые средние пересекают медленную. Для управления выходами используется опциональный канал Дончиана, что повторяет логику исходного скрипта с индикатором «Price Channel».

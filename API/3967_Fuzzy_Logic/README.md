@@ -1,5 +1,5 @@
 # Fuzzy Logic Legacy Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy reproduces the 2007 "Fuzzy logic" MetaTrader expert advisor in StockSharp. It combines several Bill Williams tools
 with momentum oscillators and evaluates them through a fuzzy scoring table. Only when the aggregated score shows strong bullish o

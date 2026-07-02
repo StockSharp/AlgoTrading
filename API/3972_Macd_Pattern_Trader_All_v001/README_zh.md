@@ -1,5 +1,5 @@
 # Macd Pattern Trader All v0.01
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现 MetaTrader 专家顾问 “MacdPatternTraderAll v0.01”。它在同一根K线数据上同时运行六套独立的 MACD 入场模式，通过自适应的止损与止盈控制风险，按照原始 EA 的方式分批止盈，并可在亏损后启用缓慢的马丁加仓规则。
 
@@ -46,4 +46,3 @@
 - 通过 `CandleType` 提供蜡烛图数据（例如 `TimeSpan.FromMinutes(5).TimeFrame()`）。
 - 当多个模式同时触发时，仅会建立一笔新的净仓位，因为每次入场都会重新计算总下单量并清理反向止损/止盈。
 - 分批平仓针对的是净仓位，因此即使不同模式给出同方向信号，减仓逻辑依旧生效。
-

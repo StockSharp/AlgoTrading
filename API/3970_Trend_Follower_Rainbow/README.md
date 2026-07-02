@@ -1,4 +1,5 @@
 # Trend Follower Rainbow Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Trend Follower Rainbow Strategy is a C# port of the MetaTrader 4 expert advisor "TrendFollowerRainbowMethodkyast773". The strategy combines several confirmation layers to trade in the direction of strong trends while filtering out range-bound periods. It relies on the alignment of a rainbow of exponential moving averages, MACD momentum, Laguerre oscillator thresholds, Money Flow Index readings, and a fast/slow EMA crossover to trigger positions.

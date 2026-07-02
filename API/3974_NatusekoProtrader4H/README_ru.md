@@ -1,4 +1,5 @@
 # Стратегия Natuseko Protrader 4H
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Natuseko Protrader 4H — порт эксперта MetaTrader 4 *NatusekoProtrader4HStrategy* на платформу StockSharp. Алгоритм комбинирует три EMA,

@@ -1,4 +1,5 @@
 # Macd Pattern Trader Trigger Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Macd Pattern Trader Trigger Strategy 将 MetaTrader 4 顾问 `MacdPatternTraderv05cb` 移植到 StockSharp 的高级策略 API。策略完全依靠 MACD 直方图形态：当零轴下方出现双顶时做空，零轴上方出现镜像双底时做多。风控逻辑保持原样——每次入场均为市价单，并使用以最小价位表示的固定止损与止盈。

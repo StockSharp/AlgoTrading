@@ -1,4 +1,5 @@
 # Стратегия Vector (порт из MT4)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 В этой папке находится реализация советника **Vector** из MetaTrader 4 (`MQL/8305/Vector.mq4`), переписанная на высокоуровневом API StockSharp. Стратегия одновременно анализирует до четырёх валютных пар (основная EURUSD и дополнительные GBPUSD, USDCHF, USDJPY) и открывает позиции только при согласованном направлении тренда.
 

@@ -1,4 +1,5 @@
 # Vector Basket Trend Strategy (MT4 Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This folder contains the StockSharp high-level API port of the MetaTrader 4 expert advisor **Vector** (original script: `MQL/8305/Vector.mq4`). The strategy coordinates up to four major forex pairs — EURUSD (primary), GBPUSD, USDCHF, and USDJPY — and trades them in the same direction when a shared smoothed moving average alignment appears. The conversion keeps the core Vector ideas while adapting them to idiomatic StockSharp patterns.
 

@@ -1,4 +1,5 @@
 # DeMark Lines Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The DeMark Lines Strategy is a conversion of the MetaTrader "DeMark_lines" indicator (MQL/8296). The original script drew DeMark trendlines based on recent swing highs and lows and highlighted breakouts with optional alerts. This StockSharp implementation transforms the visualization logic into an automated breakout strategy. It continuously scans for downtrend and uptrend lines formed by validated pivot points and opens positions when price action decisively breaks those lines.

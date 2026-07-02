@@ -1,5 +1,5 @@
 # Macd Pattern Trader All v0.01
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the "MacdPatternTraderAll v0.01" MetaTrader expert advisor. It runs six independent MACD-based entry patterns on the same candle stream, manages risk with adaptive stop-loss and take-profit levels, performs staged profit taking, and optionally applies a slow martingale sizing rule after losing cycles.
 
@@ -53,4 +53,3 @@ All default values mirror the `extern` variables of `MacdPatternTraderAll v0.01`
 - Provide a candle series via `CandleType` (for example, `TimeSpan.FromMinutes(5).TimeFrame()`).
 - When several patterns trigger simultaneously the strategy will open only one position because every entry call recalculates the combined desired volume and clears opposite stops.
 - The staged exit logic works with aggregated positions, so partial closes occur even if multiple patterns share the same trade direction.
-

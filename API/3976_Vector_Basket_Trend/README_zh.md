@@ -1,4 +1,5 @@
 # Vector 策略（来自 MT4 的移植）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本目录提供了 MetaTrader 4 智能交易系统 **Vector**（源码位于 `MQL/8305/Vector.mq4`）在 StockSharp 高级 API 上的移植版本。策略可同时分析四个主要外汇品种：EURUSD（主品种）、GBPUSD、USDCHF、USDJPY，并在出现一致的趋势信号时同步开仓。
 

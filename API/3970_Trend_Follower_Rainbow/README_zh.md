@@ -1,4 +1,5 @@
 # 趋势追随彩虹策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 趋势追随彩虹策略是 MetaTrader 4 专家顾问“TrendFollowerRainbowMethodkyast773”的 C# 移植版本。策略通过多层确认来捕捉强趋势行情，同时过滤震荡阶段。信号由彩虹式指数移动平均线的排列、MACD 动量、拉盖尔滤波阈值、资金流量指标以及快/慢 EMA 金叉/死叉共同驱动。

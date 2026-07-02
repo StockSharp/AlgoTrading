@@ -1,4 +1,5 @@
 # 德马克趋势线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 德马克趋势线策略基于 MetaTrader 指标“DeMark_lines”（MQL/8296）。原始程序负责在图表上绘制由摆动高点和摆动低点组成的德马克趋势线，并在价格突破时触发提醒。本移植版本将绘图逻辑转换为 StockSharp 自动化策略：它持续跟踪由最新枢轴点确定的上升与下降趋势线，并在收盘价有效突破时执行交易。

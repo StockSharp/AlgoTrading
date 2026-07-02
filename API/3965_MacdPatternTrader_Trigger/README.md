@@ -1,4 +1,5 @@
 # Macd Pattern Trader Trigger Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Macd Pattern Trader Trigger Strategy ports the MetaTrader 4 expert advisor `MacdPatternTraderv05cb` to StockSharp's high-level strategy API. The system trades pure MACD histogram patterns, looking for a double-top structure below the zero line to open shorts and a mirror image double-bottom above the zero line to open longs. Trade management mirrors the original EA: every entry is submitted at market with a configurable fixed stop loss and take profit measured in instrument points.

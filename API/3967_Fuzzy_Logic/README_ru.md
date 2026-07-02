@@ -1,5 +1,5 @@
 # Стратегия Fuzzy Logic Legacy
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит в StockSharp советник MetaTrader «Fuzzy logic» (2007 года). Она объединяет инструменты Билла Вильямса с моме
 нтум-осцилляторами и оценивает их через таблицу нечетких правил. Сделка открывается только тогда, когда агрегированная оценка пок

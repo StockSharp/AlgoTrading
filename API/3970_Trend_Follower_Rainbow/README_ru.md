@@ -1,4 +1,5 @@
 # Стратегия Trend Follower Rainbow
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Trend Follower Rainbow — порт советника MetaTrader 4 «TrendFollowerRainbowMethodkyast773» на C#. Стратегия использует несколько уровней подтверждения, чтобы торговать в направлении сильного тренда и избегать флэта. Входы формируются комбинацией перекрёста EMA, подтверждения MACD, гистограммы Лагерра, фильтра Money Flow Index и строгой структуры «радужных» скользящих средних.

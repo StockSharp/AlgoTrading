@@ -1,4 +1,5 @@
 # Natuseko Protrader 4H 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Natuseko Protrader 4H 策略是 MetaTrader 4 专家顾问 *NatusekoProtrader4HStrategy* 的 StockSharp 版本。原始 EA 在四小时级别上

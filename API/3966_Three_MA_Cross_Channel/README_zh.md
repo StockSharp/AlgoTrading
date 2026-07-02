@@ -1,4 +1,5 @@
 # 三均线通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **三均线通道策略** 将 MetaTrader 专家顾问 `3MaCross_EA` 转换为 StockSharp 的高级 API。策略跟踪三条可配置的移动平均线，当较快的均线向上或向下穿越较慢的均线时开仓。可选的 Donchian 价格通道用于管理离场，对应原脚本使用的 “Price Channel” 指标。
@@ -29,7 +30,7 @@
 | `CandleType` | `DataType` | `TimeSpan.FromMinutes(1).TimeFrame()` | 用于计算的蜡烛类型。 |
 
 ## 说明
-- 所有均线均使用收盘价，可分别配置以对应原 EA 的 `FasterMode`、`MediumMode` 与 `SlowerMode`。 
-- `TakeProfit` 与 `StopLoss` 为绝对价差（例如外汇五位报价中 `0.0010` 约等于 10 点），在柱线收盘时进行判断。 
-- 开启 `UseChannelStop` 时，策略复刻原脚本依赖 `Price Channel` 指标的自动止损逻辑。 
+- 所有均线均使用收盘价，可分别配置以对应原 EA 的 `FasterMode`、`MediumMode` 与 `SlowerMode`。
+- `TakeProfit` 与 `StopLoss` 为绝对价差（例如外汇五位报价中 `0.0010` 约等于 10 点），在柱线收盘时进行判断。
+- 开启 `UseChannelStop` 时，策略复刻原脚本依赖 `Price Channel` 指标的自动止损逻辑。
 - 策略会在图表上绘制三条均线、Donchian 通道与交易标记，便于核对信号。

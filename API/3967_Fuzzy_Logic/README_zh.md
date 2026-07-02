@@ -1,5 +1,5 @@
 # Fuzzy Logic Legacy 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中重现 2007 年发布的 MetaTrader "Fuzzy logic" 专家顾问。它把比尔·威廉姆斯的工具与动量振荡指标结
 合，并使用模糊评分表来综合判断市场方向。只有当综合得分显示明显的多头或空头共识时，系统才会开仓。固定止损与可选
