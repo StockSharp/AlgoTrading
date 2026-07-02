@@ -1,4 +1,5 @@
 # Graal Fractal Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Graal Fractal Channel Strategy** is a StockSharp port of the MetaTrader 4 expert advisor "Graal-003". The algorithm watches five-candle fractal patterns and confirms breakouts using adaptive price channels. When a valid bullish or bearish fractal appears, the strategy evaluates several filters (fractal tunnel, close-price envelope, and optional flat-market suppression) before entering in the breakout direction. An optional Williams %R overlay replicates the manual exit logic from the original robot, while hedge stop orders can be staged to emulate the EA's counter-trend protection.

@@ -1,4 +1,5 @@
 # EMA 6/12 Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert advisor that trades the crossover between a fast EMA(6) and a slow EMA(12). It subscribes to hourly candles by default, calculates both moving averages, and waits for a confirmed crossover at the close of a candle before acting.
 

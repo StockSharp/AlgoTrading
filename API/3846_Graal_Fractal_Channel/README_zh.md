@@ -1,4 +1,5 @@
 # Graal Fractal Channel 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Graal Fractal Channel** 是 MetaTrader 4 专家顾问「Graal-003」在 StockSharp 平台上的移植版本。策略跟踪五根蜡烛组成的分形形态，并通过自适应价格通道确认突破。当出现有效的多头或空头分形时，系统会依次评估多个过滤器（分形通道、收盘价包络以及可选的横盘抑制），只有全部通过后才在突破方向开仓。可选的 Williams %R 指标重现了原始 EA 的离场逻辑，同时还能自动挂出对冲性止损单，以模拟对手单保护。

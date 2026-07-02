@@ -1,5 +1,5 @@
 # GoldWarrior02b 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 4 专家顾问 *GoldWarrior02b*（目录 `MQL/7694`）的 StockSharp 移植版本。
 它结合了商品通道指数（CCI）、自定义“日冲量”指标的替代方案以及 ZigZag 摆动结构，

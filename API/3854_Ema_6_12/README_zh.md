@@ -1,4 +1,5 @@
 # EMA 6/12 均线交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 平台的 EMA_6_12 专家顾问：在默认的一小时 K 线中计算 EMA(6) 与 EMA(12)，并在蜡烛收盘后确认均线交叉，再决定开仓或平仓。
 

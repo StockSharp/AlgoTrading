@@ -1,5 +1,5 @@
 # Firebird MA Envelope Exhaustion
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 Firebird v0.60 包络均值回归 EA。首先对蜡烛的开盘价或高低价中值计算简单移动平均线，然后按百分比向上、向下偏移形成上下通道。价格突破上轨时开空，跌破下轨时开多。只有当价格相对最近一次成交至少偏离一个可配置的点差步长时才会加仓，从而实现网格式摊平。所有头寸共用同一个止损，止损触发后会暂时禁止同方向再次入场，避免在趋势行情中不断重启。
 

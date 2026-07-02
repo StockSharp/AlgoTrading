@@ -1,4 +1,5 @@
 # Стратегия пересечения EMA 6/12
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет логику советника EMA_6_12 для MetaTrader: рассчитывает EMA(6) и EMA(12) на выбранных свечах (по умолчанию — часовые), и после закрытия свечи реагирует на пересечения скользящих средних.
 

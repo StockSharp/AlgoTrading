@@ -1,4 +1,5 @@
 # Gselector Pattern Probability 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Gselector Pattern Probability** 策略是 MT4「Gselector」专家的 StockSharp 版本。策略针对多个价格步长构建合成价阶，记录每一个新出现的模式并评估继续运行的概率，只要概率足够高就发出交易信号。止损和止盈由代码主动管理，从而重现原有 EA 的行为。
@@ -24,7 +25,7 @@
 ## 参数
 | 参数 | 说明 | 默认值 |
 | --- | --- | --- |
-| `CandleType` | 策略订阅的 K 线类型。 | 1 分钟 | 
+| `CandleType` | 策略订阅的 K 线类型。 | 1 分钟 |
 | `ProbabilityThreshold` | 触发交易所需的最小概率。 | 0.8 |
 | `BaseDeltaPoints` | 第一条价阶的基础点数。 | 1 |
 | `DeltaSteps` | 要分析的价阶数量。 | 20 |

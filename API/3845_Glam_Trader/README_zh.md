@@ -1,4 +1,5 @@
 # Glam Trader（多周期共振）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 MetaTrader 平台上的 “GLAM Trader” 专家顾问，通过三个时间框架的共振过滤信号：

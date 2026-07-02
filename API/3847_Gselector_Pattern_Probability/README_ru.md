@@ -1,4 +1,5 @@
 # Стратегия Gselector Pattern Probability
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Gselector Pattern Probability** — порт советника MetaTrader 4 «Gselector» на StockSharp. Стратегия строит синтетические ценовые лестницы для нескольких величин шага, отслеживает вероятности продолжения движения для каждого обнаруженного паттерна и открывает позиции, когда вероятность достаточна. Стоп-лосс и тейк-профит моделируются программно, чтобы повторить логику оригинального эксперта.

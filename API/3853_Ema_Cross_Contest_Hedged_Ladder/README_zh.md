@@ -1,5 +1,5 @@
 # EMA Cross Contest Hedged 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中重现 MetaTrader 智能交易系统 **EMA_CROSS_CONTEST_HEDGED**。机器人监控快慢指数移动平均线（EMA）的交叉，并可选使用 MACD 直方图过滤趋势。当出现信号时，策略立即以市价开仓，并放置一组分批的止损挂单，当价格继续沿趋势运行时逐步加仓以对冲风险。
 

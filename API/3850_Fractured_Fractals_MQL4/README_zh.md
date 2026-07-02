@@ -1,5 +1,5 @@
 # Fractured Fractals (MT4) 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本项目为 MetaTrader 4 智能交易系统 `MQL/7696/Fractured_fractals.mq4` 的 C# 高精度移植版本。策略捕捉最新确认的威廉姆斯
 分形，在突破位置挂入止损单，并利用上一个分形摆动更新保护性止损。仓位规模遵循原版按风险计算的思路，并在亏损连

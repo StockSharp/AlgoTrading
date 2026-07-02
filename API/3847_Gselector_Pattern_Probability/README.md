@@ -1,4 +1,5 @@
 # Gselector Pattern Probability Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Gselector Pattern Probability** strategy is a StockSharp port of the MetaTrader 4 "Gselector" expert. It studies direction changes of synthetic price series built from multiple step sizes, keeps probability statistics for every observed pattern, and trades when the probability of a continuation move is high enough. Stop-loss and take-profit distances are simulated in software to mirror the original expert behaviour.
