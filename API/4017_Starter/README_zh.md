@@ -1,4 +1,5 @@
 # Starter 2005 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Starter 2005 Strategy** 是对 MetaTrader 4 经典专家顾问 `Starter.mq4`（2005 年版）的 StockSharp 高阶 API 迁移。原始系统结合了 Laguerre 振荡器、指数移动平均（EMA）斜率过滤以及 CCI 确认。本移植在保留决策结构的同时，将资金管理和订单执行方式适配到 StockSharp：

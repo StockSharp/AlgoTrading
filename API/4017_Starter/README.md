@@ -1,4 +1,5 @@
 # Starter 2005 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Starter 2005 Strategy** is a StockSharp high-level API conversion of the classic MetaTrader 4 expert advisor `Starter.mq4` released in 2005. The original system mixed a Laguerre oscillator, an exponential moving average slope filter, and a Commodity Channel Index confirmation. This port keeps the decision tree intact while adapting money-management and execution to StockSharp conventions:

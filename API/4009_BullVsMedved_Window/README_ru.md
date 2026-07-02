@@ -1,4 +1,5 @@
 # Стратегия Bull vs Medved Window
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Bull vs Medved — это перенос советника MetaTrader 4 *Bull_vs_Medved.mq4* на платформу StockSharp. Стратегия пытается

@@ -1,4 +1,5 @@
 # TwentyPipsOnceADayStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 MetaTrader 专家顾问 **20pipsOnceADayOppositeLastNHourTrend**，并使用 StockSharp 高阶 API 重新实现。策略每天在指定的小时执行一次交易，通过比较最近一小时与 `N` 小时前的收盘价，逆势开仓。仓位规模采用阶梯式马丁格尔，只在最近的交易出现亏损时才放大手数；同时还增加了交易时段过滤、可选的移动止损以及最大持仓时间限制。
 

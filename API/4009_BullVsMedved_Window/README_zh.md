@@ -1,4 +1,5 @@
 # Bull vs Medved 时间窗口策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Bull vs Medved 时间窗口策略是 MetaTrader 4 专家顾问 *Bull_vs_Medved.mq4* 的 StockSharp 版本。系统在一天内的六个固定

@@ -1,4 +1,5 @@
 # Corrected Average Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Corrected Average Channel Strategy** is a C# port of the MetaTrader expert advisor `e-CA-5`. The system rebuilds the "Corrected Average" (CA) indicator every time a candle closes and opens a position when price crosses the corrected moving average by a configurable sigma offset. The converted implementation relies on StockSharp's high-level candle API, uses market orders, and manages protective exits (stop-loss, take-profit, trailing stop) internally to mirror the behaviour of the original Expert Advisor.

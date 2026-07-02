@@ -1,4 +1,5 @@
 # 校正均线通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **校正均线通道策略** 是 MetaTrader 专家顾问 `e-CA-5` 的 C# 版本。策略在每根 K 线收盘后重新计算“校正均线”（Corrected Average）指标，只要价格向上或向下突破校正均线一定的西格玛偏移量，就会开仓。移植后的实现完全基于 StockSharp 的高级蜡烛图 API，使用市价单，并在策略内部管理止损、止盈和移动止损，以复制原始 EA 的行为。

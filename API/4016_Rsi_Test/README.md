@@ -1,4 +1,5 @@
 # Rsi Test Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 `RsiTestStrategy` converts the MetaTrader 4 expert advisor **RSI_Test** into StockSharp's high level API. The strategy combines a fast RSI momentum filter with simple candle confirmation and risk-aware position sizing. It trades a single instrument defined by the host strategy and uses completed candles only, mirroring the tick-to-close logic of the original code.

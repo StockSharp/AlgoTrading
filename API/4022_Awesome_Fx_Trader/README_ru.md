@@ -1,4 +1,5 @@
 # Awesome Fx Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит связку из каталога `MQL/8539`, состоящую из индикаторов **AwesomeFxTradera.mq4** и **t_ma.mq4**. Первый строит гистограмму Bill Williams Awesome Oscillator, окрашивая столбцы в зелёный или красный цвет в зависимости от изменения значения, второй отображает 34-периодную линейно-взвешенную среднюю (LWMA) и её сглаженную копию. В версии для StockSharp эти расчёты сохранены, а изменение «цветов» превращено в торговые сигналы.
 

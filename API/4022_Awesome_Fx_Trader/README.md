@@ -1,4 +1,5 @@
 # Awesome Fx Trader
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the MetaTrader setup from `MQL/8539`, which consists of the custom indicators **AwesomeFxTradera.mq4** and **t_ma.mq4**. The original code paints the Bill Williams Awesome Oscillator histogram in green or red depending on whether the value is rising or falling, and overlays a 34-period linear weighted moving average (LWMA) alongside a smoothed clone of the same curve. The StockSharp port keeps the same calculations and converts the indicator colours into trading signals.
 

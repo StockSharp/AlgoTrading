@@ -1,4 +1,5 @@
 # Brandy v1.2 Strategy (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Brandy v1.2 Strategy** is a direct conversion of the MetaTrader 4 expert advisor "Brandy_v1_2.mq4" into the StockSharp high-level strategy framework. The system evaluates a pair of displaced simple moving averages (SMAs) calculated on the closing price of the configured candle series. New positions are opened only when both the long-term and short-term SMAs show synchronized momentum in the same direction, while existing trades are managed using slope reversals, fixed stop-loss levels, and an optional trailing stop module.

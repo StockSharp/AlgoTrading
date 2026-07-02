@@ -1,4 +1,5 @@
 # FT 趋势跟随
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 FT 趋势跟随是 MetaTrader 4 智能交易系统 `FT_TrendFollower.mq4` 的 StockSharp 移植版本。策略通过叠加古比均线 (GMMA) 扇形、Laguerre 振荡器触发器、快/慢 EMA 金叉过滤器以及 MACD 主线过滤，在中等周期的趋势中寻找入场点。只有当价格先跌入 GMMA 束内部、在 Laguerre 极值处反弹，并且大多数 GMMA 曲线重新朝交易方向倾斜时，才会触发开仓。风险控制完全复刻原始 EA：可选的摆动止损、固定距离止损，以及三种互斥的分批离场模块（基于日枢轴位或波动通道）。

@@ -1,4 +1,5 @@
 # Bull vs Medved Window Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Bull vs Medved strategy is a StockSharp conversion of the MetaTrader 4 expert *Bull_vs_Medved.mq4*. The system attempts to

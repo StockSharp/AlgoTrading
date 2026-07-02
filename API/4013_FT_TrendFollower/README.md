@@ -1,4 +1,5 @@
 # FT Trend Follower
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 FT Trend Follower is a StockSharp port of the MetaTrader 4 expert advisor `FT_TrendFollower.mq4`. The strategy rides medium-term trends by stacking a Guppy Multiple Moving Average (GMMA) fan with a Laguerre oscillator trigger, a fast/slow EMA crossover and a MACD filter. Entries only fire after the market dips into the GMMA bundle, rebounds from a Laguerre extreme, and the majority of GMMA lines resume sloping in the direction of the trade. Profit management mirrors the original EA: an optional swing-based stop, a fixed-distance stop, and three mutually exclusive staged exit modules driven by daily pivot levels or channel averages.

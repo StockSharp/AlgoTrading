@@ -1,4 +1,5 @@
 # Стратегия Starter 2005
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Starter 2005 Strategy** — это перенос на высокоуровневый API StockSharp классического эксперта MetaTrader 4 `Starter.mq4` (2005 год). Оригинальный алгоритм сочетает осциллятор Laguerre, фильтр наклона экспоненциальной средней и подтверждение по CCI. Конверсия сохраняет структуру принятия решений, адаптируя управление капиталом и исполнение к архитектуре StockSharp:

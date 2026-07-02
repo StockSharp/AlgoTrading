@@ -1,4 +1,5 @@
 # Brandy v1.2 策略（C# 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Brandy v1.2 策略** 是对 MetaTrader 4 专家顾问 "Brandy_v1_2.mq4" 的完整移植，基于 StockSharp 高级策略 API 实现。系统同时计算两条基于收盘价的简单移动平均线（SMA），并对它们施加与原始脚本相同的位移。只有当长周期与短周期 SMA 的斜率同时指向同一方向时才允许开仓；持仓阶段则通过趋势反转、固定止损以及可选的跟踪止损进行管理。

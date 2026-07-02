@@ -1,4 +1,5 @@
 # TwentyPipsOnceADayStrategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Port of the MetaTrader expert **20pipsOnceADayOppositeLastNHourTrend** implemented with the StockSharp high-level API. The strategy trades once per configured hour and opens a contrarian position against the drift of the last `N` hourly candles. Position size follows a martingale ladder that increases the lot only when a recent trade ended with a loss. The implementation also enforces a daily trading schedule, optional trailing protection, and a maximum holding period.
 

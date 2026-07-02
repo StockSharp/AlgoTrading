@@ -1,4 +1,5 @@
 # Стратегия Rsi Test
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 `RsiTestStrategy` — порт адаптера MetaTrader 4 **RSI_Test** на высокоуровневый API StockSharp. Стратегия совмещает динамику RSI с подтверждением от свечных разрывов и управлением риском при расчёте объёма. Торговля ведётся только по завершённым свечам, что полностью повторяет логику исходного эксперта.

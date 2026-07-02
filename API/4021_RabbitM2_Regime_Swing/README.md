@@ -1,4 +1,5 @@
 # Rabbit M2 Regime Swing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Rabbit M2 is a discretionary expert advisor originally coded by Peter Byrom for MetaTrader 4. The algorithm alternates between

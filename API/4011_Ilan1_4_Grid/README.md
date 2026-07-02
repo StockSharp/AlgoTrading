@@ -1,4 +1,5 @@
 # Ilan 1.4 Basket Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Ilan 1.4 is a classical averaging grid system. The converted strategy subscribes to a single candle series and opens an initial market position based on the direction of the last two completed candles: if the more recent close is below the older one the basket starts with a sell, otherwise it opens a buy. When price moves against the active basket by the configured **Pip Step**, the strategy optionally adds a new position in the same direction and recalculates the weighted-average entry price.

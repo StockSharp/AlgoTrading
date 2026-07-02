@@ -1,4 +1,5 @@
 # Rsi Test 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 `RsiTestStrategy` 将 MetaTrader 4 专家顾问 **RSI_Test** 迁移到 StockSharp 的高级 API。策略结合 RSI 动能判定、K 线开盘价确认以及基于风险的仓位控制，只在 K 线完成后运行，与原始 EA 的收盘判定逻辑完全一致。

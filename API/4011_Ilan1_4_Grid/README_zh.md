@@ -1,4 +1,5 @@
 # Ilan 1.4 篮式网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Ilan 1.4 是典型的网格加仓系统。本策略订阅单一周期的 K 线序列，根据最近两根已完成 K 线的收盘价决定首单方向：如果最新收盘价低于更早的收盘价，则以卖单开启篮子，否则开多。价格按照配置的 **Pip Step** 逆向移动时，策略可选择性地在同一方向加仓，并重新计算加权平均建仓价。
