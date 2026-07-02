@@ -1,4 +1,4 @@
-# IMACD Sniper
+# IMACD Sniper 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 IMACD SniperはMACDクロスオーバーをEMAトレンドフィルター、出来高確認、強いローソク足パターンと組み合わせます。動的なテイクプロフィットとストップロスは直近の平均レンジに基づいています。

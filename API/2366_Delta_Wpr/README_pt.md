@@ -1,4 +1,4 @@
-# Delta WPR
+# Estratégia Delta WPR
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 O Delta WPR compara um oscilador Williams %R rápido e um lento para capturar mudanças de momentum. Quando o valor rápido supera o lento e o oscilador lento permanece acima de um nível limiar, a estratégia abre uma posição comprada e fecha qualquer exposição vendida. A configuração oposta — rápido abaixo do lento com o oscilador lento abaixo do nível — aciona uma entrada vendida. Cada nova vela é processada apenas após a conclusão para evitar ruído.

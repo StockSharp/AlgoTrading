@@ -1,4 +1,4 @@
-# Aver4 Stoch Post ZigZag
+# Strategie Aver4 Stoch Post ZigZag
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Kombiniert vier Stoch-Oszillatoren über mehrere Zeithorizonte und einen einfachen ZigZag-Pivot-Detektor. Der gemittelte Stoch leitet die überkauften/überverkauften Niveaus, während der ZigZag Swing-Hochs und -Tiefs bestätigt. Käufe erfolgen, wenn der gemittelte Stoch unter das überverkaufte Niveau fällt und ein neues ZigZag-Tief entsteht. Verkäufe erfolgen, wenn der gemittelte Stoch über das überkaufte Niveau steigt und ein neues ZigZag-Hoch entsteht. Bestehende entgegengesetzte Positionen werden bei Signalumkehr geschlossen.

@@ -1,4 +1,4 @@
-# Accrual Anomaly
+# Accrual Anomaly 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Accrual Anomaly** 策略实现了应计项异常因子。在每年五月的第一个交易日重新平衡，做多低应计股票并做空高应计股票。

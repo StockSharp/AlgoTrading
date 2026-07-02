@@ -1,4 +1,4 @@
-# FON60DK
+# FON60DK 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は、Tillson T3ラインがOptimized Trend Tracker（OTT）の上限バンドを上回り、Williams %Rが強気モメンタムを確認したときにロングポジションを建てます。Tillson T3が反対側のOTTバンドを下回り、Williams %Rが売られ過ぎゾーンに入るとポジションを決済します。

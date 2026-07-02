@@ -1,4 +1,4 @@
-# 3x Supertrend
+# Estratégia 3x Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia **3x Supertrend** utiliza três bandas baseadas em ATR com diferentes períodos e multiplicadores.

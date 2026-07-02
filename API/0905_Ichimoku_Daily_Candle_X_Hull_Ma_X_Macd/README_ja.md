@@ -1,4 +1,4 @@
-# Ichimoku Daily Candle X Hull MA X MACD
+# Ichimoku Daily Candle X Hull MA X MACD 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は、Ichimokuの先行線、日足ローソク足の方向、Hull Moving Averageのトレンド、およびHMAベースのMACDを組み合わせています。すべてのコンポーネントが強気に揃ったときにロングポジションを建て、すべての条件が弱気に転じたときにショートを行います。

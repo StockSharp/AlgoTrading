@@ -1,4 +1,4 @@
-# Color Stochastic NR Strategy
+# Color Stochastic NR 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用随机指标并提供多种信号模式。每种模式以不同方式解释 %K 和 %D 线以生成买卖信号。

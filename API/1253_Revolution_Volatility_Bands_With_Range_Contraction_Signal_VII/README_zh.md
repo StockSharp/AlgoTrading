@@ -1,4 +1,4 @@
-# Revolution Volatility Bands With Range Contraction Signal VII Strategy
+# Revolution Volatility Bands With Range Contraction Signal VII 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用指数移动平均线构建包络通道，并寻找上下轨之间距离收缩的时期。当检测到收缩且价格突破平滑的上下轨时，策略顺势开仓。

@@ -1,4 +1,4 @@
-# Volume Spike Trend
+# Volume Spike Trend 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 Volume Spike Trendは取引出来高の急増を監視します。現在の出来高が直近の平均を設定した乗数倍超えると、強い市場参加を示します。

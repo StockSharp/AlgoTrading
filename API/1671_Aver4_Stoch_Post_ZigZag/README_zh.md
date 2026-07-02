@@ -1,4 +1,4 @@
-# Aver4 Stoch Post ZigZag
+# Aver4 Stoch Post ZigZag 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合了四个不同周期的 Stochastic 振荡器和一个简单的 ZigZag 枢轴检测器。平均 Stochastic 用于判断超买和超卖水平，而 ZigZag 用于确认新的高点和低点。当平均 Stochastic 低于超卖阈值并出现新的 ZigZag 低点时买入；当平均 Stochastic 高于超买阈值并出现新的 ZigZag 高点时卖出。反向信号出现时会平掉相反的持仓。

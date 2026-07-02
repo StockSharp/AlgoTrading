@@ -1,4 +1,4 @@
-# HTF Candles Lib
+# Estrategia HTF Candles Lib
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 HTF Candles Lib es una estrategia utilitaria que reconstruye velas de marcos temporales superiores a partir de datos de marcos temporales inferiores y registra su estructura detallada.

@@ -1,4 +1,4 @@
-# Bollinger Winner Lite
+# Bollinger Winner Lite 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Winner Lite 是一个简化的布林带反转系统，关注价格大幅超出带之后的快速回归。

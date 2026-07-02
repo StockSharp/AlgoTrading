@@ -1,4 +1,4 @@
-# MOC Delta MOO Entry v2
+# MOC Delta MOO Entry v2 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在下午时段记录买入和卖出成交量，并利用得到的 MOC  delta 在次日开盘进行交易。

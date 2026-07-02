@@ -1,4 +1,4 @@
-# Cidomo V1
+# Strategie Cidomo V1
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tages-Ausbruchsstrategie, die Trades platziert, wenn der Preis die jüngste Range verlässt.

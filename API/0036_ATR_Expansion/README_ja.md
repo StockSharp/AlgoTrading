@@ -1,4 +1,4 @@
-# ATR Expansion Breakout
+# ATR Expansion Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この戦略はAverage True Rangeを使用してボラティリティの急増に追従します。ATRが前のバーと比較して上昇し、価格が移動平均に対して取引される場合、ブレイクアウトに乗ることを目指します。

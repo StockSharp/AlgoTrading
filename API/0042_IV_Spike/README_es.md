@@ -1,4 +1,4 @@
-# Implied Volatility Spike
+# Estrategia Implied Volatility Spike
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Esta estrategia vigila la volatilidad implícita en busca de saltos repentinos respecto al valor anterior. Un fuerte spike combinado con un precio que opera contra la media móvil puede señalar una reversión a corto plazo.

@@ -1,4 +1,4 @@
-# Larry Connors RSI 3
+# Estratégia Larry Connors RSI 3
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia de reversão à média baseada nas regras RSI de Larry Connors.

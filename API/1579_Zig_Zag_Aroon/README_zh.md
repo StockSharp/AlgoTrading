@@ -1,4 +1,4 @@
-# Zig Zag Aroon Strategy
+# Zig Zag Aroon 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将简单的 ZigZag 枢轴识别与 Aroon 指标结合。当 Aroon Up 上穿 Aroon Down 且最近的枢轴为高点时买入。Aroon Down 上穿 Aroon Up 且最新枢轴为低点时做空。

@@ -1,4 +1,4 @@
-# Kalman Filter Trend Strategy
+# Kalman Filter Trend 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此趋势跟随方法使用卡尔曼滤波器平滑价格波动，并估计潜在方向。滤波器可动态适应市场噪声，比常规均线更能反映趋势力度。

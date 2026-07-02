@@ -1,4 +1,4 @@
-# TFM
+# TFM 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 時間軸乗数ブレイクアウト戦略。基本時間軸を乗算して形成される上位時間軸を使用します。価格が前回の高値を上抜けするとロング、前回の安値を下抜けするとオプションでショートまたは決済します。

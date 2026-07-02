@@ -1,4 +1,4 @@
-# Cronex AC
+# Cronex AC 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Cronex AC戦略は、StockSharpの高レベルAPIを使用してクラシックなCronex Acceleration/Deceleration（AC）エキスパートアドバイザーを再現します。2つの連続移動平均でAcceleratorオシレーターを平滑化し、ファストラインがスローラインをクロスしたときに反応します。強気クロスはロングポジションを開いてショートを閉じ、弱気クロスはショートを開いてロングを閉じます。

@@ -1,4 +1,4 @@
-# Ichimoku Volume Strategy
+# Strategie Ichimoku Volume
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Implementierung der Strategie - Ichimoku + Volume. Kauft, wenn der Preis über der Kumo-Wolke liegt, Tenkan-sen über Kijun-sen liegt und das Volumen über dem Durchschnitt liegt. Verkauft, wenn der Preis unter der Kumo-Wolke liegt, Tenkan-sen unter Kijun-sen liegt und das Volumen über dem Durchschnitt liegt.

@@ -1,4 +1,4 @@
-# Z-Score Normalized VIX Strategy
+# Z-Score Normalized VIX 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略计算多个VIX指数的z分数并求平均，当组合值低于负阈值时做多。

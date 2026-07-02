@@ -1,4 +1,4 @@
-# Tweezer Bottom Strategy
+# Strategie Tweezer Bottom
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Der Tweezer Bottom ist ein Zwei-Kerzen-Umkehrmuster, das nach einem Rückgang erscheint. Beide Kerzen teilen ein ähnliches Tief, was signalisiert, dass Verkäufer nicht über dieses Niveau hinaus drücken konnten.

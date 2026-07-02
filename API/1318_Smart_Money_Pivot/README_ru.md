@@ -1,4 +1,4 @@
-# Smart Money Pivot Strategy
+# Стратегия Smart Money Pivot
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пробои пивотных максимумов и минимумов. Покупка выполняется при пробое последнего пивот-хая, продажа — при пробое пивот-лоу. Каждая сделка использует собственные значения стоп-лосса и тейк-профита.

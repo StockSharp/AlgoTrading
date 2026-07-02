@@ -1,4 +1,4 @@
-# Risk Management and Positionsize - MACD example
+# Стратегия Risk Management and Positionsize - MACD example
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Risk Management and Positionsize - MACD example** демонстрирует динамический размер позиции на основе текущей эквити. Используются пересечения MACD со старшего таймфрейма и фильтр тренда на основе скользящей средней.

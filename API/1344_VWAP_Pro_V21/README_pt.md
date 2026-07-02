@@ -1,4 +1,4 @@
-# VWAP Pro V21
+# Estratégia VWAP Pro V21
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia combina EMA rápida e lenta com VWAP e gestão de risco baseada em ATR. Um filtro EMA de período superior (1h, comprimento 50) confirma a tendência. As operações abrem quando o preço se alinha com a tendência e fecham nos níveis de take profit ou stop loss baseados em ATR.

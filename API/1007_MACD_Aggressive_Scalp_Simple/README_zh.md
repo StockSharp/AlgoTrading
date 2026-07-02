@@ -1,4 +1,4 @@
-# MACD Aggressive Scalp Simple Strategy
+# MACD Aggressive Scalp Simple 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 MACD 直方图与 50 周期 EMA 过滤的剥头皮策略。

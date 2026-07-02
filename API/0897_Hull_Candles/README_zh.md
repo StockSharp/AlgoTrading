@@ -1,4 +1,4 @@
-# Hull Candles
+# Hull Candles 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hull Candles 是一种简单的趋势跟随策略，使用基于 OHLC 平均价的 Hull 移动平均线。当 HMA 上升且收盘价高于其 SMA 时做多；当 HMA 下降且收盘价低于其 SMA 时做空。

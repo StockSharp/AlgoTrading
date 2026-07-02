@@ -1,4 +1,4 @@
-# My Line Order
+# My Line Order 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在价格突破预设的水平线时发送市价单。用户分别指定做多和做空的触发价格以及以点为单位的风险参数。开仓后策略会跟踪止损、止盈以及可选的追踪止损。

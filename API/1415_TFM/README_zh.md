@@ -1,4 +1,4 @@
-# TFM
+# TFM 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 时间框架倍数突破策略。通过将基础时间框架乘以倍数形成更高时间框架。当价格突破上一高点时做多，跌破上一低点时可做空或平多。

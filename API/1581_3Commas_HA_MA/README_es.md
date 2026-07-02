@@ -1,4 +1,4 @@
-# 3Commas HA & MA
+# Estrategia 3Commas HA & MA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Utiliza velas Heikin Ashi y un par de medias móviles exponenciales. Una operación larga ocurre cuando una vela HA bajista es seguida por una alcista mientras la MA rápida está por encima de la MA lenta. Los cortos siguen la configuración opuesta. Las posiciones se cierran cuando el precio cruza la MA lenta o alcanza el stop de swing.

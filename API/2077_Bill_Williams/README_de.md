@@ -1,4 +1,4 @@
-# Bill Williams
+# Strategie Bill Williams
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bill Williams kombiniert den Alligator-Indikator mit Fraktal-Ausbrüchen. Kiefer, Zähne und Lippen müssen divergieren, bevor ein Ausbruch des letzten Fraktals eine Order auslöst.

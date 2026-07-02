@@ -1,4 +1,4 @@
-# VIX Trigger
+# Estrategia VIX Trigger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 VIX Trigger reacciona a los cambios en el Índice de Volatilidad. Un VIX en aumento señala miedo y posibles reversiones en el instrumento subyacente. La estrategia compara la dirección del VIX con el precio relativo a una media móvil.

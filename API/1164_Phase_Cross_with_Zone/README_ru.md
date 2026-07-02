@@ -1,4 +1,4 @@
-# Phase Cross Strategy with Zone
+# Стратегия Phase Cross Strategy with Zone
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия покупает, когда сглаженная SMA с положительным смещением пересекает снизу EMA с отрицательным смещением, и закрывает позицию при обратном пересечении.

@@ -1,4 +1,4 @@
-# OBV Breakout
+# OBV Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 On-Balance Volume (OBV)は出来高を累積することで買い圧力と売り圧力を追跡します。この戦略は、価格が動きを確認している間、ルックバック期間内でOBVが高値を上抜けるか安値を下抜けるブレイクアウトを探します。

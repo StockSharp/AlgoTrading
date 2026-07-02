@@ -1,4 +1,4 @@
-# Zero-lag Volatility-Breakout EMA Trend Strategy
+# Стратегия Zero-lag Volatility-Breakout EMA Trend
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пробоя волатильности на основе нулелаговой разницы EMA и полос Боллинджера с фильтром тренда EMA. При желании удерживает позицию до противоположного сигнала.

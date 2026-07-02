@@ -1,4 +1,4 @@
-# VWAP Pro V21
+# VWAP Pro V21 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略结合快慢EMA、VWAP和基于ATR的风险控制。使用1小时50周期EMA作为趋势过滤器。当价格符合趋势时开仓，达到ATR计算的止盈或止损水平时平仓。

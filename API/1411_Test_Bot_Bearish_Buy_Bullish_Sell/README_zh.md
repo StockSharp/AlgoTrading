@@ -1,4 +1,4 @@
-# Test Bot: Bearish Buy / Bullish Sell
+# Test Bot: Bearish Buy / Bullish Sell 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 在无持仓时遇到第一根看跌K线买入，在第一根看涨K线平仓。

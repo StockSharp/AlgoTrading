@@ -1,4 +1,4 @@
-# VWAP Williams R Strategy
+# VWAP Williams R 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略关注围绕VWAP的日内回归，结合Williams %R动量指标。当价格远离VWAP且%R进入超买或超卖区域时，预期价格将回到均值。

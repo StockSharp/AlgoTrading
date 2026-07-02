@@ -1,4 +1,4 @@
-# Pairs Trading Strategy
+# Strategie Pairs
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Diese Pairs-Trading-Strategie überwacht den Kurs-Spread zwischen zwei korrelierten Instrumenten. Durch den Vergleich des Spreads mit seinem historischen Mittelwert und seiner Standardabweichung versucht das System, vorübergehende Divergenzen auszunutzen, die schließlich revertieren.

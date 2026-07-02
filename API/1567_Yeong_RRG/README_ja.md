@@ -1,4 +1,4 @@
-# Yeong RRG
+# Yeong RRG 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 正規化された相対強度とモメンタム比率（RRG）に基づく戦略です。

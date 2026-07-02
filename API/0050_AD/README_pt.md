@@ -1,4 +1,4 @@
-# Accumulation/Distribution Trend
+# Estratégia Accumulation/Distribution Trend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Esta estratégia usa o indicador Accumulation/Distribution (A/D) para medir a pressão compradora e vendedora. Um A/D crescente junto com o preço acima da média móvel sinaliza acumulação, enquanto um A/D decrescente com o preço abaixo da média indica distribuição.

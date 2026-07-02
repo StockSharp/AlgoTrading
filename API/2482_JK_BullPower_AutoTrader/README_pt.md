@@ -1,4 +1,4 @@
-# JK BullP AutoTrader
+# Estratégia JK BullP AutoTrader
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 O JK BullP AutoTrader é um porte do Expert Advisor original do MetaTrader que depende do oscilador Bulls Power. Ele interpreta a relação entre dois valores consecutivos de Bulls Power para detectar quando a força altista está enfraquecendo acima da linha zero ou quando cai abaixo de zero e se reverte. Operações compradas e vendidas são protegidas com stops fixos e um trailing stop incremental que se aperta conforme a operação se torna lucrativa.

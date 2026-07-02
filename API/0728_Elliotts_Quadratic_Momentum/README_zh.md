@@ -1,4 +1,4 @@
-# Elliott's Quadratic Momentum
+# Elliott's Quadratic Momentum 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Elliott's Quadratic Momentum** 策略使用多个 SuperTrend 指标来捕捉波浪动量。

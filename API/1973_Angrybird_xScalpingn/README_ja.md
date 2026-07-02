@@ -1,4 +1,4 @@
-# Angrybird xScalpingn
+# Angrybird xScalpingn 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Angrybird xScalpingn はマーチンゲール方式のスキャルピング戦略です。短期価格方向とRSIフィルターに基づいて最初のトレードを開きます。直近レンジから導出された動的ステップ分だけ価格がオープンポジションに反して動くと、戦略はボリュームをファクターで掛けた別のトレードを追加します。CCIが強い逆方向の動きを示したとき、またはストップロスやテイクプロフィットに達したとき、すべてのポジションがクローズされます。

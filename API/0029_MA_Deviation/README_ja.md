@@ -1,4 +1,4 @@
-# MA Deviation
+# MA Deviation 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 価格が移動平均から大きく乖離したときに取引する戦略

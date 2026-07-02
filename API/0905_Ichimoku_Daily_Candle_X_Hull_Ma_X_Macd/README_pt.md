@@ -1,4 +1,4 @@
-# Ichimoku Daily Candle X Hull MA X MACD
+# Estratégia Ichimoku Daily Candle X Hull MA X MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Esta estratégia combina as linhas avançadas do Ichimoku, a direção da vela diária, a tendência da Hull Moving Average e um MACD baseado em HMA. Posições compradas são abertas quando todos os componentes estão alinhados em alta; vendidas ocorrem quando todas as condições ficam baixistas.

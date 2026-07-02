@@ -1,4 +1,4 @@
-# PulseWave Strategy
+# PulseWave 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 VWAP、MACD 金叉/死叉 与 RSI 过滤器。

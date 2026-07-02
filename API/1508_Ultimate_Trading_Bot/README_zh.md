@@ -1,4 +1,4 @@
-# Ultimate Trading Bot
+# Ultimate Trading Bot 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 只做多策略，结合RSI、均线、MACD和随机指标的交叉来确定进出场。

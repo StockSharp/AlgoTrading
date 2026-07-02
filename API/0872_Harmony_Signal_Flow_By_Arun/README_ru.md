@@ -1,4 +1,4 @@
-# Harmony Signal Flow By Arun
+# Стратегия Harmony Signal Flow By Arun
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Harmony Signal Flow By Arun** — стратегия, использующая RSI малого периода для ловли разворотов с фиксированными стоп-лоссами и целями. Лонг открывается при пересечении RSI уровня `LowerThreshold` снизу вверх, шорт — при пересечении сверху уровня `UpperThreshold`. Позиции закрываются по стопу, цели или в 15:25 каждого дня.

@@ -1,4 +1,4 @@
-# US Index First 30m Candle Strategy
+# US Index First 30m Candle 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略在美股开盘后首个30分钟区间形成后，突破该区间进行交易，每日仅一笔。

@@ -1,4 +1,4 @@
-# Ehlers SwamiCharts RSI
+# Ehlers SwamiCharts RSI 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 期間2〜48のRSI値を平均してカラーマップを構築します。平均色が緑のときにロング、赤のときにショートを取ります。

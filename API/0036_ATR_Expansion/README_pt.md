@@ -1,4 +1,4 @@
-# ATR Expansion Breakout
+# Estratégia ATR Expansion Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Esta estratégia segue explosões de volatilidade usando o Average True Range. Quando o ATR está aumentando em comparação com a barra anterior e o preço opera em relação a uma média móvel, ela busca surfar o rompimento.

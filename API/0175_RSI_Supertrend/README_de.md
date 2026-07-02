@@ -1,4 +1,4 @@
-# Rsi Supertrend Strategy
+# Strategie Rsi Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategie basierend auf den Indikatoren RSI und Supertrend. Geht long, wenn der RSI überverkauft ist (< 30) und der Preis über Supertrend liegt. Geht short, wenn der RSI überkauft ist (> 70) und der Preis unter Supertrend liegt.

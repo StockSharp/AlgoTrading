@@ -1,4 +1,4 @@
-# Macd Williams R Strategy
+# Macd Williams R 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 MACD と Williams %R インジケーターに基づく戦略。MACD > Signal かつ Williams %R が売られすぎ（< -80）の場合にロング参入。MACD < Signal かつ Williams %R が買われすぎ（> -20）の場合にショート参入。

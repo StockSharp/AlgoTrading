@@ -1,4 +1,4 @@
-# Bbsr Extreme
+# Estrategia Bbsr Extreme
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia **Bbsr Extreme** combina rupturas de Bollinger Bands con un filtro de tendencia basado en una media móvil.

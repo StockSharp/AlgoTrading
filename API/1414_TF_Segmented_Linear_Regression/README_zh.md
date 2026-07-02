@@ -1,4 +1,4 @@
-# TF Segmented Linear Regression
+# TF Segmented Linear Regression 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在每个时间段内构建线性回归通道。当价格突破上轨时做多，跌破下轨时做空。

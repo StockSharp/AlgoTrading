@@ -1,4 +1,4 @@
-# Adx Bollinger Strategy
+# Strategie Adx Bollinger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategie basierend auf den Indikatoren ADX und Bollinger Bänder. Geht long, wenn ADX > 25 und der Preis über das obere Bollinger Band ausbricht. Geht short, wenn ADX > 25 und der Preis unter das untere Bollinger Band ausbricht.

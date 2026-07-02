@@ -1,4 +1,4 @@
-# Adx Bollinger Strategy
+# Adx Bollinger 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 ADXとBollingerバンドインジケーターに基づく戦略。ADX > 25かつ価格がBollingerバンド上限を突破したときロングエントリー。ADX > 25かつ価格がBollingerバンド下限を割り込んだときショートエントリー。

@@ -1,4 +1,4 @@
-# Parabolic SAR Hurst Filter
+# Parabolic SAR Hurst Filter 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Parabolic SAR Hurst Filter** 策略基于 Parabolic SAR Hurst Filter。

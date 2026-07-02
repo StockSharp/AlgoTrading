@@ -1,4 +1,4 @@
-# 3x Supertrend
+# 3x Supertrend 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 **3x Supertrend**戦略は、異なる期間と乗数を持つ3つのATRベースのバンドを使用します。

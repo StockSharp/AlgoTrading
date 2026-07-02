@@ -1,4 +1,4 @@
-# BTCUSD Adjustable SLTP Strategy
+# BTCUSD Adjustable SLTP 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 BTCUSD 上使用 SMA(10) 与 SMA(25) 的交叉，并配合 EMA(150) 过滤。多头在均线金叉后等待回撤：记录最高价并计算回撤水平，当价格再次上破该水平时入场。空头在均线死叉且价格低于 EMA(150) 时立即入场。

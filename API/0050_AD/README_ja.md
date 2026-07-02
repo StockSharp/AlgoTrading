@@ -1,4 +1,4 @@
-# Accumulation/Distribution Trend
+# Accumulation/Distribution Trend 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この戦略は、Accumulation/Distribution (A/D) インジケーターを使って買い圧力と売り圧力を測定します。A/Dが上昇し価格が移動平均を上回っている場合は蓄積（アキュムレーション）、A/Dが下落し価格が平均を下回っている場合は分配（ディストリビューション）を示します。

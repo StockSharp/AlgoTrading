@@ -1,4 +1,4 @@
-# Honest Volatility Grid
+# Стратегия Honest Volatility Grid
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит сетку из уровней Keltner Channel и открывает длинные и короткие позиции на заранее заданных полосах. Выход осуществляется по противоположным уровням или аварийному стопу.

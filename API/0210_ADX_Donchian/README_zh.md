@@ -1,4 +1,4 @@
-# ADX Donchian Strategy
+# ADX Donchian 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合ADX和唐奇安通道。当ADX高于阈值且价格突破上轨时做多；当ADX高于阈值且价格跌破下轨时做空，体现强势趋势突破。

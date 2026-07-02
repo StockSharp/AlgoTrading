@@ -1,4 +1,4 @@
-# Refined SMA EMA Crossover with Ichimoku and 200 SMA Filter
+# Стратегия Refined SMA EMA Crossover with Ichimoku and 200 SMA Filter
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сочетает пересечение SMA и EMA с фильтрами облака Ишимоку и 200-периодной SMA. Покупает, когда SMA пересекает EMA снизу вверх при цене выше облака и SMA200. Продаёт при обратных условиях.

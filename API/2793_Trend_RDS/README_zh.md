@@ -1,4 +1,4 @@
-# Trend RDS
+# Trend RDS 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend RDS 策略专注于价格行为中的方向性结构。当三根已完成的 K 线呈现严格递增的低点时，被视为新的多头动能；三根严格递减的高点则被视为空头机会。若同一组三根 K 线同时出现更高低点和更低高点（通常意味着收敛三角形），信号会被过滤掉，以避免在无明显趋势时入场。`Reverse` 参数可以按需反转多空方向。

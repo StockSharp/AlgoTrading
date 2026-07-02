@@ -1,4 +1,4 @@
-# Smart Money Concept Strategy - Uncle Sam
+# Стратегия Smart Money Concept Strategy - Uncle Sam
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия пробоя отслеживает локальные максимумы и минимумы. Сделка на покупку открывается при закрытии цены выше последнего пивота, а сделка на продажу — при закрытии ниже последнего пивота. При желании можно включить фильтр по скользящей средней, чтобы торговать только по направлению текущего тренда.

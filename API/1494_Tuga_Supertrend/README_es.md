@@ -1,4 +1,4 @@
-# Tuga Supertrend
+# Estrategia Tuga Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tuga Supertrend es una estrategia solo larga basada en el indicador SuperTrend. Entra en una posición larga cuando la dirección del SuperTrend cambia hacia abajo y sale cuando la dirección gira hacia arriba.

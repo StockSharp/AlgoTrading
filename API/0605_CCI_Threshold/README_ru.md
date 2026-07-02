@@ -1,4 +1,4 @@
-# Cci Threshold Strategy
+# Стратегия Cci Threshold
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Простая стратегия на основе индикатора CCI. Покупает, когда CCI опускается ниже порога, и закрывает позицию, когда цена закрытия превышает предыдущую.

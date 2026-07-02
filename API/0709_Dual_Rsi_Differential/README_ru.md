@@ -1,4 +1,4 @@
-# Dual RSI Differential
+# Стратегия Dual RSI Differential
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Dual RSI Differential** сравнивает два периода RSI и открывает сделки,

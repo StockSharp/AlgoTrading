@@ -1,4 +1,4 @@
-# Macd Williams R Strategy
+# Strategie Macd Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie basierend auf MACD- und Williams %R-Indikatoren. Geht Long, wenn MACD > Signal und Williams %R überverkauft ist (< -80). Geht Short, wenn MACD < Signal und Williams %R überkauft ist (> -20).

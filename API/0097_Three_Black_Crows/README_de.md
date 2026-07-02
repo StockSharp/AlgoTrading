@@ -1,4 +1,4 @@
-# Three Black Crows Strategy
+# Strategie Three Black Crows
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Drei Schwarze Krähen ist das bärische Gegenstück zu Drei Weißen Soldaten und besteht aus drei langen Abwärtskerzen nach einem Aufschwung. Das Muster deutet darauf hin, dass die Verkäufer die Kontrolle übernommen haben, da jeder Schlusskurs nahe dem Sitzungstief liegt.

@@ -1,4 +1,4 @@
-# Grim Slash
+# Grim Slash 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Grim Slashは、現在のローソク足の安値が前回の終値をテストしたときに買い、高値が前回の高値に達したときに手仕舞いするシンプルなプライスアクション戦略です。リスクは固定パーセントの利確とストップロスで管理します。

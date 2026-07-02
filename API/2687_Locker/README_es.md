@@ -1,4 +1,4 @@
-# Locker
+# Estrategia Locker
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia de cobertura basada en cuadrícula que alterna órdenes de mercado largas y cortas para bloquear pérdidas flotantes y capturar un pequeño porcentaje de ganancia sobre el saldo de la cuenta.

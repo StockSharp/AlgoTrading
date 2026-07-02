@@ -1,4 +1,4 @@
-# Liquidex Keltner
+# Estratégia Liquidex Keltner
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia **Liquidex Keltner** opera rompimentos dos Canais Keltner com um filtro de tendência por média móvel.

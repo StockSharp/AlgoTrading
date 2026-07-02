@@ -1,4 +1,4 @@
-# Multi-Timeframe Parabolic SAR
+# Strategie Multi-Timeframe Parabolic SAR
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Kombiniert Parabolic-SAR-Signale aus mehreren Zeitrahmen. Long-Trades werden ausgelöst, wenn der Kurs über den durch die Parameter gewählten SAR-Niveaus bleibt. Short-Trades erscheinen, wenn der Kurs unter die gewählten SARs fällt. Optionaler Stop-Loss, Trailing-Stop und Take-Profit sind verfügbar.

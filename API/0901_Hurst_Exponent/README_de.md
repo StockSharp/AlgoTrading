@@ -1,4 +1,4 @@
-# Hurst Exponent
+# Strategie Hurst Exponent
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Einfache Strategie, die auf Basis eines geglätteten Hurst Exponent handelt.  

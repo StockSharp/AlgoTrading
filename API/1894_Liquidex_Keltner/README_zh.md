@@ -1,4 +1,4 @@
-# Liquidex Keltner
+# Liquidex Keltner 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Liquidex Keltner** 策略结合移动平均线和 Keltner 通道来交易突破。

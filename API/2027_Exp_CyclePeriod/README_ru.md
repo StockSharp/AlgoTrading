@@ -1,4 +1,4 @@
-# Exp CyclePeriod Strategy
+# Стратегия Exp CyclePeriod
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикатор CyclePeriod для определения разворотов рыночного цикла. Открывает покупки при росте индикатора и продажи при его падении, закрывая противоположные позиции.

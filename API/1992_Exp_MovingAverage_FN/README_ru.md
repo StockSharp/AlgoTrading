@@ -1,4 +1,4 @@
-# Exp Moving Average FN Strategy
+# Стратегия Exp Moving Average FN
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия торгует на разворотах наклона экспоненциальной скользящей средней (EMA). Покупает, когда EMA разворачивается вверх после снижения, и продаёт, когда EMA разворачивается вниз после роста. Стоп-лосс и тейк-профит задаются в абсолютных ценовых единицах.

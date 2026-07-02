@@ -1,4 +1,4 @@
-# JFATL Digit System
+# JFATL Digit System 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Jurik 移动平均 (JFATL) 的斜率。JMA 向上转折时开多，向下转折时开空。思路源自原始 MQL 版本的颜色数字系统。

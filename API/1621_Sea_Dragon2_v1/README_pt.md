@@ -1,4 +1,4 @@
-# Sea Dragon 2
+# Estratégia Sea Dragon 2
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Sea Dragon 2 é uma estratégia de grade com hedge que abre posições em ambas as direções e adiciona novas ordens quando o preço se move por um passo definido pelo usuário. Os tamanhos das ordens seguem uma sequência predefinida e os níveis de take profit se adaptam dependendo do equilíbrio entre a exposição comprada e vendida.

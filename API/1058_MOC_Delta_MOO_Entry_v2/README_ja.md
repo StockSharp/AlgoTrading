@@ -1,4 +1,4 @@
-# MOC Delta MOO Entry v2
+# MOC Delta MOO Entry v2 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は午後セッション中の買い売り出来高を記録し、得られたMOCデルタを使って翌日の始値を取引します。

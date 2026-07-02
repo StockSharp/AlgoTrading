@@ -1,4 +1,4 @@
-# Hawaiian Tsunami Surfer
+# Hawaiian Tsunami Surfer 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は突然のモメンタムスパイクを探し、それに逆張りで取引します。Momentumインジケーターを使用して1本のバーにわたる終値の変化率を計算します。変化率が小さな閾値を超えると、その動きは「津波」と見なされます。戦略は強い上昇スパイクの後に売り、強い下降スパイクの後に買います。StartProtectionを通じて価格ステップでプロテクティブなストップロスとテイクプロフィットが適用されます。

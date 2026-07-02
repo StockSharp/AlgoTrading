@@ -1,4 +1,4 @@
-# Volume Weighted Price Breakout
+# Strategie Volume Weighted Price Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Diese Strategie kombiniert einen gleitenden Durchschnitt mit einem volumengewichteten gleitenden Durchschnitt (VWMA). Wenn der Preis über dem VWMA handelt, deutet das darauf hin, dass Käufer dominant sind. Ein Ausbruch tritt auf, wenn der Preis den VWMA von der entgegengesetzten Seite kreuzt.

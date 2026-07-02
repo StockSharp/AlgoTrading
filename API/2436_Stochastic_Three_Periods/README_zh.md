@@ -1,4 +1,4 @@
-# Stochastic Three Periods
+# Stochastic Three Periods 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Stochastic Three Periods** 策略在三个时间框架上对齐随机指标信号。 当快速随机指标发生交叉且两个更高时间框架同向时开仓。

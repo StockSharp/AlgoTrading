@@ -1,4 +1,4 @@
-# Tweezer Bottom Strategy
+# Tweezer Bottom 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 ツイーザーボトムは、下落後に現れる2本のローソク足による反転パターンです。両方のローソク足が同様の安値を共有しており、売り手がそのレベルを下回ることができなかったことを示しています。

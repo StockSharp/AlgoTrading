@@ -1,4 +1,4 @@
-# Hurst Exponent
+# Hurst Exponent 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于平滑后的赫斯特指数进行交易。  

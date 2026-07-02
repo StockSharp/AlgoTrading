@@ -1,4 +1,4 @@
-# Volume Weighted Price Breakout
+# Estrategia Volume Weighted Price Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Esta estrategia combina una media móvil con una media móvil ponderada por volumen (VWMA). Cuando el precio opera por encima de la VWMA, sugiere que los compradores son dominantes. Un rompimiento ocurre cuando el precio cruza la VWMA desde el lado opuesto.

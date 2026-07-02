@@ -1,4 +1,4 @@
-# Delta WPR
+# Strategie Delta WPR
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Delta WPR vergleicht einen schnellen und einen langsamen Williams %R Oszillator, um Momentumverschiebungen zu erfassen. Wenn der schnelle Wert den langsamen überschreitet und der langsame Oszillator über einem Schwellenniveau bleibt, eröffnet die Strategie eine Long-Position und schließt jedes Short-Engagement. Die entgegengesetzte Konfiguration — schnell unter langsam mit dem langsamen Oszillator unter dem Niveau — löst einen Short-Einstieg aus. Jede neue Kerze wird erst nach der Fertigstellung verarbeitet, um Rauschen zu vermeiden.

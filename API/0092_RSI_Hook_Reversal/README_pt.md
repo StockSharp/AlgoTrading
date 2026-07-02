@@ -1,4 +1,4 @@
-# RSI Hook Reversal Strategy
+# Estratégia RSI Hook Reversal
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia RSI Hook Reversal tenta capturar pontos de virada de curto prazo quando o RSI sai de um extremo. Após um impulso de sobrecompra ou sobrevenda, o indicador frequentemente "engata" de volta em direção à linha central antes que o preço reaja.

@@ -1,4 +1,4 @@
-# Cronex AC
+# Strategie Cronex AC
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Cronex-AC-Strategie bildet den klassischen Cronex Acceleration/Deceleration (AC) Experten-Advisor mit der StockSharp High-Level-API nach. Sie glättet den Accelerator Oscillator mit zwei aufeinanderfolgenden gleitenden Durchschnitten und reagiert, wenn die schnelle Linie die langsame Linie kreuzt. Bullische Crossover öffnen Long-Positionen und schließen Shorts, während bärische Crossover Shorts öffnen und Longs schließen.

@@ -1,4 +1,4 @@
-# Keltner Macd Strategy
+# Estratégia Keltner Macd
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia baseada nos Canais Keltner e MACD. Entra comprado quando o preço rompe acima do canal Keltner superior com MACD > Signal. Entra vendido quando o preço rompe abaixo do canal Keltner inferior com MACD < Signal. Sai quando o MACD cruza sua linha de sinal na direção oposta.

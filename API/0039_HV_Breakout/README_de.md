@@ -1,4 +1,4 @@
-# Historical Volatility Breakout
+# Strategie Historical Volatility Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Diese Ausbruchmethode verwendet historische Volatilität, um dynamische Schwellenwerte festzulegen. Wenn sich der Preis über einen Referenzpegel hinaus um mehr als die aktuelle Volatilität bewegt, deutet das auf einen potenziellen Trend hin.

@@ -1,4 +1,4 @@
-# Ha MaZi
+# Strategie Ha MaZi
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Kombiniert Heikin Ashi-Kerzen, einen EMA-Filter und ZigZag-Pivot-Bestätigung. Ein Long-Trade wird eröffnet, wenn sich eine bullische Heikin Ashi-Kerze an einem neuen ZigZag-Tief oberhalb der EMA bildet. Shorts erscheinen bei einer bärischen Kerze an einem neuen ZigZag-Hoch unterhalb der EMA. Positionen werden durch festen Stop-Loss oder Take-Profit geschlossen.

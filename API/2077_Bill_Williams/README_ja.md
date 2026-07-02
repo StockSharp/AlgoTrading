@@ -1,4 +1,4 @@
-# Bill Williams
+# Bill Williams 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Bill Williamsは、Alligatorインジケーターとフラクタルブレイクアウトを組み合わせます。顎、歯、唇が乖離した後、最新のフラクタルのブレイクアウトが注文をトリガーします。

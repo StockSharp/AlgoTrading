@@ -1,4 +1,4 @@
-# Gold Friday Anomaly Strategy
+# Gold Friday Anomaly 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在用户定义的日期范围内于星期五的第一根蜡烛买入，并在持有固定数量的蜡烛后平仓。

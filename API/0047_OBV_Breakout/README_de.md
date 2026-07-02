@@ -1,4 +1,4 @@
-# OBV Breakout
+# Strategie OBV Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 On-Balance Volume (OBV) verfolgt den Kauf- und Verkaufsdruck durch Akkumulation von Volumen. Diese Strategie sucht nach einem OBV-Ausbruch über ein Hoch oder unter ein Tief innerhalb des Beobachtungsfensters, während der Preis die Bewegung bestätigt.

@@ -1,4 +1,4 @@
-# Supertrend Adx Strategy
+# Estrategia Supertrend Adx
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia basada en el indicador Supertrend y ADX para confirmación de la fuerza de tendencia. Criterios de entrada: Largo: Price > Supertrend && ADX > 25 (tendencia alcista con movimiento fuerte). Corto: Price < Supertrend && ADX > 25 (tendencia bajista con movimiento fuerte). Criterios de salida: Largo: Price < Supertrend (precio cae por debajo de Supertrend). Corto: Price > Supertrend (precio sube por encima de Supertrend).

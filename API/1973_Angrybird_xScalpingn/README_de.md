@@ -1,4 +1,4 @@
-# Angrybird xScalpingn
+# Strategie Angrybird xScalpingn
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Angrybird xScalpingn ist eine Martingal-Scalping-Strategie. Sie eröffnet einen ersten Trade basierend auf der kurzfristigen Preisrichtung und einem RSI-Filter. Wenn sich der Preis gegen die offene Position um einen dynamischen Schritt bewegt, der vom aktuellen Range abgeleitet wird, fügt die Strategie einen weiteren Trade mit einem Volumen hinzu, das mit einem Faktor multipliziert wird. Alle Positionen werden geschlossen, wenn der CCI eine starke Gegenbewegung anzeigt oder Stop-Loss bzw. Take-Profit erreicht wird.

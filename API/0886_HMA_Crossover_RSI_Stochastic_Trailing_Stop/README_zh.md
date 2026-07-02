@@ -1,4 +1,4 @@
-# HMA Crossover RSI Stochastic Trailing Stop
+# HMA Crossover RSI Stochastic Trailing Stop 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于快速与慢速 HMA 交叉，并结合 RSI 与平滑 Stochastic 过滤的策略。当快速 HMA 上穿慢速且 RSI 和 Stochastic 低于阈值时开多，反向条件开空。通过百分比追踪止损退出。

@@ -1,4 +1,4 @@
-# Time
+# Time 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略展示时间函数。当最高价相对开盘价超过指定tick并持续一段时间后买入。

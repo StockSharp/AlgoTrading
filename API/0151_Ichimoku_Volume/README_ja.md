@@ -1,4 +1,4 @@
-# Ichimoku Volume Strategy
+# Ichimoku Volume 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 戦略の実装 - Ichimoku + Volume。価格が雲（Kumo）の上にあり、転換線（Tenkan-sen）が基準線（Kijun-sen）の上にあり、出来高が平均を上回るときに買い。価格が雲の下にあり、転換線が基準線の下にあり、出来高が平均を上回るときに売り。

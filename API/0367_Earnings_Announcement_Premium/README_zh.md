@@ -1,4 +1,4 @@
-# Earnings Announcement Premium
+# Earnings Announcement Premium 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Earnings Announcement Premium** 策略在财报发布前几天买入股票，并在财报发布后不久退出。

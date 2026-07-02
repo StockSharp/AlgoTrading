@@ -1,4 +1,4 @@
-# RSI Value
+# Estratégia RSI Value
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia que negocia com base no Índice de Força Relativa (RSI) cruzando um valor central.

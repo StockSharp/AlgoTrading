@@ -1,4 +1,4 @@
-# WAMI Cloud X2
+# Strategie WAMI Cloud X2
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Strategie repliziert das Dual-Zeitrahmen-Verhalten des originalen MetaTrader-Experten "Exp_WAMI_Cloud_X2". Sie verwendet den Warren Momentum Indicator (WAMI) auf einem höheren Zeitrahmen, um die dominierende Ausrichtung zu definieren, und eine zweite Instanz desselben Indikators auf einem niedrigeren Zeitrahmen für das Timing von Einstiegen und Ausstiegen. Die WAMI-Hauptlinie wird auf beiden Zeitrahmen gegen ihre interne Signallinie verglichen, was der Logik der ursprünglichen MQL-Implementierung entspricht.

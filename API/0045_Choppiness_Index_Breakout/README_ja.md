@@ -1,4 +1,4 @@
-# Choppiness Index Breakout
+# Choppiness Index Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 Choppiness Indexは市場がトレンド状態かレンジ状態かを計測します。インジケーターが閾値を下回ると、もみ合い環境からトレンドが始まることを示します。

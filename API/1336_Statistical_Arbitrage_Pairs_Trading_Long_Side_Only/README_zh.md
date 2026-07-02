@@ -1,4 +1,4 @@
-# Statistical Arbitrage Pairs Trading - Long-Side Only
+# Statistical Arbitrage Pairs Trading - Long-Side Only 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于两个品种的z分数差执行配对交易。当价差z分数低于设定阈值时开多仓，当价差z分数上穿零时平仓。

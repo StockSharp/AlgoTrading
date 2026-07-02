@@ -1,4 +1,4 @@
-# Bollinger Breakout
+# Bollinger Breakout 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bollinger Breakout 策略旨在捕捉突破布林带后继续发展的行情。

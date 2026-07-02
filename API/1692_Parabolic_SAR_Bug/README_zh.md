@@ -1,4 +1,4 @@
-# Parabolic SAR Bug
+# Parabolic SAR Bug 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Parabolic SAR Bug** 策略利用 Parabolic SAR 指标捕捉趋势反转。当 SAR 点位从价格上方翻到下方时开多单，反之开空单。可选的反向模式会反转信号。通过内置的保护模块支持止损、止盈以及可选的跟踪止损。

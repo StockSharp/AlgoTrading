@@ -1,4 +1,4 @@
-# Volume-Weighted Supertrend Strategy
+# Стратегия Volume-Weighted Supertrend
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит супер-тренд на основе объёмно-взвешенной средней и полос ATR. Дополнительный супер-тренд по объёму подтверждает направление. Длинная позиция открывается при совпадении роста цены и объёма, закрывается при обратных условиях.

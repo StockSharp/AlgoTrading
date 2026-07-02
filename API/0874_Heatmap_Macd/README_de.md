@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Strategie Heatmap MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dieses System verwendet eine Heatmap von MACD-Histogrammen aus fünf Zeitrahmen. Wenn alle Histogramme über oder unter null wechseln, wird in der entsprechenden Richtung eingestiegen und ausgestiegen, sobald die Ausrichtung bricht oder Risikolimits ausgelöst werden.

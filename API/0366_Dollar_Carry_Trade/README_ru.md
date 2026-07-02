@@ -1,4 +1,4 @@
-# Dollar Carry Trade
+# Стратегия Dollar Carry Trade
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Dollar Carry Trade** ранжирует валютные пары USD по дифференциалу процентных ставок: покупает доллар против валют с низкой доходностью и продаёт против высокодоходных. Перебалансировка выполняется ежемесячно в первый торговый день.

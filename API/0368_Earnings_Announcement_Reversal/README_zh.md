@@ -1,4 +1,4 @@
-# Earnings Announcement Reversal
+# Earnings Announcement Reversal 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Earnings Announcement Reversal** 策略在财报公布日做空近期赢家并买入近期输家。

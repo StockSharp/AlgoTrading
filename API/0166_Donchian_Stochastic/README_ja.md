@@ -1,4 +1,4 @@
-# Donchian Stochastic Strategy
+# Donchian Stochastic 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Donchian Channel + Stochastic 戦略。価格が Donchian Channel をブレイクし、Stochastic が売られすぎ/買われすぎ条件を確認した際に市場に参入します。

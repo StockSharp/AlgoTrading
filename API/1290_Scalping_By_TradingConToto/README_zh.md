@@ -1,4 +1,4 @@
-# Scalping Strategy By TradingConToto
+# Scalping Strategy By TradingConToto 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Scalping Strategy By TradingConToto 根据 EMA 趋势在连续的枢轴高点或低点之间绘制连线。当上升趋势中价格向上突破下降的枢轴高点连线时做多；当下降趋势中价格向下跌破上升的枢轴低点连线时做空。策略仅在指定的交易时段内执行。

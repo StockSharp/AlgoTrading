@@ -1,4 +1,4 @@
-# TSI MACD Crossover Strategy
+# TSI MACD Crossover 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 True Strength Index (TSI) 及其指数移动平均线信号线的交叉系统。

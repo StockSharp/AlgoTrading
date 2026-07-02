@@ -1,4 +1,4 @@
-# Flex ATR
+# Flex ATR 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Flex ATR 根据当前时间框架动态选择 EMA、RSI 和 ATR 周期。当快速 EMA 上穿慢速 EMA 且 RSI 高于 50 时做多；当快速 EMA 下穿慢速 EMA 且 RSI 低于 50 时做空。退出基于 ATR 的止损或止盈，并可选启用追踪止损。

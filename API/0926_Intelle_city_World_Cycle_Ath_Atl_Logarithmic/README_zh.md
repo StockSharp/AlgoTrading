@@ -1,4 +1,4 @@
-# Intelle city World Cycle Ath Atl Logarithmic Strategy
+# Intelle city World Cycle Ath Atl Logarithmic 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用缩放移动平均线基于 Pi Cycle 概念识别历史高点 (ATH) 和历史低点 (ATL) 的信号。

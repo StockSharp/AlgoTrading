@@ -1,4 +1,4 @@
-# Williams %R Hook Reversal Strategy
+# Estrategia Williams %R Hook Reversal
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia Williams %R Hook Reversal sigue el indicador Williams %R cuando se retrae rápidamente desde un extremo. Cuando la lectura se mueve por encima de -20 o por debajo de -80 y luego engancha hacia el centro, el impulso previo probablemente está agotado.

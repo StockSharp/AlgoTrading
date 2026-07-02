@@ -1,4 +1,4 @@
-# ATR Trailing Stops
+# Estrategia ATR Trailing Stops
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 ATR Trailing usa un múltiplo del average true range para arrastrar stops detrás de las posiciones abiertas. Las entradas ocurren cuando el precio cruza una media móvil, y el stop de seguimiento se ajusta con la volatilidad.

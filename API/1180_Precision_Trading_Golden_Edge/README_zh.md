@@ -1,4 +1,4 @@
-# Precision Trading Strategy: Golden Edge
+# Precision Trading Strategy: Golden Edge 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该黄金剥头皮策略将快慢 EMA 的交叉与 HMA 的趋势方向结合。只有当 RSI 证实动量且波动性充足时才进行交易。

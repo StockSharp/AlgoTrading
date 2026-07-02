@@ -1,4 +1,4 @@
-# Sea Dragon 2
+# Strategie Sea Dragon 2
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sea Dragon 2 ist eine hedgende Grid-Strategie, die Positionen in beide Richtungen eröffnet und neue Aufträge hinzufügt, wenn sich der Preis um einen benutzerdefinierten Schritt bewegt. Die Auftragsgrößen folgen einer vordefinierten Sequenz, und die Take-Profit-Niveaus passen sich abhängig vom Gleichgewicht zwischen Long- und Short-Exposure an.

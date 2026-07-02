@@ -1,4 +1,4 @@
-# RSI Cyclic Smoothed
+# Стратегия RSI Cyclic Smoothed
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует индикатор циклически сглаженного RSI. Вычисляет динамические процентильные границы и торгует развороты при их пересечении.

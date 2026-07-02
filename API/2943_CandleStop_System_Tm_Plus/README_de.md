@@ -1,4 +1,4 @@
-# CandleStop System Tm Plus
+# Strategie CandleStop System Tm Plus
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Ausbruchsstrategie, die auf dem benutzerdefinierten Kanalindikator CandleStop aufgebaut ist. Das System berechnet kontinuierlich verzögerte Highest-High- und Lowest-Low-Bänder, wartet auf eine abgeschlossene Kerze, die jenseits dieser Bänder schließt, und reagiert dann auf dem folgenden Balken. Es erzwingt optional eine maximale Positionslebensdauer und verwendet punktbasierte Schutzstops.

@@ -1,4 +1,4 @@
-# Three White Soldiers Strategy
+# Three White Soldiers 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 三白兵パターンは、3本連続した強い陽線で構成されるクラシックな強気反転です。下落トレンドの後、この連続は買い圧力が売り手を圧倒することで持続的な上昇の始まりを示すことが多いです。

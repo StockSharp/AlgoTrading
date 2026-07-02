@@ -1,4 +1,4 @@
-# Vwap Macd Strategy
+# Strategie Vwap Macd
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategie basierend auf VWAP und MACD. Einstieg Long, wenn der Preis über dem VWAP liegt und MACD > Signal. Einstieg Short, wenn der Preis unter dem VWAP liegt und MACD < Signal. Ausstieg, wenn MACD seine Signallinie in die entgegengesetzte Richtung kreuzt.

@@ -1,4 +1,4 @@
-# VWMA Cross
+# Estrategia VWMA Cross
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 La Media Móvil Ponderada por Volumen (VWMA) enfatiza los niveles de precio con mayor volumen de negociación. Esta estrategia opera los cruces entre el precio y la VWMA.

@@ -1,4 +1,4 @@
-# Bullish Harami Strategy
+# Estratégia Bullish Harami
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 O Harami de Alta é um padrão de duas velas onde um corpo pequeno está contido dentro do intervalo da vela de baixa anterior. Isso indica que o momentum de venda parou e os compradores podem voltar a entrar.

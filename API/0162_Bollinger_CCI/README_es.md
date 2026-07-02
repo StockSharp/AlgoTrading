@@ -1,4 +1,4 @@
-# Bollinger Cci Strategy
+# Estrategia Bollinger Cci
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implementación de la estrategia - Bollinger Bands + CCI. Compra cuando el precio está por debajo de la banda inferior de Bollinger y el CCI está por debajo de -100 (sobreventa). Vende cuando el precio está por encima de la banda superior de Bollinger y el CCI está por encima de 100 (sobrecompra).

@@ -1,4 +1,4 @@
-# Low Volatility Reversion
+# Strategie Low Volatility Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Diese Mean-Reversion-Strategie wird nur in ruhigen Märkten aktiviert. Sie misst den ATR über ein Rückblickfenster und tritt ein, wenn die Volatilität unter einen Prozentsatz dieses Durchschnitts fällt und der Preis von seinem gleitenden Durchschnitt abweicht.

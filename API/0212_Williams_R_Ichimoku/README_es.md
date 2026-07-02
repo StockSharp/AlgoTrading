@@ -1,4 +1,4 @@
-# Williams R Ichimoku Strategy
+# Estrategia Williams R Ichimoku
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Esta configuración combina los extremos de momentum de Williams %R con la estructura de tendencia definida por la Nube Ichimoku. La idea es unirse a movimientos fuertes solo cuando el precio se encuentra en el lado favorable de la nube y las líneas de corto plazo confirman el sesgo.

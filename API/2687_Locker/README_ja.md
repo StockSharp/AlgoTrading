@@ -1,4 +1,4 @@
-# Locker
+# Locker 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 グリッドベースのヘッジ戦略で、ロングとショートの成行注文を交互に発注して浮動損失をロックし、口座残高の小さな割合の利益を獲得します。

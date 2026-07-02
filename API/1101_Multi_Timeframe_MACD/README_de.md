@@ -1,4 +1,4 @@
-# Multi-Timeframe MACD
+# Strategie Multi-Timeframe MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Der Multi-Timeframe MACD kombiniert MACD-Signale aus dem Arbeitszeitrahmen und einem höheren Zeitrahmen. Einstiege erfolgen, wenn beide Zeitrahmen durch Linienkreuzungen oder Nulllinienkreuzungen übereinstimmen.

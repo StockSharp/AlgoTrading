@@ -1,4 +1,4 @@
-# Linear Regression Slope V1
+# Linear Regression Slope V1 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 利用线性回归斜率及其偏移副本来捕捉趋势变化。

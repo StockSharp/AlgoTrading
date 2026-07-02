@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Estrategia Heatmap MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Este sistema utiliza un mapa de calor de histogramas MACD de cinco marcos temporales. Cuando todos los histogramas cambian por encima o por debajo de cero, entra en la dirección correspondiente y sale una vez que la alineación se rompe o se activan los límites de riesgo.

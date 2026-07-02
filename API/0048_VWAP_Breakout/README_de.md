@@ -1,4 +1,4 @@
-# VWAP Breakout
+# Strategie VWAP Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 VWAP Breakout sucht nach einem Preiskreuz des volumengewichteten Durchschnittspreises von der entgegengesetzten Seite. Ein Ausbruch über den VWAP signalisiert bullischen Druck, während ein Rückgang unter den VWAP bärisches Sentiment anzeigt.

@@ -1,4 +1,4 @@
-# My Line Order
+# My Line Order 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は価格が事前に定義した水平レベルをクロスした時に成行注文を発動します。ユーザーはロングとショートのエントリーに別々のレベルとpips単位のリスクパラメーターを指定します。ポジションを建てた後、戦略はストップロス、テイクプロフィット、オプションのトレーリングストップを追跡します。

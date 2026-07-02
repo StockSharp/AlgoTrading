@@ -1,4 +1,4 @@
-# Keltner Macd Strategy
+# Estrategia Keltner Macd
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia basada en los Canales Keltner y MACD. Entra largo cuando el precio rompe por encima del canal Keltner superior con MACD > Signal. Entra corto cuando el precio rompe por debajo del canal Keltner inferior con MACD < Signal. Sale cuando MACD cruza su línea de señal en la dirección opuesta.

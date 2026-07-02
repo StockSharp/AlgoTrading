@@ -1,4 +1,4 @@
-# Vwap Macd Strategy
+# Estrategia Vwap Macd
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia basada en VWAP y MACD. Entra en largo cuando el precio está por encima del VWAP y MACD > Señal. Entra en corto cuando el precio está por debajo del VWAP y MACD < Señal. Sale cuando el MACD cruza su línea de señal en dirección opuesta.

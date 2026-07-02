@@ -1,4 +1,4 @@
-# Low Volatility Reversion
+# Estratégia Low Volatility Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Esta estratégia de reversão à média é ativada apenas durante mercados calmos. Ela mede o ATR ao longo de uma janela de retrospectiva e entra quando a volatilidade cai abaixo de uma porcentagem dessa média e o preço se desvia da sua média móvel.

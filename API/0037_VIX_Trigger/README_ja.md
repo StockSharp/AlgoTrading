@@ -1,4 +1,4 @@
-# VIX Trigger
+# VIX Trigger 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 VIX Triggerはボラティリティ指数の変化に反応します。上昇するVIXは恐怖と原資産における潜在的なリバーサルを示します。この戦略はVIXの方向を移動平均に対する価格と比較します。

@@ -1,4 +1,4 @@
-# Hawaiian Tsunami Surfer
+# Strategie Hawaiian Tsunami Surfer
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Diese Strategie sucht nach plötzlichen Momentum-Spitzen und handelt gegen sie. Sie berechnet die prozentuale Änderung des Schlusskurses über eine Kerze mithilfe eines Momentum-Indikators. Wenn die prozentuale Änderung einen kleinen Schwellenwert überschreitet, gilt die Bewegung als "Tsunami". Die Strategie verkauft nach einem starken Aufwärtsschub und kauft nach einem starken Abwärtsschub. Schutz-Stop-Loss und Take-Profit werden über StartProtection in Preisschritten angewendet.

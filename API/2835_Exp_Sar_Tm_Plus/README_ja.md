@@ -1,4 +1,4 @@
-# Exp Sar Tm Plus Strategy
+# Exp Sar Tm Plus 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 エキスパートアドバイザー**Exp_Sar_Tm_Plus**のStockSharp高レベルポートです。この戦略は設定可能な時間軸でParabolic SARの反転を監視し、元のマネー管理とタイムアウト機能を再現しながら、StockSharpの高レベルAPIと互換性のあるロジックを維持します。

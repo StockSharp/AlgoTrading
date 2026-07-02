@@ -1,4 +1,4 @@
-# Ichimoku Adx Strategy
+# Стратегия Ichimoku Adx
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на индикаторах облака Ишимоку и ADX. Критерии входа: Long: Price > Kumo (облако) && Tenkan > Kijun && ADX > 25 (восходящий тренд с сильным движением) Short: Price < Kumo (облако) && Tenkan < Kijun && ADX > 25 (нисходящий тренд с сильным движением) Критерии выхода: Long: Price < Kumo (цена падает ниже облака) Short: Price > Kumo (цена поднимается выше облака).

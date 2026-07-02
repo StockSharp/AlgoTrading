@@ -1,4 +1,4 @@
-# ColorXADX
+# ColorXADX 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 +DI 和 -DI 交叉并由 ADX 强度确认的策略。

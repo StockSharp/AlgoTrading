@@ -1,4 +1,4 @@
-# Cronex DeMarker
+# Cronex DeMarker 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 **Cronex DeMarker戦略**は、DeMarkerオシレーターを二重平滑化スタックと組み合わせたクラシックなCronexエキスパートアドバイザーを再現します。まず、DeMarker値がファスト単純移動平均で平滑化され、次にその結果がより遅い平均でもう一度平滑化されます。これら2本のラインの距離と相対的な順序が逆張りスタイルのエントリーシグナルを提供します。

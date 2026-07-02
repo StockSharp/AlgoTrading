@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Heatmap MACD 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Heatmap MACDは5つの時間軸のMACDヒストグラムが一致したときに取引します。全てのヒストグラムがプラスに転じるとロングポジション、全てがマイナスに転じるとショートポジションを建てます。オプションで、いずれかのヒストグラムがトレードに逆行した場合にポジションをクローズすることもできます。

@@ -1,4 +1,4 @@
-# Hurst Exponent
+# Hurst Exponent 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 平滑化されたHurst Exponentに基づいて取引するシンプルな戦略です。  

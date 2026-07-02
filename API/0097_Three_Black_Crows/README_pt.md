@@ -1,4 +1,4 @@
-# Three Black Crows Strategy
+# Estratégia Three Black Crows
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Três Corvos Negros é o equivalente de baixa dos Três Soldados Brancos, composto por três velas longas de baixa após uma subida. O padrão sugere que os vendedores assumiram o controle, pois cada fechamento cai perto da mínima da sessão.

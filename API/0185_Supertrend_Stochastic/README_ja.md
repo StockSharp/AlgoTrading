@@ -1,4 +1,4 @@
-# Supertrend Stochastic Strategy
+# Supertrend Stochastic 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 Supertrend + Stochastic戦略。SupertrendがトレンドDirection を示し、Stochasticが売られすぎ/買われすぎの条件で確認したときにトレードを開始する戦略。

@@ -1,4 +1,4 @@
-# Ultimate Strategy Template
+# Ultimate Strategy Template 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于快慢移动平均线交叉的模板策略，当快线与慢线交叉时开仓。包含可选的百分比止损和止盈保护。

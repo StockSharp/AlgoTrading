@@ -1,4 +1,4 @@
-# RMI Trend Sync
+# Strategie RMI Trend Sync
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 RMI Trend Sync kombiniert RSI- und MFI-Momentum-Signale mit einem SuperTrend-Trailing-Stop. Ein Long-Trade öffnet, wenn das durchschnittliche Momentum einen Schwellenwert mit steigendem EMA-Gefälle überschreitet, während ein Short-Trade bei einem Abwärtsausbruch ausgelöst wird. SuperTrend liefert den Ausstiegs-Trail.

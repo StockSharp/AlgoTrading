@@ -1,4 +1,4 @@
-# RSI Bollinger Bands
+# Strategie RSI Bollinger Bands
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie, die den Relative Strength Index (RSI) mit Bollinger Bands kombiniert. Eine Long-Position wird eröffnet, wenn der RSI unter dem Überverkauft-Schwellenwert liegt und der Schlusskurs unter dem unteren Bollinger Band ist. Eine Short-Position wird eröffnet, wenn der RSI über dem Überkauft-Schwellenwert liegt und der Schlusskurs über dem oberen Bollinger Band ist. Positionen kehren sich bei entgegengesetzten Signalen um.

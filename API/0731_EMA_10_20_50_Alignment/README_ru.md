@@ -1,4 +1,4 @@
-# EMA 10/20/50 Alignment
+# Стратегия EMA 10/20/50 Alignment
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинную позицию, когда EMA(10) > EMA(20) > EMA(50), и закрывает её при обратном расположении EMA. Торговля ведётся только в заданном временном диапазоне.

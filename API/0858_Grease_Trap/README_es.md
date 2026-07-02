@@ -1,4 +1,4 @@
-# Grease Trap
+# Estrategia Grease Trap
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grease Trap usa dos medias móviles de longitud Fibonacci y opera en sus cruces con objetivos de ganancia.

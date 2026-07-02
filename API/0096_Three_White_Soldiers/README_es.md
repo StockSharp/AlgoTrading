@@ -1,4 +1,4 @@
-# Three White Soldiers Strategy
+# Estrategia Three White Soldiers
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 El patrón Tres Soldados Blancos es una reversión alcista clásica compuesta por tres velas alcistas fuertes consecutivas. Después de una tendencia bajista, esta secuencia a menudo marca el inicio de un movimiento sostenido al alza, ya que la presión compradora supera a los vendedores.

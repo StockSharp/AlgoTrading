@@ -1,4 +1,4 @@
-# Donky MA TP SL
+# Donky MA TP SL 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用均线交叉并设置两个止盈目标和一个止损。当快速SMA上穿慢速SMA时做多，下穿时做空。达到第一个目标时平掉一半仓位，其余在第二个目标或止损处平仓。

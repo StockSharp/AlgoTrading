@@ -1,4 +1,4 @@
-# Follow Line Strategy
+# Стратегия Follow Line
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия строит линию сопровождения на основе пробоев полос Боллинджера с опциональным смещением ATR. Входы происходят при смене направления линии, при необходимости подтвержденные трендом старшего таймфрейма.

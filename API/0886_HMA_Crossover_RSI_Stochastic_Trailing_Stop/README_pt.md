@@ -1,4 +1,4 @@
-# HMA Crossover RSI Stochastic Trailing Stop
+# Estratégia HMA Crossover RSI Stochastic Trailing Stop
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia que usa o cruzamento de HMA rápida e lenta com filtros RSI e Stochastic suavizado. Abre comprado quando a HMA rápida cruza acima da lenta com RSI e Stochastic abaixo dos limites, e abre vendido na condição oposta. Um trailing stop gerencia as saídas.

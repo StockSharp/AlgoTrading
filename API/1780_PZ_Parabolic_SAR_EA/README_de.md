@@ -1,4 +1,4 @@
-# PZ Parabolic SAR EA
+# Strategie PZ Parabolic SAR EA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Diese Strategie repliziert den *PZ Parabolic SAR*-Experten. Sie verwendet zwei Parabolic SAR-Indikatoren mit unterschiedlichen Schritt- und Maximalbeschleunigungseinstellungen. Der "Trade"-SAR erkennt die Trendrichtung für Einstiege, während der "Stop"-SAR dem Preis enger folgt und Ausstiege auslöst, wenn der Trend sich umkehrt.

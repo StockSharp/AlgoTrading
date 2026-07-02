@@ -1,4 +1,4 @@
-# VWAP Williams R Strategy
+# Estrategia VWAP Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 La estrategia VWAP Williams %R se centra en la reversión intradía alrededor del Precio Promedio Ponderado por Volumen. Observa cuándo el precio se aleja del VWAP mientras el oscilador Williams %R alcanza territorio de sobrecompra o sobreventa. La suposición es que las lecturas extremas cerca del VWAP a menudo conducen a un retroceso hacia la media.

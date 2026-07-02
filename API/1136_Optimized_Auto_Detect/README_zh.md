@@ -1,4 +1,4 @@
-# Optimized Auto-Detect Strategy
+# Optimized Auto-Detect 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于移动平均线交叉的策略，可选趋势与RSI过滤，并支持ATR或固定百分比的止损止盈。

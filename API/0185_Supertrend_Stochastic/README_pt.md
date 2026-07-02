@@ -1,4 +1,4 @@
-# Supertrend Stochastic Strategy
+# Estratégia Supertrend Stochastic
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia Supertrend + Stochastic. A estratégia entra em operações quando o Supertrend indica a direção da tendência e o Stochastic confirma com condições de sobrevenda/sobrecompra.

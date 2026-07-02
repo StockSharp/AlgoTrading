@@ -1,4 +1,4 @@
-# ATR Reversion
+# ATR Reversion 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 ATR Reversionは、Average True Range (ATR)の倍数で測定された急激な動きを探します。価格がATRの乗数を超えた場合、システムは平均回帰を期待します。

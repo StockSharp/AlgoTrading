@@ -1,4 +1,4 @@
-# 3Commas HA & MA
+# 3Commas HA & MA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Heikin Ashiキャンドルと一対の指数移動平均を使用します。ベアリッシュなHAキャンドルの後にブリッシュなキャンドルが続き、かつ速いMAが遅いMAより上にある場合にロングトレードが発生します。ショートはその逆の設定に従います。価格が遅いMAを越えるか、スイングストップに達したときにポジションを決済します。

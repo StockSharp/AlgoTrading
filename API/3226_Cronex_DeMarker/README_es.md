@@ -1,4 +1,4 @@
-# Cronex DeMarker
+# Estrategia Cronex DeMarker
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La **Estrategia Cronex DeMarker** reproduce el clásico asesor experto Cronex que combina el oscilador DeMarker con una pila de doble suavizado. Primero, los valores del DeMarker son suavizados por una media móvil simple rápida, luego el resultado es suavizado una vez más por una media más lenta. La distancia y el orden relativo de estas dos líneas proporcionan señales de entrada estilo reversión.

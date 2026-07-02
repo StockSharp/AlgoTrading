@@ -1,4 +1,4 @@
-# Historical Volatility Breakout
+# Historical Volatility Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 このブレイクアウト手法は、動的な閾値を設定するために歴史的ボラティリティを使用します。価格が現在のボラティリティを超えて参照レベルを超えると、潜在的なトレンドを示します。

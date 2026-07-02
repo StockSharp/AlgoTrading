@@ -1,4 +1,4 @@
-# Vwap Stochastic Strategy
+# Estrategia Vwap Stochastic
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia que combina los indicadores VWAP y Stochastic. Compra cuando el precio está por debajo del VWAP y el Stochastic está sobrevendido. Vende cuando el precio está por encima del VWAP y el Stochastic está sobrecomprado.

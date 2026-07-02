@@ -1,4 +1,4 @@
-# CCI VWAP Strategy
+# CCI VWAP 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用CCI指标与VWAP寻找日内反转。当CCI跌破-100且价格低于VWAP时做多；当CCI升破+100且价格高于VWAP时做空。价格反向穿越VWAP时平仓。

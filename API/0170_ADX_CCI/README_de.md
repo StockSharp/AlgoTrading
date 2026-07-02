@@ -1,4 +1,4 @@
-# Adx Cci Strategy
+# Strategie Adx Cci
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie basierend auf ADX- und CCI-Indikatoren. Geht Long, wenn ADX > 25 und CCI überverkauft ist (< -100). Geht Short, wenn ADX > 25 und CCI überkauft ist (> 100).

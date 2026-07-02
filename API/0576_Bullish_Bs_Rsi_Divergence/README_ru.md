@@ -1,4 +1,4 @@
-# Bullish B's RSI Divergence
+# Стратегия Bullish B's RSI Divergence
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует RSI для обнаружения обычных и скрытых бычьих дивергенций с помощью пивотов. Открывает длинные позиции при дивергенции и закрывает при медвежьем сигнале, достижении цели RSI или трейлинг-стопе.

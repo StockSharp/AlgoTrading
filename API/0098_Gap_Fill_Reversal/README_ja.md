@@ -1,4 +1,4 @@
-# Gap Fill Reversal Strategy
+# Gap Fill Reversal 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 ギャップフィルリバーサル戦略は、翌セッション中に素早く埋められる夜間のギャップを活用します。価格が前日の終値からギャップアップ・ダウンした後、すぐにそのギャップを埋めるために戻る場合、これは多くの場合、最初の動きの枯渇を示しています。

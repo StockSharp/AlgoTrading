@@ -1,4 +1,4 @@
-# Williams %R Hook Reversal Strategy
+# Williams %R Hook Reversal 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Williams %R Hook Reversal戦略は、Williams %Rインジケーターが極端な水準から素早く戻るときの動きを追います。値が-20を上回るか-80を下回り、その後中央に向けてフックすると、前の推進力はおそらく枯渇しています。

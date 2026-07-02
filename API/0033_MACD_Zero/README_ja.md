@@ -1,4 +1,4 @@
-# MACD Zero Cross
+# MACD Zero Cross 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 このシステムは、Moving Average Convergence Divergence (MACD)ヒストグラムがゼロラインに近づくときのモメンタム転換を取引します。ゼロ以下での上昇MACDまたはゼロ以上での下落MACDは潜在的なリバーサルを示します。

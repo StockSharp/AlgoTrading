@@ -1,4 +1,4 @@
-# Auto SL-TP Setter Strategy
+# Auto SL-TP Setter 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该工具型策略在持仓没有止损或止盈时自动添加相应订单。距离可以设置为固定点数或ATR倍数。

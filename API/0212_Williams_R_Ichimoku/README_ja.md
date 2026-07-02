@@ -1,4 +1,4 @@
-# Williams R Ichimoku Strategy
+# Williams R Ichimoku 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 このセットアップは、Williams %Rのモメンタム極値と一目均衡表の雲によって定義されるトレンド構造を組み合わせます。価格が雲の有利な側にあり、短期線がバイアスを確認している場合にのみ、強い動きに参加するというアイデアです。

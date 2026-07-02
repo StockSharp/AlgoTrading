@@ -1,4 +1,4 @@
-# VWMA Cross
+# VWMA Cross 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 出来高加重移動平均（VWMA）は取引出来高が多い価格水準を重視します。この戦略は価格とVWMAのクロスオーバーを取引します。

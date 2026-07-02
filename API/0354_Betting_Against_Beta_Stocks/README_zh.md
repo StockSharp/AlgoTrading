@@ -1,4 +1,4 @@
-# Betting Against Beta Stocks
+# Betting Against Beta Stocks 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Betting Against Beta Stocks** 策略在股票池中做多最低贝塔十分位并做空最高贝塔十分位，于每月的第一个交易日进行再平衡。

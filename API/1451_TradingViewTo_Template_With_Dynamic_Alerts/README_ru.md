@@ -1,4 +1,4 @@
-# TradingViewTo Strategy Template With Dynamic Alerts
+# Стратегия TradingViewTo Strategy Template With Dynamic Alerts
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Шаблонная стратегия, открывающая позиции по уровням RSI и управляющая ими с помощью процентного стоп-лосса и тейк-профита.

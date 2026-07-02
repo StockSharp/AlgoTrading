@@ -1,4 +1,4 @@
-# Chaikin Momentum Scalper
+# Chaikin Momentum Scalper 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该剥头皮策略利用Chaikin振荡器捕捉动量变化。当振荡器上穿零且价格位于200周期SMA之上时做多；当振荡器下穿零且价格在SMA之下时做空。ATR倍数用于设置止损和止盈。

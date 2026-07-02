@@ -1,4 +1,4 @@
-# Fracture
+# Fracture 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Fractureは、フラクタルのブレイクアウトと平滑移動平均、ADXを組み合わせて、レンジ相場とトレンド相場の両方で取引します。

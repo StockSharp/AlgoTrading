@@ -1,4 +1,4 @@
-# ADX CCI MA
+# Estrategia ADX CCI MA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia combina ADX, CCI y una media móvil configurable para operar tendencias fuertes.

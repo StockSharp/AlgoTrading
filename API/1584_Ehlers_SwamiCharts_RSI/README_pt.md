@@ -1,4 +1,4 @@
-# Ehlers SwamiCharts RSI
+# Estratégia Ehlers SwamiCharts RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Calcula a média dos valores de RSI dos períodos 2–48 para construir um mapa de cores. Comprado quando a cor média é verde, vendido quando é vermelha.

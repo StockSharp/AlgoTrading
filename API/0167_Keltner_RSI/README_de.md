@@ -1,4 +1,4 @@
-# Keltner Rsi Strategy
+# Strategie Keltner Rsi
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie, die Keltner Channels und RSI-Indikatoren kombiniert. Sucht nach Mean-Reversion-Möglichkeiten, wenn der Preis Kanalgrenzen berührt und der RSI überverkaufte/überkaufte Bedingungen bestätigt.

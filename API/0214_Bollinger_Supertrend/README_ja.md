@@ -1,4 +1,4 @@
-# Bollinger Supertrend Strategy
+# Bollinger Supertrend 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この戦略はボリンジャーバンドとSupertrendインジケーターを組み合わせて、強い方向性のある動きの中でエントリーポイントを特定します。ボリンジャーバンドはボラティリティの拡大を測定し、Supertrend線は全体的なトレンドを追跡してトレーリングストップとして機能します。

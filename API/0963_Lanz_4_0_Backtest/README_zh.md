@@ -1,4 +1,4 @@
-# LANZ Strategy 4.0 Backtest
+# LANZ Strategy 4.0 Backtest 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 LANZ Strategy 4.0 Backtest 是一种利用摆动枢轴检测趋势的突破策略。当价格突破最后一个枢轴高点时做多，跌破最后一个枢轴低点时做空。仓位大小根据账户权益、风险百分比和点值计算，止损设在最近摆动点加缓冲，止盈按风险收益比计算。

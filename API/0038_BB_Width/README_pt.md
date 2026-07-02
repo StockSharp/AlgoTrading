@@ -1,4 +1,4 @@
-# Bollinger Band Width Breakout
+# Estratégia Bollinger Band Width Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 A largura das Bollinger Bands mede a separação entre as bandas superior e inferior. Uma largura em expansão sugere volatilidade e possível formação de tendência. Esta estratégia opera rompimentos quando a largura está aumentando.

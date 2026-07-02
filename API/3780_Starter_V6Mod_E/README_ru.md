@@ -1,4 +1,4 @@
-# Starter V6 Mod E
+# Стратегия Starter V6 Mod E
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Starter V6 Mod E** — перенос советника MetaTrader 4 `Starter_v6mod_e_www_forex-instruments_info.mq4` на высокоуровневый API StockSharp. Стратегия сохраняет оригинальное сочетание экстремумов Laguerre, двойного EMA-фильтра, индикатора CCI и ограничения по углу EMA, при этом логика исполнения адаптирована под событийную модель StockSharp.

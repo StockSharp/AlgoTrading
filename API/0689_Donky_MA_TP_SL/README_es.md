@@ -1,4 +1,4 @@
-# Donky MA TP SL
+# Estrategia Donky MA TP SL
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia opera cruces de medias móviles con dos objetivos de take-profit y un stop-loss. Entra largo cuando la SMA rápida cruza por encima de la SMA lenta y corto cuando cruza por debajo. La mitad de la posición se cierra en el primer objetivo y el resto en el segundo objetivo o el stop-loss.

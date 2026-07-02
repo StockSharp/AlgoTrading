@@ -1,4 +1,4 @@
-# PZ Parabolic SAR EA
+# Estratégia PZ Parabolic SAR EA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Esta estratégia replica o consultor especialista *PZ Parabolic SAR*. Emprega dois indicadores Parabolic SAR com diferentes configurações de passo e aceleração máxima. O SAR de "negociação" detecta a direção da tendência para as entradas, enquanto o SAR de "stop" segue o preço mais de perto e aciona as saídas quando a tendência se reverte.

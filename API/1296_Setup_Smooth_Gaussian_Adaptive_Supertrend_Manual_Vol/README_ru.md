@@ -1,4 +1,4 @@
-# Setup: Smooth Gaussian + Adaptive Supertrend (Manual Vol)
+# Стратегия Setup: Smooth Gaussian + Adaptive Supertrend (Manual Vol)
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Открывает длинную позицию, когда цена закрытия выше двойного сглаженного скользящего среднего («гауссова» тренда).

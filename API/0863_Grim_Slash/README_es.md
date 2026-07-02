@@ -1,4 +1,4 @@
-# Grim Slash
+# Estrategia Grim Slash
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grim Slash es una estrategia de acción del precio simple que compra cuando el mínimo de la vela actual toca el cierre anterior y sale cuando el máximo alcanza el máximo anterior. El riesgo se gestiona con take profit y stop loss de porcentaje fijo.

@@ -1,4 +1,4 @@
-# Gold Scalping BOS & CHoCH Strategy
+# Gold Scalping BOS & CHoCH 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在黄金上交易结构突破（BOS）和结构转变（CHoCH）形态。它计算短期支撑和阻力位，并在出现BOS后立即出现CHoCH时入场，同时使用动态止损和止盈。

@@ -1,4 +1,4 @@
-# RSI Bollinger Bands
+# Estratégia RSI Bollinger Bands
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia que combina o Índice de Força Relativa (RSI) com as Bollinger Bands. Uma posição comprada é aberta quando o RSI está abaixo do limiar de sobrevenda e o preço de fechamento está abaixo da banda inferior de Bollinger. Uma posição vendida é aberta quando o RSI está acima do limiar de sobrecompra e o preço de fechamento está acima da banda superior de Bollinger. As posições se revertem em sinais opostos.

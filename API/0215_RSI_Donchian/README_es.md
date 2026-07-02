@@ -1,4 +1,4 @@
-# RSI Donchian Strategy
+# Estrategia RSI Donchian
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 La estrategia RSI Donchian busca extremos de momentum que coincidan con rupturas del Canal Donchian. El índice de fuerza relativa mide las condiciones de sobrecompra y sobreventa mientras que el canal define los máximos y mínimos recientes del precio.

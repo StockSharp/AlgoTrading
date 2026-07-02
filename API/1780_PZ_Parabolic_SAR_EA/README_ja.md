@@ -1,4 +1,4 @@
-# PZ Parabolic SAR EA
+# PZ Parabolic SAR EA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は*PZ Parabolic SAR*エキスパートアドバイザーを再現したものです。異なるステップと最大加速設定を持つ2つのParabolic SARインジケーターを使用します。「トレード」SARはエントリーのためのトレンド方向を検出し、「ストップ」SARは価格により近くを追従して、トレンドが反転したときにエグジットを引き起こします。

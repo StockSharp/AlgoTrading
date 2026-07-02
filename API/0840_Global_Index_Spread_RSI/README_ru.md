@@ -1,4 +1,4 @@
-# Global Index Spread RSI Strategy
+# Стратегия Global Index Spread RSI
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Global Index Spread RSI Strategy** — стратегия, торгующая E-mini S&P 500, когда спред к глобальному фондовому индексу становится перепроданным. Спред рассчитывается в процентах и подается в короткий RSI. Лонг открывается при падении RSI ниже порога перепроданности и закрывается при росте выше порога перекупленности.

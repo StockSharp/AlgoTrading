@@ -1,4 +1,4 @@
-# Bollinger Percent B Reversion
+# Bollinger Percent B Reversion 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 このアプローチは、Percent Bインジケーターを使用してBollinger Bandsを超えた価格の極値に逆張りします。上部バンドを上回るまたは下部バンドを下回る動きは過剰延伸を示唆します。

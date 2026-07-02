@@ -1,4 +1,4 @@
-# US Index First 30m Candle Strategy
+# Стратегия US Index First 30m Candle
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пробой диапазона первой 30-минутной свечи американской сессии, одна сделка в день.

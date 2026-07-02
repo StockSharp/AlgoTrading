@@ -1,4 +1,4 @@
-# Uhl MA Crossover System
+# Strategie Uhl MA Crossover System
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Das Uhl MA Crossover System baut zwei adaptive Linien (CTS und CMA) mithilfe von Varianz zur Anpassung der Glättung auf. Eine Long-Position wird eröffnet, wenn CTS CMA nach oben kreuzt, und eine Short-Position, wenn es nach unten kreuzt.

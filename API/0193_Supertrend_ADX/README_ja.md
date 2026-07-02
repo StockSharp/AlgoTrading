@@ -1,4 +1,4 @@
-# Supertrend Adx Strategy
+# Supertrend Adx 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 SupertrendインジケーターとADXによるトレンド強度確認に基づく戦略。エントリー条件：ロング：Price > Supertrend && ADX > 25（強い動きを伴う上昇トレンド）。ショート：Price < Supertrend && ADX > 25（強い動きを伴う下降トレンド）。エグジット条件：ロング：Price < Supertrend（価格がSupertrendを下回る）。ショート：Price > Supertrend（価格がSupertrendを上回る）。

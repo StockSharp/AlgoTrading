@@ -1,4 +1,4 @@
-# Chaikin Volatility Stochastic Strategy
+# Chaikin Volatility Stochastic 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将随机振荡器应用于Chaikin波动率以捕捉趋势反转。每根K线的高低范围先通过EMA平滑，再用随机指标归一化，最后使用加权移动平均进一步平滑。

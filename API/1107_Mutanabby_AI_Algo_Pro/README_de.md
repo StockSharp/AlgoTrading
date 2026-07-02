@@ -1,4 +1,4 @@
-# Mutanabby AI Algo Pro
+# Strategie Mutanabby AI Algo Pro
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Mutanabby AI Algo Pro-Strategie geht long, wenn ein bullisches Engulfing-Muster mit einem RSI-Wert unter einem Schwellenwert und einem Kursrückgang über eine bestimmte Anzahl von Kerzen zusammentrifft. Exits erfolgen bei einem bärischen Engulfing-Muster oder wenn der Stop-Loss ausgelöst wird.

@@ -1,4 +1,4 @@
-# IMACD Sniper
+# Estrategia IMACD Sniper
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IMACD Sniper combina cruces del MACD con un filtro de tendencia EMA, confirmación de volumen y patrones de velas fuertes. El take profit y el stop loss dinámicos se basan en el rango promedio reciente.

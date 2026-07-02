@@ -1,4 +1,4 @@
-# Ha MaZi
+# Ha MaZi 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Heikin Ashiローソク足、EMAフィルター、ZigZagピボット確認を組み合わせます。EMAの上でZigZagの新たな安値に強気のHeikin Ashiローソク足が形成されたときにロング取引を開きます。EMAの下でZigZagの新たな高値に弱気のローソク足が現れたときにショートポジションを開きます。ポジションは固定ストップロスまたはテイクプロフィットによってクローズされます。

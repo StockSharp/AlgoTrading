@@ -1,4 +1,4 @@
-# IU Gap Fill Strategy
+# IU Gap Fill 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IU Gap Fill 策略在价格与上一交易日收盘价形成缺口并回补该缺口时入场。向上跳空后回测并收盘价重新站上前收盘价时做多；向下跳空后反弹并收盘价跌回前收盘价下方时做空。离场使用基于 ATR 的移动止损。

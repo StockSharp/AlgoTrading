@@ -1,4 +1,4 @@
-# CCI COMA
+# Strategie CCI COMA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Verwendet den Commodity Channel Index und gleitende Durchschnitte mehrerer Zeitrahmen, um dem vorherrschenden Trend zu folgen.

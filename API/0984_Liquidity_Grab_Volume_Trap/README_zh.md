@@ -1,4 +1,4 @@
-# Liquidity Grab Volume Trap Strategy
+# Liquidity Grab Volume Trap 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略等待在成交量平稳时出现的流动性抓取，并形成公平价值缺口。当价格收于缺口上沿之上且成交量保持接近其均线时，在缺口下沿挂多单，同时设置对称的止损和止盈。

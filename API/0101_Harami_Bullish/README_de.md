@@ -1,4 +1,4 @@
-# Bullish Harami Strategy
+# Strategie Bullish Harami
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Das Bullish Harami ist ein Zwei-Kerzen-Muster, bei dem ein kleiner Körper innerhalb des Bereichs der vorherigen bärischen Kerze liegt. Es deutet darauf hin, dass der Verkaufsschwung gestoppt hat und Käufer möglicherweise wieder einsteigen.

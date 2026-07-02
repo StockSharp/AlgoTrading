@@ -1,4 +1,4 @@
-# CCI COMA
+# Estratégia CCI COMA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Usa o Índice de Canal de Commodities (CCI) e médias móveis de múltiplos períodos para seguir a tendência predominante.

@@ -1,4 +1,4 @@
-# VWAP Breakout
+# Estrategia VWAP Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 VWAP Breakout busca que el precio cruce el Precio Promedio Ponderado por Volumen desde el lado opuesto. Una ruptura por encima del VWAP señala presión alcista, mientras que una caída por debajo del VWAP señala sentimiento bajista.

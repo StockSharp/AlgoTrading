@@ -1,4 +1,4 @@
-# MACD and SAR
+# MACD and SAR 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 上的 “MACD and SAR” 专家顾问。在每根完成的 K 线结束后，它会同时检查 MACD 主线与信号线之间的关系以及 Parabolic SAR 点位。每个比较条件都提供了布尔开关，可以轻松反转方向，因此同一个框架既可用于顺势也可用于逆势思路。当累积仓位数未超过上限时，允许分批加仓。

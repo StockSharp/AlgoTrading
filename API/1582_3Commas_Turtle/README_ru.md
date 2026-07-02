@@ -1,4 +1,4 @@
-# 3Commas Turtle Strategy
+# Стратегия 3Commas Turtle
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Упрощённая стратегия Turtle на основе каналов Дончиана. Покупает при пробое верхней границы быстрого канала с подтверждением от медленного, продаёт при пробое нижней границы. Выход происходит при пересечении цены с противоположным выходным каналом.

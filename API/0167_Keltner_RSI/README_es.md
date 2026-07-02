@@ -1,4 +1,4 @@
-# Keltner Rsi Strategy
+# Estrategia Keltner Rsi
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia que combina los indicadores Keltner Channels y RSI. Busca oportunidades de reversión a la media cuando el precio toca los límites del canal y el RSI confirma condiciones de sobreventa/sobrecompra.

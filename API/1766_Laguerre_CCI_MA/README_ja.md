@@ -1,4 +1,4 @@
-# Laguerre CCI MA
+# Laguerre CCI MA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Laguerreフィルター、商品チャンネル指数（CCI）、指数移動平均を組み合わせた戦略。

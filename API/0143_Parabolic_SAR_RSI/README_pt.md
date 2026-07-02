@@ -1,4 +1,4 @@
-# Parabolic Sar Rsi Strategy
+# Estratégia Parabolic Sar Rsi
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia que combina o Parabolic SAR para a direção da tendência e o RSI para confirmação de entrada com condições de sobrevenda/sobrecompra.

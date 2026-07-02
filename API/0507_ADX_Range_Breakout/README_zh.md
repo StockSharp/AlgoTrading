@@ -1,4 +1,4 @@
-# ADX Range Breakout Strategy
+# ADX Range Breakout 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在收盘价突破近期最高收盘价且 ADX 低于设定阈值时做多，表明市场处于低波动状态。交易仅在指定的会话内进行，并限制每日最大交易次数。每笔持仓都使用固定价差的止损进行保护。

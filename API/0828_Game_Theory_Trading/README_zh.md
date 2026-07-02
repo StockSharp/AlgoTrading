@@ -1,4 +1,4 @@
-# Game Theory Trading Strategy
+# Game Theory 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Game Theory Trading Strategy 结合了群体行为分析、流动性陷阱侦测、机构资金流和纳什均衡区间，用于反向与动量交易。

@@ -1,4 +1,4 @@
-# Logistic RSI STOCH ROC AO
+# Estrategia Logistic RSI STOCH ROC AO
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia aplica un mapa logístico a un indicador seleccionado (AO, ROC, RSI, Stochastic) y opera cuando la desviación estándar con signo cruza el cero.

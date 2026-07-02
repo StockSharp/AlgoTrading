@@ -1,4 +1,4 @@
-# Waddah Attar Trend
+# Strategie Waddah Attar Trend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Diese Strategie konvertiert den originalen MQL-Experten "Exp_Waddah_Attar_Trend" in die StockSharp High-Level-API. Sie verwendet den Waddah Attar Trend-Indikator, der die Differenz zwischen zwei exponentiellen gleitenden Durchschnitten (schnell und langsam) mit einem zusätzlichen glättenden gleitenden Durchschnitt multipliziert. Der Indikator gibt einen Farbzustand aus: grün wenn der Trendwert steigt und magenta wenn er fällt. Eine Änderung dieser Farbe löst Trades aus.

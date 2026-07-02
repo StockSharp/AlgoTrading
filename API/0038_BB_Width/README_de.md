@@ -1,4 +1,4 @@
-# Bollinger Band Width Breakout
+# Strategie Bollinger Band Width Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Die Bollinger-Band-Breite misst den Abstand zwischen dem oberen und unteren Band. Eine zunehmende Breite deutet auf Volatilität und mögliche Trendbildung hin. Diese Strategie handelt Ausbrüche, wenn die Breite zunimmt.

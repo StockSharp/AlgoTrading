@@ -1,4 +1,4 @@
-# My Line Order
+# Estrategia My Line Order
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia dispara órdenes de mercado cuando el precio cruza niveles horizontales predefinidos. El usuario especifica niveles separados para entradas largas y cortas y parámetros de riesgo en pips. Tras abrir una posición, la estrategia rastrea el stop-loss, take-profit y el trailing stop opcional.

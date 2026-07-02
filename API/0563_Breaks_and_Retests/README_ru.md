@@ -1,4 +1,4 @@
-# Breaks and Retests
+# Стратегия Breaks and Retests
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия входит при пробоях последних максимумов или минимумов и при необходимости на ретестах, управляя риском трейлинг-стопом.

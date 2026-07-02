@@ -1,4 +1,4 @@
-# Stochastic Hook Reversal Strategy
+# Strategie Stochastic Hook Reversal
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Stochastic Hook Reversal-Strategie beobachtet die %K-Linie auf einen Haken aus dem überkauften oder überverkauften Bereich. Nachdem der Oszillator eine Extremzone erreicht hat, dreht er sich häufig zurück, was darauf hinweist, dass der Schwung nachlässt.

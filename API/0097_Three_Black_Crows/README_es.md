@@ -1,4 +1,4 @@
-# Three Black Crows Strategy
+# Estrategia Three Black Crows
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Tres Cuervos Negros es el equivalente bajista de Tres Soldados Blancos, compuesto por tres velas largas bajistas después de un avance. El patrón sugiere que los vendedores han tomado el control, ya que cada cierre cae cerca del mínimo de la sesión.

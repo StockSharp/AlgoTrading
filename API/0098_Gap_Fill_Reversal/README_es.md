@@ -1,4 +1,4 @@
-# Gap Fill Reversal Strategy
+# Estrategia Gap Fill Reversal
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia Reversión por Relleno de Brecha aprovecha los gaps nocturnos que retroceden rápidamente durante la siguiente sesión. Cuando el precio forma un gap alejándose del cierre anterior pero inmediatamente regresa para llenar ese vacío, a menudo señala el agotamiento del movimiento inicial.

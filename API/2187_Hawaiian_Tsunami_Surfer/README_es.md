@@ -1,4 +1,4 @@
-# Hawaiian Tsunami Surfer
+# Estrategia Hawaiian Tsunami Surfer
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia busca picos repentinos de impulso y opera en su contra. Calcula el cambio porcentual del precio de cierre en una barra utilizando un indicador Momentum. Cuando el cambio porcentual supera un umbral mínimo, el movimiento se considera un "tsunami". La estrategia vende después de un fuerte pico alcista y compra después de un fuerte pico bajista. Se aplican stop-loss y take-profit de protección en pasos de precio a través de StartProtection.

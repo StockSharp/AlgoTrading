@@ -1,4 +1,4 @@
-# IU 4 Bar UP Strategy
+# Стратегия IU 4 Bar UP
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **IU 4 Bar UP Strategy** — лонговая стратегия, которая покупает после четырёх подряд бычьих свечей, если цена находится выше индикатора SuperTrend.

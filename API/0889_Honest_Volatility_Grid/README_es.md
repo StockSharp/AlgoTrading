@@ -1,4 +1,4 @@
-# Honest Volatility Grid
+# Estrategia Honest Volatility Grid
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia basada en múltiples niveles de Keltner Channel para construir una rejilla de volatilidad. Escala en posiciones largas y cortas a través de bandas predefinidas y sale mediante niveles opuestos o un stop bruto.

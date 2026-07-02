@@ -1,4 +1,4 @@
-# ATR Range Breakout
+# Estrategia ATR Range Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 ATR Range Breakout mide el movimiento del precio durante un número fijo de barras y lo compara con el rango verdadero promedio. Cuando el movimiento supera el ATR, se abre una posición en la dirección del movimiento.

@@ -1,4 +1,4 @@
-# Psar Bug 6 Strategy
+# Psar Bug 6 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 从 MQL4 脚本 “psar_bug_6” 转换而来。

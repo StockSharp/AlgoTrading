@@ -1,4 +1,4 @@
-# Ma Adx Strategy
+# Estratégia Ma Adx
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia baseada nos indicadores MA e ADX. Entra em posição quando o preço cruza a MA com tendência forte.

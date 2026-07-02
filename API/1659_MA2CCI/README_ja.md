@@ -1,4 +1,4 @@
-# MA2CCI
+# MA2CCI 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 CCIで確認された移動平均クロス戦略。ストップロスにATRを使用します。

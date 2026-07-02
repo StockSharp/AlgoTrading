@@ -1,4 +1,4 @@
-# MFI Histogram Strategy
+# MFI Histogram 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MFI Histogram 策略使用资金流量指数（MFI）通过可配置阈值识别超买和超卖区域。MFI 结合价格与成交量衡量资金流入和流出强度。当指标从下方向上突破上限时，视为买盘增强，策略开多并平掉已有空单；当指标从上向下跌破下限时，开空并平掉多单。止损和止盈以跳动点表示，由内置保护机制管理。

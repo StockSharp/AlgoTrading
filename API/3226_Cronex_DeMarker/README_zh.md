@@ -1,4 +1,4 @@
-# Cronex DeMarker
+# Cronex DeMarker 策略
 [English](README.md) | [Русский](README_ru.md)
 
 **Cronex DeMarker 策略** 复刻了经典的 Cronex 专家顾问：先计算 DeMarker 振荡器，再使用两个连续的简单移动平均线进行平滑。快线对原始 DeMarker 值进行平滑，慢线则再次平滑快线。两条线之间的顺序和距离用于识别反转型入场信号。

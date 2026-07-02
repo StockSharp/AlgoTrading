@@ -1,4 +1,4 @@
-# Simple MA ADX EA
+# Estratégia Simple MA ADX EA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia que combina uma EMA com o Índice Direcional Médio para confirmar a força da tendência.

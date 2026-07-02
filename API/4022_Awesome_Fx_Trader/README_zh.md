@@ -1,4 +1,4 @@
-# Awesome Fx Trader
+# Awesome Fx Trader 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 `MQL/8539` 中的 MetaTrader 方案，原始文件包括自定义指标 **AwesomeFxTradera.mq4** 与 **t_ma.mq4**。前者通过比较当前值与上一根柱体来给 Bill Williams Awesome Oscillator 柱状体着色，后者则在图表上绘制 34 周期的线性加权移动平均线（LWMA）及其 6 周期简单移动平均线平滑曲线。移植到 StockSharp 后，我们保持相同的计算方式，并把颜色变化转换成交易信号。

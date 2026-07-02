@@ -1,4 +1,4 @@
-# Moving Regression
+# Стратегия Moving Regression
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия использует полиномиальную скользящую регрессию для прогнозирования следующей цены. Покупает, когда прогноз выше текущего значения, и продаёт, когда ниже.

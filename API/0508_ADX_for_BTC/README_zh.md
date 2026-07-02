@@ -1,4 +1,4 @@
-# ADX for BTC
+# ADX for BTC 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用平均趋向指数 (ADX) 并可选 SMA 趋势过滤器，以捕捉比特币中的强势行情。

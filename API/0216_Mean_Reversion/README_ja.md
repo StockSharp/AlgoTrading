@@ -1,4 +1,4 @@
-# Mean Reversion Strategy
+# Mean Reversion 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この統計的アプローチは、最近の平均に対する価格の短期的な極値を探します。この戦略は移動平均を公正価値の定義に使用し、標準偏差の計算によってその平均からの乖離を測定します。

@@ -1,4 +1,4 @@
-# Three White Soldiers Strategy
+# Estratégia Three White Soldiers
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 O padrão Três Soldados Brancos é uma reversão de alta clássica composta por três velas de alta fortes consecutivas. Após uma tendência de baixa, essa sequência frequentemente marca o início de um movimento ascendente sustentado, pois a pressão compradora supera os vendedores.

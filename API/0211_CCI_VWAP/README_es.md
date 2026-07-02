@@ -1,4 +1,4 @@
-# CCI VWAP Strategy
+# Estrategia CCI VWAP
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 El enfoque CCI VWAP intenta capturar reversiones intradía cuando el momentum y el precio se alejan del precio promedio ponderado por volumen. Al observar el Índice de Canal de Materias Primas junto con el nivel VWAP, el sistema mide la fuerza de los movimientos recientes en relación con un punto de referencia de valor justo.

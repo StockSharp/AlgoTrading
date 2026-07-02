@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Estratégia Heatmap MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Heatmap MACD opera quando os histogramas MACD de cinco períodos se alinham. Uma posição comprada é aberta quando todos os histogramas se tornam positivos, e uma posição vendida quando todos se tornam negativos. Opcionalmente, a posição pode ser fechada quando qualquer histograma vira contra a operação.

@@ -1,4 +1,4 @@
-# Auto Trailing Stop
+# Estratégia Auto Trailing Stop
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Anexa automaticamente ordens de stop-loss e take-profit a posições existentes e move o stop à medida que o preço avança favoravelmente.

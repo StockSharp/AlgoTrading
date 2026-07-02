@@ -1,4 +1,4 @@
-# Trend Envelopes Strategy
+# Trend Envelopes 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 TrendEnvelopes 指标的趋势策略。该指标结合 EMA 与基于 ATR 的带状结构来识别突破。

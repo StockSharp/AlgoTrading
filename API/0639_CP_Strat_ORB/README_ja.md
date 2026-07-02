@@ -1,4 +1,4 @@
-# CP Strat ORB
+# CP Strat ORB 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は、ニューヨーク市場のオープニングレンジ（9:30-9:45）のブレイクアウトをリテストと組み合わせてトレードします。価格がレンジ高値を上抜けてその上に戻って終値をつけた後にロングエントリーし、価格がレンジ安値を下抜けてその下に戻って終値をつけた後にショートエントリーします。イグジットは固定のストップロスとテイクプロフィットを使用します。

@@ -1,4 +1,4 @@
-# Hull Ma Volume Strategy
+# Estrategia Hull Ma Volume
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia que utiliza la Media Móvil Hull para la dirección de la tendencia y la confirmación de volumen para las entradas de operaciones.

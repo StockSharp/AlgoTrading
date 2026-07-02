@@ -1,4 +1,4 @@
-# Volatility Adjusted Mean Reversion Strategy
+# Volatility Adjusted Mean Reversion 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此均值回归变体根据ATR与标准差之比调整入场阈值。若相对噪声的波动增大，触发交易所需的距离也随之增加，避免在剧烈波动时过早进场。

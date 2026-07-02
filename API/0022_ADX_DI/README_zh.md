@@ -1,4 +1,4 @@
-# ADX DI
+# ADX DI 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略关注+DI与-DI的交叉以及ADX的强度。+DI上穿-DI且ADX走强时做多，反向交叉则做空；ADX减弱或出现相反交叉时离场。通过要求ADX确认，可避免在每次DI交叉时交易，旨在捕捉可持续的趋势。

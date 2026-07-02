@@ -1,4 +1,4 @@
-# RSI Hook Reversal Strategy
+# RSI Hook Reversal 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 RSI Hook Reversal戦略は、RSIが極端な水準から脱するときの短期的な転換点を捉えることを目的としています。買われすぎや売られすぎの後、インジケーターは価格が反応する前に中央ラインに向けて「フック」することがよくあります。

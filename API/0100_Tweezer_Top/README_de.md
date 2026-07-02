@@ -1,4 +1,4 @@
-# Tweezer Top Strategy
+# Strategie Tweezer Top
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Der Tweezer Top spiegelt die Bodenversion, erscheint aber nach einem Aufschwung. Zwei Kerzen teilen nahezu dasselbe Hoch und zeigen, dass Käufer nicht über ein bestimmtes Niveau hinaus drücken konnten.

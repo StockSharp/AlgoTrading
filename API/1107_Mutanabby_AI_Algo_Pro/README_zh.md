@@ -1,4 +1,4 @@
-# Mutanabby AI Algo Pro
+# Mutanabby AI Algo Pro 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在出现看涨吞没形态、RSI 低于阈值且价格低于 N 根前的收盘价时做多。出现看跌吞没或触发止损时平仓。

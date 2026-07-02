@@ -1,4 +1,4 @@
-# Choppiness Index Breakout
+# Estratégia Choppiness Index Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 O Choppiness Index mede se o mercado está em tendência ou em consolidação. Quando o indicador cai abaixo de um limiar, sinaliza o início de uma tendência a partir de um ambiente agitado.

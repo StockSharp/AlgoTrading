@@ -1,4 +1,4 @@
-# VWAP EMA ATR Pullback
+# Strategie VWAP EMA ATR Pullback
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trendfolge-Strategie unter Verwendung von EMAs, VWAP und ATR.

@@ -1,4 +1,4 @@
-# VWAP RSI Scalper FINAL v1
+# VWAP RSI Scalper FINAL v1 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于VWAP和RSI的剥头皮策略，使用ATR止损和每日交易限制。

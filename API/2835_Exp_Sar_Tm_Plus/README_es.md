@@ -1,4 +1,4 @@
-# Exp Sar Tm Plus Strategy
+# Estrategia Exp Sar Tm Plus
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Puerto de alto nivel de StockSharp del asesor experto **Exp_Sar_Tm_Plus**. La estrategia monitorea los reversiones del Parabolic SAR en un marco temporal configurable y replica las funciones originales de gestión de dinero y tiempo de espera mientras mantiene la lógica compatible con la API de alto nivel de StockSharp.

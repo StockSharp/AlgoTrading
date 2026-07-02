@@ -1,4 +1,4 @@
-# Bullish B's RSI Divergence
+# Bullish B's RSI Divergence 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 使用RSI和枢轴点检测常规与隐藏的看涨背离。出现金叉信号时开多单，遇到看跌信号、RSI触及目标或触发跟踪止损时平仓。

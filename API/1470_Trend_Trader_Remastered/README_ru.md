@@ -1,4 +1,4 @@
-# Trend Trader-Remastered Strategy
+# Стратегия Trend Trader-Remastered
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на индикаторе Parabolic SAR. Покупка выполняется при пересечении цены выше SAR, продажа — при пересечении ниже. Обратное пересечение закрывает открытую позицию.

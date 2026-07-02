@@ -1,4 +1,4 @@
-# ADX CCI MA
+# ADX CCI MA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略はADX、CCI、設定可能な移動平均を組み合わせて強いトレンドを取引します。

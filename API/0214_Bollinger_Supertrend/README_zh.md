@@ -1,4 +1,4 @@
-# Bollinger Supertrend Strategy
+# Bollinger Supertrend 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略将布林带与Supertrend结合，在强劲趋势中寻找入场点。布林带衡量波动扩大，Supertrend跟踪整体趋势并充当跟踪止损。

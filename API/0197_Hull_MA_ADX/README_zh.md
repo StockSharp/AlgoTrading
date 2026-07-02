@@ -1,4 +1,4 @@
-# Hull Ma Adx Strategy
+# Hull Ma Adx 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 策略结合Hull移动平均线与ADX。当HMA向上且ADX>25时做多；当HMA向下且ADX>25时做空。ADX降到20以下表明趋势减弱，此时离场。

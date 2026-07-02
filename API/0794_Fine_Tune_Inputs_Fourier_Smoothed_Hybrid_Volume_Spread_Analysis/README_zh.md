@@ -1,4 +1,4 @@
-# Fine-Tune Inputs Fourier Smoothed Hybrid Volume Spread Analysis
+# Fine-Tune Inputs Fourier Smoothed Hybrid Volume Spread Analysis 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合平滑成交量与开盘价和收盘价的EMA来分析成交量价差。当价差和其移动平均都为正时做多，当两者都为负时做空。可选参数允许在没有信号时平仓。

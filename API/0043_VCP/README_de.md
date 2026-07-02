@@ -1,4 +1,4 @@
-# Volatility Contraction Pattern
+# Strategie Volatility Contraction Pattern
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Die VCP-Strategie sucht nach einer Abfolge sich verengender Preisspannen. Mit jeder Kontraktion baut sich Energie für einen Ausbruch auf. Das System misst die Spannenbreite und wartet auf einen Ausbruch über das höchste Hoch oder unter das niedrigste Tief.

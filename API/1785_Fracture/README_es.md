@@ -1,4 +1,4 @@
-# Fracture
+# Estrategia Fracture
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Fracture combina rupturas por fractales con medias móviles suavizadas y ADX para operar tanto en mercados laterales como en tendencia.

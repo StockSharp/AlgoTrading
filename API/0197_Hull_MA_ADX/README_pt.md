@@ -1,4 +1,4 @@
-# Hull Ma Adx Strategy
+# Estratégia Hull Ma Adx
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia baseada em Hull Moving Average e ADX. Entra comprado quando o HMA sobe e ADX > 25 (tendência forte). Entra vendido quando o HMA cai e ADX > 25 (tendência forte). Sai quando ADX < 20 (tendência enfraquecendo).

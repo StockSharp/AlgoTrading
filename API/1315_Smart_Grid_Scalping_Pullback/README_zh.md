@@ -1,4 +1,4 @@
-# Smart Grid Scalping Pullback Strategy
+# Smart Grid Scalping Pullback 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于ATR的网格剥头皮策略，从二十根K线前的价格扩展网格。进入前使用RSI过滤回调。仓位通过盈利目标或ATR跟踪止损退出。

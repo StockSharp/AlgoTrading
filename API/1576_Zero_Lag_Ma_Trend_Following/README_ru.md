@@ -1,4 +1,4 @@
-# Zero-Lag MA Trend Following
+# Стратегия Zero-Lag MA Trend Following
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Трендовая система, ожидающая пересечения нулелаговой MA и EMA, после чего входит при пробое цены из коробки размером ATR. Позиции сопровождаются тейком и стопом по соотношению риск-доходность.

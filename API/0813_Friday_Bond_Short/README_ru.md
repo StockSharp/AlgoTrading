@@ -1,4 +1,4 @@
-# Friday Bond Short Strategy
+# Стратегия Friday Bond Short
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Временная стратегия, которая открывает короткую позицию в указанные день и час по восточному времени США и закрывает её в другой день и час. По умолчанию продаёт в пятницу в 13:00 ET и выкупает позицию в понедельник в 13:00 ET.

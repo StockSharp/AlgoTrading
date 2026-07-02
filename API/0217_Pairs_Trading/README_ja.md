@@ -1,4 +1,4 @@
-# Pairs Trading Strategy
+# Pairs 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 このペアトレーディング戦略は、2つの相関した銘柄間の価格スプレッドを監視します。スプレッドをその履歴平均と標準偏差と比較することで、システムは最終的に回帰する一時的な乖離を活用しようとします。

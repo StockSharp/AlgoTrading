@@ -1,4 +1,4 @@
-# Color HMA Reversal
+# Color HMA Reversal 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Hull 移动平均线斜率变化的策略。当 HMA 由下降转为上升时，策略平掉空单并开多；当 HMA 由上升转为下降时，策略平掉多单并开空。

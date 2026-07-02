@@ -1,4 +1,4 @@
-# Mean Reversion Strategy
+# Strategie Mean Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Dieser statistische Ansatz sucht nach kurzfristigen Extremen im Preis im Verhältnis zu seinem jüngsten Durchschnitt. Die Strategie verwendet einen gleitenden Durchschnitt zur Definition des fairen Werts und misst die Abweichung von diesem Mittelwert durch eine Standardabweichungsberechnung.

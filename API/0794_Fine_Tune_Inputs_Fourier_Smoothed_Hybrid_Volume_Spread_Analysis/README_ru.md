@@ -1,4 +1,4 @@
-# Fine-Tune Inputs Fourier Smoothed Hybrid Volume Spread Analysis
+# Стратегия Fine-Tune Inputs Fourier Smoothed Hybrid Volume Spread Analysis
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия объединяет сглаженный объем с EMA цены открытия и закрытия для анализа спреда по объему. Вход в лонг осуществляется, когда и спред по объему, и его скользящая средняя положительны; вход в шорт — когда оба отрицательны. Дополнительный параметр позволяет закрывать позицию при отсутствии сигнала.

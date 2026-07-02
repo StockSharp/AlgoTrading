@@ -1,4 +1,4 @@
-# Bollinger Volume Strategy
+# Estrategia Bollinger Volume
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia que utiliza rupturas de las Bandas de Bollinger con confirmación de volumen.

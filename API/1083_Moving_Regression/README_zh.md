@@ -1,4 +1,4 @@
-# Moving Regression
+# Moving Regression 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用多项式移动回归预测下一个价格。预测高于当前值时做多，低于当前值时做空。

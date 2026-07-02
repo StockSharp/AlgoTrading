@@ -1,4 +1,4 @@
-# Fracture
+# Fracture 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Fracture 将分形突破与平滑移动平均和 ADX 结合，用于在盘整和趋势市场中交易。

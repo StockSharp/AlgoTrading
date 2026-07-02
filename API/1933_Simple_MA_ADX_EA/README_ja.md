@@ -1,4 +1,4 @@
-# Simple MA ADX EA
+# Simple MA ADX EA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 EMAとADX（平均方向性指数）を組み合わせてトレンドの強さを確認する戦略。

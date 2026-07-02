@@ -1,4 +1,4 @@
-# ICT NY Kill Zone Auto Trading
+# ICT NY Kill Zone Auto Trading 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在纽约杀戮时段内利用公平价值缺口和订单块进行交易。

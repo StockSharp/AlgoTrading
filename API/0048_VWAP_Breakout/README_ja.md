@@ -1,4 +1,4 @@
-# VWAP Breakout
+# VWAP Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 VWAP Breakoutは価格が出来高加重平均価格（VWAP）を反対側からクロスするタイミングを探します。VWAPを上抜けると強気の圧力、VWAPを下抜けると弱気のセンチメントを示します。

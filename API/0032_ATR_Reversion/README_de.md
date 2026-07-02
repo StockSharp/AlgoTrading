@@ -1,4 +1,4 @@
-# ATR Reversion
+# Strategie ATR Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 ATR Reversion sucht nach plötzlichen Bewegungen, gemessen in Vielfachen des Average True Range (ATR). Wenn der Preis den ATR-Multiplikator überschreitet, erwartet das System eine Mean Reversion.

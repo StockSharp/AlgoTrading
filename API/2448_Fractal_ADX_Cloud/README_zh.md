@@ -1,4 +1,4 @@
-# Fractal ADX Cloud
+# Fractal ADX Cloud 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中使用平均趋向指数（ADX）指标，复现原始 MQL `Fractal_ADX_Cloud` 专家的思想。策略基于四小时K线，分析 +DI 与 -DI 分量的交叉。当 +DI 上穿 -DI 时，策略平掉空头并可开多头；当 -DI 上穿 +DI 时则反向操作开空。

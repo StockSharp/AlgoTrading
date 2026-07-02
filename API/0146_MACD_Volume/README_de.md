@@ -1,4 +1,4 @@
-# Macd Volume Strategy
+# Strategie Macd Volume
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategie, die MACD (Moving Average Convergence Divergence) mit Volumenbestätigung kombiniert. Einstieg in Positionen, wenn die MACD-Linie die Signallinie kreuzt und dies durch erhöhtes Volumen bestätigt wird.

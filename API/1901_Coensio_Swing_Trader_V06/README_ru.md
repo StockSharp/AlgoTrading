@@ -1,4 +1,4 @@
-# Coensio Swing Trader V06 Strategy
+# Стратегия Coensio Swing Trader V06
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет логику пробоя из оригинального Coensio Swing Trader. Дончиан-канал определяет динамические уровни поддержки и сопротивления. Сделка открывается при пробое цены выше верхней границы или ниже нижней границы на заданное число пунктов.

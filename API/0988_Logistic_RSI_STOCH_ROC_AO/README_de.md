@@ -1,4 +1,4 @@
-# Logistic RSI STOCH ROC AO
+# Strategie Logistic RSI STOCH ROC AO
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Strategie wendet eine logistische Abbildung auf einen ausgewählten Indikator (AO, ROC, RSI, Stochastic) an und handelt, wenn die vorzeichenbehaftete Standardabweichung die Null kreuzt.

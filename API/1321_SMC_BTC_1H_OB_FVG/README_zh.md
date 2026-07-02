@@ -1,4 +1,4 @@
-# SMC Strategy BTC 1H OB FVG
+# SMC Strategy BTC 1H OB FVG 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 Smart Money Concepts 的比特币1小时策略。在出现看涨结构突破后，价格回到识别出的订单块或公平价值缺口时做多。止损使用 ATR 乘数，止盈根据风险回报比计算。

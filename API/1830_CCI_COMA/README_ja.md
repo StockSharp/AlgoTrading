@@ -1,4 +1,4 @@
-# CCI COMA
+# CCI COMA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 コモディティ・チャネル・インデックス（CCI）と複数の時間軸の移動平均を使用して、主要なトレンドに従います。

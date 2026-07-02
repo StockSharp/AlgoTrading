@@ -1,4 +1,4 @@
-# Delta WPR
+# Delta WPR 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Delta WPRは高速と低速のWilliams %Rオシレーターを比較してモメンタムの変化を捉えます。高速値が低速値を上回り、低速オシレーターが閾値レベルを上回っているとき、戦略はロングポジションを建てて任意のショートポジションを決済します。逆の構成 — 高速が低速を下回り、低速オシレーターがレベルを下回っているとき — はショートエントリーをトリガーします。各新しいローソク足はノイズを避けるために完成後にのみ処理されます。

@@ -1,4 +1,4 @@
-# Locker
+# Strategie Locker
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gitterbasierte Hedging-Strategie, die Long- und Short-Marktorders abwechselt, um schwebende Verluste zu sichern und einen kleinen prozentualen Gewinn auf dem Kontosaldo zu erzielen.

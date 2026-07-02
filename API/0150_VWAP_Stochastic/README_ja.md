@@ -1,4 +1,4 @@
-# Vwap Stochastic Strategy
+# Vwap Stochastic 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 VWAPとストキャスティクスインジケーターを組み合わせた戦略。価格がVWAPを下回り、Stochasticが売られすぎのときに買い。価格がVWAPを上回り、Stochasticが買われすぎのときに売り。

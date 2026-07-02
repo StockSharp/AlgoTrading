@@ -1,4 +1,4 @@
-# Psar Bug 6 Strategy
+# Стратегия Psar Bug 6
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конвертация из MQL4 скрипта «psar_bug_6».

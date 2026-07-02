@@ -1,4 +1,4 @@
-# Logistic RSI STOCH ROC AO
+# Logistic RSI STOCH ROC AO 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は選択されたインジケーター（AO、ROC、RSI、Stochastic）にロジスティック写像を適用し、符号付き標準偏差がゼロを越えたときに取引します。

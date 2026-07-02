@@ -1,4 +1,4 @@
-# Tuga Supertrend
+# Стратегия Tuga Supertrend
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Tuga Supertrend** — лонговая стратегия на основе индикатора SuperTrend. Она открывает длинную позицию, когда направление SuperTrend меняется вниз, и закрывает её, когда направление меняется вверх.

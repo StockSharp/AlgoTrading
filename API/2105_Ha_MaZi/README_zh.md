@@ -1,4 +1,4 @@
-# Ha MaZi
+# Ha MaZi 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 Heikin Ashi 蜡烛、EMA 滤波和 ZigZag 转折确认。当在 EMA 上方出现新的 ZigZag 低点且 HA 蜡烛转多时开多；当在 EMA 下方出现新的 ZigZag 高点且 HA 蜡烛转空时做空。仓位通过固定止损或止盈平仓。

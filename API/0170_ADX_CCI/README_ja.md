@@ -1,4 +1,4 @@
-# Adx Cci Strategy
+# Adx Cci 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 ADX と CCI インジケーターに基づく戦略。ADX > 25 かつ CCI が売られすぎ（< -100）の場合にロング参入。ADX > 25 かつ CCI が買われすぎ（> 100）の場合にショート参入。

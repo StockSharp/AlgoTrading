@@ -1,4 +1,4 @@
-# Sea Dragon 2
+# Sea Dragon 2 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Sea Dragon 2 は、両方向でポジションを開き、価格がユーザー定義のステップだけ動いたときに新しい注文を追加するヘッジグリッド戦略です。注文サイズは事前定義されたシーケンスに従い、テイクプロフィットレベルはロングとショートのエクスポージャーのバランスに応じて調整されます。

@@ -1,4 +1,4 @@
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Horizontal Line Levels 策略
 
 **Horizontal Line Levels** 策略是同名 MetaTrader 5 智能交易系统的移植版本。它会在最新报价附近动态构建两条水平线，并在市场突破这些水平时给出提醒。StockSharp 版本依赖 Level1 买卖价数据来复刻原始 OnTick/OnTimer 工作流程，全程不发送任何订单。
 

@@ -1,4 +1,4 @@
-# Rsi Williams R Strategy
+# Estrategia Rsi Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implementación de la estrategia - RSI + Williams %R. Compra cuando el RSI está por debajo de 30 y el Williams %R está por debajo de -80 (condición de doble sobreventa). Vende cuando el RSI está por encima de 70 y el Williams %R está por encima de -20 (condición de doble sobrecompra).

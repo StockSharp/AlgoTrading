@@ -1,4 +1,4 @@
-# Exp MUV NorDIFF Cloud
+# Стратегия Exp MUV NorDIFF Cloud
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на нормализованном импульсе SMA и EMA.

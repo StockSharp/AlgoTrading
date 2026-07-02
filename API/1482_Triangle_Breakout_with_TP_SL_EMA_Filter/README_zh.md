@@ -1,4 +1,4 @@
-# Triangle Breakout Strategy with TP SL and EMA Filter
+# Triangle Breakout Strategy with TP SL and EMA Filter 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 通过枢轴高点和低点识别三角形形态，向上突破时做多，可选地要求价格高于 EMA20 和 EMA50，并使用百分比止盈止损。

@@ -1,4 +1,4 @@
-# Volatility Contraction Pattern
+# Volatility Contraction Pattern 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 VCP戦略は、価格レンジが段階的に縮小する連続パターンを探します。レンジが収縮するたびにブレイクアウトに向けたエネルギーが蓄積されます。システムはレンジの大きさを計測し、直近高値の上抜けまたは直近安値の下抜けを待ちます。

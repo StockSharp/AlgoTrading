@@ -1,4 +1,4 @@
-# Implied Volatility Spike
+# Implied Volatility Spike 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この戦略は、インプライドボラティリティが直前の値に対して突然急騰するタイミングを監視します。強いスパイクと移動平均に逆行する価格の組み合わせが、短期的なリバーサルを示すことがあります。

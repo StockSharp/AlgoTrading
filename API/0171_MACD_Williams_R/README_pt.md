@@ -1,4 +1,4 @@
-# Macd Williams R Strategy
+# Estratégia Macd Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia baseada nos indicadores MACD e Williams %R. Entra comprado quando MACD > Signal e o Williams %R está sobrevendido (< -80). Entra vendido quando MACD < Signal e o Williams %R está sobrecomprado (> -20).

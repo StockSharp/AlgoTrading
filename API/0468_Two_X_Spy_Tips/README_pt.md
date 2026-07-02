@@ -1,4 +1,4 @@
-# Two X SPY TIPS
+# Estratégia Two X SPY TIPS
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia aloca capital no ativo negociado quando tanto o S&P 500 quanto os preços TIPS estão acima de suas médias móveis de 200 períodos na virada de um novo mês.

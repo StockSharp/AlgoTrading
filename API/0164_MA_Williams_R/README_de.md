@@ -1,4 +1,4 @@
-# Ma Williams R Strategy
+# Strategie Ma Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Implementierung der Strategie - MA + Williams %R. Kaufen, wenn der Preis über der MA liegt und der Williams %R unter -80 (überverkauft) ist. Verkaufen, wenn der Preis unter der MA liegt und der Williams %R über -20 (überkauft) ist.

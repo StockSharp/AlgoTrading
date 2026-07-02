@@ -1,4 +1,4 @@
-# Exp Multitrend Signal KVN Strategy
+# Exp Multitrend Signal KVN 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略实现了 MultiTrend Signal KVN 概念。它利用平均趋向指数（ADX）构建自适应价格通道。当价格收盘高于通道上轨时，策略做多；当价格收盘低于下轨时，策略做空。

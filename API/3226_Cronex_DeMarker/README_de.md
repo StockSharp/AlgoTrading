@@ -1,4 +1,4 @@
-# Cronex DeMarker
+# Strategie Cronex DeMarker
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die **Cronex-DeMarker-Strategie** reproduziert den klassischen Cronex-Experten-Advisor, der den DeMarker-Oszillator mit einem doppelten Glättungs-Stack kombiniert. Zunächst werden die DeMarker-Werte durch einen schnellen einfachen gleitenden Durchschnitt geglättet, dann wird das Ergebnis durch einen langsameren Durchschnitt noch einmal geglättet. Die Distanz und relative Anordnung dieser zwei Linien liefern reversal-artige Einstiegssignale.

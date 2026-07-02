@@ -1,4 +1,4 @@
-# Dskyz (DAFE) MAtrix with ATR-Powered Precision
+# Стратегия Dskyz (DAFE) MAtrix with ATR-Powered Precision
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия открывает длинные позиции, когда быстрая скользящая средняя находится выше медленной и выполняются фильтры ATR, объёма и времени. Короткие позиции открываются при противоположных условиях.

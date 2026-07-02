@@ -1,4 +1,4 @@
-# Donky MA TP SL
+# Strategie Donky MA TP SL
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Diese Strategie handelt gleitende Durchschnitt-Kreuzungen mit zwei Take-Profit-Zielen und einem Stop-Loss. Sie geht Long, wenn der schnelle SMA den langsamen SMA nach oben kreuzt, und Short, wenn er ihn nach unten kreuzt. Die Hälfte der Position wird beim ersten Ziel geschlossen, der Rest beim zweiten Ziel oder dem Stop-Loss.

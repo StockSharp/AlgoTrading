@@ -1,4 +1,4 @@
-# Sea Dragon 2
+# Estrategia Sea Dragon 2
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sea Dragon 2 es una estrategia de cuadrícula con cobertura que abre posiciones en ambas direcciones y añade nuevas órdenes cuando el precio se mueve un paso definido por el usuario. Los tamaños de las órdenes siguen una secuencia predefinida y los niveles de toma de ganancias se adaptan según el equilibrio entre la exposición larga y corta.

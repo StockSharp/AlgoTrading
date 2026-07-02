@@ -1,4 +1,4 @@
-# Bullish Harami Strategy
+# Bullish Harami 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 強気のハラミは、小さな実体が前の弱気ローソク足の範囲内に収まる2本のローソク足パターンです。売りモメンタムが失速し、買い手が再び参入する可能性があることを示しています。

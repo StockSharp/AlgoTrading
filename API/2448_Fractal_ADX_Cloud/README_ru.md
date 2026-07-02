@@ -1,4 +1,4 @@
-# Fractal ADX Cloud
+# Стратегия Fractal ADX Cloud
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия адаптирует оригинальный эксперт MQL `Fractal_ADX_Cloud`, используя индикатор Average Directional Index в StockSharp. Работа ведётся на четырёхчасовых свечах, анализируется пересечение компонентов +DI и -DI. Когда бычий компонент (+DI) поднимается выше медвежьего (-DI), стратегия закрывает короткие позиции и может открыть длинную. Если -DI поднимается выше +DI, логика зеркально работает для коротких сделок.

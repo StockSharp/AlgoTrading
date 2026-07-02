@@ -1,4 +1,4 @@
-# Fib Hurst Breakout
+# Fib Hurst Breakout 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Fib Hurst Breakout** 将日线级别的斐波那契回撤与 Hurst 指数过滤器结合。当价格在趋势方向上突破关键斐波那契水平时入场，2% 的止损和 1:2 的盈亏比控制风险。

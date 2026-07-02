@@ -1,4 +1,4 @@
-# Volatility Adjusted Moving Average
+# Estratégia Volatility Adjusted Moving Average
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Esta técnica modifica uma banda de média móvel por um múltiplo do ATR. Quando o preço se move além da banda ajustada, indica uma tendência acelerada.

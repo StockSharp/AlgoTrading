@@ -1,4 +1,4 @@
-# Prop Firm Business Simulator
+# Prop Firm Business Simulator 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用基于风险的仓位管理，在 Keltner 通道突破时入场。仓位数量根据账户权益的固定风险百分比计算。

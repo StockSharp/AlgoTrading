@@ -1,4 +1,4 @@
-# Grim Slash
+# Стратегия Grim Slash
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Grim Slash** — простая стратегия price action: покупает, когда минимум текущей свечи касается предыдущего закрытия, и выходит при достижении предыдущего максимума. Риск управляется фиксированными уровнями тейк‑профита и стоп‑лосса.

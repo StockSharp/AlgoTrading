@@ -1,4 +1,4 @@
-# 3rd Generation XMA Reversal
+# 3rd Generation XMA Reversal 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 采用双重指数平滑的第三代移动平均线来寻找局部高点和低点。当 XMA 从局部低点向上转折时开多单；当 XMA 在局部高点向下转折时开空单。出现反向信号时反向开仓，不设置固定止损或止盈。

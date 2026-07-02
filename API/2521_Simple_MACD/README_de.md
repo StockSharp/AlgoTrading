@@ -1,4 +1,4 @@
-# Simple MACD
+# Strategie Simple MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simple MACD repliziert die Logik des MQL5-Beraters `Simple_MACD.mq5` in StockSharp. Die Strategie folgt der Steigung der MACD-Hauptlinie, die auf abgeschlossenen Kerzen berechnet wird, und fügt der Position weiterhin hinzu, solange die Steigung in dieselbe Richtung geht.

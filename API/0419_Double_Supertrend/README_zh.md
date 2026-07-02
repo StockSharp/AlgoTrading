@@ -1,4 +1,4 @@
-# Double Supertrend
+# Double Supertrend 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Double Supertrend 使用两个基于 ATR 的移动平均线，周期和倍数各不相同。

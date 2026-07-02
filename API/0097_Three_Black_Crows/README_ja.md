@@ -1,4 +1,4 @@
-# Three Black Crows Strategy
+# Three Black Crows 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 三羽烏（さんばがらす）は三白兵の弱気版であり、上昇後に3本の長い陰線で構成されます。このパターンは各終値がセッションの安値付近に落ち、売り手が支配権を握ったことを示唆します。

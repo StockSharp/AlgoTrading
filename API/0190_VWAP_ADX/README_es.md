@@ -1,4 +1,4 @@
-# Vwap Adx Strategy
+# Estrategia Vwap Adx
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia basada en los indicadores VWAP y ADX. Entra largo cuando el precio está por encima del VWAP y ADX > 25. Entra corto cuando el precio está por debajo del VWAP y ADX > 25. Sale cuando ADX < 20.

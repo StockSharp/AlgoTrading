@@ -1,4 +1,4 @@
-# Tweezer Bottom Strategy
+# Estrategia Tweezer Bottom
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 El Tweezer Bottom es un patrón de reversión de dos velas que aparece después de un declive. Ambas velas comparten un mínimo similar, señalando que los vendedores no lograron superar ese nivel.

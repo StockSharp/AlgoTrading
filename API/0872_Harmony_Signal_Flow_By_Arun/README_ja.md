@@ -1,4 +1,4 @@
-# Harmony Signal Flow By Arun
+# Harmony Signal Flow By Arun 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Harmony Signal Flow By Arunは短期RSIを使って、固定のストップロスと目標レベルで転換点を捉えます。RSIが下限閾値を上抜けするとロング、上限閾値を下抜けするとショートに入ります。ポジションはストップ・目標到達、または毎日15:25にクローズされます。

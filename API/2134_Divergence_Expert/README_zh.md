@@ -1,4 +1,4 @@
-# Divergence Expert
+# Divergence Expert 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略交易价格与RSI指标的背离。当价格创出新低而RSI形成更高低点时判定为看涨背离并做多；当价格创出新高而RSI形成更低高点时判定为看跌背离并做空。使用百分比止损。

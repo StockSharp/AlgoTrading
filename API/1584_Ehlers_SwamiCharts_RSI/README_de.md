@@ -1,4 +1,4 @@
-# Ehlers SwamiCharts RSI
+# Strategie Ehlers SwamiCharts RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Mittelt RSI-Werte der Perioden 2–48, um eine Farbkarte zu erstellen. Long bei durchschnittlich grüner Farbe, Short bei rot.

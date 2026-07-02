@@ -1,4 +1,4 @@
-# Rsi Supertrend Strategy
+# Estratégia Rsi Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia baseada nos indicadores RSI e Supertrend. Entra comprado quando o RSI está em sobrevenda (< 30) e o preço está acima do Supertrend. Entra vendido quando o RSI está em sobrecompra (> 70) e o preço está abaixo do Supertrend.

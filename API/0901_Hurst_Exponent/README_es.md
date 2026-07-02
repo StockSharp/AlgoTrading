@@ -1,4 +1,4 @@
-# Hurst Exponent
+# Estrategia Hurst Exponent
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia simple que opera basándose en un Hurst Exponent suavizado.  

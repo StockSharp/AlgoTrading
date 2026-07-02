@@ -1,4 +1,4 @@
-# Adx Stochastic Strategy
+# Estrategia Adx Stochastic
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia que combina el ADX (Índice Direccional Promedio) para la fuerza de la tendencia y el Oscilador Stochastic para el momento de entrada con condiciones de sobreventa/sobrecompra.

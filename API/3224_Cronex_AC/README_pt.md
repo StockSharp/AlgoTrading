@@ -1,4 +1,4 @@
-# Cronex AC
+# Estratégia Cronex AC
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia Cronex AC recria o clássico consultor especialista Cronex Acceleration/Deceleration (AC) usando a API de alto nível do StockSharp. Ela suaviza o Oscilador Acelerador com duas médias móveis consecutivas e reage quando a linha rápida cruza a linha lenta. Cruzamentos altistas abrem posições compradas e fecham vendidas, enquanto cruzamentos baixistas abrem vendidas e fecham compradas.

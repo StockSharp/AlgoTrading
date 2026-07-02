@@ -1,4 +1,4 @@
-# Graph Style 4th Dimension RSI
+# Estrategia Graph Style 4th Dimension RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia que combina el cambio de precio con los niveles del RSI.

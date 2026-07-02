@@ -1,4 +1,4 @@
-# Gold Pullback Strategy
+# Стратегия Gold Pullback
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Gold Pullback Strategy** — трендовая стратегия. Лонги открываются, когда цена в восходящем тренде касается EMA21 и индикаторы MACD и TDI показывают бычий сигнал. Шорты открываются при откате к EMA21 в нисходящем тренде при медвежьем MACD и TDI. Для каждой позиции используется тейк-профит и стоп-лосс 1:1 относительно сигнальной свечи с добавленным смещением.

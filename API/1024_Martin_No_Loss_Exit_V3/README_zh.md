@@ -1,4 +1,4 @@
-# Martin Strategy - No Loss Exit V3
+# Martin Strategy - No Loss Exit V3 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该马丁加仓策略在价格从首单下跌指定百分比时继续做多，并按系数增加投入金额，重新计算平均成本。当蜡烛最高价达到平均成本加上止盈百分比时平仓，从而确保只在盈利时退出。

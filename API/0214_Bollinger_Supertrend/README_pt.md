@@ -1,4 +1,4 @@
-# Bollinger Supertrend Strategy
+# Estratégia Bollinger Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Esta estratégia combina as Bandas de Bollinger com o indicador Supertrend para identificar entradas durante movimentos direcionais fortes. As Bandas de Bollinger medem a expansão da volatilidade enquanto a linha Supertrend acompanha a tendência geral e atua como trailing stop.

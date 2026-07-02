@@ -1,4 +1,4 @@
-# Pure Price Action Strategy
+# Стратегия Pure Price Action
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Упрощённая стратегия прайс-экшн, определяющая Break of Structure (BOS) и Market Structure Shift (MSS) по недавним максимумам и минимумам.

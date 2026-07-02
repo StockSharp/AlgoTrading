@@ -1,4 +1,4 @@
-# Bullish Harami Strategy
+# Estrategia Bullish Harami
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 El Harami Alcista es un patrón de dos velas donde un cuerpo pequeño está contenido dentro del rango de la vela bajista anterior. Indica que el impulso vendedor se ha detenido y los compradores pueden volver a entrar.

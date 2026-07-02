@@ -1,4 +1,4 @@
-# Low Volatility Reversion
+# Low Volatility Reversion 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この平均回帰戦略は、静かな市場でのみ発動します。ルックバック期間にわたってATRを測定し、ボラティリティがその平均の一定割合を下回り、価格が移動平均から乖離したときにエントリーします。

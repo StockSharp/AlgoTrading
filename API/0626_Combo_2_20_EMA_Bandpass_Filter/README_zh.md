@@ -1,4 +1,4 @@
-# Combo 2/20 EMA Bandpass Filter Strategy
+# Combo 2/20 EMA Bandpass Filter 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合快慢EMA交叉与带通滤波器。当快EMA高于慢EMA且滤波值突破卖出区间时做多；当快EMA低于慢EMA且滤波值跌破买入区间时做空。若信号消失或尚未达到起始日期，则平仓。

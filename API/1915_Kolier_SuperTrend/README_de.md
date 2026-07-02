@@ -1,4 +1,4 @@
-# Kolier SuperTrend
+# Strategie Kolier SuperTrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie basierend auf dem Kolier SuperTrend-Indikator, der ATR-Bänder zur Erkennung von Trendumkehrungen verwendet.

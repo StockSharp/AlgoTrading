@@ -1,4 +1,4 @@
-# Tweezer Top Strategy
+# Estratégia Tweezer Top
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 O Tweezer Top espelha a versão de fundo, mas aparece após uma subida. Duas velas compartilham quase a mesma máxima, mostrando que os compradores não conseguiram ultrapassar certo nível.

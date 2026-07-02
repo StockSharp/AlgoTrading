@@ -1,4 +1,4 @@
-# Scalping 15m EMA MACD RSI ATR
+# Scalping 15m EMA MACD RSI ATR 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合50周期EMA趋势过滤、MACD柱状图动量和RSI水平，使用ATR动态设定止损和止盈。

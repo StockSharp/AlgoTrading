@@ -1,4 +1,4 @@
-# Bill Williams
+# Estratégia Bill Williams
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Bill Williams combina o indicador Alligator com rupturas de fractais. Os maxilares, dentes e lábios devem divergir antes que uma ruptura do fractal mais recente acione uma ordem.

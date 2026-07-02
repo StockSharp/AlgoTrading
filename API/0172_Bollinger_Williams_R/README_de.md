@@ -1,4 +1,4 @@
-# Bollinger Williams R Strategy
+# Strategie Bollinger Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie basierend auf Bollinger Bands und Williams %R-Indikatoren. Geht Long, wenn der Preis am unteren Band liegt und Williams %R überverkauft ist (< -80). Geht Short, wenn der Preis am oberen Band liegt und Williams %R überkauft ist (> -20).

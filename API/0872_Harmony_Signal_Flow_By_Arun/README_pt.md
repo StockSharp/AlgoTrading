@@ -1,4 +1,4 @@
-# Harmony Signal Flow By Arun
+# Estratégia Harmony Signal Flow By Arun
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Harmony Signal Flow By Arun usa um RSI de período curto para capturar reversões com níveis fixos de stop-loss e alvo. A estratégia vai comprada quando o RSI cruza acima do limiar inferior e vendida quando cruza abaixo do limiar superior. As posições são fechadas por stop, alvo ou às 15:25 de cada dia.

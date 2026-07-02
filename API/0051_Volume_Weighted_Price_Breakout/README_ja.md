@@ -1,4 +1,4 @@
-# Volume Weighted Price Breakout
+# Volume Weighted Price Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この戦略は移動平均と出来高加重移動平均（VWMA）を組み合わせています。価格がVWMAを上回って推移している場合は買い方が優勢であることを示します。価格がVWMAを反対側からクロスした時点でブレイクアウトが発生します。

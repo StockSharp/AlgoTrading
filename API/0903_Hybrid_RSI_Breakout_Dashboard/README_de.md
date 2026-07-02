@@ -1,4 +1,4 @@
-# Hybrid RSI Breakout Dashboard
+# Strategie Hybrid RSI Breakout Dashboard
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Strategie kombiniert RSI Mean Reversion mit Ausbruchs-Einstiegen, gefiltert durch ADX und eine 200 EMA.

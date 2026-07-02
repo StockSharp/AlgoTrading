@@ -1,4 +1,4 @@
-# TFM
+# Estrategia TFM
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia de ruptura con multiplicador de marco temporal. Utiliza un marco temporal superior formado multiplicando el marco temporal base. Largo cuando el precio rompe por encima del máximo anterior y opcionalmente corto o salida cuando el precio cae por debajo del mínimo anterior.

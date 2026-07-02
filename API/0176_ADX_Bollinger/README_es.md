@@ -1,4 +1,4 @@
-# Adx Bollinger Strategy
+# Estrategia Adx Bollinger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia basada en los indicadores ADX y Bandas de Bollinger. Entra largo cuando ADX > 25 y el precio rompe por encima de la banda superior de Bollinger. Entra corto cuando ADX > 25 y el precio rompe por debajo de la banda inferior de Bollinger.

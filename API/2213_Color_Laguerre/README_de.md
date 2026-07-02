@@ -1,4 +1,4 @@
-# Color Laguerre
+# Strategie Color Laguerre
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trendfolge-Strategie basierend auf dem Color Laguerre-Oszillator.

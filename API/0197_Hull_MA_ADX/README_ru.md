@@ -1,4 +1,4 @@
-# Hull Ma Adx Strategy
+# Стратегия Hull Ma Adx
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия основана на Hull Moving Average и ADX. Вход в длинные позиции, когда HMA растет и ADX > 25 (сильный тренд). Вход в короткие, когда HMA падает и ADX > 25. Выход, когда ADX < 20 (ослабление тренда).

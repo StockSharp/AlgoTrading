@@ -1,4 +1,4 @@
-# Volatility Quality
+# Volatility Quality 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该示例策略演示如何通过平滑后的中位价方向变化进行交易。原始的 MQL 专家使用 *Volatility Quality* 指标，此处通过对中位价应用简单移动平均线来进行近似。

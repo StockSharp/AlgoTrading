@@ -1,4 +1,4 @@
-# Vortex Cross with MA Confirmation Strategy
+# Vortex Cross with MA Confirmation 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略利用 Vortex 指标识别趋势反转，并使用平滑移动平均线确认信号。当正向 Vortex 上穿负向且价格位于平滑均线上方时开多；当负向 Vortex 上穿正向且价格低于该线时做空。

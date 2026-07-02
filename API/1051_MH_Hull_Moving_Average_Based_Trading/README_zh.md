@@ -1,4 +1,4 @@
-# MH Hull Moving Average Based Trading
+# MH Hull Moving Average Based Trading 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于Hull移动平均的突破策略。

@@ -1,4 +1,4 @@
-# Volatility Contraction Pattern
+# Estrategia Volatility Contraction Pattern
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 La estrategia VCP busca una secuencia de rangos de precio que se van estrechando. A medida que cada rango se contrae, se acumula energía para un rompimiento. El sistema mide el tamaño del rango y espera una ruptura por encima del máximo más alto o por debajo del mínimo más bajo.

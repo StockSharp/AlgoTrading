@@ -1,4 +1,4 @@
-# Aver4 Stoch Post ZigZag
+# Estrategia Aver4 Stoch Post ZigZag
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combina cuatro osciladores Stoch en múltiples horizontes temporales y un detector simple de pivotes ZigZag. El Stoch promedio guía los niveles de sobrecompra/sobreventa mientras que el ZigZag confirma máximos y mínimos de oscilación. Las compras ocurren cuando el Stoch promediado cae por debajo del nivel de sobreventa y se forma un nuevo mínimo ZigZag. Las ventas ocurren cuando el Stoch promediado sube por encima del nivel de sobrecompra y se forma un nuevo máximo ZigZag. Las posiciones opuestas existentes se cierran al revertirse la señal.

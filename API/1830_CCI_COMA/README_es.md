@@ -1,4 +1,4 @@
-# CCI COMA
+# Estrategia CCI COMA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Utiliza el Índice de Canal de Materias Primas (CCI) y medias móviles de múltiples marcos temporales para seguir la tendencia predominante.

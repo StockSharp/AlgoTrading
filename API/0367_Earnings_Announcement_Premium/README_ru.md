@@ -1,4 +1,4 @@
-# Earnings Announcement Premium
+# Стратегия Earnings Announcement Premium
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Earnings Announcement Premium** покупает акции за несколько дней до отчёта и выходит спустя несколько дней после публикации.

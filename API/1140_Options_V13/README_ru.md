@@ -1,4 +1,4 @@
-# Options Strategy V1.3
+# Стратегия Options Strategy V1.3
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пересечения EMA с фильтром RSI, стопом и целью на основе ATR и фильтром объёма. Опционально требует пробоя утреннего диапазона и закрывает позиции в 15:55 по Нью‑Йорку. Торговля блокируется в заданных сессиях и в пользовательском промежутке времени.

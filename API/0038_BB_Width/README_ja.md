@@ -1,4 +1,4 @@
-# Bollinger Band Width Breakout
+# Bollinger Band Width Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 Bollinger Bandの幅は上部バンドと下部バンドの間隔を測定します。幅の拡大はボラティリティとトレンド形成の可能性を示します。この戦略は幅が増加しているときにブレイクアウトを取引します。

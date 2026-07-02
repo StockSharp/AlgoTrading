@@ -1,4 +1,4 @@
-# Mutanabby AI Algo Pro
+# Estratégia Mutanabby AI Algo Pro
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia Mutanabby AI Algo Pro entra comprada quando um padrão de vela envolvente altista se alinha com uma leitura de RSI abaixo de um limiar e uma queda de preço durante um número especificado de barras. As saídas ocorrem em um padrão envolvente baixista ou quando o stop loss é atingido.

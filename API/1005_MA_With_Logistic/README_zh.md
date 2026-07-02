@@ -1,4 +1,4 @@
-# MA With Logistic
+# MA With Logistic 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA With Logistic 是一种基于移动平均线的策略，使用快慢均线判断入场，并支持百分比或逻辑概率的出场方式。

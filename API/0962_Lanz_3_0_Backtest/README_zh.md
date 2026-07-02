@@ -1,4 +1,4 @@
-# LANZ Strategy 3.0
+# LANZ Strategy 3.0 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 LANZ Strategy 3.0 交易亚洲区间突破。方向在纽约时间01:15–02:15的决策窗口确定，在区间高或低放置限价单并设置基于斐波那契的止盈和止损。若到02:15订单未成交，策略可能反向；未成交的订单在08:00取消，所有持仓于15:45平仓。

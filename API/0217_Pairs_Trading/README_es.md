@@ -1,4 +1,4 @@
-# Pairs Trading Strategy
+# Estrategia Pairs
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Esta estrategia de pairs trading monitorea el spread de precios entre dos instrumentos correlacionados. Al comparar el spread con su media histórica y desviación estándar, el sistema intenta explotar divergencias temporales que eventualmente revertirán.

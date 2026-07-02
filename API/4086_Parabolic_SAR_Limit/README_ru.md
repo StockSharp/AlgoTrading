@@ -1,4 +1,4 @@
-# Parabolic SAR Limit
+# Стратегия Parabolic SAR Limit
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Parabolic SAR Limit — это порт советника **ytg_Parabolic_exp.mq4**, написанного для MetaTrader 4. Стратегия непрерывно отслеживает значение индикатора Parabolic SAR и удерживает возле него лимитные заявки на покупку и продажу. Когда рынок задевает лимит, позиция открывается, а далее стратегия контролирует выход по стоп-лоссу или тейк-профиту, используя экстремумы свечи, что полностью повторяет исходное MQL-решение.

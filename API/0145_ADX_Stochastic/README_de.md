@@ -1,4 +1,4 @@
-# Adx Stochastic Strategy
+# Strategie Adx Stochastic
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategie, die den ADX (Average Directional Index) für die Trendstärke und den Stochastic Oszillator für das Einstiegs-Timing mit überkauften/überverkauften Bedingungen kombiniert.

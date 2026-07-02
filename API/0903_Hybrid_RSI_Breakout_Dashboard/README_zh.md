@@ -1,4 +1,4 @@
-# Hybrid RSI Breakout Dashboard
+# Hybrid RSI Breakout Dashboard 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略结合 RSI 均值回归和基于 ADX 与 200 EMA 的突破交易。

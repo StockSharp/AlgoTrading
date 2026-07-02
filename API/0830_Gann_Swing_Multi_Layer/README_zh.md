@@ -1,4 +1,4 @@
-# Gann Swing Multi Layer
+# Gann Swing Multi Layer 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用简化的多层甘氏摆动分析。

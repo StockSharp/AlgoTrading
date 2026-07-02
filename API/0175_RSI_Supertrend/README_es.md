@@ -1,4 +1,4 @@
-# Rsi Supertrend Strategy
+# Estrategia Rsi Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Estrategia basada en los indicadores RSI y Supertrend. Entra largo cuando el RSI está en sobrevendido (< 30) y el precio está por encima de Supertrend. Entra corto cuando el RSI está en sobrecomprado (> 70) y el precio está por debajo de Supertrend.

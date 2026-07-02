@@ -1,4 +1,4 @@
-# Mean Reversion Strategy
+# Estrategia Mean Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Este enfoque estadístico busca extremos a corto plazo en el precio en relación con su promedio reciente. La estrategia utiliza una media móvil para definir el valor justo y mide la desviación de esa media mediante un cálculo de desviación estándar.

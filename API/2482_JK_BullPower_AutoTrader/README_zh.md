@@ -1,4 +1,4 @@
-# JK BullP AutoTrader
+# JK BullP AutoTrader 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 JK BullP AutoTrader 是原始 MetaTrader 智能交易系统的移植版本，依赖 Bulls Power 振荡指标。策略比较连续两个 Bulls Power 值：当两根柱子都在零线上方且最新一根低于更早一根时，视为多头动能减弱并做空；当上一根 Bulls Power 跌破零线时做多。多空仓位均使用固定止盈、固定止损以及随盈利逐步收紧的移动止损进行保护。

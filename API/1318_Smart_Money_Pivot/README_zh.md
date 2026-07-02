@@ -1,4 +1,4 @@
-# Smart Money Pivot Strategy
+# Smart Money Pivot 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略利用枢轴高点和低点的突破进行交易。价格突破最新枢轴高点时做多，跌破枢轴低点时做空。每笔交易都有独立的止损和止盈百分比。

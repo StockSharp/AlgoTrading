@@ -1,4 +1,4 @@
-# Vwap Adx Strategy
+# Vwap Adx 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于VWAP和ADX指标。当价格高于VWAP且ADX>25时做多；价格低于VWAP且ADX>25时做空。ADX下降到20以下时平仓。

@@ -1,4 +1,4 @@
-# Exp Sar Tm Plus Strategy
+# Exp Sar Tm Plus 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 StockSharp 高层 API 的 **Exp_Sar_Tm_Plus** 专家顾问移植版本。策略在可配置的时间框架上跟踪 Parabolic SAR 反转，并复刻原始脚本中的仓位管理与超时保护，同时与 StockSharp 的高层事件模型保持一致。

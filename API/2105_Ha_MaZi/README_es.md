@@ -1,4 +1,4 @@
-# Ha MaZi
+# Estrategia Ha MaZi
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Combina velas Heikin Ashi, un filtro EMA y confirmación de pivote ZigZag. Se abre una operación larga cuando se forma una vela Heikin Ashi alcista en un nuevo mínimo de ZigZag por encima de la EMA. Las posiciones cortas aparecen en una vela bajista en un nuevo máximo de ZigZag por debajo de la EMA. Las posiciones se cierran por stop loss fijo o take profit.

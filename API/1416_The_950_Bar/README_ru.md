@@ -1,4 +1,4 @@
-# The 950 Bar Strategy
+# Стратегия The 950 Bar
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пятиминутную свечу 9:50 по Нью-Йорку. После её завершения открывается позиция в направлении свечи с фиксированными целями и стопом в тиках.

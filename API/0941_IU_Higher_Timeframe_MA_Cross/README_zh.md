@@ -1,4 +1,4 @@
-# IU Higher Timeframe MA Cross Strategy
+# IU Higher Timeframe MA Cross 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 IU Higher Timeframe MA Cross Strategy 在用户指定的高时间框上计算的快速移动平均线与另一条较慢均线发生交叉时入场。向上交叉做多，向下交叉做空。止损放在前一根K线的极值位置，止盈根据可配置的风险回报比计算。

@@ -1,4 +1,4 @@
-# Aver4 Stoch Post ZigZag
+# Aver4 Stoch Post ZigZag 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 複数の時間軸にわたる4つのStochオシレーターとシンプルなZigZagピボット検出器を組み合わせます。平均Stochが売られすぎ/買われすぎのレベルを誘導し、ZigZagがスイングの高値と安値を確認します。平均StochがOversoldレベルを下回り、新しいZigZag安値が形成されたときに買い。平均StochがOverboughtレベルを上回り、新しいZigZag高値が形成されたときに売り。シグナルが逆転すると既存の逆方向ポジションはクローズされます。

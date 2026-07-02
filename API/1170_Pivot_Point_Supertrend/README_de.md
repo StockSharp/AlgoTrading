@@ -1,4 +1,4 @@
-# Pivot Point Supertrend
+# Strategie Pivot Point Supertrend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie, die Pivot Points mit einem ATR-basierten Supertrend kombiniert, um Trendwenden zu erfassen.

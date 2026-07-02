@@ -1,4 +1,4 @@
-# Macd Vwap Strategy
+# Macd Vwap 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 MACDとVWAPインジケーターに基づく戦略。MACD > SignalかつClose > VWAPのときロングエントリー。MACD < SignalかつClose < VWAPのときショートエントリー。

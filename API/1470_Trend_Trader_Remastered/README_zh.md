@@ -1,4 +1,4 @@
-# Trend Trader-Remastered Strategy
+# Trend Trader-Remastered 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Parabolic SAR 指标。当价格向上穿越 SAR 时买入；向下穿越时卖出。相反方向的穿越会平掉当前持仓。

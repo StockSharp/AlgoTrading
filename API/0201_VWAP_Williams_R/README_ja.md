@@ -1,4 +1,4 @@
-# VWAP Williams R Strategy
+# VWAP Williams R 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 VWAP Williams %R戦略は、出来高加重平均価格を中心としたイントラデイの平均回帰に注目します。価格がVWAPから離れ、Williams %Rオシレーターが売られすぎまたは買われすぎの領域に達するときを観察します。VWAPに近い極端な読み取りが平均への反発を引き起こすことが多いという前提です。

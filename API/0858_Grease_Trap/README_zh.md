@@ -1,4 +1,4 @@
-# Grease Trap
+# Grease Trap 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grease Trap 使用两个斐波那契长度的移动平均线，并在其交叉时交易并设置盈利目标。

@@ -1,4 +1,4 @@
-# CCI Hook Reversal Strategy
+# CCI Hook Reversal 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 CCI Hook Reversal戦略は、Commodity Channel Indexが極端な値からフックして離れるときにトリガーとして使用します。インジケーターが+100を超えるか-100を下回った後、モメンタムが失速するにつれて急速に戻ることがよくあります。

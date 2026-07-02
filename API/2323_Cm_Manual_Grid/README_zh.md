@@ -1,4 +1,4 @@
-# Cm Manual Grid
+# Cm Manual Grid 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Cm Manual Grid 在当前价格周围放置可配置的止损和限价订单网格。每个新订单的数量按固定值增加。策略可以在达到目标利润时分别关闭多头或空头仓位，并包含跟踪利润机制。

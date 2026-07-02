@@ -1,4 +1,4 @@
-# Volume Spike Trend
+# Strategie Volume Spike Trend
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Volume Spike Trend überwacht plötzliche Anstiege im gehandelten Volumen. Wenn das aktuelle Volumen den jüngsten Durchschnitt um einen festgelegten Multiplikator überschreitet, signalisiert es eine starke Marktbeteiligung.

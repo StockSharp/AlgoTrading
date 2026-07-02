@@ -1,4 +1,4 @@
-# Long EMA Advanced Exit
+# Long EMA Advanced Exit 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Long EMA Advanced Exit 是一个仅做多策略，当短期均线向上穿越中期均线且价格位于长期均线上方时入场。退出条件包括 MACD 死叉、价格收于选定均线之下、短期均线下穿中期均线、可选的跟踪止损以及基于 ATR 的波动率过滤器。

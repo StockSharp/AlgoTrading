@@ -1,4 +1,4 @@
-# Keltner Macd Strategy
+# Keltner Macd 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略结合Keltner通道和MACD指标。当价格突破上轨且MACD在信号线上方时做多；跌破下轨且MACD在信号线下方时做空。MACD与信号线出现反向交叉时离场。

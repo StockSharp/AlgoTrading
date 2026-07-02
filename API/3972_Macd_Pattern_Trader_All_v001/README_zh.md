@@ -1,4 +1,4 @@
-# Macd Pattern Trader All v0.01
+# Macd Pattern Trader All v0.01 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现 MetaTrader 专家顾问 “MacdPatternTraderAll v0.01”。它在同一根K线数据上同时运行六套独立的 MACD 入场模式，通过自适应的止损与止盈控制风险，按照原始 EA 的方式分批止盈，并可在亏损后启用缓慢的马丁加仓规则。

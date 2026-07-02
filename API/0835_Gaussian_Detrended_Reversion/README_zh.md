@@ -1,4 +1,4 @@
-# Gaussian Detrended Reversion
+# Gaussian Detrended Reversion 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gaussian Detrended Reversion 是一种均值回归策略，使用经 ALMA 平滑的去趋势价格振荡器。当平滑后的振荡器在零线下方上穿其滞后线时开多；当振荡器在零线上方下穿滞后线时开空。振荡器反向穿越或穿越零线时平仓。

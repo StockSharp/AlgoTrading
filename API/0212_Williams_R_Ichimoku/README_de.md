@@ -1,4 +1,4 @@
-# Williams R Ichimoku Strategy
+# Strategie Williams R Ichimoku
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Dieses Setup kombiniert die Momentum-Extreme von Williams %R mit der Trendstruktur, die durch die Ichimoku Cloud definiert wird. Die Idee ist, starken Bewegungen nur dann beizutreten, wenn der Preis auf der günstigen Seite der Cloud liegt und die kurzfristigen Linien die Richtung bestätigen.

@@ -1,4 +1,4 @@
-# RSI CCI Williams %R
+# Estrategia RSI CCI Williams %R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia combina RSI, CCI y Williams %R para capturar oportunidades de reversión. Compra cuando los tres indicadores alcanzan niveles de sobreventa y vende cuando todos alcanzan niveles de sobrecompra. Cada operación utiliza take profit y stop loss basados en porcentaje.

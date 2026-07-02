@@ -1,4 +1,4 @@
-# Bill Williams
+# Bill Williams 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Bill Williams 策略结合了鳄鱼指标和分形突破。当鳄鱼的颚、齿和唇张开后，价格突破最近的分形时开仓。

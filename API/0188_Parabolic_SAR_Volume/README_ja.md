@@ -1,4 +1,4 @@
-# Parabolic Sar Volume Strategy
+# Parabolic Sar Volume 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 Parabolic SARと出来高確認を組み合わせた戦略。価格が平均以上の出来高でParabolic SARをクロスしたときにトレードをエントリーする。

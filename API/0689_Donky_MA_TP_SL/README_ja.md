@@ -1,4 +1,4 @@
-# Donky MA TP SL
+# Donky MA TP SL 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は、2つのテイクプロフィット目標とストップロスを伴う移動平均クロスオーバーをトレードします。速いSMAが遅いSMAを上抜けするとロング、下抜けするとショートに入ります。ポジションの半分を最初の目標で決済し、残りを2番目の目標またはストップロスで決済します。

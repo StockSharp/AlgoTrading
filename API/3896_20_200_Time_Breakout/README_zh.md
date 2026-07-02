@@ -1,4 +1,4 @@
-# Twenty200 Time Breakout
+# Twenty200 Time Breakout 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略移植自 MetaTrader 专家顾问 **20/200 expert v4.2 (AntS)**。它每天在指定的交易小时对比两根历史小时K线的开盘价（默认分别是当前K线向前 6 根与 2 根）。若远端开盘价高于近端开盘价超过 `Short Delta` 点，则开空；反之若近端开盘价高出远端超过 `Long Delta` 点，则开多。

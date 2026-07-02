@@ -1,4 +1,4 @@
-# ADX System
+# Strategie ADX System
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die **ADX System** Strategie handelt mit dem Average Directional Index und seinen DI-Komponenten. Sie öffnet eine Position, wenn der ADX steigt und eine der Richtungslinien über den ADX kreuzt. Positionen beinhalten feste Take-Profit- und Stop-Loss-Niveaus mit einem Trailing Stop zum Gewinnschutz.

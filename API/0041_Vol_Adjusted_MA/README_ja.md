@@ -1,4 +1,4 @@
-# Volatility Adjusted Moving Average
+# Volatility Adjusted Moving Average 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この手法は移動平均バンドをATRの倍数で修正します。価格が調整されたバンドを超えると、加速したトレンドを示します。

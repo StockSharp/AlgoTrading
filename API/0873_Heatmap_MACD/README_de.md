@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Strategie Heatmap MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heatmap MACD handelt, wenn MACD-Histogramme aus fünf Zeitrahmen übereinstimmen. Eine Long-Position wird eröffnet, wenn alle Histogramme positiv werden, und eine Short-Position, wenn alle negativ werden. Optional kann die Position geschlossen werden, wenn ein Histogramm gegen den Trade dreht.

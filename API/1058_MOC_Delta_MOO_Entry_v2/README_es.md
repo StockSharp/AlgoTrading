@@ -1,4 +1,4 @@
-# MOC Delta MOO Entry v2
+# Estrategia MOC Delta MOO Entry v2
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia registra el volumen de compra y venta durante la sesión de la tarde y utiliza el delta MOC resultante para operar la apertura del día siguiente.

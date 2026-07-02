@@ -1,4 +1,4 @@
-# VWAP Reversion
+# Estrategia VWAP Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia VWAP Reversion que opera en desviaciones del Precio Promedio Ponderado por Volumen

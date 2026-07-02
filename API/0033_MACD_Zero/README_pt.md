@@ -1,4 +1,4 @@
-# MACD Zero Cross
+# Estratégia MACD Zero Cross
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Este sistema opera mudanças de momentum quando o histograma do Moving Average Convergence Divergence (MACD) se aproxima da linha zero. Um MACD ascendente abaixo de zero ou um MACD descendente acima de zero sinaliza uma possível reversão.

@@ -1,4 +1,4 @@
-# Kolier SuperTrend
+# Kolier SuperTrend 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Kolier SuperTrend 指标，利用 ATR 带识别趋势反转。

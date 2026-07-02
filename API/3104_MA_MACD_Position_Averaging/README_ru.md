@@ -1,4 +1,4 @@
-# MA MACD Position Averaging
+# Стратегия MA MACD Position Averaging
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является точной конверсией советника MetaTrader **«MA MACD Position averaging»**. Она объединяет фильтр по взвешенной скользящей средней с проверкой отношения линий MACD и включает модуль усреднения с наращиванием позиции при неблагоприятном движении цены на заданное число пунктов. Все рисковые параметры задаются в пунктах и автоматически переводятся в ценовые отступы с учётом параметров инструмента из StockSharp.

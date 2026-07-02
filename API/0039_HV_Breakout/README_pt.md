@@ -1,4 +1,4 @@
-# Historical Volatility Breakout
+# Estratégia Historical Volatility Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Este método de rompimento usa a volatilidade histórica para definir limiares dinâmicos. Quando o preço se move além de um nível de referência por mais do que a volatilidade atual, indica uma tendência potencial.

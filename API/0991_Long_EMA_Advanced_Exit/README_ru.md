@@ -1,4 +1,4 @@
-# Long EMA Advanced Exit
+# Стратегия Long EMA Advanced Exit
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Long EMA Advanced Exit** — лонговая стратегия, входящая при пересечении короткой скользящей средней выше средней и цене выше длинной. Выход осуществляется при пересечении MACD вниз, закрытии ниже выбранной скользящей, пересечении короткой средней ниже средней, трейлинг-стопе или фильтре волатильности на основе ATR.

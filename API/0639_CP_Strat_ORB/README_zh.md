@@ -1,4 +1,4 @@
-# CP Strat ORB
+# CP Strat ORB 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在纽约开盘区间（9:30-9:45）突破并回测后入场。价格突破区间高点并回测后收于其上则做多；价格跌破区间低点并回测后收于其下则做空。止损和止盈为固定点数。

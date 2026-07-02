@@ -1,4 +1,4 @@
-# VWAP Pro V21
+# VWAP Pro V21 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 この戦略は、速いEMAと遅いEMAをVWAPおよびATRベースのリスク管理と組み合わせます。上位時間軸のEMAフィルター（1時間、長さ50）がトレンドを確認します。価格がトレンドと一致したときに取引が開き、ATRベースの利益確定または損切りレベルで閉じます。

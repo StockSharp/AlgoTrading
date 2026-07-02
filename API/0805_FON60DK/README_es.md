@@ -1,4 +1,4 @@
-# FON60DK
+# Estrategia FON60DK
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia abre posiciones largas cuando la línea Tillson T3 sube por encima de la banda superior del Optimized Trend Tracker (OTT) y Williams %R confirma impulso alcista. La posición se cierra cuando Tillson T3 cae por debajo de la banda OTT opuesta y Williams %R entra en territorio de sobreventa.

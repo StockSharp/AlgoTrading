@@ -1,4 +1,4 @@
-# Elder Impulse System Strategy
+# Стратегия Elder Impulse System
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия реализует систему импульсов Элдера, объединяя направление экспоненциального скользящего среднего (EMA) и импульс гистограммы MACD. Сделки открываются, когда бычий или медвежий импульс ослабевает на свечах старшего таймфрейма.

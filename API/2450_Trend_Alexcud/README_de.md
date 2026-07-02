@@ -1,4 +1,4 @@
-# Trend Alexcud
+# Strategie Trend Alexcud
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die Trend Alexcud Strategie sucht nach starker Richtungsbewegung, indem mehrere einfache gleitende Durchschnitte und der Accelerator Oscillator über drei Zeitrahmen ausgerichtet werden. Sie wurde aus dem originalen MQL5-Expert "TREND_alexcud v_2" konvertiert.

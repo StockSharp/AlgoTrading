@@ -1,4 +1,4 @@
-# Macd Pattern Trader All v0.01
+# Стратегия Macd Pattern Trader All v0.01
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воспроизводит эксперта MetaTrader "MacdPatternTraderAll v0.01". Она запускает шесть независимых паттернов входа на основе MACD на одном и том же потоке свечей, управляет рисками адаптивными стоп-лоссами и тейк-профитами, выполняет поэтапную фиксацию прибыли и по желанию использует мягкий мартингейл после убыточных серий.

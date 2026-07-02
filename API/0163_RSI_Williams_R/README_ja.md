@@ -1,4 +1,4 @@
-# Rsi Williams R Strategy
+# Rsi Williams R 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 戦略の実装 - RSI + Williams %R。RSI が 30 を下回り、Williams %R が -80 を下回っている（二重売られすぎ条件）場合に買い。RSI が 70 を上回り、Williams %R が -20 を上回っている（二重買われすぎ条件）場合に売り。

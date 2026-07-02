@@ -1,4 +1,4 @@
-# HMA Crossover ATR Curvature
+# HMA Crossover ATR Curvature 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 HMA Crossover ATR Curvature 是一种趋势跟随策略，结合快慢 Hull 移动平均线交叉和曲率过滤。仓位大小基于 ATR 和风险百分比，使用基于 ATR 的跟踪止损保护。

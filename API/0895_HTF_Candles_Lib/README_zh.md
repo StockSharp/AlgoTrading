@@ -1,4 +1,4 @@
-# HTF Candles Lib
+# HTF Candles Lib 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 HTF Candles Lib 是一个实用策略，从较低时间框架数据重构较高时间框架K线，并记录其详细结构。

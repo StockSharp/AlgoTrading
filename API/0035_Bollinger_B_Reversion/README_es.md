@@ -1,4 +1,4 @@
-# Bollinger Percent B Reversion
+# Estrategia Bollinger Percent B Reversion
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Este enfoque opera contra los extremos de precio más allá de las Bollinger Bands usando el indicador Percent B. Los movimientos por encima de la banda superior o por debajo de la banda inferior sugieren sobreextensión.

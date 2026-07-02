@@ -1,4 +1,4 @@
-# Simple MA ADX EA
+# Strategie Simple MA ADX EA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie, die eine EMA mit dem Average Directional Index kombiniert, um die Trendstärke zu bestätigen.

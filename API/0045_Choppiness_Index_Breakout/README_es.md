@@ -1,4 +1,4 @@
-# Choppiness Index Breakout
+# Estrategia Choppiness Index Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 El Choppiness Index mide si el mercado está en tendencia o en rango. Cuando el indicador cae por debajo de un umbral, señala el inicio de una tendencia desde un entorno choppy.

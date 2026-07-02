@@ -1,4 +1,4 @@
-# Stochastic Hook Reversal Strategy
+# Estratégia Stochastic Hook Reversal
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 A estratégia Stochastic Hook Reversal observa a linha %K em busca de um gancho saindo do território de sobrecompra ou sobrevenda. Após se estender a um extremo, o oscilador frequentemente se curva de volta, indicando que o momentum está diminuindo.

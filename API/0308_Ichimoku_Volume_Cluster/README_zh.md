@@ -1,4 +1,4 @@
-# Ichimoku Volume Cluster
+# Ichimoku Volume Cluster 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Ichimoku Volume Cluster** 策略基于相关指标构建。

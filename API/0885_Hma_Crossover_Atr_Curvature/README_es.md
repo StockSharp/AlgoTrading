@@ -1,4 +1,4 @@
-# HMA Crossover ATR Curvature
+# Estrategia HMA Crossover ATR Curvature
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 HMA Crossover ATR Curvature es una estrategia de seguimiento de tendencia que combina un cruce de Hull Moving Average rápida y lenta con un filtro de curvatura. El tamaño de la posición se basa en el ATR y el porcentaje de riesgo, y las operaciones están protegidas por un stop de seguimiento basado en ATR.

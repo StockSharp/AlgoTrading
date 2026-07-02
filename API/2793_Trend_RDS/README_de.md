@@ -1,4 +1,4 @@
-# Trend RDS
+# Strategie Trend RDS
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend RDS sucht nach klaren direktionalen Sequenzen in der Kursbewegung. Wenn drei abgeschlossene Kerzen strikt höhere Tiefs bilden, behandelt die Strategie die Struktur als bullisches Trendsegment. Drei strikt niedrigere Hochs markieren eine bärische Konfiguration. Eine Schutzregel blockiert Einstiege, wenn dieselben drei Bars gleichzeitig sowohl höhere Tiefs als auch niedrigere Hochs erzeugen, was üblicherweise ein sich zusammenziehendes Dreieck anstatt einer direktionalen Bewegung anzeigt. Die Strategie kann optional die Richtung über den `Reverse`-Parameter umkehren.

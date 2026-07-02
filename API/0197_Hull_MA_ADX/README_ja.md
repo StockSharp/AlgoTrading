@@ -1,4 +1,4 @@
-# Hull Ma Adx Strategy
+# Hull Ma Adx 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 Hull Moving AverageとADXに基づく戦略。HMAが上昇しADX > 25（強いトレンド）のときロングエントリー。HMAが下降しADX > 25（強いトレンド）のときショートエントリー。ADX < 20（トレンド弱体化）で退場。

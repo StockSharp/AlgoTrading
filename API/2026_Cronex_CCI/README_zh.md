@@ -1,4 +1,4 @@
-# Cronex CCI
+# Cronex CCI 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于 Cronex 商品通道指数的交叉。该指标通过两条指数移动平均线平滑 CCI，形成快线和慢线。

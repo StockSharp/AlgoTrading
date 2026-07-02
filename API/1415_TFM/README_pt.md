@@ -1,4 +1,4 @@
-# TFM
+# Estratégia TFM
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia de rompimento com multiplicador de período. Utiliza um período superior formado pela multiplicação do período base. Comprado quando o preço rompe acima da máxima anterior e opcionalmente vendido ou saída quando o preço cai abaixo da mínima anterior.

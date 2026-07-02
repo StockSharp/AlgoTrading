@@ -1,4 +1,4 @@
-# FTMO Rules Monitor
+# Стратегия FTMO Rules Monitor
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия отслеживает правила FTMO и управляет сделками на основе ATR.

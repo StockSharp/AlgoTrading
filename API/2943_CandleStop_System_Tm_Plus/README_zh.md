@@ -1,4 +1,4 @@
-# CandleStop System Tm Plus
+# CandleStop System Tm Plus 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 基于 CandleStop 自定义通道指标的突破策略。系统持续计算延迟的最高价与最低价通道，等待上一根完整蜡烛收盘突破通道后，在下一根蜡烛采取行动。同时可以限制持仓时间，并使用以价格最小变动为单位的保护性止损/止盈。

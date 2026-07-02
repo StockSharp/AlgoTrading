@@ -1,4 +1,4 @@
-# PresentTrend RMI Synergy
+# PresentTrend RMI Synergy 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 PresentTrend RMI SynergyはRSIベースのモメンタムフィルターとSuperTrendスタイルのATRトレーリングストップを組み合わせています。モメンタムが閾値を超え、価格がトレンドと一致したときにエントリーが発生します。ストップは移動平均とATRバンドを使用して価格を動的に追跡します。

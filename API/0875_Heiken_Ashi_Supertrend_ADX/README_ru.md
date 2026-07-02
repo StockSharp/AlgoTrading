@@ -1,4 +1,4 @@
-# Heiken Ashi Supertrend Adx Strategy
+# Стратегия Heiken Ashi Supertrend Adx
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия объединяет свечи Heiken Ashi, направление Supertrend и опциональный фильтр ADX. Бычья свеча Heiken Ashi без нижней тени открывает длинную позицию в восходящем тренде. Медвежья свеча без верхней тени открывает короткую позицию в нисходящем тренде. Позиции закрываются по противоположному сигналу или ATR-трейлинг-стопу.

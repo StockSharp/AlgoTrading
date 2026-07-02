@@ -1,4 +1,4 @@
-# CCI COMA
+# Стратегия CCI COMA
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Использует индикатор CCI и скользящие средние нескольких таймфреймов для следования текущему тренду.

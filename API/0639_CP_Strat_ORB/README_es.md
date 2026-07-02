@@ -1,4 +1,4 @@
-# CP Strat ORB
+# Estrategia CP Strat ORB
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Esta estrategia opera rompimientos del rango de apertura de Nueva York (9:30-9:45) con un retesteo. Entra en largo después de que el precio rompe por encima del máximo del rango y cierra nuevamente por encima de él, y entra en corto después de que el precio rompe por debajo del mínimo del rango y cierra nuevamente por debajo. Las salidas utilizan niveles fijos de stop-loss y take-profit.

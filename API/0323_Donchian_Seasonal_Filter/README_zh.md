@@ -1,4 +1,4 @@
-# Donchian Seasonal Filter
+# Donchian Seasonal Filter 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Donchian Seasonal Filter** 策略基于 Donchian Channels with seasonal filter。

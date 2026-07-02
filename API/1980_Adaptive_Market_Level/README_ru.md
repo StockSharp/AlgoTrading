@@ -1,4 +1,4 @@
-# Adaptive Market Level
+# Стратегия Adaptive Market Level
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует на основе индикатора Adaptive Market Level (AML). Индикатор адаптируется к текущей волатильности и строит динамический уровень цены. Длинная позиция открывается при развороте линии AML вверх, короткая — при развороте вниз. Противоположные позиции закрываются при смене цвета либо по стоп-лоссу/тейк-профиту.

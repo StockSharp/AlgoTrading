@@ -1,4 +1,4 @@
-# Keltner Rsi Strategy
+# Keltner Rsi 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Keltner Channels と RSI インジケーターを組み合わせた戦略。価格がチャネル境界に触れ、RSI が売られすぎ/買われすぎ条件を確認した際の平均回帰の機会を探します。

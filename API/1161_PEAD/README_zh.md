@@ -1,4 +1,4 @@
-# PEAD Strategy
+# PEAD 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在盈利公告后出现正向EPS惊喜且跳空上涨时交易。

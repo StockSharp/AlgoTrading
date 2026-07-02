@@ -1,4 +1,4 @@
-# Fracture
+# Strategie Fracture
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Fracture kombiniert fraktale Ausbrüche mit geglätteten gleitenden Durchschnitten und ADX, um sowohl in Seitwärtsmärkten als auch in Trendmärkten zu handeln.

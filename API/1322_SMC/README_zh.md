@@ -1,4 +1,4 @@
-# SMC Strategy
+# SMC 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 SMC策略利用最近的摆动高点和低点来定义溢价、均衡和折扣区域。结合SMA趋势过滤和简单订单块确认，在折扣区买入、溢价区卖出。

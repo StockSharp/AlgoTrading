@@ -1,4 +1,4 @@
-# Gold Pullback Strategy
+# Gold Pullback 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Gold Pullback Strategy 是一种趋势策略。当价格在上升趋势中回调至 EMA21 且 MACD 与 TDI 同时看多时做多；当价格在下降趋势中回调至 EMA21 且 MACD 与 TDI 看空时做空。每笔交易的止盈和止损以信号蜡烛为基准，距离相等并加上一个偏移。

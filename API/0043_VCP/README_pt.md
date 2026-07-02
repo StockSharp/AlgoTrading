@@ -1,4 +1,4 @@
-# Volatility Contraction Pattern
+# Estratégia Volatility Contraction Pattern
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 A estratégia VCP procura uma sequência de intervalos de preço cada vez mais estreitos. À medida que cada intervalo se contrai, acumula-se energia para um rompimento. O sistema mede o tamanho do intervalo e aguarda uma ruptura acima da máxima mais alta ou abaixo da mínima mais baixa.

@@ -1,4 +1,4 @@
-# Trend RDS
+# Estrategia Trend RDS
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trend RDS busca secuencias direccionales claras en la acción del precio. Cuando tres velas completadas forman mínimos estrictamente más altos, trata la estructura como un tramo de tendencia alcista. Tres máximos estrictamente más bajos marcan una configuración bajista. Una regla de protección bloquea entradas cuando las mismas tres barras crean simultáneamente tanto mínimos más altos como máximos más bajos, lo que generalmente indica un triángulo contrayente en lugar de un movimiento direccional. La estrategia puede invertir opcionalmente la dirección a través del parámetro `Reverse`.

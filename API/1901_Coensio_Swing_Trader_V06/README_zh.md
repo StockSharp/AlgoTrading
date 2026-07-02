@@ -1,4 +1,4 @@
-# Coensio Swing Trader V06 Strategy
+# Coensio Swing Trader V06 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了原始 Coensio Swing Trader 的突破逻辑。通过 Donchian 通道确定动态支撑和阻力。当价格突破上轨或下轨超过设定阈值时开仓。

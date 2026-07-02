@@ -1,4 +1,4 @@
-# Larry Connors RSI 3
+# Larry Connors RSI 3 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Larry Connors の RSI ルールに基づく平均回帰戦略。

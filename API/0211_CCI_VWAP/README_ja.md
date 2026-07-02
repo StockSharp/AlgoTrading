@@ -1,4 +1,4 @@
-# CCI VWAP Strategy
+# CCI VWAP 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 CCI VWAPのアプローチは、モメンタムと価格が出来高加重平均価格から乖離したときのイントラデイのリバーサルを捉えようとします。VWAPレベルと並べてCommodity Channel Indexを観察することで、システムは公正価値のベンチマークに対する最近のスイングの強さを測定します。

@@ -1,4 +1,4 @@
-# Cidomo V1
+# Estratégia Cidomo V1
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia de rompimento diário que coloca negociações quando o preço escapa do intervalo recente.

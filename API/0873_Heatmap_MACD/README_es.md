@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Estrategia Heatmap MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Heatmap MACD opera cuando los histogramas MACD de cinco marcos temporales se alinean. Se abre una posición larga cuando todos los histogramas se vuelven positivos, y una posición corta cuando todos se vuelven negativos. Opcionalmente, la posición puede cerrarse cuando cualquier histograma gira en contra de la operación.

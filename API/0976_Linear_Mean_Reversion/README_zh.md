@@ -1,4 +1,4 @@
-# Linear Mean Reversion Strategy
+# Linear Mean Reversion 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Linear Mean Reversion Strategy 利用价格相对于均值的 z 分数进行均值回归交易，并使用固定点数止损。

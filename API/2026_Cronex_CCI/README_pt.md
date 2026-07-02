@@ -1,4 +1,4 @@
-# Cronex CCI
+# Estratégia Cronex CCI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 Estratégia baseada no cruzamento do Índice de Canal de Mercadoria Cronex. O indicador suaviza o CCI através de duas médias móveis exponenciais para criar uma linha rápida e uma lenta.

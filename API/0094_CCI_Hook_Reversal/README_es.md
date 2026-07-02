@@ -1,4 +1,4 @@
-# CCI Hook Reversal Strategy
+# Estrategia CCI Hook Reversal
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia CCI Hook Reversal utiliza el Commodity Channel Index como disparador cuando engancha alejándose de una lectura extrema. Después de que el indicador supera +100 o cae por debajo de -100, frecuentemente se retrae rápidamente a medida que el impulso se detiene.

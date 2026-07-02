@@ -1,4 +1,4 @@
-# GRIM309 CallPut Strategy
+# GRIM309 CallPut 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 GRIM309 CallPut Strategy 基于多重 EMA 趋势对齐并带有预警机制。EMA10 高于 EMA20 且价格高于 EMA50 时，EMA5 上升并突破 EMA10 开多单；相反条件下开空单。平仓后有冷却期防止立即再次开仓。当 EMA5 与 EMA10 之间的差值迅速收缩时，预警会提前平仓。

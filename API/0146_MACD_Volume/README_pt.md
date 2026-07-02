@@ -1,4 +1,4 @@
-# Macd Volume Strategy
+# Estratégia Macd Volume
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Estratégia que combina o MACD (Convergência/Divergência de Médias Móveis) com confirmação de volume. Entra em posições quando a linha MACD cruza a linha de Sinal e confirma com aumento de volume.

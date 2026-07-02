@@ -1,4 +1,4 @@
-# MA Parabolic SAR Strategy
+# Strategie MA Parabolic SAR
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Die MA Parabolic SAR Strategie versucht, anhaltende Trends zu erfassen, indem ein einfacher gleitender Durchschnitt die vorherrschende Richtung bestimmt und die Parabolic SAR-Punkte das Einstiegs-Timing und die Stop-Platzierung liefern. Wenn beide Indikatoren übereinstimmen, geht das System davon aus, dass das Momentum stark genug ist, um ihm zu folgen.

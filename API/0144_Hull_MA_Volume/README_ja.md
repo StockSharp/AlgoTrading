@@ -1,4 +1,4 @@
-# Hull Ma Volume Strategy
+# Hull Ma Volume 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 トレンドの方向にHull Moving Average、トレードエントリーの確認に出来高を使用する戦略。

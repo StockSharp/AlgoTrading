@@ -1,4 +1,4 @@
-# ATR Range Breakout
+# ATR Range Breakout 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 ATR Range Breakoutは、固定本数のバーにわたる価格変動を計測し、平均真の値幅（ATR）と比較します。変動がATRを超えると、その方向にポジションを建てます。

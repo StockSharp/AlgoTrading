@@ -1,4 +1,4 @@
-# Roulette Game
+# Roulette Game 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Roulette Game 策略把 MetaTrader 上的同名游戏搬到了 StockSharp。每一根收盘的 K 线都被视为一次新的轮盘旋转，方向随机决定，若上一轮亏损则按照马丁格尔方式放大下一个仓位。策略维护一个虚拟资金池，并通过可配置的上限来抑制风险敞口。

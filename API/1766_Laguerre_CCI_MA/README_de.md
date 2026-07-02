@@ -1,4 +1,4 @@
-# Laguerre CCI MA
+# Strategie Laguerre CCI MA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie, die den Laguerre-Filter, den Commodity Channel Index (CCI) und einen exponentiellen gleitenden Durchschnitt kombiniert.

@@ -1,4 +1,4 @@
-# Heatmap MACD
+# Heatmap MACD 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 このシステムは5つの時間軸のMACDヒストグラムのヒートマップを使用します。全てのヒストグラムがゼロより上または下に転じると対応する方向にエントリーし、アラインメントが崩れるかリスク限度が発動するとエグジットします。

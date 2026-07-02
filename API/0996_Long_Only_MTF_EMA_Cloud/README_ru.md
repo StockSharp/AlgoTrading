@@ -1,4 +1,4 @@
-# Long-Only MTF EMA Cloud
+# Стратегия Long-Only MTF EMA Cloud
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия пересечения EMA, которая открывает только длинные позиции при пересечении быстрой EMA выше медленной. Использует фиксированные проценты стоп-лосса и тейк-профита от цены входа.

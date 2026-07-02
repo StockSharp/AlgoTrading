@@ -1,4 +1,4 @@
-# PZ Parabolic SAR EA
+# Стратегия PZ Parabolic SAR EA
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет эксперт *PZ Parabolic SAR*. Она использует два индикатора Parabolic SAR с различными параметрами шага и максимального ускорения. "Торговый" SAR определяет направление тренда для входа, а "стоповый" SAR идёт ближе к цене и служит сигналом выхода при смене тренда.

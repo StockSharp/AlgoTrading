@@ -1,4 +1,4 @@
-# Choppiness Index Breakout
+# Strategie Choppiness Index Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Der Choppiness Index misst, ob der Markt im Trend oder in einer Seitwärtsbewegung ist. Wenn der Indikator unter einen Schwellenwert fällt, signalisiert er den Beginn eines Trends aus einem choppy Umfeld.

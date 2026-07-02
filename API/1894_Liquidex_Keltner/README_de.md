@@ -1,4 +1,4 @@
-# Liquidex Keltner
+# Strategie Liquidex Keltner
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Die **Liquidex Keltner**-Strategie handelt Ausbrüche aus Keltner-Kanälen mit einem gleitenden Durchschnitt als Trendfilter.

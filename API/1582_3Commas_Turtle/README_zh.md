@@ -1,4 +1,4 @@
-# 3Commas Turtle Strategy
+# 3Commas Turtle 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 简化的乌龟突破策略，使用唐奇安通道。当价格向上突破快速通道且同时高于慢速通道时买入；当价格向下跌破快速通道且低于慢速通道时卖出。价格穿越相反方向的退出通道时平仓。

@@ -1,4 +1,4 @@
-# Adaptive HMA Plus
+# Стратегия Adaptive HMA Plus
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия на адаптивной скользящей средней Халла, которая изменяет период в зависимости от волатильности или объёма. Она открывает длинные или короткие позиции, когда наклон HMA указывает направление тренда при активном рынке.

@@ -1,4 +1,4 @@
-# MAM Crossover Trader Strategy
+# Стратегия MAM Crossover Trader
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия сравнивает скользящие средние от цены закрытия и открытия свечей.

@@ -1,4 +1,4 @@
-# Averaging Down Strategy
+# Averaging Down 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 当价格突破以EMA为中心的ATR通道时开仓。若价格逆向运行，策略按照阶梯百分比偏移进行加仓（DCA）。当价格回到平均建仓价并达到设定的利润百分比时平仓。

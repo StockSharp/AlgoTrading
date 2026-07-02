@@ -1,4 +1,4 @@
-# Hardcore FX Breakout
+# Hardcore FX Breakout 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略改编自 MetaTrader 的 "HardcoreFX" 专家顾问。策略跟踪 ZigZag 的高点和低点，当价格突破这些水平时开仓。它使用固定的止损和止盈，并通过跟踪止损来保护已有利润。

@@ -1,4 +1,4 @@
-# Bollinger Williams R Strategy
+# Estrategia Bollinger Williams R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Estrategia basada en los indicadores Bollinger Bands y Williams %R. Entra largo cuando el precio está en la banda inferior y el Williams %R está sobrevendido (< -80). Entra corto cuando el precio está en la banda superior y el Williams %R está sobrecomprado (> -20).

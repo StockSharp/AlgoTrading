@@ -1,4 +1,4 @@
-# Exp Price Position
+# Exp Price Position 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Exp Price Position** 策略来自原始的 MetaTrader 专家顾问，它结合价格位置与趋势过滤。

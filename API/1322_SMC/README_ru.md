@@ -1,4 +1,4 @@
-# SMC Strategy
+# Стратегия SMC
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 SMC стратегия определяет зоны premium, equilibrium и discount на основе недавних swing high и swing low. Торгует в зонах discount или premium с фильтром тенденции SMA и простым подтверждением order block.

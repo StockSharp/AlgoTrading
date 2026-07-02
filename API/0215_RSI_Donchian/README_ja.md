@@ -1,4 +1,4 @@
-# RSI Donchian Strategy
+# RSI Donchian 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 RSI Donchian戦略は、ドンチャンチャネルのブレイクアウトと一致するモメンタムの極値を探します。相対力指数が買われすぎと売られすぎの状態を測定し、チャネルが最近の価格の高値と安値を定義します。

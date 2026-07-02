@@ -1,4 +1,4 @@
-# Three White Soldiers Strategy
+# Strategie Three White Soldiers
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Das Drei Weiße Soldaten-Muster ist eine klassische bullische Umkehr, bestehend aus drei aufeinanderfolgenden starken Aufwärtskerzen. Nach einem Abwärtstrend markiert diese Sequenz oft den Beginn einer anhaltenden Aufwärtsbewegung, da der Kaufdruck die Verkäufer überwältigt.

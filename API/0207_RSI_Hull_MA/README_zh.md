@@ -1,4 +1,4 @@
-# RSI Hull MA Strategy
+# RSI Hull MA 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 此策略结合RSI与Hull移动平均线。当RSI低于30且HMA上升时做多；当RSI高于70且HMA下降时做空，分别对应超卖和超买状态。

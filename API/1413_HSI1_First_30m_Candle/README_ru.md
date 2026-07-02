@@ -1,4 +1,4 @@
-# HSI1 First 30m Candle Strategy
+# Стратегия HSI1 First 30m Candle
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия торгует пробой диапазона первых 30 минут на графике 15 минут, допускается только одна сделка в день.

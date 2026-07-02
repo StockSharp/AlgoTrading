@@ -1,4 +1,4 @@
-# Delta WPR
+# Delta WPR 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Delta WPR 策略比较快慢 Williams %R 振荡器的差值以捕捉动量变化。当快速值高于慢速值且慢速值在设定水平之上时，策略开多并平掉任何空头头寸。相反，当快速值低于慢速值且慢速值位于该水平之下时，策略开空并关闭多头。策略仅在每根K线收盘后进行计算，以减少噪音。

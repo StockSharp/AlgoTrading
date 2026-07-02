@@ -1,4 +1,4 @@
-# Bollinger Band Width Breakout
+# Estrategia Bollinger Band Width Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 La anchura de las Bollinger Bands mide la separación entre las bandas superior e inferior. Una anchura en expansión sugiere volatilidad y posible formación de tendencia. Esta estrategia opera rompimientos cuando la anchura está aumentando.

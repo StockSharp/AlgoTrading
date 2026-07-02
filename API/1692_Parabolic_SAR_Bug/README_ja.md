@@ -1,4 +1,4 @@
-# Parabolic SAR Bug
+# Parabolic SAR Bug 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 **Parabolic SAR Bug**戦略は、Parabolic SARインジケーターを使用してトレンドリバーサルを取引します。SARが価格の下に反転するとロングポジションに入り、SARが価格の上に反転するとショートポジションに入ります。オプションのリバースモードはシグナルを反転させます。内蔵のポジション保護モジュールを通じて、保護ストップロス、テイクプロフィット、トレーリングストップがサポートされています。

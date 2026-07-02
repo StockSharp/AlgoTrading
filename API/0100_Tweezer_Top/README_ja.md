@@ -1,4 +1,4 @@
-# Tweezer Top Strategy
+# Tweezer Top 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 ツイーザートップはボトム版の鏡像ですが、上昇後に現れます。2本のローソク足がほぼ同じ高値を共有しており、買い手が一定のレベルを超えることができなかったことを示しています。

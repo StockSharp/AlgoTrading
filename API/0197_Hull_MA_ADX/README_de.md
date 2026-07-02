@@ -1,4 +1,4 @@
-# Hull Ma Adx Strategy
+# Strategie Hull Ma Adx
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Strategie basierend auf Hull Moving Average und ADX. Einstieg Long, wenn HMA steigt und ADX > 25 (starker Trend). Einstieg Short, wenn HMA fällt und ADX > 25 (starker Trend). Ausstieg, wenn ADX < 20 (abschwächender Trend).

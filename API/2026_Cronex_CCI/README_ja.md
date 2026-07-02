@@ -1,4 +1,4 @@
-# Cronex CCI
+# Cronex CCI 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Cronex商品チャンネル指数のクロスオーバーに基づく戦略。インジケーターは2つの指数移動平均でCCIを平滑化し、高速ラインと低速ラインを作成します。

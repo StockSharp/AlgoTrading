@@ -1,4 +1,4 @@
-# Stochastic Hook Reversal Strategy
+# Stochastic Hook Reversal 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Stochastic Hook Reversal戦略は、%Kラインが買われすぎまたは売られすぎの領域からフックする動きを監視します。極端な水準に達した後、オシレーターはしばしば戻るように曲がり、モメンタムが弱まっていることを示します。

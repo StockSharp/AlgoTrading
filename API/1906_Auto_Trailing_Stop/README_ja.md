@@ -1,4 +1,4 @@
-# Auto Trailing Stop
+# Auto Trailing Stop 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 既存のポジションにストップロスとテイクプロフィット注文を自動的に付加し、価格が有利な方向に動くにつれてストップをトレールします。

@@ -1,4 +1,4 @@
-# RSI Hull MA Strategy
+# RSI Hull MA 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
 この戦略はRSI Hull MAインジケーターを使ってシグナルを生成します。

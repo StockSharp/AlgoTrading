@@ -1,4 +1,4 @@
-# Simple MACD
+# Simple MACD 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 Simple MACDは、MQL5アドバイザー`Simple_MACD.mq5`のロジックをStockSharpで再現します。戦略は完成したローソク足で計算されたMACD主線の傾きに従い、傾きが同じ方向を維持する限りポジションに追加し続けます。

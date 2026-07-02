@@ -1,4 +1,4 @@
-# Smart Money Concept Strategy - Uncle Sam
+# Smart Money Concept Strategy - Uncle Sam 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该突破策略追踪近期的摆动高点和低点。当收盘价上破最新枢轴高点时开多仓；当收盘价跌破最新枢轴低点时开空仓。可选的移动平均过滤器可用于仅在趋势方向上交易。

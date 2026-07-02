@@ -1,4 +1,4 @@
-# Simple MACD
+# Estrategia Simple MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Simple MACD replica la lógica del asesor MQL5 `Simple_MACD.mq5` en StockSharp. La estrategia sigue la pendiente de la línea principal del MACD calculada en velas completadas y continúa añadiendo a la posición siempre que la pendiente permanezca en la misma dirección.

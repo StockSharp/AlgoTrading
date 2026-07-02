@@ -1,4 +1,4 @@
-# Exp MUV NorDIFF Cloud
+# Strategie Exp MUV NorDIFF Cloud
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Strategie basierend auf dem normalisierten Schwung von SMA und EMA.

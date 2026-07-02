@@ -1,4 +1,4 @@
-# PresentTrend RMI Synergy
+# Strategie PresentTrend RMI Synergy
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 PresentTrend RMI Synergy kombiniert einen RSI-basierten Momentum-Filter mit einem SuperTrend-ähnlichen ATR-Trailing-Stop. Einstiege erfolgen, wenn das Momentum die Schwellenwerte überschreitet und der Preis mit dem Trend übereinstimmt. Der Stop verfolgt den Preis dynamisch mit einem gleitenden Durchschnitt und einem ATR-Band.
