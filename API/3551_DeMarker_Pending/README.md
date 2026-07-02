@@ -1,4 +1,5 @@
 # DeMarker Pending Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This StockSharp strategy reproduces the behaviour of the MetaTrader expert advisor "DeMarker Pending 2.5". The bot evaluates the DeMarker oscillator on a configurable timeframe and, when extreme levels are crossed, it places a pending order in the breakout direction. The order can be either a stop or a limit order offset by a fixed number of points. Optional trade window filtering and automatic expiration keep pending orders aligned with the original expert's behaviour.

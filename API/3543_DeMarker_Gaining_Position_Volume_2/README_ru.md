@@ -1,5 +1,5 @@
 # Стратегия DeMarker Gaining Position Volume 2
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет работу эксперта MetaTrader 5 **«DeMarker gaining position volume 2»** средствами StockSharp. Она анализирует выбранный таймфрейм свечей, рассчитывает осциллятор DeMarker и открывает сделки при попадании значения в зоны перекупленности/перепроданности. Реализация сохраняет ключевые особенности оригинала: фиксированный объём, возможность инверсии сигналов, встроенные стоп-лоссы/тейк-профиты и фильтр торговой сессии.
 

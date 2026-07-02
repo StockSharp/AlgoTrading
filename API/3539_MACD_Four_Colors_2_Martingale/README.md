@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# MACD Four Colors 2 Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 # MACD Four Colors 2 Martingale
 
@@ -47,4 +48,3 @@ Only one directional basket of trades is active at any time. A new trade is allo
 - **Complexity**: Intermediate
 - **Risk**: High due to martingale scaling
 - **Automation**: Fully automated once started
-

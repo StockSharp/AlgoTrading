@@ -1,4 +1,5 @@
 # MA on Momentum Min Profit 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 MetaTrader 5 智能交易系统 **MA on Momentum Min Profit.mq5**。当 Momentum 指标向上穿越自身的动量均线并且上一根 K 线仍低于 100 水平时买入；当 Momentum 向下跌破均线且上一根 K 线高于 100 时卖出。实现中保留了原始版本的资金止损和以点数表示的固定止盈。

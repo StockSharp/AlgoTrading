@@ -1,4 +1,5 @@
 # AMA Trader 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AMA Trader 2 策略复刻了 Vladimir Karputov 的 MetaTrader 专家顾问。策略使用考夫曼自适应均线 (AMA) 识别趋势方向，并结合 RSI 振荡指标确认极值。当收盘价高于 AMA 且 RSI 落入超卖区域时加仓做多；当收盘价低于 AMA 且 RSI 进入超买区域时加仓做空。所有加仓订单都使用固定手数，并可通过风险参数（最大加仓次数、最小价格间距、止损/止盈/跟踪止损等）进行约束。

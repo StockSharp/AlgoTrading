@@ -1,4 +1,5 @@
 # MA on Momentum Min Profit Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader 5 expert advisor **MA on Momentum Min Profit.mq5** by trading the crossover between a Momentum indicator and a moving average that is calculated on top of the momentum series. A bullish signal appears when momentum crosses above its average while the previous bar kept momentum below the neutral 100 level. A bearish signal is generated when momentum crosses below the average with the previous bar above 100. The implementation keeps the original money based equity stop and the fixed take-profit distance measured in points.

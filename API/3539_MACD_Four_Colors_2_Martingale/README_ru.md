@@ -1,4 +1,5 @@
-[English](README.md) | [中文](README_zh.md)
+# Стратегия MACD Four Colors 2 Martingale
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 # MACD Four Colors 2 Martingale
 
@@ -47,4 +48,3 @@
 - **Сложность**: средняя
 - **Риск**: высокий из-за мартингейла
 - **Автоматизация**: полная
-

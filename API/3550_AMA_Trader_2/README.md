@@ -1,4 +1,5 @@
 # AMA Trader 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The AMA Trader 2 strategy replicates the averaging workflow of the original MetaTrader expert by Vladimir Karputov. It combines a Kaufman Adaptive Moving Average (AMA) trend filter with a Relative Strength Index (RSI) confirmation block. When price closes above the AMA and the RSI dips into oversold territory the strategy adds long exposure; the symmetric rule applies to short trades when price closes below the AMA while RSI prints an overbought reading. Averaging trades are submitted in fixed lot sizes and can be constrained through risk parameters such as maximum position count, minimum entry spacing, and protective trailing stops.

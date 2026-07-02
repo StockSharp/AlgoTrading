@@ -1,5 +1,5 @@
 # DeMarker Gaining Position Volume 2 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高阶 API 重写 MetaTrader 5 专家顾问 **“DeMarker gaining position volume 2”**。它监控可配置的 K 线序列，计算 DeMarker 振荡指标，当数值进入极端区域时执行交易，并保留原版的资金管理特色：固定手数、信号反转开关、内置止损止盈以及可选的交易时段过滤。
 

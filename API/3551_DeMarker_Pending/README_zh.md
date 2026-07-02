@@ -1,4 +1,5 @@
 # DeMarker Pending 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 专家顾问 "DeMarker Pending 2.5" 移植到 StockSharp 平台。策略在可配置的周期上计算 DeMarker 指标，当指标突破设定的上下阈值时，按照突破方向创建挂单。挂单价格通过设置点差偏移，既可以是顺势突破的 Stop 单，也可以是回撤入场的 Limit 单，并可选地按照时间窗口和有效期管理等待中的挂单。

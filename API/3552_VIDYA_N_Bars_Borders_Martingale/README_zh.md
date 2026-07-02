@@ -1,4 +1,5 @@
 # VIDYA N Bars Borders Martingale
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原始的 MetaTrader 策略将 “VIDYA N Bars Borders” 通道与马丁格尔资金管理结合。StockSharp 版本保留核心思想：当价格跌破自适应下轨时买入，当价格突破上轨时卖出。通道中线由自适应移动平均生成，宽度由平均真实波幅（ATR）定义。马丁格尔模块在出现亏损后放大下一笔交易，同时检查单笔和总持仓上限。

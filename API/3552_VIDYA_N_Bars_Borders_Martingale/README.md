@@ -1,4 +1,5 @@
 # VIDYA N Bars Borders Martingale
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original MetaTrader strategy combines the "VIDYA N Bars Borders" channel indicator with a martingale position sizing module. The StockSharp port keeps the idea of buying when price drops below the adaptive lower band and selling when price rallies above the upper band. The channel centre is produced by an adaptive moving average (VIDYA analogue) and its width is controlled by an Average True Range envelope. A money management block increases the trade size after losing trades while observing maximum position and exposure limits.
