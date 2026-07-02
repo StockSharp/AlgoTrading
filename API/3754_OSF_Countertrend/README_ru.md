@@ -1,5 +1,5 @@
 # Стратегия OSF Countertrend
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия воспроизводит контртрендовый эксперт Open Source Forex «Overbought/Oversold».
 Осциллятор исходной версии моделируется значением RSI, а отклонение от уровня равновесия 50

@@ -1,5 +1,5 @@
 # Dealers Trade MACD MQL4 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Dealers Trade MACD MQL4 策略是 MetaTrader 4 上 "Dealers Trade v7.74" 智能交易系统的完整移植版本。该实现保留了原策略的金字塔加仓、MACD 斜率判别以及账户保护机制，并针对 StockSharp 的净持仓模式重新整理了仓位管理，适合在 H4 和 D1 等中长周期图表上进行波段交易。
 

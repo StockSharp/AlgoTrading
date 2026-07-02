@@ -1,4 +1,5 @@
 # e-TurboFx Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **e-TurboFx Momentum Strategy** is a direct port of the original MetaTrader 4 expert advisor "e-TurboFx". The system scans the most recent finished candles and looks for directional stretches where the candle bodies keep expanding. Consecutive bearish candles with growing body size signal a potential capitulation that can be faded with a long entry, whereas consecutive bullish candles with expanding bodies hint at an overextended rally that may be sold short. The StockSharp implementation keeps the logic event-driven through candle subscriptions and automatically attaches optional stop-loss and take-profit protection.

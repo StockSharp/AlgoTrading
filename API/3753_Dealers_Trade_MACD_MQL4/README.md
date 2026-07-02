@@ -1,5 +1,5 @@
 # Dealers Trade MACD MQL4 Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Dealers Trade MACD MQL4 strategy is a direct conversion of the "Dealers Trade v7.74" expert advisor for MetaTrader 4. It keeps the pyramiding money management and the MACD slope logic of the original system while adapting position handling to StockSharp's netted accounts. The strategy is designed for swing trading on H4/D1 charts and continuously adds to the trend as long as momentum remains aligned with the MACD main line.
 

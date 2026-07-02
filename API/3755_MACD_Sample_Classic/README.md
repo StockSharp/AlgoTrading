@@ -1,4 +1,5 @@
 # MACD Sample Classic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy reproduces the MetaTrader 4 "MACD Sample" expert advisor using StockSharp's high-level API. It trades both directions on a single instrument and mirrors the original logic: take trades when the MACD line crosses its signal line on the correct side of zero while a trend EMA confirms the direction. Protective orders are converted to StockSharp's built-in risk manager with optional trailing stops.
 

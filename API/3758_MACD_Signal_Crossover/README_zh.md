@@ -1,4 +1,5 @@
 # MACD信号线交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本示例将 MetaTrader 4 专家顾问 `MACD_v1.mq4` 转换为 StockSharp 的高级策略。算法跟踪移动平均收敛散度（MACD）与其信号线的交叉情况，并按新趋势方向进行交易。同时保留原始脚本中的风险控制：止损、远距离止盈以及在达到首个目标时对仓位进行部分了结。

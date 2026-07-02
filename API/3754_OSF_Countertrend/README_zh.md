@@ -1,5 +1,5 @@
 # OSF 逆势策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 Open Source Forex 的“超买/超卖”逆势专家。
 通过一个 RSI 指标来近似原始振荡器，并把与 50 均衡水平的偏离视为方向与仓位规模信号。

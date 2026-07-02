@@ -1,4 +1,5 @@
 # Cloudzs Trade 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Cloudzs Trade 2 Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `cloudzs_trade_2`. The original robot combines stochastic oscillator reversals with a double-fractal confirmation filter and uses aggressive trailing logic to protect open positions. This C# version recreates the signal flow and the trade management rules while exposing the parameters as `StrategyParam` objects so they can be optimised or adjusted from the StockSharp UI.

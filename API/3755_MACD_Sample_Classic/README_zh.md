@@ -1,4 +1,5 @@
 # MACD Sample Classic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复刻 MetaTrader 4 中的 "MACD Sample" 智能交易系统。它仅在单一标的上双向交易：当 MACD 线在合适的零轴一侧穿越信号线且 26 周期 EMA 走势配合时入场。固定止盈与跟踪止损通过 `StartProtection` 模块实现，与原版 EA 的风险控制保持一致。
 

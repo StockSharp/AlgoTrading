@@ -1,4 +1,5 @@
 # Cloudzs Trade 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Cloudzs Trade 2** 策略是 MetaTrader 4 专家顾问 `cloudzs_trade_2` 在 StockSharp 平台上的移植版本。原始策略通过组合两套条件——**站在极值区的随机指标反转**与**连续两个同向分形**——来决定进出场，同时使用主动的追踪止损机制保护浮动利润。本 C# 实现保持了原有的交易逻辑，并使用 `StrategyParam` 暴露所有参数，方便在 Designer 中优化或通过界面调整。

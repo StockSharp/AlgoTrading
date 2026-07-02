@@ -1,4 +1,5 @@
 # Стратегия e-TurboFx Classic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **e-TurboFx Classic** — это точный перенос советника MetaTrader 4 из файла `MQL/7262/e-TurboFx.mq4` на платформу StockSharp. Алгоритм отслеживает серии сильных свечей с увеличивающимся телом и пытается входить в противоположную сторону, когда импульс выдыхается. В версии для StockSharp используется высокоуровневый API стратегий, подписки на свечи и встроенные защитные ордера.

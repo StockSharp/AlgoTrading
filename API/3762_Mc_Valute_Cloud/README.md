@@ -1,4 +1,5 @@
 # Mc Valute Cloud Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This folder contains the StockSharp port of the MetaTrader expert advisor "Mc_valute". The original robot combined a short
 exponential moving average (EMA) with three smoothed moving averages, an Ichimoku cloud filter and multiple MACD instances while

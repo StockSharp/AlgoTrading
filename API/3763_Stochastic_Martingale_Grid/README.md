@@ -1,4 +1,5 @@
 # Stochastic Martingale Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor `rmkp_9yj4qp1gn8fucubyqnvb`. It combines a stochastic oscillator entry filter with a martingale-style averaging grid. The algorithm monitors finished candles, waits for the stochastic signal line to exit predefined overbought or oversold zones, and then opens a position in the direction of the reversal. When price moves against the trade, it adds averaging orders with doubled volume at fixed pip distances. Every leg carries its own take-profit target and trailing stop management, allowing positions to scale out independently once price recovers.

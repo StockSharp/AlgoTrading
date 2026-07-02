@@ -1,4 +1,5 @@
 # e-TurboFx 动量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **e-TurboFx** 是原始 MetaTrader 4 智能交易系统的移植版本。策略会检查最近收盘的蜡烛线，寻找蜡烛实体持续扩大的趋势段。若连续出现实体不断放大的空头蜡烛，说明下跌动能正在衰竭，可以考虑做多；若连续出现实体不断放大的多头蜡烛，则意味着上涨过度，可以尝试做空。StockSharp 版本通过蜡烛订阅保持事件驱动结构，并可选地自动附加止损和止盈。

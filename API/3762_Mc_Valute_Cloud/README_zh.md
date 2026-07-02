@@ -1,4 +1,5 @@
 # Mc Valute Cloud 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本目录提供 MetaTrader 专家顾问 “Mc_valute” 的 StockSharp 版本。原始 EA 通过一条短周期 EMA、三条平滑移动平均线、
 Ichimoku 云以及多组 MACD 共同判断趋势，并在行情加速时逐步加仓。移植到 StockSharp 后保留了主要的趋势确认

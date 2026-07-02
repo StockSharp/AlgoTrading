@@ -1,4 +1,5 @@
 # e-TurboFx Classic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **e-TurboFx Classic** strategy is a direct C# port of the MetaTrader 4 expert adviser found in `MQL/7262/e-TurboFx.mq4`. It detects momentum exhaustion after a streak of strong candles with progressively larger bodies and enters in the opposite direction. The StockSharp version uses the high-level strategy API with candle subscriptions, automatic protective orders and UI-friendly parameters.

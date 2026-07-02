@@ -1,4 +1,5 @@
 # ProtoType IX 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ProtoType IX 是从 MetaTrader 4 专家顾问移植而来的多过滤趋势策略。算法利用 Williams %R 指标追踪最新的摆动高点和低点，并通过平均真实波幅（ATR）验证突破。当潜在的收益与风险比足够理想且突破得到确认时才会入场。

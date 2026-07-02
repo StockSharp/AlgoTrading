@@ -1,4 +1,5 @@
 # e-TurboFx Classic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **e-TurboFx Classic** 策略将 `MQL/7262/e-TurboFx.mq4` 中的 MetaTrader 4 智能交易系统完整移植到 StockSharp。策略寻找一连串实体不断扩大的强势 K 线，并在动能衰竭时反向入场。移植版本使用 StockSharp 的高级策略 API、K 线订阅以及内置的保护性订单管理。

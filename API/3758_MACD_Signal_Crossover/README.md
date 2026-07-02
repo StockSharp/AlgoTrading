@@ -1,4 +1,5 @@
 # MACD Signal Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This sample converts the original MetaTrader 4 expert advisor `MACD_v1.mq4` into a StockSharp high-level strategy. The algorithm tracks moving average convergence divergence (MACD) crossovers and trades in the direction of the new trend. Optional protective exits replicate the original advisor's behaviour: a stop-loss, a distant take-profit and a partial profit target that liquidates half of the current position.

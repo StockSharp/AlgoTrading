@@ -1,4 +1,5 @@
 # ProtoType IX Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 ProtoType IX is a multi-filter trend following strategy converted from the original MetaTrader 4 expert advisor. The algorithm observes Williams %R swings to detect fresh impulsive moves and validates them with Average True Range (ATR) expansion. Trades are opened only when the projected reward-to-risk ratio is attractive enough and the breakout is confirmed.

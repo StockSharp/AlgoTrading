@@ -1,4 +1,5 @@
 # 随机指标马丁格尔网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MetaTrader 顾问 `rmkp_9yj4qp1gn8fucubyqnvb` 移植到 StockSharp 平台。算法结合随机震荡指标的反转信号与马丁格尔式的网格加仓。当上一根已完成的 K 线显示随机指标的信号线脱离超买或超卖区域时，策略立即开仓。若价格朝不利方向运行，则按照固定点差添加加仓单，每次加仓的手数都会翻倍。每一腿都有独立的止盈和跟踪止损，因此当价格回撤时可以逐步锁定收益。
