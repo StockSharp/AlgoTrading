@@ -1,4 +1,5 @@
 # FT Bill Williams AO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **FT Bill Williams AO 策略** 是 MetaTrader 4 智能交易系统 `FT_BillWillams_AO` 的 StockSharp 高阶 API 版本。原始程序

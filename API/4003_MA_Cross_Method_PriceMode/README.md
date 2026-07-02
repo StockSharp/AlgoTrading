@@ -1,4 +1,5 @@
 # MA Cross Method PriceMode Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MA Cross Method PriceMode** strategy is a direct StockSharp port of the MetaTrader 4 expert "MA_cross_Method_PriceMode". It combines two configurable moving averages and reacts whenever the fast average crosses the slow average. Both lines expose the original MetaTrader inputs: period, smoothing method (SMA, EMA, SMMA, LWMA), applied price (close, open, high, low, median, typical, weighted) and horizontal shift. The strategy works with any instrument that provides regular time-based candles.

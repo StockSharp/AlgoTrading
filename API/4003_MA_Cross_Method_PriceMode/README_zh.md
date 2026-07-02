@@ -1,4 +1,5 @@
 # MA Cross Method PriceMode 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MA Cross Method PriceMode** 策略是 MetaTrader 4 专家顾问“MA_cross_Method_PriceMode”的 StockSharp 移植版。策略比较两条可配置的移动平均线，只要快速均线穿越慢速均线就会触发交易。两条均线均保留了原始 MT4 输入：周期、平滑方法（SMA、EMA、SMMA、LWMA）、价格类型（收盘、开盘、最高、最低、中值、典型价、加权价）以及水平位移。策略可用于任何提供常规时间周期 K 线的标的。

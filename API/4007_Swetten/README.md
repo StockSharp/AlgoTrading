@@ -1,4 +1,5 @@
 # Swetten Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Swetten is a neural-network driven breakout strategy that was originally distributed for MetaTrader 4. It evaluates the spread between a long-term 233-period simple moving average and ten faster moving averages calculated on one-minute candles. The spreads are fed into a radial basis network that produces a bullish or bearish activation level. When the activation is positive the strategy enters long, when it is negative it enters short.

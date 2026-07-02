@@ -1,4 +1,5 @@
 # Support & Resistance Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the "SupportResistTrade" MetaTrader expert by combining a breakout of recent support and resistance with a long-term EMA trend filter. Trades are opened only when the price breaks the Donchian channel boundary **and** the candle opens on the same side of a long exponential moving average. Risk is managed through immediate protective stops and a three-step trailing routine that locks in profits at +10, +20 and +30 points.

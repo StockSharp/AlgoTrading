@@ -1,4 +1,5 @@
 # Ten Pips Opposite Last N Hour Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -72,4 +73,3 @@ Position sizing mirrors the original expert's martingale ladder:
 - Works best on hourly Forex data where pip size calculations using the `PriceStep` ×10 heuristic are valid.
 - Always verify that `Security.VolumeStep`, `VolumeMin`, and `VolumeMax` are set by the connector so the strategy can adjust lot sizes correctly.
 - Because entries are evaluated only once per finished candle, the strategy should be launched before the chosen trading hour so the first signal of the day is not missed.
-

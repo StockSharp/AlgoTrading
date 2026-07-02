@@ -1,4 +1,5 @@
 # Laptrend_1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Laptrend_1 reproduces the logic of the MetaTrader expert advisor **Laptrend_1.mq4**. The strategy blends a multi-timeframe LabTrend channel filter, Fisher Transform momentum confirmation and an ADX trend strength check on 15-minute candles. Orders are opened only when the higher-timeframe (H1) and signal timeframe (M15) LabTrend directions agree, the Fisher transform confirms the move and the ADX shows a strengthening trend. Positions are closed when the momentum reverses, the LabTrend direction changes, or the market transitions into a flat regime where ADX and the DI components converge.

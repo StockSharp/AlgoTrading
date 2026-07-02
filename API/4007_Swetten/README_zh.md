@@ -1,4 +1,5 @@
 # Swetten 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Swetten 是最初为 MetaTrader 4 开发的神经网络突破策略。策略在一分钟K线上计算 233 周期简单移动平均线与 10 条更快均线之间的价差，并将这些价差输入径向基神经网络。网络输出为正时认为多头占优，输出为负时认为空头占优。

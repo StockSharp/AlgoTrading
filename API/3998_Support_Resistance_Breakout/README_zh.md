@@ -1,4 +1,5 @@
 # 支撑阻力突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 上的 “SupportResistTrade” 专家顾问，通过 Donchian 通道确定最近的支撑与阻力，并结合长期 EMA 趋势过滤器来筛选方向。只有当价格突破区间边界并且 K 线开盘价位于 EMA 的同侧时才会开仓。策略使用即时保护性止损以及三阶逐步移动止损（+10/+20/+30 点）来管理风险。

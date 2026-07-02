@@ -1,4 +1,5 @@
 # Ten Pips Opposite Last N Hour Trend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -72,4 +73,3 @@
 - 推荐在外汇小时级别数据上运行，确保点值换算符合预期。
 - 请确认连接器提供 `VolumeStep`、`VolumeMin`、`VolumeMax` 等信息，以便策略能够调整手数。
 - 为避免错过当日唯一的交易信号，应在目标交易小时之前启动策略。
-

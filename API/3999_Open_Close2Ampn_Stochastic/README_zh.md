@@ -1,4 +1,5 @@
 # Open Close2 Ampn 随机指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 该策略为 MetaTrader 4 专家顾问 *open_close2ampnstochastic_strategy* 的移植版本，基于 StockSharp 的高层 API 实现。

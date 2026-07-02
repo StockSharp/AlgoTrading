@@ -1,4 +1,5 @@
 # Стратегия MA Cross Method PriceMode
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **MA Cross Method PriceMode** — порт на StockSharp эксперта MetaTrader 4 «MA_cross_Method_PriceMode». Стратегия отслеживает две настраиваемые скользящие средние и реагирует каждый раз, когда быстрая средняя пересекает медленную. Обе линии полностью повторяют входные параметры MT4: период, метод сглаживания (SMA, EMA, SMMA, LWMA), тип цены (close, open, high, low, median, typical, weighted) и горизонтальный сдвиг. Стратегию можно применять к любому инструменту, который предоставляет стандартные свечи по времени.

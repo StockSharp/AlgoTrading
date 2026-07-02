@@ -1,4 +1,5 @@
 # Laptrend_1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Laptrend_1 策略复刻了 MetaTrader 专家顾问 **Laptrend_1.mq4** 的交易逻辑。策略结合多周期 LabTrend 通道过滤、Fisher 变换动量确认以及基于 15 分钟 K 线的 ADX 趋势强度判断。只有当高周期（H1）和信号周期（M15）的 LabTrend 方向一致、Fisher 变换指示动量同向、ADX 显示趋势增强时才会开仓。当动量反转、LabTrend 改变方向或 ADX 与 DI 指标收敛显示横盘时，仓位将被平掉。

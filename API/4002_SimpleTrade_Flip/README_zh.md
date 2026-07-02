@@ -1,4 +1,5 @@
 # SimpleTrade 反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 基于 MetaTrader 4 专家顾问 **SimpleTrade.mq4**（亦称 “neroTrade”）的 StockSharp 移植版本。
