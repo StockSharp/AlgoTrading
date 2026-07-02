@@ -1,4 +1,5 @@
 # Sudoku UI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -53,4 +54,3 @@ The Sudoku board is interpreted as a 9x9 matrix of digits. Column averages defin
 - All user interface features (dialog windows, buttons, chart events) are removed. Their functional equivalents are exposed as strategy parameters.
 - Instead of solving Sudoku puzzles manually, the board influences algorithmic trading levels. The same randomness controls determine how aggressive or conservative those levels become.
 - The StockSharp version runs autonomously. Auto-update now reacts to trading days rather than button clicks, and position management happens via standard `BuyMarket`/`SellMarket`/`ClosePosition` calls.
-

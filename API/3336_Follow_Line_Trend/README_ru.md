@@ -1,4 +1,5 @@
 # Стратегия Follow Line Trend
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Стратегия Follow Line является переносом советника MetaTrader `FollowLineEA_v1.0`. Она использует связку индикаторов Bollinger Bands, ATR и набора простых скользящих средних, чтобы построить динамическую линию тренда. Линия скользит только в направлении прорыва, поэтому образует ступенчатую структуру и помогает удерживать позицию до завершения импульса.

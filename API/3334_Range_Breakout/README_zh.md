@@ -1,4 +1,5 @@
 # 区间突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在最近 `RangePeriod` 根K线上统计最高价和最低价。当K线收盘价向上或向下突破该区间，且区间宽度（以点数计）小于 `MaxRangePoints` 时，策略会在突破方向开仓。
 

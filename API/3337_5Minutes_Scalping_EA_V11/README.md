@@ -1,4 +1,5 @@
 # FiveMinutesScalpingEA v1.1 (StockSharp port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **FiveMinutesScalpingEaV11Strategy** is a conversion of the MetaTrader 4 expert advisor *5MinutesScalpingEA v1.1*. The strategy keeps the original concept of combining multi-period Hull moving averages, a momentum Fisher transform, an ATR breakout detector and a trend filter to scalp short-lived movements on a five-minute chart. The implementation follows the StockSharp high level API and uses candle subscriptions with indicator bindings to reproduce the expert advisor behaviour.

@@ -1,4 +1,5 @@
 # Expert Alligator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Expert Alligator Strategy** is a faithful StockSharp port of MetaTrader 5's built-in expert advisor `Expert_Alligator.mq5`. The original expert drives its trading decisions from Bill Williams' Alligator indicator, which consists of three smoothed moving averages shifted into the future: the jaw (blue), the teeth (red), and the lips (green). By monitoring how these lines contract and expand the EA identifies fresh crossovers and waits for the "mouth" to open before another trade can be taken. This C# conversion recreates the same workflow with StockSharp's high-level strategy API and indicator suite.
 

@@ -1,4 +1,5 @@
 # Expert Alligator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Expert Alligator 策略** 是 MetaTrader 5 内置专家顾问 `Expert_Alligator.mq5` 的 StockSharp 复刻版。原始 EA 使用比尔·威廉姆斯 (Bill Williams) 的 Alligator 指标：三条平滑移动平均线（颚线、齿线、唇线）按经典长度计算，并向未来平移数根 K 线。EA 通过观察这些线条的收敛和发散来捕捉新的交叉点，并在“鳄鱼之口”重新张开之前禁止再次入场。此 C# 实现完全按照该流程构建，使用 StockSharp 的高级策略 API 与指标库复现原始逻辑。
 

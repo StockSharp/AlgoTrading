@@ -1,4 +1,5 @@
 # Two EMA Intraday Filter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the MetaTrader Expert Advisor **Expert_2EMA_ITF** using the StockSharp high-level API. It trades on the crossover of two exponential moving averages and uses the average true range (ATR) to set pending limit orders, protective stops and targets. An additional intraday time filter blocks entries during undesired minutes, hours or days of the week.

@@ -1,5 +1,5 @@
 # Grid 再平衡策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Grid 再平衡策略是基于 StockSharp 高级 API 重写的 Mission Automate「Grid」专家顾问。策略在多头与空头网格之间交替运行，并始终在当前方向上维持阶梯式限价单。当组合仓位触及统一的止盈价位后，策略会平掉全部仓位、取消所有挂单，并以相反方向开始下一轮循环。
 

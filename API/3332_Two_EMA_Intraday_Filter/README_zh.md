@@ -1,4 +1,5 @@
 # 双均线日内过滤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略基于 MetaTrader 专家顾问 **Expert_2EMA_ITF**，使用 StockSharp 高级 API 复刻实现。策略通过两条指数移动平均线（EMA）的金叉/死叉寻找方向，并利用平均真实波幅（ATR）计算限价单、止损和止盈位置，同时提供日内时间过滤器以避开不希望交易的分钟、小时或星期几。

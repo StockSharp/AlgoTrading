@@ -1,4 +1,5 @@
 # 数独界面策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -53,4 +54,3 @@
 - 所有用户界面元素（对话框、按钮、图表事件）已移除，对应功能通过策略参数提供。
 - 棋盘不再用于手动解谜，而是决定算法交易的阈值。同样的随机控制项决定策略的激进或保守程度。
 - StockSharp 版本完全自动运行。自动更新基于交易日切换而非按钮点击，仓位管理通过标准的 `BuyMarket`、`SellMarket`、`ClosePosition` 方法完成。
-

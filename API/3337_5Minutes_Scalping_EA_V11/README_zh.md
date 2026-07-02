@@ -1,4 +1,5 @@
 # FiveMinutesScalpingEA v1.1（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **FiveMinutesScalpingEaV11Strategy** 是 MetaTrader 4 智能交易系统 *5MinutesScalpingEA v1.1* 的 StockSharp 高级 API 移植版本。策略保留了原始 EA 的核心思路：结合两条 Hull 移动平均线、一个 Fisher 变换动量过滤器、ATR 突破判定以及一个趋势 Fisher 过滤器，在 5 分钟周期上捕捉短线机会。所有信号都在蜡烛收盘后计算，策略只维护单一净头寸。

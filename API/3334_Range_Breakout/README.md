@@ -1,4 +1,5 @@
 # Range Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy measures the highest and lowest prices within the last `RangePeriod` candles. When the candle closes outside of this range and the total width of the range is narrower than `MaxRangePoints`, the strategy enters in the breakout direction.
 

@@ -1,4 +1,5 @@
 # Histo Scalper Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Histo Scalper Strategy** is a C# port of the MetaTrader expert advisor *HistoScalperEA v1.0*. The algorithm fuses eight histogram-style indicators (ADX, ATR, Bollinger Bands, Bulls/Bears Power, CCI, MACD, RSI, and Stochastic) and requires unanimous agreement from all enabled filters before opening a trade. A second requirement is that at least one filter reported the opposite direction on the previous bar, which prevents the strategy from entering during flat markets and mimics the original "two bar" confirmation logic.

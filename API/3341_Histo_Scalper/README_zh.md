@@ -1,4 +1,5 @@
 # Histo Scalper 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Histo Scalper Strategy** 是将 *HistoScalperEA v1.0* 移植到 StockSharp 的版本。策略同时结合 ADX、ATR、布林带、Bulls/Bears Power、CCI、MACD、RSI 与随机指标八个直方图过滤器。只有在所有启用的过滤器统一给出同方向信号，并且至少有一个过滤器在上一根 K 线上给出相反信号时，才会开仓，从而保留原始 EA 的“双 K 线确认”逻辑。

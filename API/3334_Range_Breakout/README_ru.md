@@ -1,4 +1,5 @@
 # Стратегия Range Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия оценивает максимум и минимум последних `RangePeriod` свечей. Когда цена закрытия выходит за пределы этого диапазона и его ширина в пунктах меньше `MaxRangePoints`, открывается позиция в сторону пробоя.
 

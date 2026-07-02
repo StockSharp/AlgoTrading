@@ -1,4 +1,5 @@
 # FiveMinutesScalpingEA v1.1 (порт на StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **FiveMinutesScalpingEaV11Strategy** — это порт советника MetaTrader 4 *5MinutesScalpingEA v1.1* на высокоуровневый API StockSharp. Стратегия сохраняет исходную идею: сочетание двух Hull Moving Average, импульсного индикатора Fisher, детектора пробоя по ATR и трендового фильтра. Алгоритм рассчитан на работу на пятиминутных свечах и анализирует только закрытые бары.

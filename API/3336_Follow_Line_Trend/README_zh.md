@@ -1,4 +1,5 @@
 # Follow Line Trend 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Follow Line 策略完整移植自 MetaTrader 顾问 `FollowLineEA_v1.0`。策略通过布林带突破来更新一条“跟随线”，这条线在多头趋势中只会上移，在空头趋势中只会下移。为了避免过早触发，还可以用 ATR 做缓冲。额外的简单移动平均线用于确认信号，行为与原始 EA 一致。

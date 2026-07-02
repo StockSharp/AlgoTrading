@@ -1,4 +1,5 @@
 # Follow Line Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Follow Line strategy is a direct port of the MetaTrader expert advisor `FollowLineEA_v1.0`. It replicates the original logic by combining a Bollinger Band breakout detector with an adaptive trend line that hugs price action. The strategy listens to finished candles and works on any timeframe provided by the user.
