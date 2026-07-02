@@ -1,4 +1,5 @@
 # More Orders After BreakEven (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This folder contains a StockSharp C# port of the MetaTrader 4 expert advisor **"More Orders After BreakEven"** (MQL source id `35609`). The original EA repeatedly adds new long positions once previous trades have been protected at break-even. The port reproduces that ticket-based money management while integrating with StockSharp's high-level API.
 

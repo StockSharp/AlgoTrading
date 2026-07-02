@@ -1,4 +1,5 @@
 # 手动持仓跟踪面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -53,4 +54,3 @@
 3. 想要锁定盈利时启用保本模块；若希望立即保本，将触发点数设为 `0`。
 4. 如果某个方向仍需人工控制，可关闭对应的管理开关。
 5. 打开 **Log management actions** 后查看日志，确认订单按预期创建或调整。
-

@@ -1,5 +1,5 @@
 # Sample Check Pending Order Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Sample Check Pending Order strategy continuously ensures that exactly one buy-stop and one sell-stop order are resting in the book. The original MetaTrader 5 expert by Tungman verifies that the broker accepts the requested lot size, confirms there is sufficient free margin for both directions, and then submits new pending orders right on top of the current bid/ask with a one-day expiration. This conversion reproduces the same workflow using StockSharp's high-level order management API and Level 1 quotes.
 

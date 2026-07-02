@@ -1,4 +1,5 @@
 # Стратегия Zone Recovery Hedge
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Zone Recovery Hedge Strategy** — это порт советника MetaTrader *Zone Recovery Hedge V1* на платформу StockSharp. Алгоритм чередует покупки и продажи вокруг опорной цены, открывая новую сделку при выходе цены за границы восстановительной зоны. Объём каждой последующей сделки увеличивается по мартингейлу, что позволяет закрыть серию как только суммарная плавающая прибыль достигает заданной цели или срабатывает ограничение по убытку.
 

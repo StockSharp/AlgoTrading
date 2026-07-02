@@ -1,4 +1,5 @@
 # Стратегия SampleTrailingstop MT5
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **SampleTrailingstopMt5Strategy** переносит в StockSharp логику советника MetaTrader 5 `SampleTrailingstop-MT5.mq5`. Стратегия круглосуточно поддерживает две встречные стоп-заявки на пробой, оформляет отдельные защитные ордера после входа и включает трейлинг-стоп при появлении плавающей прибыли. Все расчёты выполняются в «пунктах» и приводятся к цене через шаг цены инструмента, благодаря чему поведение совпадает с исходным МQL-скриптом.

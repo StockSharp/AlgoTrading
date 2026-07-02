@@ -1,4 +1,5 @@
 # Tops Bottoms Trend RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor "Tops bottoms trend and rsi ea". It monitors finished candles of the selected timeframe, searches for emerging trend tops or bottoms within a configurable lookback window, and confirms each opportunity with a Relative Strength Index (RSI) filter. When the criteria are met the strategy opens a single market order and immediately assigns protective stop-loss and take-profit levels derived from pip-based distances.

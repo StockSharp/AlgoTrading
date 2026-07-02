@@ -1,4 +1,5 @@
 # Стратегия Heiken Ashi Engulf
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия повторяет логику советников MetaTrader 5 **heiken ashi engulf ea buy mt5.mq5** и **heiken ashi engulf sell ea mt5.mq5**, объединяя длинные и короткие сценарии внутри одного класса StockSharp. На каждом завершённом баре заново строятся свечи Heiken Ashi, проверяется модель поглощения, затем следуют подтверждения двумя скользящими средними и двумя фильтрами RSI. При выполнении всех условий отправляется рыночная заявка с фиксированными стоп-лоссом и тейк-профитом в метатрейдеровских пипсах.

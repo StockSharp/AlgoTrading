@@ -1,4 +1,5 @@
 # Tops Bottoms Trend RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问 “Tops bottoms trend and rsi ea” 在 StockSharp 平台上的移植版本。算法订阅所选时间框架的蜡烛，始终只处理已经收盘的柱线，利用可配置的历史窗口捕捉新的顶部或底部，并结合相对强弱指数 (RSI) 过滤信号。当条件满足时，策略仅开一笔市价单，并根据预设的点差距离立即计算止损和止盈。

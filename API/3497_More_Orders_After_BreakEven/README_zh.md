@@ -1,4 +1,5 @@
 # More Orders After BreakEven（StockSharp移植版）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本目录提供 MetaTrader 4 智能交易系统 **“More Orders After BreakEven”**（MQL 源编号 `35609`）的 C# / StockSharp 实现。原策略在已有仓位被移动到保本之后继续加仓多单。本移植版保留了按单管理的特性，并使用 StockSharp 的高级 API 完成下单、监控与出场。
 

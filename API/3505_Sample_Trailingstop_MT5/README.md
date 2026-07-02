@@ -1,4 +1,5 @@
 # SampleTrailingstop MT5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **SampleTrailingstopMt5Strategy** reproduces the behaviour of the MetaTrader 5 expert advisor `SampleTrailingstop-MT5.mq5` using StockSharp's high level API. The strategy constantly maintains paired breakout stop orders, protects filled positions with dedicated exit orders and applies a trailing stop once the trade becomes profitable. All calculations rely on the instrument price step so that the logic matches the original "points"-based implementation.

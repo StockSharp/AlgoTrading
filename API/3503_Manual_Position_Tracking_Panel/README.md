@@ -1,4 +1,5 @@
 # Manual Position Tracking Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -53,4 +54,3 @@ The class relies exclusively on high-level StockSharp API methods (`SubscribeLev
 3. Enable the break-even module when you want the protection to lock profits once a position becomes favourable. Leave the trigger at zero for an immediate break-even.
 4. Disable management for a side (long or short) if you want to keep discretionary control over that direction.
 5. Monitor the log output when **Log management actions** is active to verify that the orders are created or adjusted as expected.
-

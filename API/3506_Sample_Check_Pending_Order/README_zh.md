@@ -1,5 +1,5 @@
 # Sample Check Pending Order 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Sample Check Pending Order 策略始终在市场上保持一张买入止损单和一张卖出止损单。原始的 MetaTrader 5 专家顾问由 Tungman 编写，会检查经纪商是否接受指定手数、确认双向都有足够的可用保证金，然后在当前买价和卖价附近挂出新的挂单，并设置一天的有效期。本实现把同样的流程迁移到 StockSharp，高度依赖高级别下单 API 和 Level 1 行情。
 

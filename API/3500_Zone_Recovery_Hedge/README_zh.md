@@ -1,4 +1,5 @@
 # Zone Recovery Hedge 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Zone Recovery Hedge Strategy** 是将 MetaTrader 顾问 *Zone Recovery Hedge V1* 移植到 StockSharp 平台的结果。策略在基准价位附近交替开多单和空单，只要价格穿越恢复区间就追加新的订单。每次追加的手数按照马丁格尔方式放大，直到达到设定的盈利目标或触发最大亏损限制。
 

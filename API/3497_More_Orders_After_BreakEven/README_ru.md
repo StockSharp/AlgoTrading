@@ -1,4 +1,5 @@
 # More Orders After BreakEven (порт для StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Папка содержит перевод советника MetaTrader 4 **«More Orders After BreakEven»** (MQL источник `35609`) на C# под платформу StockSharp. Оригинальная стратегия постоянно добавляет новые длинные позиции после того, как предыдущие сделки переведены в безубыток. Порт сохраняет поведение работы с отдельными тикетами и использует высокоуровневый API StockSharp.
 

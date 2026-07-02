@@ -1,4 +1,5 @@
 # Alligator Candle Cross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader experts **alligator candle cross up/down** to the StockSharp high-level API. It monitors the Bill Williams Alligator indicator built from smoothed moving averages of the median price and reacts whenever a completed candle body travels from one side of the Alligator mouth to the other. Entries can be restricted to bullish, bearish, or both directions through a parameter, while fixed pip-based stops and targets handle risk management.
 

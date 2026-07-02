@@ -1,4 +1,5 @@
 # Heiken Ashi Engulf Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the behaviour of the MetaTrader 5 experts **heiken ashi engulf ea buy mt5.mq5** and **heiken ashi engulf sell ea mt5.mq5** by combining both directions inside a single StockSharp high-level strategy. It reconstructs classic Heiken Ashi candles from the subscribed timeframe, waits for an engulfing pattern, confirms it with moving-average alignment and two RSI-based filters, and finally opens a market position with optional fixed stop-loss and take-profit distances expressed in MetaTrader pips.

@@ -1,4 +1,5 @@
 # Alligator Candle Cross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 专家顾问 **alligator candle cross up/down** 移植到 StockSharp 高阶 API。策略基于 Bill Williams 的 Alligator 指标，使用对称均价 `(High + Low) / 2` 计算的平滑移动平均线，并在收盘蜡烛的实体穿越 Alligator “嘴部” 时触发信号。通过参数可以选择仅做多、仅做空或双向交易，风险控制依赖固定的止损与止盈点数。
 

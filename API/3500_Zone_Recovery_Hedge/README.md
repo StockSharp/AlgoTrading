@@ -1,4 +1,5 @@
 # Zone Recovery Hedge Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Zone Recovery Hedge Strategy** is a StockSharp port of the MetaTrader expert advisor *Zone Recovery Hedge V1*. The algorithm alternates buy and sell positions around an anchor price so that a new order is placed whenever price crosses the configured recovery zone. The sequence expands position volume following a martingale schedule until either the floating profit target or the optional loss protection is reached.
 

@@ -1,4 +1,5 @@
 # Heiken Ashi Engulf 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略在 StockSharp 高级 API 中复刻 MetaTrader 5 专家顾问 **heiken ashi engulf ea buy mt5.mq5** 与 **heiken ashi engulf sell ea mt5.mq5** 的全部逻辑，并将多空两套规则封装到一个类中。系统会在每根完成的 K 线后重新计算 Heiken Ashi 蜡烛，寻找吞没形态，通过两条移动平均线与两组 RSI 限制进行确认，然后按 MetaTrader 的“点”距离放置市价单与固定止损/止盈。

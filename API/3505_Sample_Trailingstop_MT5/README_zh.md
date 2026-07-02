@@ -1,4 +1,5 @@
 # SampleTrailingstop MT5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **SampleTrailingstopMt5Strategy** 使用 StockSharp 高级 API 重现 MetaTrader 5 专家顾问 `SampleTrailingstop-MT5.mq5`。策略持续维护一对突破止损挂单，为成交后的持仓创建独立的保护单，并在出现浮动盈利时启动跟踪止损。所有距离都依据标的的最小报价变动（PriceStep）换算，完全对应原始程序以“点”为单位的设定。
