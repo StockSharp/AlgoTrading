@@ -1,4 +1,5 @@
 # Hpcs Inter7 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Hpcs Inter7 strategy is a Bollinger Bands breakout system converted from the MetaTrader 4 expert advisor `_HPCS_Inter7_MT4_EA_V01_We.mq4`. The algorithm monitors standard Bollinger Bands calculated on the selected candle series. When price crosses outside of the bands it interprets this as a momentum breakout and opens a position in the direction of the breakout. For every new entry the strategy immediately places both stop loss and take profit targets at a fixed distance from the entry price to replicate the original expert advisor behavior.

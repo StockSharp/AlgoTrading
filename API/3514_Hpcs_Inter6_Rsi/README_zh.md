@@ -1,4 +1,5 @@
 # Hpcs Inter6 RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Hpcs Inter6 RSI 策略将 MetaTrader 专家顾问 `_HPCS_Inter6_MT4_EA_V01_WE` 移植到 StockSharp 高级 API。算法观察可配置周期的相对强弱指标（RSI），关注围绕经典 70/30 阈值的快速反转。当 RSI 向上穿越 70 时策略转为空头，当 RSI 向下穿越 30 时策略转为多头。每次入场都会立即设置对称的止盈和止损，距离以点（pip）表示。

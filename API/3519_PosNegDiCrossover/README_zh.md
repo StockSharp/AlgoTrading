@@ -1,4 +1,5 @@
 # PosNegDiCrossoverStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **PosNegDiCrossoverStrategy** 是 MetaTrader 指标 `_HPCS_PosNegDIsCrossOver_Mt4_EA_V01_WE` 的 StockSharp 版本。原始 EA 根据 ADX

@@ -1,4 +1,5 @@
 # OpenPendingorderAfterPositionGetStopLoss
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **OpenPendingorderAfterPositionGetStopLoss** strategy ports the MetaTrader 5 expert advisor of the same name into the StockSharp high-level API. It continuously evaluates the slope of the Stochastic %K line on the selected timeframe. When %K turns down it places a sell stop order below the market, and when %K turns up it places a buy stop order above the market. Each filled entry immediately receives a protective stop-loss and take-profit order. If a stop-loss closes the position, the strategy automatically reinstalls the corresponding pending order so that the grid of breakout trades is restored without waiting for the next candle.

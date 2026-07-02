@@ -1,4 +1,5 @@
 # 经济日历侦测策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **经济日历侦测策略** 来源于 MetaTrader 专家顾问 `SampleDetectEconomicCalendar.mq5`。该策略监控手动提供的经济事件列表，当指定货币即将公布高重要度数据时，会在当前买卖价附近同时布置买入/卖出止损单。止损、止盈与移动止损逻辑全部继承自原始 EA。

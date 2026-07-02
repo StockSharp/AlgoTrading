@@ -1,4 +1,5 @@
 # Стратегия Sample Detect Economic Calendar
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Sample Detect Economic Calendar** — порт оригинального советника MetaTrader `SampleDetectEconomicCalendar.mq5`. Стратегия отслеживает вручную заданные события экономического календаря и при приближении важной новости для выбранной валюты выставляет симметричную пару стоп-заявок. Логика стоп-лосса, тейк-профита и трейлинг-стопа повторяет исходный код.

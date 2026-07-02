@@ -1,4 +1,5 @@
 # Sample Detect Economic Calendar Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Sample Detect Economic Calendar Strategy** replicates the behaviour of the original MetaTrader expert advisor `SampleDetectEconomicCalendar.mq5`. The strategy watches a manually provided list of economic calendar events, and—when a high impact event is approaching for the configured currency—places a symmetric pair of stop orders around the current bid/ask prices. Protective stops, optional take profit levels, and a trailing exit replicate the money-management logic from the source code.

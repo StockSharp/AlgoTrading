@@ -1,4 +1,5 @@
 # 快慢 RVI 均线交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复现 MetaTrader 专家顾问 `_HPCS_FastSlowRVIsCrossOver_MT4_EA_V01_WE`。当相对活力指数（RVI）主线在设定的交易时间段内与其信号线发生交叉时触发交易。每根蜡烛只允许一次入场，同时支持用点（pip）表示的止损、止盈以及追踪止损距离。

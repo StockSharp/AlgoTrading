@@ -1,4 +1,5 @@
 # Fast Slow RVI Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader expert advisor `_HPCS_FastSlowRVIsCrossOver_MT4_EA_V01_WE`. It trades when the Relative Vigor Index (RVI) main line crosses its signal line during the configured trading session. Only one trade is allowed per candle, and the strategy supports optional stop loss, take profit, and trailing stop distances expressed in pips.

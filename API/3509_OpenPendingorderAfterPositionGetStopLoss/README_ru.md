@@ -1,4 +1,5 @@
 # OpenPendingorderAfterPositionGetStopLoss
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия **OpenPendingorderAfterPositionGetStopLoss** переносит одноимённого советника MetaTrader 5 на высокоуровневый API StockSharp. На каждом закрытом баре вычисляется наклон линии Stochastic %K выбранного таймфрейма. Если %K снижается, ниже рынка размещается sell stop, если растёт — выше рынка появляется buy stop. После срабатывания любой заявки сразу выставляются защитные стоп-лосс и тейк-профит. Когда позиция закрывается по стоп-лоссу, соответствующий отложенный ордер автоматически восстанавливается, поэтому сетка пробойных входов поддерживается без ожидания следующей свечи.

@@ -1,4 +1,5 @@
 # Стратегия Close Profit End Of Week
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Close Profit End Of Week Strategy** автоматизирует работу скрипта MetaTrader *Closeprofitendofweek.mq5*. Стратегия следит за выбранным инструментом и по пятницам после настраиваемого контрольного времени закрывает каждую прибыльную позицию. Цель — зафиксировать плавающий результат перед выходными и снизить разрывный риск.

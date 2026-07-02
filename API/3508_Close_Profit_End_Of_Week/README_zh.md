@@ -1,4 +1,5 @@
 # 周末盈利平仓策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Close Profit End Of Week Strategy** 对 MetaTrader 脚本 *Closeprofitendofweek.mq5* 进行了移植。该策略监控指定交易品种，在每周五到达可配置的截止时间之后，将所有盈利头寸通过市价单平掉，以避免周末跳空造成的收益回吐。

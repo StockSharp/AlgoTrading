@@ -1,4 +1,5 @@
 # Close Profit End Of Week Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Close Profit End Of Week Strategy** automates the MetaTrader script *Closeprofitendofweek.mq5*. The strategy supervises the assigned instrument and, on Fridays after a configurable cut-off time, exits every profitable position. The goal is to secure floating gains before the weekend gap risk appears.

@@ -1,4 +1,5 @@
 # Hpcs Inter7 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Hpcs Inter7 策略是从 MetaTrader 4 专家顾问 `_HPCS_Inter7_MT4_EA_V01_We.mq4` 转换而来的布林带突破系统。算法在所选 K 线序列上计算标准布林带，当收盘价向带外突破时，会顺势开仓。每次开仓后都会立即设置固定距离的止损与止盈，以复现原始 EA 的风险控制方式。

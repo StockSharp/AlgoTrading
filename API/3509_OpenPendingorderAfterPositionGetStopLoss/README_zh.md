@@ -1,4 +1,5 @@
 # OpenPendingorderAfterPositionGetStopLoss
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **OpenPendingorderAfterPositionGetStopLoss** 策略将同名的 MetaTrader 5 专家顾问移植到 StockSharp 的高级 API。策略在所选时间框架的每根收盘 K 线上计算 Stochastic 指标的 %K 斜率：当 %K 向下倾斜时，在市场价下方放置 sell stop；当 %K 向上倾斜时，在市场价上方放置 buy stop。每当挂单成交，都会立即生成对应的止损和止盈保护单。如果仓位因为止损而关闭，策略会立刻重新挂出相同方向的待触发订单，从而维持原有的突破网格结构。

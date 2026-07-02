@@ -1,4 +1,5 @@
 # Hpcs Inter6 RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Hpcs Inter6 RSI Strategy ports the MetaTrader expert `_HPCS_Inter6_MT4_EA_V01_WE` to the StockSharp high-level API. The algorithm watches the Relative Strength Index (RSI) on a configurable candle series and reacts to fast reversals around the classical 70/30 thresholds. Whenever RSI crosses above 70 the strategy flips into a short position, while a cross below 30 flips into a long position. Each trade immediately attaches symmetric take-profit and stop-loss levels measured in pips.
