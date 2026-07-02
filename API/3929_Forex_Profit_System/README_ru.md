@@ -1,5 +1,5 @@
 # Стратегия Forex Profit System
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит классический советник MetaTrader «Forex Profit System» в высокоуровневый API StockSharp. Она использует три
 экспоненциальные скользящие средние по медианной цене свечи (EMA 10, 25 и 50) вместе с фильтром Parabolic SAR. Такое сочетание

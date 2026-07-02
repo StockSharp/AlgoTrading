@@ -1,4 +1,5 @@
 # Hercules 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hercules 策略是 MetaTrader 专家顾问 **Hercules v1.3 (Majors)** 的 StockSharp 版本。策略利用快慢均线交叉，并结合多时间框架过滤条件，同时为每个信号管理两个独立的止盈目标。
 

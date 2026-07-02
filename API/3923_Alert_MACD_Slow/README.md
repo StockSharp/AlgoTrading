@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Alert MACD Slow Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Alert MACD Slow** strategy reproduces the MetaTrader 4 expert `Alert_MACD_Slow.mq4`. It watches the MACD main line and two exponential moving averages and raises textual alerts when the indicator stack signals a potential breakout. No orders are submitted — the conversion stays faithful to the original advisor, which only displayed pop-up messages.
 

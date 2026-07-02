@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# Alert MACD Slow 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Alert MACD Slow** 策略对应 MetaTrader 4 顾问 `Alert_MACD_Slow.mq4`。它监控 MACD 主线与两条指数均线，在出现潜在突破时输出文字提醒。本移植不会发送任何订单，与原版仅弹出提示框的行为完全一致。
 

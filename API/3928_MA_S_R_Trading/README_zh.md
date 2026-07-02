@@ -1,5 +1,5 @@
 # MA S.R. Trading 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA S.R. Trading 策略移植自 MetaTrader 顾问程序“MA S.R Trading”。系统监控一条短周期简单移动平均线（SMA）的形态，以识别价格动量在最近几个K线上形成的局部高点或低点。一旦检测到拐点，策略立即按照趋势反转方向建仓，并把最近的摆动极值记录为止损水平。
 

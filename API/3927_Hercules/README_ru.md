@@ -1,4 +1,5 @@
 # Стратегия Hercules
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Hercules — порт советника MetaTrader **Hercules v1.3 (Majors)** на платформу StockSharp. Стратегия использует пересечение быстрой и медленной скользящих средних, набор фильтров на старших таймфреймах и сопровождает сделку двумя целями по прибыли.
 

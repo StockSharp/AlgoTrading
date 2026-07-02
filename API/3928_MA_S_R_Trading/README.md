@@ -1,5 +1,5 @@
 # MA S.R. Trading Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The MA S.R. Trading strategy is a trend-reversal system converted from the original MetaTrader advisor "MA S.R Trading". It monitors the shape of a short simple moving average (SMA) to detect when price momentum bends into a local top or bottom. When the SMA peaks or troughs, the strategy immediately enters in the direction of the turn and protects the position with a stop level anchored at the most recent swing.
 

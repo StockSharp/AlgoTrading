@@ -1,4 +1,5 @@
 # Стратегия Up3x1 Krohabor Shift
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **up3x1 Krohabor D** — это перенос эксперта MetaTrader 4 `up3x1_Krohabor_D.mq4` на платформу StockSharp. Стратегия использует три смещённых простых скользящих средних (SMA), чтобы выявлять продолжение тренда на выбранном таймфрейме. Реализация на C# применяет высокоуровневый API StockSharp с подпиской на свечи и привязкой индикаторов, а также адаптированные механизмы управления позицией и рисками.

@@ -1,4 +1,5 @@
 # Up3x1 移位SMA策略（MT4版本移植）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 - 将 `MQL/8097` 中的 MetaTrader 4 智能交易系统 `up3x1.mq4` 移植到 StockSharp 高层 API。

@@ -1,4 +1,5 @@
 # Up3x1 Krohabor Shift Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **up3x1 Krohabor D** strategy is a conversion of the MetaTrader 4 expert advisor `up3x1_Krohabor_D.mq4`. It keeps the original idea of aligning three displaced simple moving averages (SMA) to detect trend continuation breakouts on the active timeframe. The C# implementation uses the high-level StockSharp API with candle subscriptions and indicator bindings, while adapting risk and position management to the .NET environment.

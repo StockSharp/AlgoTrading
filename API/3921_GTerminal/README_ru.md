@@ -1,4 +1,5 @@
 # Стратегия GTerminal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 GTerminal — это порт эксперта MetaTrader 4 `GTerminal_V5a` на C#. В оригинальной версии трейдер управлял входами и выходами,

@@ -1,5 +1,5 @@
 # Forex Profit System Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy reproduces the classic MetaTrader expert advisor "Forex Profit System" inside the StockSharp high-level API. It uses
 three exponential moving averages (EMA 10, 25 and 50) on the candle median price combined with a Parabolic SAR filter. The

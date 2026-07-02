@@ -1,4 +1,5 @@
 # Стратегия Up3x1 со смещёнными SMA (конвертация из MT4)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 - Конвертация эксперта MetaTrader 4 `up3x1.mq4` из каталога `MQL/8097` в высокоуровневый API StockSharp.

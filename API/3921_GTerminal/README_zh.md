@@ -1,4 +1,5 @@
 # GTerminal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 GTerminal 策略是 MetaTrader 4 专家顾问 `GTerminal_V5a` 的 C# 版本。原始脚本通过在图表上绘制水平线来手动

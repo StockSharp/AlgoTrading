@@ -1,4 +1,5 @@
 # Up3x1 Krohabor Shift 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **up3x1 Krohabor D** 策略移植自 MetaTrader 4 专家顾问 `up3x1_Krohabor_D.mq4`。策略核心思想是对三条前移的简单移动平均线 (SMA) 进行比较，以便在所选周期上识别趋势延续突破。本 C# 版本基于 StockSharp 的高层 API，通过 K 线订阅与指标绑定完成信号计算，同时针对 .NET 环境重新实现了风控与仓位管理。

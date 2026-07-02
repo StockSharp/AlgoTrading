@@ -1,4 +1,5 @@
 # Hercules Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Hercules strategy is a StockSharp port of the MetaTrader expert **Hercules v1.3 (Majors)**. It combines a fast/slow moving average crossover with multi-timeframe confirmation filters and executes two independent profit targets per signal.
 

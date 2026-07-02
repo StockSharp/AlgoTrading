@@ -1,5 +1,5 @@
 # Forex Profit System 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将经典的 MetaTrader 智能交易系统 “Forex Profit System” 移植到 StockSharp 的高级 API 中。它对每根已完成
 K线的中位价同时计算三条指数移动平均线（EMA 10、25、50），并叠加 Parabolic SAR 滤波器，用于确认动量突破。

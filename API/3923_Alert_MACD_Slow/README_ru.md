@@ -1,4 +1,5 @@
-[English](README.md) | [中文](README_zh.md)
+# Стратегия Alert MACD Slow
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Alert MACD Slow** повторяет советника MetaTrader 4 `Alert_MACD_Slow.mq4`. Она отслеживает основную линию MACD и две экспоненциальные средние, формируя текстовые оповещения при появлении признаков пробоя. Торговые заявки не отправляются — конверсия полностью соответствует оригиналу, который лишь показывал всплывающие сообщения.
 

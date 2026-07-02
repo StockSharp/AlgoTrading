@@ -1,4 +1,5 @@
 # Up3x1 Shifted SMA Strategy (MT4 Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 - Conversion of the MetaTrader 4 expert advisor `up3x1.mq4` located in `MQL/8097`.
