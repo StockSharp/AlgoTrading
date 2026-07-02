@@ -1,5 +1,5 @@
 # Стратегия Fractal ZigZag
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия представляет собой прямую конвертацию советника MetaTrader 4 **Fractal ZigZag Expert.mq4**. Она заново строит
 последовательность фракталов Билла Уильямса и трактует последнюю подтверждённую экстремальную точку как активную фазу рынка.

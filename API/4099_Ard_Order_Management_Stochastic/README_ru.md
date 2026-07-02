@@ -1,4 +1,5 @@
 # Стратегия ARD Order Management Stochastic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Ard Order Management** — порт MetaTrader-советника `ARD_ORDER_MANAGEMENT_EA-BETA_1` на платформу StockSharp. Исходная версия была сосредоточена на дисциплине "сначала закрыть, потом открыть" и предоставляла вспомогательные процедуры для ручной корректировки стопов и тейков. Перенос сохранил эту философию и дополнил её автоматическим генератором сигналов на основе осциллятора Стохастик.

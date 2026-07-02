@@ -1,4 +1,5 @@
 # Стратегия Nirvaman Imax
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Nirvaman Imax представляет собой конвертацию эксперта MetaTrader 4 `NirvamanImax.mq4` вместе с индикаторами HA, Moving Averages2 и iMAX3alert. Реализация на StockSharp сохраняет первоначальную идею: анализ Heikin-Ashi свечей, определение направления по двум фазам тренда и фильтрация через EMA-базис, дополнительно используя таймер принудительного закрытия позиций.

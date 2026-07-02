@@ -1,4 +1,5 @@
 # STO M5xM15xM30 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a faithful C# conversion of the MetaTrader 4 expert advisor "STO_m5xm15xm30". It uses three stochastic oscillators computed on M5, M15, and M30 timeframes to identify synchronized momentum shifts. The StockSharp implementation keeps the original entry/exit structure, replaces manual order management with the high-level API, and exposes every key constant as a configurable `StrategyParam`.

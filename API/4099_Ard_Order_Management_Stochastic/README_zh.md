@@ -1,4 +1,5 @@
 # ARD Order Management Stochastic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Ard Order Management** 策略是 MetaTrader 专家顾问 `ARD_ORDER_MANAGEMENT_EA-BETA_1` 的 StockSharp 版本。原脚本的核心是先平掉现有持仓再重新下单，并提供手动修改止损/止盈的辅助方法。移植后的版本保留了这种严格的仓位管理，同时引入了基于随机指标的自动化信号。

@@ -1,4 +1,5 @@
 # Simple 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Simple 策略** 是将 `MQL/9019` 目录下的 MetaTrader 4 专家顾问 `S!mple.mq4` 按照 StockSharp 高阶 API 规范进行的移植。原版系统监控一篮子固定的外汇货币对，只要 50 周期线性加权移动平均（LWMA）向上或向下穿越 200 周期简单移动平均（SMA）就开仓。每次入场都可以按照参数重复多次，并为每笔交易附加以货币金额表示的止损/止盈。本移植版本完整保留这些设置，将其暴露为策略参数，并在日志中输出与 MT4 终端注释面板相同的诊断信息。

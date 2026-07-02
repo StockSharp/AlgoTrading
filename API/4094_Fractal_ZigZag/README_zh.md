@@ -1,5 +1,5 @@
 # Fractal ZigZag 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略直接移植自 MetaTrader 4 顾问 **Fractal ZigZag Expert.mq4**。算法重新构建比尔·威廉姆斯的分形序列，并将最近一次确认为市
 场当前的主导波段：最新分形如果是低点，则开多；最新分形如果是高点，则开空。所有原始参数——分形深度、止盈、初始止损和移动止

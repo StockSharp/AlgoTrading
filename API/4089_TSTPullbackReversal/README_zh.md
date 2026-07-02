@@ -1,5 +1,5 @@
 # TST 回撤反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **TST 回撤反转策略** 是从 MetaTrader 4 专家顾问 `TST.mq4` 转换而来的策略，并使用 StockSharp 的高级 API 重写。策略寻找那些在创出当日极值之后价格大幅远离开盘价的 K 线，并押注价格将出现均值回归。系统可做多也可做空，并使用以价格最小变动为单位的固定止损和止盈。

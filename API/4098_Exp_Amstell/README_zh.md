@@ -1,4 +1,5 @@
 # Exp Amstell 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Exp Amstell** 是从 MetaTrader 4 智能交易系统 `exp_Amstell.mq4` 移植而来的网格策略。当价格相对于最近成交价移动了设定的点数时，它会持续发送买入或卖出市价单。每一笔交易都会独立管理：一旦价格达到设定的止盈距离，策略就会下达反向订单，仅对该网格层进行获利了结。

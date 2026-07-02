@@ -1,4 +1,5 @@
 # TrainYourself 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 4 智能交易系统 **TrainYourself-V1_1-1** 的 StockSharp 版本。原始脚本依靠图表按钮来重建趋势线并手动下单，而移植后的版本在每根完成的 K 线后自动计算 Donchian 通道，并在价格脱离通道时发起突破交易，同时提供等效的手动调用方法。
 

@@ -1,4 +1,5 @@
 # Nirvaman Imax Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Nirvaman Imax strategy is a direct conversion of the MetaTrader 4 expert advisor `NirvamanImax.mq4` bundled with the HA, Moving Averages2 and iMAX3alert custom indicators. The StockSharp implementation keeps the original idea of combining Heikin-Ashi candles with a two-phase trend detector and an EMA baseline filter while adopting the high-level API. The strategy works on a single instrument and timeframe and automatically closes trades after a configurable holding period.

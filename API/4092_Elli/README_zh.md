@@ -1,4 +1,5 @@
 # Elli 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Elli 策略将 MetaTrader 4 的 "Elli" 专家顾问迁移到 StockSharp 的高级 API。原版脚本使用 1 小时 Ichimoku 结构配合低周期 ADX 过滤，同时内置固定的止损止盈。移植版本保留所有趋势判定规则，以 `StartProtection` 替代手工修改订单，并把每个调节参数封装为可优化的 `StrategyParam<T>`，方便在 Designer 中测试不同组合。

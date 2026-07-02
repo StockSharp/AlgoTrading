@@ -1,4 +1,5 @@
 # Neuro Nirvaman MQ4 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Neuro Nirvaman MQ4 策略** 是 MetaTrader 4 专家顾问 `NeuroNirvaman.mq4` 的完整移植版本。原始 EA 将经过 Laguerre 滤波的 ADX 正向动向 (+DI) 与 SilverTrend 突破指示器结合，由三层感知器和一个监督器做出交易决策。StockSharp 版本复现了这一流程，只在收盘 K 线上重新计算，并且始终保持单一持仓。

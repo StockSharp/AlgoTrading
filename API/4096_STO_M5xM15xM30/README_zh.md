@@ -1,4 +1,5 @@
 # STO M5xM15xM30 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 4 中的 "STO_m5xm15xm30" 专家顾问迁移到 StockSharp 高级 API。核心思想是利用 M5、M15 与 M30 三个周期的随机指标，寻找同步的动量反转。所有关键常量都通过 `StrategyParam` 暴露，可在 StockSharp Designer 中直接优化。

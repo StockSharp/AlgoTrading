@@ -1,4 +1,5 @@
 # Neuro Nirvaman MQ4 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Neuro Nirvaman MQ4 Strategy** is a faithful port of the MetaTrader 4 expert advisor `NeuroNirvaman.mq4`. The original robot combines a custom Laguerre filter applied to the +DI component of the ADX indicator with a SilverTrend breakout detector. Three perceptrons evaluate these inputs and a supervisor decides whether to buy or sell. The StockSharp version mirrors that workflow and executes one position at a time, recalculating its logic only on fully closed candles.

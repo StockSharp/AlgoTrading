@@ -1,4 +1,5 @@
 # Simple Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Simple Strategy** is the StockSharp high-level conversion of the MetaTrader 4 expert advisor `S!mple.mq4` located in `MQL/9019`. The original system monitored a fixed basket of Forex symbols and traded whenever a 50-period linear weighted moving average crossed a 200-period simple moving average. Each entry could be repeated a configurable number of times and optional money-based stop-loss and take-profit levels were attached to every trade. The conversion keeps the same logic, exposes all user inputs as strategy parameters, and logs the same diagnostic information that the EA printed in the MetaTrader terminal comment.

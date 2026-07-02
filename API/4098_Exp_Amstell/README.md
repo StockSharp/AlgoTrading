@@ -1,4 +1,5 @@
 # Exp Amstell Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Exp Amstell Strategy** is a grid trading system converted from the original MetaTrader 4 expert advisor `exp_Amstell.mq4`. It continuously places buy and sell market orders whenever price travels a configurable number of points away from the most recent fill. Every individual trade is managed independently: once the market moves by the specified take-profit distance, the strategy sends an offsetting order to capture the profit for that single layer.

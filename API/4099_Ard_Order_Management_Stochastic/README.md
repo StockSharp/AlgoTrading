@@ -1,4 +1,5 @@
 # ARD Order Management Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Ard Order Management** strategy is a StockSharp conversion of the MetaTrader expert `ARD_ORDER_MANAGEMENT_EA-BETA_1`. The original script focused on repeatedly closing existing positions before placing new orders and offered helper routines for manual stop-loss and take-profit updates. The StockSharp version keeps this discipline while adding indicator-driven automation based on the Stochastic oscillator.

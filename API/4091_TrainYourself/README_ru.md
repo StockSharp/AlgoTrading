@@ -1,4 +1,5 @@
 # Стратегия TrainYourself
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом MetaTrader 4 советника **TrainYourself-V1_1-1** на платформу StockSharp. В оригинале построение канала и открытия/закрытия позиций выполнялись через элементы на графике. В версии для StockSharp канал рассчитывается автоматически на каждой завершённой свече, а для ручного управления предоставлены отдельные методы.
 

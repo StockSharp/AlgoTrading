@@ -1,4 +1,5 @@
 # Nirvaman Imax 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Nirvaman Imax 策略是 MetaTrader 4 专家顾问 `NirvamanImax.mq4` 的 StockSharp 版本，同时重现了随附的 HA、Moving Averages2 与 iMAX3alert 指标。该实现保留了原策略“海龟蜡烛 + 双相趋势探测器 + EMA 基线过滤”的核心思想，并借助高阶 API 自动在持仓达到设定时间后平仓。

@@ -1,4 +1,5 @@
 # Elli Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Elli Strategy ports the MetaTrader 4 expert advisor "Elli" to the StockSharp high level API. The original robot combined the Ichimoku Kinko Hyo structure on the H1 timeframe with a lower timeframe ADX filter and strict risk parameters. The conversion keeps the same directional logic, replaces manual order management with `StartProtection`, and exposes every tuning knob as an optimisable `StrategyParam<T>` so that the behaviour can be adapted to different markets.
