@@ -1,4 +1,5 @@
 # Lilith Goes To Hollywood 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略把 MetaTrader 专家顾问 “Lilith goes to Hollywood” 移植到 StockSharp 的高层 API。它实现了一套对冲网格，提供两种截然不同的工作模式：

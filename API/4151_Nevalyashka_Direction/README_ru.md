@@ -1,4 +1,5 @@
 # Стратегия Nevalyashka Direction
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Nevalyashka — это порт на C# оригинального советника MetaTrader 4 `Nevalyashka.mq4`. Советник постоянно меняет направление торговли: открывает единственную рыночную позицию, дожидается её закрытия по стопу, тейку или вручную и тут же переворачивается с тем же объёмом. Реализация на StockSharp повторяет эту логику и выносит ключевые настройки в параметры стратегии.

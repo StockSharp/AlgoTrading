@@ -1,4 +1,5 @@
 # Стратегия Parabolic SAR Alert
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Эта стратегия представляет собой перенос советника MetaTrader 4 `pSAR_alert.mq4` на платформу StockSharp. Исходный скрипт лишь воспроизводил звуковой сигнал, когда Parabolic SAR переходил с одной стороны цены на другую. В версии для StockSharp сигнал преобразован в реальные рыночные заявки, поэтому стратегия автоматически торгует теми же переключениями индикатора.

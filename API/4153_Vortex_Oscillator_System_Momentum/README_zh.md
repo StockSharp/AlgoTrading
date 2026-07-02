@@ -1,4 +1,5 @@
 # 4153 Vortex振荡器系统
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略将 MetaTrader 4 的 “Vortex Oscillator System” 专家顾问迁移到 StockSharp 的高级 API。策略使用标准 Vortex 指标的 VI+ 与 VI- 分量构建归一化振荡器，并在动量突破自定义的中性区间时进行交易。算法只针对单一标的，在方向改变时始终完全平仓或反向开仓。

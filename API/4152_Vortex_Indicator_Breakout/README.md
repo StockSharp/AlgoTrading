@@ -1,4 +1,5 @@
 # Vortex Indicator Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader expert **Vortex Indicator System.mq4** into the StockSharp high level API. The original idea wa
 s published in *Technical Analysis of Stocks & Commodities* (January 2010) and relies on the Vortex indicator crossover to arm bre
@@ -13,7 +14,7 @@ nce using `Bind`, so the strategy always receives synchronized VI+ and VI- value
 2. When the indicator finishes warming up, the algorithm tracks the previous VI values to detect the same crossover conditions u
 sed in the MQL expert: `VI+` crossing above `VI-` or vice versa between the last two closed candles.
 3. **Setup phase** – as soon as a bullish crossover is detected, any open short position is closed immediately and the high of th
-e crossover candle becomes the pending long trigger. The opposite crossover closes an existing long position and stores the low 
+e crossover candle becomes the pending long trigger. The opposite crossover closes an existing long position and stores the low
 of that bar as the short trigger.
 4. **Trigger phase** – on each subsequent finished candle the strategy checks whether the recorded trigger price was touched (`Hi
 ghPrice` ≥ long trigger or `LowPrice` ≤ short trigger). If so, it submits a market order sized to both flatten the remaining oppo

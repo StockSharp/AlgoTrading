@@ -1,4 +1,5 @@
 # Nevalyashka 方向策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Nevalyashka 策略基于 MetaTrader 4 原始专家顾问 `Nevalyashka.mq4`，现被移植为 C# 版本。策略始终保持持仓状态：先开出一笔市价单，等待仓位被止损、止盈或人工平仓后，立即以相同手数反向开仓。StockSharp 实现完全复刻这一思路，并将核心配置暴露为可调参数。

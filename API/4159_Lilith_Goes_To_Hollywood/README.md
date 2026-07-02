@@ -1,4 +1,5 @@
 # Lilith Goes To Hollywood Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy recreates the behaviour of the MetaTrader expert "Lilith goes to Hollywood" inside the StockSharp high level API. It implements a hedging grid that can operate in two very different modes:

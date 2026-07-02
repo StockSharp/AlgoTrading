@@ -1,4 +1,5 @@
 # EMA WMA 风险策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 Vladimir Hlystov 编写的 MetaTrader 4 “EMA WMA” 专家顾问移植到 StockSharp。

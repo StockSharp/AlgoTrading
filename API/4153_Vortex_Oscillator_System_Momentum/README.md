@@ -1,4 +1,5 @@
 # 4153 Vortex Oscillator System
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the MetaTrader 4 "Vortex Oscillator System" expert using StockSharp's high level strategy API. It derives a normalized Vortex oscillator by combining the standard Vortex indicator components and reacts whenever momentum escapes a configurable neutral band. The algorithm trades a single symbol and always works with fully closed or reversed positions.

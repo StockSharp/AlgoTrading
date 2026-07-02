@@ -1,4 +1,5 @@
 # Combo EA4 FSF R Updated 5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp conversion of the MetaTrader expert advisor "Combo_EA4FSFrUpdated5". It combines five different technical modules—moving averages, RSI, stochastic oscillator, parabolic SAR and a zero-lag MACD—to validate every trading decision. A position is opened only when **all** enabled modules point to the same direction, recreating the strict consensus logic of the original EA. Optional trailing management, automatic signal-based exits and the ability to flip into the opposite direction after closing are also preserved.

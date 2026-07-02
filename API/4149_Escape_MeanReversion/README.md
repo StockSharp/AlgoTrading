@@ -1,4 +1,5 @@
 # Escape Mean Reversion Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Escape strategy is a StockSharp port of the MetaTrader 4 expert advisor `escape.mq4`. The original robot trades a five-minute chart and reacts to mean-reversion opportunities: it buys when price falls below a short moving average and sells when price rallies above another fast average. Each position is protected by a fixed-distance take-profit and stop-loss expressed in MetaTrader points. The C# implementation keeps the same minimalist logic while exposing all tunable distances as strategy parameters.

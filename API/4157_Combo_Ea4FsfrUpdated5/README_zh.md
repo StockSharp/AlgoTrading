@@ -1,4 +1,5 @@
 # Combo EA4 FSF R Updated 5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是对 MetaTrader 专家顾问“Combo_EA4FSFrUpdated5”的 StockSharp 版本。它将移动平均线、RSI、随机指标、抛物线 SAR 以及零滞后 MACD 五个模块组合在一起，只有当所有已启用模块给出同一方向的信号时才会开仓，从而忠实地还原原始 EA 的共识过滤逻辑。策略同样保留了可选的追踪止损、基于信号的自动平仓以及在平仓后立即反向入场的功能。

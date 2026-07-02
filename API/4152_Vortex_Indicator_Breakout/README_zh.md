@@ -1,4 +1,5 @@
 # Vortex Indicator System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 专家顾问 **Vortex Indicator System.mq4** 移植到 StockSharp 的高级 API。原始构想发表于 *Technic
 al Analysis of Stocks & Commodities*（2010 年 1 月），通过 Vortex 指标的交叉来设置突破订单：当 VI+ 与 VI- 出现交叉

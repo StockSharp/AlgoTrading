@@ -1,4 +1,5 @@
 # Psar Bug 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Psar Bug 策略** 来自 MetaTrader 4 专家顾问 `pSAR_bug.mq4`，核心思想是在抛物线 SAR 第一次翻转到价格另一侧时立即反手。StockSharp 版本订阅蜡烛数据，只在蜡烛完成后计算，并借助高级 API 下达市价单，同时自动维护止损和止盈。

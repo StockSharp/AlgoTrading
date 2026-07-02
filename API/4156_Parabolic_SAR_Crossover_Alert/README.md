@@ -1,4 +1,5 @@
 # Parabolic SAR Alert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is the StockSharp port of the MetaTrader 4 expert advisor `pSAR_alert.mq4`. The original script only played an alert sound whenever the Parabolic SAR indicator flipped from one side of price to the other. The conversion keeps the same decision logic but turns the alerts into actual market orders, allowing the signal to be traded automatically inside StockSharp.

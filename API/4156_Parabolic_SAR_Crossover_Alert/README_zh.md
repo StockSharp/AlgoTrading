@@ -1,4 +1,5 @@
 # 抛物线 SAR 报警策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 智能交易程序 `pSAR_alert.mq4` 在 StockSharp 平台上的移植版。原始脚本只会在抛物线 SAR 指标从价格上方翻转到下方（或反向）时播放提示音。本转换保留了相同的判断逻辑，并将提示行为升级为真实的市价委托，使信号能够在 StockSharp 中自动执行。

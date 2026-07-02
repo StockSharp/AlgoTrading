@@ -1,4 +1,5 @@
 # Стратегия Lilith Goes To Hollywood
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Данная реализация переносит эксперт MetaTrader «Lilith goes to Hollywood» на высокий уровень API StockSharp. Стратегия строит хеджирующую сетку и умеет работать в двух режимах:

@@ -1,4 +1,5 @@
 # Escape 均值回归策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Escape 策略是 MetaTrader 4 智能交易系统 `escape.mq4` 的 StockSharp 版本。原始脚本运行在 5 分钟图上，通过均值回归信号交易：当收盘价跌破一个短期均线时买入，当收盘价上穿另一条快速均线时卖出。所有仓位都带有以 MetaTrader 点数表示的固定止盈和止损。C# 实现保留了这种极简结构，并将所有关键距离公开为参数。

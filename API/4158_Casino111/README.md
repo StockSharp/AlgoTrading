@@ -1,4 +1,5 @@
 # Casino111 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Casino111 is a counter-trend breakout system that originates from the MetaTrader 4 expert advisor with the same name. On every new bar the strategy compares the current open price with reference levels derived from the previous daily candle. If the open gaps beyond the daily extremes (plus configurable buffers) the algorithm immediately opens a market position in the opposite direction and relies on symmetric stop-loss / take-profit protection. The StockSharp port keeps the single-position behaviour of the original robot and adds extensive parameterization for research and optimization.

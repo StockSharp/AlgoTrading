@@ -1,4 +1,5 @@
 # Nevalyashka Direction Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Nevalyashka strategy is a C# port of the original MetaTrader 4 expert advisor `Nevalyashka.mq4`. The EA repeatedly flips its trading direction: it opens a single market order, waits until the position is closed by a stop-loss, take-profit or manual action, and instantly re-enters in the opposite direction with the same volume. The StockSharp implementation reproduces this behaviour while exposing all critical settings as strategy parameters.

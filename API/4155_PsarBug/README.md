@@ -1,4 +1,5 @@
 # Psar Bug Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Psar Bug Strategy** is a direct port of the MetaTrader 4 expert advisor `pSAR_bug.mq4`. It reacts to the very first Parabolic SAR dot that appears on the opposite side of price and immediately reverses the position. The StockSharp implementation subscribes to candles, evaluates completed bars only, and uses the high-level API to place market orders and manage protective stops.
