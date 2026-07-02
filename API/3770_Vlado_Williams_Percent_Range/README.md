@@ -1,4 +1,5 @@
 # Vlado Williams %R Threshold Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Vlado Williams %R Threshold Strategy** is a direct conversion of the MetaTrader 4 expert advisor `Vlado_www_forex-instruments_info.mq4`. The original robot trades a single Williams %R oscillator and flips its market exposure whenever the indicator crosses a user-defined level. This StockSharp port reproduces the same regime-switching behaviour while exposing each tunable value as a strategy parameter for optimisation and UI control.

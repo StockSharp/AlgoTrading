@@ -1,4 +1,5 @@
 # Volume Trader V2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Volume Trader V2 是 MetaTrader 专家顾问 `Volume_trader_v2_www_forex-instruments_info.mq4` 的直接移植版本。原始系统通过观察最近蜡烛的总成交量变化来判断短期资金流向，并据此保持单一方向的仓位。本次移植保留了仅持有单仓、按时间窗口过滤以及每根完成蜡烛只处理一次的行为特征。

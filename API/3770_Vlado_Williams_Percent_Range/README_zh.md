@@ -1,4 +1,5 @@
 # Vlado Williams %R 阈值策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Vlado Williams %R 阈值策略** 完全复刻了 MetaTrader 4 专家顾问 `Vlado_www_forex-instruments_info.mq4`。原始脚本依据 Williams %R 指标与设定阈值的关系来决定持仓方向，只允许同时持有一个头寸。本移植版本沿用了同样的判定流程，并将所有关键输入封装为 StockSharp 参数，便于优化与界面配置。

@@ -1,4 +1,5 @@
 # Стратегия Volume Trader V2
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Volume Trader V2 — прямой порт советника MetaTrader `Volume_trader_v2_www_forex-instruments_info.mq4`. Оригинальная версия отслеживает, как меняется суммарный объём последних свечей, и на основе этого потока удерживает позицию в одну сторону. При переносе сохранены ключевые особенности: работа только с одной позицией, фильтр по времени и обработка сигнала один раз на каждую завершённую свечу.

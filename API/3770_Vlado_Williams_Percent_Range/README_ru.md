@@ -1,4 +1,5 @@
 # Стратегия Vlado Williams %R Threshold
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Vlado Williams %R Threshold** — перенос советника MetaTrader 4 `Vlado_www_forex-instruments_info.mq4` на платформу StockSharp. Алгоритм использует один индикатор Williams %R и меняет направление торговли при пересечении заданного уровня. В любой момент времени стратегия удерживает лишь одну позицию, полностью повторяя последовательность вызовов `CheckForSignals → CheckForClose → CheckForOpen` из оригинального кода.

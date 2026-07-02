@@ -1,4 +1,5 @@
 # Universal MA Cross V4 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Universal MA Cross V4 策略** 是将 MetaTrader 4 专家顾问“Universal MACross EA v4”移植到 StockSharp 高级 API 的版本。策略监控可配置的快、慢移动平均线交叉，支持多种均线类型、价格来源、可选的交易时段过滤以及包含反手、止盈止损和跟踪止损的仓位管理。该实现基于蜡烛图订阅，在每根完成的 K 线结束时执行决策。

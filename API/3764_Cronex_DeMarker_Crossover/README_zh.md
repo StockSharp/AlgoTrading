@@ -1,4 +1,5 @@
 # Cronex DeMarker 交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Cronex DeMarker 策略复刻了 MetaTrader 指标 **Cronex DeMarker**，并将其转化为自动化交易系统。原始指标绘制 DeMarker 振荡器以及两条线性加权移动平均线（LWMA）。该策略完全复制这一结构：在两条平滑曲线发生金叉或死叉时生成交易信号，让系统能够及时捕捉动量由空头转为多头或由多头转为空头的变化。

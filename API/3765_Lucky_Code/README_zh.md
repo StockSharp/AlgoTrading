@@ -1,5 +1,5 @@
 # Lucky Code 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lucky Code 源自 MetaTrader 的「Lucky_code」专家顾问，是一套超短线突破型剥头皮策略。它实时监控买卖价差的极值，当最优卖价相对上一笔报价跃升、或最优买价下挫超过设定的点数距离时立即出手。策略的持仓管理非常激进：行情一旦朝有利方向跳动就平仓锁定利润，若出现超过阈值的不利波动则立即止损。
 

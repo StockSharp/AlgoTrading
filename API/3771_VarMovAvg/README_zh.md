@@ -1,4 +1,5 @@
 # VarMovAvg 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 VarMovAvg 策略移植自 MetaTrader 4 专家顾问 `VarMovAvg_v0011`。策略通过自适应的可变均线（Variable Moving Average，VMA）来评估趋势，在出现两阶段的回踩形态（原程序称为 Bar A 与 Bar B）时执行反向建仓。当持有仓位时，系统使用移动平均线拖尾止损来保护盈利，并在出现相反方向的 Bar A/Bar B 序列时立即反手。

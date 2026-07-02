@@ -1,4 +1,5 @@
 # Wss Trader
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Port of the "Wss_trader" MetaTrader 4 expert advisor published on forex-instruments.info. The original EA combines Camarilla-style reversal levels with classic pivot distances and opens a single trade per bar whenever price breaks the configured bands during the London session.
 

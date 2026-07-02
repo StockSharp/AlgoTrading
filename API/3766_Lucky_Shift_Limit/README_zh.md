@@ -1,5 +1,5 @@
 # Lucky Shift Limit 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Lucky Shift Limit** 策略是 MetaTrader 4 专家 `Lucky_acnl6p6j89zn91fa.mq4` 的完整移植版。策略实时监听最优买价和卖价（Level 1 报价），根据相邻报价之间的“点”（MetaTrader 点值）跳变进行反向交易：卖价向上跳变触发做空，买价向下跳变触发做多。所有持仓都会被持续跟踪，只要出现盈利或者浮亏超过安全阈值，就会立即平仓，与原始 MQ4 逻辑完全一致。
 

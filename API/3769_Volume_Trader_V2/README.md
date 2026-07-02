@@ -1,4 +1,5 @@
 # Volume Trader V2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Volume Trader V2 is a direct conversion of the MetaTrader expert advisor `Volume_trader_v2_www_forex-instruments_info.mq4`. The original system observes how the total volume of the latest candles evolves and uses this short-term flow to decide whether a simple long or short exposure should be active. The StockSharp port keeps the one-position-at-a-time behaviour, the time-of-day filter and the requirement to act only once per completed candle.

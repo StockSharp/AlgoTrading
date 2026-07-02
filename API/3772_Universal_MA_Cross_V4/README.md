@@ -1,4 +1,5 @@
 # Universal MA Cross V4 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Universal MA Cross V4 Strategy** is a high-level StockSharp port of the MetaTrader 4 expert advisor "Universal MACross EA v4". The algorithm follows the interaction between a configurable fast moving average and a slow moving average. It supports several moving average types, selectable price sources, an hourly trading window, and flexible position management including stop-and-reverse behaviour, protective targets and trailing stops. The strategy is designed for bar-based execution using the StockSharp high-level API with candle subscriptions.

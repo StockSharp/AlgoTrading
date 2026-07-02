@@ -1,4 +1,5 @@
 # Zs1 Forex Instruments 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 MetaTrader 专家顾问 **Zs1_www_forex-instruments_info** 的对冲网格逻辑。算法会同时开出买入和卖出头寸，跟踪价格相对起始点的移动，并根据五个离散区域执行原始 EA 的分支逻辑。保留下来的锚定方向会按马丁格尔系数加仓，而整个仓位在达到盈亏平衡时会整体平仓。
 

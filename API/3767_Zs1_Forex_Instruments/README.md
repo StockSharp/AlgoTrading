@@ -1,4 +1,5 @@
 # Zs1 Forex Instruments Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the hedged grid logic of the MetaTrader expert **Zs1_www_forex-instruments_info**. The algorithm opens a simultaneous buy/sell pair, monitors how far price travels from the starting point and reacts to five discrete trading zones. The surviving leg of the hedge is averaged with martingale multipliers while the basket is protected by an equity-based exit.
 

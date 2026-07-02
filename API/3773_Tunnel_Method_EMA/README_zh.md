@@ -1,5 +1,5 @@
 # Tunnel Method EMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Tunnel Method EMA** 策略基于原版 MetaTrader「Tunnel Method」专家顾问，并使用 StockSharp 的高级 API 实现。策略运行在 1 小时 K 线之上，比较以下三条基于收盘价的指数移动平均线（EMA）：

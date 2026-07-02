@@ -1,5 +1,5 @@
 # Lucky Code Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Lucky Code is a short-term breakout scalper converted from the original MetaTrader "Lucky_code" expert advisor. The strategy watches the spread extremes and reacts when the best ask jumps above or the best bid falls below the previous quote by a configurable distance. All trades are closed aggressively: profits are taken immediately once price ticks favorably, while losses are cut when an adverse excursion breaches a protective limit.
 

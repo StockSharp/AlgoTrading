@@ -1,4 +1,5 @@
 # Wss Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт эксперта MetaTrader 4 «Wss_trader» с сайта forex-instruments.info. Первоначальная версия использует уровни Камариллы и классические пивоты, открывая не более одной сделки за свечу, когда цена пробивает расчётные границы в рабочее время.
 

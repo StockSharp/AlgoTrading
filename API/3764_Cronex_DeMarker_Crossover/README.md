@@ -1,4 +1,5 @@
 # Cronex DeMarker Crossover Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Cronex DeMarker Crossover Strategy reproduces the MetaTrader indicator **Cronex DeMarker** and transforms it into an automated trading system. The original indicator plots the DeMarker oscillator together with two linear weighted moving averages (LWMAs). The strategy mirrors that setup, evaluates bullish and bearish crossovers between the smoothed oscillator lines, and converts them into market orders. This allows the trading logic to react immediately when momentum shifts from downside to upside pressure (and vice versa) according to the indicator.

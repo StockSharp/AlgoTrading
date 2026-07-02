@@ -1,5 +1,5 @@
 # Tunnel Method EMA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Tunnel Method EMA Strategy** replicates the original MetaTrader "Tunnel Method" expert advisor on the StockSharp high-level API. It operates on hourly candles and compares three exponential moving averages (EMAs) built on closing prices:

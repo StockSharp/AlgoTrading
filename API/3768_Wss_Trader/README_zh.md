@@ -1,4 +1,5 @@
 # Wss Trader
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 移植自 forex-instruments.info 上的 MetaTrader 4 专家顾问 “Wss_trader”。原版策略结合 Camarilla 反转水平与经典枢轴点，只要价格在伦敦时段内突破预设区间，就在每根 K 线上至多开一笔仓位。
 

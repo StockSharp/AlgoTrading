@@ -1,4 +1,5 @@
 # VarMovAvg Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The VarMovAvg strategy is a stop-and-reverse system converted from the MetaTrader 4 expert advisor `VarMovAvg_v0011`. It uses an adaptive Variable Moving Average (VMA) to measure trend direction and waits for a two-step pullback pattern (called Bar A and Bar B in the original EA) before reversing the position. While a position is active, a moving-average-based trailing stop protects profits and flips the trade when the opposite Bar A/Bar B sequence completes.
