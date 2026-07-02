@@ -1,4 +1,5 @@
 # Bobnaley 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Bobnaley 策略在 StockSharp 高层 API 中复刻了 MetaTrader 5 专家顾问“bobnaley”。它把简单移动平均线趋势过滤与随机指标结合起来寻找反转机会。原脚本在每个 Tick 上计算，这里改为在收盘 K 线后执行，同时保留原有的订单管理规则。

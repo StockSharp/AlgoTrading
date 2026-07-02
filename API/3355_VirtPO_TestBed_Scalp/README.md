@@ -1,4 +1,5 @@
 # VirtPO TestBed Scalp Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **VirtPOTestBed_ScalpM1** MetaTrader 4 expert advisor to the StockSharp high level API. It keeps the original idea of creating *virtual pending orders* that are armed by Stochastic oscillator crossovers and executed once price momentum confirms the move. All filters, money-management rules and scheduling controls from the MQL version were replicated with StockSharp indicators and order methods.
 

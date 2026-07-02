@@ -1,4 +1,5 @@
 # MACD Sample Hedging Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader "MACD Sample Hedging Grid" expert advisor. It combines a short-term MACD crossover, a local EMA slope filter, and higher timeframe confirmations. When conditions align the strategy builds a grid of positions in the detected direction, scaling the trade size by a configurable exponent.

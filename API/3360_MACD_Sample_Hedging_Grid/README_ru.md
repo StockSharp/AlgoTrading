@@ -1,4 +1,5 @@
 # Стратегия MACD Sample Hedging Grid
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия представляет собой портирование советника MetaTrader "MACD Sample Hedging Grid" на StockSharp. Она объединяет краткосрочные пересечения MACD, фильтр наклона EMA и подтверждения со старших таймфреймов. При совпадении условий строится сетка позиций по направлению сигнала с наращиванием объёма по заданному множителю.

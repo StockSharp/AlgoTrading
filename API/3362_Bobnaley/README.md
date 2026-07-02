@@ -1,4 +1,5 @@
 # Bobnaley Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Bobnaley strategy reproduces the MetaTrader 5 expert advisor "bobnaley" using the StockSharp high level API. It combines a simple moving average trend filter with the stochastic oscillator to search for reversal opportunities. The original expert evaluated tick prices; the port uses completed candles and keeps the order management rules intact.

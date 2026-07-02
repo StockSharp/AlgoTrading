@@ -1,4 +1,5 @@
 # VR Smart Grid Lite 均值网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 VR Smart Grid Lite 是从原始 MetaTrader 5 智能交易系统移植而来的网格加仓策略。算法根据最近一根已完成 K 线的方向开仓，并在价格逆行时沿用马丁式的加仓方式构建仓位梯队。距离、手数以及出场逻辑都可以配置，以复现 MQL 版本的行为。

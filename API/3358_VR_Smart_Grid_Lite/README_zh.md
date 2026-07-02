@@ -1,4 +1,5 @@
 # VR Smart Grid Lite 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **VR Smart Grid Lite 策略** 重现了同名 MetaTrader 智能交易系统的运行方式。策略通过市价单构建马丁格尔式网格，在价格逆势移动达到设定步长时加仓。网格支持两种出场方式：在加权平均价一次性平掉最旧与最新订单，或部分减仓以保留网格结构。
 

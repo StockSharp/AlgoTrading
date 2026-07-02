@@ -1,4 +1,5 @@
 # VR Smart Grid Lite Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **VR Smart Grid Lite Strategy** replicates the logic of the MetaTrader expert advisor with the same name. The strategy builds a martingale-style averaging grid using market orders. Position sizing starts from a base volume and doubles each time price moves against the existing position by a user-defined distance. The strategy supports two exit modes: closing the extreme trades at a weighted take-profit price or partially reducing exposure while keeping the grid active.
 

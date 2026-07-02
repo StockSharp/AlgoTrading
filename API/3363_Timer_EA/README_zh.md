@@ -1,5 +1,5 @@
 # Timer EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 平台的 TimerEA 机器人移植到 StockSharp，目标是在预设的日期时间开仓与平仓，并可按需配合
 挂单、追踪止损与保本机制。

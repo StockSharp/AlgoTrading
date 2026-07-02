@@ -1,4 +1,5 @@
 # MACD Sample Hedging Grid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader "MACD Sample Hedging Grid" 智能交易系统的 StockSharp 移植版本。策略将短周期 MACD 金叉/死叉、局部 EMA 斜率过滤以及更高周期的确认信号结合在一起。当多个条件同时满足时，会沿着信号方向建立网格仓位，并按照可配置的指数因子逐步放大手数。

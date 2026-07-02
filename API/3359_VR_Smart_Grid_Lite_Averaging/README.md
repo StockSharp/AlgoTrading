@@ -1,4 +1,5 @@
 # VR Smart Grid Lite Averaging Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The VR Smart Grid Lite Averaging strategy is a grid averaging system that follows the original MetaTrader 5 expert advisor. The algorithm opens market orders in the direction of the most recent bullish or bearish candle and builds a martingale-style ladder whenever price moves against the position. Distances, volumes and exit logic can be tuned to match the original MQL implementation.

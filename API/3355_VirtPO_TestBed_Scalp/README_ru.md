@@ -1,4 +1,5 @@
 # Стратегия VirtPO TestBed Scalp
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит эксперта **VirtPOTestBed_ScalpM1** из MetaTrader 4 на высокоуровневый API StockSharp. Основная идея сохранена: создаются *виртуальные отложенные ордера*, которые активируются при пересечениях стохастика и исполняются, когда цена подтверждает импульс. Все фильтры, правила управления позицией и расписание из оригинала реализованы средствами StockSharp.
 

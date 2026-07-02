@@ -1,4 +1,5 @@
 # FXF Fast in Fast out 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **FXF Fast in Fast out** 策略是一套基于波动率的突破系统，将原始的 MetaTrader 4 专家顾问重写为 StockSharp 高级策略。策略监控可配置的时间框架，当出现大幅波动的 K 线时测量点差，并尝试通过挂单捕捉顺势延续。信号只依赖于已经收盘的 K 线，而点差过滤、下单与移动止损依靠 Level1 行情数据完成。

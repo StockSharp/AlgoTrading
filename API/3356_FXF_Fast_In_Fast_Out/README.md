@@ -1,4 +1,5 @@
 # FXF Fast in Fast out Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **FXF Fast in Fast out** strategy is a volatility-driven breakout system that converts the original MetaTrader 4 expert advisor into a StockSharp high-level strategy. It watches a configurable timeframe for large candles, measures the spread, and reacts by placing pending stop orders that attempt to catch immediate momentum continuation. The logic uses only finished candles for signal generation while quotes (Level1 data) are used for spread filters, order placement, and trailing stop management.

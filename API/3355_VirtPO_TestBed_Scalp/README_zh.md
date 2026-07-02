@@ -1,4 +1,5 @@
 # VirtPO TestBed Scalp 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 4 的 **VirtPOTestBed_ScalpM1** EA 移植到 StockSharp 的高级 API。核心思路保持不变：利用 *虚拟挂单*，在随机指标穿越阈值时“布单”，在价格动量确认后立即转化为市价单执行。所有过滤条件、仓位管理和时间控制均按原始 EA 的逻辑改写。
 
