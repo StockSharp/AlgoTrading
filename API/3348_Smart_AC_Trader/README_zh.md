@@ -1,4 +1,5 @@
 # Smart AC Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Smart AC Trader 将 MetaTrader 中的 "Smart AC Trader" 专家顾问移植到 StockSharp 的高级 API。原始 EA 会比较货币对中各货币的强弱并在基准货币强于报价货币时入场。在 StockSharp 中我们使用指数移动平均线（EMA）和动量指标率（ROC）来模拟这种强弱筛选，同时仅对所连接的单一证券进行交易：

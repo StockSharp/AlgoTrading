@@ -1,4 +1,5 @@
 # Smart AC Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Smart AC Trader adapts the original MetaTrader "Smart AC Trader" idea to StockSharp's high level API. The MQL expert evaluated the relative strength of the currencies inside a pair and reacted when the base currency outperformed the quote currency. In StockSharp we focus on the same momentum-driven behaviour but operate on a single instrument that the strategy is attached to. Strength is approximated through a combination of exponential moving averages (EMAs) and the rate of change (ROC) indicator:

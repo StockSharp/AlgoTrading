@@ -1,4 +1,5 @@
 # N Trades Per Set Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct conversion of the MetaTrader expert advisor "N trades per set martingale + Close and reset on equity increase". It keeps the market direction simple—only long trades are taken—but actively manages position sizing through a martingale cascade and an equity-based reset. A new trade is opened immediately after the previous one closes, keeping the strategy constantly engaged in the market.

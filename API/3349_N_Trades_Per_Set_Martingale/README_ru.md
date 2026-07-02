@@ -1,4 +1,5 @@
 # Стратегия N Trades Per Set Martingale
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия является точной конвертацией советника MetaTrader «N trades per set martingale + Close and reset on equity increase». Торговля ведётся только в длинную сторону, а управление объёмом осуществляется за счёт мартиингейла и сброса по приросту капитала. Новый ордер выставляется сразу после закрытия предыдущей позиции, поэтому стратегия постоянно присутствует в рынке.

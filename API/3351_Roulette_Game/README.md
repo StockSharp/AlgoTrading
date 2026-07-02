@@ -1,5 +1,5 @@
 # Roulette Game
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Roulette Game strategy recreates the casino-like expert advisor from MetaTrader inside StockSharp. It treats every finished candle as a new spin of the wheel, chooses a random direction, and scales its order size after losses using a Martingale-style progression. The implementation keeps track of a virtual bankroll and limits exposure through configurable caps.
 

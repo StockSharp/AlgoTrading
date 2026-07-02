@@ -1,4 +1,5 @@
 # N Trades Per Set Martingale 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略完整复刻了 MetaTrader 智能交易系统 “N trades per set martingale + Close and reset on equity increase”。策略仅做多，但通过马丁加仓和基于权益的重置机制实现动态仓位管理。每次上一笔交易平仓后都会立即开立新的多单，因此始终保持在场内。

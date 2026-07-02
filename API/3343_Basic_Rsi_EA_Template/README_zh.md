@@ -1,5 +1,5 @@
 # 基础 RSI EA 模板策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Basic RSI EA Template Strategy** 为 MetaTrader 4 专家顾问 “Basic Rsi EA Template.mq4”（MQL/26750）的 StockSharp 版本。策略在指定的K线序列上监控相对强弱指数（RSI），当动量进入自定义的超买或超卖区域时执行交易。转换保留了原始机器人“单一持仓+固定止损止盈”的简洁风格，并采用 StockSharp 的高级订阅接口实现。
 

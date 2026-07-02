@@ -1,4 +1,5 @@
 # 网格模板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 专家顾问 **Grid_Template** 的 StockSharp 移植版本。它会在当前买卖价附近构建一组对称的挂单网格，可直接作为突破模板使用，也可以在此基础上叠加自定义入场过滤条件。当所有挂单成交或被取消后，策略会立即重建新网格。实现保留了原始 EA 的资金管理公式，以及在设定小时数后自动撤销未触发挂单的机制。

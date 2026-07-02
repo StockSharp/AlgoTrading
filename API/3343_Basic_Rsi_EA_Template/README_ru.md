@@ -1,5 +1,5 @@
 # Шаблон стратегии на RSI
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Basic RSI EA Template Strategy** — конвертация советника MetaTrader 4 «Basic Rsi EA Template.mq4» (MQL/26750). Стратегия отслеживает индекс относительной силы (RSI) на выбранной серии свечей и реагирует, когда импульс достигает настраиваемых зон перекупленности или перепроданности. В StockSharp сохранены простая работа с одной позицией и защитные стоп/тейк уровни оригинального робота, при этом используется высокоуровневый API подписки.
 

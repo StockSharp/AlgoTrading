@@ -1,4 +1,5 @@
 # ROC Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The ROC strategy is a StockSharp port of the MetaTrader expert advisor stored in `MQL/26938/ROC.mq4`. It operates on a single symbol and evaluates price action using a chain of linear weighted moving averages (LWMA), a custom rate-of-change (ROC) model, higher timeframe momentum and a monthly MACD filter. The original money management features such as break-even, pip-based trailing stops, equity protection and money denominated profit targets are preserved.

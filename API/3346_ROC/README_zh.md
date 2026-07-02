@@ -1,4 +1,5 @@
 # ROC 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 ROC 策略是在 StockSharp 高级 API 中对 MetaTrader 专家顾问 `MQL/26938/ROC.mq4` 的移植。该策略只针对单一品种运行，通过一组线性加权移动平均线（LWMA）、自定义速度变化模型（ROC）、更高周期的动量指标以及月度 MACD 来判断趋势。原版中的资金管理模块全部保留，包括保本、按点数移动的追踪止损、权益保护以及以货币或百分比计的止盈。
