@@ -1,4 +1,5 @@
 # Myfriend Forex Instruments 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Myfriend Forex Instruments** 策略复刻了 2006 年的 MetaTrader "MyFriend" 智能交易系统。策略默认在 EUR/USD 30 分钟周期上运行，通过结合上一交易日的枢轴位、Donchian 通道扩张以及 3/9 周期收盘价动量差来寻找入场机会。当价格强势穿越枢轴位或 Donchian 通道突然放宽，并且方向与动量偏差一致时，系统会开出唯一的一笔订单，并立即设定保护性止损与止盈。
 

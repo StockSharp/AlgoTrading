@@ -1,3 +1,5 @@
+# NRTR Reversal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## 概述
 NRTR Reversal 策略是 MetaTrader 4 专家顾问「NRTR_Revers」的 StockSharp 版本。原始 EA 基于 ATR 绘制 Noise Reduction Trailing Range (NRTR) 追踪线，当价格有效突破该自适应边界时立即反向。移植版本延续“一次只持有单向仓位”的逻辑，完整复刻 ATR 偏移的计算方式，并把出场交给 StockSharp 内置的风控模块。
 

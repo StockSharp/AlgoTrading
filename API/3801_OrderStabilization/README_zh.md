@@ -1,4 +1,5 @@
 # 挂单稳定策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **挂单稳定策略** 是对 MetaTrader 专家顾问 `hjueiisyx8lp2o379e_www_forex-instruments_info.mq4` 的移植。原策略会在现价上下放置一对止损挂单，并等待价格突破。一旦触发开仓，系统会监控最近几根蜡烛的实体大小，用来判断行情是否进入横盘，并在动能减弱或利润达到预设目标时退出仓位。

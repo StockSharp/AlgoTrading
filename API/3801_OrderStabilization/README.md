@@ -1,4 +1,5 @@
 # Order Stabilization Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Order Stabilization Strategy** is a conversion of the MetaTrader expert advisor `hjueiisyx8lp2o379e_www_forex-instruments_info.mq4`. The original robot places a pair of stop orders around the current price and waits for a breakout. Once a position is opened, the system monitors recent candle bodies to determine whether price action has stalled ("stabilized") and exits the trade when the market loses momentum or when a predefined profit threshold is reached.

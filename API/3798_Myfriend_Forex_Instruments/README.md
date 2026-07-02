@@ -1,4 +1,5 @@
 # Myfriend Forex Instruments Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Myfriend Forex Instruments Strategy** reproduces the 2006 "MyFriend" MetaTrader expert. It trades EUR/USD on 30-minute candles by combining daily pivot levels, Donchian channel expansions and a short-vs-long momentum spread measured from closing prices. The system looks for candles that pierce the daily pivot with a wide real body or for abrupt Donchian width expansions. When one of these impulses aligns with the intraday momentum bias, the strategy opens a single position with pre-defined protective levels.
 

@@ -1,5 +1,5 @@
 # OverHedge V2 网格策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 OverHedge V2 是一个对冲型网格系统，会在多空之间交替开仓，并在每次成交后按照倍数放大手数。策略通过比较快、慢指数移动平均线 (EMA) 的位置来确定新一轮循环的起始方向。循环启动时记录当前买价，构建一个包含价差的“隧道”，然后按方向立即成交第一单，反向订单则在价格触及隧道边界时执行。
 

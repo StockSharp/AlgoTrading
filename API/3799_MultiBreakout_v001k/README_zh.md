@@ -1,4 +1,5 @@
 # MultiBreakout V001k 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MultiBreakout V001k 策略完整复刻 MT4 智能交易系统 “Multibreakout_v001k”。它在参考交易小时结束后，依据刚刚收盘的小时 K 线高低点，成批挂出买入止损和卖出止损订单，并保留原版的分批止盈与保本移动逻辑（含可选的移动保本功能）。

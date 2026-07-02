@@ -1,3 +1,5 @@
+# Стратегия NRTR Reversal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## Обзор
 NRTR Reversal — это порт стратегии MetaTrader 4 «NRTR_Revers» на платформу StockSharp. Исходный советник строит линию Noise Reduction Trailing Range (NRTR) на основе индикатора ATR и переворачивает позицию, когда цена уверенно пробивает эту адаптивную границу. Реализация для StockSharp сохраняет модель «одна позиция одновременно», повторяет расчёт ATR-смещения и передаёт выходы встроенному модулю защиты.
 

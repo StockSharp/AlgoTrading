@@ -1,4 +1,5 @@
 # Nina EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Nina EA 策略是从 MetaTrader 4 专家顾问 “NinaEA” 转换而来的趋势跟随系统。原始版本依赖自定义指标 **NINA**，通过比较指标的多头与空头缓冲区，并在差值穿越零轴时进出场。StockSharp 版本使用内置 **SuperTrend** 指标替换该自定义指标，因为 SuperTrend 同样提供多头与空头缓冲。SuperTrend 方向的翻转即被视作原策略中的零轴穿越：趋势转多即买入，趋势转空则卖出。

@@ -1,4 +1,5 @@
 # Noah 10 Pips 2006 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 - Recreates the breakout and reversal logic from the original Noah10pips2006 MetaTrader 4 expert advisor.
@@ -6,25 +7,25 @@
 - Applies secure-profit trailing, optional dynamic position sizing, and an optional reversal trade after the first position closes.
 
 ## Trading Logic
-1. **Session Range Calculation**  
+1. **Session Range Calculation**
    At the start of every new trading day (after applying the configured time-zone offset) the strategy records the previous session high and low. These levels are used to compute:
-   - The mid-point between high and low.  
-   - A "pass" buffer positioned 20 pips above/below the range.  
+   - The mid-point between high and low.
+   - A "pass" buffer positioned 20 pips above/below the range.
    - An entry channel obtained by subtracting/adding 40 pips (or 25% of the range if the range is larger than 160 pips).
-2. **Initial Pending Order**  
-   When the market enters the trading window, the strategy checks the latest close:  
-   - If the close is between the mid-point and the upper buffer, a **sell stop** is placed at the mid-point.  
-   - If the close is between the lower buffer and the mid-point, a **buy stop** is placed at the mid-point.  
+2. **Initial Pending Order**
+   When the market enters the trading window, the strategy checks the latest close:
+   - If the close is between the mid-point and the upper buffer, a **sell stop** is placed at the mid-point.
+   - If the close is between the lower buffer and the mid-point, a **buy stop** is placed at the mid-point.
    The range width must exceed the configured minimum before any orders are placed.
-3. **Second Pending Order**  
+3. **Second Pending Order**
    If only one stop order remains active, the system adds the opposite-direction order at the corresponding buffer (upper buffer for a buy stop, lower buffer for a sell stop). This mirrors the original EA behaviour and prepares the strategy for breakouts on both sides of the range.
-4. **Position Management**  
-   - Protective stop-loss and take-profit orders are created after an entry fills.  
-   - Once floating profit reaches the secure trigger threshold, the stop-loss is moved to lock in the configured secure profit.  
+4. **Position Management**
+   - Protective stop-loss and take-profit orders are created after an entry fills.
+   - Once floating profit reaches the secure trigger threshold, the stop-loss is moved to lock in the configured secure profit.
    - When the secure lock is active, an optional trailing stop keeps following price with the specified distance.
-5. **Daily Shutdown**  
+5. **Daily Shutdown**
    All pending orders and open positions are closed when the trading window ends or when the Friday cut-off is reached.
-6. **Reversal Trade**  
+6. **Reversal Trade**
    The first completed position can trigger an opposite-direction market order, reproducing the "reverse after stop" behaviour from the original code. The reversal is skipped if the secure-profit adjustment already locked in gains.
 
 ## Parameters

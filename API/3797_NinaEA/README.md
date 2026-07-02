@@ -1,4 +1,5 @@
 # Nina EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Nina EA strategy is a one-position trend follower converted from the MetaTrader 4 expert "NinaEA". The original robot uses a custom indicator named **NINA** and trades whenever the difference between the indicator's bullish and bearish buffers crosses above or below zero. In the StockSharp version the custom indicator is replaced with the built-in **SuperTrend** indicator, which also publishes separate bullish and bearish buffers. A flip in SuperTrend direction serves as the zero-crossing proxy: when the trend turns bullish the strategy buys, and when it turns bearish it sells.

@@ -1,3 +1,5 @@
+# NRTR Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 ## Overview
 The NRTR Reversal strategy is a StockSharp port of the MetaTrader 4 expert "NRTR_Revers". The original system plots a Noise Reduction Trailing Range (NRTR) line derived from the Average True Range (ATR) and reverses positions whenever price convincingly breaks this adaptive barrier. The StockSharp version keeps the single-position behaviour of the expert advisor, mirrors the ATR-based offset calculation, and manages exits through the built-in protection module.
 
