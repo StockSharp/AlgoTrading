@@ -1,4 +1,5 @@
 # Sniper Jaw Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Sniper Jaw Strategy** ports the MetaTrader 4 expert advisor `SniperJawEA.mq4` to StockSharp's high-level strategy API. The system analyses Bill Williams' Alligator indicator on the candle median price. A trade is only initiated when the three smoothed moving averages (jaw, teeth, and lips) are stacked in strict bullish or bearish order and all of them advance in the same direction compared with the previous finished candle.
 

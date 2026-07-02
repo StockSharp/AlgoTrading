@@ -1,4 +1,5 @@
 # Pending tread Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Pending tread Grid Strategy** is a faithful StockSharp port of the MetaTrader 4 expert advisor `Pending_tread.mq4`. The original EA constantly rebuilds two ladders of pending orders: one ladder above the market and one below. Each ladder can be configured to use buy or sell orders, and spacing is defined in pips. The StockSharp implementation reproduces the same behaviour through the high-level API without introducing additional indicators or collections.

@@ -1,4 +1,5 @@
 # Risk Management ATR Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Risk Management ATR strategy is a StockSharp conversion of the MetaTrader 5 expert *Risk Management EA Based on ATR Volatility*. The original EA focussed on automatically sizing positions according to the account balance and the current market volatility measured by the Average True Range (ATR). The StockSharp port keeps the same philosophy: it only opens long positions when a 10-period simple moving average crosses above a 20-period simple moving average, and every entry size is computed so that the potential loss at the protective stop matches the configured risk percentage.

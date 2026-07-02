@@ -1,4 +1,5 @@
 # Tuyul Gap End Of Week
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Tuyul Gap End Of Week ports the MetaTrader 5 expert advisor `TuyulGAP` to StockSharp. The strategy prepares for the weekly market open by scanning a configurable number of recent candles on Friday night, placing a pair of breakout stop orders around the highest high and lowest low. Only one trading session per week is allowed; once the orders are staged the strategy waits for price to gap through either level. Any open position that reaches a secure profit target in account currency is closed immediately, and all remaining pending orders are cancelled on Monday to reset the workflow for the next week.

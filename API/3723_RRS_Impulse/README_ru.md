@@ -1,4 +1,5 @@
 # Стратегия RRS Impulse
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **RRS Impulse** — это перенос эксперта MetaTrader «RRS Impulse» на высокоуровневый API StockSharp. В оригинале робот сочетал
 фильтры RSI, стохастика и полос Боллинджера, переключал режимы силы сигналов и использовал виртуальные стопы с трейлингом. В

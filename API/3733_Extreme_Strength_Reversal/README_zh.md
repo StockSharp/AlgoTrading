@@ -1,4 +1,5 @@
 # 极限强度反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 - 将 MetaTrader EXSR 专家顾问转换为 StockSharp 策略的逆势系统。

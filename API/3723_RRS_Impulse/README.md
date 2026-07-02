@@ -1,4 +1,5 @@
 # RRS Impulse Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **RRS Impulse Strategy** is a high level StockSharp port of the MetaTrader expert advisor "RRS Impulse". The original robot
 combined RSI, Stochastic and Bollinger Bands filters, rotated between several signal-strength modes and used protective stops and

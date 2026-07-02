@@ -1,4 +1,5 @@
 # Tuyul Gap End Of Week
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Tuyul Gap End Of Week 将 MetaTrader 5 智能交易系统 `TuyulGAP` 迁移到 StockSharp。策略在周五晚间扫描可配置数量的最近K线，在最高价上方和最低价下方各放置一张突破止损单，为周末跳空做好准备。每周只允许触发一次，当挂单就位后策略等待价格向任意方向突破。如果持仓的浮动利润达到设定的安全目标，策略立即以市价平仓，并在周一取消所有剩余的挂单，为下一周重新初始化。

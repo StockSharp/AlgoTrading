@@ -1,4 +1,5 @@
 # Pending tread 网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Pending tread 网格策略** 是 MetaTrader 4 专家顾问 `Pending_tread.mq4` 的 StockSharp 版本。原始 EA 会在行情上方与下方持续维护两组挂单梯形，每一组都可以选择使用买单或卖单，并以点数控制间距。本移植完全使用 StockSharp 高阶 API 实现同样的逻辑，没有引入额外指标或自建数据集合。

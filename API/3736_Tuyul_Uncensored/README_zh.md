@@ -1,4 +1,5 @@
 # Tuyul Uncensored 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Tuyul Uncensored 策略基于原始 MetaTrader 5 专家顾问重新实现，利用 StockSharp 的高级 API 运行。系统通过 ZigZag 指标追踪摆动高低点，并结合快慢指数移动平均线判定趋势。当确认新的摆动后，在最近一段的 57% 斐波那契回撤位置挂出限价单，希望在主趋势回踩时入场，同时根据摆动区间自动设定止损和止盈。

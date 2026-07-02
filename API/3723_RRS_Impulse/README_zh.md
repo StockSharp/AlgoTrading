@@ -1,4 +1,5 @@
 # RRS Impulse 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **RRS Impulse** 是 MetaTrader 专家顾问“RRS Impulse”的 StockSharp 高级 API 版本。原始 EA 结合了 RSI、随机指标和布林带，
 可以切换多种信号强度模式，并使用虚拟止损/移动止损。本移植在 C# 中复刻了这些特点：通过蜡烛订阅驱动指标，交易指令全部通过

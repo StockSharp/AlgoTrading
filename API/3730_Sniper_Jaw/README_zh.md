@@ -1,4 +1,5 @@
 # Sniper Jaw 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Sniper Jaw Strategy** 将 MetaTrader 4 专家顾问 `SniperJawEA.mq4` 移植到 StockSharp 的高级策略 API。系统在每根 K 线的中值价格上重建比尔·威廉姆斯的鳄鱼（Alligator）指标。当三条平滑移动平均线（下颚、牙齿、嘴唇）严格按照多头或空头顺序排列，并且相对于上一根收盘 K 线继续朝同一方向运动时，策略才会触发交易。
 

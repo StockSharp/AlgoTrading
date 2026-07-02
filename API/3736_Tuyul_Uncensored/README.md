@@ -1,4 +1,5 @@
 # Tuyul Uncensored Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Tuyul Uncensored is a swing-following strategy that rebuilds the original MetaTrader 5 expert advisor with StockSharp's high-level API. The system observes ZigZag swings, aligns entries with a moving average trend filter, and places limit orders at the 57% Fibonacci retracement of the latest leg. When price revisits that level, the strategy attempts to join the dominant swing while protecting the trade with stop-loss and take-profit levels derived from the same leg.

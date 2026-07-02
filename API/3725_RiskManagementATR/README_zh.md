@@ -1,4 +1,5 @@
 # 风险管理 ATR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 风险管理 ATR 策略是 MetaTrader 5 专家顾问 *Risk Management EA Based on ATR Volatility* 的 StockSharp 版本。原始 EA 的核心思想是根据账户余额和通过平均真实波幅 (ATR) 量化的市场波动率自动计算仓位规模。移植版本保持相同逻辑：当 10 周期简单移动平均线向上突破 20 周期简单移动平均线时开多仓，并让潜在亏损正好等于用户设定的风险百分比。
