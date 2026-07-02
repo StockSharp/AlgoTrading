@@ -1,4 +1,5 @@
 # Стратегия AdaptiveTrader Pro
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 AdaptiveTrader Pro — это многотаймфреймовая трендовая стратегия, перенесённая из эксперта MetaTrader 5 *AdaptiveTrader_Pro_Final_EA.mq5*. Она сочетает RSI, ATR и две скользящие средние, чтобы торговать по направлению доминирующего тренда и одновременно контролировать риски.

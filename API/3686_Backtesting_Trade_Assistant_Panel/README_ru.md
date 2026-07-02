@@ -1,4 +1,5 @@
 # Стратегия Backtesting Trade Assistant Panel
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Backtesting Trade Assistant Panel Strategy** — перенос эксперта MetaTrader 4 *Backtesting Trade Assistant Panel V1.10*, который в тестере предоставлял панель с кнопками BUY/SELL и полями для ввода лота, стоп-лосса и тейк-профита. В версии для StockSharp визуальные элементы заменены на параметры стратегии и публичные методы, но сценарий работы остаётся тем же: трейдер вручную инициирует сделки, а стратегия автоматически навешивает защитные ордера.

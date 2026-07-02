@@ -1,4 +1,5 @@
 # Smart Trend Follower 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Smart Trend Follower 策略** 是 MetaTrader 5 智能交易系统 *Smart Trend Follower* 的 StockSharp 版本。原始 EA
@@ -64,4 +65,3 @@ StockSharp 高级 API（K 线订阅、指标绑定、市场委托）实现相同
 
 ## 文件
 - `CS/SmartTrendFollowerStrategy.cs` – 使用 StockSharp 高级 API 编写的 C# 策略实现。
-

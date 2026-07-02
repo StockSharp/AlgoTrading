@@ -1,4 +1,5 @@
 # SUPERMACBOT by The Guardian Forex TV Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **SUPERMACBOT by The Guardian Forex TV Strategy** replicates the concept of the original MetaTrader expert advisor by combining the MACD oscillator with a dual simple moving average trend filter and a trailing average exit filter. The converted StockSharp implementation works on completed candles and sends market orders whenever a bullish or bearish confluence forms. The strategy avoids tick-by-tick trading and follows the high-level API guidelines by relying on candle subscriptions and indicator bindings.

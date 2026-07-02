@@ -1,4 +1,5 @@
 # Raymond Cloudy Day Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Raymond Cloudy Day is a breakout-following strategy that reconstructs the trading logic of the original **"Raymond Cloudy Day for EA"** MQL5 expert advisor. The algorithm derives a set of reference levels from a higher timeframe candle and uses them to detect momentum resumption on the execution timeframe. The StockSharp port keeps the original trading rules while exposing each component as configurable strategy parameters.
@@ -64,4 +65,3 @@ All parameters support optimization ranges and descriptive metadata for StockSha
 - Symmetric 500-point stop-loss and take-profit offsets converted to ticks in the StockSharp environment.
 
 With these components the StockSharp strategy behaves identically to the source EA while providing rich configuration and logging suitable for further research and automation.
-

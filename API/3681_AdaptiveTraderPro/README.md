@@ -1,4 +1,5 @@
 # AdaptiveTrader Pro Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 AdaptiveTrader Pro is a multi-timeframe trend-following strategy converted from the MetaTrader 5 expert advisor *AdaptiveTrader_Pro_Final_EA.mq5*. It combines RSI, ATR and moving averages to trade in the direction of the dominant trend while applying money-management controls.

@@ -1,4 +1,5 @@
 # Backtesting Trade Assistant Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Backtesting Trade Assistant Panel Strategy** is a manual helper converted from the MetaTrader 4 expert advisor *Backtesting Trade Assistant Panel V1.10*. The original script created a graphical control panel inside the tester that let the operator change lot size, stop-loss and take-profit distances, and instantly submit BUY or SELL market orders. The StockSharp port offers the same workflow inside a strategy component by exposing strongly typed parameters and public helper methods instead of on-chart widgets.

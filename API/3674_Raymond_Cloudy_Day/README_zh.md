@@ -1,4 +1,5 @@
 # Raymond Cloudy Day 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Raymond Cloudy Day 是一套突破再入场策略，完整复现了原始 MQL5 专家 **“Raymond Cloudy Day for EA”** 的交易逻辑。算法通过更高周期蜡烛计算出一组关键参考价位，并在执行周期上利用这些价位寻找动量恢复信号。移植到 StockSharp 后，原有规则得到保留，同时每个模块都可以通过参数进行配置。
@@ -64,4 +65,3 @@ Raymond Cloudy Day 使用以 tick 为单位的对称保护带：
 - 500 点对称止损/止盈，已转换为 StockSharp 环境下的 tick 偏移。
 
 凭借这些要素，StockSharp 版本既复现了原始专家的行为，又提供了更灵活的配置与日志，便于后续研究和自动化。
-

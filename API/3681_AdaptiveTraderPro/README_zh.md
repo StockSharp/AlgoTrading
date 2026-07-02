@@ -1,4 +1,5 @@
 # AdaptiveTrader Pro 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AdaptiveTrader Pro 是由 MetaTrader 5 智能交易系统 *AdaptiveTrader_Pro_Final_EA.mq5* 转换而来的多时间框趋势策略。它结合 RSI、ATR 以及双重均线，在趋势方向上寻找交易机会并执行资金管理控制。

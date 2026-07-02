@@ -1,4 +1,5 @@
 # Revised Self Adaptive EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Порт эксперта MetaTrader 5 `revised_self_adaptive_ea.mq5` на высокоуровневый API StockSharp.
 

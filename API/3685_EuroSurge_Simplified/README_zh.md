@@ -1,4 +1,5 @@
 # EuroSurge Simplified 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 4 智能交易系统 **“EuroSurge Simplified”** 迁移到 StockSharp 高层 API。

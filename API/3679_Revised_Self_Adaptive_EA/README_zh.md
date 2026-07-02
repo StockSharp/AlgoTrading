@@ -1,4 +1,5 @@
 # Revised Self Adaptive EA
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MetaTrader 5 专家顾问 `revised_self_adaptive_ea.mq5` 的 StockSharp 高级 API 版本。
 

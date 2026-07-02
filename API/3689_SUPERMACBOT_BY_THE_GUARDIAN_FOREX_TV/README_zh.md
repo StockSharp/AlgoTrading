@@ -1,4 +1,5 @@
 # SUPERMACBOT by The Guardian Forex TV 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **SUPERMACBOT by The Guardian Forex TV 策略** 通过将 MACD 振荡器、双重简单移动平均线趋势过滤器以及跟踪移动平均线结合在一起，复刻了原始 MetaTrader 智能交易系统的思路。转换后的 StockSharp 版本基于已完成的 K 线进行决策，并在多重多空共振出现时发出市价委托。策略完全基于高级 API：使用蜡烛订阅、指标绑定以及参数化配置，便于跨品种、跨周期复用。

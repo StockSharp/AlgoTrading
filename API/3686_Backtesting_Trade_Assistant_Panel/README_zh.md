@@ -1,4 +1,5 @@
 # 回测交易助手面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Backtesting Trade Assistant Panel Strategy** 源自 MetaTrader 4 专家顾问 *Backtesting Trade Assistant Panel V1.10*，原版在测试器窗口中绘制按钮与输入框，允许交易者在回测阶段手动调整手数、止损、止盈，并立即发送 BUY/SELL 市价单。迁移到 StockSharp 后，图形界面被策略参数与公开方法替代，但功能完全等价，依旧侧重于“人工下单 + 自动挂保护单”的流程。
