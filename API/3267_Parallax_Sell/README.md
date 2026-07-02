@@ -1,4 +1,5 @@
 # Parallax Sell Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Parallax Sell is a short-only martingale strategy converted from the MetaTrader expert advisor `parallax_sell`. The original robot traded JPY crosses (CAD/JPY and CHF/JPY) and relies on a confluence of Williams %R, MACD and stochastic oscillator filters to initiate shorts into overbought rallies. Position exits depend on momentum fading signs provided by Williams %R or a slow stochastic, while a martingale-like position sizing scheme increases exposure after losing sequences.

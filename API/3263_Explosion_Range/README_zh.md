@@ -1,4 +1,5 @@
 # Explosion 区间扩张策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Explosion Strategy 源自 MetaTrader 5 指标交易程序 “Explosion”。策略比较当前收盘完成的 K 线高低差与前一根 K 线的区间，当当前区间大于前一区间乘以设定的 `Range Ratio` 时，在蜡烛实体方向开仓。StockSharp 版本保留了原始 EA 的主要风控机制，并增加了方便的交易时间窗口与移动止损参数。

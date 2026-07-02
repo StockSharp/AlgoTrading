@@ -1,4 +1,5 @@
 # Killer Sell 2.0 (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Killer Sell 2.0 is a short-only MetaTrader 4 expert advisor that times entries after

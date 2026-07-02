@@ -1,4 +1,5 @@
 # AeroSpine Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The AeroSpine Strategy is a conversion of the MetaTrader expert **AEROSPINE.mq4**. It trades a single symbol and attempts to capture breakouts away from the daily open price. The original robot was designed for daily charts while monitoring ticks; the port keeps the daily open breakout idea but relies on finished candles supplied by StockSharp.

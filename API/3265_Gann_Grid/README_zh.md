@@ -1,4 +1,5 @@
 # Gann Grid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 `MQL/25065/Gann Grid.mq4` 中的 **Gann Grid** 专家顾问迁移到 StockSharp 的高级 API。原始脚本依赖人工绘制的图形对象并在多个时间框架上过滤；C# 版本保留总体流程，同时用指标计算替代手工操作，使策略可以完全自动化运行。
 

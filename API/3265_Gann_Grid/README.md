@@ -1,4 +1,5 @@
 # Gann Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the original **Gann Grid** expert advisor from `MQL/25065/Gann Grid.mq4` to the StockSharp high-level API. The original script mixed manual chart objects with multiple timeframe filters; the C# version keeps the overall workflow while replacing chart-derived data with indicator-driven logic that can run unattended.
 

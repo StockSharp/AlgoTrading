@@ -1,4 +1,5 @@
 # Стратегия Parallax Sell
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Parallax Sell — это конвертированная в StockSharp короткая маржинальная стратегия из советника MetaTrader `parallax_sell`. Исходный робот торговал кроссы с JPY (CAD/JPY и CHF/JPY) и использовал сочетание индикаторов Williams %R, MACD и стохастика для поиска перекупленных участков рынка. Выходы строятся на признаках ослабления импульса по Williams %R или медленному стохастику, а схема управления объёмом с элементами мартингейла увеличивает позицию после убыточных серий.

@@ -1,4 +1,5 @@
 # 标准差通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 MetaTrader 专家顾问 **Standard Deviation Channel** 的 StockSharp 版本。它基于线性加权移动平均线（LWMA）构建波动率通道，只在通道突破与主要趋势方向一致时开仓。入场信号由动量强度和 MACD 交叉确认，离场部分结合固定目标、保本跳动以及跟踪止损。

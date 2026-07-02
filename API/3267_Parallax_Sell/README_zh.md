@@ -1,4 +1,5 @@
 # Parallax Sell 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Parallax Sell 是根据 MetaTrader 顾问 `parallax_sell` 转换而来的 StockSharp 策略。原始程序主要交易 CAD/JPY 和 CHF/JPY 等日元交叉盘，通过 Williams %R、MACD 与随机指标的组合寻找上涨行情中的做空机会。策略在动能减弱时平仓，并采用类似马丁格尔的仓位管理，在亏损序列后逐步放大仓位。

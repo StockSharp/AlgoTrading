@@ -1,4 +1,5 @@
 # Standard Deviation Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert **Standard Deviation Channel**. It plots a linear weighted moving average (LWMA) based volatility channel and trades breakouts that align with the prevailing trend. Entries are filtered by momentum strength and a MACD confirmation, while exits combine fixed targets, break-even jumps, and trailing protection.

@@ -1,4 +1,5 @@
 # Стратегия AeroSpine
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия AeroSpine — это перенос советника MetaTrader **AEROSPINE.mq4**. Торговля ведётся по одному инструменту и строится на пробое дневного открытия. Оригинальный робот требовал таймфрейм D1 и анализировал тики; версия для StockSharp сохраняет логику «прорыва цены от открытия дня», но использует завершённые свечи.

@@ -1,4 +1,5 @@
 # Reverse Day Fractal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Reverse Day Fractal is a price action strategy that looks for sharp reversals after an intraday breakout. The algorithm analyses the last three finished candles. When the current bar forms a new extreme beyond the previous two candles and closes back in the opposite direction, it treats this pattern as a failed breakout and enters a reversal trade. Protective orders are managed through configurable take-profit, stop-loss and trailing-stop distances measured in price steps.

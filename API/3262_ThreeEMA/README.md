@@ -1,4 +1,5 @@
 # Three EMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the MetaTrader "ThreeEMA" expert advisor by stacking three exponential moving averages (EMAs). It looks for directional alignment between a fast, medium, and slow EMA on the same timeframe. When the averages are strictly ordered in ascending fashion (fast above medium above slow) the strategy opens or maintains a long position. When the order flips (fast below medium below slow) it opens or maintains a short position. Protective stop-loss and take-profit offsets mirror the original MQL parameters and are expressed in price points relative to the instrument's tick size.

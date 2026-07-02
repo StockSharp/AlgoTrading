@@ -1,4 +1,5 @@
 # Explosion Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy reproduces the logic of the MetaTrader "Explosion" expert. It watches the range of each finished candle and enters the market when the latest bar "explodes" – its height more than doubles the range of the previous bar. The direction is decided by the candle body: a bullish body opens a long position, while a bearish body opens a short one.
 

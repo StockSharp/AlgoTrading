@@ -1,4 +1,5 @@
 # Reverse Day Fractal Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Reverse Day Fractal 是一种价格行为策略，专注于捕捉突破后的快速反转。算法会分析最近三根已完成的 K 线。当当前 K 线突破前两根 K 线的极值并在收盘时反向收回，该形态被视为假突破，策略将在反方向开仓。止盈、止损和移动止损均以价格步长为单位进行配置。

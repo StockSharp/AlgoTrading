@@ -1,4 +1,5 @@
 # AeroSpine 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 AeroSpine 策略源自 MetaTrader 专家顾问 **AEROSPINE.mq4**。它专注于单一品种，通过跟踪价格突破每日开盘价的行为来捕捉趋势。原始 EA 要求挂载在日线图并按 tick 运行，本移植版本保留了“日线开盘突破”思想，但通过 StockSharp 提供的已完成 K 线进行计算。

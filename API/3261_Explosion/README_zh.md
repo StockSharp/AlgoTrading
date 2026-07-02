@@ -1,4 +1,5 @@
 # Explosion 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现了 MetaTrader 上的 “Explosion” 专家顾问。它监控每根已完成 K 线的波动幅度，当最新的蜡烛出现“爆发”——其高度超过上一根蜡烛范围的两倍时入场。方向由实体决定：收盘价高于开盘价时做多，收盘价低于开盘价时做空。
 

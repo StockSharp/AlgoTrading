@@ -1,4 +1,5 @@
 # Three EMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻 MetaTrader "ThreeEMA" 专家顾问，通过三条指数移动平均线（EMA）的排列来判断趋势方向。策略在同一周期内计算快、中、慢三条 EMA，当出现 `快线 > 中线 > 慢线` 的多头结构时，建立或保持多头仓位；当出现 `快线 < 中线 < 慢线` 的空头结构时，建立或保持空头仓位。止损与止盈距离沿用了原始 MQL 参数，并以合约价格步长对应的点数表示。

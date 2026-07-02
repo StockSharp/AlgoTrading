@@ -1,4 +1,5 @@
 # Killer Sell 2.0 (C#)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Killer Sell 2.0 — это эксперт MetaTrader 4, который работает исключительно

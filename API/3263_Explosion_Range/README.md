@@ -1,4 +1,5 @@
 # Explosion Range Expansion Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Explosion Range Expansion Strategy is a breakout system converted from the MetaTrader 5 expert advisor "Explosion". The algorithm compares the range of the current completed candle with the previous candle and opens a market position in the direction of the candle body whenever the range expansion exceeds a configurable ratio. The StockSharp version keeps the original money-management features and adds convenient parameters for schedule control and trailing stop management.
