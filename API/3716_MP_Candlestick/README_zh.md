@@ -1,4 +1,5 @@
 # MP 烛形策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **MP 烛形策略** 是将 MetaTrader 5 专家顾问 `mp candlestick.mq5` 移植到 StockSharp 高级策略框架的结果。系统基于完成蜡烛的方向选择交易方向，同时执行严格的资金与风险管理。策略既支持以 MetaTrader 点 (pip) 表示的固定止损距离，也支持基于平均真实波幅 (ATR) 的自适应止损方案。

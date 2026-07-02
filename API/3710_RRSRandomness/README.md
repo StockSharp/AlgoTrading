@@ -1,4 +1,5 @@
 # RRS Randomness Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -38,4 +39,3 @@ Because StockSharp uses net positions per security, simultaneous long and short 
 - The strategy relies on market data subscriptions for candles, Level1 quotes and trades. Ensure the selected data type is available for the chosen security.  
 - Trailing stop logic mirrors the MQL implementation: it activates after the price gains `TrailingStartPoints + TrailingGapPoints` steps and then follows price at a distance of `TrailingGapPoints`.  
 - Risk management compares floating PnL with the configured loss threshold and liquidates the position when the threshold is breached.
-

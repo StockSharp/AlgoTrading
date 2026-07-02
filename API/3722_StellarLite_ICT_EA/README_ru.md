@@ -1,4 +1,5 @@
 # Стратегия StellarLite ICT EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 StellarLite ICT EA переносит правила проп-фирменной стратегии "Stellar Lite" на платформу StockSharp. Алгоритм объединяет два шаблона Inner Circle Trader (ICT) — Silver Bullet и модель 2022 года — и повторяет частичное фиксирование прибыли, перемещение стопа в безубыток и трейлинг-стоп, присутствующие в оригинальном советнике MetaTrader.

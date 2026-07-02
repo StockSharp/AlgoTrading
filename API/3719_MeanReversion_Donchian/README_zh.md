@@ -1,4 +1,5 @@
 # Mean Reversion Donchian 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略移植自 MetaTrader 专家顾问 `MeanReversion.mq5`。当价格在设定的回溯窗口内创出新的低点时，策略会开立多头仓位并将最近区间的中点作为回归目标；当价格刷新新高时，则按照相同思路开立空头仓位。头寸规模根据风险百分比和止损距离计算，尽可能还原原始 EA 的手数算法。

@@ -1,4 +1,5 @@
 # Adjustable Moving Average Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the MetaTrader "Adjustable Moving Average" expert advisor using StockSharp's high-level API. Two moving averages of the same type but different lengths monitor their distance. When the faster curve crosses the slower one by at least a configurable gap the strategy closes any opposite position and optionally opens a trade in the new direction. Additional session filters, protective exits and an optional trailing stop provide the same operational flexibility as the original robot.
 

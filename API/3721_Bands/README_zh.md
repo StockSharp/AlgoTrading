@@ -1,4 +1,5 @@
 # Bands 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略把 MetaTrader 5 智能交易系统 **Bands.mq5** 迁移到了 StockSharp 的高级 API。系统等待一根已经收盘的 K 线从布林带

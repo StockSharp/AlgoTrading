@@ -1,4 +1,5 @@
 # Mean Reversion Donchian Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a port of the MetaTrader expert advisor `MeanReversion.mq5`. It trades a simple mean-reversion pattern: whenever price prints a fresh low within the selected lookback window the strategy opens a long position, targeting the midpoint of the recent range. When a new high appears the strategy mirrors the logic on the short side. Position size is calculated from the risk percentage and the stop distance, closely replicating the lot calculation that the original EA performs.

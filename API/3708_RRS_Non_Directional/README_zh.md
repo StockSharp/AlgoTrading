@@ -1,4 +1,5 @@
 # RRS Non-Directional 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MetaTrader 4 的 “RRS Non-Directional” 智能交易系统迁移到 StockSharp 框架。原始版本根据所选模式同时建立买入和卖出网格，并通过虚拟的止损、止盈与跟踪止损来管理仓位。StockSharp 版本保留了全部可配置模式、资金风险控制以及虚拟保护机制，同时适配 StockSharp 的净额结算组合结构。因此，在所谓的“对冲”模式下，仓位会在多空之间交替，而不是像 MT4 那样同时持有两个方向。

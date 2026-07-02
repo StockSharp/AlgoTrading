@@ -1,4 +1,5 @@
 # ATR Step Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The ATR Step Trader strategy is a direct port of the MetaTrader5 expert advisor `atrTrader.mq5`. It combines a fast/slow moving-average filter with Average True Range (ATR) based breakout and pyramiding rules. The port keeps the bar-driven workflow of the original EA: only completed candles are processed, the fast SMA must sit above or below the slow SMA for a fixed number of bars, and every decision is anchored to ATR multiples to normalise distances across markets.

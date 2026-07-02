@@ -1,4 +1,5 @@
 # Стратегия ATR Step Trader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 ATR Step Trader — это порт советника MetaTrader5 `atrTrader.mq5`. Стратегия сочетает фильтрацию тренда по двум скользящим средним и работу с диапазонами, построенными на Average True Range (ATR). Реализация для StockSharp повторяет событийную модель исходного советника: обрабатываются только закрытые свечи, тренд должен подтверждаться серией из `MomentumPeriod` баров, а все расстояния выражаются в кратных величинах ATR, чтобы адаптироваться к волатильности инструмента.

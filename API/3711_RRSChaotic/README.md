@@ -1,4 +1,5 @@
 # RRS Chaotic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original **RRS Chaotic EA** continuously rolls the dice on every tick, choosing random symbols and position sizes before dispatching market orders. The StockSharp port keeps the spirit of controlled chaos by driving entries from a candle stream on the configured security. Each closed candle triggers a new random decision for both direction and volume while mirroring the expert advisor's money-management rules.

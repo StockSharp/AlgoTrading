@@ -1,4 +1,5 @@
 # RRS Tangled EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **RRS Tangled EA Strategy** is a StockSharp port of the MetaTrader 4 expert advisor "RRS Tangled EA". The original system randomly chooses trade direction and symbol, while capping the number of simultaneous orders and protecting floating profit through trailing stops and strict risk limits. The converted version focuses on the currently selected instrument, reproducing the random entry, trailing, and risk management behaviour using the high-level StockSharp API.

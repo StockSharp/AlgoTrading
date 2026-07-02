@@ -1,4 +1,5 @@
 # ATR Step Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 ATR Step Trader 策略移植自 MetaTrader5 专家顾问 `atrTrader.mq5`。策略利用快/慢简单移动平均线进行趋势过滤，并以平均真实波幅（ATR）来衡量入场、加仓以及止损距离。StockSharp 版本沿用原始 EA 的思路：仅在蜡烛收盘后运算、要求趋势连续确认若干根蜡烛，并且所有价差都以 ATR 倍数表示，以便适应不同市场的波动性。

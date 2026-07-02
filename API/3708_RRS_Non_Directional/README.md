@@ -1,4 +1,5 @@
 # RRS Non-Directional Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MetaTrader 4 expert advisor "RRS Non-Directional" to the StockSharp framework. The original EA opens hedged buy and sell baskets depending on the selected trading mode and manages them with virtual stop-loss, take-profit and trailing rules. The StockSharp implementation reproduces the configurable modes, money-risk shutdown and virtual protective logic while adapting the behaviour to the netting portfolios used by StockSharp. Hedge-based modes therefore alternate between long and short exposure instead of keeping simultaneous opposite positions.

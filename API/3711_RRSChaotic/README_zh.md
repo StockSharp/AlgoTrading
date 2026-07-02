@@ -1,4 +1,5 @@
 # RRS Chaotic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 原始的 **RRS Chaotic EA** 会在每个 tick 上随机挑选交易品种和手数，然后立刻下市价单。移植到 StockSharp 后，我们保留了“受控混沌”的思想：策略监听所选证券的 K 线，当一根 K 线收盘时根据随机数决定方向与仓位大小，同时完全复制 MQL4 中的风险管理逻辑。

@@ -1,4 +1,5 @@
 # StellarLite ICT EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 StellarLite ICT EA 策略把 "Stellar Lite" 挑战的人工主观流程迁移到 StockSharp 框架中。策略整合了 ICT (Inner Circle Trader) 的 Silver Bullet 与 2022 Model 两种入场模板，并自动执行原始 MetaTrader EA 中的分批止盈、保本和跟踪止损管理。

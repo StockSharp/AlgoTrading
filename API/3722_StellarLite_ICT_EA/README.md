@@ -1,4 +1,5 @@
 # StellarLite ICT EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 StellarLite ICT EA is a discretionary-style algorithm that translates the "Stellar Lite" prop-firm playbook into StockSharp. The strategy merges two Inner Circle Trader (ICT) entry models — Silver Bullet and the 2022 model — and automates the partial take-profit plan used in the original MetaTrader expert advisor. It works on any instrument that provides candle, price step, and volume step information.

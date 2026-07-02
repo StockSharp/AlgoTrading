@@ -1,4 +1,5 @@
 # MP Candlestick Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **MP Candlestick Strategy** is a conversion of the MetaTrader 5 Expert Advisor `mp candlestick.mq5` into the StockSharp high-level strategy framework. The system evaluates the direction of completed candles and opens trades in the same direction while applying strict risk management. It supports both fixed stop-loss distances expressed in MetaTrader pips and adaptive stop-loss placement derived from the Average True Range (ATR).

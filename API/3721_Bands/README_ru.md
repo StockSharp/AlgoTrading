@@ -1,4 +1,5 @@
 # Стратегия Bands
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит эксперт MetaTrader 5 **Bands.mq5** на высокоуровневый API StockSharp. Алгоритм ждёт закрытую свечу, которая п

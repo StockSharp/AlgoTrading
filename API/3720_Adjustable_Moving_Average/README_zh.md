@@ -1,4 +1,5 @@
 # 可调节移动均线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高级 API 复刻 MetaTrader 中的“Adjustable Moving Average”专家顾问。两条相同算法但不同周期的均线跟踪它们之间的距离。当快速均线以不少于设定阈值的幅度穿越慢速均线时，策略会平掉相反方向的仓位，并在允许的情况下顺势开仓。会话过滤、保护性止损/止盈以及可选的移动止损让移植版本保持与原程序一致的灵活性。
 

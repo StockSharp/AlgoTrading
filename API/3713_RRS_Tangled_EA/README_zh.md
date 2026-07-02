@@ -1,4 +1,5 @@
 # RRS Tangled EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **RRS Tangled EA 策略** 是 MetaTrader 4 专家顾问的 StockSharp 移植版本。原始程序会随机选择交易方向与品种，并限制同时持有的订单数量，同时通过移动止损和资金风险控制来保护浮动收益。移植版在当前选定的品种上复现这一行为，利用 StockSharp 的高级 API 完成随机进场、跟踪止损和资金管理。

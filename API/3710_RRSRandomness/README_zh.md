@@ -1,4 +1,5 @@
 # RRS 随机策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -38,4 +39,3 @@
 - 策略需要订阅 K 线、Level1 报价以及成交数据，请确保所选品种提供这些数据。  
 - 跟踪止损逻辑与 MQL 版本一致：当盈利超过 `TrailingStartPoints + TrailingGapPoints` 个价格步长时启动，并始终保持 `TrailingGapPoints` 的距离。  
 - 风险控制会比较浮动盈亏与设定阈值，一旦亏损超限立即平仓。
-
