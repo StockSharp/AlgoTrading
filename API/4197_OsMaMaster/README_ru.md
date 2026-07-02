@@ -1,4 +1,5 @@
 # Стратегия OsMaMaster
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия OsMaMaster повторяет поведение оригинального советника **OsMaSter_V0** для MetaTrader 4. В основе лежит анализ гистограммы MACD (OsMA) для поиска разворотных точек импульса. Обработка выполняется только по завершённым свечам, что соответствует требованиям репозитория.

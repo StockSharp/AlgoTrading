@@ -1,4 +1,5 @@
 # Стратегия Easiest RSI (ID 4204)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Конверсия из эксперта MetaTrader 4 **"Easiest RSI"** (`MQL/9827/Easiest_RSI.mq4`).
 

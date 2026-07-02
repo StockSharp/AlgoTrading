@@ -1,4 +1,5 @@
 # Стратегия Robot ADX + 2 MA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Robot ADX + 2 MA — порт MetaTrader-советника `Robot_ADX+2MA` на платформу StockSharp. Система сочетает быструю и медленную
@@ -58,4 +59,3 @@ Robot ADX + 2 MA — порт MetaTrader-советника `Robot_ADX+2MA` на
 - `ExponentialMovingAverage(5)` по ценам закрытия.
 - `ExponentialMovingAverage(12)` по ценам закрытия.
 - `AverageDirectionalIndex(6)` с компонентами +DI/-DI и величиной ADX.
-

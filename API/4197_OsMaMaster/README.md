@@ -1,4 +1,5 @@
 # OsMaMaster Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The OsMaMaster strategy reproduces the behaviour of the original **OsMaSter_V0** MetaTrader 4 expert by relying on the MACD histogram (OsMA) to detect momentum reversals. The strategy subscribes to a single candle series and evaluates the most recent OsMA turning point once a candle is closed, which aligns with the repository guideline of working on finished bars only.

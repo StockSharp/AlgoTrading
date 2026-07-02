@@ -1,4 +1,5 @@
 # RandomT 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 专家顾问 “RandomT” 的 StockSharp 移植版。原始 EA 在 ZigZag 摆动与已确认的分形同时出现时触发，并通过 MACD 主线与信号线的比较来过滤信号。移植后的版本沿用了相同思路：监控可配置数量的K线（`BarWatch`），确认五根K线构成的分形就是最近的摆动极值，然后在同一历史K线上比较 MACD 主线与信号线。

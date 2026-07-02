@@ -1,4 +1,5 @@
 # MACD Not So Sample 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MACD Not So Sample 策略源自 MetaTrader 专家顾问 *MACD_Not_So_Sample*。原始机器人在 4 小时 EURUSD 图表上运行，

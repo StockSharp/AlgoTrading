@@ -1,4 +1,5 @@
 # Trailing Stop FrCnSar 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Trailing Stop FrCnSar 策略移植了 MetaTrader 套件中的 **TrailingStopFrCnSARen_v4.mq4** 和 **OrderBalansEN_v3_4.mq4**。原始脚本通过多种方法（最近蜡烛极值、分形、价格“速度”或 Parabolic SAR）调整已有订单的止损，并在图表上展示账户信息。StockSharp 版本在净头寸模式下重写了全部逻辑，同时提供可选的日志输出，以文本方式复刻 OrderBalans 指标的监控面板。

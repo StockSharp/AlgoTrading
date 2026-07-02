@@ -1,4 +1,5 @@
 # Trailing Stop FrCnSar Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Trailing Stop FrCnSar strategy ports the MetaTrader toolkit shipped as **TrailingStopFrCnSARen_v4.mq4** and **OrderBalansEN_v3_4.mq4**. The expert advisor managed existing positions by adjusting their stop-losses using several techniques (previous candles, fractals, price velocity, or Parabolic SAR), while the companion indicator displayed the current account balance and open orders. The StockSharp conversion focuses on net positions and re-implements the trailing logic with high-level API primitives. It also provides an optional order summary logger so the informational overlay from the original indicator remains available in textual form.

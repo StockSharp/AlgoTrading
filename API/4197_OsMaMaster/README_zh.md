@@ -1,4 +1,5 @@
 # OsMaMaster 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 OsMaMaster 策略复现了 MetaTrader 4 顾问 **OsMaSter_V0** 的核心行为。策略依靠 MACD 直方图（OsMA）来识别动量反转，只在每根 K 线收盘后做出决策，以符合仓库只处理已完成蜡烛的要求。

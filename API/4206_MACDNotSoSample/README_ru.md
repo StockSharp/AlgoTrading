@@ -1,4 +1,5 @@
 # Стратегия MACD Not So Sample
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия MACD Not So Sample — это порт MetaTrader-советника *MACD_Not_So_Sample*. Исходный робот работал на графике EURUSD

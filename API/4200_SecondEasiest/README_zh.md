@@ -1,4 +1,5 @@
 # Second Easiest 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Second Easiest 策略是 MetaTrader 专家顾问 *Second_Easiest.mq4* 的 StockSharp 移植版本。原始 EA 在整天内监控当日

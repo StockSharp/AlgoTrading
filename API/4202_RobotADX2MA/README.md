@@ -1,4 +1,5 @@
 # Robot ADX + 2 MA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Robot ADX + 2 MA strategy is a StockSharp port of the MetaTrader expert `Robot_ADX+2MA`. The system combines a fast and a slow
@@ -65,4 +66,3 @@ take-profit protections.
 - `ExponentialMovingAverage(5)` calculated on close prices.
 - `ExponentialMovingAverage(12)` calculated on close prices.
 - `AverageDirectionalIndex(6)` providing +DI/-DI and ADX strength filters.
-

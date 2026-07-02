@@ -1,4 +1,5 @@
 # Easiest RSI Strategy (ID 4204)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the MetaTrader 4 expert advisor **"Easiest RSI"** located in `MQL/9827/Easiest_RSI.mq4`.
 

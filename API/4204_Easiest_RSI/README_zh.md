@@ -1,4 +1,5 @@
 # Easiest RSI 策略（ID 4204）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 源自 MetaTrader 4 专家顾问 **“Easiest RSI”**（`MQL/9827/Easiest_RSI.mq4`）。
 

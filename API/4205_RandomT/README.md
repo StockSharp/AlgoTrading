@@ -1,4 +1,5 @@
 # RandomT Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor "RandomT". The original EA waits for a ZigZag swing that coincides with a confirmed fractal and then filters the entry with a MACD comparison. The StockSharp version keeps the same decision process: it watches a configurable number of candles (`BarWatch`), confirms that a five-bar fractal marks the most recent swing extreme, and only trades when the MACD main line is above or below the signal line on the same historical bar.
