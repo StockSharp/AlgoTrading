@@ -1,4 +1,5 @@
 # 交易量计算策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **交易量计算策略** 复刻了原始 MetaTrader 智能交易系统的逻辑，通过设定止损价与止盈价来计算建议持仓量。策略启动后会读取配置的价格、获取所选证券的当前市价，并结合账户资金推导出风险指标。

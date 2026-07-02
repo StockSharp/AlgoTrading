@@ -1,4 +1,5 @@
 # Dual Stoploss 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 专家顾问 **Dual StopLoss.mq4** 的风险管理逻辑。它不会开仓，而是监控当前持仓所附带的止损委托，在价格距离止损仅剩少量点数时提前平仓，以此减少滑点并保护收益。
 

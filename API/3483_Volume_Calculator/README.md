@@ -1,4 +1,5 @@
 # Volume Calculator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Volume Calculator Strategy** reproduces the logic of the original MetaTrader expert advisor that calculates a recommended trade volume based on stop-loss and take-profit levels. When the strategy starts it reads the configured stop prices, evaluates the current market price of the selected security, and derives the risk metrics using the available portfolio capital.

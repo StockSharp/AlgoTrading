@@ -1,4 +1,5 @@
 # SpaceX Delete StopLoss TakeProfit Button Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the **"DELETE SL_TP"** button from the original MetaTrader panel *SpaceX_Delete_StopLoss_TakeProfit_button.mq5*. It is designed as a utility helper that scans the current portfolio and cancels all active protective stop-loss or take-profit orders that belong to open positions. The conversion targets the StockSharp high-level API and provides a convenient way to remove protective brackets without manually opening each ticket.

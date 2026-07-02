@@ -1,4 +1,5 @@
 # Trading Panel Control Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -39,4 +40,3 @@ Unlike the source Expert Advisor, this port does not send trading orders. Its go
 - No graphical buttons; parameter changes are used instead.
 - No trading actions are sent – the logic is limited to data subscription management and logging.
 - The timeframe list is identical to the original panel, ensuring familiar behaviour for traders migrating from MT4.
-

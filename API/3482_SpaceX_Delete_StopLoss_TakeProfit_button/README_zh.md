@@ -1,4 +1,5 @@
 # SpaceX 删除止损止盈按钮策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 面板 *SpaceX_Delete_StopLoss_TakeProfit_button.mq5* 中的 **“DELETE SL_TP”** 按钮。它作为一个实用工具，扫描投资组合中的持仓，并取消与这些持仓相关的所有止损和止盈保护订单。转换版本基于 StockSharp 的高级 API，帮助交易者在不逐一打开订单的情况下快速清除保护性挂单。

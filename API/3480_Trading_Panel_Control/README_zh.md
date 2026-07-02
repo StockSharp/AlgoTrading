@@ -1,4 +1,5 @@
 # Trading Panel 控制策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -39,4 +40,3 @@
 - 不再提供图形按钮，而是通过参数控制。
 - 不发送任何交易指令，只负责数据订阅与日志反馈。
 - 支持的周期列表与原脚本一致，方便从 MT4 迁移。
-

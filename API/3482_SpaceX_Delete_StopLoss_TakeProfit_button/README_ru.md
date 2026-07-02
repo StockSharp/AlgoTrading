@@ -1,4 +1,5 @@
 # Стратегия SpaceX Delete StopLoss TakeProfit Button
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия повторяет работу кнопки **«DELETE SL_TP»** из оригинального советника MetaTrader *SpaceX_Delete_StopLoss_TakeProfit_button.mq5*. Она служит утилитой, которая сканирует текущий портфель и снимает все защитные приказы стоп-лосс и тейк-профит, связанные с открытыми позициями. Конверсия построена на высокоуровневом API StockSharp и позволяет мгновенно очистить защитные приказы без ручного поиска заявок.

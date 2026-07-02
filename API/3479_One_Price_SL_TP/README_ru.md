@@ -1,5 +1,5 @@
 # Стратегия «Один ценовой уровень для SL/TP»
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Утилита воспроизводит скрипт MetaTrader «One Price SL TP» в экосистеме StockSharp. Стратегия не открывает сделки самостоятельно, а наблюдает за текущей позицией по выбранному инструменту и следит, чтобы обе защитные заявки соответствовали единому целевому уровню, заданному пользователем.
 

@@ -1,4 +1,5 @@
 # Scalping Assistant
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Scalping Assistant** strategy is a direct conversion of the MetaTrader 4 expert advisor "Scalper Assistant v1.0". It does not generate entries on its own. Instead, it monitors open positions on the configured security and manages protective orders in a MetaTrader-like fashion.
 

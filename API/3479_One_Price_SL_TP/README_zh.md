@@ -1,5 +1,5 @@
 # 单一价格止损/止盈策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该实用策略在 StockSharp 中复刻了 MetaTrader 脚本“One Price SL TP”。策略本身不会主动开仓，而是监控选定品种的当前持仓，确保两个保护性订单都被调至用户指定的同一个目标价格。
 

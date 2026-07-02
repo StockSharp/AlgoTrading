@@ -1,4 +1,5 @@
 # Scalping Assistant
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Scalping Assistant** 策略是 MetaTrader 4 指标 "Scalper Assistant v1.0" 的直接移植版本。策略本身不会开仓，而是监控指定标的的持仓，并以 MetaTrader 的方式管理保护性订单。
 

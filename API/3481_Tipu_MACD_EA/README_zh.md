@@ -1,4 +1,5 @@
 # Tipu MACD EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是将 MQL4 上的 **Tipu MACD EA** 迁移到 StockSharp 的高层 API 实现。策略在单一品种上运行，依靠 MACD 指标给出的信号，并保留了原始专家顾问的主要功能：

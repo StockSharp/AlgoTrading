@@ -1,4 +1,5 @@
 # Стратегия Tipu MACD EA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Стратегия является портом эксперт-советника **Tipu MACD EA** с MQL4 на StockSharp. Торговля ведётся по одному инструменту с использованием сигналов индикатора MACD и включает функциональность, реализованную в оригинале:

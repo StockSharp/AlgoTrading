@@ -1,5 +1,5 @@
 # 平均蜡烛交叉策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略重现了 MetaTrader 上的 “Average candle cross” 专家顾问。它只在上一根已完成的蜡烛向上或向下穿越均线、并且两组趋势均线已经指向同一方向时开仓。系统始终只持有一笔仓位，入场后立即根据设定的点值距离放置止损和止盈，使行为与原始的逐棒触发逻辑一致。
 

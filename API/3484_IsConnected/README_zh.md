@@ -1,4 +1,5 @@
 # IsConnected 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 * **来源**：由 MetaTrader 5 脚本 `IsConnected.mq5`（目录 `MQL/35056`）转换而来。

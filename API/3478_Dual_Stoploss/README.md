@@ -1,4 +1,5 @@
 # Dual Stoploss Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the behaviour of the MetaTrader expert **Dual StopLoss.mq4**. It acts as a risk-management layer: it monitors the protective stop-loss orders attached to open positions and closes those positions a few points before the stop would trigger. The early exit is designed to avoid negative slippage on highly volatile moves while still respecting the trader's initial stop placement.
 

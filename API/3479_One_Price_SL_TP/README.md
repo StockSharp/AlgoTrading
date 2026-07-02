@@ -1,5 +1,5 @@
 # One Price Stop-Loss / Take-Profit Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This utility strategy replicates the MetaTrader script "One Price SL TP" inside StockSharp. Instead of opening trades, the algorithm watches the current position on the configured instrument and makes sure that both protective orders are aligned with a single target price specified by the user.
 

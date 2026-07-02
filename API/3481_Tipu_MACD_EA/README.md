@@ -1,4 +1,5 @@
 # Tipu MACD EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy is a high-level StockSharp port of the **Tipu MACD EA** from MQL4. It trades a single symbol using MACD-based signals and mirrors the original expert advisor features:
