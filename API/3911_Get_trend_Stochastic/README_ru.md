@@ -1,4 +1,5 @@
 # Стратегия Get trend Stochastic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой реализацию на высокоуровневом API StockSharp оригинального советника MetaTrader 4 **Get trend.mq4**.
 Основная работа ведётся на таймфрейме M15, при этом направление тренда подтверждается по H1. Используются две сглаженные

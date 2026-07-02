@@ -1,4 +1,5 @@
 # TRAYLERv Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **TRAYLERv Strategy** is a direct conversion of the MetaTrader 4 expert advisor *TRAYLERv*. The original code acted as an automated trade manager rather than a signal generator; it continuously adjusted protective orders for existing positions using Bill Williams fractals and allowed traders to clean up outstanding pending orders. This StockSharp port preserves the same behaviour while leveraging the high-level API for order management and candle subscriptions.

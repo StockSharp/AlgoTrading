@@ -1,4 +1,5 @@
 # FX-CHAOS Scalp MT4 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 FX-CHAOS Scalp MT4 策略是 MetaTrader 4 专家顾问的直接移植版本，它结合了 Awesome Oscillator（神奇震荡指标）与基于分形的 ZigZag 水平。StockSharp 版本完整保留了原始系统的多周期结构：小时级别的蜡烛驱动交易信号与风控，日线蜡烛提供趋势过滤。两个内置跟踪器通过扫描五根蜡烛的组合重建“基于分形的 ZigZag”指标，依次记录新的摆动高点和低点。

@@ -1,4 +1,5 @@
 # Get trend 随机指标策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 4 专家顾问 **Get trend.mq4** 的 StockSharp 高级 API 版本。它以 M15 周期作为主要信号源，并使用 H1
 周期确认大方向。两个平滑移动平均线（SMMA）配合双随机指标用于寻找靠近慢速均线的反转突破机会。风险控制沿用原版

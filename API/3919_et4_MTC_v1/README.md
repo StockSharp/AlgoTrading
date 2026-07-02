@@ -1,4 +1,5 @@
 # Et4 MTC v1 Strategy (StockSharp Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 - **Origin**: MetaTrader 4 expert advisor `et4_MTC_v1.mq4` from the GlobeInvestFund collection.

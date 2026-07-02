@@ -1,4 +1,5 @@
 # Стратегия Universal Investor
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия является прямой конверсией советника **Universal Investor** с платформы MetaTrader 4. Она сочетает экспоненциальную скользящую среднюю (EMA) и линейно-взвешенную скользящую среднюю (LWMA) для подтверждения краткосрочного тренда и торгует одной позицией с адаптивным размером лота.
 

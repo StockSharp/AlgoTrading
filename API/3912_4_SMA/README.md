@@ -1,4 +1,5 @@
 # 4 SMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The 4 SMA strategy replicates the MetaTrader expert advisor **4 SMA.mq4**. It works on 30-minute candles calculated with median prices and compares four simple moving averages (5, 20, 40, and 60 periods) to detect momentum breakouts. The StockSharp port keeps the single-position behaviour of the original code and uses high-level API helpers for market entries and risk management.

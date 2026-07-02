@@ -1,4 +1,5 @@
 # Get trend Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy is a StockSharp high-level port of the MetaTrader 4 expert advisor **Get trend.mq4**. It evaluates the M15 chart for
 entries, validates the broader trend on H1, and relies on two smoothed moving averages together with a pair of stochastic

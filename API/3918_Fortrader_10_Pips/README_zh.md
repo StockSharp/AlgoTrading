@@ -1,4 +1,5 @@
 # Fortrader 10 Pips 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Fortrader 10 Pips 策略** 是 MetaTrader 4 智能交易系统 `10pips.mq4`（编号 8074）的 StockSharp 版本。机器人同时保持一个多头和一个空头头寸，每个方向都使用以品种点值为单位的固定止盈、止损和移动止损距离。

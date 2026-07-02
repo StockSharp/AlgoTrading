@@ -1,4 +1,5 @@
 # Universal Investor 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略直接移植自 MetaTrader 4 平台上的 **Universal Investor** 智能交易系统。通过结合指数移动平均线（EMA）与线性加权移动平均线（LWMA）来确认短期趋势，只保持单向持仓并根据风险动态调整下单手数。
 

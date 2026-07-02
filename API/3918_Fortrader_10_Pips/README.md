@@ -1,4 +1,5 @@
 # Fortrader 10 Pips Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Fortrader 10 Pips Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `10pips.mq4` (strategy ID 8074). The robot simultaneously keeps one long and one short position open. Each leg uses fixed take-profit, stop-loss and trailing-stop distances measured in symbol points.

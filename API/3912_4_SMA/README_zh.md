@@ -1,4 +1,5 @@
 # 4 SMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 4 SMA 策略复刻了 MetaTrader 专家顾问 **4 SMA.mq4**。策略在使用中值价(最高价与最低价的平均值)计算的 30 分钟K线上运行，并比较 5、20、40、60 四条简单移动平均线来捕捉动量突破。StockSharp 版本保持了原始程序一次只持有一个方向仓位的行为，并使用高层 API 来完成下单与风控。

@@ -1,4 +1,5 @@
 # TRAYLERv 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **TRAYLERv 策略** 是 MetaTrader 4 专家顾问 *TRAYLERv* 的完整移植版本。原始 EA 的定位是“仓位管理器”而不是信号生成器：它持续监控现有持仓，利用比尔·威廉姆斯分形来调整保护性止损，同时提供一键清理挂单的能力。该 StockSharp 版本在保留原始逻辑的基础上，使用高级 API 管理订单并订阅蜡烛图数据。

@@ -1,4 +1,5 @@
 # Et4 MTC v1 策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - **来源**：MetaTrader 4 专家顾问 `et4_MTC_v1.mq4`。
