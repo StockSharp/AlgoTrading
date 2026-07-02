@@ -1,4 +1,5 @@
 # Bull & Bear Candle Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reacts to strong bullish and bearish candles and opens market positions in the same direction. It uses an independent martingale sequence for each side: long positions scale the volume with the *Bull Multiplier*, while short positions use the *Bear Multiplier*. Protective stop-loss and take-profit distances are also configured separately for each direction, allowing precise control over the asymmetrical behaviour that the original MQL expert advisor exposes.

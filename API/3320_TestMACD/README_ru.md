@@ -1,4 +1,5 @@
 # Стратегия Test MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Test MACD** — это точная конвертация советника MetaTrader `TestMACD` на платформу StockSharp с использованием высокоуровневого API. Стратегия применяет индикатор MACD для отслеживания смены импульса и совершает сделки, когда основная линия MACD пересекает сигнальную на закрытии свечи. Инструмент и таймфрейм задаются параметром `CandleType`.

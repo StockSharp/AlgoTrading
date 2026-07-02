@@ -1,4 +1,5 @@
 # Стратегия «Head and Shoulders»
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Head and Shoulders Strategy** — адаптация советника MetaTrader «HEAD AND SHOULDERS» (MQL ID 26066). Исходный робот определял фигуру «голова и плечи», фильтровал сигналы с помощью индикаторов Momentum, MA и MACD, а также управлял позициями посредством трейлинг-стопа, контроля по капиталу и переноса стопа в безубыток. Версия на StockSharp реализует основной торговый алгоритм на высокоуровневом API, используя привязку индикаторов и сервис `StartProtection` для автоматического управления рисками.

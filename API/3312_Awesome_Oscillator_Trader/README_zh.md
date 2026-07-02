@@ -1,5 +1,5 @@
 # Awesome Oscillator Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Awesome Oscillator Trader 策略是 MetaTrader 平台 "AwesomeOscTrader" 专家的完整复刻版本。策略同时利用 Bill Williams 的 Awesome Oscillator、布林带宽度过滤以及随机指标，在波动率被压缩之后捕捉向上的爆发行情。默认针对单一货币对的 1 小时周期（如 EURUSD），与原始 EA 的使用说明保持一致。
 

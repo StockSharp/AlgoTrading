@@ -1,4 +1,5 @@
 # Test MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Test MACD 策略** 是 MetaTrader `TestMACD` 专家顾问在 StockSharp 高级 API 中的完整复刻版。策略使用移动平均收敛散度（MACD）指标识别动量变化，在每根收盘的 K 线中，当 MACD 主线与信号线发生交叉时执行交易。策略通过 `CandleType` 参数控制所订阅的单一标的及时间框架。

@@ -1,4 +1,5 @@
 # ZigZag Climber 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 fxDreema 生成的 ZigZag Climber 智能交易系统只有三个模块：一个 **No trade** 过滤器以及紧随其后的 **Buy now**、**Sell now** 操作。当终端确认当前没有持仓时，会立即按预设的止损/止盈距离下达一笔市价买单，并且不再做任何判断就挂出等量的市价卖单。两笔交易采用完全相同的风险设置，旨在形成对冲组合。

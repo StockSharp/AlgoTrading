@@ -1,4 +1,5 @@
 # 多空蜡烛马丁策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略针对强烈的多头和空头蜡烛做出反应，并在同方向开仓。多头与空头各自维护独立的马丁格尔序列：亏损的多头交易会使用“多头放大倍数”增加下一笔多头仓位，而亏损的空头则使用“空头放大倍数”。止损与止盈距离也分别配置，从而忠实再现原始 MQL EA 的非对称参数。

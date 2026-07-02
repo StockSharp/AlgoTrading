@@ -1,5 +1,5 @@
 # Стратегия Awesome Oscillator Trader
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Awesome Oscillator Trader — это точная конверсия советника MetaTrader «AwesomeOscTrader». В её основе лежит индикатор Bill Williams Awesome Oscillator, фильтр ширины полос Боллинджера и стохастик. Цель — находить моменты, когда после затухания волатильности возникает импульсный пробой. Базовый таймфрейм — часовые свечи по одной валютной паре (например, EURUSD), что полностью повторяет оригинальные настройки.
 

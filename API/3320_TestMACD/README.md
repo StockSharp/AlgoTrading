@@ -1,4 +1,5 @@
 # Test MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Test MACD Strategy** is a faithful conversion of the MetaTrader `TestMACD` expert advisor into the StockSharp high-level API. It uses the Moving Average Convergence Divergence (MACD) indicator to detect momentum shifts and executes trades whenever the MACD line crosses the signal line on closed candles. The strategy operates on a single instrument and timeframe supplied through the `CandleType` parameter.

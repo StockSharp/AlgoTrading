@@ -1,5 +1,5 @@
 # CorrTime 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 CorrTime 策略是对 MetaTrader 同名专家顾问的移植。它通过比较收盘价与时间顺序之间的相关性来捕捉动能的增强或衰减。所有决策都基于已经完成的 K 线，并叠加三重过滤条件：
 

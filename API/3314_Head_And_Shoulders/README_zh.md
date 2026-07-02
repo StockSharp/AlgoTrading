@@ -1,4 +1,5 @@
 # 头肩形策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **头肩形策略**直接移植自 MetaTrader 专家顾问“HEAD AND SHOULDERS”（MQL ID 26066）。原始 EA 通过识别头肩形形态，并结合动量、均线与 MACD 过滤条件，同时提供移动止损、权益保护和保本处理。本版本在 StockSharp 高级 API 上重写交易逻辑，使用指标绑定和 `StartProtection` 自动化风险控制，保留核心的形态识别与突破入场思想。

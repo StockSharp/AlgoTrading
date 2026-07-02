@@ -1,4 +1,5 @@
 # Head and Shoulders Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Head and Shoulders Strategy** is a direct port of the MetaTrader expert advisor "HEAD AND SHOULDERS" (MQL ID 26066). The original robot combines head-and-shoulders pattern recognition with momentum, moving average, and MACD filters, while also managing positions with trailing stops, equity protection, and break-even rules. This StockSharp implementation focuses on the discretionary logic of the entry and exit engine using the high-level API, providing clean bindings to indicators and automated risk management via `StartProtection`.

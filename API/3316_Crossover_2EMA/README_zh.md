@@ -1,5 +1,5 @@
 # Crossover 2 EMA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 中的 “Crossover_2EMA” 专家顾问，通过比较快慢两条指数移动平均线（EMA）的收盘价来做出交易决策。当快线 EMA 上穿慢线 EMA 时建立多头仓位；当快线重新跌破慢线时立即反向建立空头仓位，从而始终保持与当前趋势方向一致。
 
