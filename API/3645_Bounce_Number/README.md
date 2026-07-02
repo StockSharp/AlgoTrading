@@ -1,4 +1,5 @@
 # Bounce Number Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Bounce Number Strategy** is a StockSharp port of the MetaTrader indicator `BounceNumber_V0.mq4` / `BounceNumber_V1.mq4`. The original tool was a visual analyzer that counted how many times price touched a symmetric channel before breaking out of it. This C# strategy recreates the bounce counter with the high-level API, stores the results in a distribution table, and reports every completed cycle through the strategy log. The implementation stays faithful to the MetaTrader logic while adapting it to StockSharp's event-driven pipeline.

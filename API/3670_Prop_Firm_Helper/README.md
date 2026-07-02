@@ -1,4 +1,5 @@
 # Prop Firm Helper Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Prop Firm Helper Strategy is a Donchian channel breakout system converted from the MetaTrader expert advisor "Prop Firm Helper". The strategy submits stop orders above the recent range for long entries and below the range for short entries. It automatically enforces prop firm challenge rules by stopping trading after the target equity is reached or when the daily loss limit is breached.

@@ -1,4 +1,5 @@
 # KA-Gold Bot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **KA-Gold Bot** 策略移植自 MetaTrader 专家顾问 “KA-Gold Bot”。策略基于自定义 Keltner 通道的突破，并结合 EMA 趋势过滤器。移植版本使用 StockSharp 的高级蜡烛订阅和参数系统，保持可视化配置与优化能力。
 

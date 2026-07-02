@@ -1,4 +1,5 @@
 # Neural Network Template Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the behaviour of the MQL5 expert advisor template that feeds RSI and MACD features into a neural network. Because StockSharp does not ship with the custom network loader from the original project, the strategy replaces the black-box network with a deterministic scoring model while keeping the same market structure and risk controls. The goal is to capture momentum when both RSI and MACD agree on direction and the projected move is large enough to justify a trade.

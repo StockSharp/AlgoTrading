@@ -1,4 +1,5 @@
 # Close on Profit or Loss in Account Currency
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the MetaTrader expert advisor *Close_on_PROFIT_or_LOSS_inAccont_Currency*. It continuously monitors the portfolio equity that the strategy is attached to and, once a configured profit target or drawdown floor is reached, it liquidates every open position and cancels all pending orders managed by the strategy. The class relies on StockSharp's high level API: a candle subscription provides the heartbeat, `CancelActiveOrders()` removes working orders, and `ClosePosition()` flattens the exposure through market orders.
 

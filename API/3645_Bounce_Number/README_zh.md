@@ -1,4 +1,5 @@
 # Bounce Number 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Bounce Number Strategy** 是 MetaTrader 指标 `BounceNumber_V0.mq4` / `BounceNumber_V1.mq4` 的 StockSharp 版本。原始指标会在图表上绘制一个统计表，用来展示价格在突破通道之前在通道内往返多少次。C# 实现保留了相同的统计思想：策略订阅蜡烛线，在高、低通道之间检测交替触碰次数，并把每个循环的结果保存到分布表中。

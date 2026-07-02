@@ -1,4 +1,5 @@
 # 神经网络模板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略来源于 MQL5 神经网络模板专家顾问。由于 StockSharp 环境缺少原始项目中的自定义网络加载器，我们使用可解释的得分模型来替代黑盒网络，同时保持原策略的结构、指标和风险控制。目标是在 RSI 与 MACD 指向同一方向且预计波动幅度足够时捕捉动能行情。

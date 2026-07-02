@@ -1,4 +1,5 @@
 # Grid EA Pro 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Grid EA Pro 策略** 复刻了原始 MT4 智能交易系统的主要逻辑：通过 RSI 或定时突破信号开启初始仓位，并在价格回撤时以网格方式加仓，同时使用虚拟止损、止盈、保本和移动止损等保护机制。策略针对净持仓账户设计，因此始终保持单一净仓位，并在开仓时自动平掉反向持仓。

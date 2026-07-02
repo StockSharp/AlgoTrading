@@ -1,4 +1,5 @@
 # 指数测试策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **指数测试策略** 是 MetaTrader 5 "Indices Tester" 专家顾问的移植版本。系统专注于指数的日内交易，在极短的时间窗口内寻找单次做多机会，并完全依赖时间过滤器和操作限制：

@@ -1,4 +1,5 @@
 # Стратегия KA-Gold Bot
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **KA-Gold Bot** — это порт советника MetaTrader «KA-Gold Bot». Стратегия торгует пробои пользовательского канала Кельтнера и подтверждает сигналы трендовыми фильтрами EMA. Реализация использует высокоуровневые подписки StockSharp, чтобы сохранить параметры управляемыми через интерфейс и готовыми к оптимизации.
 

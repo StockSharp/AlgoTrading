@@ -1,4 +1,5 @@
 # 按账户货币的盈利或亏损平仓
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自 MetaTrader 专家顾问 *Close_on_PROFIT_or_LOSS_inAccont_Currency*。它持续监控所连接投资组合的当前权益值，一旦达到设定的盈利目标或跌破亏损底线，就会取消所有挂单并平掉全部持仓。实现基于 StockSharp 的高级 API：蜡烛订阅提供“心跳”，`CancelActiveOrders()` 撤销挂单，而 `ClosePosition()` 通过市价单完成平仓。
 

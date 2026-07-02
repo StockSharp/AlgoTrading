@@ -1,4 +1,5 @@
 # Balance Drawdown In MT4 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 4 的 **BalanceDrawdownInMT4** 专家顾问迁移到 StockSharp 高级 API。启动后立刻买入一手多单，并持续监控账户权益相对历史峰值的回撤。
 

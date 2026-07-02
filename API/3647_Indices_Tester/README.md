@@ -1,4 +1,5 @@
 # Indices Tester Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Indices Tester Strategy** is a direct port of the MetaTrader 5 expert advisor "Indices Tester". The system focuses on intraday index trading where a single long position is opened during a very narrow trading window. Trading decisions rely purely on time filters and operational limits:

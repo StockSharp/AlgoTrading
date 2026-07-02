@@ -1,4 +1,5 @@
 # Стратегия Balance Drawdown In MT4
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MetaTrader 4 **BalanceDrawdownInMT4** на высокоуровневый API StockSharp. После запуска она сразу открывает одну длинную позицию и постоянно измеряет просадку счёта относительно максимального достигнутого баланса.
 

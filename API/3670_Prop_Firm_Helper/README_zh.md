@@ -1,4 +1,5 @@
 # Prop Firm Helper 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Prop Firm Helper 策略源自 MetaTrader 的 "Prop Firm Helper" 智能交易系统，使用唐奇安通道突破逻辑。策略在价格突破近期高点时挂买入止损单，在跌破近期低点时挂卖出止损单，并在达到挑战目标或触及每日亏损限制后自动停止交易。
