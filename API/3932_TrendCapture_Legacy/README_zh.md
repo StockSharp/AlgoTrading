@@ -1,4 +1,5 @@
 # Trend Capture Legacy 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Trend Capture Legacy 策略** 将 MetaTrader 专家顾问 `TrendCapture.mq4` 迁移到 StockSharp 的高级 API。移植版完整保留原始规则：以 Parabolic SAR 的位置决定方向，结合低 ADX 过滤，并辅以固定止损/止盈及保本管理。
 

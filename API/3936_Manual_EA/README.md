@@ -1,4 +1,5 @@
 # Manual EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Manual EA Strategy** is a one-to-one StockSharp high-level API conversion of the MetaTrader 4 expert advisor *Manual_EA.mq4* (folder `MQL/8159`). The original system issues discretionary buy or sell orders whenever the Stochastic oscillator leaves extreme zones. The StockSharp port keeps the same 5-3-3 oscillator configuration, automatically nets existing exposure before placing the next market order, and exposes the common money-management options through strategy parameters.
 

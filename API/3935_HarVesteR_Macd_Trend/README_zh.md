@@ -1,4 +1,5 @@
 # HarVesteR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 HarVesteR 策略源自同名的 MetaTrader 智能交易系统，属于典型的趋势跟随模型。策略通过 MACD 动能确认与两条简单移动平均线配合，判定市场方向并管理持仓。可选的 ADX 滤波器能够在趋势充足时才允许开仓，从而减少震荡期的交易。

@@ -1,4 +1,5 @@
 # Up3x1 Investor Range Filter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct port of the MetaTrader 4 expert adviser **up3x1_Investor**. It trades a single instrument using completed candles from a configurable timeframe (H1 by default). The port replicates the original logic with StockSharp high-level APIs and adds clear risk-management parameters.

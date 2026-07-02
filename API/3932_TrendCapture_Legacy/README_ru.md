@@ -1,4 +1,5 @@
 # Стратегия Trend Capture Legacy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Trend Capture Legacy** — перенос советника MetaTrader `TrendCapture.mq4` на высокоуровневый API StockSharp. Перевод сохраняет исходную логику: направление задаёт индикатор Parabolic SAR, фильтр по слабому тренду выполняет ADX, а управление позицией включает фиксированные уровни и переход в безубыток.
 

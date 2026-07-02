@@ -1,4 +1,5 @@
 # VQ EA
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 - 将 MetaTrader 专家顾问“VQ_EA”迁移到 StockSharp 平台。

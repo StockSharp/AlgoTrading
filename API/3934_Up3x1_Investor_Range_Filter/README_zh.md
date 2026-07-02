@@ -1,4 +1,5 @@
 # Up3x1 Investor 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略为 MetaTrader 4 专家顾问 **up3x1_Investor** 的移植版本。策略在可配置的周期（默认 1 小时）上处理已收盘的 K 线，并使用 StockSharp 的高级 API 重现原始规则，同时提供明确的风险控制参数。

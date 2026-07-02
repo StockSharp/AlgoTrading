@@ -1,4 +1,5 @@
 # Trend Capture Legacy Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Trend Capture Legacy Strategy** ports the MetaTrader expert `TrendCapture.mq4` to the high-level StockSharp API. The C# version keeps the original rule set based on Parabolic SAR direction, a low ADX filter and simple break-even money management.
 

@@ -1,4 +1,5 @@
 # Manual EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Manual EA 策略** 是 MetaTrader 4 智能交易系统 *Manual_EA.mq4*（目录 `MQL/8159`）的 StockSharp 高级 API 复刻版。原始脚本在随机指标（Stochastic）离开超买 / 超卖区间时发出手动交易信号。本移植版本保持 5-3-3 的随机指标配置，在下达新的市价单之前会自动对冲现有仓位，并将常见的资金管理选项暴露为可调参数。
 

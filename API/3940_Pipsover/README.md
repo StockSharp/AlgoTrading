@@ -1,4 +1,5 @@
 # Pipsover 8167 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Pipsover 8167** strategy is a StockSharp port of the MetaTrader 4 expert advisor `Pipsover.mq4` distributed with build 8167. The expert searches for strong Chaikin oscillator spikes that appear immediately after a pullback to the 20-period simple moving average on the previous candle. When that combination happens, the script opens a position in the direction of the impulse and protects it with fixed stop-loss and take-profit distances (70 and 140 points respectively in the original MQL code). This C# version rebuilds the exact same logic using high-level StockSharp components so that no direct buffer access is required.

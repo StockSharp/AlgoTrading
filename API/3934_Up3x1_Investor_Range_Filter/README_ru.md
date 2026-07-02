@@ -1,4 +1,5 @@
 # Стратегия Up3x1 Investor
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Это порт советника MetaTrader 4 **up3x1_Investor**. Стратегия торгует одним инструментом по закрытым свечам выбранного таймфрейма (по умолчанию H1). В реализации для StockSharp сохранены все ключевые правила оригинала и добавлены наглядные параметры управления рисками.

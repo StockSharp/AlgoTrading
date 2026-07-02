@@ -1,4 +1,5 @@
 # HarVesteR MACD Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The HarVesteR strategy is a trend-following system converted from the original MetaTrader advisor. It combines MACD momentum confirmation with two simple moving averages that define the trend direction and manage trailing exits. An optional ADX filter keeps trading activity focused on strong directional moves.

@@ -1,4 +1,5 @@
 # Pipsover 8167 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Pipsover 8167** 是 MetaTrader 4 智能交易系统 `Pipsover.mq4`（8167 版本）的 StockSharp 移植版本。原始脚本在上一根 K 线回撤到 20 周期简单移动平均线之后，寻找 Chaikin 振荡器的强烈尖峰，并按照冲量方向开仓，同时固定止损 70 点、止盈 140 点。本 C# 实现完全复刻该逻辑，使用 StockSharp 的高层 API，无需直接访问指标缓冲区。
