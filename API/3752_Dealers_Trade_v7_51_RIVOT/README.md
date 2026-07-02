@@ -1,4 +1,5 @@
 # Dealers Trade v7.51 RIVOT (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 
@@ -74,4 +75,3 @@ All parameters are configured through `StrategyParam<T>` so they can be optimize
 - `CS/DealersTradeV751RivotStrategy.cs` – Main C# implementation.
 - `README_zh.md` – Chinese documentation.
 - `README_ru.md` – Russian documentation.
-

@@ -1,4 +1,5 @@
 # Frank Ud Minimal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This sample ports the classic **Frank Ud** MetaTrader expert advisor into StockSharp using the high-level strategy API. The original MQL script runs a hedged martingale grid that keeps adding positions every time price moves against the latest entry. Profits are locked once the most recent (and therefore largest) order earns a fixed number of pips, after which *all* trades on that side are closed simultaneously.
 

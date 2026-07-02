@@ -1,4 +1,5 @@
 # Cs2011 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Cs2011 策略改编自原始的 `cs2011.mq5` 专家顾问，是一套基于 MACD 的反转系统。它在每根完成的 K 线收盘时检查 MACD 柱状图与信号线，寻找零轴附近的衰竭形态。C# 版本保持了核心的触发条件，并使用 StockSharp 的高级 API 进行封装。

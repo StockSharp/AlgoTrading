@@ -1,4 +1,5 @@
 # TradingLab Best MACD Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the MetaTrader expert advisor "TradingLab_Best_MACD_Strategy" using StockSharp's high-level API. It combines moving average structure, MACD crossovers, and dynamic support/resistance checks to open directional trades that align with momentum and recent price reactions.
 

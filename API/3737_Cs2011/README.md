@@ -1,4 +1,5 @@
 # Cs2011 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Cs2011 strategy is a reversal system translated from the original `cs2011.mq5` expert advisor. It monitors the MACD histogram and signal line on every finished candle and searches for exhaustion patterns around the zero line. The C# port keeps the core timing rules while exposing them through the high level StockSharp API.

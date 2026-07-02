@@ -1,4 +1,5 @@
 # MultiStrategyEA v1.2 (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level StockSharp port of the MetaTrader expert advisor **MultiStrategyEA v1.2**. The original EA aggregates seven oscillators and manages multiple grids of orders. The StockSharp version focuses on the signal generation aspect and trades a single net position that is driven by a consensus between the indicator modules. Order management, money management profiles, grids and recovery features from the MT5 code are intentionally omitted to keep the implementation aligned with StockSharp's high-level API and to maintain clarity.

@@ -1,4 +1,5 @@
 # TradingLab 最佳 MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略使用 StockSharp 高阶 API 复刻 MetaTrader 专家顾问 "TradingLab_Best_MACD_Strategy"。策略把移动平均趋势过滤、MACD 金叉死叉以及动态支撑/阻力检测组合在一起，以顺势参与价格动能并利用最近的价格反应。
 
@@ -28,4 +29,4 @@
 
 - 支撑与阻力的检测遵循原策略思路：观察上一根 K 线是否突破 20 周期盒子的高点或低点，一旦突破即重置倒计时。
 - 每次进场都会重新计算止损与止盈，并在后续 K 线中根据高低点监控，实现可预测的出场行为。
-- 保护管理依赖品种的 `PriceStep`。若品种未提供有效步长，将回退到 0.0001。 
+- 保护管理依赖品种的 `PriceStep`。若品种未提供有效步长，将回退到 0.0001。

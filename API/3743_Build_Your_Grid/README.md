@@ -1,4 +1,5 @@
 # Build Your Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Build Your Grid Strategy** is a direct conversion of the MetaTrader expert advisor "BuildYourGridEA". It keeps two indepen
 dent ladders of market positions on the long and short side, adds new layers when price advances by a configurable number of pip

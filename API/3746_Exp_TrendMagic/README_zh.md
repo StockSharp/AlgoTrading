@@ -1,4 +1,5 @@
 # Exp TrendMagic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Exp TrendMagic 策略是 MetaTrader 5 智能交易系统 “Exp_TrendMagic” 的等价移植版本。策略持续监控 TrendMagic 指标的颜色切换，该指标由 CCI（商品通道指数）与 ATR（平均真实波幅）通道组合而成。当颜色发生转变时，系统会平掉相反方向的持仓，并在允许的情况下按新趋势方向开仓。

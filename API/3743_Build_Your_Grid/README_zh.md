@@ -1,4 +1,5 @@
 # Build Your Grid 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Build Your Grid 策略** 是 MetaTrader 专家顾问 “BuildYourGridEA” 的直接移植版本。它分别维护多头和空头两组市价仓位，当价格按
 照设定的点差间距移动时添加新的网格层，并可按几何或指数方式放大下单手数。当组合利润达到目标、浮亏超过允许的点数，或

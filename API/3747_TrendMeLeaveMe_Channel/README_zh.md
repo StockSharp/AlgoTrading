@@ -1,5 +1,5 @@
 # TrendMeLeaveMe 挂单通道策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略在 StockSharp 平台上复刻了 MetaTrader 的 “TrendMeLeaveMe” 专家顾问。原版本依赖交易者在图表上手工绘制趋势线并在价格靠近时挂出突破性 stop 单。本实现使用线性回归指标自动生成通道中轴，同时按照原始 EA 的设置对上、下轨做固定点差偏移。
 

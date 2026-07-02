@@ -1,4 +1,5 @@
 # Стратегия TradingLab Best MACD
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит эксперта MetaTrader "TradingLab_Best_MACD_Strategy" на высокоуровневый API StockSharp. Она сочетает фильтр по скользящей средней, сигналы MACD и проверку реакций цены на локальные уровни поддержки/сопротивления.
 

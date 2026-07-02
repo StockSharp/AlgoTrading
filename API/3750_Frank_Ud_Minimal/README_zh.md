@@ -1,4 +1,5 @@
 # Frank Ud 极简策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本示例将经典的 **Frank Ud** MetaTrader 专家顾问移植到 StockSharp，并使用高阶策略 API 复刻其逻辑。原始 MQL 程序通过对冲模式维护一组做多网格和一组做空网格，当价格向最新仓位不利移动时不断加仓；一旦最新（也是手数最大的）订单获得固定点数利润，就立即同时平掉该方向的所有仓位。
 

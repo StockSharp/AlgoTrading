@@ -1,4 +1,5 @@
 # Dealers Trade v7.51 RIVOT（C#）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 
@@ -74,4 +75,3 @@ Dealers Trade v7.51 最初是 MetaTrader 4 平台上的 `Dealers_Trade_v_7.51_RI
 - `CS/DealersTradeV751RivotStrategy.cs` —— C# 策略实现。
 - `README.md` —— 英文说明文档。
 - `README_ru.md` —— 俄文说明文档。
-

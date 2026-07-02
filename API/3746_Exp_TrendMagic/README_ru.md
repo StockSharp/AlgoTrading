@@ -1,4 +1,5 @@
 # Стратегия Exp TrendMagic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Exp TrendMagic — это точная конверсия эксперта MetaTrader 5 «Exp_TrendMagic». Стратегия отслеживает смену цвета индикатора TrendMagic, который объединяет CCI (Commodity Channel Index) и ATR (Average True Range). При изменении цвета закрываются позиции противоположного направления и, при разрешении, открывается сделка по новому тренду.

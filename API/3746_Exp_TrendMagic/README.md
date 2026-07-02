@@ -1,4 +1,5 @@
 # Exp TrendMagic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Exp TrendMagic strategy is a direct port of the MetaTrader 5 expert advisor "Exp_TrendMagic". It monitors the color changes of the TrendMagic indicator, which combines a Commodity Channel Index (CCI) with an Average True Range (ATR) channel. When the indicator switches color, the strategy closes positions from the opposite side and optionally opens a new trade in the direction of the fresh trend.

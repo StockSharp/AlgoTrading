@@ -1,4 +1,5 @@
 # MultiStrategyEA v1.2（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略基于 MetaTrader 平台的 **MultiStrategyEA v1.2**，使用 StockSharp 的高级 API 重新实现。原始 EA 通过七个指标模块、网格与加倍手数管理订单。移植版本仅保留信号生成部分，并使用单一净头寸进行交易，以便更好地集成到 StockSharp Designer、Runner 等工具中。网格、递增手数、自动资金管理等复杂模块均未移植。
