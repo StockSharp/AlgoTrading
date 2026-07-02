@@ -1,4 +1,5 @@
 # EMA Cross 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor **"EMA_CROSS_2"** from the MQL repository. The original EA monitors two exponential moving averages (EMAs) and places market orders whenever the averages swap order. The conversion keeps the contrarian nature of the script – it buys when the long EMA moves above the short EMA and sells when the short EMA rises above the long EMA – while wrapping the logic into the high-level StockSharp strategy infrastructure.

@@ -1,4 +1,5 @@
 # MACD с фильтром по нулевой линии
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия «MACD с фильтром по нулевой линии» представляет собой порт MetaTrader 4-советника `Robot_MACD_12.26.9`. Исходный робот

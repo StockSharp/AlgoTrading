@@ -1,4 +1,5 @@
 # MACD 零轴过滤交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 MACD 零轴过滤交叉策略是 MetaTrader4 智能交易系统 `Robot_MACD_12.26.9` 的 C# 版本移植。原始 EA 监控 MACD 主线与信号线的交叉，并要求做多信号只在两条线都位于零轴下方时触发、做空信号只在两条线都位于零轴上方时触发。StockSharp 版本完整保留该核心思想，并结合框架提供的统一风控功能：可配置的账户余额过滤、点差单位的止盈管理以及支持优化的参数系统。

@@ -1,6 +1,6 @@
 # ZigZag EvgeTrofi 1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-[Русский](README_ru.md) | [中文](README_zh.md)
 
 ## Overview
 ZigZag EvgeTrofi 1 reproduces the behavior of the original MetaTrader expert advisor that reacts to the latest ZigZag swing point. The strategy monitors every completed candle, identifies the freshest ZigZag pivot using the classic depth, deviation and backstep configuration, and enters the market if the pivot is still recent. A swing high triggers a long position, while a swing low opens a short position, matching the original EA signal map.

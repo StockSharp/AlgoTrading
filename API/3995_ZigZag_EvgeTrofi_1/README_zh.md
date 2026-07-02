@@ -1,6 +1,6 @@
 # ZigZag EvgeTrofi 1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-[English](README.md) | [Русский](README_ru.md)
 
 ## 概述
 ZigZag EvgeTrofi 1 复刻了最初的 MetaTrader 智能交易系统，该系统会根据最新的 ZigZag 转折点开仓。策略逐根处理已经收盘的 K 线，利用经典的深度、偏离和回撤参数确定最新的 ZigZag 枢轴，并在信号仍然新鲜时入场。形成的 ZigZag 高点触发做多，形成的 ZigZag 低点触发做空，与原始 EA 的方向完全一致。

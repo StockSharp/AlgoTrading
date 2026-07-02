@@ -1,5 +1,5 @@
 # Стратегия E Regression Channel
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **E Regression Channel Strategy** — реализация советника MetaTrader «e-Regr» на базе высокоуровневого API StockSharp. Стратегия строит полиномиальную регрессию по последним ценам закрытия, формирует симметричные каналы по стандартному отклонению остатков и реагирует на пробой границ. Алгоритм ориентирован на возврат цены к средней с дополнительными фильтрами по волатильности и торговым сессиям.

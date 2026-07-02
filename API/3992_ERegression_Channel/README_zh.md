@@ -1,5 +1,5 @@
 # E回归通道策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **E Regression Channel Strategy** 基于 StockSharp 高级 API 复刻 MetaTrader 的 “e-Regr” 策略。该策略对最近的收盘价进行多项式回归，利用残差标准差生成上下通道，并在价格触及通道时触发信号。它是一种侧重均值回归的系统，同时提供日内时间过滤、日波动过滤以及可选的保护性止损与移动止损。

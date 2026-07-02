@@ -1,4 +1,5 @@
 # EMA Cross 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 专家顾问 **“EMA_CROSS_2”** 的 StockSharp 移植版本。原始脚本监控两条指数移动平均线（EMA），当两条均线互换位置时就会开仓。移植版保留了原策略的反向特点——当长周期 EMA 高于短周期 EMA 时买入，当短周期 EMA 高于长周期 EMA 时卖出——并将全部逻辑封装在 StockSharp 的高级策略框架中。

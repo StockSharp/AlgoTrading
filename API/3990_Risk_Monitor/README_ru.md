@@ -1,4 +1,5 @@
 # Стратегия Risk Monitor
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Risk Monitor — порт MetaTrader 4 советника `risk.mq4`. Оригинальный скрипт не открывал сделок, а рассчитывал доступный объём

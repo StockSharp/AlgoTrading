@@ -1,5 +1,5 @@
 # Стратегия CCI MA v1.5
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MetaTrader «CCI_MA v1.5» на высокоуровневый API StockSharp. В оригинале сигналы возникают, когда Commodity Channel Index (CCI) пересекает простую скользящую среднюю, рассчитанную по самим значениям CCI, а дополнительный CCI контролирует возвраты из зон ±100. В версии для StockSharp сохранены порядок сигналов, опциональное мани-менеджмент правило и стопы/тейки в пунктах, при этом они реализованы через подписку на свечи и биндинг индикаторов.
 

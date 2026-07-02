@@ -1,5 +1,5 @@
 # RPoint 250 反转策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **RPoint 250 反转策略** 是 MetaTrader 4 专家顾问 `e_RPoint_250` 在 StockSharp 平台上的移植版本。原始脚本依赖自定义
 指标 *RPoint* 来标记最近的摆动高点与低点。由于该指标在 StockSharp 中不可用，本实现改用内置的 `Highest` 与 `Lowest`

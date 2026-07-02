@@ -1,4 +1,5 @@
 # Open Close 策略 (ID 3996)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略对应 MetaTrader 4 智能交易系统 `open_close.mq4`。它仅关注一个品种，通过比较最近两根 K 线的开盘价与收盘价来寻找反转机会。当没有持仓时，策略逆势交易单根 K 线的过度波动；持仓期间，一旦出现相反信号或浮动亏损达到阈值便立即离场。

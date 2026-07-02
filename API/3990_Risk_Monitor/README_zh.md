@@ -1,4 +1,5 @@
 # 风险监控策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 风险监控策略移植自 MetaTrader 4 专家顾问 `risk.mq4`。原始脚本并不会自动下单，而是根据账户余额和用户定义的风险百分比

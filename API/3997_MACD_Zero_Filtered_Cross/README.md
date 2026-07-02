@@ -1,4 +1,5 @@
 # MACD Zero Filtered Cross
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 MACD Zero Filtered Cross is a C# port of the MetaTrader 4 expert advisor `Robot_MACD_12.26.9`. The original robot watches for

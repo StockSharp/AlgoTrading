@@ -1,5 +1,5 @@
 # E Regression Channel Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **E Regression Channel Strategy** reproduces the MetaTrader "e-Regr" expert advisor using StockSharp's high-level strategy API. It fits a polynomial regression curve to recent closing prices, builds equidistant bands from the residual standard deviation and reacts when price pierces those envelopes. The strategy is designed for mean-reversion trading with optional protective stops, a daily volatility filter and an intraday trading window.

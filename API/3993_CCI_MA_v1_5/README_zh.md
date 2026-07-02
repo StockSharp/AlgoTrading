@@ -1,5 +1,5 @@
 # CCI MA v1.5 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 中的 “CCI_MA v1.5” 智能交易系统迁移到 StockSharp 的高层 API。原始版本等待商品通道指数（CCI）与基于自身数值的简单移动平均线产生交叉，并借助第二个 CCI 监控 ±100 附近的超买/超卖回撤。移植后的实现保留了相同的信号顺序、可选的资金管理以及以点为单位的止损/止盈规则，并通过蜡烛订阅与指标绑定完成计算。
 

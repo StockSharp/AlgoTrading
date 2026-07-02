@@ -1,4 +1,5 @@
 # Cyberia Trader 自适应策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Cyberia Trader 自适应策略** 是 MetaTrader 平台上经典 "CyberiaTrader" 智能交易系统的 C# 版本。策略在 StockSharp 中重构了原始的概率核心，并提供可选的技术指标过滤器。系统持续分析价格波动，评估潜在的反转概率，然后再由 EMA、MACD、CCI、ADX 或分形过滤器确认信号并执行交易。

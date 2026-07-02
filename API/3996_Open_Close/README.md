@@ -1,4 +1,5 @@
 # Open Close Strategy (ID 3996)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader 4 expert `open_close.mq4`. It works on a single instrument and compares the open and close of the latest candle against the previous one. When no position is active, it fades strong one-bar moves (gap-and-reversal patterns). While in a trade, it closes the position either when the pattern reverses or when a floating-loss protection threshold is breached.
