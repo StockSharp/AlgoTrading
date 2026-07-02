@@ -1,4 +1,5 @@
 # Russian20 Time Filter Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Russian20 Time Filter Momentum Strategy** is a conversion of the MetaTrader 4 expert advisor `Russian20-hp1.mq4`, originally distributed by Gordago Software Corp. The algorithm combines a 20-period simple moving average (SMA) with a 5-period Momentum indicator evaluated on 30-minute candles. Positions are only opened when price momentum and trend direction align, optionally restricted to a user-defined intraday trading window.

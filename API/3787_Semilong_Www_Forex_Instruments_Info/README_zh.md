@@ -1,4 +1,5 @@
 # Semilong WWW Forex Instruments Info 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了 MetaTrader 专家顾问 “Semilong” 的交易逻辑。它同时观测当前买价与两个历史收盘价之间的距离，这两个收盘价之间相隔可配置的 K 线数量。当当前价格足够大幅度地低于（或高于）较新的参考收盘价，并且该收盘价又明显脱离更久远的收盘价时，策略会开仓做多或做空。头寸管理完全参照原始脚本，支持自定义止盈、止损、可选的移动止损，以及在连续亏损后自动降低仓位的自动手数模块。

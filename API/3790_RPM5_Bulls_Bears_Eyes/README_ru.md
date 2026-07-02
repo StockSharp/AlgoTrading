@@ -1,4 +1,5 @@
 # Стратегия RPM5 BullsBearsEyes
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **RPM5 BullsBearsEyes** — порт советника MetaTrader 4 *Rpm5_mt4v1* на платформу StockSharp. Оригинальный алгоритм комбинировал индикаторы Bulls Power и Bears Power в собственный осциллятор BullsBearsEyes и удерживал единственную позицию по направлению преобладающей силы. Перенос повторяет ту же логику с использованием высокоуровневого API StockSharp, сохраняя исходные параметры рисков, правила трейлинга и пороги сигналов.

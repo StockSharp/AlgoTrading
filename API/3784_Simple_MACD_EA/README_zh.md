@@ -1,5 +1,5 @@
 # Simple MACD EA 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Simple MACD EA 策略源自 MetaTrader 平台上的经典顾问程序 “Simple MACD EA”。策略使用两条指数移动平均线（EMA）来模拟 MACD 柱状图，并在 1 分钟 K 线级别上确定趋势方向。当 100 周期 EMA 上穿用户设定周期的 EMA 时开多头；当 100 周期 EMA 下穿该 EMA 时开空头。策略始终仅保持一笔持仓。

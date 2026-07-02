@@ -1,4 +1,5 @@
 # RPM5 BullsBearsEyes 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **RPM5 BullsBearsEyes 策略** 是 MetaTrader 4 专家顾问 *Rpm5_mt4v1* 的 C# 版本。原始 EA 通过 Bulls Power 与 Bears Power 构建自定义的 BullsBearsEyes 指标，并根据该指标的多空倾向持有单一仓位。本移植版使用 StockSharp 高阶 API 重现相同行为，同时保留原有的风险参数、移动止损逻辑和信号阈值。

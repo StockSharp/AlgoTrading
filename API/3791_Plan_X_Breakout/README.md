@@ -1,5 +1,5 @@
 # Plan X Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Plan X breakout strategy replicates the MetaTrader expert advisor "plan x" by Peter Ingram. It focuses on the London late-morning session and waits for price to break away from a reference candle before entering. Only one net position can be open at a time, and risk is controlled through pip-based stops that trail behind the trade as it moves in favor.
 
@@ -47,4 +47,3 @@ The Plan X breakout strategy replicates the MetaTrader expert advisor "plan x" b
 ## Files
 
 - `CS/PlanXBreakoutStrategy.cs` – C# implementation of the Plan X breakout logic for StockSharp.
-

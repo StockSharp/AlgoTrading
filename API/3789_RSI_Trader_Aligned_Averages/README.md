@@ -1,4 +1,5 @@
 # RSI Trader Aligned Averages Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 This strategy reproduces the "RSI trader" MetaTrader Expert Advisor. It aligns two trend filters – price moving averages and smoothed RSI averages – to enter in the direction of the dominant trend and exits when the filters diverge (sideways regime). The StockSharp port works on any instrument with candle data support and defaults to hourly candles as in the original description.

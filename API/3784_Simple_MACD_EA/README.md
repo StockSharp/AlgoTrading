@@ -1,5 +1,5 @@
 # Simple MACD EA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Simple MACD EA strategy is a direct port of the classic MetaTrader expert advisor "Simple MACD EA". The approach uses two exponential moving averages (EMAs) to emulate the MACD histogram and determine the dominant trend on one-minute candles. Long positions are opened when the fast EMA (period 100) crosses above the slow EMA (user-defined MACD level). Short positions are opened when the fast EMA drops below the slow EMA. Only one position is maintained at any time.

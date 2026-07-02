@@ -1,4 +1,5 @@
 # RPM5 BullsBearsEyes Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **RPM5 BullsBearsEyes Strategy** is a C# port of the MetaTrader 4 expert *Rpm5_mt4v1*. The advisor rebuilt the custom BullsBearsEyes oscillator from Bulls Power and Bears Power readings and opened a single position that followed the prevailing bias. This StockSharp version reproduces the same behaviour using the high-level API while keeping the original risk parameters, trailing logic, and signal thresholds.

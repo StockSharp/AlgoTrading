@@ -1,4 +1,5 @@
 # Russian20 Time Filter Momentum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Russian20 Time Filter Momentum 策略** 源自 MetaTrader 4 专家顾问 `Russian20-hp1.mq4`，原作者为 Gordago Software Corp. 该算法在 30 分钟 K 线图上结合 20 周期简单移动平均线（SMA）与 5 周期 Momentum 指标，只在趋势与动量方向一致时入场，并可选地限制在指定交易时段内执行。

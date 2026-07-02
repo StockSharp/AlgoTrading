@@ -1,4 +1,5 @@
 # Martingail Expert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Martingail Expert 是一种基于随机指标 (Stochastic Oscillator) 的马丁格尔策略。指标给出方向后，策略会以动态盈利目标和几何级数的仓位扩张来管理一组连续的市价单。

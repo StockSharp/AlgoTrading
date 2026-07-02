@@ -1,4 +1,5 @@
 # Semilong WWW Forex Instruments Info Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the behaviour of the "Semilong" MetaTrader expert. It monitors the distance between the current bid price and two historical closing prices that are separated by configurable shifts. When the current market trades far enough below (or above) the older close while the older close has also moved away from an even older reference, the strategy opens a long (or short) position. Position management mirrors the original script with configurable take profit, stop loss, optional trailing stop, and an auto-lot module that reduces size after consecutive losses.

@@ -1,4 +1,5 @@
 # Стратегия Russian20 Time Filter Momentum
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Russian20 Time Filter Momentum** — конвертация советника MetaTrader 4 `Russian20-hp1.mq4`, опубликованного компанией Gordago Software Corp. Алгоритм использует простую скользящую среднюю (SMA) с периодом 20 и индикатор Momentum с периодом 5 на 30-минутных свечах. Сделки открываются только при согласовании тренда и импульса и, при необходимости, ограничиваются заданным торговым окном внутри дня.

@@ -1,4 +1,5 @@
 # RSI 趋势交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 摘要
 该策略移植自 MetaTrader 的“RSI trader”专家顾问，通过价格移动均线与 RSI 平滑均线的双重趋势过滤来寻找方向一致的行情。当两个过滤器给出相反信号时视为盘整，并平掉现有仓位。默认使用与原策略相同的 1 小时 K 线，也可选择其他任意烛图数据。
