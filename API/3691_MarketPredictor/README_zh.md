@@ -1,4 +1,5 @@
 # Market Predictor 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Market Predictor 策略是对 MetaTrader 平台 MarketPredictor 智能交易顾问的 StockSharp 高级 API 版本。策略通过蒙特卡洛预测与基于最新蜡烛的自适应统计参数相结合，持续评估下一步价格走势，只处理已经收盘的蜡烛。

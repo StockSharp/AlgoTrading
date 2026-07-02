@@ -1,4 +1,5 @@
 # Symbol Swap Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Symbol Swap Panel Strategy** is a StockSharp conversion of the MQL panel *"Symbol Swap Panel"*. The original expert acted as a chart widget that allowed traders to type a symbol, switch the active chart to that symbol, and monitor real-time market information such as OHLC values, tick volume, and spread. The converted strategy recreates the same workflow in the StockSharp environment. It can be launched on any security and provides a manual toggle to jump to another instrument while continuously logging the most relevant market metrics.

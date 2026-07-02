@@ -1,4 +1,5 @@
 # 符号切换面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **符号切换面板策略** 是 MQL 面板 *“Symbol Swap Panel”* 在 StockSharp 平台上的移植版。原始专家顾问提供了一个图表面板，让交易者可以输入符号、切换当前图表，并实时查看 OHLC、成交量以及点差等关键指标。该策略在 StockSharp 中复刻了这一体验：启动后即可在日志中持续输出与面板标签一致的信息，并允许通过参数即时跳转到新的标的。

@@ -1,4 +1,5 @@
 # Close Agent Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Close Agent Strategy is a risk-management assistant that mirrors the MQL CloseAgent expert advisor. The strategy does not open new trades. Instead, it monitors existing positions and closes them when price stretches beyond the Bollinger Bands while the Relative Strength Index (RSI) reaches extreme zones. The tool can watch for positions created manually or by other automated strategies and optionally liquidate everything once a global profit target is achieved.

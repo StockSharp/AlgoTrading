@@ -1,4 +1,5 @@
 # Стратегия разворота по полосам Боллинджера
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом эксперт-советника **BollingerBandsEA (ver. 3.0)** с платформы MetaTrader. Она ищет возврат к среднему после экстремальных выходов цены за полосы Боллинджера внутри активной сессии.
 

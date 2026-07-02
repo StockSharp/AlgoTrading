@@ -1,4 +1,5 @@
 # BreakRevert Pro Стратегия
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BreakRevert Pro — это конверсия советника MetaTrader 5 *BreakRevertPro.mq5* на платформу StockSharp. Алгоритм объединяет импульсные пробои на минутных свечах с анализом тренда и волатильности по таймфреймам M15 и H1. Вероятностные оценки из оригинала воспроизведены через индикаторы высокого уровня, что позволяет максимально точно повторить логику при строгом соблюдении архитектуры StockSharp.
 

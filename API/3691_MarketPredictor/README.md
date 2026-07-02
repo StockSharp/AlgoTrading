@@ -1,4 +1,5 @@
 # Market Predictor Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Market Predictor strategy is a high-level adaptation of the original MetaTrader MarketPredictor expert advisor. The logic focuses on continuously re-estimating the expected price movement by combining a Monte Carlo forecast with adaptive statistical parameters gathered from recent candles. The strategy subscribes to candles of the selected timeframe and processes only finished bars to avoid premature signals.

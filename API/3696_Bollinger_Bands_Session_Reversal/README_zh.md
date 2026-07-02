@@ -1,4 +1,5 @@
 # 布林带会话反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 **BollingerBandsEA (ver. 3.0)** 的 C# 版本。它在交易时段内捕捉价格突破布林带后的均值回归机会。
 

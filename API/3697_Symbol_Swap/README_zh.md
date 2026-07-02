@@ -1,4 +1,5 @@
 # Symbol Swap 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Symbol Swap Strategy** 是 MetaTrader 5 工具 “Symbol Swap” 的 StockSharp 版本。原始的 MQL5 面板允许交易者输入任意品种，立即把图表切换到该符号，并显示一个包含时间、OHLC 价格、tick 成交量与点差的数据窗口。本次移植保持同样的职责，同时完全依赖 StockSharp 的高级订阅接口实现。
 
@@ -39,4 +40,3 @@
 - 九个标签被组合成一个多行文本，顺序保持与原程序一致：Time、Period、Symbol、Close、Open、High、Low、Tick Volume、Spread。
 - 不再需要手动把符号加入 Market Watch，策略直接通过 `SecurityProvider` 查找标的。
 - 整个实现只使用高级 API（`SubscribeCandles`、`SubscribeLevel1`、`DrawText`、`AddInfo`），符合仓库的编码要求。
-

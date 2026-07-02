@@ -1,4 +1,5 @@
 # Bollinger Bands Session Reversal
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a C# port of the MetaTrader expert advisor **BollingerBandsEA (ver. 3.0)**. It trades mean-reversion setups that occur after price stretches beyond the Bollinger Bands during the active trading session.
 

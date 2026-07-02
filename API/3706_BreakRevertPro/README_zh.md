@@ -1,4 +1,5 @@
 # BreakRevert Pro 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BreakRevert Pro 是 MetaTrader 5 专家顾问 *BreakRevertPro.mq5* 的 StockSharp 版本。策略将 1 分钟级别的突破筛选与 15 分钟和 1 小时级别的趋势、波动率分析结合在一起。原始 EA 中的概率指标通过高层 API 指标进行了等效近似，从而在遵守 StockSharp 架构的同时最大限度地保留原有思路。
 

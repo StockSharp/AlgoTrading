@@ -1,4 +1,5 @@
 # Mean Reverse 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Mean Reverse 策略复刻了 "MeanReversionTrendEA" 智能交易系统，通过简单均线交叉的趋势模块与基于 ATR 波动区间的均值回归模块相结合来产生交易信号。当价格确认趋势反转或相对慢速均线出现过度偏离时，系统会开仓。

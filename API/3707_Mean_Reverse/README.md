@@ -1,4 +1,5 @@
 # Mean Reverse Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Mean Reverse Strategy replicates the "MeanReversionTrendEA" expert advisor. It mixes a moving average crossover trend module with a mean-reversion overlay driven by Average True Range (ATR) volatility bands. The idea is to open a position when price either confirms a bullish or bearish trend shift or stretches too far away from the slower moving average by a volatility-adjusted distance.

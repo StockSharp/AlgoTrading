@@ -1,4 +1,5 @@
 # Close Agent 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Close Agent 策略是一款风控辅助工具，对应原始的 MQL CloseAgent 智能交易系统。策略本身不会开仓，而是持续监控已有仓位：当价格突破布林带边界并且 RSI 指标进入极值区时，自动平仓。它可以筛选人工开仓或其他策略生成的仓位，并在浮动盈利达到设定阈值时一键清仓。

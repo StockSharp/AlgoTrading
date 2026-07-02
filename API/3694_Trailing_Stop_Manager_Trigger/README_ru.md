@@ -1,4 +1,5 @@
 # Стратегия Trailing Stop Trigger Manager
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Trailing Stop Manager** — это перенос MetaTrader-советника `Trailing Sl.mq5` на платформу StockSharp. Исходный эксперт не

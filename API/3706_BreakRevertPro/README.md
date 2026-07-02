@@ -1,4 +1,5 @@
 # BreakRevert Pro Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 BreakRevert Pro is the StockSharp conversion of the MetaTrader 5 expert advisor *BreakRevertPro.mq5*. The strategy combines breakout confirmation on the one-minute timeframe with broader trend and volatility context from the 15-minute and one-hour charts. Probability-style scores are reproduced through indicator-driven approximations so that the behaviour remains close to the original EA while following StockSharp high-level API patterns.
 

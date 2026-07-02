@@ -1,4 +1,5 @@
 # Symbol Swap Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Symbol Swap Strategy** is the StockSharp port of the MetaTrader 5 utility "Symbol Swap". The original MQL5 program opens a panel where a trader can enter any ticker, immediately switch the current chart to that symbol, and monitor a compact data window with the latest time, OHLC prices, tick volume, and spread. This C# conversion keeps the same responsibilities while relying exclusively on StockSharp's high-level subscription API.
 
@@ -39,4 +40,3 @@ The strategy is informational only; it does not place orders. It can run standal
 - The MQL panel labels are represented by a single multi-line text block. The text uses the exact ordering from the original tool: Time, Period, Symbol, Close, Open, High, Low, Tick Volume, Spread.
 - Runtime symbol swaps no longer need manual Market Watch management—the strategy resolves instruments directly via the StockSharp security provider.
 - Only high-level API calls are used (`SubscribeCandles`, `SubscribeLevel1`, `DrawText`, `AddInfo`). There are no manual indicator calculations or direct connector manipulations, satisfying the repository coding rules.
-

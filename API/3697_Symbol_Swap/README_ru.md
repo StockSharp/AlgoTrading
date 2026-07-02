@@ -1,4 +1,5 @@
 # Стратегия Symbol Swap
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Symbol Swap Strategy** — это порт утилиты MetaTrader 5 «Symbol Swap». Оригинальный MQL5-скрипт открывает панель, где трейдер вводит тикер, мгновенно переключает график на выбранный инструмент и получает компактное окно данных с текущим временем, ценами OHLC, тиковым объёмом и спредом. Переписанная на C# версия сохраняет те же обязанности и использует только высокоуровневый API StockSharp.
 
@@ -39,4 +40,3 @@
 - Девять MQL-ярлыков собраны в один многострочный текст с исходным порядком: Time, Period, Symbol, Close, Open, High, Low, Tick Volume, Spread.
 - Больше не требуется вручную добавлять тикер в Market Watch — стратегия использует `SecurityProvider` для поиска инструментов.
 - Применяются только высокоуровневые вызовы (`SubscribeCandles`, `SubscribeLevel1`, `DrawText`, `AddInfo`), что полностью удовлетворяет правилам репозитория.
-
