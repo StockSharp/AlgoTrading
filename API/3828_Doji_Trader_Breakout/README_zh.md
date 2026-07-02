@@ -1,4 +1,5 @@
 # Doji Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MQL4 的 "DojiTrader" 智能交易系统转换成 StockSharp C# 示例。策略会在欧美主要交易时段内寻找最近出现的十字星，并在突破十字星区间时进场。
 

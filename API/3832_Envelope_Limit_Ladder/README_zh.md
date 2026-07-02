@@ -1,4 +1,5 @@
 # Envelope Limit Ladder 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Envelope Limit Ladder Strategy** 是将 MetaTrader 专家顾问 `E_2_12_5min.mq4`（ID 7671）移植到 StockSharp 的 C# 实现。该策略在 5 分钟蜡烛上重建原始的 EMA 包络线限价梯形结构，并保留三个分级止盈与跟踪止损的管理方式。
 

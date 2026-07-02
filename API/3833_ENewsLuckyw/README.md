@@ -1,4 +1,5 @@
 # ENewsLuckyw Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ENewsLuckyw Strategy** is a time-based breakout system converted from the MetaTrader expert advisor *e-News-Lucky$*. At a scheduled time it submits buy-stop and sell-stop orders around the current price, continuously recenters them while both orders are active, and performs position management that mimics the original MQL logic. Protective exits, optional trailing, and an end-of-day cleanup complete the workflow.

@@ -1,5 +1,5 @@
 # Contrarian Trade MA Weekly Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 A weekly contrarian system converted from the original MQL "Contrarian_trade_MA" expert advisor. The strategy analyses weekly candle extremes together with a simple moving average to fade stretched moves at the start of a new week.
 

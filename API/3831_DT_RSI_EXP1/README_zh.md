@@ -1,5 +1,5 @@
 # DT RSI EXP1 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本移植复刻了 MT4 智能交易系统 **DT-RSI-EXP1**。策略在 15 分钟 RSI 上寻找 60/40 附近的双顶与双底结构：如果 RSI 连续形成两次高点且第二个高于 60、期间没有低于 40 的低点，并且 4 小时趋势过滤器向下，则买入；若出现对称的双底且趋势向上，则做空。开仓后同时挂出固定止损与止盈，并可选用追踪止损保护浮盈。当 RSI 触及 70/30 极值时，无论盈亏都会强制平仓，与原版一致。
 

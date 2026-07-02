@@ -1,4 +1,5 @@
 # Envelope Limit Ladder Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Envelope Limit Ladder Strategy** is a C# port of the MetaTrader expert advisor `E_2_12_5min.mq4` (ID 7671). It rebuilds the original ladder of limit orders around an EMA envelope on 5-minute candles while keeping the multi-target and trailing management model from the legacy robot.
 

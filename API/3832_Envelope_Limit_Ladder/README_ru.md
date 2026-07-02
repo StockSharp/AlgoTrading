@@ -1,4 +1,5 @@
 # Стратегия Envelope Limit Ladder
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Envelope Limit Ladder Strategy** — порт эксперта MetaTrader `E_2_12_5min.mq4` (ID 7671) на платформу StockSharp. Стратегия воссоздаёт лестницу отложенных лимитных ордеров вокруг конверта EMA на пятиминутных свечах и сохраняет оригинальную схему из трёх тейк-профитов и трейлинг-стопа.
 

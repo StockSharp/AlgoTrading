@@ -1,5 +1,5 @@
 # Стратегия Contrarian Trade MA Weekly
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Недельная контртрендовая система, перенесённая из исходного MQL-советника "Contrarian_trade_MA". Алгоритм оценивает экстремумы недельных свечей и простую скользящую среднюю, чтобы входить против избыточных движений в начале новой торговой недели.
 

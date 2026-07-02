@@ -1,4 +1,5 @@
 # Channels Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a direct port of the MetaTrader 4 "Channels" expert advisor included in Gordago's public library. It combines a very fast exponential moving average (EMA) with three EMA-based envelopes to detect moments when price escapes from compressed zones. Once a single position is open the strategy relies on stop orders and optional trailing stops to manage exits, just like the original MQL implementation.
 

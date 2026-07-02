@@ -1,4 +1,5 @@
 # Donchain Counter-Channel System
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Donchain Counter-Channel System** reproduces the 2005 MetaTrader 4 expert advisor by Michal Rutka. It watches for turns in a 20-day Donchian Channel calculated on daily candles. When the lower band turns upward the strategy assumes that sellers failed to push price to new lows and buys the next session at market. When the upper band turns downward the strategy interprets that as a momentum loss on rallies and sells short at market. Protective stops are always aligned with the opposite Donchian band so that exits mirror the original stop-management logic.

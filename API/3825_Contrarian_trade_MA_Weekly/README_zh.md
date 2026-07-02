@@ -1,5 +1,5 @@
 # Contrarian Trade MA Weekly 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略来源于 MQL 专家顾问 "Contrarian_trade_MA"，在 StockSharp 平台上以周线数据运行。系统结合周线极值和简单移动平均，在每个新交易周开始时逆势入场。
 

@@ -1,4 +1,5 @@
 # Стратегия Doji Arrows
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Doji Arrows Strategy** — портирование советника MetaTrader `Doji_arrows_expert1.mq4` на инфраструктуру StockSharp. Идея простая: найти нейтральную свечу-доджи и отработать пробой на следующей свече. Если рынок формирует свечу с минимальным телом (open ≈ close), а затем закрывается выше максимума/ниже минимума доджи, алгоритм трактует движение как пробой и открывает позицию в его направлении.

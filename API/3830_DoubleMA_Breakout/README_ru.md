@@ -1,4 +1,5 @@
 # Double MA Breakout Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Double MA Breakout Strategy** — портирование эксперта MetaTrader `DoubleMA_Breakout` на StockSharp. Стратегия анализирует две скользящие средние на закрытых свечах. Когда быстрая средняя поднимается выше медленной, размещается отложенный приказ Buy Stop на заданном расстоянии от цены закрытия. При обратном пересечении размещается Sell Stop ниже рынка. Все отложенные заявки снимаются, а позиции закрываются, если сигнал меняется или торговое окно закрывается.

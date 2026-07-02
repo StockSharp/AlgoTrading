@@ -1,4 +1,5 @@
 # Стратегия ENewsLuckyw
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **ENewsLuckyw** — это конверсия советника MetaTrader *e-News-Lucky$*, построенная на времени выхода новостей. В заданный момент стратегия размещает симметричные отложенные buy stop и sell stop заявки вокруг текущей цены, поддерживает их актуальность при появлении новых баров и управляет позициями в точном соответствии с оригинальной логикой MQL.

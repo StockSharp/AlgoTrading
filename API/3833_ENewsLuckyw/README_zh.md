@@ -1,4 +1,5 @@
 # ENewsLuckyw 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ENewsLuckyw 策略** 是从 MetaTrader 智能交易系统 *e-News-Lucky$* 移植而来的定时突破策略。它会在预设时间在当前价格上下提交对称的买入止损和卖出止损单，并在挂单同时保持两者围绕价格移动。同时，策略会复制原始 MQL 逻辑中的持仓管理、可选的移动止损以及收盘清理。

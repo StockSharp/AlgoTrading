@@ -1,4 +1,5 @@
 # Donchain Counter-Channel System
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Donchain Counter-Channel System** 复刻了 Michal Rutka 在 2005 年《Currency Trader》杂志上发表的 MetaTrader 4 智能交易程序。策略在所选周期（默认日线）上计算 20 根长度的 Donchian 通道。当下轨在上一根 K 线上抬升时，系统判定空头力量减弱，于下一根 K 线的开盘附近以市价买入；当上轨在上一根 K 线上下压时，则视为多头动能衰退，于下一根 K 线市价卖出。保护性止损始终放在相反方向的 Donchian 边界上，与原始脚本的止损移动方法完全一致。

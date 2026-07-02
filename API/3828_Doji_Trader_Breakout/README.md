@@ -1,4 +1,5 @@
 # Doji Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy converts the MQL4 "DojiTrader" expert advisor into a StockSharp C# sample. It searches for recent doji candles and trades a breakout of the doji range during the main European and U.S. sessions.
 

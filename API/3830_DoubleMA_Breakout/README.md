@@ -1,4 +1,5 @@
 # Double MA Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Double MA Breakout Strategy** is a StockSharp port of the MetaTrader expert advisor `DoubleMA_Breakout`. The strategy monitors a fast and a slow moving average on finished candles. When the fast average moves above the slow one, a buy stop order is placed at a configurable breakout distance above the last close. When the fast average drops below the slow one, a sell stop is placed symmetrically below the market. Pending orders are cancelled and open positions are flattened when the crossover flips or the trading window closes.

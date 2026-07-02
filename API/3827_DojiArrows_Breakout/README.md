@@ -1,4 +1,5 @@
 # Doji Arrows Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Doji Arrows Strategy** is a StockSharp port of the MetaTrader expert advisor `Doji_arrows_expert1.mq4`. The trading idea is to detect a neutral doji candle and immediately trade the breakout that follows on the next bar. When the market prints a very small body candle (open ≈ close) and the subsequent candle closes beyond the doji high or low, the strategy interprets the move as a directional breakout and enters in that direction.

@@ -1,4 +1,5 @@
 # 通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略为 MetaTrader 4 平台上 Gordago "Channels" 专家顾问的直接移植版。策略通过一个极短周期的指数移动平均线（EMA）与三组基于 EMA 的通道（Envelope）组合来捕捉价格突破压缩区间的时刻。与原版一样，开仓后仅持有一笔仓位，并使用止损/止盈单以及可选的跟踪止损管理风险。
 

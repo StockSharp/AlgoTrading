@@ -1,4 +1,5 @@
 # Doji Arrows 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Doji Arrows Strategy** 是将 MetaTrader 指标 `Doji_arrows_expert1.mq4` 移植到 StockSharp 的实现。策略思想是在市场出现中性十字星后，跟随下一根 K 线的方向性突破。当价格先形成接近开收价相等的十字星，再由下一根 K 线收盘突破十字星的高点或低点时，系统认为行情出现动量突破并顺势入场。

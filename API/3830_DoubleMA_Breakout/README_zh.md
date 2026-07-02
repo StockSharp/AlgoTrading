@@ -1,4 +1,5 @@
 # Double MA Breakout Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Double MA Breakout Strategy** 是 MetaTrader 智能交易系统 `DoubleMA_Breakout` 的 StockSharp 版本。策略在每根已完成的 K 线上计算一条快线和一条慢线移动平均。当快线突破慢线时，会在最近收盘价上方按指定的突破距离挂出 Buy Stop；当快线跌破慢线时，则在下方挂出 Sell Stop。一旦信号反转或者交易窗口结束，所有挂单都会被撤销，已有仓位将被平掉。
