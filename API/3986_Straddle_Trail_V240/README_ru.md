@@ -1,4 +1,5 @@
 # Стратегия Straddle Trail v2.40
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Straddle Trail v2.40** — это перенос на StockSharp советника MetaTrader 4 "Straddle&Trail" версии 2.40. Алгоритм выставляет симметричный стреддл из стоп-заявок перед важным событием, сопровождает активированную позицию переводом в безубыток и трейлинг-стопом, а также контролирует вручную открытые сделки.
 

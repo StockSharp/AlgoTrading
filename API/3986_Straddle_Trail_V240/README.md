@@ -1,4 +1,5 @@
 # Straddle Trail v2.40 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Straddle Trail v2.40 Strategy** is a StockSharp port of the MetaTrader 4 expert advisor "Straddle&Trail" (version 2.40). The algorithm prepares a symmetrical pair of stop orders ahead of a high-impact event, automatically manages the triggered position with break-even and trailing-stop logic, and can react to manual trades that already exist on the account.
 

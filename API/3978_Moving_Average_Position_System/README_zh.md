@@ -1,4 +1,5 @@
 # 移动平均持仓系统策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -48,4 +49,3 @@
 - `README.md` – 英文文档。
 - `README_ru.md` – 俄文文档。
 - `README_zh.md` – 中文文档（本文件）。
-

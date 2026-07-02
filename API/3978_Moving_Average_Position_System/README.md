@@ -1,4 +1,5 @@
 # Moving Average Position System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -48,4 +49,3 @@ The Moving Average Position System is a direct port of the MetaTrader 4 expert a
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
 - `README_zh.md` – Chinese documentation.
-

@@ -1,4 +1,5 @@
 # MAMACD 无波动策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MAMACD 无波动策略是 MetaTrader 4 专家顾问 `MAMACD_novlt.mq4` 的直接移植。策略把三条分别基于最低价和收盘价的均线与 MACD 动量过滤器结合起来：当快速 EMA 跌破（做多）或升破（做空）两条基于最低价的 LWMA 时，先进入准备状态，随后只有在 MACD 主线确认动量方向后才执行进场。

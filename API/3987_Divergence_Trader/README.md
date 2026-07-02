@@ -1,4 +1,5 @@
 # Divergence Trader (Classic Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the behaviour of the MetaTrader 4 expert advisor **Divergence Trader** inside the StockSharp high level API. Two simple moving averages are calculated on the selected candle price (open by default). The system monitors how the distance between the fast and slow averages changes from one bar to the next:
 

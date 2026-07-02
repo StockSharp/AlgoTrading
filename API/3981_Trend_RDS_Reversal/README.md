@@ -1,4 +1,5 @@
 # Trend RDS Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Trend RDS is a session-based reversal strategy originally written for MetaTrader. It scans for a three-bar momentum formation at the start of a specified trading window and fades the move by entering in the opposite direction. The StockSharp port keeps the original money management logic, including optional reversal of the signals, fixed stop-loss and take-profit levels, break-even protection, and a trailing stop with adjustable step size.

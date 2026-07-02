@@ -1,4 +1,5 @@
 # Sidus v1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Sidus v1 is a trend-following strategy that combines two sets of Exponential Moving Averages (EMAs) with Relative Strength Index (RSI) filters. The original MetaTrader 4 expert advisor opens a position when a fast EMA diverges from a slower EMA and the RSI confirms either oversold or overbought conditions. This StockSharp port keeps the core logic, limiting trades to candles with low volume and attaching asymmetric protective orders for long and short positions.

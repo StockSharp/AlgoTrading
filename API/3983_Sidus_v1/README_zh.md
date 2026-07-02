@@ -1,4 +1,5 @@
 # Sidus v1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Sidus v1 是一套趋势型策略，结合了两组指数移动平均线（EMA）与 RSI 滤波器。原始的 MT4 智能交易系统在快 EMA 明显偏离慢 EMA 且 RSI 显示超卖或超买时入场。本移植版本保留了核心逻辑，仅允许在低成交量的蜡烛上交易，并针对多头与空头分别挂出不同的止盈止损订单。

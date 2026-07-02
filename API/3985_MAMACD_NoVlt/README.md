@@ -1,4 +1,5 @@
 # MAMACD No Volatility Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 MAMACD No Volatility is a direct port of the MetaTrader 4 expert advisor `MAMACD_novlt.mq4`. The strategy combines three moving averages calculated on candle lows and closes with a MACD momentum filter. It waits until the fast EMA drops below (for longs) or rises above (for shorts) two low-based LWMA filters, arms a pending setup, and triggers an entry only after the MACD main line confirms the momentum shift.

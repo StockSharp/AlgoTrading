@@ -1,4 +1,5 @@
 # 趋势背离交易者（经典转换）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 4 的 **Divergence Trader** 专家顾问迁移到 StockSharp 的高级 API。系统在所选蜡烛价格（默认使用开盘价）上计算两条简单移动平均线，并观察快速均线与慢速均线之间的距离如何随每根柱线变化：
 

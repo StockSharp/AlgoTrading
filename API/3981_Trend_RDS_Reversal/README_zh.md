@@ -1,4 +1,5 @@
 # 趋势 RDS 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 趋势 RDS 最初是 MetaTrader 平台上的一个会话型反转策略。它会在指定的开盘时间开始扫描最近的 100 根已收盘 K 线，寻找连续三根同向动量结构，并逆向建仓。移植到 StockSharp 后保留了原始的资金管理功能，包括可选的信号反向、固定止损与止盈、保本移动以及带步长的追踪止损。

@@ -1,4 +1,5 @@
 # Straddle Trail v2.40 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Straddle Trail v2.40** 策略复刻了 MetaTrader 4 智能交易系统 “Straddle&Trail” (v2.40)。该策略会在重大事件前布置一组对称的止损单，并在订单触发后执行保本与跟踪止损，同时也会管理已经存在的手动仓位。
 

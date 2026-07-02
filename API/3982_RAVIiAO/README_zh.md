@@ -1,4 +1,5 @@
 # RAVIiAO 策略（StockSharp）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **RAVIiAO 策略** 在 StockSharp 高级 API 中复刻 MetaTrader 4 专家顾问 "RAVIiAO"。策略等待每根 K 线收盘，同时评估
