@@ -1,4 +1,5 @@
 # MasterMind 2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 MasterMind 2 策略来源于 MQL4 平台上的 "TheMasterMind2" 智能交易程序。策略等待 Stochastic Oscillator 与 Williams %R 同时给出极端信号来判断市场耗竭。当两个指标同时显示极度超卖时建立多头仓位，当两者同时显示极度超买时建立空头仓位。所有判断均在 K 线收盘后进行，与原始程序完全一致。

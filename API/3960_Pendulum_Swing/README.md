@@ -1,4 +1,5 @@
 # Pendulum Swing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Pendulum Swing Strategy** is a StockSharp port of the MetaTrader expert advisor *Pendulum 1_01*. The original system keeps two pending stop orders around the current price and progressively increases their volume after each fill. This C# version reproduces the same "swing" behaviour using high-level StockSharp helpers.

@@ -1,4 +1,5 @@
 # Polish Layer Expert Advisor System Efficient
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略完整移植自 MQL4 指标交易系统 “Polish Layer Expert Advisor System Efficient”。原版建议运行在 5 或 15 分钟周期的图表上，因此这里同样只在单一时间框上运作，并且同一时间仅持有一张仓位。趋势方向由价格的快慢均线以及两条经 SMA 平滑处理的 RSI 均线共同决定；当趋势条件满足后，还需要同时通过随机指标、DeMarker 与 Williams %R 的极值反转信号确认，才会执行进出场。

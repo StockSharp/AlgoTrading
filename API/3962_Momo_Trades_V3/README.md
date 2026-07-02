@@ -1,4 +1,5 @@
 # Momo Trades V3 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Momo Trades V3 is a momentum strategy converted from the original MetaTrader expert advisor. It combines a multi-condition MACD pattern detector with a displaced exponential moving average (EMA) filter. The StockSharp port keeps the discretionary elements of the EA, adds optional breakeven handling, and provides a risk-based position sizing mode that mirrors the automatic lot logic of the script.

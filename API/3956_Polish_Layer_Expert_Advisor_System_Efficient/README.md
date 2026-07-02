@@ -1,4 +1,5 @@
 # Polish Layer Expert Advisor System Efficient
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a direct port of the MQL4 expert advisor "Polish Layer Expert Advisor System Efficient". It is designed for intraday charts (the original author recommended 5 or 15 minute candles) and restricts trading to a single position at a time. Trend direction is defined by the alignment between a fast and a slow price moving average together with two smoothed RSI filters. Actual entries require a triple confirmation from the Stochastic Oscillator, DeMarker, and Williams %R indicators in order to capture reversals from extreme conditions that occur within the prevailing trend.

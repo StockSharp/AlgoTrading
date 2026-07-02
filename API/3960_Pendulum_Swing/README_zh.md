@@ -1,4 +1,5 @@
 # Pendulum 摆动策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Pendulum 策略** 是 MetaTrader 智能交易系统 *Pendulum 1_01* 的 StockSharp 版本。原始 EA 会在现价上下保持两个挂单，并在每次成交后成倍增加同向挂单的手数。本 C# 版本使用 StockSharp 的高级 API 复现了这种“钟摆式”运行方式。

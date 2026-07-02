@@ -1,4 +1,5 @@
 # She Kanskigor Daily Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 She Kanskigor Daily Strategy is a once-per-day breakout system that mirrors the original MetaTrader expert advisor `SHE_kanskigor.mq4`. The strategy evaluates the direction of the previous daily candle and opens a single market position inside a narrow time window at the start of the new trading day. It automatically monitors the position to close it by a configurable take-profit or stop-loss distance, expressed in security price steps.

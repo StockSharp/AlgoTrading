@@ -1,4 +1,5 @@
 # Стратегия Pendulum Swing
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Pendulum Strategy** — порт MetaTrader-советника *Pendulum 1_01* на платформу StockSharp. Исходный советник удерживает пару встречных стоп-заявок и после каждого исполнения наращивает объём следующей заявки по принципу мартингейла. В данной реализации та же логика реализована через высокоуровневые методы StockSharp.

@@ -1,4 +1,5 @@
 # Multi Indicator Optimizer Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the voting logic of the MetaTrader expert **MultiIndicatorOptimizer** on top of the high level StockSharp API. Five classic oscillators evaluate the finished candle and contribute a weighted vote toward the aggregated sentiment. The resulting score is then compared with user-defined thresholds to decide whether the strategy should go long, go short, or flatten an existing position.
 

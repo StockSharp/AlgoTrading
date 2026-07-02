@@ -1,4 +1,5 @@
 # The Puncher Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Puncher Strategy is a momentum-reversal system converted from the original MetaTrader 4 expert advisor "The Puncher by L. Bigger". It combines a slow Stochastic oscillator with a classic RSI filter to trade extreme overbought and oversold conditions. When both oscillators agree that the market is extended, the strategy looks for a reversal at the close of the candle and enters a market order in the opposite direction.

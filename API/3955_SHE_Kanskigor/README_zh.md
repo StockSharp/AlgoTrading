@@ -1,4 +1,5 @@
 # She Kanskigor 日线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 She Kanskigor 日线策略复刻了 MetaTrader 指标 `SHE_kanskigor.mq4` 的交易思想。策略在每天固定的时间窗口内只开一笔仓位，根据上一根日线的方向选择做多或做空，并按照可配置的价格步长自动平仓。

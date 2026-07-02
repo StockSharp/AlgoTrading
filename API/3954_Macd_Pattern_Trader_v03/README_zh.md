@@ -1,4 +1,5 @@
 # Macd Pattern Trader v03（StockSharp 移植版）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Macd Pattern Trader v03 是从 MetaTrader 4 指标顾问 *MacdPatternTraderv03* 转换而来的 StockSharp 策略。原始 EA 通过观察 MACD 主线的三重峰/谷模式并结合移动平均线的分批止盈来寻找趋势衰竭。本 C# 版本复现了核心逻辑，并使用 StockSharp 的烛线订阅、指标绑定与市价下单接口。

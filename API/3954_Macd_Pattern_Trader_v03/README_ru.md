@@ -1,4 +1,5 @@
 # Macd Pattern Trader v03 (порт на StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Macd Pattern Trader v03 — это стратегия StockSharp, перенесённая с советника MetaTrader 4 *MacdPatternTraderv03*. Исходный алгоритм ищет на основной линии MACD тройное формирование «пик/впадина» и частично фиксирует прибыль по сигналам скользящих средних. Версия на C# полностью повторяет эту идею, используя подписки StockSharp на свечи, индикаторы и рыночные заявки.

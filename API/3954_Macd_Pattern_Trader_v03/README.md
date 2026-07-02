@@ -1,4 +1,5 @@
 # Macd Pattern Trader v03 (StockSharp port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Macd Pattern Trader v03 is a high-level StockSharp strategy converted from the MetaTrader 4 expert advisor *MacdPatternTraderv03*. The original robot searches the MACD main line for a three-peak reversal formation and applies partial profit-taking rules based on moving averages. This C# port preserves the pattern logic while using StockSharp subscriptions, indicators, and order helpers.

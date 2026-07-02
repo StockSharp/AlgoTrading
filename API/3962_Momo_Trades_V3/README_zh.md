@@ -1,4 +1,5 @@
 # Momo Trades V3 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Momo Trades V3 是将原始 MetaTrader 专家顾问迁移到 StockSharp 框架的动量策略。它保留了 EA 的核心思路：通过多条件 MACD 形态识别配合位移 EMA 滤波，同时增加可选的保本管理以及与原版相似的自动仓位控制模式。

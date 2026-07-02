@@ -1,4 +1,5 @@
 # Multi Indicator Optimizer 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 上还原 MetaTrader 专家顾问 **MultiIndicatorOptimizer** 的投票机制。五个经典振荡指标在每根已完成的 K 线上给出加权投票，最终汇总成一条综合信号，再根据用户设定的阈值决定是做多、做空还是平仓观望。
 

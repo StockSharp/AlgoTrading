@@ -1,4 +1,5 @@
 # The Puncher 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 The Puncher 策略源自 MetaTrader 4 专家顾问 "The Puncher by L. Bigger"，是一套反转型动量系统。策略同时使用慢速随机指标与经典 RSI，在两者共同指向极端超卖或超买时，于 K 线收盘后反向入场，从而捕捉潜在的回归行情。

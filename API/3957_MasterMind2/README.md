@@ -1,4 +1,5 @@
 # MasterMind 2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 MasterMind 2 is a conversion of the "TheMasterMind2" MQL4 expert advisor. The strategy waits for extreme values on the Stochastic Oscillator and Williams %R indicators to detect exhaustion points. When both indicators show extreme oversold conditions it opens a long position, and when they both show extreme overbought conditions it opens a short position. The logic operates on fully closed candles only, mimicking the original Expert Advisor behaviour.

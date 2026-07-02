@@ -1,4 +1,5 @@
 # Cash Machine 5 min Legacy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Cash Machine 5 min Legacy — порт советника MetaTrader 4 `CashMachine_5min` на платформу StockSharp. Стратегия отслеживает разворотные импульсы по индикаторам DeMarker и Stochastic на пятиминутных свечах. После входа защитные уровни стоп-лосса и тейк-профита остаются скрытыми во внутренней логике, чтобы не публиковать их на стороне брокера. При росте прибыли включается поэтапная защита на трёх настраиваемых уровнях.

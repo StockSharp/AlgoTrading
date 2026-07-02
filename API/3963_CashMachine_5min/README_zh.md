@@ -1,4 +1,5 @@
 # Cash Machine 5 min Legacy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Cash Machine 5 min Legacy 是将 MetaTrader 4 智能交易系统 `CashMachine_5min` 迁移到 StockSharp 的版本。策略在五分钟 K 线上结合 DeMarker 指标与快速随机指标的反转信号。当仓位开启后，保护性的止损和止盈仅在策略内部跟踪，不会向经纪商暴露，同时在三个可配置的利润目标上逐步收紧止损。

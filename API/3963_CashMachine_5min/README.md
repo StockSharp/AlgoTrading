@@ -1,4 +1,5 @@
 # Cash Machine 5 min Legacy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Cash Machine 5 min Legacy is a StockSharp port of the MetaTrader 4 expert advisor `CashMachine_5min`. The system reacts to momentum reversals detected by the DeMarker oscillator and the fast Stochastic oscillator on five-minute candles. Once a position is open, the strategy hides its protective stop-loss and take-profit levels, revealing them only to the internal logic so that broker-side stops are not visible. Profit is protected incrementally across three user-defined milestones.
