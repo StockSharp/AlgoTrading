@@ -1,4 +1,5 @@
 # PSAR Multi Timeframe Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the MetaTrader expert advisor **EA_PSar_002B**. It evaluates Parabolic SAR values on three timeframes (M15, M30 and H1) while managing positions on a one-minute stream. Trading is directional: only one net position can be active at a time and new trades appear only when the previous exposure is flat. The original expert was designed for EURUSD on the M1 chart and the port keeps the same context.

@@ -1,4 +1,5 @@
 # Slope RSI MTF 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Slope RSI MTF 策略** 是对 MetaTrader 4 智能交易程序 `SLOPE_RSI_MTF_LBranjord.mq4` 及其配套指标 `Slope_Direction_Line_Alert.mq4` 的移植。原始系统在多个时间周期上叠加所谓的“坡度方向线”（实质为 Hull 移动平均），只有在所有周期同时指向同一方向并且四层 RSI 过滤器确认动量时才开仓。本移植版使用 StockSharp 的高级 API 重建这种多周期确认逻辑，保留 ATR 止损/止盈规则，并通过参数系统提供更多可配置选项。

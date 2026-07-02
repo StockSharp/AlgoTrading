@@ -1,4 +1,5 @@
 # Rich Kohonen Map Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Rich Kohonen Map Strategy is a conversion of the MetaTrader 4 expert advisor "Rich.mq4". The original system builds a self-organizing map (Kohonen network) over feature vectors derived from Tom DeMark pivot calculations and classifies the next bar as a buy, sell or hold opportunity. The StockSharp port preserves the learning approach while integrating with the high-level strategy API, operating exclusively on completed candles and market orders.

@@ -1,4 +1,5 @@
 # VmMatrix Double Zero
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 VmMatrix Double Zero 是 MetaTrader 4 策略 `vMATRIXDoubleZero` 的 StockSharp 移植版本。原始策略通过将上一根完结蜡烛的收盘价四舍五入至小数点后两位，寻找价格对该“整数位”水平的突破。移植版本完整保留了 EA 的分层过滤结构：可配置的多蜡烛偏向比较、可选的成交量与区间检测、ATR 加速度开关以及辅助摆动强度过滤器。此外，还可以要求日线 CCI 确认方向，并提供基于小时 ATR 统计的动态止盈补偿。

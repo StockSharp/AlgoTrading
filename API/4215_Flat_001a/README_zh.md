@@ -1,4 +1,5 @@
 # Flat 001a 区间策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Flat 001a 是一套针对 EURUSD 小时图的剥头皮系统。策略读取最近三根完成的 K 线，计算最高点与最低点之间的距离。当该范围处于设定的点数区间内时，系统假设行情维持横盘状态，并尝试在区间边缘进行逆势交易。只要收盘价落在区间的上四分之一或下四分之一区域，并且没有持仓，策略就会进场并立即设置保护性订单。

@@ -1,4 +1,5 @@
 # Slope RSI MTF Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Slope RSI MTF Strategy** ports the MetaTrader 4 expert advisor `SLOPE_RSI_MTF_LBranjord.mq4` together with its companion indicator `Slope_Direction_Line_Alert.mq4`. The original setup stacked multiple Hull moving averages (named "Slope Direction Line") across several timeframes and only opened trades when all of them pointed in the same direction while a four-tier RSI filter confirmed the momentum. The StockSharp version reproduces this multi-timeframe confirmation logic with high-level subscriptions, keeps the ATR-based exit targets, and adds extensive configuration support through strategy parameters.

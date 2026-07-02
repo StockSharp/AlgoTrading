@@ -1,4 +1,5 @@
 # Early Top Prorate V1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This document describes the StockSharp port of the MetaTrader expert advisor **earlyTopProrate_V1**. The strategy searches for intraday moves that extend away from the daily open and scales out of the position using three profit targets. It was converted using the high level StockSharp API while preserving the original money management and trade management ideas.
 
@@ -71,4 +72,3 @@ Each result is normalized using the instrument volume step and the exchange min/
 3. Tune the point-based thresholds and ratios according to the instrument volatility.
 4. Select a money management mode and set the corresponding parameters (`BaseVolume`, `MoneyManagementFactor`, `MoneyManagementRiskPercent`).
 5. Run the strategy in paper trading first to validate that the behaviour matches your expectations before using it with live capital.
-

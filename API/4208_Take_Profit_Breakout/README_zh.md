@@ -1,5 +1,5 @@
 # 盈利目标突破策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 的 “take-profit” 智能交易系统，通过检测四根连续 K 线的高点和开盘价是否呈现严格的单调变化来寻找短期动量。当前 K 线收盘时，如果四根蜡烛的高点和开盘价均按升序排列，则判定为看涨突破并以市价买入；若两者均按降序排列，则以市价卖出。策略在下单后会根据账户权益目标、可选的初始止损、可部分减仓的跟踪止损来管理仓位。
 

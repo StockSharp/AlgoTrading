@@ -1,4 +1,5 @@
 # Early Top Prorate V1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本文档说明 MetaTrader 专家顾问 **earlyTopProrate_V1** 在 StockSharp 平台上的移植版本。该策略关注日内价格相对于每日开盘价的偏离，并通过三个分级止盈逐步减仓。移植使用 StockSharp 高级 API，保留了原策略的仓位管理与资金管理思想。
 
@@ -71,4 +72,3 @@
 3. 根据波动率调节点数阈值和分批比例。
 4. 选择资金管理模式，并设定相关参数（如 `BaseVolume`、`MoneyManagementFactor`、`MoneyManagementRiskPercent`）。
 5. 先在模拟或历史数据环境验证策略行为，确认符合预期后再连接真实资金。
-

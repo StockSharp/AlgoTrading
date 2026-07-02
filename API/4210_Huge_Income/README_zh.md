@@ -1,4 +1,5 @@
 # Huge Income 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 4 智能交易系统 “Huge Income” 的 StockSharp 移植版本。原始脚本关注日内价格相对每日开盘价的大幅拉伸，并在突破方向上开立单一仓位。StockSharp 版本保持这一思想：通过日内 K 线重建当日的开盘价、最高价和最低价，只允许同时持有一个仓位，并在配置的收市时间到来之前强制平仓。

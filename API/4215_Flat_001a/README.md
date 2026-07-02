@@ -1,4 +1,5 @@
 # Flat 001a Range Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Flat 001a is a scalping system designed for the EURUSD hourly chart. It scans the most recent three hourly candles and measures the distance between the highest high and the lowest low. When the range of this three-candle window stays within a configurable number of points, the strategy anticipates that price will remain trapped inside the flat. It then looks to fade short-term excursions into the upper or lower quarter of the channel and immediately attaches protective orders.

@@ -1,4 +1,5 @@
 # Huge Income Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 4 expert advisor "Huge Income". The original robot looks for intraday moves that stretch away from the daily open and enters a single position in the direction of the breakout. The StockSharp version keeps the same idea by rebuilding the daily high/low range from intraday candles, opening only one position at a time and forcing an exit just before the configured market close.

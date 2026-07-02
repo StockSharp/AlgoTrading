@@ -1,4 +1,5 @@
 # PSAR 多周期策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略移植自 MetaTrader 专家顾问 **EA_PSar_002B**。它在 M15、M30 与 H1 三个周期上计算 Parabolic SAR，同时使用 1 分钟数据管理仓位。系统一次只允许持有一个净仓位；前一笔仓位完全平仓后才会触发新的信号。原始脚本是针对 EURUSD 的 M1 图表开发的，移植版本保持这一假设。

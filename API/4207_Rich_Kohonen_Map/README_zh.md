@@ -1,4 +1,5 @@
 # Rich Kohonen Map 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Rich Kohonen Map 策略来源于 MetaTrader 4 专家顾问“Rich.mq4”的移植版。原始系统通过 Tom DeMark 枢轴所构建的特征向量训练自组织映射（Kohonen 网络），并将下一根 K 线分类为买入、卖出或观望。StockSharp 版本保持了该学习方法，同时与高层策略 API 集成，仅依赖已经完成的 K 线与市价单进行交易。

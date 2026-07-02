@@ -1,4 +1,5 @@
 # VmMatrix Double Zero
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 VmMatrix Double Zero is a StockSharp port of the MetaTrader 4 expert advisor `vMATRIXDoubleZero`. The original robot looks for "double zero" breakouts by rounding the previous candle close to two decimals and entering trades when price crosses that rounded level. The port keeps the layered filter structure of the EA: configurable multi-bar bias comparisons, optional volume and range checks, an ATR acceleration gate, and a secondary swing-strength filter. The strategy can also require the daily Commodity Channel Index (CCI) to confirm direction and offers an adaptive take-profit component derived from hourly ATR statistics.
