@@ -1,4 +1,5 @@
 # Check Execution 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Check Execution 策略复现了原始 MQL 专家顾问的逻辑，通过反复修改经纪商订单来衡量执行质量。算法可以测试两种场景：在挂单模式下提交 Buy Stop；在市价模式下先买入，再用 Sell Stop 保护多头头寸。每一次修改都会记录当前点差以及交易所确认修改所需的时间，从而帮助评估经纪商的延迟表现。

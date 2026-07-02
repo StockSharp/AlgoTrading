@@ -1,4 +1,5 @@
 # 加密货币斐波那契均线（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略将 MetaTrader 智能交易系统 “Cryptocurrency Fibonacci MAs” 移植到 StockSharp 高级 API。策略通过 8/13/21/55 周期的斐波那契指数均线判断趋势，同时在更高周期上检查 14 周期动量偏离程度，并结合月度 MACD 过滤方向。所有运算均基于完成的 K 线，并通过 `Bind` / `BindEx` 管道更新指标。

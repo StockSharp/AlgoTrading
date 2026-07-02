@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Awesome Osc Trader Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the "Awesome Osc Trader" MetaTrader expert by combining Bollinger Band width, a stochastic filter and a normalized Awesome Oscillator momentum check. Long trades are opened when the oscillator is climbing from a negative extreme while the stochastic leaves the oversold area and market volatility stays inside a configurable band width. Shorts require the mirror conditions. A configurable trading window limits new orders to specific hours, and open positions can be force-closed on opposite signals only if the floating profit matches the chosen filter.
 

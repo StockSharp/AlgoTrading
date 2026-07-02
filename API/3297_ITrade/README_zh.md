@@ -1,4 +1,5 @@
 # iTrade 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 iTrade 策略是从 MetaTrader 专家顾问 **iTrade** 转换而来，用于手动管理做空组合。它完全复刻原始 EA 的图表按钮流程：当用户发出卖出请求时，策略会按照马丁格尔规则开仓，并持续监控所有空头的浮动盈亏，在达到指定阈值后同时平掉浮动利润最高和最低的仓位。
 

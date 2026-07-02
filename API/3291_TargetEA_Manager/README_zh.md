@@ -1,4 +1,5 @@
 # Target EA 管理策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Target EA 管理策略** 是 MetaTrader 专家顾问 *TargetEA_v1.5* 的 StockSharp 版本。该策略不会主动开仓，而是持续监控当前属于策略的订单的浮动盈亏，并在达到用户设定的阈值时平掉仓位、撤销挂单。策略完整保留了原始 EA 的“篮子”管理模式：买单和卖单既可以分别评估，也可以作为单一篮子整体处理。

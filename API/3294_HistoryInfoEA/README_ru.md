@@ -1,4 +1,5 @@
 # HistoryInfoEaStrategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **HistoryInfoEaStrategy** переносит утилиту MT4 «HistoryInfo» на платформу StockSharp. Вместо вывода текста на график MetaTrader стратегия обрабатывает поток `OnNewMyTrade` и суммирует статистику по сделкам, подходящим под выбранный фильтр. Агрегированные значения доступны через свойство `LastSnapshot` и продублированы в журнале стратегии, что позволяет визуализировать их в любом интерфейсе.

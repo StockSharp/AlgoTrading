@@ -1,4 +1,5 @@
 # HistoryInfoEaStrategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **HistoryInfoEaStrategy** replicates the MT4 "HistoryInfo" utility on top of StockSharp. Instead of drawing text on the MetaTrader chart, the strategy listens to the `OnNewMyTrade` stream and aggregates statistics for trades that match a chosen filter. The aggregated values are exposed through the `LastSnapshot` property and mirrored in the strategy log so that a GUI or automation script can display the summary in any preferred form.

@@ -1,5 +1,5 @@
 # Awesome Osc Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复现 MetaTrader 上的 "Awesome Osc Trader" 专家顾问，通过布林带宽度、随机指标过滤以及归一化的 Awesome Oscillator 动能来确定信号。当振荡器在负值区域回升且随机指标脱离超卖区域，并且市场波动率保持在设定区间内时开多；开空则需要相反条件。可配置的交易时间窗口限制新开仓的时段，已开仓位可在出现反向信号且浮动盈亏满足所选过滤器时被强制平仓。
 

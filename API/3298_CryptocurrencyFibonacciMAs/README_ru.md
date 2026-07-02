@@ -1,4 +1,5 @@
 # Cryptocurrency Fibonacci MAs (версия StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия переносит эксперт "Cryptocurrency Fibonacci MAs" с MetaTrader на высокоуровневый API StockSharp. Система отслеживает веер экспоненциальных скользящих средних с длинами 8/13/21/55, проверяет импульс на старшем таймфрейме и подтверждает глобальный тренд месячным MACD перед отправкой рыночных ордеров. Обрабатываются только завершённые свечи, а индикаторы обновляются через `Bind` и `BindEx`.

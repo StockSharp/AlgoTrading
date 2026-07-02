@@ -1,4 +1,5 @@
 # Target EA Manager Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Target EA Manager Strategy** is a faithful StockSharp port of the MetaTrader expert *TargetEA_v1.5*. The strategy does not open new trades by itself. Instead, it constantly monitors the floating profit and loss of the orders that already belong to the strategy and, if required, liquidates positions and cancels pending orders when user defined thresholds are reached. The behaviour reproduces the "basket" management logic of the original expert: buy and sell orders may be evaluated independently or as a single combined basket.

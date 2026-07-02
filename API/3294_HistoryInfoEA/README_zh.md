@@ -1,4 +1,5 @@
 # HistoryInfoEaStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **HistoryInfoEaStrategy** 将 MT4 的 “HistoryInfo” 工具移植到 StockSharp。策略不会在图表上绘制文本，而是监听 `OnNewMyTrade` 事件，对满足筛选条件的成交进行统计。聚合结果通过 `LastSnapshot` 属性提供，同时写入日志，方便界面或外部服务读取。

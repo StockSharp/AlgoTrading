@@ -1,4 +1,5 @@
 # Cryptocurrency Fibonacci MAs (StockSharp)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy ports the MetaTrader expert advisor "Cryptocurrency Fibonacci MAs" to StockSharp's high-level API. The system tracks a stack of Fibonacci-based exponential moving averages (8/13/21/55), validates momentum on a higher timeframe, and confirms the macro trend with a monthly MACD filter before sending market orders. Only completed candles are processed and all indicator updates are performed via the `Bind`/`BindEx` pipeline.

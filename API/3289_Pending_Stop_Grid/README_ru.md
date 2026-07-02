@@ -1,4 +1,5 @@
 # Стратегия Pending Stop Grid
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Pending Stop Grid Strategy** — это прямой перенос эксперта MetaTrader 4 `new.mq4`. Стратегия одновременно поддерживает две симметричные лестницы отложенных заявок:

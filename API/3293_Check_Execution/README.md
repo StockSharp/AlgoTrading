@@ -1,4 +1,5 @@
 # Check Execution Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Check Execution strategy reproduces the behaviour of the original MQL expert that repeatedly modifies a broker order to measure execution quality. The algorithm can test either a pending buy stop or a protective sell stop that guards a long position opened with a market order. Every modification records both the observed spread and the time required for the trading venue to accept the change, making it straightforward to evaluate latency-sensitive conditions offered by a broker.

@@ -1,4 +1,5 @@
 # Target EA Manager Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Target EA Manager Strategy** — это перенос MetaTrader-советника *TargetEA_v1.5* на платформу StockSharp. Стратегия не открывает новые сделки: она отслеживает текущие ордера стратегии и при достижении заданных порогов закрывает позиции и снимает отложенные заявки. Поведение полностью повторяет «корзинную» логику оригинала: длинные и короткие позиции можно оценивать раздельно либо как единую корзину.
