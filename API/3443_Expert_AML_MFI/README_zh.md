@@ -1,4 +1,5 @@
 # Expert AML MFI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Expert AML MFI Strategy** 使用 StockSharp 高级 API 复刻 MetaTrader 5 顾问程序 “Expert_AML_MFI”。策略聚焦于 *Meeting Lines*（相遇线）K 线形态，并通过 **资金流量指数（MFI）** 对每次入场信号进行确认。系统自动维护最近的 K 线统计数据，识别多空反转形态，并在 MFI 穿越超买 / 超卖阈值时管理持仓。

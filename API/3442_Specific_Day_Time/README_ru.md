@@ -1,4 +1,5 @@
 # Стратегия «Ордера в заданный день и время»
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет логику советника MetaTrader **«Expert Advisor specific day and time»**.  
 В заданный момент времени она размещает рыночные или отложенные ордера на покупку/продажу и может закрыть все позиции в другой момент.  

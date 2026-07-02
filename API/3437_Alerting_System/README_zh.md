@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# Alerting System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Alerting System** 策略是 MetaTrader 4 顾问 `AlertingSystem.mq4` 在 StockSharp 平台上的精确移植版。原始脚本会绘制两条水平线，当价格触碰线条时播放提示音。StockSharp 实现通过订阅 Level1（最优买/卖）行情，并在价格越过预设水平时向日志写入提示，从而复现相同的监控流程。
 

@@ -1,4 +1,5 @@
-[English](README.md) | [中文](README_zh.md)
+# Стратегия Alerting System
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия **Alerting System** — это аккуратная конверсия советника MetaTrader 4 `AlertingSystem.mq4` в экосистему StockSharp. В оригинале пользователь размещает две горизонтальные линии и получает звуковой сигнал при касании цены. StockSharp-вариант реализует тот же алгоритм: подписывается на поток котировок Level1 (лучший бид/аск) и записывает сообщения в журнал при пересечении заданных уровней.
 

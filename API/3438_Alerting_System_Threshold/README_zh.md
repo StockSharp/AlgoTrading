@@ -1,4 +1,5 @@
 # Alerting System 阈值策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Alerting System Threshold Strategy** 是 MetaTrader 5 专家顾问 “AlertingSystem”（MQL 目录 `31843`）的 StockSharp 版本。原始 EA 在图表上绘制两条水平线，当买价突破上方水平线或卖价跌破下方水平线时播放提示音。C# 版本继承相同的预警思想，并使用 StockSharp 的高级 API 和日志系统来交付通知。
 

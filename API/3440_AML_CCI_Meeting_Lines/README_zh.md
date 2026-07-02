@@ -1,5 +1,5 @@
 # AML CCI Meeting Lines 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略把 MetaTrader 5 智能交易系统 "Expert_AML_CCI" 移植到 StockSharp 的高级 API。当年的机器人将日本蜡烛形态
 “Meeting Lines” 与商品通道指数（CCI）过滤器结合，并通过 Expert Advisor 引擎给多空信号赋予权重。移植版本保持相同

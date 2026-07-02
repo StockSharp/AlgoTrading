@@ -1,4 +1,5 @@
 # AH HM RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert **Expert_AH_HM_RSI**. It looks for hammer or hanging man candlestick patterns and requires a confirming signal from the Relative Strength Index (RSI) before trading. The approach mirrors the original Expert Advisor, including its risk management philosophy of reversing positions when a fresh signal appears.

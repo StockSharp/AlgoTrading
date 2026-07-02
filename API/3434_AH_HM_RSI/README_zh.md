@@ -1,4 +1,5 @@
 # AH HM RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 智能交易系统 **Expert_AH_HM_RSI** 的 StockSharp 移植版本。策略在已收盘的 K 线中寻找锤子线或上吊线，并使用相对强弱指数（RSI）进行确认。风险管理与原版 EA 一致：当出现新的反向信号时立即反手。

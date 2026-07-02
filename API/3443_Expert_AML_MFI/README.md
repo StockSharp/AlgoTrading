@@ -1,4 +1,5 @@
 # Expert AML MFI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Expert AML MFI Strategy** replicates the MetaTrader 5 expert advisor "Expert_AML_MFI" using the StockSharp high-level API. It focuses on the *Meeting Lines* candlestick pattern and validates every signal with the **Money Flow Index (MFI)** oscillator. The strategy automatically maintains the necessary candle statistics, identifies bullish or bearish reversals, and manages open positions whenever the MFI crosses oversold or overbought thresholds.

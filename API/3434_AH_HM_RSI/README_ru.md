@@ -1,4 +1,5 @@
 # Стратегия AH HM RSI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Эта стратегия — порт MetaTrader-советника **Expert_AH_HM_RSI** на платформу StockSharp. Она ищет свечные модели «молот» и «повешенный» на закрытых барах и подтверждает их фильтром Relative Strength Index (RSI). Логика управления позициями повторяет оригинальный эксперт: при появлении противоположного сигнала позиция разворачивается сразу же.

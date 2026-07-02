@@ -1,4 +1,5 @@
-[Русский](README_ru.md) | [中文](README_zh.md)
+# Alerting System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Alerting System** strategy is a faithful StockSharp conversion of the MetaTrader 4 expert advisor `AlertingSystem.mq4`. The original script draws two horizontal lines and plays a sound whenever the market touches them. The StockSharp version accomplishes the same goal by subscribing to Level1 (best bid/ask) quotes and printing journal messages when either configurable alert level is crossed.
 

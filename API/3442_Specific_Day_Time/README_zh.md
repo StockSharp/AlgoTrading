@@ -1,4 +1,5 @@
 # 特定日期与时间下单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 专家顾问 **“Expert Advisor specific day and time”** 的逻辑。  
 在预设的时间点自动开仓（市价、止损挂单或限价挂单），并可在另一个时间点平仓及清理挂单。  

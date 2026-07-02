@@ -1,4 +1,5 @@
 # Alerting System Threshold Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Alerting System Threshold Strategy** is a StockSharp port of the MetaTrader 5 expert advisor "AlertingSystem" (MQL folder `31843`). The original EA draws two horizontal lines and plays a sound whenever the bid trades above the upper line or the ask trades below the lower line. This C# conversion keeps the alerting behavior while using StockSharp's high-level API for data access and notification logging.
 

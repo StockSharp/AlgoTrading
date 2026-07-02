@@ -1,4 +1,5 @@
 # Стратегия Expert AML MFI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Expert AML MFI Strategy** повторяет советник MetaTrader 5 «Expert_AML_MFI» с использованием высокоуровневого API StockSharp. В центре внимания — свечная модель *Meeting Lines* (встречные линии), подтверждаемая осциллятором **Money Flow Index (MFI)**. Стратегия автоматически поддерживает статистику по свечам, определяет бычьи и медвежьи разворотные комбинации и управляет позициями при пересечениях MFI уровней перепроданности и перекупленности.
