@@ -1,4 +1,5 @@
 # M.A Break Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy replicates the behaviour of the MetaTrader "M.A break mt5 buy" and "M.A break mt5 sell" experts by combining both breakout directions into a single StockSharp implementation. It watches a configurable candle series, analyses several exponential moving averages, and confirms a strong impulse candle before opening trades. Positions are managed through fixed protective stops and targets measured in pips.
 

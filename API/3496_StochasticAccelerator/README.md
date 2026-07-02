@@ -1,4 +1,5 @@
 # Stochastic Accelerator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Stochastic Accelerator strategy is a conversion of the MetaTrader 5 expert *#2 stoch mt5*. The original robot evaluates three

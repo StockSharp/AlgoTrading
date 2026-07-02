@@ -1,5 +1,5 @@
 # Time Bomb 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Time Bomb 策略还原了同名的 MetaTrader 智能交易系统：当价格在极短时间内突进指定点数时，它只开一笔仓位。
 策略持续跟踪最新的买一与卖一价格，计算最新报价与参考价之间跨越的点数。如果价格在给定的时间窗口内快速

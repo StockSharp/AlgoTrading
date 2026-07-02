@@ -1,4 +1,5 @@
 # Простая стратегия по паттерну «Поглощение»
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Simple Engulfing Strategy** воспроизводит работу советников MetaTrader 4 «simple engulf mt4 buy» и «simple engulf mt4 sell». Оригинальные советники ищут свечной паттерн «поглощение» и открывают сделки только в одном направлении. В версии для StockSharp оба робота объединены в один класс с параметром `Direction`, позволяющим выбрать работу только в лонг, только в шорт или в обе стороны.

@@ -1,4 +1,5 @@
 # M.A均线突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略源自MetaTrader上的“M.A break mt5 buy”和“M.A break mt5 sell”专家顾问，并将两个方向的逻辑整合为一个StockSharp策略。策略订阅指定周期的K线，在每根收盘K线上分析多组指数移动平均线（EMA），并验证是否出现足够强烈的突破动能。只有当所有过滤条件满足时才会建仓，并按照固定的止损与止盈（以点数衡量）管理头寸。
 

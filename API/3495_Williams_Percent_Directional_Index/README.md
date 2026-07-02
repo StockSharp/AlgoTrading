@@ -1,4 +1,5 @@
 # Williams Percent Directional Index Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Williams Percent Directional Index Strategy** recreates the MetaTrader 5 expert "Mt5 Williams % Directional Index EA" using StockSharp's high-level API. It combines the Williams %R oscillator with the Average Directional Index (ADX) to identify momentum turns and then relies on the Money Flow Index (MFI) and Stochastic Oscillator to exit trades. The implementation processes only finished candles and uses indicator bindings so every decision is based on the latest completed bar.

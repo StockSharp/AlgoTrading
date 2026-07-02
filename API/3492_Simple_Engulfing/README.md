@@ -1,4 +1,5 @@
 # Simple Engulfing Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Simple Engulfing Strategy** replicates the behaviour of the MetaTrader 4 experts "simple engulf mt4 buy" and "simple engulf mt4 sell". Both experts detect engulfing candlestick patterns and open trades in a single direction. The StockSharp port merges both advisors into one configurable strategy so that the trader can reproduce the original buy-only, sell-only or combined behaviour inside the StockSharp framework.

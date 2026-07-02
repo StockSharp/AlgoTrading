@@ -1,4 +1,5 @@
 # Commission Calculator Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Commission Calculator Strategy** is a utility strategy that mirrors the original MetaTrader script. It sends a single discretionary order using the selected execution mode (market, limit, or stop) and measures the broker commission applied to every resulting fill. The strategy stores the cumulative commission and prints a final report with the starting balance, total fees, and fee-adjusted balance when it finishes.

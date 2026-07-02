@@ -1,4 +1,5 @@
 # Commission Calculator 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Commission Calculator Strategy** 是一款实用型策略，按照原始的 MetaTrader 脚本实现。策略在启动时发送一次指定类型的订单（市价、限价或止损），并根据每笔成交计算经纪商佣金。所有佣金都会累加，在策略停止时输出包含初始余额、总费用以及扣费后余额的完整报告。

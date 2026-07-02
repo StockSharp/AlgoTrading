@@ -1,4 +1,5 @@
 # 简单吞没策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **简单吞没策略** 复刻了 MetaTrader 4 的 "simple engulf mt4 buy" 与 "simple engulf mt4 sell" 两个专家顾问。原版分别只做多或只做空吞没形态。本移植版本在 StockSharp 中提供一个统一的策略，并通过参数 `Direction` 控制执行买入、卖出或双向交易，从而完整保留原始逻辑。

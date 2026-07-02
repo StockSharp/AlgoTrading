@@ -1,4 +1,5 @@
 # MA Break Impulse Buy Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the "M.A break mt4 buy" expert advisor using StockSharp's high-level API. It focuses on identifying strong bullish breakouts after a quiet consolidation. The entry logic looks for a sequence of exponential moving average (EMA) filters, a quiet market phase, and then a powerful bullish impulse candle that interacts with a breakout EMA. The strategy opens **long** positions only.
@@ -55,4 +56,3 @@ This strategy reproduces the "M.A break mt4 buy" expert advisor using StockSharp
 - Make sure the connected instrument provides `PriceStep`, `VolumeStep`, and volume limits so that pip and volume conversions remain accurate.
 - Adjust EMA periods and impulse parameters to the instrument's volatility. Lower `ImpulseStrength` will react to smaller breakouts, while a higher value filters only the strongest moves.
 - The strategy is designed for one open position at a time. External positions on the same security may prevent new entries.
-

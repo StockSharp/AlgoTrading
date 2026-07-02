@@ -1,4 +1,5 @@
 # MACD Divergence RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 - Port of the MetaTrader expert advisor **"Macd diver rsi mt4"** to the StockSharp high-level API.

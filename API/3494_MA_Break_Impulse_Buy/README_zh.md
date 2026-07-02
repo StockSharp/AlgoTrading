@@ -1,4 +1,5 @@
 # MA Break Impulse Buy 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略按照 StockSharp 高层 API 重现 “M.A break mt4 buy” 智能交易顾问。核心思想是在一段低波动的整固之后捕捉强势的多头突破。交易逻辑依次检查多条指数移动平均线（EMA）、静默期以及触碰突破 EMA 的强势多头蜡烛。策略 **只做多**。
@@ -55,4 +56,3 @@
 - 请确保标的提供 `PriceStep`、`VolumeStep` 以及最小/最大下单量，这样点值与手数转换才准确。
 - 可根据品种波动性调整 EMA 周期与动能阈值；降低 `ImpulseStrength` 会更敏感，高值则只接受更强的突破。
 - 策略一次只允许一个仓位，若有外部持仓可能阻止新的入场信号。
-

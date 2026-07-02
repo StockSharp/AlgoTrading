@@ -1,4 +1,5 @@
 # Стратегия Williams Percent Directional Index
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Williams Percent Directional Index Strategy** — это порт StockSharp для эксперта MetaTrader 5 «Mt5 Williams % Directional Index EA». Логика построена на сочетании Williams %R и направленного движения ADX для поиска смены импульса, а закрытие позиций контролируется индикаторами Money Flow Index (MFI) и Stochastic Oscillator. Реализация работает только с полностью сформированными свечами и использует механизмы `BindEx`, поэтому решения принимаются на основе окончательных значений индикаторов.

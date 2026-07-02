@@ -1,4 +1,5 @@
 # Williams Percent Directional Index 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Williams Percent Directional Index 策略** 在 StockSharp 高级 API 中重现了 MetaTrader 5 专家顾问“Mt5 Williams % Directional Index EA”。策略以 Williams %R 动量曲线与平均方向指数（ADX）交叉为入场触发点，并使用资金流量指数（MFI）与随机指标确认离场。程序只处理已经收盘的K线，并通过指标绑定获取最新的计算结果。
