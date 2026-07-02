@@ -1,4 +1,5 @@
 # MoStAsHaR15 枢轴线策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用 StockSharp 高层 API 复刻 MetaTrader 4 的“MoStAsHaR15 FoReX - Pivot Line”专家顾问。策略保留了原始的日内地板枢轴网格，并结合 ADX、EMA 差值以及 MACD 柱（OsMA）等动量过滤器。交易逻辑基于 1 小时 K 线，另外订阅上一根完整的日线用于在每根小时 K 线更新枢轴水平。

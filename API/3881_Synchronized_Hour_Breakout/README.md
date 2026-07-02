@@ -1,4 +1,5 @@
 # Synchronized Hour Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Synchronized Hour Breakout Strategy** is a StockSharp port of the MetaTrader 4 expert advisor `JK_sinkhro1`. It analyses the balance of bullish and bearish candles during the recent trading window and only trades during two carefully selected synchronization hours (by default 19:00 and 22:00 plus an offset). The strategy focuses on capturing directional breakouts while enforcing conservative risk management rules similar to the original EA.

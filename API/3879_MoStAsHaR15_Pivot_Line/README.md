@@ -1,4 +1,5 @@
 # MoStAsHaR15 Pivot Line Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy reproduces the "MoStAsHaR15 FoReX - Pivot Line" MetaTrader 4 expert using StockSharp's high level strategy API. It keeps the original daily floor-pivot map combined with momentum filters from ADX, EMA spreads and the MACD histogram (OsMA). Intraday logic operates on an hourly candle stream while a second subscription consumes the previous completed daily candle to rebuild the pivot ladder before each decision.

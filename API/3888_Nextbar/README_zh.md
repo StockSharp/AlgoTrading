@@ -1,4 +1,5 @@
 # Nextbar 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Nextbar** 策略是 MetaTrader 4 专家顾问 `nextbar.mq4` 的完整移植版本。原始 EA 会比较最新收盘价与若干根之前的收盘价，当价格单向移动超过阈值时，根据方向参数选择顺势或逆势入场。所有头寸都设置对称的止盈/止损，并在持仓达到固定的根数后强制平仓。

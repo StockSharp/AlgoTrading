@@ -1,4 +1,5 @@
 # Morning Pullback Corridor Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Morning Pullback Corridor Strategy** replicates the behaviour of the "3_Otkat_Sys_v1_2" MetaTrader 4 expert advisor. The system trades once per day during the early morning session, evaluating the interaction between the current price and the price corridor formed by candles that are 29 bars apart. It reacts to morning pullbacks after a strong overnight move and immediately attaches asymmetric take-profit levels for long and short positions.

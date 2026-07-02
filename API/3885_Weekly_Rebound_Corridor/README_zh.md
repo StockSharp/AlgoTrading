@@ -1,4 +1,5 @@
 # 每周回撤通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 每周回撤通道策略复现了 MetaTrader 4 专家顾问 `2_Otkat_Sys_v1_1` 的核心思想。系统寻找前一次收盘价与 24 根 K 线之前的开盘价之间的大幅差距，当差距超过设定的通道阈值并且满足指定的交易日条件时，会在新交易日的最初几分钟入场。策略会设置止损/止盈，并在交易日结束前强制平仓。

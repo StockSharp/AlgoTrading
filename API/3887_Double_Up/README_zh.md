@@ -1,4 +1,5 @@
 # Double Up 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Double Up 策略是 MetaTrader 专家顾问 `DoubleUp.mq4` 的等价移植版本。策略同时使用 CCI 振荡指标和 MACD 主线来识别极端动量。当两个指标都进入同一极端区域时，系统会预先设置下一笔逆向交易。CCI 回落到阈值附近时，算法要么平掉所有空头并开多，要么平掉所有多头并开空。

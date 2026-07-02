@@ -1,4 +1,5 @@
 # Weekly Rebound Corridor Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Weekly Rebound Corridor strategy replicates the behavior of the MetaTrader 4 Expert Advisor `2_Otkat_Sys_v1_1`. The system searches for a strong gap between the previous session close and the open price that occurred 24 candles earlier. When the detected gap exceeds a configurable corridor threshold and it is the specified trading day of the week, the strategy enters the market during the first minutes of the new trading day. Protective stop-loss and take-profit levels are applied, and all open positions are force-closed shortly before the trading session ends.

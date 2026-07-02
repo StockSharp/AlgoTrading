@@ -1,4 +1,5 @@
 # 晨间回撤通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **晨间回撤通道策略** 复现了 MetaTrader 4 专家顾问 “3_Otkat_Sys_v1_2” 的逻辑。策略只在清晨时段工作，分析相隔 29 根 K 线的价格走廊，寻找夜间大幅运动后的回撤机会，并为多空仓位分别设置非对称的止盈水平。

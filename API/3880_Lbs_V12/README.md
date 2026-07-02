@@ -1,4 +1,5 @@
 # Lbs V12 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Lbs V12 strategy is a conversion of the MetaTrader expert advisor **LBS_V12.mq4**. It opens a pair of breakout stop orders around the previous 15-minute candle when the configured trigger hour begins. Both orders are offset by the current Average True Range (ATR) value in order to account for short-term volatility. The strategy attempts to catch the first impulse of the trading session and manages exits through virtual stop-loss, take-profit and trailing rules evaluated on every finished candle.

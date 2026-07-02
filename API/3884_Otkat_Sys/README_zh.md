@@ -1,4 +1,5 @@
 # Otkat Sys 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 专家顾问 **1_Otkat_Sys**。它跟踪上一交易日的开盘价、收盘价、最高价和最低价，并在
 每天午夜后的前三分钟（经纪商时间）从周二到周四判断是否入场。

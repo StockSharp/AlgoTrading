@@ -1,4 +1,5 @@
 # Nextbar Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Nextbar Strategy** is a direct translation of the MetaTrader 4 expert advisor `nextbar.mq4`. The original EA evaluates the distance between the last completed candle and a candle that is several bars older. When price travels far enough in one direction it either follows the momentum or trades against it, depending on the configured direction flag. Positions are then protected with symmetric take-profit/stop-loss levels and are force-closed after a fixed number of bars.

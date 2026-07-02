@@ -1,5 +1,5 @@
 # Graal EMA Momentum 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 4 智能交易系统 **0Graal-CROSSmuvingi** 转换到 StockSharp。它利用两条指数移动平均线：快速 EMA 基于收盘价，慢速 EMA 基于开盘价。当两条均线在完成的 K 线上发生交叉，且动量指标确认方向时入场，并通过固定点数的止盈距离复制原始 MT4 策略的平仓方式。
 

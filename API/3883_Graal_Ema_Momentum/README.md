@@ -1,5 +1,5 @@
 # Graal EMA Momentum Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a conversion of the MetaTrader 4 expert advisor **0Graal-CROSSmuvingi**. It trades trend reversals that occur when a fast exponential moving average (EMA) on closing prices crosses a slower EMA calculated on opening prices. A momentum oscillator confirms the breakout direction, and a fixed-distance take profit replicates the original MT4 execution model.
 

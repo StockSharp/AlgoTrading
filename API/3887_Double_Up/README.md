@@ -1,4 +1,5 @@
 # Double Up Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Double Up strategy is a direct port of the MetaTrader expert advisor `DoubleUp.mq4`. It combines a Commodity Channel Index (CCI) oscillator with the main line of the MACD indicator to detect extreme momentum conditions and then applies a martingale style position sizing model. Whenever both oscillators reach the same extreme zone, the algorithm arms itself for a trade in the opposite direction. Once the CCI returns toward the midpoint, the strategy either opens a new long position (after closing existing shorts) or opens a new short position (after closing existing longs).

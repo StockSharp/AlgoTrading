@@ -1,4 +1,5 @@
 # Lbs V12 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Lbs V12 策略基于 MetaTrader 专家顾问 **LBS_V12.mq4** 改写。系统会在设定的触发小时开始时，围绕上一根 15 分钟 K 线区间布置一组突破性止损挂单。为了吸收短期波动，挂单价格会根据当前的平均真实波幅（ATR）数值进行偏移。持仓之后，策略利用虚拟止损、止盈和移动止损，在每根收盘 K 线上重新评估离场条件。

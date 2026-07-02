@@ -1,4 +1,5 @@
 # 同步时段突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **同步时段突破策略（Synchronized Hour Breakout）** 是将 MetaTrader 4 专家顾问 `JK_sinkhro1` 移植到 StockSharp 平台的版本。策略在最近一段时间内统计多头与空头蜡烛数量，只在两个预设的“同步”时段（默认为 19:00 与 22:00 加上时间偏移量）寻找入场机会，以捕捉方向性突破，同时延续原策略的风险控制思想。
