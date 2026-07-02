@@ -1,4 +1,5 @@
 # Equidistant Channel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Equidistant Channel Strategy** ports the original "Equidistant Channel" MQL4 expert advisor to the StockSharp high-level API. The strategy analyses MACD line crossovers and manages existing positions through Bollinger Band touches, breakeven logic, and money-based trailing targets.

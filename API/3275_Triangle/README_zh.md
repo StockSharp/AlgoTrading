@@ -1,5 +1,5 @@
 # Triangle 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 **Triangle v1** MetaTrader 智能交易系统迁移到 StockSharp 高层 API。原版 EA 在更高的时间框架上使用加权移动平均线、Momentum 动量偏离以及超长周期 MACD 过滤，然后才会发出突破式交易信号。移植版本保留了多时间框架的核心逻辑，并改用基于 K 线的止损/止盈管理来取代逐笔的资金控制。
 

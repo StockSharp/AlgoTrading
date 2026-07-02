@@ -1,4 +1,5 @@
 # Стратегия Equidistant Channel
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Equidistant Channel Strategy** — порт оригинального советника MQL4 «Equidistant Channel» на высокоуровневый API StockSharp. Стратегия отслеживает пересечения линии MACD и сигнальной линии для открытия сделок и управляет позициями с помощью касаний полос Боллинджера, режима безубытка и денежных тралений прибыли.

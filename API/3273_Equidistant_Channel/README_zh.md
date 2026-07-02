@@ -1,4 +1,5 @@
 # 等距通道策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Equidistant Channel Strategy** 是将原始 MQL4 «Equidistant Channel» 专家顾问移植到 StockSharp 高层 API 的版本。策略使用 MACD 线与信号线的交叉作为入场信号，并通过布林带触发、保本处理以及基于货币的浮动盈利追踪来管理仓位。

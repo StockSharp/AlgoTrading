@@ -1,4 +1,5 @@
 # Lavika100 Strategy (StockSharp)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Lavika100 Strategy** is a faithful port of the MetaTrader 5 expert advisor "Lavika  cent". The system combines a one-hour (H1) and a four-hour (H4) RAVI momentum filter to decide when to open trades. It keeps the original money management choices (fixed lot or risk percentage), one-position discipline, optional signal reversal and automatic stop management. The StockSharp version adheres to the high level API guidelines: candle subscriptions drive the workflow, indicators are accessed through binders, and protective orders are configured with `StartProtection`.

@@ -1,5 +1,5 @@
 # 突破波动率策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 突破波动率策略专注于寻找蜡烛内部短暂的波动放大。当当前蜡烛的振幅比上一根更大，但仅比上一根高出两个经小数位调整后的点值时视为有效突破。如果蜡烛收盘价高于开盘价则做多，收盘价低于开盘价则做空。策略通过固定止损与止盈、可选的移动止损以及在亏损后自动反向开仓来管理风险与回撤。
 

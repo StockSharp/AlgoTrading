@@ -1,5 +1,5 @@
 # Triangle Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the **Triangle v1** MetaTrader expert advisor to the StockSharp high-level API. The original EA combined weighted moving average filters on a higher timeframe, a momentum divergence check, and a very long-term MACD confirmation before placing breakout-style orders. The StockSharp version keeps the multi-timeframe logic while replacing tick-by-tick money management with candle-based protective orders.
 

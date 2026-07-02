@@ -1,4 +1,5 @@
 # Lavika100 策略（StockSharp）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Lavika100** 是 MetaTrader 5 专家顾问 “Lavika  cent” 的完整移植。策略将 1 小时（H1）与 4 小时（H4）的 RAVI 动量过滤器结合，用于挑选进场时机。StockSharp 版本保留了原始 EA 的核心功能：可选的资金管理模式（固定手数或按风险百分比计算）、单仓控制、信号反转开关，以及自动的止损/止盈/追踪保护。所有逻辑均基于高层 API：通过蜡烛订阅驱动流程、指标通过 `Bind` 绑定、`StartProtection` 负责保护性委托。
