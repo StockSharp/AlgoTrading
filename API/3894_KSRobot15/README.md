@@ -1,4 +1,5 @@
 # KSRobot 1.5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **KSRobot 1.5 Strategy** is a C# conversion of the MetaTrader 4 expert advisor `KSRobot_1_5_h1_v1.mq4`. The StockSharp version keeps the original idea of trading Kijun-sen price breaks confirmed by a 20-period linear weighted moving average (LWMA) while enforcing a strict trading window and layered risk controls. All calculations are performed on 30-minute candles by default, but the timeframe can be changed through a parameter.

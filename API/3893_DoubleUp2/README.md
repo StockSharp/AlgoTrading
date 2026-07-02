@@ -1,4 +1,5 @@
 # DoubleUp2 Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The DoubleUp2 Martingale strategy reproduces the original MetaTrader expert by combining the Commodity Channel Index (CCI) and the MACD oscillator. Trades are opened only when both indicators reach extreme levels in the same direction. Position sizing follows a martingale scheme where the volume doubles after a losing trade. Profitable trades are partially locked by closing the position once price travels a configurable distance in favor of the position.

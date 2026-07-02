@@ -1,4 +1,5 @@
 # T3MA(MTC) 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略来自 MetaTrader 4 智能交易系统 **T3MA(MTC).mq4**（目录 `MQL/7904`）。原始 EA 依赖 “T3MA-ALARM” 指标：先对行情做双重指数平滑，当平滑曲线的斜率从下行变为上行或从上行转为下行时就开仓。移植到 StockSharp 后，算法保持不变，并使用官方的高层 API 实现。
 

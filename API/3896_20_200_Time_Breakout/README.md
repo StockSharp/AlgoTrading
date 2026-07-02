@@ -1,4 +1,5 @@
 # Twenty200 Time Breakout
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader expert advisor **20/200 expert v4.2 (AntS)**. It waits for a specific hour of the trading day and then compares two historical hourly open prices (6 and 2 bars back in the default configuration). If the distant open is higher than the nearer open by more than `Short Delta` pips the strategy sells, while the reverse gap that exceeds `Long Delta` pips opens a long position.
 

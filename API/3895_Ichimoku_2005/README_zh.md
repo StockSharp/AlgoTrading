@@ -1,4 +1,5 @@
 # Ichimoku 2005 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 `ichimok2005` 的移植版本，针对 StockSharp 的高层 API 进行了重写。它专注于识别价格对 Ichimoku 指标 Senkou Span B 的突破，并通过连续的实体 K 线确认动能。
 

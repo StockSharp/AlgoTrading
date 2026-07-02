@@ -1,4 +1,5 @@
 # Ichimoku 2005 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a direct port of the MetaTrader expert advisor `ichimok2005` tailored for the StockSharp high-level API. It focuses on identifying decisive breakouts above or below the Ichimoku Senkou Span B line and confirms momentum through consecutive candle bodies.
 

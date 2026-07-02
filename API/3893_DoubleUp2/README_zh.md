@@ -1,4 +1,5 @@
 # DoubleUp2 马丁格尔策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 DoubleUp2 马丁格尔策略复刻了原始的 MetaTrader 智能交易系统，通过组合商品通道指数（CCI）和 MACD 振荡器来筛选极端动量。只有当两个指标同时到达同方向的极值时才开仓。仓位规模遵循马丁格尔原则：每次亏损后加倍，赢利后重置。策略还会在价格相对入场价达到设定点数时平仓，以部分锁定收益。

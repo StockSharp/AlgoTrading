@@ -1,4 +1,5 @@
-[English](README.md) | [Русский](README_ru.md)
+# ASCPlusPlus 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ASC++ Williams Breakout 策略** 将经典的 MQL4 "ASC++.mq4" 专家顾问迁移到 StockSharp 的高级 API。策略在 Williams %R 振荡指标确认的窄幅波动区间内埋单，在蜡烛高点或低点外侧放置突破性止损单；订单被触发后，系统会自动设置止盈、止损以及（可选的）移动止损。
 

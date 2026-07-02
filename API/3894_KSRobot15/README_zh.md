@@ -1,4 +1,5 @@
 # KSRobot 1.5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **KSRobot 1.5 策略** 是将 MetaTrader 4 专家顾问 `KSRobot_1_5_h1_v1.mq4` 迁移到 StockSharp 高级 API 的 C# 版本。策略保留了原始 EA 的核心思想：价格穿越 Kijun-sen 线时，在 20 周期线性加权移动平均线（LWMA）的趋势确认下入场，同时通过限定交易时间和层级化的风控规则保护仓位。默认使用 30 分钟 K 线，但可以通过参数调整时间框架。

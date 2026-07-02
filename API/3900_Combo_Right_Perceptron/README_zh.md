@@ -1,4 +1,5 @@
 # Combo Right 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 智能交易系统 **Combo_Right.mq4** 的 StockSharp 复刻版。它把基于开盘价计算的商品通道指数（CCI）动量筛选与三组感知机结合起来，根据不同的 `PassMode` 分支决定是否覆盖 CCI 信号，并分别应用对应的止盈止损距离。
 

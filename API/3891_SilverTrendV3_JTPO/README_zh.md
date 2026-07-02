@@ -1,4 +1,5 @@
 # SilverTrend V3 JTPO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 SilverTrend V3 JTPO 策略移植自 MetaTrader 4 版本。策略通过 SilverTrend 指标识别趋势方向，并结合 J_TPO 统计滤波器过滤噪声信号。系统一次只持有一个头寸，并在周五设定的时间之后停止开仓，以避免周末隔夜风险。

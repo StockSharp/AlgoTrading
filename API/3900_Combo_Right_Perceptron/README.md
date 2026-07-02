@@ -1,4 +1,5 @@
 # Combo Right Perceptron Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a faithful StockSharp port of the MetaTrader expert advisor **Combo_Right.mq4**. It mixes a base Commodity Channel Index (CCI) momentum filter with three perceptrons that analyse open-price momentum over configurable bar strides. Depending on the `PassMode` the perceptrons can override the CCI signal and instruct the supervisor to open long or short positions with their dedicated risk parameters.
 

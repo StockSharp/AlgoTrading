@@ -1,4 +1,5 @@
 # Стратегия Ichimoku 2005
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия представляет собой порт эксперта MetaTrader `ichimok2005`, адаптированный под высокоуровневый API StockSharp. Алгоритм ищет уверенные пробои выше или ниже линии Senkou Span B индикатора Ichimoku и подтверждает импульс серией направленных свечей.
 

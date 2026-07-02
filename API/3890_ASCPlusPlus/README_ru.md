@@ -1,4 +1,5 @@
-[English](README.md) | [中文](README_zh.md)
+# Стратегия ASCPlusPlus
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **ASC++ Williams Breakout** — это порт советника "ASC++.mq4" на высокоуровневый API StockSharp. Стратегия отслеживает узкие диапазоны волатильности, подтверждённые осциллятором Williams %R, и выставляет отложенные заявки немного выше/ниже экстремумов свечи. После активации позиции защищаются автоматическим тейк-профитом, стоп-лоссом и при необходимости трейлингом.
 

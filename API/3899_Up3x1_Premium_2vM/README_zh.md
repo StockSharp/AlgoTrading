@@ -1,4 +1,5 @@
 # Up3x1 Premium 2vM 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -36,4 +37,4 @@
 - 保留了原 EA 中“日线均线与买价比较永远为真”的特性，以确保回测结果一致。
 - 止盈/止损通过 `StartProtection` 注册，可自动适配券商的价格步长。
 - 移动止损只有在 `TrailingStopPoints` 为正且 `Security.PriceStep` 有效时才会生效；缺少任一信息都会禁用该功能。
-- 手数归一化遵循交易所限制（`VolumeStep`、`VolumeMin`、`VolumeMax`）。若需要百分比仓位，可在此基础上扩展自定义逻辑并传入负值。 
+- 手数归一化遵循交易所限制（`VolumeStep`、`VolumeMin`、`VolumeMax`）。若需要百分比仓位，可在此基础上扩展自定义逻辑并传入负值。

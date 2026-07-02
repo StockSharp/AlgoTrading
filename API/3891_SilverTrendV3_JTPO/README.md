@@ -1,4 +1,5 @@
 # SilverTrend V3 JTPO Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 SilverTrend V3 is a trend-following strategy translated from the original MetaTrader 4 implementation. It evaluates the SilverTrend indicator together with the J_TPO statistical filter to identify new directional swings. The strategy trades a single instrument at a time and enforces a Friday evening flat rule to avoid holding risk over the weekend.

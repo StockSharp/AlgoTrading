@@ -1,4 +1,5 @@
 # SilverTrend V3 Стратегия
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 SilverTrend V3 — это перевод оригинального советника MetaTrader 4. Стратегия определяет смену тренда по индикатору SilverTrend и подтверждает его фильтром J_TPO. Система торгует только одним инструментом и не открывает новые позиции в пятницу после заданного часа, чтобы не переносить риск на выходные.

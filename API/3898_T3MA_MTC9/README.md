@@ -1,4 +1,5 @@
 # T3MA(MTC) Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the MetaTrader 4 expert advisor **T3MA(MTC).mq4** (directory `MQL/7904`). The original robot trades signals from the "T3MA-ALARM" indicator: it builds a double-smoothed exponential moving average and places an order whenever the slope of that curve flips from falling to rising or vice versa. The StockSharp port mirrors the same logic with idiomatic high-level APIs.
 
