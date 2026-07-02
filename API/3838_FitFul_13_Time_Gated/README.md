@@ -1,4 +1,5 @@
 # FitFul 13 Time Gated Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **FitFul 13 Time Gated Strategy** is a StockSharp port of the MetaTrader 4 expert advisor "FitFul_13". The strategy builds a weekly pivot ladder (PP, R0.5, R1, R1.5, R2, R2.5, R3 and the corresponding support levels) using the previous week's high, low and close. Trade decisions are taken on the primary timeframe (default 1 hour) and are optionally confirmed by a faster timeframe (default 15 minutes). New positions are allowed only at specific intraday minutes to mimic the original EA behaviour.

@@ -1,4 +1,5 @@
 # Karakatica 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Karakatica 策略源自 MetaTrader 4 智能交易系统 “Exp_karakatica”。默认在 **EUR/USD 的 M15 周期** 上运行，通过基于简单移动平均线（SMA）的交叉模型来模拟原始 “iKarakatica” 指标的行为。信号周期在每根新K线上重新计算，使策略能够动态跟随近期最具盈利潜力的市场状态。

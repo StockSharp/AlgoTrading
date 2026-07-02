@@ -1,4 +1,5 @@
 # Elderv30aug05v Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Elderv30aug05v strategy is a direct port of the MetaTrader 4 expert advisor with the same name. It combines signals from two MACD filters calculated on hourly candles and two stochastic oscillators calculated on 15-minute candles. Trade execution and exit management happen on one-minute candles to replicate the tick-by-tick logic of the original MQL script. The strategy opens at most one position at a time and relies on dynamic trailing stops rather than fixed take-profit orders.

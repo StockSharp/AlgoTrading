@@ -1,4 +1,5 @@
 # Get Rich GBP Session Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Get Rich or Die Trying GBP Strategy** is a high-frequency mean-reversion system that ported the MetaTrader 4 expert advisor "Get Rich or Die Trying GBP" to the StockSharp high-level API. The logic monitors a short rolling history of minute candles and opens trades near two predefined times of day when the most recent candles have mostly closed against the expected direction. This approach attempts to capture a quick retracement immediately after the London and New York sessions overlap.

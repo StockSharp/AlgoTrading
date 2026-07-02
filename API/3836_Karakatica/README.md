@@ -1,4 +1,5 @@
 # Karakatica Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Karakatica Strategy is a medium-term trend-following system that was ported from the original MetaTrader 4 expert advisor "Exp_karakatica". The strategy trades **EUR/USD on the M15 timeframe** by default and uses a custom signal engine that emulates the behaviour of the original "iKarakatica" indicator with a moving-average crossover model. The crossover is recalculated on every bar and the signal period is continuously re-optimised in order to follow the most profitable recent regime.

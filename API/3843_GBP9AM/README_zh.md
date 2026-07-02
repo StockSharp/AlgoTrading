@@ -1,4 +1,5 @@
 # GBP 9 AM 挂单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是将 `MQL/7687/Gbp9am.mq4` 中的 MetaTrader 4 智能交易系统移植到 StockSharp 的结果。它复刻了伦敦上午 9 点突破的思路：在参考价上下放置两个挂单，并确保任意时刻只有一笔持仓。
 

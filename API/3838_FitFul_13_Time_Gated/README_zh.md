@@ -1,4 +1,5 @@
 # FitFul 13 时间过滤策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **FitFul 13 时间过滤策略** 是 MetaTrader 4 指标顾问 "FitFul_13" 的 StockSharp 版本。策略使用上一周的最高价、最低价和收盘价构建枢轴价位阶梯（PP、R0.5、R1、R1.5、R2、R2.5、R3 以及对应的支撑位）。交易决策在主时间框架（默认 1 小时）上完成，并可通过更快的确认时间框架（默认 15 分钟）验证。为了保持原始 EA 的节奏，只允许在特定分钟触发新仓位。

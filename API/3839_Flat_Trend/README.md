@@ -1,4 +1,5 @@
 # Flat Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Flat Trend Strategy** reproduces the core ideas of the original Flat Trend expert advisor by combining multi-speed trend filters, ADX confirmation and a standard deviation "juice" breakout filter. The strategy focuses on detecting the moment when price leaves a ranging phase and momentum expands, allowing it to join directional moves with dynamic position protection.

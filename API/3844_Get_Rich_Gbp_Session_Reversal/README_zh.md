@@ -1,4 +1,5 @@
 # Get Rich or Die Trying GBP 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Get Rich or Die Trying GBP 策略** 是将 MetaTrader 4 专家顾问 "Get Rich or Die Trying GBP" 移植到 StockSharp 高级 API 的结果。策略通过持续统计最近一段时间的分钟 K 线涨跌次数，并在每天两个设定的时间窗口内寻找反向反弹机会，以捕捉伦敦与纽约交易时段重叠时常见的短期修复波动。

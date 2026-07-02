@@ -1,4 +1,5 @@
 # EMA回调策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 EMA回调策略是MetaTrader "Ema" 专家顾问的高层移植版本。策略在设定的K线周期（默认5分钟）上计算5周期与10周期的指数移动平均线（EMA），使用中价 `(最高价 + 最低价) / 2` 作为输入。当出现快慢EMA金叉或死叉后，策略等待价格回撤到前一根K线的极值附近再入场，并在持仓后应用固定的止盈和止损距离。

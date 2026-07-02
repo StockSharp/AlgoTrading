@@ -1,4 +1,5 @@
 # EMA Pullback Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The EMA Pullback strategy is a high-level port of the MetaTrader "Ema" expert advisor. It observes a pair of exponential moving averages (EMA) with periods 5 and 10 calculated on median candle prices. When a bullish or bearish crossover appears, the strategy waits for price to retrace towards the previous candle's extreme before entering in the direction of the crossover. Fixed take-profit and stop-loss levels measured in price points manage risk once the position is open.

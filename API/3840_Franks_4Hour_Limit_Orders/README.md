@@ -1,4 +1,5 @@
 # Franks 4 Hour Limit Orders Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Franks 4 Hour Limit Orders Strategy** ports the MetaTrader 4 expert advisor from `MQL/7684/Franks_4hour_limit_orders.mq4` to the StockSharp high-level API. The original EA combines Alexander Elder's Triple Screen ideas: it evaluates momentum on a four-hour chart using the MACD histogram (OsMA) together with the Force Index, and then places contrarian limit orders around the previous candle extremes. The StockSharp implementation keeps this multi-indicator logic while following the repository guidelines (tabs, high-level API, no custom collections) and adds extensive inline comments in English for clarity.

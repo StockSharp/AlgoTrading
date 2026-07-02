@@ -1,4 +1,5 @@
 # Farhad Hill Version 2 策略 (C#)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问 “Farhad Hill Version 2” 的 StockSharp 版本。

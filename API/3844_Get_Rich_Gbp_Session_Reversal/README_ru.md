@@ -1,4 +1,5 @@
 # Стратегия Get Rich or Die Trying GBP
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Get Rich or Die Trying GBP** — это перенос эксперта MetaTrader 4 «Get Rich or Die Trying GBP» на высокоуровневый API StockSharp. Стратегия отслеживает краткосрочную историю минутных свечей и в строго определённые часы открывает сделку против преобладающего направления последних свечей, рассчитывая на быструю коррекцию в период перекрытия европейской и американской сессий.

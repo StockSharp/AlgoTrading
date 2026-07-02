@@ -1,4 +1,5 @@
 # Elderv30aug05v 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Elderv30aug05v 策略直接移植自同名的 MetaTrader 4 智能交易系统。策略在 1 小时周期上计算两组 MACD 过滤器，在 15 分钟周期上计算两组随机指标，并使用 1 分钟 K 线完成入场确认与仓位管理，从而复刻原始 MQL 程序的逐笔逻辑。系统同时最多只持有一笔仓位，依靠动态追踪止损而不是固定止盈。

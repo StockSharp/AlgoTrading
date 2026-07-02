@@ -1,4 +1,5 @@
 # FrBestExp02 Maloma Mod 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 4 智能交易程序 `Frbestexp02_1_maloma_mod.mq4` 的 C# 版本。它结合了 OsMA 动量、分形反转、勾选成交量确认以及滚动日枢轴过滤器，用于在 15 分钟周期上捕捉过度延伸后的反向机会。
 

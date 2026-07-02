@@ -1,4 +1,5 @@
 # 平滑趋势策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **平滑趋势策略** 通过多速率趋势过滤器、ADX 强度确认以及标准差 “juice” 波动性过滤器，重现了原 Flat Trend 专家的核心思想。策略关注价格脱离盘整并出现动量扩张的瞬间，以动态风控方式参与趋势行情。

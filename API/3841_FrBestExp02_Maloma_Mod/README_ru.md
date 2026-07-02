@@ -1,4 +1,5 @@
 # Стратегия FrBestExp02 Maloma Mod
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия представляет собой перенос советника MetaTrader 4 `Frbestexp02_1_maloma_mod.mq4` на C#. Она сочетает импульс по OsMA, разворотные фракталы Билла Вильямса, фильтр по тиковому объёму и скользящий дневной пивот, чтобы торговать откаты на таймфрейме M15.
 

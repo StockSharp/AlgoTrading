@@ -1,4 +1,5 @@
 # Franks 4 Hour Limit Orders 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Franks 4 Hour Limit Orders Strategy** 将 `MQL/7684/Franks_4hour_limit_orders.mq4` 中的 MetaTrader 4 专家顾问移植到 StockSharp 高阶 API。原版 EA 结合了 Alexander Elder 的“三重筛选”思想：在四小时图上利用 MACD 直方图（OsMA）和 Force Index 判断动能，再在上一根蜡烛的高低点附近挂出逆势限价单。移植版本完全遵守仓库规则（使用制表符、高阶 API、避免自建集合），并在代码中加入了详细的英文注释。

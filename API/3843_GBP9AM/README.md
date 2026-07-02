@@ -1,4 +1,5 @@
 # GBP 9 AM Pending Orders Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp conversion of the original MetaTrader 4 expert located in `MQL/7687/Gbp9am.mq4`. It recreates the London 9 AM breakout routine that arms two pending orders around the current price and keeps at most one active trade during the session.
 
