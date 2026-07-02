@@ -1,4 +1,5 @@
 # Macd Secrets 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Macd Secrets 策略** 源自 MetaTrader 平台的 "Macd Secrets I" 智能交易系统，本移植版本使用 StockSharp 高级 API，并通过三重时间框架的 MACD 趋势确认、线性加权移动平均线 (LWMA) 滤波以及动量偏移过滤来确定入场信号。与原版 EA 可以叠加多个仓位不同，移植版始终只保持一个净仓位，以便更直观地管理风险。

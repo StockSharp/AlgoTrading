@@ -1,4 +1,5 @@
 # Zone Recovery Button 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Zone Recovery Button Strategy** 源自 MetaTrader 专家顾问 "ZONE RECOVERY BUTTON VER1"（`MQL/25347`）。
 原版 EA 通过图表上的 BUY/SELL 按钮手动启动网格。移植到 StockSharp 后，按钮被参数化替代，但保留了原有的

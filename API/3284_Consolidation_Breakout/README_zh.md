@@ -1,4 +1,5 @@
 # Consolidation Breakout 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 MetaTrader 上的 **Consolidation Breakout** 智能交易系统的核心逻辑。它寻找短期盘整区间，并在 Momentum 与 MACD 同向确认后，沿突破方向开仓。风险通过以价格跳动（点）为单位的固定止盈与止损距离来控制。
 

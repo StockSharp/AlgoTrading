@@ -1,4 +1,5 @@
 # Williams AO + AC 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Williams AO + AC 策略** 将 MetaTrader 4 专家顾问 “Williams_AOAC” 转换为 StockSharp 的高层策略 API。该策略把多种 Bill Williams 工具组合在一起，以在默认的 1 小时时间框中捕捉动量爆发：

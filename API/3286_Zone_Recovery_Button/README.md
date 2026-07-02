@@ -1,4 +1,5 @@
 # Zone Recovery Button Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Zone Recovery Button Strategy** is a direct conversion of the MetaTrader expert advisor "ZONE RECOVERY BUTTON VER1" (`MQL/25347`).
 The original robot relied on on-chart BUY/SELL buttons to start a hedged basket. In this StockSharp port the manual panel is

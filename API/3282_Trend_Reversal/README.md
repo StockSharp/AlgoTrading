@@ -1,4 +1,5 @@
 # Trend Reversal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Trend Reversal strategy is a directional system that attempts to capture breakouts after a short-term pullback inside an existing trend. It was ported from the MetaTrader "Trend Reversal" expert advisor and rewritten to use the high-level StockSharp API. The conversion keeps the core confirmation stack (moving averages, momentum, and MACD) while replacing the original graphical line filters with price overlap checks that are easier to reproduce programmatically.

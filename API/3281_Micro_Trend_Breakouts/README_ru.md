@@ -1,4 +1,5 @@
 # Стратегия Micro Trend Breakouts
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Micro Trend Breakouts** — это перенос советника MetaTrader «Micro Trend Breakouts» на высокоуровневый API StockSharp. Стратегия отслеживает короткие импульсные пробои, анализируя взаимное положение линейно-взвешенных средних, всплески Momentum и направленность MACD. В рынке удерживается не более одной позиции, решения принимаются по закрытиям свечей.

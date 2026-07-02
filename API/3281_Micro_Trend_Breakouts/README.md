@@ -1,4 +1,5 @@
 # Micro Trend Breakouts Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Micro Trend Breakouts** strategy is a conversion of the MetaTrader expert advisor "Micro Trend Breakouts" to the StockSharp high-level API. It detects short-lived breakout patterns using linear weighted moving averages, momentum spikes and MACD alignment. The strategy opens at most one position at a time and relies on candle close prices to trigger entries and exits.

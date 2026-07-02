@@ -1,4 +1,5 @@
 # 趋势反转策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 趋势反转策略旨在捕捉既有趋势中的回调结束后出现的突破行情。该版本基于 MetaTrader 平台上的 "Trend Reversal" 智能交易系统移植，并使用 StockSharp 的高级 API 重新实现。移植过程中保留了关键的确认条件（移动平均线、动量和 MACD），将原策略依赖的人工趋势线替换为可重复的 K 线重叠判断。

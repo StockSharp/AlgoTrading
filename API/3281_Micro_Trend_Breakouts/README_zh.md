@@ -1,4 +1,5 @@
 # Micro Trend Breakouts 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **Micro Trend Breakouts** 策略将 MetaTrader 上的同名专家顾问迁移到 StockSharp 的高层 API。它结合线性加权移动平均、Momentum 冲量和 MACD 方向过滤器来捕捉短线突破行情。策略一次仅持有一个仓位，并仅在蜡烛收盘时做出交易决策。

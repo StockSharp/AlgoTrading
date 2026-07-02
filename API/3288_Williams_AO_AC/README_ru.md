@@ -1,4 +1,5 @@
 # Стратегия Williams AO + AC
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 **Williams AO + AC** — это перенос советника MetaTrader 4 «Williams_AOAC» на высокоуровневый API StockSharp. Алгоритм объединяет несколько инструментов Билла Вильямса, чтобы на часовом таймфрейме (по умолчанию) отбирать импульсные движения:

@@ -1,4 +1,5 @@
 # Consolidation Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the core behaviour of the original **Consolidation Breakout** expert advisor for MetaTrader. It looks for tight consolidations confirmed by momentum and MACD filters, then opens a position in the direction of the breakout. Risk is managed through fixed take-profit and stop-loss distances measured in price steps (pips).
 

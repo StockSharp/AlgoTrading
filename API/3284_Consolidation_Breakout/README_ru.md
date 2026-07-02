@@ -1,4 +1,5 @@
 # Стратегия Consolidation Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия повторяет ключевую логику советника **Consolidation Breakout** для MetaTrader. Она ищет короткие периоды консолидации, подтверждённые фильтрами Momentum и MACD, и открывает позицию по направлению выхода из диапазона. Управление риском выполняется с помощью фиксированных уровней тейк-профита и стоп-лосса, задаваемых в шагах цены (пипсах).
 

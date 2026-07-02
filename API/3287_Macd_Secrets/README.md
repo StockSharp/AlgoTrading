@@ -1,4 +1,5 @@
 # Macd Secrets Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Macd Secrets Strategy** is a multi-timeframe momentum-following system inspired by the original "Macd Secrets I" expert advisor for MetaTrader. The StockSharp port uses the high-level API and focuses on aligning MACD direction across three timeframes while filtering trades with a linear weighted moving average (LWMA) baseline and a momentum deviation check. The strategy only holds a single net position at any moment, providing a simplified and transparent risk profile compared to the source EA that could pyramid multiple orders.

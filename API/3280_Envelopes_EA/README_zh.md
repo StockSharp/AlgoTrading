@@ -1,4 +1,5 @@
 # Envelopes EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻自 MetaTrader 4 专家顾问“EnvelopesEA”。策略在选定周期的K线之上计算指数移动平均线（EMA）包络，当价格显著偏离包络时逆势建仓，一旦价格重新回到包络内即平仓。原始 EA 在 2019 年的 EUR/USD 上进行过回测，StockSharp 版本保留了原有逻辑，并将核心输入暴露为可优化参数。

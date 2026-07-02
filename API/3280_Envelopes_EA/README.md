@@ -1,4 +1,5 @@
 # Envelopes EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy replicates the MetaTrader 4 expert advisor "EnvelopesEA". It applies an exponential moving average envelope to the primary candle stream and trades mean reversions. When the market pushes far outside the envelope a contrarian market order is sent. Positions are closed as soon as price re-enters the envelope in the opposite direction. The original expert was tested on EUR/USD in 2019; the StockSharp port keeps the same logic while exposing all key inputs as optimizable parameters.
