@@ -1,4 +1,5 @@
 # WPR Custom Cloud Simple Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **WPR Custom Cloud Simple Strategy** is a StockSharp port of the MetaTrader expert advisor `WPR Custom Cloud Simple.mq5`. The EA monitors Larry Williams' %R oscillator and opens trades when the indicator exits oversold or overbought territory. This C# version keeps the original design of trading only on new candles, reversing the position when an opposite signal appears, and avoids any stop-loss or take-profit orders exactly like the reference implementation.

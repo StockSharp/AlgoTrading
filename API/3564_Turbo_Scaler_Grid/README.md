@@ -1,4 +1,5 @@
 # Turbo Scaler Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Turbo Scaler Grid strategy is a high-level StockSharp implementation of the MQL5 "Turbo Scaler Grid Pending" expert advisor. The strategy focuses on managing pending stop grids around predefined price levels, dynamically protecting open positions with break-even and trailing logic, and supervising the account equity to close positions when profit or loss thresholds are reached.

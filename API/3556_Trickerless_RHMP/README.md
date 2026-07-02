@@ -1,4 +1,5 @@
 # Trickerless RHMP Strategy (StockSharp Port)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the MetaTrader expert advisor **Trickerless RHMP** to StockSharp's high level API. It keeps the multi-stage
 entry logic of the original robot – combining Average Directional Index confirmation, smoothed moving average structure and

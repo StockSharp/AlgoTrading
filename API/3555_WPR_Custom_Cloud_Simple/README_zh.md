@@ -1,4 +1,5 @@
 # WPR Custom Cloud Simple 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **WPR Custom Cloud Simple 策略** 是 MetaTrader 智能交易程序 `WPR Custom Cloud Simple.mq5` 的 StockSharp 版本。原策略利用 Larry Williams 的 %R 摆动指标，在指标脱离超买或超卖区域时开仓。本 C# 实现保持了原始 EA 的节奏：只在新 K 线出现时评估信号、收到反向信号时直接反手，并且不使用止损、止盈或跟踪保护。

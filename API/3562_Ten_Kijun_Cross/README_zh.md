@@ -1,4 +1,5 @@
 # TenKijun 交叉提醒策略 (ID 3562)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -61,4 +62,3 @@
 ## 文件列表
 
 - `CS/TenKijunCrossStrategy.cs` – 策略的 C# 实现。
-

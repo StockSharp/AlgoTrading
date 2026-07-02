@@ -1,4 +1,5 @@
 # MACD Fixed PSAR Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# port of the MetaTrader expert advisor **EA_MACD_FixedPSAR**. It trades trend reversals by combining a MACD crossover filter with an EMA trend check. Risk management mirrors the original implementation and supports both a fixed-distance trailing stop and a Parabolic SAR style trailing mode. All distances are configured in pips and internally converted to price units based on the instrument tick size.

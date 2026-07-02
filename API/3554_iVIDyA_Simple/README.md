@@ -1,4 +1,5 @@
 # iVIDyA Simple Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a high-level StockSharp port of the MetaTrader expert **"iVIDyA Simple"**. It trades a single symbol by tracking a Variable Index Dynamic Average (VIDYA) that adapts to market momentum via the Chande Momentum Oscillator (CMO). Whenever the most recent finished candle crosses the shifted VIDYA line, the strategy opens a market position in the direction of the breakout and optionally attaches protective stop-loss and take-profit orders.

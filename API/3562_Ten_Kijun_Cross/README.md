@@ -1,4 +1,5 @@
 # TenKijun Cross Alert Strategy (ID 3562)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -57,4 +58,3 @@ If `StartHour` is less than or equal to `LastHour`, alerts are produced between 
 ## Files
 
 - `CS/TenKijunCrossStrategy.cs` – main C# implementation of the alert logic.
-

@@ -1,4 +1,5 @@
 # 随机方向策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 5 专家顾问“At random”（MQL ID 39835）的 StockSharp 移植版本。原始机器人展示了在必须持续持仓的情况下，完全随机的决策流程会如何表现。每根完成的 K 线都会触发一次“抛硬币”，决定下一步是买入还是卖出。StockSharp 版本保留了这一思想，并使用高级 API 原语（`SubscribeCandles`、`BuyMarket`、`SellMarket`）实现，从而可以方便地在 Designer 或 Runner 中运行。
@@ -31,4 +32,3 @@
 - 与原始 MQL 程序一样，移植版本没有止盈止损。如需实盘实验，必须自行添加风险控制。
 - 固定随机种子可以生成可复现的数据集，便于优化或对比不同的随机序列。
 - 建议在测试阶段启用日志，因为纯随机策略在图表上的反馈非常有限。
-

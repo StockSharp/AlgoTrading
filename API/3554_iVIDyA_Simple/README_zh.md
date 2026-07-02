@@ -1,4 +1,5 @@
 # iVIDyA Simple 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 专家顾问 **“iVIDyA Simple”** 的 StockSharp 高层 API 移植版。策略只交易一个品种，通过 Chande 动量振荡器（CMO）驱动的可变指数动态平均线（VIDYA）捕捉趋势。当最新完成的 K 线与经过偏移的 VIDYA 发生交叉时，策略按突破方向开立市价单，并可选地附加止损和止盈。

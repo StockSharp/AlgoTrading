@@ -1,4 +1,5 @@
 # SR Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Summary
 SR Breakout Strategy monitors support and resistance levels derived from Donchian Channels on two timeframes (H1 and H4). When a completed candle closes above resistance or below support, the strategy writes an informational log message. The implementation mirrors the alerting logic of the original MQL4 expert without placing any orders.

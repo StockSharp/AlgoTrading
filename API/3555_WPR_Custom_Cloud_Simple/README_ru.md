@@ -1,4 +1,5 @@
 # Стратегия WPR Custom Cloud Simple
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **WPR Custom Cloud Simple** — это порт эксперта MetaTrader `WPR Custom Cloud Simple.mq5` на платформу StockSharp. Робот отслеживает осциллятор Larry Williams %R и открывает сделки, когда индикатор выходит из зон перепроданности или перекупленности. В версии на C# сохранены все ключевые особенности оригинала: анализ только на открытии новой свечи, разворот позиции при обратном сигнале и полный отказ от стоп-лоссов, тейк-профитов и трейлинг-стопов.

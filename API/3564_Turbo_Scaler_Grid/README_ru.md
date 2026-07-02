@@ -1,4 +1,5 @@
 # Стратегия Turbo Scaler Grid
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Стратегия Turbo Scaler Grid переносит логику советника MQL5 «Turbo Scaler Grid Pending» в инфраструктуру StockSharp. Алгоритм выстраивает сетку отложенных стоп-заявок вокруг заданных цен, защищает открытые позиции с помощью перевода в безубыток и трейлинг-стопа, а также контролирует совокупную плавающую прибыль/убыток по портфелю.

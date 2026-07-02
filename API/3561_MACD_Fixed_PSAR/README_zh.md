@@ -1,4 +1,5 @@
 # MACD Fixed PSAR 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略为 MetaTrader 智能交易系统 **EA_MACD_FixedPSAR** 的 C# 版本。策略通过 MACD 金叉/死叉配合 EMA 趋势过滤来捕捉趋势反转，同时提供固定距离追踪止损与类抛物线 SAR 追踪止损两种风险管理选项。所有阈值均以点数（pips）配置，并根据品种的最小跳动点自动转换为价格单位。

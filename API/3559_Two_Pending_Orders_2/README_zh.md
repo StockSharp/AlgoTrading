@@ -1,4 +1,5 @@
 # Two Pending Orders 2
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略是 MetaTrader 智能交易系统 **“Two pending orders 2”** 的 StockSharp 版本。策略始终在市场价格的上下各保持一个对称的挂单，并在首个成交方向上按照配置的止损、止盈与移动止损规则管理仓位。转换完全基于 StockSharp 的高级 API，实现原策略的核心思想，同时保留所有关键参数以便调优。

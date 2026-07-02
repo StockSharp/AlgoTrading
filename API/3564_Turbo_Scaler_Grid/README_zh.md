@@ -1,4 +1,5 @@
 # Turbo Scaler 网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Turbo Scaler 网格策略是对 MQL5 “Turbo Scaler Grid Pending” EA 的 StockSharp 高级接口实现。策略围绕预设价格水平构建买入/卖出止损网格，并结合多时间框架过滤条件，同时通过移动止损和浮动权益管理来保护已有头寸。

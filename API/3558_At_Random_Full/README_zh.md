@@ -1,5 +1,5 @@
 # At Random Full 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **At Random Full** 是 MetaTrader 5 专家顾问「At random Full」的完整移植版。策略依然通过随机数选择方向，并保留

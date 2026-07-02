@@ -1,4 +1,5 @@
 # Two Pending Orders 2
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor **"Two pending orders 2"**. It keeps two symmetric pending orders around the market price and lets the first triggered side manage the trade with configurable stop-loss, take-profit, and trailing rules. The conversion uses the high level StockSharp API and keeps the core ideas of the original algorithm while exposing every tuning knob through strategy parameters.

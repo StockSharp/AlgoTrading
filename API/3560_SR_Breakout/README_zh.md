@@ -1,4 +1,5 @@
 # SR Breakout 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 SR Breakout 策略在两个时间框架（H1 与 H4）上跟踪由 Donchian Channels 计算出的支撑与阻力。一旦完成的 K 线收盘价突破阻力或跌破支撑，策略会写入信息日志，复现原始 MQL4 专家顾问的提醒逻辑，而不会发送订单。

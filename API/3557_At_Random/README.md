@@ -1,4 +1,5 @@
 # At Random Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor "At random" (MQL ID 39835). The original bot demonstrates how a purely random decision process behaves when it is forced to be always in the market. Every completed bar triggers a coin flip that determines whether the next action is to buy or to sell. The StockSharp version keeps the same idea but expresses it with high-level API primitives (`SubscribeCandles`, `BuyMarket`, `SellMarket`) and integrates smoothly with Designer or Runner.
@@ -31,4 +32,3 @@ Because each candle triggers only one random decision, the strategy is either fl
 - The port keeps the absence of take-profit and stop-loss levels just like the MQL reference. Any risk control must be added manually if the strategy is used for experiments with real capital.
 - Deterministic seeds are useful to create reproducible datasets when optimising or benchmarking random behaviour.
 - Enabling logging is recommended during tests because a pure random strategy offers little visual feedback on the chart.
-

@@ -1,4 +1,5 @@
 # Trickerless RHMP 策略（StockSharp 版本）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 专家顾问 **Trickerless RHMP** 迁移到 StockSharp 的高级 API。它保留了原始机器人多阶段的入场判定 ——
 利用平均趋向指数（ADX）确认趋势、平滑移动平均线判断结构，以及基于 ATR 的头寸管理 —— 并遵循仓库中 `AGENTS.md`
