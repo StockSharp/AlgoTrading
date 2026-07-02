@@ -1,4 +1,5 @@
 # Стратегия Bullish & Bearish Harami Stochastic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Bullish & Bearish Harami Stochastic Strategy** — порт StockSharp эксперта MetaTrader `expert_abh_bh_stoch.mq5` из каталога `MQL/310`. Оригинальный робот распознаёт свечные комбинации «бычье харами» и «медвежье харами» и допускает сделку только при подтверждении осциллятором Stochastic. Реализация на C# полностью повторяет логику, используя высокоуровневый API StockSharp, и добавляет подробный лог с визуализацией на графике.
 

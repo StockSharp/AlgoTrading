@@ -1,4 +1,5 @@
 # ABH_BH_MFI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **ABH_BH_MFI 策略** 是 MetaTrader 专家顾问 “Expert_ABH_BH_MFI” 的 StockSharp 高级 API 版本。策略通过识别孕线形态并结合资金流量指数（MFI）确认来捕捉趋势反转：

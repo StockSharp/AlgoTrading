@@ -1,5 +1,5 @@
 # Hammer Hanging Stochastic
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит логику советника MetaTrader "Expert_AH_HM_Stoch" на высокоуровневый API StockSharp. Используются свечные модели Молот/Повешенный в сочетании с подтверждением от стохастического осциллятора, что позволяет ловить развороты после резких импульсов.
 

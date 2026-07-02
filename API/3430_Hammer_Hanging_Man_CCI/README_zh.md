@@ -1,5 +1,5 @@
 # 锤子线与上吊线 CCI 确认策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 中复刻 MetaTrader 的“AH HM CCI”专家顾问。它同时监控锤子线（Hammer）和上吊线（Hanging Man）形态，并
 使用顺势而为的商品通道指数（CCI）作为入场确认。只有当蜡烛形态与 CCI 指示的动量变化一致时才会开仓，从而过滤掉噪声信号。

@@ -1,4 +1,5 @@
 # TemplateEAbyMarket Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 TemplateEAbyMarket is a direct StockSharp port of the original MetaTrader 4 expert advisor *TemplateEAbyMarket.mq4*. The strategy uses the Moving Average Convergence Divergence (MACD) indicator to detect momentum shifts. When the MACD main line crosses the signal line while both components are in the same positive or negative zone, the strategy opens a market position in the direction of the crossover. Exits are managed exclusively through protective orders (take profit and stop loss) configured via the built-in `StartProtection` helper.

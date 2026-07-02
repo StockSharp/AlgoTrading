@@ -1,4 +1,5 @@
 # ABH_BH_MFI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **ABH_BH_MFI Strategy** is a StockSharp high-level port of the MetaTrader expert advisor "Expert_ABH_BH_MFI". The algorithm combines bullish and bearish Harami candlestick patterns with confirmation from the Money Flow Index (MFI). Long trades are triggered when a bullish Harami forms inside a falling market while the MFI remains depressed. Short trades require a bearish Harami inside a rising market and an elevated MFI. The original MQL implementation relied on MetaTrader's signal infrastructure; this conversion keeps the decision logic but expresses it with StockSharp's candle subscriptions, indicator binding, and position management helpers.

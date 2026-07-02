@@ -1,4 +1,5 @@
 # Template M5 Envelopes 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略由 MetaTrader 4 专家顾问 “Template_M5_Envelopes.mq4” 转换而来。它在 5 分钟 K 线图上计算线性加权移动平均线（LWMA）包络通道，当价格远离通道足够距离时布置突破型止损挂单。挂单会随着市场自动调价，成交后还会根据参数设置挂出止损、止盈以及可选的跟踪止损。
 

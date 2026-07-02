@@ -1,4 +1,5 @@
 # DreamBot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 DreamBot is a StockSharp port of the MetaTrader 4 expert advisor "DreamBot". The strategy monitors the Force Index oscillator on hourly candles and waits for the momentum to cross bullish or bearish thresholds. When the Force Index crosses above the bullish level after being below it on the previous bar, the strategy opens a long position. When the Force Index crosses below the bearish level after being above it, the strategy opens a short position. Trading occurs only when there is no existing position, mirroring the single-position logic of the original robot.

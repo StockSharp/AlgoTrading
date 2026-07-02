@@ -1,4 +1,5 @@
 # Bullish & Bearish Harami Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Bullish & Bearish Harami Stochastic Strategy** is the StockSharp port of the MetaTrader Expert Advisor `expert_abh_bh_stoch.mq5` from folder `MQL/310`. The original expert uses candlestick pattern recognition for Bullish Harami and Bearish Harami setups and requires a stochastic oscillator confirmation. The C# version keeps the same logic using the high-level StockSharp API and adds detailed logging and chart output for easier monitoring.
 

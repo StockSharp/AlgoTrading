@@ -1,4 +1,5 @@
 # Bullish & Bearish Harami Stochastic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Bullish & Bearish Harami Stochastic Strategy** 是将 MetaTrader 专家顾问 `expert_abh_bh_stoch.mq5`（位于 `MQL/310`）迁移到 StockSharp 的结果。原版 EA 利用「孕线」蜡烛形态配合随机指标 Stochastic 的确认信号。本次 C# 实现依托 StockSharp 高级 API 复刻全部逻辑，并提供详细日志与图表输出，方便跟踪策略行为。
 

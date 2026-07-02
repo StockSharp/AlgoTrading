@@ -1,4 +1,5 @@
 # Harami CCI Confirmation 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Harami CCI Confirmation 是对 MetaTrader 5 专家顾问 `Expert_ABH_BH_CCI` 的 StockSharp 高级 API 复刻。原始 EA 交易两根 K 线组成的孕线（Bullish Harami / Bearish Harami）反转形态。策略在下单之前，会先通过商品通道指数（CCI）进行确认，并用移动平均线衡量较大实体是否真正主导了区间。该移植版本完整保留确认逻辑、只处理收盘后的 K 线，并启用了 StockSharp 内置的保护模块。

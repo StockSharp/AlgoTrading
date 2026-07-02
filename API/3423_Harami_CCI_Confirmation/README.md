@@ -1,4 +1,5 @@
 # Harami CCI Confirmation
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Harami CCI Confirmation is a high-level StockSharp port of the MetaTrader 5 expert advisor `Expert_ABH_BH_CCI`. The original EA trades the two-candle Bullish Harami and Bearish Harami reversal patterns. Before entering a trade, it demands confirmation from a Commodity Channel Index (CCI) oscillator and measures candle body size against a moving average to ensure that the larger candle truly dominates the range. The StockSharp conversion keeps the same confirmation logic, processes only completed candles, and uses the platform's built-in protection module for order safety.

@@ -1,4 +1,5 @@
 # TemplateEAbyMarket 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 TemplateEAbyMarket 是 MetaTrader 4 智能交易程序 *TemplateEAbyMarket.mq4* 在 StockSharp 平台上的直接移植版本。策略依靠 MACD 指标捕捉动量变化：当 MACD 主线与信号线发生交叉，并且两条线同时位于零轴同一侧时，就按照交叉方向提交市价单。离场完全交由保护模块处理，通过 `StartProtection` 一次性设置的止盈止损来控制风险。

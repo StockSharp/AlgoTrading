@@ -1,4 +1,5 @@
 # Template M5 Envelopes Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Converted from the MetaTrader 4 expert advisor "Template_M5_Envelopes.mq4". The strategy tracks a linear weighted moving average (LWMA) envelope on five-minute candles and arms breakout stop orders whenever price stretches far enough away from the channel. Pending orders are dynamically repriced to follow the market, and filled positions are protected by configurable stop-loss, take-profit and trailing-stop logic.
 

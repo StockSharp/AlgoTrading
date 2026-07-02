@@ -1,5 +1,5 @@
 # Hammer Hanging Stochastic
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 顾问 "Expert_AH_HM_Stoch" 迁移到 StockSharp 高级 API。它结合锤子线/上吊线形态与随机指标确认，用于捕捉强趋势后的反转机会。
 

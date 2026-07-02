@@ -1,4 +1,5 @@
 # DreamBot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 DreamBot 是 MetaTrader 4 顾问 "DreamBot" 的 StockSharp 版本。策略在 1 小时 K 线上计算 Force Index 振荡指标，并等待动量突破多头或空头阈值。当 Force Index 在上一根 K 线上自下而上穿越多头阈值时开多；当上一根 K 线的数值自上而下跌破空头阈值时开空。与原始 EA 一样，只有在仓位为空时才允许入场。
