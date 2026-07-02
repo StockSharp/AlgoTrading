@@ -1,4 +1,5 @@
 # Fly System Scalp 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Fly System Scalp 策略源自 MQL4 专家顾问 *FlySystemEA*。策略持续监听盘口最佳买价和卖价，在市场两侧放置对称的止损挂单（Buy Stop / Sell Stop），以捕捉短期突破机会。同时严格控制点差、佣金和可交易时段，确保系统适用于高频剥头皮场景。

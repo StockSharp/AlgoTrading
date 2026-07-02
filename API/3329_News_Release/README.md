@@ -1,4 +1,5 @@
 # News Release Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the core behaviour of the original **NewsReleaseEA** expert advisor by preparing a bracket of pending orders around a scheduled news release and actively managing the resulting position.
 

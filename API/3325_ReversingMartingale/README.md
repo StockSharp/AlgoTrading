@@ -1,4 +1,5 @@
 # Reversing Martingale Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Reversing Martingale Strategy** is a direct C# port of the MetaTrader expert advisor “Reversing Martingale EA”. It continuously maintains a single market position and alternates the trade direction after each closed deal. Losing trades trigger a martingale volume progression, while profitable trades reset the cycle back to the initial lot size. All positions are protected by symmetric stop-loss and take-profit levels expressed in price points.

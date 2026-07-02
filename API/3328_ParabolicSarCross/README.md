@@ -1,5 +1,5 @@
 # Parabolic SAR Cross Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a StockSharp port of the MetaTrader "PSAR Trader EA" expert advisor. It observes how price interacts with the Parabolic SAR indicator and reacts only when the dot field flips from one side of the candle body to the other. The conversion preserves the original money-management logic: the strategy can either trade a fixed lot size or dynamically adjust the order volume based on account balance, applies fixed stop-loss and take-profit levels, and activates a trailing stop once a trade accumulates sufficient profit.
 

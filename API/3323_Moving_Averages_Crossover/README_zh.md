@@ -1,4 +1,5 @@
 # 均线交叉策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻了原始 MQL 移动平均线交叉专家顾问，使用 StockSharp 的高级 API 监控两条简单移动平均线。策略在每根完成的K线后更新指标，当快线从慢线下方穿越到上方时产生做多信号，反向穿越时产生做空信号，并可选择在出现反向信号时立即平掉当前持仓。

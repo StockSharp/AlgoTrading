@@ -1,5 +1,5 @@
 # Parabolic SAR Cross 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略是 MetaTrader 平台「PSAR Trader EA」专家顾问在 StockSharp 上的移植版本。算法持续监控价格与 Parabolic SAR 指标之间的关系，只在指标点从蜡烛一侧翻转到另一侧时做出反应。移植过程中保留了原始的资金管理思想：既可以使用固定手数，也可以根据账户余额动态调整下单量，同时设置固定的止损/止盈，并在盈利达到指定阈值后启动追踪止损。
 

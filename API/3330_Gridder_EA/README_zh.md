@@ -1,4 +1,5 @@
 # Gridder EA 策略（从 MQL4 移植）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原版 GridderEA 是 MetaTrader 4 上的多品种网格策略。StockSharp 版本保留了核心思想——可变步长、递增手数、篮子止盈止损以及紧急对冲——并专注于当前策略绑定的单一标的。策略会订阅指定周期的K线，只在K线收盘后处理数据，当价格相对最后参考价偏离到设定的点差时开出新的加仓单。

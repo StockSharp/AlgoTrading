@@ -1,4 +1,5 @@
 # Стратегия Reversing Martingale
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 **Reversing Martingale Strategy** — порт советника MetaTrader «Reversing Martingale EA». Стратегия постоянно держит только одну рыночную позицию и после каждого закрытия меняет направление сделки. Убыточные сделки запускают мартингейловое увеличение объёма, а прибыльные возвращают цикл к исходному лоту. Все позиции защищаются симметричными стоп-лоссом и тейк-профитом, заданными в пунктах.

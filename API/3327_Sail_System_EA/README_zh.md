@@ -1,4 +1,5 @@
 # Sail System EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Sail System EA 是一款对冲型剥头皮策略，会同时保持多头和空头敞口，并实时监控

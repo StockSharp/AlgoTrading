@@ -1,4 +1,5 @@
 # Стратегия Fly System Scalp
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 Fly System Scalp — это адаптация советника *FlySystemEA* на платформу StockSharp. Стратегия постоянно отслеживает лучшие цены Bid/Ask и выставляет симметричные стоп-ордера Buy Stop и Sell Stop на фиксированном расстоянии от рынка. Цель — быстро реагировать на импульсные движения, сохраняя строгий контроль над спредом, комиссиями и торговым расписанием.

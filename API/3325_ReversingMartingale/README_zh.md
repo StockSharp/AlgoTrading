@@ -1,4 +1,5 @@
 # 反向马丁策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **反向马丁策略** 是 MetaTrader 专家顾问 “Reversing Martingale EA” 的 C# 版本。策略始终保持仅有一笔市场头寸，并在每次平仓后反向开仓。如果上笔交易出现亏损，则根据马丁格尔倍数放大下一笔交易量；如果实现盈利，则重新使用初始手数。所有头寸均使用点数形式的对称止损和止盈进行保护。

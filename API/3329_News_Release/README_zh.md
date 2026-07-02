@@ -1,4 +1,5 @@
 # 新闻发布策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻了 **NewsReleaseEA** 智能交易系统的核心思想：在预定的新闻发布时间前后布设对称的挂单，并对触发后的头寸进行主动管理。
 

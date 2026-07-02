@@ -1,4 +1,5 @@
 # Boring EA2 Alert
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Boring EA2 Alert recreates the notification logic of the MetaTrader 4 expert advisor `boring-ea2`. The strategy listens to finished candles, calculates three simple moving averages (SMA 3, SMA 20, SMA 150), and emits informative logs whenever a crossover happens between the moving averages. The implementation intentionally avoids order placement: the goal is to provide traders with timely alerts that they can combine with their discretionary execution or other automated strategies.

@@ -1,4 +1,5 @@
 # Boring EA2 Alert
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Boring EA2 Alert 重现了 MetaTrader 4 专家顾问 `boring-ea2` 的通知逻辑。策略监听收盘的K线，计算三条简单移动平均线（SMA 3、SMA 20、SMA 150），并在均线之间出现金叉或死叉时输出详细日志。实现刻意不下单，目的是为交易者提供及时的提醒，方便与自主执行或其他自动化策略组合使用。

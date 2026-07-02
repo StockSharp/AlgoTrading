@@ -1,4 +1,5 @@
 # Auto Trading Publish 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略是 MetaTrader 4 工具 **“Auto Trading Publish”** 的 StockSharp 版本。策略不会主动下单，而是专注于控制何时允许运行交易。通过订阅蜡烛数据来跟踪市场时间，一旦到达预设的开始或结束小时，就切换 `AutoTradingActive` 标志，从而模拟原工具自动切换 MT4 “AutoTrading” 按钮的行为。

@@ -1,4 +1,5 @@
 # Fly System Scalp Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Fly System Scalp Strategy is a high-frequency breakout system that reproduces the core behaviour of the original MQL4 expert advisor *FlySystemEA*. The strategy constantly monitors the best bid/ask quotes and deploys two symmetrical stop orders around the market price. The goal is to capture rapid micro-trends that emerge after short-term consolidations, while maintaining a strict control over spread, commissions and trading session boundaries.

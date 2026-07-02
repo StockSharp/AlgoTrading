@@ -1,4 +1,5 @@
 # Gridder EA Strategy (Ported from MQL4)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original GridderEA is a multi-symbol grid trading expert advisor designed for MetaTrader 4. This StockSharp port keeps the core concepts—progressive spacing, adaptive lot sizing, basket take-profit, and emergency hedging—while focusing on a single instrument managed by the hosting strategy. The strategy subscribes to a configurable candle stream, watches finished bars, and opens averaging trades when price moves away from the last reference level by a distance defined in pips.
