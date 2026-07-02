@@ -1,4 +1,5 @@
 # Exp TEMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Exp TEMA** 策略是 MetaTrader 专家顾问 `Exp_TEMA.mq5` 的 StockSharp 版本。原始 EA 会同时监控多只外汇货币对，通过 Triple Exponential Moving Average (TEMA) 的斜率方向来决定开仓与平仓。本次移植保持相同的指标逻辑，不过在 StockSharp 中一次聚焦于一个指定的证券。
 

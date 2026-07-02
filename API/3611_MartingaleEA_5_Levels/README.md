@@ -1,4 +1,5 @@
 # MartingaleEA-5 Levels Strategy (StockSharp)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **MartingaleEA-5 Levels Strategy** is a direct port of the MetaTrader 5 expert advisor "MartingaleEA-5 Levels" to the StockSharp high-level API. The system supervises an existing position and builds a five-step averaging grid whenever the market moves against it. All logic runs on finished candles, which keeps the behaviour reproducible in both historical tests and live trading.
 

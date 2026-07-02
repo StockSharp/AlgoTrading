@@ -1,4 +1,5 @@
 # Стратегия MartingaleEA-5 Levels (StockSharp)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **MartingaleEA-5 Levels** — перенос советника MetaTrader 5 «MartingaleEA-5 Levels» на высокоуровневый API StockSharp. Стратегия следит за уже открытой позицией и при движении цены против неё строит мартингейл-сетку из максимум пяти усредняющих ордеров. Все вычисления выполняются на закрытии свечей, поэтому результаты совпадают в тестах и на реальном рынке.
 

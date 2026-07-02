@@ -1,4 +1,5 @@
 # Стратегия Aussie Surfer Ltd
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Aussie Surfer Ltd** — это порт советника MetaTrader 5 "Aussie Surfer Ltd" (папка MQL `43278`) на высокоуровневый API StockSharp. Стратегия сочетает отскоки от полос Боллинджера с фильтром по линии "зубов" индикатора Alligator, чтобы автоматизировать авторский подход оригинального эксперта. По умолчанию анализ ведётся по 15-минутным свечам и исполняется на выбранном инструменте рыночными ордерами.

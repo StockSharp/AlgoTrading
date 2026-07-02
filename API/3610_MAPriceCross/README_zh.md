@@ -1,5 +1,5 @@
 # MA Price Cross 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MA Price Cross 策略是将 MetaTrader 4 专家顾问 “MA Price Cross” 迁移到 StockSharp 高级 API 的结果。系统在可配置的交易时间窗口内等待所选均线与当前价格发生交叉：当均线自下而上穿越价格时开多单，当均线自上而下穿越价格时开空单。止损和止盈距离以 MetaTrader 点数输入，并通过合约的 `PriceStep` 自动转换为绝对价格偏移。
 

@@ -1,4 +1,5 @@
 # 分层风险防护策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **分层风险防护策略** 是对 MetaTrader 专家顾问 “RiskManager” 的直接移植。该算法通过商品通道指数（CCI）、平均真实波幅（ATR）倍数以及分层仓位模型，持续监控投资组合权益并调整市场敞口。当风险指标低于可配置阈值时，策略会自动切换到对冲模式，在达到盈利或回撤条件时平仓，并可选择在盈亏平衡点强制清仓。

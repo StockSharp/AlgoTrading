@@ -1,4 +1,5 @@
 # Exp TEMA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Exp TEMA Strategy** is a StockSharp port of the MetaTrader expert advisor `Exp_TEMA.mq5`. The original system scans multiple forex pairs and monitors the slope of the Triple Exponential Moving Average (TEMA). Whenever the slope flips its sign, the expert either enters a new trend-following position or exits the opposite one. This C# conversion keeps the same indicator logic while focusing on a single security that is assigned to the strategy in StockSharp.
 

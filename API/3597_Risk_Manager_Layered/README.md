@@ -1,4 +1,5 @@
 # Layered Risk Protector Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Layered Risk Protector Strategy** is a direct conversion of the MetaTrader expert advisor "RiskManager". The algorithm continuously tracks the portfolio equity curve and adjusts market exposure using the Commodity Channel Index (CCI), Average True Range (ATR) multiples and a layered position sizing model. When risk metrics fall below configurable thresholds the strategy automatically switches into hedging mode, closes positions on profit or drawdown events, and can optionally flatten at break-even.

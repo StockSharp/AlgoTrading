@@ -1,4 +1,5 @@
 # Aussie Surfer Ltd Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Aussie Surfer Ltd Strategy** is a StockSharp high level API port of the MetaTrader 5 expert advisor "Aussie Surfer Ltd" (MQL folder `43278`). The strategy mixes fast Bollinger Band reversals with an Alligator trend filter to automate the discretionary setup used in the original EA. Trades are taken on the primary instrument configured for the strategy and evaluated on a 15-minute candle series by default.

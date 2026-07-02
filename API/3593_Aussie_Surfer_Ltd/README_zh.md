@@ -1,4 +1,5 @@
 # Aussie Surfer Ltd 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Aussie Surfer Ltd 策略** 是将 MetaTrader 5 专家顾问 “Aussie Surfer Ltd”（位于 MQL 目录 `43278`）完整移植到 StockSharp 高层 API 的版本。策略结合了快速的布林带反弹信号与 Alligator 趋势过滤器，自动化原 EA 的主观交易思路。默认在 15 分钟 K 线序列上评估并在所选交易品种上执行市价单。

@@ -1,4 +1,5 @@
 # SwingTrader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **SwingTrader 策略** 是对 MetaTrader 4 专家顾问 `SwingTrader.mq4` 的 StockSharp 版本移植。原始 EA 通过观察价格在

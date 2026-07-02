@@ -1,4 +1,5 @@
 # Стратегия SwingTrader
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **SwingTrader** — порт советника MetaTrader 4 `SwingTrader.mq4` на платформу StockSharp. Оригинальный эксперт ищет отскоки от

@@ -1,4 +1,5 @@
 # AK-47 剥头皮策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略基于 MetaTrader 5 专家顾问 **“AK-47 Scalper EA”（版本 44883）** 重写，实现于 StockSharp 的高级策略框架中。
 

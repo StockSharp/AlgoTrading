@@ -1,4 +1,5 @@
 # Cryptos Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -44,4 +45,3 @@ The strategy replicates the MT4 logic: `volume = RiskPerTrade / rangeTicks * val
 - Manual triggers and bias controls make it possible to synchronise with discretionary decisions during live trading.
 - ETH/USD automatically uses `CryptoValueIndex` and `TakeProfitRatio`; other instruments fall back to the alternative parameters.
 - Stops and targets are enforced within the strategy loop, so no additional protection module is required.
-

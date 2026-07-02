@@ -1,4 +1,5 @@
 # MartingaleEA-5 Levels 策略（StockSharp）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **MartingaleEA-5 Levels 策略** 将 MetaTrader 5 专家顾问 “MartingaleEA-5 Levels” 迁移到 StockSharp 高级 API。系统会监控已有的多头或空头仓位，当价格向不利方向移动时构建最多五层的马丁格尔加仓网格。所有计算都在收盘后的 K 线完成，确保历史回测与实时交易具有一致的行为。
 

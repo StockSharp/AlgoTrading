@@ -1,4 +1,5 @@
 # Cryptos 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -44,4 +45,3 @@
 - 手动触发与偏好控制可让交易者在实盘中与主观决策保持同步。
 - 对 ETH/USD 自动使用 `CryptoValueIndex` 与 `TakeProfitRatio`；其他品种会切换到备用参数。
 - 止损与止盈在策略内部监控，无需额外的保护模块。
-

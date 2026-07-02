@@ -1,4 +1,5 @@
 # Стратегия Exp TEMA
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Exp TEMA** — это порт на StockSharp экспертного советника MetaTrader `Exp_TEMA.mq5`. Оригинальная система анализирует несколько валютных пар и отслеживает знак наклона Triple Exponential Moving Average (TEMA). При смене знака наклона советник либо открывает позицию по направлению нового тренда, либо закрывает противоположную. В C# версии сохранена логика индикатора, но торговля выполняется по одному инструменту, который назначается стратегии в StockSharp.
 
