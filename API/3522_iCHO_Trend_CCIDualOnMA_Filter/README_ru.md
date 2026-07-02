@@ -1,4 +1,5 @@
 # Стратегия iCHO Trend CCIDualOnMA Filter
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Эта стратегия — перенос на StockSharp эксперта MetaTrader **«iCHO Trend CCIDualOnMA Filter»**. Она объединяет фильтр по нулевой линии осциллятора Chaikin с подтверждением двух индикаторов Commodity Channel Index (CCI), вычисляемых на сглаженной цене. Такой подход позволяет работать по тренду, но при этом требовать согласованного импульса от пары CCI перед входом в сделку.
 

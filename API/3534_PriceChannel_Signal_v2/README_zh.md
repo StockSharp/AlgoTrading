@@ -1,4 +1,5 @@
 # PriceChannel Signal v2 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 PriceChannel Signal v2 是基于改进型唐奇安通道的趋势突破系统。原始的 MQL5 专家顾问监控通道趋势的切换、在价格重新突破区间时的二次入场信号，以及来源于同一价格区间的保护性退出水平。本次移植保持了全部行为：始终只持有一个方向的仓位，只处理已完成的K线，并可选用日内时间过滤。

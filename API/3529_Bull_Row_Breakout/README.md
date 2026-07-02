@@ -1,4 +1,5 @@
 # Bull Row Breakout Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Bull Row Breakout strategy is a C# conversion of the MetaTrader 5 expert advisor "BULL row full EA". The original robot was built with a block-constructor and combines price action patterns with momentum confirmation. The StockSharp port reproduces the same logic on a single configurable timeframe and keeps the trading commentary in English as required.

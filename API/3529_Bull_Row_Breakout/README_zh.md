@@ -1,4 +1,5 @@
 # Bull Row Breakout 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 Bull Row Breakout 策略是 MetaTrader 5 专家顾问 “BULL row full EA” 的 C# 版本。原策略使用模块化构建，结合蜡烛排列和动量确认。移植到 StockSharp 后，我们在单一可配置的时间框架上复现相同逻辑，并按照仓库要求将代码注释保持为英文。

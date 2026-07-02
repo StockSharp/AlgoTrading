@@ -1,4 +1,5 @@
 # DeMarker 增量仓位策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略是 MetaTrader 专家顾问 *“DeMarker gaining position volume”* 的 StockSharp 版本。策略利用 DeMarker 振荡指标识别超买与超卖极值，在行情保持极端状态时逐步增加头寸。实现基于已完成的 K 线运行，每根 K 线只响应一次信号。

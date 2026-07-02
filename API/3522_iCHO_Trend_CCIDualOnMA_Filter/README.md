@@ -1,4 +1,5 @@
 # iCHO Trend CCIDualOnMA Filter Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy is a high-level StockSharp port of the MetaTrader expert advisor **"iCHO Trend CCIDualOnMA Filter"**. It mixes a Chaikin oscillator zero-line regime filter with a dual Commodity Channel Index (CCI) confirmation that is calculated on top of a smoothed price series. The result is a trend-following approach that reacts to momentum shifts but still requires a momentum confirmation from the CCI pair before entering a trade.
 

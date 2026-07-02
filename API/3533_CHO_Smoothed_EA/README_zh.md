@@ -1,4 +1,5 @@
 # CHO Smoothed EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略复刻原始的“CHO Smoothed EA”智能交易系统。在每根已完成的K线上计算Chaikin振荡指标，使用可配置的移动平均线对指标进行平滑处理。策略支持交易时段限制、方向控制以及零轴过滤等附加条件，信号满足后立即以市价单入场，并通过以点数表示的止损、止盈和移动止损来管理持仓风险。

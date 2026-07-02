@@ -1,4 +1,5 @@
 # PriceChannel Signal v2 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 PriceChannel Signal v2 is a trend-following breakout system built around a modified Donchian channel. The original MQL5 expert advisor watches for transitions in the channel trend, optional re-entry conditions when price pushes back through the bands, and protective exit levels derived from the same range. The StockSharp port keeps the original behaviour: it trades a single position at a time, reacts only on completed candles and can be restricted to an intraday window.

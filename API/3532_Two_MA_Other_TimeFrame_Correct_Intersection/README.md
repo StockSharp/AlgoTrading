@@ -1,4 +1,5 @@
 # Two MA Other TimeFrame Correct Intersection Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader 5 expert advisor "Two MA Other TimeFrame Correct Intersection". The original EA relies on two moving averages that are each calculated on their own timeframe (for example H1 vs D1) while trade decisions are synchronized to the chart timeframe. The conversion keeps the multi-timeframe behaviour and opens long positions when the fast moving average crosses above the slow moving average. Conversely, short positions are opened when the fast average crosses below the slow one. All orders are executed at market price and the strategy always closes any opposite exposure before opening a new trade, matching the engine-driven execution model of the MQL5 script.

@@ -1,4 +1,5 @@
 # RSI MA on RSI Filling Step Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **RSI MA on RSI Filling Step Strategy** is a StockSharp port of the MetaTrader expert advisor `RSI_MAonRSI_Filling Step EA.mq5`. The original system measures momentum with a Relative Strength Index (RSI) and smooths that oscillator with a moving average. Trades are initiated when RSI crosses its moving average while both values remain on the same side of the middle 50 level. The conversion keeps the configurable trade direction filters, optional session timer and the ability to reverse the signals while leveraging StockSharp's high-level indicator bindings.

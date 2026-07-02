@@ -1,4 +1,5 @@
 # DeMarker Gaining Position Volume Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a StockSharp port of the MetaTrader expert advisor *"DeMarker gaining position volume"*. It uses the DeMarker oscillator to detect oversold and overbought extremes, gradually accumulating exposure when the market stays in a stretched condition. The implementation operates on completed candles and ensures that only one signal per bar is processed.

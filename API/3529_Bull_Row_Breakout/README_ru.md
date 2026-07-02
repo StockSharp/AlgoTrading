@@ -1,4 +1,5 @@
 # Стратегия Bull Row Breakout
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 Bull Row Breakout — это порт на C# эксперта MetaTrader 5 «BULL row full EA». Оригинальный советник собран из блоков и сочетает свечные последовательности с подтверждением индикаторами. Версия для StockSharp воспроизводит те же правила на одном настраиваемом таймфрейме и сохраняет англоязычные комментарии в коде, как требует стандарт репозитория.

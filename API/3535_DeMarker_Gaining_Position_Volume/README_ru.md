@@ -1,4 +1,5 @@
 # Стратегия DeMarker Gaining Position Volume
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Эта стратегия представляет собой перенос советника MetaTrader *«DeMarker gaining position volume»* на платформу StockSharp. Она использует осциллятор DeMarker для выявления зон перекупленности и перепроданности и постепенно наращивает позицию, когда рынок удерживается в экстремальной области. Алгоритм работает только с завершёнными свечами и обрабатывает не более одного сигнала на бар.

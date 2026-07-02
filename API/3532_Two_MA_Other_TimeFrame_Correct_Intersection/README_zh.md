@@ -1,4 +1,5 @@
 # Two MA Other TimeFrame Correct Intersection 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略将 MetaTrader 5 上的 "Two MA Other TimeFrame Correct Intersection" 专家顾问移植到 StockSharp 平台。原始 EA 使用两个分别位于不同时间框架的移动平均线（例如 H1 与 D1），而交易决策在图表时间框架上执行。本移植版本完整保留多时间框架结构：当快速均线向上穿越慢速均线时开多单；当快速均线向下穿越慢速均线时开空单。所有订单均以市价成交，并在建立新仓位前关闭相反方向的仓位，以符合 MQL5 交易引擎的执行方式。

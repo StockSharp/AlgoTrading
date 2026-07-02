@@ -1,4 +1,5 @@
 # CHO Smoothed EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the logic of the original "CHO Smoothed EA" Expert Advisor. It watches Chaikin Oscillator crossovers on completed candles and smooths the oscillator with a configurable moving average. Optional filters limit trading to a specific session, restrict trade direction, and validate signals with zero-line confirmation. When a signal is accepted the strategy sends a market order and manages the position using fixed distances in points for stop-loss, take-profit, and trailing protection.

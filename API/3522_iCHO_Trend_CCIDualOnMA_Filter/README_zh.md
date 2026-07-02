@@ -1,4 +1,5 @@
 # iCHO Trend CCIDualOnMA Filter 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader 专家顾问 **“iCHO Trend CCIDualOnMA Filter”** 的 StockSharp 高级 API 版本。它利用 Chaikin 振荡器的零轴过滤来识别趋势，再配合两条建立在平滑价格上的商品通道指数（CCI）确认信号，只有当动能与趋势一致时才允许入场。
 

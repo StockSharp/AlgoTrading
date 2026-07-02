@@ -1,4 +1,5 @@
 # RSI MA on RSI Filling Step 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **RSI MA on RSI Filling Step** 策略移植自 MetaTrader 专家顾问 `RSI_MAonRSI_Filling Step EA.mq5`。原版系统使用相对强弱指数 (RSI) 衡量动能，并对其进行移动平均平滑。当 RSI 与其移动均线发生交叉且两者都位于 50 中枢同侧时触发交易。该 StockSharp 版本保留了方向过滤、信号反转和日内交易时段等选项，并通过高层 API 完成指标绑定。
