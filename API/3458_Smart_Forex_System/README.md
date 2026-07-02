@@ -1,4 +1,5 @@
 # Smart Forex System Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Smart Forex System Strategy is a StockSharp port of the MetaTrader expert advisor "Smart Forex System". The robot blends a single-candle momentum filter with a martingale-style averaging grid. The first trade is opened when the previous candle shows a strong directional close and the current price has moved sufficiently away from the reference close. Additional entries are added at fixed pip intervals in the adverse direction, with the position size increasing by a configurable multiplier. The strategy manages exits through averaged take-profit levels and a safety stop-loss linked to the latest grid order.

@@ -1,4 +1,5 @@
 # Ichimoku Price Action Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Ichimoku Price Action Strategy** is a time-filtered MACD momentum system ported from the MQL4 expert "Ichimoku Price Action Strategy v1.0" into the StockSharp high-level API. The original EA opened market orders whenever trading was enabled for the instrument and the optional MACD filter confirmed the direction. This C# port keeps the same idea while providing detailed risk controls for stop-loss placement, break-even handling and trailing exits.

@@ -1,4 +1,5 @@
 # 点差统计采集策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Spread Data Collector 策略** 是 MetaTrader 5 工具“Spread data collector”（MQL 编号 33314）的 StockSharp 版本。原始 EA 不会下单，只是监听买/卖报价并统计点差落在各个范围内的次数；当交易年度发生变化或 EA 被停止时，它会打印汇总结果。本移植使用高级的 `SubscribeLevel1()` API，实现完全相同的逻辑，并允许用户修改每个点差区间的上限。

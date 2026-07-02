@@ -1,5 +1,5 @@
 # Spread Informer 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 用于收集所选品种买卖价差（Bid-Ask Spread）的完整统计信息，并在价差超过可配置的上限时给出提示。策略持续订阅 Level1 行情，记录价差的最大值、最小值和平均值（以点数表示），在停止时输出总结，可用于在回测前评估流动性情况或验证历史数据质量。
 

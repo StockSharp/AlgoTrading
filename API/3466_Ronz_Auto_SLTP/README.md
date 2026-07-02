@@ -1,4 +1,5 @@
 # Ronz Auto SLTP Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -65,4 +66,3 @@ Key capabilities:
 - StockSharp aggregates positions by security, while MetaTrader hedging mode tracks individual tickets. The port therefore manages the net position per instrument.
 - The test-order functionality of the MQ5 script (opening dummy trades in the tester) was intentionally omitted.
 - Alerts are delivered through the StockSharp logging subsystem rather than on-screen pop-ups.
-

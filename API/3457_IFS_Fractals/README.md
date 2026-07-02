@@ -1,4 +1,5 @@
 # IFS Fractals
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 IFS Fractals is a port of the MetaTrader 5 script `IFS_Fractals`. The original expert renders an iterated function system (IFS) bitmap of the "fractal word" by repeatedly applying 28 affine transforms to a point cloud. The StockSharp version turns the same chaotic process into a directional oscillator: the X coordinate of the generated points is scaled, smoothed with an exponential moving average (EMA), and interpreted as a momentum gauge that drives long and short entries.

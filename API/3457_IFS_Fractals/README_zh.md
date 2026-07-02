@@ -1,4 +1,5 @@
 # IFS Fractals
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 IFS Fractals 是 MetaTrader 5 脚本 `IFS_Fractals` 的移植版本。原始脚本通过对点云连续应用 28 组仿射变换来绘制“分形单词”的位图。StockSharp 版本沿用了相同的迭代函数系统 (IFS)，但将其转换为交易信号：生成点的 X 坐标按原始比例缩放、再用指数移动平均线 (EMA) 平滑，并作为动量指标来驱动多空交易。

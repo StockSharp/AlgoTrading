@@ -1,4 +1,5 @@
 # Smart Forex System 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Smart Forex System 策略是 MetaTrader 智能交易系统在 StockSharp 平台上的移植版本。策略结合了上一根 K 线的动量过滤器与带有加仓倍数的网格加仓机制。当上一根 K 线出现显著的趋势收盘且当前价格相对于参考收盘价偏离足够多时，会启动第一笔交易。价格逆向移动时，会按照固定的点差间距继续加仓，并使用可配置的倍数放大手数。平仓逻辑通过网格平均价格设置的分级止盈，以及跟随最近一次加仓价格的止损来控制风险。

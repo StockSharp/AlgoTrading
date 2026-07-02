@@ -1,5 +1,5 @@
 # Spread Informer Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Collects detailed statistics for the bid-ask spread of the selected instrument and notifies when the spread breaks a configurable limit. The strategy continuously listens to Level1 updates, tracks maximum, minimum, and average spread in points, and logs a summary once it stops. It is useful for researching liquidity conditions before running latency-sensitive systems or optimizing trading windows in the Strategy Tester.
 

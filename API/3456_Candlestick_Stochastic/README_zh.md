@@ -1,5 +1,5 @@
 # 蜡烛图 + 随机指标确认策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 专家顾问 **Expert_CP_Stoch** 移植到 StockSharp 的高层 API 中。它把日本蜡烛图反转形态与随机指标 %D 信号线结合，先识别前三根完成蜡烛中的多头或空头形态，再要求随机指标进入超买/超卖区域后才入场。当出现反向形态，或者 %D 穿越预设的退出阈值时立即平仓。
 

@@ -1,4 +1,5 @@
 # Ichimoku Price Action Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Ichimoku Price Action Strategy** — перенос советника “Ichimoku Price Action Strategy v1.0” из MQL4 в высокоуровневый API StockSharp. Оригинальный советник открывал рыночные сделки, когда торговля была разрешена и фильтр MACD подтверждал направление. Переносная версия повторяет эту логику и дополняет её расширенными механизмами управления риском — стоп-лоссами, тейк-профитами, переводом в безубыток и трейлингом.

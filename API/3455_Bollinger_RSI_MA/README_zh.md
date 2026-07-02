@@ -1,4 +1,5 @@
 # Bollinger RSI MA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Bollinger RSI MA 策略将 MetaTrader 专家顾问 *BolRSIMAs* 迁移到 StockSharp 的高级 API。策略结合布林带突破、RSI 滤波

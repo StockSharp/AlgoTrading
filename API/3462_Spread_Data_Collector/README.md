@@ -1,4 +1,5 @@
 # Spread Data Collector Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Spread Data Collector Strategy** is a StockSharp port of the MetaTrader 5 utility "Spread data collector" (MQL entry 33314). The original expert advisor does not place orders; instead, it listens to the bid/ask stream and counts how many ticks fall inside predefined spread ranges. Whenever the trading year changes or the expert stops, it prints a statistical summary. This C# version reproduces the same behaviour using the high-level `SubscribeLevel1()` API and exposes the range thresholds as configurable parameters.

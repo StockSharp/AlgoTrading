@@ -1,4 +1,5 @@
 # Ichimoku Price Action Strategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Ichimoku Price Action Strategy** 是将 MQL4 专家顾问“Ichimoku Price Action Strategy v1.0”移植到 StockSharp 高级 API 的版本。原始 EA 只要允许交易并且可选的 MACD 过滤器给出方向，就会在当前时间段内直接市价开仓。本移植版沿用了相同的思想，同时在 C# 侧实现了完整的风控：止损、止盈、保本以及移动止损。

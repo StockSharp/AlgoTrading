@@ -1,4 +1,5 @@
 # Ronz Auto SLTP 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -53,4 +54,3 @@
 - MetaTrader 可在对冲模式下针对每一张订单单独设置 SL/TP，本移植版基于 StockSharp 的净仓位模型进行管理。
 - 原脚本的测试功能（在策略测试器中自动开立示例订单）未被保留。
 - 提示信息通过 StockSharp 的日志系统输出，而不是 MetaTrader 弹窗。
-
