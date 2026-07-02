@@ -1,4 +1,5 @@
 # 条件持仓开启策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **条件持仓开启策略** 复刻了原始的 MetaTrader 脚本“当没有持仓时开多单”的思路。策略的核心非常直接：当手动开关允许做多或做空时，只有在对应方向上没有敞口时才发送市价单，从而避免重复建仓，让仓位始终符合选择的方向。

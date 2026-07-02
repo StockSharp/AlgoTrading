@@ -1,4 +1,5 @@
 # CCI MACD Scalper
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The CCI MACD Scalper ports the MetaTrader 5 expert advisor "CCI + MACD Scalper" to the StockSharp high-level strategy API. The conversion keeps the original indicator stack—an EMA trend filter, a CCI zero-line trigger, and a MACD divergence check—while translating the money-management logic into StockSharp conventions. Orders size themselves from portfolio equity, stops are rejected when the distance is too tight, and an optional trailing stop can secure profits by partially closing positions after the first adjustment. A five-candle cooldown prevents the strategy from re-entering immediately after an execution, replicating the MQL timer behaviour.

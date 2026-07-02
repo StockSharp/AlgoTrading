@@ -1,4 +1,5 @@
 # Стратегия Divergence MACD Stochastic
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MetaTrader 5 **«Divergence EA pip sl tp»** в экосистему StockSharp. Алгоритм отслеживает классические дивергенции между ценой и гистограммой MACD и подтверждает сигналы фильтром стохастического осциллятора, прежде чем открыть разворотную позицию.
 

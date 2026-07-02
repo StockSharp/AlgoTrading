@@ -1,4 +1,5 @@
 # Pause Trading On Consecutive Loss Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Pause Trading On Consecutive Loss Strategy** reproduces the risk control logic of the MetaTrader 4 expert advisor *"Pause Trading On Consecutive Loss"*. The original script monitored the most recent closed trades, counted how many of them ended with a negative profit, and suspended new orders when the losing streak exceeded a user-defined limit within a short time window. The StockSharp port keeps that behaviour while wrapping it around a minimal momentum entry model so the pause mechanism can be evaluated inside the standalone strategy.
 

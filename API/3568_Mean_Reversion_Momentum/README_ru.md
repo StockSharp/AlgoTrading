@@ -1,4 +1,5 @@
 # Стратегия Mean Reversion Momentum
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия Mean Reversion — порт эксперта MetaTrader *Mean reversion.mq4*. В версии для StockSharp сохранена исходная идея: покупки выполняются после серии понижающихся закрытий, продажи — после последовательного роста. Сигналы подтверждаются сочетанием двух линейно-взвешенных средних, импульсом на старшем таймфрейме и месячным MACD.

@@ -1,4 +1,5 @@
 # XP Trade Manager Grid (C#)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Описание
 
@@ -43,4 +44,3 @@
 2. Увеличение `StepPoints` снижает частоту добора и уменьшает просадки, но делает сетку менее чувствительной.
 3. Для инструментов с широким спредом увеличьте `TakeProfit1Offset`, чтобы избежать слишком ранних повторных входов.
 4. Не отключайте `StartProtection()` — встроенная защита помогает восстановить соединение при сбоях.
-

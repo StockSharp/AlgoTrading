@@ -1,4 +1,5 @@
 # XP Trade Manager Grid（C#）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -43,4 +44,3 @@
 2. 根据标的波动性调整 `StepPoints`，步长越大，网格腿数越少，回撤越低。
 3. 当交易点差较大时可适当增加 `TakeProfit1Offset`，避免过早补单。
 4. 保留 `StartProtection()`，确保连接异常时策略能够自恢复。
-

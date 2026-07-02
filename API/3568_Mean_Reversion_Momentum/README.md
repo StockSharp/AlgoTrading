@@ -1,4 +1,5 @@
 # Mean Reversion Momentum Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Mean Reversion strategy is a direct port of the MetaTrader expert advisor *Mean reversion.mq4*. The StockSharp version keeps the original trading idea: buy after an extended series of declining closes and sell after a similar bullish run. Entries are confirmed by trend alignment using two linear weighted moving averages, momentum strength on a higher timeframe, and a monthly MACD filter.

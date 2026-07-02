@@ -1,4 +1,5 @@
 # Conditional Position Opener Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Conditional Position Opener Strategy** reproduces the behaviour of the original MetaTrader script *"Open a buy position if there's no open position"*. The logic is intentionally simple: when manual switches enable the long or short side the strategy sends a market order only if there is no open exposure in that direction. This prevents duplicate entries and keeps the position aligned with the selected side.

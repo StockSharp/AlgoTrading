@@ -1,4 +1,5 @@
 # CCI MACD Scalper
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 CCI MACD Scalper 将 MetaTrader 5 专家顾问 “CCI + MACD Scalper” 迁移到 StockSharp 的高级策略 API。原有的指标组合被完整保留：EMA 用于趋势过滤，CCI 用于零轴触发，MACD 用于确认动量；资金管理规则则按照 StockSharp 的约定重写。仓位规模依据账户权益自动计算，过小的止损会被拒绝，启用追踪止损后首次移动会部分锁定利润。为了模拟 MQL 中的 `EventSetTimer`，每次成交后都会暂停五根 K 线才允许再次开仓。

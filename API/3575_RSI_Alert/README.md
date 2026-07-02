@@ -1,4 +1,5 @@
 # RSI Alert Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **RSI Alert Strategy** reproduces the behaviour of the MetaTrader 5 "RSI Alert" expert advisor inside the StockSharp framework. The original bot watched for Relative Strength Index (RSI) readings that crossed deeply oversold (≤20) or overbought (≥80) levels and immediately sent alert notifications while opening market positions. The converted version keeps this event-driven philosophy: it listens for completed candles, evaluates the RSI, and automatically flips the position by sending market orders when the configured thresholds are hit.

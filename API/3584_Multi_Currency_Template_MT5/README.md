@@ -1,4 +1,5 @@
 # MultiCurrency Template MT5 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -57,4 +58,3 @@ The StockSharp port keeps the multi-symbol management by letting the user define
 * `PairsToTrade` must contain identifiers that the connected connector can resolve. Unknown symbols are skipped silently.
 * The martingale and trailing blocks operate per symbol context, therefore each security maintains an independent basket.
 * `SlippagePoints` is preserved for completeness but does not affect execution in StockSharp.
-

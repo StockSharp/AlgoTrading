@@ -1,4 +1,5 @@
 # XP Trade Manager Grid (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -50,4 +51,3 @@ The C# port keeps track of every filled leg internally. Partial fills are suppor
 2. Carefully adjust `StepPoints` for the symbol volatility. Larger steps reduce the number of open legs and therefore drawdown.
 3. Increase `TakeProfit1Offset` when trading instruments with wider spreads to avoid premature re-entries.
 4. Combine the strategy with the built-in `StartProtection()` call, which monitors unexpected disconnections and reconnects gracefully.
-

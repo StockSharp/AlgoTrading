@@ -1,4 +1,5 @@
 # Mean Reversion Momentum 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Mean Reversion 策略是 MetaTrader 专家顾问 *Mean reversion.mq4* 的移植版。StockSharp 版本保留了原始思想：在连续收盘价下跌后买入，在连续上涨后卖出。信号需要三个过滤条件：两条线性加权移动平均线的趋势一致、更高周期的 Momentum 强度，以及月线 MACD。

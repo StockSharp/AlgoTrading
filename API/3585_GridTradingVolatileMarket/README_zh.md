@@ -1,4 +1,5 @@
 # 波动市场网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略在 StockSharp 高级 API 上重现 MetaTrader 专家顾问“Gridtrading_at_volatile_market.mq4”。它在更高周期上跟踪 Donchian 通道的触碰，并在交易周期上通过吞没形态确认入场。一旦网格被激活，价格每向不利方向移动多个 ATR，就会按几何级数加仓，并在达到既定利润或触发投资组合回撤限制时平掉全部仓位。

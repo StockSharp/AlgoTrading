@@ -1,4 +1,5 @@
 # Divergence MACD Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy recreates the MetaTrader 5 expert advisor **"Divergence EA pip sl tp"** in the StockSharp framework. The algorithm searches for classical divergences between price action and the MACD histogram, then validates the signal with an overbought/oversold Stochastic oscillator filter before opening reversal trades.
 

@@ -1,4 +1,5 @@
 # 连续亏损暂停交易策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **连续亏损暂停交易策略** 复刻了 MetaTrader 4 智能交易系统 *“Pause Trading On Consecutive Loss”* 的风控思想。原始脚本会检查最近的平仓订单，统计其中连续亏损的笔数，并在亏损次数在限定时间窗口内达到阈值时暂停新的下单。StockSharp 版本沿用了这一逻辑，并嵌入了一个最小化的动量入场模型，使得暂停功能可以在独立策略中被回测和验证。
 

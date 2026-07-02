@@ -1,4 +1,5 @@
 # Divergence MACD Stochastic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 5 专家顾问 **“Divergence EA pip sl tp”** 迁移到 StockSharp 框架。算法在价格行为与 MACD 柱状图之间寻找经典背离，并通过随机指标的超买/超卖过滤进行确认，然后执行反转交易。
 

@@ -1,4 +1,5 @@
 # RSI Alert 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **RSI Alert Strategy** 将 MetaTrader 5 中的 "RSI Alert" 智能交易系统移植到 StockSharp 框架。原始 EA 在每根新 K 线结束时计算相对强弱指标（RSI），当 RSI 进入深度超卖（≤20）或超买（≥80）区域时发送提醒并立即执行市价交易。移植版本延续了这种事件驱动的思路：订阅蜡烛数据、评估完成的 RSI 数值，并在触发阈值时通过市价单自动翻转仓位。

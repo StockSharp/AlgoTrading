@@ -1,4 +1,5 @@
 # MultiCurrency Template MT5 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -57,4 +58,3 @@
 * `PairsToTrade` 中的代码必须能被连接的交易通道识别，未知代码会被忽略。
 * 马丁格尔与移动止损均按品种独立运行，每个标的维护自己的篮子。
 * `SlippagePoints` 仅作为占位参数，在 StockSharp 中不会影响实际成交。
-
