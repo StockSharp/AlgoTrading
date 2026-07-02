@@ -1,4 +1,5 @@
 # No Nonsense Tester Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **No Nonsense Tester Strategy** is a StockSharp port of the MQL4 "NoNonsenseTester" expert advisor. The implementation focuses on the core NNFX workflow that validates a trend baseline, waits for two confirmation indicators, checks volatility using ATR and supervises trades with strict exit logic. The strategy is designed for multi-parameter experimentation and therefore exposes all important thresholds through `StrategyParam` objects so they can be optimized inside StockSharp.
@@ -44,4 +45,3 @@ Every `StrategyParam` used in the logic exposes optimization ranges mirroring th
 - Combine the strategy with NNFX indicator presets by adjusting the thresholds to match your custom tools.
 - Keep an eye on the ATR filter; a non-zero `AtrMinimum` prevents trades during low-volatility sessions.
 - When testing continuation trades set `AtrTrailingMultiplier` greater than zero to let profitable positions breathe while locking in gains.
-

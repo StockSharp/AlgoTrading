@@ -1,4 +1,5 @@
 # No Nonsense Tester 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **No Nonsense Tester 策略** 是 MQL4 "NoNonsenseTester" 智能交易系统在 StockSharp 平台上的移植版本。实现遵循 NNFX 的核心流程：先确认趋势基准线，再等待两个确认指标，使用 ATR 检查波动性，并通过严格的退出规则管理头寸。策略全部关键阈值都通过 `StrategyParam` 参数公开，方便在 StockSharp 中进行批量优化测试。
@@ -44,4 +45,3 @@
 - 根据个人 NNFX 指标组合调整阈值，快速验证自定义模板。
 - 合理设置 `AtrMinimum`，避免在低波动区间频繁交易。
 - 若要测试续仓策略，可将 `AtrTrailingMultiplier` 设为大于零，让盈利头寸在保护止损的同时继续扩展。
-

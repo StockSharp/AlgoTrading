@@ -1,4 +1,5 @@
 # Basic ATR Stop Take
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Basic ATR Stop Take 将 MetaTrader 4 专家顾问 **“Basic ATR stop_take expert adviser”** 移植到 StockSharp 的高级策略 API。策略刻意保持极简：在指定方向上仅开立一笔市场仓位，基于订阅蜡烛计算平均真实波幅（ATR），并按 ATR 倍数生成止损与止盈。仓位一旦被任一价格水平触发平仓，策略立即等待下一根蜡烛收盘，准备同向的下一次入场。

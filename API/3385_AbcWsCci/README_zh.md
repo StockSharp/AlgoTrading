@@ -1,4 +1,5 @@
 # AbcWsCci 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **AbcWsCci 策略** 将日本蜡烛图中的 **三白兵** 与 **三只黑乌鸦** 形态，结合 **商品通道指数（CCI）** 进行信号确认。策略仅处理已经收盘的K线，通过均线判断实体是否足够强势，在多根K线动量与CCI极值同步时才入场。当CCI脱离极值区间时立即离场。

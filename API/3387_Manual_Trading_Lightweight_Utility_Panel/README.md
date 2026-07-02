@@ -1,4 +1,5 @@
 # Manual Trading Lightweight Utility Panel Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Manual Trading Lightweight Utility Panel Strategy** replicates the behaviour of the MT4 "Manual Trading Lightweight Utility" panel using the StockSharp high level strategy API. It exposes the same interactive controls as strategy parameters so that the operator can toggle between market, limit and stop orders, adjust automatic price calculation, configure volume management and attach risk controls without relying on custom chart objects.
@@ -31,4 +32,3 @@ The strategy is designed for discretionary trading. Orders are triggered manuall
 - `README.md` – English documentation (this file).
 - `README_zh.md` – Simplified Chinese documentation.
 - `README_ru.md` – Russian documentation.
-

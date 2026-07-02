@@ -1,4 +1,5 @@
 # Multi Currency Template Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Multi Currency Template Strategy** is a conversion of the MetaTrader 4 expert advisor *Multi Currency Template v4*. It reproduces the original EMA crossover entry logic together with martingale style averaging, pip based protective levels and trailing management using the StockSharp high-level API. The default time frame is five-minute candles, but it can be changed through a parameter.

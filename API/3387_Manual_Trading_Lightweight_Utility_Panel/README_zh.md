@@ -1,4 +1,5 @@
 # 手动交易轻量面板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **手动交易轻量工具策略** 复刻了 MT4 "Manual Trading Lightweight Utility" 面板，在 StockSharp 高层策略 API 中提供同样的交互功能。策略把原本的按钮、文本框等控件转换成参数，操作者可以在界面上切换市价、挂单限价或挂单止损，调整自动价格计算方式，配置手数与风险控制，而无需自定义图表对象。
@@ -31,4 +32,3 @@
 - `README.md` – 英文说明。
 - `README_zh.md` – 中文说明（本文件）。
 - `README_ru.md` – 俄文说明。
-

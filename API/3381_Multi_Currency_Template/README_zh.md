@@ -1,4 +1,5 @@
 # 多货币模板策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **多货币模板策略** 来自 MetaTrader 4 专家顾问 *Multi Currency Template v4* 的移植版本。策略在 StockSharp 高级 API 中复现了原始 EA 的 EMA 金叉/死叉入场逻辑、马丁格尔加仓、以点值计算的止损/止盈以及跟踪止损管理。默认使用 5 分钟K线，可通过参数修改。

@@ -1,4 +1,5 @@
 # Manual Trading Lightweight Utility Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The original "Manual Trading Lightweight Utility" expert advisor is a compact MetaTrader panel that exposes buttons for switching between market, limit, and stop orders, adjusts volumes independently for buy and sell actions, and automatically attaches stop-loss and take-profit offsets. This C# port recreates the same workflow inside StockSharp by representing every panel button as a strategy parameter. The strategy does not produce autonomous signals; it waits for your manual instructions and then executes the requested action using the high-level API while supervising protective exits.

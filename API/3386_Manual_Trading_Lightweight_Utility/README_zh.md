@@ -1,4 +1,5 @@
 # Manual Trading Lightweight Utility 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原版 MetaTrader "Manual Trading Lightweight Utility" 专家顾问是一套轻量级的手动交易面板，可以快速在市价、限价、止损订单之间切换，分别调整买卖手数，并为每笔交易自动设置止损与止盈。本 C# 版本将该面板完全移植到 StockSharp 中——所有按钮都变成了策略参数。策略本身不会生成任何信号，只会等待人工指令，通过高层 API 执行下单，同时监控防护性离场。

@@ -1,4 +1,5 @@
 # Easy Robot Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Easy Robot is a momentum-following Expert Advisor that trades once per completed hourly candle. When the previous candle closes bullish the strategy opens a new long position; when it closes bearish it opens a short. Only one position can be active at any time, fully mirroring the original MetaTrader 4 logic.

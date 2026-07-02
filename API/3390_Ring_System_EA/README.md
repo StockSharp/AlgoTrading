@@ -1,4 +1,5 @@
 # Ring System EA Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy ports the multi-currency "RingSystemEA" grid hedging expert from MetaTrader 4 to the StockSharp high level API. It arranges a configurable list of currencies into triangular rings (three currencies generate three correlated pairs) and manages two hedged baskets per ring: a **plus** basket (long/short/long) and a **minus** basket (short/long/short). The strategy continuously monitors floating profit across every ring, applies step-based martingale-style reinforcement when losses exceed configured thresholds, and coordinates global or per-side exits when profit or loss targets are reached.
 

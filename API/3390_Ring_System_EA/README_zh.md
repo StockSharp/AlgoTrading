@@ -1,4 +1,5 @@
 # Ring System EA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 4 平台上的多货币网格对冲专家 "RingSystemEA" 移植到 StockSharp 的高级 API。程序会根据设定的货币顺序自动生成所有三币组合，形成三条互相关联的货币对，并为每个组合同时维护 **正向篮子**（买/卖/买）和 **反向篮子**（卖/买/卖）。策略持续跟踪每个篮子的浮动盈亏，按照阶梯规则在亏损扩大时加仓，并在达到预设盈利或止损目标时成组平仓。
 

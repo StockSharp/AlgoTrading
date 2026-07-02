@@ -1,4 +1,5 @@
 # Three Soldiers Stochastic Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This strategy reproduces the MetaTrader expert `Expert_ABC_WS_Stoch.mq5`, which combines classical three-candle reversal patterns with Stochastic oscillator confirmation. A long signal requires the bullish "Three White Soldiers" formation together with an oversold Stochastic signal line, while a short signal relies on the bearish "Three Black Crows" confirmed by an overbought Stochastic. The exit logic monitors crossovers of the signal line through configurable bands to close positions.
 

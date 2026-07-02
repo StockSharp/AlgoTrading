@@ -1,4 +1,5 @@
 # Стратегия Manual Trading Lightweight Utility Panel
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Manual Trading Lightweight Utility Strategy** воспроизводит панель MT4 «Manual Trading Lightweight Utility», используя высокоуровневый API стратегий StockSharp. Все кнопки и поля ввода из оригинального советника заменены на параметры стратегии, поэтому трейдер может переключать типы ордеров, управлять объёмами и защитой позиции напрямую из интерфейса Hydra/Terminal без дополнительных графических объектов.
@@ -31,4 +32,3 @@
 - `README.md` — документация на английском.
 - `README_zh.md` — документация на китайском.
 - `README_ru.md` — документация на русском (данный файл).
-

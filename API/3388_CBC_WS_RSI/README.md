@@ -1,4 +1,5 @@
 # CBC_WS_RSI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **CBC_WS_RSI Strategy** is a high-level StockSharp implementation of the MQL5 expert advisor that combines the "Three White Soldiers" and "Three Black Crows" candlestick patterns with RSI confirmation. The strategy focuses on identifying strong multi-candle reversals and only enters a trade when market momentum, measured by RSI, agrees with the pattern. Exits are controlled by RSI threshold crossovers and optional risk management through stop-loss and take-profit protections.

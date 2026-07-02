@@ -1,4 +1,5 @@
 # Easy Robot 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 策略概述
 Easy Robot 是一套顺势型交易策略，每当上一根小时线收盘后立即判断其方向：若收阳则在新柱开始时做多，若收阴则做空。策略一次只允许持有一个方向的仓位，忠实复刻原始的 MetaTrader 4 专家顾问。

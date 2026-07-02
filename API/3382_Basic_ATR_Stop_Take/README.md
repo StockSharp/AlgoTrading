@@ -1,4 +1,5 @@
 # Basic ATR Stop Take
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Basic ATR Stop Take ports the MetaTrader 4 expert advisor **“Basic ATR stop_take expert adviser”** to the StockSharp high-level strategy API. The system is intentionally minimal: it opens exactly one market position in the chosen direction, calculates an Average True Range (ATR) on the working candles, and attaches protective stop-loss and take-profit levels derived from ATR multipliers. Once the trade is closed by either level, the strategy immediately prepares for the next setup in the same direction.

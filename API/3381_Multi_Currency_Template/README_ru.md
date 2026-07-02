@@ -1,4 +1,5 @@
 # Стратегия Multi Currency Template
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Multi Currency Template Strategy** — порт MetaTrader 4 советника *Multi Currency Template v4* на высокоуровневый API StockSharp. Стратегия сохраняет логику пересечения EMA для входов, поддерживает мартингейл-доливки, стопы и тейк-профиты в пунктах, а также управление плавающим трейлинг-стопом. По умолчанию используется таймфрейм 5 минут, но его можно настроить параметром.

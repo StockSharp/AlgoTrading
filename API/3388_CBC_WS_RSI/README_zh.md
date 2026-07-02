@@ -1,4 +1,5 @@
 # CBC_WS_RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **CBC_WS_RSI 策略** 是对原始 MQL5 专家顾问的 StockSharp 高级 API 版本。该策略将 "三白兵" 与 "三只乌鸦" 烛形组合与 RSI 指标结合，旨在识别强烈的多根 K 线反转，并在动量得到确认后才入场。策略只处理完全收盘的 K 线，所有逻辑均通过 `SubscribeCandles().Bind(...)` 高级接口完成，无需直接访问指标缓冲区。

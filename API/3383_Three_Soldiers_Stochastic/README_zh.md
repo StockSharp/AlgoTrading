@@ -1,4 +1,5 @@
 # Three Soldiers Stochastic 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 专家 `Expert_ABC_WS_Stoch.mq5`，将经典的三根蜡烛反转形态与随机指标结合使用。当出现多头的“三个白兵”形态并且随机指标信号线位于超卖区时开多；当出现空头的“三只乌鸦”形态并且信号线位于超买区时开空。平仓逻辑基于信号线穿越可配置的阈值带。
 

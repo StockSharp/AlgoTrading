@@ -1,4 +1,5 @@
 # AbcWsCci Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **AbcWsCci Strategy** combines two classic Japanese candlestick reversal patterns — **Three White Soldiers** and **Three Black Crows** — with the **Commodity Channel Index (CCI)** indicator for confirmation. The system scans finished candles, measures the body size relative to a moving average baseline, and opens trades only when strong multi-candle momentum aligns with CCI extremes. Position exits are triggered when the CCI leaves the extreme zones, signalling that momentum is fading.
