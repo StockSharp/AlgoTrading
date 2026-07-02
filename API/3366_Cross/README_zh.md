@@ -1,4 +1,5 @@
 # Cross 策略（MQL 27596 移植）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Cross 策略**移植自 MetaTrader 专家顾问 `Cross.mq4`（仓库目录 `MQL/27596`）。原始 EA 依据开盘价与指数移动平均线（EMA）的相对位置来反向开仓，并为每笔交易同时设置固定止盈和止损。StockSharp 版本在保持原有交易思想的同时，使用高阶 API（K 线订阅、指标绑定、持仓管理）实现完全自动化。

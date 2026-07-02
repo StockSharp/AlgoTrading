@@ -1,4 +1,5 @@
 # eKeyboardTrader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 该策略使用 StockSharp 的高级 API 复刻了 MetaTrader 的 “eKeyboardTrader” 智能交易系统。原始脚本通过键盘快捷键提交手动市价单，并在图表上显示提示信息。移植到 StockSharp 后，交互入口改为策略参数，但手动交易流程、安全检查和保护单设置依旧与 MQL 版本保持一致。

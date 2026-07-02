@@ -1,5 +1,5 @@
 # MelBar Take325 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MelBar Take325 策略直接移植自 Expert Advisor Studio 的 "MelBar™Take325%™ 5.5Y NZD-USD"。策略同时支持做多与做空 NZD/USD，通过三个条件筛选交易：
 1. 盘口勾选量（tick volume）突破预设阈值；

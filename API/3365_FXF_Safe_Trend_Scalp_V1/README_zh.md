@@ -1,4 +1,5 @@
 # FXF Safe Trend Scalp V1（C#）
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 FXF Safe Trend Scalp V1 策略基于最新的 ZigZag 枢轴点构建趋势线，并复制原始 MetaTrader 4 智能交易系统的行为。当收盘价逼近 ZigZag 趋势线并满足均线方向过滤器时，策略在下一根完成的 K 线上执行市价订单。同时，策略应用止损、止盈以及按手数计算的浮动盈利目标，以符合原程序的资金管理规则。
 
@@ -44,4 +45,3 @@ FXF Safe Trend Scalp V1 策略基于最新的 ZigZag 枢轴点构建趋势线，
 ## 文件
 
 - `CS/FXFSafeTrendScalpV1Strategy.cs` – StockSharp 实现。
-

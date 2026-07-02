@@ -1,5 +1,5 @@
 # Стратегия MelBar Take325
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 MelBar Take325 — порт стратегии "MelBar™Take325%™ 5.5Y NZD-USD" из Expert Advisor Studio. Она торгует парой NZD/USD в обе стороны, используя всплеск тикового объёма, разворот простого скользящего среднего с периодом 12 и выход по RSI с периодом 14. В версии для StockSharp сохранены исходные рисковые параметры: стоп-лосс 16 пунктов и тейк-профит 45 пунктов, измеряемые в пунктах от цены входа.
 

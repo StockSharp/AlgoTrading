@@ -1,4 +1,5 @@
 # Cross Strategy (MQL 27596 Conversion)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Cross Strategy** is a direct conversion of the MetaTrader expert advisor `Cross.mq4` (repository entry `MQL/27596`). The original EA traded a single exponential moving average (EMA) cross measured on bar open prices and applied fixed-distance take profit and stop loss levels. This StockSharp port keeps the trading logic intact while using high-level API features such as candle subscriptions, indicator binding, and managed position tracking.

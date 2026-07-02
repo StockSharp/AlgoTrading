@@ -1,4 +1,5 @@
 # FXF Safe Trend Scalp V1 (C#)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The FXF Safe Trend Scalp V1 strategy trades breakouts from ZigZag-based trendlines and mirrors the behaviour of the original MetaTrader 4 expert advisor. It observes the distance between the current price and dynamic resistance/support lines constructed from recent ZigZag pivots and aligns trades with a pair of simple moving averages. Protective stop-loss, take-profit and a floating-profit exit reproduce the money management rules from the source code.
 
@@ -44,4 +45,3 @@ The FXF Safe Trend Scalp V1 strategy trades breakouts from ZigZag-based trendlin
 ## Files
 
 - `CS/FXFSafeTrendScalpV1Strategy.cs` – StockSharp implementation of the expert advisor.
-

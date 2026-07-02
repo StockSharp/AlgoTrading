@@ -1,4 +1,5 @@
 # 动态止损
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 原版 MetaTrader 专家顾问“Dynamic Stop Loss”并不会自行开仓，而是监控已有持仓。一旦出现新的 K 线，就把保护性止损重新放置在距离最新价格固定的距离处。StockSharp 版本保持相同的行为：每根完成的 K 线都会为当前持仓方向重新计算止损价位；当没有仓位时，策略保持空闲直到检测到新的仓位。

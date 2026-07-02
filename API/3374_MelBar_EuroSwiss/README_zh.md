@@ -1,5 +1,5 @@
 # 梅尔巴欧瑞策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 梅尔巴欧瑞策略复刻了 “MelBar EuroSwiss M30 500 1.85x 2Y” 智能交易程序的核心思想。它通过布林带的突破信号触发入场，并使用相对活力指数（RVI）过滤离场。默认配置针对 EUR/CHF 货币对的 30 分钟周期，但所有参数都可以在 StockSharp 中进行优化以适配其他交易品种。
 

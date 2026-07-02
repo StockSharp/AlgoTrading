@@ -1,5 +1,5 @@
 # Basic MA Template Strategy
-[Русский](README_ru.md) | [中文](README_zh.md)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The **Basic MA Template Strategy** is a faithful StockSharp port of the MetaTrader 4 expert advisor from repository entry `MQL/27964`. The original robot traded a single symbol on a higher timeframe moving average and opened a position whenever the previous candle crossed the average. This C# version keeps the minimalist structure while exposing every control as a parameter so that the behaviour can be tuned or optimized directly inside StockSharp.
 

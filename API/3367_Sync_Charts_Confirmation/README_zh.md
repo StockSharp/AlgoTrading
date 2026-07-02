@@ -1,5 +1,5 @@
 # 同步图表确认策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略基于原始 MQL “SyncCharts” 工具的思路：监听同一交易品种的两路 K 线数据，仅在两路数据同步且趋势方向一致时
 才允许开仓。主图代表交易者重点关注的时间框架，副图通常是更快的周期或其他聚合方式。通过强制两路信号保持一致，

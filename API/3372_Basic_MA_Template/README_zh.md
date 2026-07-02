@@ -1,5 +1,5 @@
 # 基础均线模板策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **基础均线模板策略** 是仓库 `MQL/27964` 中 MetaTrader 4 EA 的 StockSharp 复刻版。原始机器人依赖较高周期的移动平均线，并在上一根蜡烛穿越均线时开仓。本移植版本保留了这种简洁的核心逻辑，同时把所有关键控制暴露为参数，方便在 StockSharp 平台上直接调节或优化。
 

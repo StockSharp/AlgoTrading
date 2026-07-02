@@ -1,5 +1,5 @@
 # Стратегия MelBar EuroSwiss
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия MelBar EuroSwiss повторяет логику советника «MelBar EuroSwiss M30 500 1.85x 2Y». Она сочетает входы по пробою полос Боллинджера с выходом по индикатору Relative Vigor Index (RVI). Базовые настройки ориентированы на пару EUR/CHF и таймфрейм M30, однако все параметры могут быть оптимизированы под другие инструменты.
 
