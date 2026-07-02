@@ -1,4 +1,5 @@
 # Стратегия Alligator Volatility
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Alligator Volatility — это порт оригинального советника MetaTrader "Alligator vol 1.1" на платформу StockSharp. Она использует индикатор Билла Вильямса Alligator, опциональный фильтр по фракталам, сетку усредняющих ордеров в стиле мартингейл и гибкое управление рисками.
 

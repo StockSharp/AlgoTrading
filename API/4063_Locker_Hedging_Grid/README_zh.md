@@ -1,4 +1,5 @@
 # Locker 对冲网格策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略复刻 MetaTrader 4 专家顾问 **Locker.mq4** 的行为。每个交易循环都会先发送一笔市价买单，然后同时管理买单与卖单组成的对冲网格。当所有持仓的浮动利润累计到账户权益的一定比例时，策略会立即平掉全部头寸并进入下一个循环。如果浮亏达到同样的比例，策略会按照固定的点数间隔逐步加仓买入或卖出，对价格波动进行“锁仓”处理。
 

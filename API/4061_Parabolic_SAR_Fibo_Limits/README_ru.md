@@ -1,4 +1,5 @@
 # Parabolic SAR Fibo Limits
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Parabolic SAR Fibo Limits — порт стратегии MetaTrader 4 `FT_0tk80i9uw4ep_Parabolic` на платформу StockSharp. Исходный эксперт сочетает две версии индикатора Parabolic SAR и уровни Фибоначчи, чтобы выставлять лимитные заявки в точках отката. Реализация на C# сохраняет поэтапную постановку заявок, встроенную защиту (перенос в безубыток и трейлинг-стоп) и опциональный фильтр торговой сессии, поэтому при работе на закрытых свечах поведение соответствует оригинальному советнику.

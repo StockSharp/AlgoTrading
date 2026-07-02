@@ -1,4 +1,5 @@
 # FuturePatternMemoryStrategy
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 `FuturePatternMemoryStrategy` 是 MetaTrader 经典专家顾问 **FutureMA** 与 **FutureMACD** 的 StockSharp 版本。原始程序会将指标差值序列写入 CSV 文件，通过历史统计判断当前环境更适合多头还是空头突破。本策略保留了同样的思想，但把文件持久化改为内存中的模式库，并把所有关键选项暴露为参数。通过 `Source` 参数可以在平滑移动平均价差（FutureMA 逻辑）和 MACD 柱状图（FutureMACD 逻辑）之间切换。

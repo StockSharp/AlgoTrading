@@ -1,4 +1,5 @@
 # Profit Hunter HSI with Fibonacci Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy is a C# port of the MetaTrader 4 expert advisor `Profit_Hunter_HSI_with_fibonacci.mq4`. The original script combines

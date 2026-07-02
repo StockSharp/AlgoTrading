@@ -1,5 +1,5 @@
 # 多周期交易者
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略监控九个不同周期的K线，并为每个周期计算同一长度的线性回归通道。H1回归通道的斜率用于判断趋势方向：斜率为负时只允许做空，斜率为正时只允许做多。M5与M1通道负责在支撑/阻力附近给出精确的入场位置。
 

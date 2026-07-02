@@ -1,4 +1,5 @@
 # Alligator 波动率策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Alligator 波动率策略是对 MetaTrader "Alligator vol 1.1" 专家顾问的 StockSharp 高级移植版本。策略利用比尔·威廉姆斯的 Alligator 指标，并提供可选的分形突破过滤、马丁格尔加仓网格以及跟踪止损管理，帮助交易者自动化原有流程。
 

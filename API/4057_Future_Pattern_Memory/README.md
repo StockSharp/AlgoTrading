@@ -1,4 +1,5 @@
 # FuturePatternMemoryStrategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 `FuturePatternMemoryStrategy` is a StockSharp port of the classic MetaTrader experts **FutureMA** and **FutureMACD**. The original robots recorded sequences of indicator differences into CSV files, reused the stored statistics, and decided whether current conditions favored bullish or bearish breakouts. This C# version keeps the same idea, but replaces the file system with an in-memory pattern warehouse and exposes every knob as a strategy parameter. The strategy can operate either on the smoothed moving average spread (the FutureMA logic) or on the MACD histogram (the FutureMACD logic).

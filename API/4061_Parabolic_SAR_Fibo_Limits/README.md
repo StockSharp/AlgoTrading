@@ -1,4 +1,5 @@
 # Parabolic SAR Fibo Limits
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Parabolic SAR Fibo Limits is a StockSharp port of the MetaTrader 4 expert advisor `FT_0tk80i9uw4ep_Parabolic`. The original robot combines a dual Parabolic SAR stack with Fibonacci retracement levels to stage limit entries at key pullback zones. The C# strategy preserves the staged order placement, the built-in break-even and trailing protections, and the optional trading session filter so that the behaviour matches the source EA when it is attached to a chart with finished candles.

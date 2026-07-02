@@ -1,4 +1,5 @@
 # 抛物线SAR斐波挂单策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 抛物线SAR斐波挂单策略移植自 MetaTrader 4 专家顾问 `FT_0tk80i9uw4ep_Parabolic`。原始机器人利用快慢两套抛物线SAR指标以及斐波回撤水平，在关键回调位置挂出限价单。C# 版本完整保留了分批挂单逻辑、内置的保本和移动止损机制以及可选的交易时段过滤，从而在使用收盘K线时复现 EA 的行为。

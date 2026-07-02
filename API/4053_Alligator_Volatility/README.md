@@ -1,4 +1,5 @@
 # Alligator Volatility Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The Alligator Volatility Strategy is a high-level StockSharp port of the "Alligator vol 1.1" MetaTrader expert advisor. It combines Bill Williams' Alligator indicator with optional fractal breakout confirmation, martingale-style averaging orders, and trailing risk management. The module is intended for discretionary traders who want to automate the original workflow while keeping granular control over position sizing and filters.
 

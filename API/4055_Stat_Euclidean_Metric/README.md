@@ -1,4 +1,5 @@
 # Stat Euclidean Metric Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The strategy reproduces the behaviour of the MetaTrader expert advisor `Stat_Euclidean_Metric.mq4`. It monitors MACD reversals on a single instrument and timeframe. When the MACD line forms a local turning point the strategy either opens a position immediately (training mode) or validates the setup with a k-nearest neighbours (k-NN) classifier that compares the current market structure with historical feature vectors stored in binary files.

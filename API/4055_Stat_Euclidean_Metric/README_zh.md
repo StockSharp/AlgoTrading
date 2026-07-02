@@ -1,4 +1,5 @@
 # Stat Euclidean Metric 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻 MetaTrader 专家顾问 `Stat_Euclidean_Metric.mq4` 的核心逻辑。策略基于单一品种、单一周期的 MACD 反转信号进行交易，并可以使用 k 近邻（k-NN）分类器来验证入场信号，分类器会把当前市场结构与存储在二进制文件中的历史特征向量进行比较。

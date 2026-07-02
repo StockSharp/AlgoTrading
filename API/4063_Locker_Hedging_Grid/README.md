@@ -1,4 +1,5 @@
 # Locker Hedging Grid Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the MetaTrader 4 expert advisor **Locker.mq4**. It starts every cycle with a market buy and then manages a hedged grid of buy and sell orders. Whenever the combined unrealized profit of all open trades reaches a fixed fraction of the account equity, every position is closed and a fresh cycle begins. If the floating loss exceeds the same fraction in the negative direction, the strategy progressively adds rescue orders at fixed point intervals, locking price swings with alternating long and short entries.
 

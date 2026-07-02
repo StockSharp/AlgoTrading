@@ -1,4 +1,5 @@
 # FuturePatternMemoryStrategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 `FuturePatternMemoryStrategy` — это перенос MetaTrader-советников **FutureMA** и **FutureMACD** на платформу StockSharp. Исходные роботы записывали последовательности разностей индикаторов в CSV-файлы, накапливали статистику и по ней решали, какой прорыв (вверх или вниз) вероятнее. В версии на C# вся логика перенесена в память процесса, а все параметры вынесены в публичные настройки. Через параметр `Source` можно выбрать источник сигналов: спред сглаженных скользящих средних (FutureMA) или гистограмму MACD (FutureMACD).
