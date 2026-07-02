@@ -1,4 +1,5 @@
 # Fibo Pivot MultiVal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
@@ -74,4 +75,3 @@ risk control and execution behaviour remain familiar to traders who used the Met
   broker's requirements.
 * Order execution relies on the StockSharp high level API (`BuyLimit`, `SellLimit`, etc.). Broker-specific behaviour (such as
   pending order offsets) should be reviewed before deploying to production.
-

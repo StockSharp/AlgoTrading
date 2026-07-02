@@ -1,4 +1,5 @@
 # Elite eFibo Trader v2.1 Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 Elite eFibo Trader v2.1 recreates the MetaTrader expert advisor that stacks Fibonacci-sized orders in one direction while sharing a common protective stop. The StockSharp port keeps the original behaviour: a single market order launches a sequence of stop orders spaced by `LevelDistancePips`, and every filled tier increases the exposure according to the Fibonacci progression. The strategy immediately closes the entire basket once the shared stop is touched or when the floating profit reaches `MoneyTakeProfit`.

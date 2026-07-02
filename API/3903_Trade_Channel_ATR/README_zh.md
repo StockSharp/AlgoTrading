@@ -1,5 +1,5 @@
 # Trade Channel ATR 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Trade Channel 策略复刻了原始的 MetaTrader 专家顾问：它基于价格通道交易，并使用 ATR 设置初始止损。策略等待通道上下边界保持不变，同时最新蜡烛触碰或反转这些位置。一旦触发条件成立，系统会在触碰方向的反向开仓，并使用以点数衡量的自适应跟踪止损保护浮盈。
 

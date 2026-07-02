@@ -1,4 +1,5 @@
 # Auto KDJ 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Auto KDJ 策略源自 MetaTrader 4 专家顾问 `AutoKdj.mq4`，作者为 *senlin ge*。该策略只交易一个品种，通过观察平滑化的随机指标 **KDJ**（%K、%D、%J）来捕捉动量反转。StockSharp 版本完整移植了原始 MQL 策略的指标逻辑与资金管理选项，同时使用高阶 API 提供的蜡烛订阅、指标绑定以及自动保护单功能。

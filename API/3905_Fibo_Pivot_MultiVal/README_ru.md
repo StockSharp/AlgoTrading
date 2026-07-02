@@ -1,4 +1,5 @@
 # Стратегия Fibo Pivot MultiVal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 
@@ -69,4 +70,3 @@
   требованиями брокера.
 * Исполнение ордеров происходит через высокоуровневый API StockSharp (`BuyLimit`, `SellLimit` и т. п.), поэтому возможны
   отличия от MetaTrader — протестируйте стратегию на тестовой среде перед запуском на реальном счёте.
-

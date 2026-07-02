@@ -1,4 +1,5 @@
 # VLT Trader 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 VLT Trader 策略是 MetaTrader 4 专家顾问 “VLT_TRADER” 的 StockSharp 版本。策略核心思想是在波动极低的时间段设置突破挂单，当最近一根完成的K线波幅小于指定数量历史K线的最小波幅时，于该K线的高低点附近布置多空双向止损单，等待波动性扩张。

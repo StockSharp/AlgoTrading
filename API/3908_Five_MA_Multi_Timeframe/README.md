@@ -1,4 +1,5 @@
 # Five MA Multi-Timeframe Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Five MA Multi-Timeframe Strategy** replicates the original MT4 "5matf" expert advisor using StockSharp's high-level API. The strategy analyzes five simple moving averages across three timeframes (primary, higher, and slowest) and combines the slope of each average with the Accelerator Oscillator to produce graded entry signals. When enough bullish or bearish evidence is present on all timeframes, the strategy opens or closes positions accordingly.

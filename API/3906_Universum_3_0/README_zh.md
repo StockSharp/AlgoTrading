@@ -1,5 +1,5 @@
 # Universum 3.0 Original 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略在 StockSharp 高级 API 中完整还原了 MQL4 平台上的 **Universum_3_0** 专家顾问。
 它结合了基于 DeMarker 指标的阈值交易信号和类似马丁格尔的仓位放大规则。

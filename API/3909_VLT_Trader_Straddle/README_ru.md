@@ -1,4 +1,5 @@
 # Стратегия VLT Trader Straddle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 VLT Trader — это порт стратегии MetaTrader 4 "VLT_TRADER" на платформу StockSharp. Алгоритм ищет участки с минимальной волатильностью и выставляет отложенные стоп-заявки вокруг последней свечи. Когда диапазон завершившейся свечи меньше минимального диапазона за предыдущие `LookbackCandles` баров, стратегия готовит симметричный «страддл» на пробой.

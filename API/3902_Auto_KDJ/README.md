@@ -1,4 +1,5 @@
 # Auto KDJ Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The Auto KDJ strategy is a direct conversion of the MetaTrader 4 expert advisor `AutoKdj.mq4` created by *senlin ge*. The system trades a single symbol and evaluates the smoothed stochastic oscillator known as **KDJ** (also called %K, %D, %J). The StockSharp implementation recreates the same indicator logic and the money-management options exposed in the original expert advisor, while leveraging the high-level API features such as candle subscriptions, indicator binding, and automatic protective orders.

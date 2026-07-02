@@ -1,4 +1,5 @@
 # VLT Trader Straddle Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The VLT Trader strategy is a StockSharp conversion of the MetaTrader 4 expert advisor "VLT_TRADER". The original idea searches for a period of extremely low volatility and then prepares a breakout straddle around the most recent candle. When the latest completed candle has the smallest range compared with a configurable number of earlier candles, the strategy positions stop orders above and below that candle in anticipation of a volatility expansion.

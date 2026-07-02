@@ -1,4 +1,5 @@
 # Стратегия OzFx Simple
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 - Портирование советника MetaTrader 4 **OzFx** (каталог `MQL/7994`) на высокоуровневый API StockSharp.

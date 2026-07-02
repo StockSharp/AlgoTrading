@@ -1,4 +1,5 @@
 # Стратегия Five MA Multi-Timeframe
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Five MA Multi-Timeframe Strategy** — реализация советника MT4 «5matf» на платформе StockSharp. Стратегия анализирует пять простых скользящих средних на трёх таймфреймах (основной, средний и медленный) и дополняет их показания индикатором Accelerator Oscillator. Комбинированная оценка показывает степень доминирования покупателей или продавцов и определяет моменты открытия или закрытия позиций.

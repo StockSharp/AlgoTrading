@@ -1,4 +1,5 @@
 # Fibo Pivot MultiVal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 
@@ -53,4 +54,3 @@
 * StockSharp 版本一次只处理一个交易品种，如需多品种交易可运行多个实例。
 * 下单数量使用交易所实际数量单位，不再使用 MetaTrader 的“手”概念，请根据券商要求设置 `OrderVolume`。
 * 订单提交通过 StockSharp 高级 API (`BuyLimit`、`SellLimit` 等) 完成，具体成交行为可能与 MetaTrader 略有不同，实盘部署前请充分测试。
-

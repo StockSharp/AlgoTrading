@@ -1,4 +1,5 @@
 # Elite eFibo Trader v2.1 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 Elite eFibo Trader v2.1 复刻了 MetaTrader 专家顾问，在单一方向上按斐波那契数列叠加仓位，并为所有挂单共用同一个保护性止损。移植到 StockSharp 后保持了原有行为：首笔市价单启动后，会根据 `LevelDistancePips` 间隔批量放置止损挂单，每当新的层级成交，就按斐波那契权重增加仓位。一旦共享止损被触发或浮动利润达到 `MoneyTakeProfit`，策略会立即平掉整个篮子。

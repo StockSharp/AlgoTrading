@@ -1,4 +1,5 @@
 # Five MA Multi-Timeframe 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Five MA Multi-Timeframe Strategy** 在 StockSharp 平台中复刻 MT4 的 “5matf” 专家顾问。策略在三个时间框架（信号、确认、趋势）上同时计算 5 条简单移动平均线，并结合 Accelerator Oscillator 加速指标来评估多空力量。当所有时间框架都指向同一方向且强度达到阈值时，策略会开仓或平仓。
