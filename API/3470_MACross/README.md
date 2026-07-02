@@ -1,4 +1,5 @@
 # MACross Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 The strategy replicates the behaviour of the original `MQL/34176/MACross.mq4` expert advisor using the StockSharp high-level API. It trades a single instrument on a moving-average crossover and keeps all risk controls expressed in pips and account equity.
 

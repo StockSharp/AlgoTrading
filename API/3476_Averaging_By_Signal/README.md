@@ -1,4 +1,5 @@
 # Averaging By Signal Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Averaging By Signal Strategy** ports the MetaTrader expert `AveragingBySignal.mq4` to the StockSharp high-level API. The original advisor combined a moving-average crossover entry filter with Martingale-style averaging, a shared basket take-profit, and an optional trailing stop that only activates for the very first order. This C# version recreates the same building blocks while adapting them to StockSharp's netting execution model and indicator framework.

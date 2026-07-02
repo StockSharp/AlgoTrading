@@ -1,4 +1,5 @@
 # Trading Panel Batch Strategy
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 `TradingPanelBatchStrategy` — порт советника MetaTrader 4 **EA_TradingPanel** на платформу StockSharp. В оригинале пользователю показывалась ручная панель: задавались количество сделок в серии, объём каждой заявки и расстояния до стоп-лосса/тейк-профита, после чего нажималась кнопка **BUY** или **SELL**. В StockSharp тот же сценарий реализован параметрами: достаточно установить `Direction`, и стратегия на следующей закрывшейся свече отправит пакет рыночных заявок, затем автоматически вернёт направление к значению `None`.

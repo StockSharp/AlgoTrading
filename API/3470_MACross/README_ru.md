@@ -1,4 +1,5 @@
 # Стратегия MACross
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит логику эксперта `MQL/34176/MACross.mq4` на высокоуровневый API StockSharp. Она торгует один инструмент по пересечению скользящих средних и сохраняет все защитные механизмы, выраженные в пунктах и капитале счёта.
 

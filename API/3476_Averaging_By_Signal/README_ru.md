@@ -1,4 +1,5 @@
 # Стратегия Averaging By Signal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Averaging By Signal Strategy** — это порт советника MetaTrader `AveragingBySignal.mq4` на высокоуровневый API StockSharp. Оригинальный эксперт объединял вход по пересечению скользящих средних, мартингейл-усреднение, общее тейк-профит-сопровождение и опциональный трейлинг, активный только для первой сделки. Версия на C# воспроизводит те же элементы и адаптирует их под неттинговую модель исполнения StockSharp и систему индикаторов библиотеки.

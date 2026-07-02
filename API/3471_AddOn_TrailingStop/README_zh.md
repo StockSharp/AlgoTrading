@@ -1,5 +1,5 @@
 # AddOn Trailing Stop
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 移植自 MetaTrader 专家顾问 **AddOn_TrailingStop**。策略本身不会开仓，只负责为当前净持仓更新跟踪止损。
 

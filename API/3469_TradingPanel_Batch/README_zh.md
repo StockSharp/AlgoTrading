@@ -1,4 +1,5 @@
 # Trading Panel 批量策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 `TradingPanelBatchStrategy` 是 MetaTrader 4 专家顾问 **EA_TradingPanel** 的 StockSharp 版本。原脚本提供了一个手动面板，交易者先设置批量下单的数量、每笔手数以及止损/止盈距离，然后点击 **BUY** 或 **SELL** 按钮。移植到 StockSharp 后，操作员只需在参数中指定 `Direction`，策略就会在下一根完整蜡烛关闭时按照设定方向批量发送市价单，并立即把方向重置为 `None`。

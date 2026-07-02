@@ -1,4 +1,5 @@
 # Close Orders Risk Control Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **Close Orders Strategy** is a risk-management utility that mirrors the behaviour of the original MQL expert advisor *CloseOrders.mq4*. It continuously monitors the floating profit and loss of open positions and automatically liquidates matching orders once either the profit target or the cut-loss threshold is reached. This makes it suitable for protecting a portfolio or synchronising exits across multiple strategies.

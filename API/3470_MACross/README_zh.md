@@ -1,4 +1,5 @@
 # MACross 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 `MQL/34176/MACross.mq4` 专家顾问移植到 StockSharp 高级 API。核心思想仍是双均线交叉开平仓，并保留所有以点数和账户权益表示的风控规则。
 

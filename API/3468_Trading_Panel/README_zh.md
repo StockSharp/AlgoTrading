@@ -1,4 +1,5 @@
 # 交易面板策略 (ID 3468)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **TradingPanelStrategy** 源自 MQL5 专家顾问 *EA_TradingPanel*，是一款用于手动下单的辅助策略。它提供 `PlaceBuyOrders()` 与 `PlaceSellOrders()` 两个方法，对应 MT5 面板上的 BUY/SELL 按钮：一次调用即可批量发送多笔市价单，并按设定的 pips 距离自动附加止损和止盈，还可以选择自定义交易标的。默认参数与原始 EA 完全一致（1 笔订单、2 个点止损、10 个点止盈、0.01 手）。

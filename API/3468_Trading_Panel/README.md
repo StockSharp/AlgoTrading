@@ -1,4 +1,5 @@
 # Trading Panel Strategy (ID 3468)
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 The **TradingPanelStrategy** is a manual order-entry helper converted from the MQL5 expert advisor *EA_TradingPanel*. It exposes programmatic methods that replicate the original on-chart panel: a single action can submit multiple market orders, automatically attach stop-loss and take-profit distances measured in pips, and optionally select a custom security to trade. The defaults mirror the source EA (one trade, 2-pip stop, 10-pip take, 0.01 volume).

@@ -1,4 +1,5 @@
 # Trading Panel Batch Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 `TradingPanelBatchStrategy` is a StockSharp port of the MetaTrader 4 expert advisor **EA_TradingPanel**. The original script exposed a manual panel where the trader configured the number of simultaneous trades, lot size and protective distances before pressing **BUY** or **SELL**. In the StockSharp version the same behaviour is automated: once the operator sets the `Direction` parameter the strategy fires a batch of market orders on the next finished candle and instantly resets the direction back to `None`.

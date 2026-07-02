@@ -1,4 +1,5 @@
 # Day Opening MACD Histogram Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 This strategy replicates the MetaTrader expert "2 1000 1 0.7% 0.5 500lev st" by entering a trade at the beginning of each new trading day and filtering the direction with the MACD histogram slope. The system was designed for hourly candles and relies on fixed money management parameters converted from the original MQL settings.

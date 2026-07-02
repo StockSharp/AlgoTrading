@@ -1,4 +1,5 @@
 # Averaging By Signal 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **Averaging By Signal Strategy** 将 MetaTrader 顾问 `AveragingBySignal.mq4` 迁移到 StockSharp 的高层 API。原始 EA 通过快慢均线交叉发出信号，并结合马丁式加仓、共享的篮子止盈以及仅对第一笔订单生效的可选移动止损。本移植版在 C# 中重建这些模块，同时适配 StockSharp 的净额模式和指标系统。

@@ -1,4 +1,5 @@
 # 日内开盘 MACD 直方图策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略还原 MetaTrader 专家顾问“2 1000 1 0.7% 0.5 500lev st”的逻辑：在每个新交易日的开始入场，并通过 MACD 直方图的斜率决定方向。系统以小时级别的 K 线为基础，并保留了原始 MQL 配置中的固定仓位管理参数。

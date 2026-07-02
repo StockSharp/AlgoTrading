@@ -1,4 +1,5 @@
 # Close Orders Risk Control 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **平仓指令策略** 是一个风险管理工具，复刻了原始 MQL 专家顾问 *CloseOrders.mq4* 的逻辑。策略持续监控持仓的浮动盈亏，只要达到设定的盈利目标或跌破止损阈值，就会自动关闭符合条件的订单，从而保护账户并同步多策略的退出时机。
