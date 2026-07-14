@@ -1,7 +1,7 @@
 # Designer-Strategien Beispielverzeichnis
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Willkommen im Beispielverzeichnis für [Designer](https://stocksharp.com/store/strategy-designer/)-Strategien. Dieser Ordner enthält eine Sammlung von Handelsstrategiebeispielen, die speziell für die Verwendung mit dem Designer-Programm entwickelt wurden — einer visuellen und codebasierten Umgebung innerhalb der StockSharp-Plattform. Die Beispiele sind sowohl im schematischen Format als auch als C#-Code verfügbar, um verschiedenen Entwicklungs- und Lernstilen gerecht zu werden.
+Willkommen im Beispielverzeichnis für [Designer](https://stocksharp.com/de/store/strategy-designer/)-Strategien. Dieser Ordner enthält eine Sammlung von Handelsstrategiebeispielen, die speziell für die Verwendung mit dem Designer-Programm entwickelt wurden — einer visuellen und codebasierten Umgebung innerhalb der StockSharp-Plattform. Die Beispiele sind sowohl im schematischen Format als auch als C#-Code verfügbar, um verschiedenen Entwicklungs- und Lernstilen gerecht zu werden.
 
 ## Verzeichnisstruktur
 

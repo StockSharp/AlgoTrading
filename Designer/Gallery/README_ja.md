@@ -1,11 +1,11 @@
 # 戦略ソースコードディレクトリ
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-このディレクトリには、[Designer](https://stocksharp.com/store/strategy-designer/) プラットフォームの[ストラテジーギャラリー](https://doc.stocksharp.com/ja/topics/designer/strategy_gallery.html)セクションで利用可能な取引戦略の図式表現が含まれています。戦略のソースコードファイルは [API](../../API) ディレクトリに保存されており、StockSharp API を通じてスタンドアロンプログラムとして読み込んだり、Designer にインポートしたりすることができます。
+このディレクトリには、[Designer](https://stocksharp.com/ja/store/strategy-designer/) プラットフォームの[ストラテジーギャラリー](https://doc.stocksharp.com/ja/topics/designer/strategy_gallery.html)セクションで利用可能な取引戦略の図式表現が含まれています。戦略のソースコードファイルは [API](../../API) ディレクトリに保存されており、StockSharp API を通じてスタンドアロンプログラムとして読み込んだり、Designer にインポートしたりすることができます。
 
 ## 概要
 
-[Designer](https://stocksharp.com/store/strategy-designer/) のストラテジーギャラリーは、コミュニティと StockSharp の専門家によって開発された多様な取引戦略のコレクションを提供しています。このディレクトリはこれらの戦略の図式版のリポジトリとして機能し、ユーザーが取引ニーズに応じてそれらを探索、修正、改良できるようにしています。ソースコードの実装は [API](../../API) ディレクトリで入手できます。
+[Designer](https://stocksharp.com/ja/store/strategy-designer/) のストラテジーギャラリーは、コミュニティと StockSharp の専門家によって開発された多様な取引戦略のコレクションを提供しています。このディレクトリはこれらの戦略の図式版のリポジトリとして機能し、ユーザーが取引ニーズに応じてそれらを探索、修正、改良できるようにしています。ソースコードの実装は [API](../../API) ディレクトリで入手できます。
 
 ## コンテンツ
 

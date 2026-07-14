@@ -10,9 +10,9 @@ The strategies in this directory are written in [insert programming language, e.
 
 These strategies are compatible with all StockSharp products:
 - **[StockSharp API](https://github.com/StockSharp/StockSharp)**: The open-source library for building custom trading applications.
-- **[Designer](https://stocksharp.com/store/designer/)**: A visual tool for creating and testing trading strategies without coding.
-- **[Shell](https://stocksharp.com/store/shell/)**: A lightweight application for managing and executing trading strategies.
-- **[Runner](https://stocksharp.com/store/runner/)**: A high-performance tool for running multiple strategies simultaneously.
+- **[Designer](https://stocksharp.com/en/store/designer/)**: A visual tool for creating and testing trading strategies without coding.
+- **[Shell](https://stocksharp.com/en/store/shell/)**: A lightweight application for managing and executing trading strategies.
+- **[Runner](https://stocksharp.com/en/store/runner/)**: A high-performance tool for running multiple strategies simultaneously.
 
 This ensures flexibility whether you're coding directly with the API or using StockSharp's graphical or execution tools.
 
@@ -36,4 +36,4 @@ Each strategy file should include comments or documentation explaining its logic
 
 Feel free to contribute by submitting your own strategies or improving existing ones. Please follow the standard pull request process if you wish to add to this repository.
 
-For more information about StockSharp, visit the official [StockSharp website](https://stocksharp.com/).
+For more information about StockSharp, visit the official [StockSharp website](https://stocksharp.com/en/).

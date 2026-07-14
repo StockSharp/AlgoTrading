@@ -1,7 +1,7 @@
 # Designer 策略示例目录
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-欢迎来到 [Designer](https://stocksharp.com/store/strategy-designer/) 策略示例目录。本文件夹包含一系列专为 Designer 程序设计的交易策略示例——Designer 是 StockSharp 平台中基于可视化与代码的开发环境。这些示例以图形化和 C# 代码两种格式提供，以满足不同的开发和学习风格。
+欢迎来到 [Designer](https://stocksharp.com/zh/store/strategy-designer/) 策略示例目录。本文件夹包含一系列专为 Designer 程序设计的交易策略示例——Designer 是 StockSharp 平台中基于可视化与代码的开发环境。这些示例以图形化和 C# 代码两种格式提供，以满足不同的开发和学习风格。
 
 ## 目录结构
 

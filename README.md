@@ -35,9 +35,9 @@ We welcome contributions from all users! If you have a strategy, a feature from 
 
 To use the strategies or features in this repository, you'll need to have StockSharp installed and configured on your system. Each strategy or feature may have specific requirements or dependencies, so be sure to check the included README.md or documentation files for each contribution.
 
-The easiest way to run these strategies is through the [Designer](https://stocksharp.com/store/strategy-designer/) application:
+The easiest way to run these strategies is through the [Designer](https://stocksharp.com/en/store/strategy-designer/) application:
 
-1. Download Designer from the [official site](https://stocksharp.com/products/download/).
+1. Download Designer from the [official site](https://stocksharp.com/en/products/download/).
 2. Install the program on your machine.
 3. Open the [Strategy Gallery](https://doc.stocksharp.com/en/topics/designer/strategy_gallery.html) inside Designer and select the strategy you want to run.
 

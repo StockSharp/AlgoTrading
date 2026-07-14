@@ -1,7 +1,7 @@
 # Directorio de Ejemplos de Estrategias de Designer
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Bienvenido al Directorio de Ejemplos de Estrategias de [Designer](https://stocksharp.com/store/strategy-designer/). Esta carpeta contiene una colección de ejemplos de estrategias de trading diseñados específicamente para su uso con el programa Designer, un entorno visual y basado en código dentro de la plataforma StockSharp. Estos ejemplos se proporcionan en formato esquemático y en código C# para adaptarse a diferentes estilos de desarrollo y aprendizaje.
+Bienvenido al Directorio de Ejemplos de Estrategias de [Designer](https://stocksharp.com/es/store/strategy-designer/). Esta carpeta contiene una colección de ejemplos de estrategias de trading diseñados específicamente para su uso con el programa Designer, un entorno visual y basado en código dentro de la plataforma StockSharp. Estos ejemplos se proporcionan en formato esquemático y en código C# para adaptarse a diferentes estilos de desarrollo y aprendizaje.
 
 ## Estructura del Directorio
 

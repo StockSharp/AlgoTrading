@@ -1,11 +1,11 @@
 # Directorio de Código Fuente de Estrategias
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Este directorio contiene representaciones esquemáticas de estrategias de trading disponibles en la sección [Galería de Estrategias](https://doc.stocksharp.com/es/topics/designer/strategy_gallery.html) de la plataforma [Designer](https://stocksharp.com/store/strategy-designer/). Los archivos de código fuente de las estrategias se almacenan en el directorio [API](../../API), desde donde pueden cargarse como programas independientes a través de la API de StockSharp o importarse en Designer.
+Este directorio contiene representaciones esquemáticas de estrategias de trading disponibles en la sección [Galería de Estrategias](https://doc.stocksharp.com/es/topics/designer/strategy_gallery.html) de la plataforma [Designer](https://stocksharp.com/es/store/strategy-designer/). Los archivos de código fuente de las estrategias se almacenan en el directorio [API](../../API), desde donde pueden cargarse como programas independientes a través de la API de StockSharp o importarse en Designer.
 
 ## Descripción general
 
-La Galería de Estrategias en [Designer](https://stocksharp.com/store/strategy-designer/) ofrece una diversa colección de estrategias de trading desarrolladas por la comunidad y los expertos de StockSharp. Este directorio sirve como repositorio de versiones esquemáticas de estas estrategias, permitiendo a los usuarios explorarlas, modificarlas y potencialmente mejorarlas según sus necesidades de trading. Las implementaciones del código fuente están disponibles en el directorio [API](../../API).
+La Galería de Estrategias en [Designer](https://stocksharp.com/es/store/strategy-designer/) ofrece una diversa colección de estrategias de trading desarrolladas por la comunidad y los expertos de StockSharp. Este directorio sirve como repositorio de versiones esquemáticas de estas estrategias, permitiendo a los usuarios explorarlas, modificarlas y potencialmente mejorarlas según sus necesidades de trading. Las implementaciones del código fuente están disponibles en el directorio [API](../../API).
 
 ## Contenido
 

@@ -1,11 +1,11 @@
 # Strategy Source Code Directory
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-This directory contains schematic representations of trading strategies available in the [Strategy Gallery](https://doc.stocksharp.com/en/topics/designer/strategy_gallery.html) section of the [Designer](https://stocksharp.com/store/strategy-designer/) platform. Strategy source code files are stored in the [API](../../API) directory, where they can be loaded as standalone programs through the StockSharp API or imported into Designer.
+This directory contains schematic representations of trading strategies available in the [Strategy Gallery](https://doc.stocksharp.com/en/topics/designer/strategy_gallery.html) section of the [Designer](https://stocksharp.com/en/store/strategy-designer/) platform. Strategy source code files are stored in the [API](../../API) directory, where they can be loaded as standalone programs through the StockSharp API or imported into Designer.
 
 ## Overview
 
-The Strategy Gallery in [Designer](https://stocksharp.com/store/strategy-designer/) offers a diverse collection of trading strategies developed by the community and StockSharp experts. This directory serves as a repository for schematic versions of these strategies, enabling users to explore, modify, and potentially enhance them according to their trading needs. Source code implementations are available in the [API](../../API) directory.
+The Strategy Gallery in [Designer](https://stocksharp.com/en/store/strategy-designer/) offers a diverse collection of trading strategies developed by the community and StockSharp experts. This directory serves as a repository for schematic versions of these strategies, enabling users to explore, modify, and potentially enhance them according to their trading needs. Source code implementations are available in the [API](../../API) directory.
 
 ## Contents
 

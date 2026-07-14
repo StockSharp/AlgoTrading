@@ -1,11 +1,11 @@
 # 策略源代码目录
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-本目录包含 [Designer](https://stocksharp.com/store/strategy-designer/) 平台[策略库](https://doc.stocksharp.com/zh/topics/designer/strategy_gallery.html)中可用交易策略的示意图表示。策略源代码文件存储在 [API](../../API) 目录中，可通过 StockSharp API 作为独立程序加载，也可导入 Designer。
+本目录包含 [Designer](https://stocksharp.com/zh/store/strategy-designer/) 平台[策略库](https://doc.stocksharp.com/zh/topics/designer/strategy_gallery.html)中可用交易策略的示意图表示。策略源代码文件存储在 [API](../../API) 目录中，可通过 StockSharp API 作为独立程序加载，也可导入 Designer。
 
 ## 概述
 
-[Designer](https://stocksharp.com/store/strategy-designer/) 中的策略库提供了由社区和 StockSharp 专家开发的多样化交易策略集合。本目录作为这些策略示意图版本的存储库，使用户能够根据自身交易需求进行探索、修改和优化。源代码实现可在 [API](../../API) 目录中获取。
+[Designer](https://stocksharp.com/zh/store/strategy-designer/) 中的策略库提供了由社区和 StockSharp 专家开发的多样化交易策略集合。本目录作为这些策略示意图版本的存储库，使用户能够根据自身交易需求进行探索、修改和优化。源代码实现可在 [API](../../API) 目录中获取。
 
 ## 内容
 

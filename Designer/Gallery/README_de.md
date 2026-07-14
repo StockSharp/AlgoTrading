@@ -1,11 +1,11 @@
 # Verzeichnis des Strategie-Quellcodes
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Dieses Verzeichnis enthält schematische Darstellungen von Handelsstrategien, die im Bereich [Strategie-Galerie](https://doc.stocksharp.com/de/topics/designer/strategy_gallery.html) der [Designer](https://stocksharp.com/store/strategy-designer/)-Plattform verfügbar sind. Die Quellcode-Dateien der Strategien befinden sich im [API](../../API)-Verzeichnis, wo sie als eigenständige Programme über die StockSharp-API geladen oder in Designer importiert werden können.
+Dieses Verzeichnis enthält schematische Darstellungen von Handelsstrategien, die im Bereich [Strategie-Galerie](https://doc.stocksharp.com/de/topics/designer/strategy_gallery.html) der [Designer](https://stocksharp.com/de/store/strategy-designer/)-Plattform verfügbar sind. Die Quellcode-Dateien der Strategien befinden sich im [API](../../API)-Verzeichnis, wo sie als eigenständige Programme über die StockSharp-API geladen oder in Designer importiert werden können.
 
 ## Überblick
 
-Die Strategie-Galerie in [Designer](https://stocksharp.com/store/strategy-designer/) bietet eine vielfältige Sammlung von Handelsstrategien, die von der Community und StockSharp-Experten entwickelt wurden. Dieses Verzeichnis dient als Repository für schematische Versionen dieser Strategien und ermöglicht es den Benutzern, sie entsprechend ihren Handelsbedürfnissen zu erkunden, zu modifizieren und potenziell zu verbessern. Quellcode-Implementierungen sind im [API](../../API)-Verzeichnis verfügbar.
+Die Strategie-Galerie in [Designer](https://stocksharp.com/de/store/strategy-designer/) bietet eine vielfältige Sammlung von Handelsstrategien, die von der Community und StockSharp-Experten entwickelt wurden. Dieses Verzeichnis dient als Repository für schematische Versionen dieser Strategien und ermöglicht es den Benutzern, sie entsprechend ihren Handelsbedürfnissen zu erkunden, zu modifizieren und potenziell zu verbessern. Quellcode-Implementierungen sind im [API](../../API)-Verzeichnis verfügbar.
 
 ## Inhalt
 

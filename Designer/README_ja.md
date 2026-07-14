@@ -1,7 +1,7 @@
 # Designer 戦略サンプルディレクトリ
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-[Designer](https://stocksharp.com/store/strategy-designer/) 戦略サンプルディレクトリへようこそ。このフォルダには、StockSharp プラットフォーム内のビジュアルおよびコードベースの環境である Designer プログラム専用に設計されたトレーディング戦略のサンプルが収録されています。これらのサンプルは、さまざまな開発スタイルや学習ニーズに対応するため、スキーマ形式と C# コード形式の両方で提供されています。
+[Designer](https://stocksharp.com/ja/store/strategy-designer/) 戦略サンプルディレクトリへようこそ。このフォルダには、StockSharp プラットフォーム内のビジュアルおよびコードベースの環境である Designer プログラム専用に設計されたトレーディング戦略のサンプルが収録されています。これらのサンプルは、さまざまな開発スタイルや学習ニーズに対応するため、スキーマ形式と C# コード形式の両方で提供されています。
 
 ## ディレクトリ構成
 

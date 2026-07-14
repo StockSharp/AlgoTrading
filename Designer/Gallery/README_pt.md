@@ -1,11 +1,11 @@
 # Diretório de Código-Fonte de Estratégias
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Este diretório contém representações esquemáticas de estratégias de negociação disponíveis na seção [Galeria de Estratégias](https://doc.stocksharp.com/pt/topics/designer/strategy_gallery.html) da plataforma [Designer](https://stocksharp.com/store/strategy-designer/). Os arquivos de código-fonte das estratégias são armazenados no diretório [API](../../API), onde podem ser carregados como programas autônomos por meio da API do StockSharp ou importados para o Designer.
+Este diretório contém representações esquemáticas de estratégias de negociação disponíveis na seção [Galeria de Estratégias](https://doc.stocksharp.com/pt/topics/designer/strategy_gallery.html) da plataforma [Designer](https://stocksharp.com/pt/store/strategy-designer/). Os arquivos de código-fonte das estratégias são armazenados no diretório [API](../../API), onde podem ser carregados como programas autônomos por meio da API do StockSharp ou importados para o Designer.
 
 ## Visão geral
 
-A Galeria de Estratégias no [Designer](https://stocksharp.com/store/strategy-designer/) oferece uma coleção diversificada de estratégias de negociação desenvolvidas pela comunidade e por especialistas do StockSharp. Este diretório serve como repositório para versões esquemáticas dessas estratégias, permitindo que os usuários as explorem, modifiquem e potencialmente aprimorem de acordo com suas necessidades de negociação. As implementações do código-fonte estão disponíveis no diretório [API](../../API).
+A Galeria de Estratégias no [Designer](https://stocksharp.com/pt/store/strategy-designer/) oferece uma coleção diversificada de estratégias de negociação desenvolvidas pela comunidade e por especialistas do StockSharp. Este diretório serve como repositório para versões esquemáticas dessas estratégias, permitindo que os usuários as explorem, modifiquem e potencialmente aprimorem de acordo com suas necessidades de negociação. As implementações do código-fonte estão disponíveis no diretório [API](../../API).
 
 ## Conteúdo
 
