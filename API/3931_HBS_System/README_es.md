@@ -52,4 +52,4 @@ La lógica se refleja en los cortos cuando la vela se abre y cierra por debajo d
 ## Referencias
 
 - Secuencia de comandos MT4 original: `MQL/8134/HBS_system.mq4`
-- StockSharp documentación: [https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- StockSharp documentación: [https://doc.stocksharp.com/es/](https://doc.stocksharp.com/es/)

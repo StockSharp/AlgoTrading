@@ -22,7 +22,7 @@ El algoritmo reacciona a cruces en zonas de sobrecompra/sobreventa y protege las
   - El stop solo avanza después de que la operación se mueve más allá de `TrailingStopSteps + TrailingStepSteps` desde el precio de entrada.
   - Lógica de trailing separada para los lados largo y corto.
 - **Indicadores**:
-  - [StochasticOscillator](https://doc.stocksharp.com/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) con `KPeriod`, `DPeriod` y `Slowing` ajustables.
+  - [StochasticOscillator](https://doc.stocksharp.com/es/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) con `KPeriod`, `DPeriod` y `Slowing` ajustables.
 - **Largo/Corto**: Ambos.
 - **Stops**: Solo trailing stop (sin órdenes fijas de SL/TP).
 - **Dimensionamiento de posición**: Usa el parámetro `Volume` de la estrategia; las reversiones envían `Volume + |Position|` para cambiar de dirección.

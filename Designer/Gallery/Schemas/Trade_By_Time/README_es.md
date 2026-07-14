@@ -11,15 +11,15 @@ Este ejemplo en StockSharp Strategy Designer demuestra una configuración sofist
 
 El esquema presentado en el archivo JSON describe una interacción compleja entre varios nodos que manejan datos basados en tiempo para activar acciones de trading:
 
-1. **Nodo TimeFrameCandle**: procesa los [datos de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) para un marco de tiempo especificado. Es fundamental para las estrategias que se basan en movimientos históricos de precios para predecir tendencias futuras.
+1. **Nodo TimeFrameCandle**: procesa los [datos de velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) para un marco de tiempo especificado. Es fundamental para las estrategias que se basan en movimientos históricos de precios para predecir tendencias futuras.
 
-2. **Nodos OpenTime y CloseTime**: [extraen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) los tiempos de apertura y cierre de los datos de velas, que son críticos para determinar los períodos específicos durante los cuales se evalúan las condiciones de trading.
+2. **Nodos OpenTime y CloseTime**: [extraen](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) los tiempos de apertura y cierre de los datos de velas, que son críticos para determinar los períodos específicos durante los cuales se evalúan las condiciones de trading.
 
-3. **Nodos de Comparación (Equals, Greater Than)**: [comparan](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) tiempos específicos (como 14:00:00 o 15:00:00) con el tiempo actual extraído de los datos de velas. Esta configuración permite a la estrategia activarse o desactivarse según si coincide con los tiempos especificados.
+3. **Nodos de Comparación (Equals, Greater Than)**: [comparan](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) tiempos específicos (como 14:00:00 o 15:00:00) con el tiempo actual extraído de los datos de velas. Esta configuración permite a la estrategia activarse o desactivarse según si coincide con los tiempos especificados.
 
-4. **Nodo del Panel de Gráfico**: implementa [componentes de visualización](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) que probablemente muestran datos de trading e indicadores en un formato comprensible, ayudando en la toma de decisiones en tiempo real y en los ajustes de la estrategia.
+4. **Nodo del Panel de Gráfico**: implementa [componentes de visualización](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) que probablemente muestran datos de trading e indicadores en un formato comprensible, ayudando en la toma de decisiones en tiempo real y en los ajustes de la estrategia.
 
-5. **Nodos de Trading (Compra, Venta)**: se activan cuando se cumplen ciertas condiciones de tiempo, permitiendo a la estrategia ejecutar [órdenes de compra o venta](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) basándose en los resultados de comparación y la lógica de trading definida dentro de la estrategia.
+5. **Nodos de Trading (Compra, Venta)**: se activan cuando se cumplen ciertas condiciones de tiempo, permitiendo a la estrategia ejecutar [órdenes de compra o venta](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) basándose en los resultados de comparación y la lógica de trading definida dentro de la estrategia.
 
 ## Flujo de Trabajo
 

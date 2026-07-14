@@ -11,7 +11,7 @@ BTC と ETH のペアトレーディング戦略は、2つの人気の高い暗�
 
 ## インストール
 
-この戦略を有効化して使用するには、StockSharp Designer がインストールされている必要があります。戦略は[ストラテジーギャラリー](https://doc.stocksharp.com/topics/designer/strategy_gallery.html)からダウンロードおよびインストールできます。これにより、個別のトレーダーの要件に応じた戦略の統合とカスタマイズが容易になります。
+この戦略を有効化して使用するには、StockSharp Designer がインストールされている必要があります。戦略は[ストラテジーギャラリー](https://doc.stocksharp.com/ja/topics/designer/strategy_gallery.html)からダウンロードおよびインストールできます。これにより、個別のトレーダーの要件に応じた戦略の統合とカスタマイズが容易になります。
 
 ## パラメーター
 
@@ -38,4 +38,4 @@ BTC と ETH のペアトレーディング戦略は、2つの人気の高い暗�
 
 ## 追加リソース
 
-詳細情報とリソースについては、[StockSharp ドキュメント](https://doc.stocksharp.com/)をご覧ください。
+詳細情報とリソースについては、[StockSharp ドキュメント](https://doc.stocksharp.com/ja/)をご覧ください。

@@ -9,13 +9,13 @@
 
 Стратегия включает две скользящие средние:
 
-- **Краткосрочная скользящая средняя**: более быстрая [скользящая средняя](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), быстрее реагирующая на изменения цены.
-- **Долгосрочная скользящая средняя**: более медленная [скользящая средняя](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), дающая сглаженную картину ценовых трендов.
+- **Краткосрочная скользящая средняя**: более быстрая [скользящая средняя](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), быстрее реагирующая на изменения цены.
+- **Долгосрочная скользящая средняя**: более медленная [скользящая средняя](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), дающая сглаженную картину ценовых трендов.
 
 ## Правила входа и выхода
 
-- **Сигнал покупки**: стратегия генерирует сигнал на [покупку](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html), когда краткосрочная скользящая средняя [пересекает](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) долгосрочную снизу вверх, что указывает на восходящий тренд.
-- **Сигнал продажи**: напротив, сигнал на [продажу](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) формируется, когда краткосрочная скользящая средняя [пересекает](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) долгосрочную сверху вниз, сигнализируя о возможном нисходящем тренде.
+- **Сигнал покупки**: стратегия генерирует сигнал на [покупку](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html), когда краткосрочная скользящая средняя [пересекает](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) долгосрочную снизу вверх, что указывает на восходящий тренд.
+- **Сигнал продажи**: напротив, сигнал на [продажу](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) формируется, когда краткосрочная скользящая средняя [пересекает](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) долгосрочную сверху вниз, сигнализируя о возможном нисходящем тренде.
 
 ## Детали диаграммы
 

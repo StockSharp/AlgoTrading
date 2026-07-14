@@ -11,19 +11,19 @@
 
 ### コンポーネント
 
-- **データソース**: Binance から ETHUSDT と BTCUSDT の[リアルタイム価格](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)データを使用します。
+- **データソース**: Binance から ETHUSDT と BTCUSDT の[リアルタイム価格](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)データを使用します。
 - **価格計算**:
-  - ETHUSDT と BTCUSDT の両方の[終値](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)を追跡します。
+  - ETHUSDT と BTCUSDT の両方の[終値](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)を追跡します。
   - これらの価格の比率を計算して合成インデックスを形成し、Bitcoin に対する Ethereum の相対的なパフォーマンスを表します。
 
 ### インデックスの計算
 
-- **ローソク足の形成**: ETH と BTC の両方に[5分間の時間枠](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を使用して、短期的な価格変動を捉えます。
-- **比率の計算**: インデックスは ETH の価格を BTC の価格で[割った](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/formula.html)値として計算され、Bitcoin に対する Ethereum の価値のトレンドを示します。
+- **ローソク足の形成**: ETH と BTC の両方に[5分間の時間枠](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を使用して、短期的な価格変動を捉えます。
+- **比率の計算**: インデックスは ETH の価格を BTC の価格で[割った](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/formula.html)値として計算され、Bitcoin に対する Ethereum の価値のトレンドを示します。
 
 ### 可視化
 
-- **チャート表示**: 結果として得られるインデックスは視覚的な分析のために[チャート](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)にプロットされ、インデックスの動きに基づいてトレンドや潜在的な取引シグナルを特定するのに役立ちます。
+- **チャート表示**: 結果として得られるインデックスは視覚的な分析のために[チャート](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/chart.html)にプロットされ、インデックスの動きに基づいてトレンドや潜在的な取引シグナルを特定するのに役立ちます。
 
 ## 実装の詳細
 

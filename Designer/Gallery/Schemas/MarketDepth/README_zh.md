@@ -11,15 +11,15 @@
 
 该图表由多个相互关联的组件构成，用于获取、处理和展示市场深度信息：
 
-1. **证券节点**：该节点代表将要获取市场深度的[证券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（如股票、期货或其他金融工具），是定义所分析市场或工具的基本元素。
+1. **证券节点**：该节点代表将要获取市场深度的[证券](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（如股票、期货或其他金融工具），是定义所分析市场或工具的基本元素。
 
-2. **TimeFrameCandle 节点**：处理按指定时间框架（示例中为5分钟）汇总的证券[蜡烛数据](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)，可用于将市场深度变化与价格走势进行关联分析。
+2. **TimeFrameCandle 节点**：处理按指定时间框架（示例中为5分钟）汇总的证券[蜡烛数据](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)，可用于将市场深度变化与价格走势进行关联分析。
 
-3. **市场深度节点**：用于捕获并响应[市场深度](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html)的实时变化，包含处理传入市场深度数据的设置，提供当前买卖订单的实时信息。
+3. **市场深度节点**：用于捕获并响应[市场深度](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html)的实时变化，包含处理传入市场深度数据的设置，提供当前买卖订单的实时信息。
 
-4. **图表面板节点**：将蜡烛图数据可视化展示在[图表](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上，帮助交易者或算法更好地理解市场状况并做出明智决策。
+4. **图表面板节点**：将蜡烛图数据可视化展示在[图表](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上，帮助交易者或算法更好地理解市场状况并做出明智决策。
 
-5. **市场深度面板节点**：专门用于在[专用面板](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html)中展示市场深度数据，可提供最优买卖价格高亮显示、市场深度可视化等功能。
+5. **市场深度面板节点**：专门用于在[专用面板](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html)中展示市场深度数据，可提供最优买卖价格高亮显示、市场深度可视化等功能。
 
 ## 工作流程
 

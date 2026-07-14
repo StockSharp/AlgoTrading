@@ -9,13 +9,13 @@
 
 该策略结合两条移动平均线：
 
-- **短期移动平均线**：一条对价格变化响应更快的[移动平均线](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)。
-- **长期移动平均线**：一条变化较慢的[移动平均线](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)，能提供更平滑的价格趋势图像。
+- **短期移动平均线**：一条对价格变化响应更快的[移动平均线](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)。
+- **长期移动平均线**：一条变化较慢的[移动平均线](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)，能提供更平滑的价格趋势图像。
 
 ## 入场与出场规则
 
-- **买入信号**：当短期移动平均线从下方[穿越](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)长期移动平均线时，策略生成[买入](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)信号，表明上涨趋势。
-- **卖出信号**：反之，当短期移动平均线从上方[穿越](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)长期移动平均线时，发出[卖出](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)信号，预示潜在的下跌趋势。
+- **买入信号**：当短期移动平均线从下方[穿越](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)长期移动平均线时，策略生成[买入](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)信号，表明上涨趋势。
+- **卖出信号**：反之，当短期移动平均线从上方[穿越](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)长期移动平均线时，发出[卖出](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)信号，预示潜在的下跌趋势。
 
 ## 图表细节
 

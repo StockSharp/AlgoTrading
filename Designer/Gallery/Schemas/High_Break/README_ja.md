@@ -11,17 +11,17 @@
 
 スキーマは、リアルタイム市場データを取得、分析、および対応するために設計された一連の相互接続されたコンポーネントを概説しています：
 
-1. **Security ノード**：戦略が適用される[証券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（例：株式、先物）を指定する基盤として機能します。このノードは戦略のデータ入力を決定するため、重要です。
+1. **Security ノード**：戦略が適用される[証券](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（例：株式、先物）を指定する基盤として機能します。このノードは戦略のデータ入力を決定するため、重要です。
 
-2. **TimeFrameCandle ノード**：入力される市場データを処理し、指定された時間枠に基づいて[ローソク足に](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)まとめます。このノードは取引判断のために歴史的な価格分析に依存する戦略に不可欠です。
+2. **TimeFrameCandle ノード**：入力される市場データを処理し、指定された時間枠に基づいて[ローソク足に](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)まとめます。このノードは取引判断のために歴史的な価格分析に依存する戦略に不可欠です。
 
-3. **Highest ノード**：ローソク足データを分析し、指定された時間（例：60分）にわたって[達成された最高値を決定](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)します。この値は重要な価格ブレイクを識別するためのベンチマークを設定します。
+3. **Highest ノード**：ローソク足データを分析し、指定された時間（例：60分）にわたって[達成された最高値を決定](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)します。この値は重要な価格ブレイクを識別するためのベンチマークを設定します。
 
-4. **比較ノード**：現在の価格を Highest ノードで決定した歴史的高値と[比較](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)します。現在の価格がこの高値を超えると、潜在的な取引シグナルをトリガーします。
+4. **比較ノード**：現在の価格を Highest ノードで決定した歴史的高値と[比較](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)します。現在の価格がこの高値を超えると、潜在的な取引シグナルをトリガーします。
 
-5. **Chart Panel ノード**：価格データと戦略のアクションを[視覚化](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)し、戦略の動作のグラフ表現を提供して監視と調整を支援します。
+5. **Chart Panel ノード**：価格データと戦略のアクションを[視覚化](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/chart.html)し、戦略の動作のグラフ表現を提供して監視と調整を支援します。
 
-6. **取引実行ノード（買い/売り）**：戦略の条件が満たされたときに[取引を実行](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)する役割を担います。例えば、価格が歴史的高値を上回ったときに買い注文が実行される場合があります。
+6. **取引実行ノード（買い/売り）**：戦略の条件が満たされたときに[取引を実行](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)する役割を担います。例えば、価格が歴史的高値を上回ったときに買い注文が実行される場合があります。
 
 ## ワークフロー
 

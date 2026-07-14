@@ -3,7 +3,7 @@
 
 ## 策略概述
 
-"Parabolic SAR"策略旨在利用 [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html) 中的抛物线停止反转（Parabolic SAR）指标捕捉趋势反转和延续形态。该策略根据价格相对于 Parabolic SAR 点位的运动提供清晰的入场和出场信号。
+"Parabolic SAR"策略旨在利用 [StockSharp Designer](https://doc.stocksharp.com/zh/topics/designer.html) 中的抛物线停止反转（Parabolic SAR）指标捕捉趋势反转和延续形态。该策略根据价格相对于 Parabolic SAR 点位的运动提供清晰的入场和出场信号。
 
 ![schema](schema.png)
 
@@ -11,17 +11,17 @@
 
 ### 组件
 
-- **蜡烛图形成**：采用5分钟[时间框架](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)分析价格走势，确保有效捕捉短期市场动态。
-- **Parabolic SAR 指标**：[配置](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)初始加速因子为0.02，加速步长为0.02，最大加速值为0.2。这些设置使指标能够适应市场波动。
+- **蜡烛图形成**：采用5分钟[时间框架](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)分析价格走势，确保有效捕捉短期市场动态。
+- **Parabolic SAR 指标**：[配置](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)初始加速因子为0.02，加速步长为0.02，最大加速值为0.2。这些设置使指标能够适应市场波动。
 
 ### 交易执行
 
-- **入场信号**：当价格从下方穿越 Parabolic SAR 点位时产生买入信号，表明可能出现上涨趋势（[比较](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)）。
-- **出场信号**：当价格跌[破](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) Parabolic SAR 点位时发出卖出信号，暗示可能出现下跌趋势。
+- **入场信号**：当价格从下方穿越 Parabolic SAR 点位时产生买入信号，表明可能出现上涨趋势（[比较](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)）。
+- **出场信号**：当价格跌[破](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) Parabolic SAR 点位时发出卖出信号，暗示可能出现下跌趋势。
 
 ### 可视化
 
-- **图表显示**：Parabolic SAR 点位与价格蜡烛图一同绘制在[图表](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上，直观呈现趋势方向和潜在交易信号。
+- **图表显示**：Parabolic SAR 点位与价格蜡烛图一同绘制在[图表](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上，直观呈现趋势方向和潜在交易信号。
 
 ## 实现细节
 

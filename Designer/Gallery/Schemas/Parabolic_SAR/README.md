@@ -3,7 +3,7 @@
 
 ## Strategy Overview
 
-The "Parabolic SAR" strategy is designed to capture trend reversals and continuation patterns using the Parabolic Stop and Reverse (SAR) indicator within [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html). This strategy provides clear entry and exit signals based on the movement of price relative to the Parabolic SAR points.
+The "Parabolic SAR" strategy is designed to capture trend reversals and continuation patterns using the Parabolic Stop and Reverse (SAR) indicator within [StockSharp Designer](https://doc.stocksharp.com/en/topics/designer.html). This strategy provides clear entry and exit signals based on the movement of price relative to the Parabolic SAR points.
 
 ![schema](schema.png)
 
@@ -11,17 +11,17 @@ The "Parabolic SAR" strategy is designed to capture trend reversals and continua
 
 ### Components
 
-- **Candle Formation**: Utilizes a 5-minute [timeframe](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) to analyze price action, ensuring that the strategy captures short-term market movements effectively.
-- **Parabolic SAR Indicator**: [Configured](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) with an initial acceleration factor of 0.02, an acceleration step of 0.02, and a maximum acceleration of 0.2. These settings allow the indicator to adjust to the volatility of the market.
+- **Candle Formation**: Utilizes a 5-minute [timeframe](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) to analyze price action, ensuring that the strategy captures short-term market movements effectively.
+- **Parabolic SAR Indicator**: [Configured](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) with an initial acceleration factor of 0.02, an acceleration step of 0.02, and a maximum acceleration of 0.2. These settings allow the indicator to adjust to the volatility of the market.
 
 ### Trade Execution
 
-- **Entry Signal**: A buy signal is generated when the price crosses [above](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) the Parabolic SAR points, indicating a potential upward trend.
-- **Exit Signal**: A sell signal is issued when the price falls [below](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) the Parabolic SAR points, suggesting a possible downward trend.
+- **Entry Signal**: A buy signal is generated when the price crosses [above](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) the Parabolic SAR points, indicating a potential upward trend.
+- **Exit Signal**: A sell signal is issued when the price falls [below](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) the Parabolic SAR points, suggesting a possible downward trend.
 
 ### Visualization
 
-- **Chart Display**: The Parabolic SAR points are plotted on the [chart](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) alongside the price candles, providing a visual representation of the trend and potential trade signals.
+- **Chart Display**: The Parabolic SAR points are plotted on the [chart](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/chart.html) alongside the price candles, providing a visual representation of the trend and potential trade signals.
 
 ## Implementation Details
 

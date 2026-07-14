@@ -50,4 +50,4 @@ All parameters created with `Param()` expose metadata for UI display and can be 
 
 ## References
 - MetaTrader Expert Advisor: `HEAD AND SHOULDERS.mq4` (MQL ID 26066).
-- StockSharp documentation on [high-level strategies](https://doc.stocksharp.com/topics/strategy/highlevel.html) and [indicator binding](https://doc.stocksharp.com/topics/strategy/highlevel/bind.html).
+- StockSharp documentation on [high-level strategies](https://doc.stocksharp.com/en/topics/strategy/highlevel.html) and [indicator binding](https://doc.stocksharp.com/en/topics/strategy/highlevel/bind.html).

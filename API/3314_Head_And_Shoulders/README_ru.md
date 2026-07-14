@@ -50,4 +50,4 @@
 
 ## Источники
 - Советник MetaTrader: `HEAD AND SHOULDERS.mq4` (MQL ID 26066).
-- Документация StockSharp: [высокоуровневые стратегии](https://doc.stocksharp.com/topics/strategy/highlevel.html), [привязка индикаторов](https://doc.stocksharp.com/topics/strategy/highlevel/bind.html).
+- Документация StockSharp: [высокоуровневые стратегии](https://doc.stocksharp.com/ru/topics/strategy/highlevel.html), [привязка индикаторов](https://doc.stocksharp.com/ru/topics/strategy/highlevel/bind.html).

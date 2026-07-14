@@ -11,15 +11,15 @@
 
 Схема, представленная в файле JSON, описывает сложное взаимодействие различных узлов, обрабатывающих данные о времени для запуска торговых действий:
 
-1. **Узел TimeFrameCandle**: обрабатывает [данные свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) за указанный таймфрейм. Необходим для стратегий, опирающихся на исторические ценовые движения для прогнозирования будущих трендов.
+1. **Узел TimeFrameCandle**: обрабатывает [данные свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) за указанный таймфрейм. Необходим для стратегий, опирающихся на исторические ценовые движения для прогнозирования будущих трендов.
 
-2. **Узлы OpenTime и CloseTime**: [извлекают](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) время открытия и закрытия из данных свечей — критически важно для определения конкретных периодов, в течение которых оцениваются торговые условия.
+2. **Узлы OpenTime и CloseTime**: [извлекают](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) время открытия и закрытия из данных свечей — критически важно для определения конкретных периодов, в течение которых оцениваются торговые условия.
 
-3. **Узлы сравнения (Equals, Greater Than)**: [сравнивают](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) конкретные значения времени (например, 14:00:00 или 15:00:00) с текущим временем, извлечённым из данных свечей. Такая схема позволяет стратегии активироваться или деактивироваться в зависимости от соответствия указанному времени.
+3. **Узлы сравнения (Equals, Greater Than)**: [сравнивают](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) конкретные значения времени (например, 14:00:00 или 15:00:00) с текущим временем, извлечённым из данных свечей. Такая схема позволяет стратегии активироваться или деактивироваться в зависимости от соответствия указанному времени.
 
-4. **Узел панели графика**: реализует [компоненты визуализации](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html), отображающие торговые данные и индикаторы в понятном формате и помогающие принимать решения в реальном времени и корректировать стратегию.
+4. **Узел панели графика**: реализует [компоненты визуализации](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html), отображающие торговые данные и индикаторы в понятном формате и помогающие принимать решения в реальном времени и корректировать стратегию.
 
-5. **Торговые узлы (Покупка, Продажа)**: активируются при выполнении определённых временных условий, позволяя стратегии исполнять [ордера на покупку или продажу](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) на основе результатов сравнения и торговой логики, заданной в стратегии.
+5. **Торговые узлы (Покупка, Продажа)**: активируются при выполнении определённых временных условий, позволяя стратегии исполнять [ордера на покупку или продажу](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) на основе результатов сравнения и торговой логики, заданной в стратегии.
 
 ## Рабочий процесс
 

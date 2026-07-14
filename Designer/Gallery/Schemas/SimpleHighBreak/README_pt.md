@@ -3,7 +3,7 @@
 
 ## Visão Geral da Estratégia
 
-A estratégia "SimpleHighBreak" foi desenvolvida para capitalizar em rompimentos de preço acima de uma máxima predefinida dentro do [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html). Esta estratégia é focada em identificar oportunidades onde o preço rompe acima da máxima de 15 períodos, sinalizando uma possível continuação da tendência de alta.
+A estratégia "SimpleHighBreak" foi desenvolvida para capitalizar em rompimentos de preço acima de uma máxima predefinida dentro do [StockSharp Designer](https://doc.stocksharp.com/pt/topics/designer.html). Esta estratégia é focada em identificar oportunidades onde o preço rompe acima da máxima de 15 períodos, sinalizando uma possível continuação da tendência de alta.
 
 ![schema](schema.png)
 
@@ -11,20 +11,20 @@ A estratégia "SimpleHighBreak" foi desenvolvida para capitalizar em rompimentos
 
 ### Componentes
 
-- **Formação de Velas**: utiliza um intervalo de tempo de 5 minutos para gerar [velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), monitorando o mercado em busca de movimentos de preços significativos.
-- **Indicador de Máxima**: calcula o [preço mais alto](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) durante os últimos 15 períodos para estabelecer níveis de rompimento.
-- **Detecção de Rompimento**: a estratégia aciona uma ordem de compra quando o preço atual rompe [acima](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) da máxima recente de 15 períodos.
+- **Formação de Velas**: utiliza um intervalo de tempo de 5 minutos para gerar [velas](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), monitorando o mercado em busca de movimentos de preços significativos.
+- **Indicador de Máxima**: calcula o [preço mais alto](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) durante os últimos 15 períodos para estabelecer níveis de rompimento.
+- **Detecção de Rompimento**: a estratégia aciona uma ordem de compra quando o preço atual rompe [acima](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) da máxima recente de 15 períodos.
 
 ### Execução de Operações
 
-- **Tipo de Ordem**: [Ordem](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) a mercado.
+- **Tipo de Ordem**: [Ordem](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) a mercado.
 - **Entrada**: uma ordem de compra é colocada quando o preço supera a máxima de 15 períodos.
 - **Estratégia de Saída**: a posição é encerrada com base em condições específicas, como um intervalo de tempo definido ou um padrão de reversão, gerenciados dinamicamente pela estratégia.
 
 ### Gerenciamento de Risco
 
 - **Dimensionamento de Posição**: adapta o tamanho da posição com base em regras predefinidas de gerenciamento de risco e na volatilidade atual do mercado.
-- **Stop Loss e Take Profit**: níveis configuráveis de [stop loss e take profit](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) são definidos imediatamente após a entrada para gerenciar o risco e garantir lucros.
+- **Stop Loss e Take Profit**: níveis configuráveis de [stop loss e take profit](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) são definidos imediatamente após a entrada para gerenciar o risco e garantir lucros.
 
 ## Detalhes de Implementação
 

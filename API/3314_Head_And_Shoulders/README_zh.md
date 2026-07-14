@@ -50,4 +50,4 @@
 
 ## 参考
 - MetaTrader 专家顾问：`HEAD AND SHOULDERS.mq4`（MQL ID 26066）。
-- StockSharp 文档：[高级策略 API](https://doc.stocksharp.com/topics/strategy/highlevel.html)、[指标绑定](https://doc.stocksharp.com/topics/strategy/highlevel/bind.html)。
+- StockSharp 文档：[高级策略 API](https://doc.stocksharp.com/zh/topics/strategy/highlevel.html)、[指标绑定](https://doc.stocksharp.com/zh/topics/strategy/highlevel/bind.html)。

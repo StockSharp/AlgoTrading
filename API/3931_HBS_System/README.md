@@ -52,4 +52,4 @@ This StockSharp port keeps the multi-order behaviour while embracing the high-le
 ## References
 
 - Original MT4 script: `MQL/8134/HBS_system.mq4`
-- StockSharp documentation: [https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- StockSharp documentation: [https://doc.stocksharp.com/en/](https://doc.stocksharp.com/en/)

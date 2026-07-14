@@ -52,4 +52,4 @@ A lógica é espelhada para vendas quando a vela abre e fecha abaixo de EMA. Ord
 ## Referências
 
 - Script MT4 original: `MQL/8134/HBS_system.mq4`
-- Documentação StockSharp: [https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- Documentação StockSharp: [https://doc.stocksharp.com/pt/](https://doc.stocksharp.com/pt/)

@@ -11,15 +11,15 @@
 
 このスキーマは、板情報を取得・処理・表示するために設計された複数の相互連結コンポーネントで構成されています。
 
-1. **証券ノード**: 板情報を取得する対象の[証券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（株式、先物、その他の金融商品）を表します。どの市場または商品を分析するかを定義する基本的な要素です。
+1. **証券ノード**: 板情報を取得する対象の[証券](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（株式、先物、その他の金融商品）を表します。どの市場または商品を分析するかを定義する基本的な要素です。
 
-2. **TimeFrameCandle ノード**: 指定した時間枠（例では5分）で集計した証券の[ローソク足データ](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を処理します。板情報の変化と価格変動を時系列で関連付けるために使用できます。
+2. **TimeFrameCandle ノード**: 指定した時間枠（例では5分）で集計した証券の[ローソク足データ](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を処理します。板情報の変化と価格変動を時系列で関連付けるために使用できます。
 
-3. **板情報ノード**: [板情報](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html)のリアルタイムな変化を捕捉し、必要に応じて反応するよう設計されています。現在の買い注文・売り注文の情報を提供する板データの処理設定が含まれます。
+3. **板情報ノード**: [板情報](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html)のリアルタイムな変化を捕捉し、必要に応じて反応するよう設計されています。現在の買い注文・売り注文の情報を提供する板データの処理設定が含まれます。
 
-4. **チャートパネルノード**: ローソク足データを[チャート](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上に可視化します。トレーダーやアルゴリズムが市場状況をより明確に把握し、適切な判断を下すのに役立ちます。
+4. **チャートパネルノード**: ローソク足データを[チャート](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上に可視化します。トレーダーやアルゴリズムが市場状況をより明確に把握し、適切な判断を下すのに役立ちます。
 
-5. **板情報パネルノード**: 板情報データを[専用パネル](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html)に表示することに特化しており、最良気配値のハイライト表示や板の深さの可視化などの機能を提供します。
+5. **板情報パネルノード**: 板情報データを[専用パネル](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html)に表示することに特化しており、最良気配値のハイライト表示や板の深さの可視化などの機能を提供します。
 
 ## ワークフロー
 

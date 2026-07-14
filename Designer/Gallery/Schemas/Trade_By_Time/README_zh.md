@@ -11,15 +11,15 @@ StockSharp Strategy Designer 中的这个示例展示了一种将日期和时间
 
 JSON 文件中的图表描述了各种处理时间数据以触发交易动作的节点之间的复杂交互：
 
-1. **TimeFrameCandle 节点**：处理指定时间框架的[蜡烛数据](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)，对于依赖历史价格走势预测未来趋势的策略至关重要。
+1. **TimeFrameCandle 节点**：处理指定时间框架的[蜡烛数据](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)，对于依赖历史价格走势预测未来趋势的策略至关重要。
 
-2. **OpenTime 和 CloseTime 节点**：从蜡烛数据中[提取](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)开盘和收盘时间，对于确定评估交易条件的具体时间段至关重要。
+2. **OpenTime 和 CloseTime 节点**：从蜡烛数据中[提取](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)开盘和收盘时间，对于确定评估交易条件的具体时间段至关重要。
 
-3. **比较节点（Equals、Greater Than）**：将特定时间（如14:00:00或15:00:00）与从蜡烛数据中提取的当前时间进行[比较](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)。这种设置允许策略根据是否匹配指定时间来激活或停用。
+3. **比较节点（Equals、Greater Than）**：将特定时间（如14:00:00或15:00:00）与从蜡烛数据中提取的当前时间进行[比较](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)。这种设置允许策略根据是否匹配指定时间来激活或停用。
 
-4. **图表面板节点**：实现[可视化组件](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)，以直观格式展示交易数据和指标，辅助实时决策和策略调整。
+4. **图表面板节点**：实现[可视化组件](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)，以直观格式展示交易数据和指标，辅助实时决策和策略调整。
 
-5. **交易节点（买入、卖出）**：当满足特定时间条件时激活，允许策略根据比较结果和策略内定义的交易逻辑执行[买入或卖出订单](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)。
+5. **交易节点（买入、卖出）**：当满足特定时间条件时激活，允许策略根据比较结果和策略内定义的交易逻辑执行[买入或卖出订单](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)。
 
 ## 工作流程
 

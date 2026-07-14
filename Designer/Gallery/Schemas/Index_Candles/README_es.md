@@ -7,12 +7,12 @@ Este archivo de diagrama ilustra una estrategia para crear un índice compuesto 
 
 ## Descripción General de la Estrategia
 
-La estrategia consiste en combinar los datos de precios de múltiples valores en un único [índice](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). Este proceso utiliza normalmente técnicas de normalización o ponderación para garantizar que cada valor contribuya proporcionalmente al valor final del índice.
+La estrategia consiste en combinar los datos de precios de múltiples valores en un único [índice](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). Este proceso utiliza normalmente técnicas de normalización o ponderación para garantizar que cada valor contribuya proporcionalmente al valor final del índice.
 
 ## Componentes del Diagrama
 
-- **Nodos de Recopilación de Datos**: son responsables de obtener los [datos de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) de cada valor seleccionado.
-- **Nodos de Normalización**: aplican normalización a los datos de velas para garantizar un impacto uniforme en el [cálculo del índice](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html) final, mitigando los efectos de las diferentes escalas de precios.
+- **Nodos de Recopilación de Datos**: son responsables de obtener los [datos de velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) de cada valor seleccionado.
+- **Nodos de Normalización**: aplican normalización a los datos de velas para garantizar un impacto uniforme en el [cálculo del índice](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html) final, mitigando los efectos de las diferentes escalas de precios.
 - **Nodos de Ponderación**: asignan pesos a cada valor en función de criterios predefinidos, como la capitalización de mercado o la volatilidad histórica.
 - **Nodo de Cálculo del Índice**: agrega los datos de precios normalizados y ponderados para calcular el valor final del índice.
 

@@ -3,7 +3,7 @@
 
 ## Visão Geral da Estratégia
 
-A "StDevStrategy" foi desenvolvida para o [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html) para aproveitar os padrões de volatilidade estatística usando o indicador Standard Deviation. Esta estratégia é construída para identificar potenciais oportunidades de trading com base em desvios do preço médio, sinalizando condições de sobrecompra ou sobrevenda.
+A "StDevStrategy" foi desenvolvida para o [StockSharp Designer](https://doc.stocksharp.com/pt/topics/designer.html) para aproveitar os padrões de volatilidade estatística usando o indicador Standard Deviation. Esta estratégia é construída para identificar potenciais oportunidades de trading com base em desvios do preço médio, sinalizando condições de sobrecompra ou sobrevenda.
 
 ![schema](schema.png)
 
@@ -12,13 +12,13 @@ A "StDevStrategy" foi desenvolvida para o [StockSharp Designer](https://doc.stoc
 ### Componentes
 
 - **Indicadores Standard Deviation**: utiliza múltiplos comprimentos para capturar a volatilidade de curto e longo prazo.
-  - **Std Dev 20**: mede a volatilidade durante [20 períodos](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html).
+  - **Std Dev 20**: mede a volatilidade durante [20 períodos](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/indicator.html).
   - **Lowest 15 e Highest 15**: rastreiam os valores mínimos e máximos durante 15 períodos para detectar condições de rompimento.
   - **Lowest 50**: captura mínimas de preços de longo prazo para avaliar condições de mercado estendidas.
 
 ### Execução de Operações
 
-- **Tipo de Ordem**: executa operações usando [ordens a mercado](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) para garantir resposta rápida às mudanças de sinal.
+- **Tipo de Ordem**: executa operações usando [ordens a mercado](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) para garantir resposta rápida às mudanças de sinal.
 - **Entrada e Saída**:
   - **Compra**: acionada quando a ação do preço sugere uma recuperação a partir de condições de sobrevenda.
   - **Venda**: iniciada quando a ação do preço indica uma possível queda a partir de condições de sobrecompra.
@@ -27,8 +27,8 @@ A "StDevStrategy" foi desenvolvida para o [StockSharp Designer](https://doc.stoc
 ### Gerenciamento de Risco
 
 - **Stop Loss e Take Profit**:
-  - O [stop loss](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) é definido em 1% abaixo da entrada para minimizar o risco.
-  - O [take profit](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) é definido em 2%, capturando potenciais altas enquanto protege os ganhos.
+  - O [stop loss](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) é definido em 1% abaixo da entrada para minimizar o risco.
+  - O [take profit](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) é definido em 2%, capturando potenciais altas enquanto protege os ganhos.
 
 ## Detalhes de Implementação
 

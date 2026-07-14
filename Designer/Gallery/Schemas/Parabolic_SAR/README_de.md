@@ -3,7 +3,7 @@
 
 ## Strategieübersicht
 
-Die Strategie „Parabolic SAR" ist darauf ausgelegt, Trendumkehrungen und Trendfortsetzungsmuster mithilfe des Parabolic Stop and Reverse (SAR)-Indikators im [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html) zu erfassen. Die Strategie liefert klare Ein- und Ausstiegssignale basierend auf der Kursbewegung relativ zu den Parabolic SAR-Punkten.
+Die Strategie „Parabolic SAR" ist darauf ausgelegt, Trendumkehrungen und Trendfortsetzungsmuster mithilfe des Parabolic Stop and Reverse (SAR)-Indikators im [StockSharp Designer](https://doc.stocksharp.com/de/topics/designer.html) zu erfassen. Die Strategie liefert klare Ein- und Ausstiegssignale basierend auf der Kursbewegung relativ zu den Parabolic SAR-Punkten.
 
 ![schema](schema.png)
 
@@ -11,17 +11,17 @@ Die Strategie „Parabolic SAR" ist darauf ausgelegt, Trendumkehrungen und Trend
 
 ### Komponenten
 
-- **Kerzenbildung**: Nutzt einen 5-Minuten-[Zeitrahmen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) zur Analyse der Kursentwicklung und stellt so sicher, dass kurzfristige Marktbewegungen effektiv erfasst werden.
-- **Parabolic SAR-Indikator**: [Konfiguriert](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) mit einem anfänglichen Beschleunigungsfaktor von 0,02, einem Beschleunigungsschritt von 0,02 und einer maximalen Beschleunigung von 0,2. Diese Einstellungen ermöglichen es dem Indikator, sich an die Marktvolatilität anzupassen.
+- **Kerzenbildung**: Nutzt einen 5-Minuten-[Zeitrahmen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) zur Analyse der Kursentwicklung und stellt so sicher, dass kurzfristige Marktbewegungen effektiv erfasst werden.
+- **Parabolic SAR-Indikator**: [Konfiguriert](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) mit einem anfänglichen Beschleunigungsfaktor von 0,02, einem Beschleunigungsschritt von 0,02 und einer maximalen Beschleunigung von 0,2. Diese Einstellungen ermöglichen es dem Indikator, sich an die Marktvolatilität anzupassen.
 
 ### Trade-Ausführung
 
-- **Einstiegssignal**: Ein Kaufsignal wird generiert, wenn der Kurs die Parabolic SAR-Punkte [von unten nach oben kreuzt](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html), was auf einen möglichen Aufwärtstrend hindeutet.
-- **Ausstiegssignal**: Ein Verkaufssignal wird ausgegeben, wenn der Kurs [unter](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) die Parabolic SAR-Punkte fällt, was einen möglichen Abwärtstrend signalisiert.
+- **Einstiegssignal**: Ein Kaufsignal wird generiert, wenn der Kurs die Parabolic SAR-Punkte [von unten nach oben kreuzt](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/comparison.html), was auf einen möglichen Aufwärtstrend hindeutet.
+- **Ausstiegssignal**: Ein Verkaufssignal wird ausgegeben, wenn der Kurs [unter](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) die Parabolic SAR-Punkte fällt, was einen möglichen Abwärtstrend signalisiert.
 
 ### Visualisierung
 
-- **Chart-Anzeige**: Die Parabolic SAR-Punkte werden auf dem [Chart](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) neben den Kurskerzen dargestellt und liefern eine visuelle Repräsentation des Trends und potenzieller Handelssignale.
+- **Chart-Anzeige**: Die Parabolic SAR-Punkte werden auf dem [Chart](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html) neben den Kurskerzen dargestellt und liefern eine visuelle Repräsentation des Trends und potenzieller Handelssignale.
 
 ## Implementierungsdetails
 

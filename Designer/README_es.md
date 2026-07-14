@@ -7,14 +7,14 @@ Bienvenido al Directorio de Ejemplos de Estrategias de [Designer](https://stocks
 
 Este directorio está organizado para ayudarle a encontrar y utilizar fácilmente varios ejemplos de estrategias de trading:
 
-- **Ejemplos Esquemáticos**: Contiene ejemplos de estrategias creados usando las [funciones de diseño visual](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) de Designer. Son principalmente archivos `.json` que pueden importarse directamente en Designer.
-- **Ejemplos de Código C#**: Incluye ejemplos de estrategias [escritas en C#](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html) que demuestran cómo definir programáticamente la lógica de trading dentro de Designer.
+- **Ejemplos Esquemáticos**: Contiene ejemplos de estrategias creados usando las [funciones de diseño visual](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer.html) de Designer. Son principalmente archivos `.json` que pueden importarse directamente en Designer.
+- **Ejemplos de Código C#**: Incluye ejemplos de estrategias [escritas en C#](https://doc.stocksharp.com/es/topics/designer/strategies/using_csharp.html) que demuestran cómo definir programáticamente la lógica de trading dentro de Designer.
 
 ## Propósito de los Ejemplos
 
 Los objetivos principales de proporcionar estos ejemplos son:
 
-- **Herramienta Educativa**: Ayudar a los usuarios nuevos y existentes del programa [Designer](https://doc.stocksharp.com/topics/designer.html) a aprender mediante ejemplos prácticos.
+- **Herramienta Educativa**: Ayudar a los usuarios nuevos y existentes del programa [Designer](https://doc.stocksharp.com/es/topics/designer.html) a aprender mediante ejemplos prácticos.
 - **Inspiración para el Desarrollo**: Inspirar a los usuarios a desarrollar y personalizar sus propias estrategias demostrando diversas técnicas y enfoques.
 - **Participación en la Comunidad**: Animar a los usuarios a compartir sus propios ejemplos y mejoras, fomentando un entorno colaborativo y de apoyo.
 
@@ -23,9 +23,9 @@ Los objetivos principales de proporcionar estos ejemplos son:
 Para aprovechar al máximo estos ejemplos, siga estos pasos:
 
 1. **Elija un Ejemplo**: Explore el directorio y seleccione un ejemplo que se ajuste a sus intereses de trading o necesidades de aprendizaje.
-2. **Descargue e Importe**: Para ejemplos esquemáticos, descargue el archivo `.json` e [impórtelo](https://doc.stocksharp.com/topics/designer/export_import/import.html) en su programa Designer. Para ejemplos en C#, copie el código o descargue el archivo en su proyecto.
+2. **Descargue e Importe**: Para ejemplos esquemáticos, descargue el archivo `.json` e [impórtelo](https://doc.stocksharp.com/es/topics/designer/export_import/import.html) en su programa Designer. Para ejemplos en C#, copie el código o descargue el archivo en su proyecto.
 3. **Estudie y Modifique**: Examine cómo están construidas las estrategias y considere modificarlas para adaptarlas mejor a sus criterios de trading o para experimentar con nuevas ideas.
-4. **Pruebe y Despliegue**: Siempre [pruebe sus estrategias](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html) en el entorno simulado de Designer antes de aplicarlas en [trading en vivo](https://doc.stocksharp.com/topics/designer/live_execution/getting_started.html) para asegurarse de que funcionan según lo esperado.
+4. **Pruebe y Despliegue**: Siempre [pruebe sus estrategias](https://doc.stocksharp.com/es/topics/designer/backtesting/getting_started.html) en el entorno simulado de Designer antes de aplicarlas en [trading en vivo](https://doc.stocksharp.com/es/topics/designer/live_execution/getting_started.html) para asegurarse de que funcionan según lo esperado.
 
 ## Contribuciones
 

@@ -22,7 +22,7 @@ Der Algorithmus reagiert auf Kreuzungen in überkauften/überverkauften Zonen un
   - Stop rückt nur vor, nachdem der Trade über `TrailingStopSteps + TrailingStepSteps` vom Einstiegspreis hinaus bewegt hat.
   - Separate Trailing-Logik für Long- und Short-Seite.
 - **Indikatoren**:
-  - [StochasticOscillator](https://doc.stocksharp.com/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) mit einstellbarem `KPeriod`, `DPeriod` und `Slowing`.
+  - [StochasticOscillator](https://doc.stocksharp.com/de/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) mit einstellbarem `KPeriod`, `DPeriod` und `Slowing`.
 - **Long/Short**: Beide.
 - **Stops**: Nur Trailing Stop (keine festen SL/TP-Orders).
 - **Positionsgrößenbestimmung**: Verwendet den `Volume`-Parameter der Strategie; Umkehrungen senden `Volume + |Position|` zum Richtungswechsel.

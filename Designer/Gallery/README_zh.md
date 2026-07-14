@@ -1,7 +1,7 @@
 # 策略源代码目录
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-本目录包含 [Designer](https://stocksharp.com/store/strategy-designer/) 平台[策略库](https://doc.stocksharp.com/topics/designer/strategy_gallery.html)中可用交易策略的示意图表示。策略源代码文件存储在 [API](../../API) 目录中，可通过 StockSharp API 作为独立程序加载，也可导入 Designer。
+本目录包含 [Designer](https://stocksharp.com/store/strategy-designer/) 平台[策略库](https://doc.stocksharp.com/zh/topics/designer/strategy_gallery.html)中可用交易策略的示意图表示。策略源代码文件存储在 [API](../../API) 目录中，可通过 StockSharp API 作为独立程序加载，也可导入 Designer。
 
 ## 概述
 
@@ -9,12 +9,12 @@
 
 ## 内容
 
-- **示意图策略**：交易策略的图表表示，[直观展示](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html)交易操作的流程和条件。适合偏好可视化策略设计方式的用户。
+- **示意图策略**：交易策略的图表表示，[直观展示](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer.html)交易操作的流程和条件。适合偏好可视化策略设计方式的用户。
 - **C# 代码策略**：策略源代码文件位于 [API](../../API) 目录中。可通过 StockSharp API 作为独立程序加载，或导入 Designer 进行进一步定制。
 
 ## 使用方式
 
-用户可以下载这些策略以研究其底层逻辑，在模拟环境中[测试](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html)，或在实盘交易中部署。每个策略均可导入 Designer 平台，在那里可以进一步定制或作为新策略开发的基础。
+用户可以下载这些策略以研究其底层逻辑，在模拟环境中[测试](https://doc.stocksharp.com/zh/topics/designer/backtesting/getting_started.html)，或在实盘交易中部署。每个策略均可导入 Designer 平台，在那里可以进一步定制或作为新策略开发的基础。
 
 ## 贡献
 

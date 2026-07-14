@@ -11,8 +11,8 @@
 
 ## Компоненты диаграммы
 
-- **Источник данных Candles**: Это основной узел, который получает [данные свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для выбранного финансового инструмента. Пользователи могут указать инструмент, диапазон данных и таймфрейм свечи (например, 1-минутные, 5-минутные свечи).
-- **Куб Chart**: Этот узел используется для [отображения](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) полученных данных на графическом интерфейсе. Он может отображать различные атрибуты свечей, такие как цены открытия, максимума, минимума и закрытия.
+- **Источник данных Candles**: Это основной узел, который получает [данные свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для выбранного финансового инструмента. Пользователи могут указать инструмент, диапазон данных и таймфрейм свечи (например, 1-минутные, 5-минутные свечи).
+- **Куб Chart**: Этот узел используется для [отображения](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) полученных данных на графическом интерфейсе. Он может отображать различные атрибуты свечей, такие как цены открытия, максимума, минимума и закрытия.
 
 ## Функциональность
 

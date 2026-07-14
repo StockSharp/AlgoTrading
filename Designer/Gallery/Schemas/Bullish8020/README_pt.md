@@ -3,7 +3,7 @@
 
 ## Visão geral da estratégia
 
-A estratégia "Bullish8020" foi elaborada para o [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html) a fim de capitalizar padrões específicos de candles de alta com grande precisão. Esta estratégia visa identificar oportunidades de mercado onde o sentimento de alta é forte, usando uma análise de padrões exclusiva combinada com volume e ação do preço.
+A estratégia "Bullish8020" foi elaborada para o [StockSharp Designer](https://doc.stocksharp.com/pt/topics/designer.html) a fim de capitalizar padrões específicos de candles de alta com grande precisão. Esta estratégia visa identificar oportunidades de mercado onde o sentimento de alta é forte, usando uma análise de padrões exclusiva combinada com volume e ação do preço.
 
 ![schema](schema.png)
 
@@ -11,13 +11,13 @@ A estratégia "Bullish8020" foi elaborada para o [StockSharp Designer](https://d
 
 ### Detecção de padrão: Bullish8020
 
-- **Descrição**: Esta estratégia detecta um cenário de alta onde o [preço de abertura](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) está abaixo do preço de fechamento e o tamanho do corpo é quatro vezes a soma de ambas as sombras, indicando forte pressão compradora.
+- **Descrição**: Esta estratégia detecta um cenário de alta onde o [preço de abertura](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) está abaixo do preço de fechamento e o tamanho do corpo é quatro vezes a soma de ambas as sombras, indicando forte pressão compradora.
 - **Padrão de candle**: 'Bullish8020' verifica se `(O < C) && (B >= 4*(BS+TS))`, onde `O` é abertura, `C` é fechamento, `B` é tamanho do corpo, `BS` é sombra inferior e `TS` é sombra superior.
 
 ### Execução de negociações
 
-- **Tipo de ordem**: [Ordem](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) a mercado
-- **Entrada**: Compra quando o [padrão](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) 'Bullish8020' é confirmado, sinalizando um potencial movimento de alta.
+- **Tipo de ordem**: [Ordem](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) a mercado
+- **Entrada**: Compra quando o [padrão](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) 'Bullish8020' é confirmado, sinalizando um potencial movimento de alta.
 - **Estratégia de saída**:
   - **Stop Loss**: Definido a 0.5% abaixo do ponto de entrada para limitar perdas potenciais.
   - **Condições de mercado**: As negociações são executadas a preços de mercado atuais para garantir resposta rápida ao reconhecimento do padrão.
@@ -25,7 +25,7 @@ A estratégia "Bullish8020" foi elaborada para o [StockSharp Designer](https://d
 ### Gestão de risco
 
 - **Dimensionamento de posições**: A estratégia usa dimensionamento dinâmico baseado nas condições atuais do mercado e no perfil de risco do trader.
-- **Estratégia de Stop-Loss**: Um [stop-loss](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) rígido é implementado para proteger contra reversões de mercado imprevistas.
+- **Estratégia de Stop-Loss**: Um [stop-loss](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) rígido é implementado para proteger contra reversões de mercado imprevistas.
 
 ## Detalhes de implementação
 

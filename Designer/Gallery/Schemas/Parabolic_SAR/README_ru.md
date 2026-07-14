@@ -3,7 +3,7 @@
 
 ## Обзор стратегии
 
-Стратегия «Parabolic SAR» предназначена для захвата разворотов и продолжения трендов с использованием индикатора Parabolic Stop and Reverse (SAR) в [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html). Стратегия предоставляет чёткие сигналы входа и выхода на основе движения цены относительно точек Parabolic SAR.
+Стратегия «Parabolic SAR» предназначена для захвата разворотов и продолжения трендов с использованием индикатора Parabolic Stop and Reverse (SAR) в [StockSharp Designer](https://doc.stocksharp.com/ru/topics/designer.html). Стратегия предоставляет чёткие сигналы входа и выхода на основе движения цены относительно точек Parabolic SAR.
 
 ![schema](schema.png)
 
@@ -11,17 +11,17 @@
 
 ### Компоненты
 
-- **Формирование свечей**: использует 5-минутный [таймфрейм](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для анализа ценового движения, обеспечивая эффективный захват краткосрочных рыночных движений.
-- **Индикатор Parabolic SAR**: [настроен](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) с начальным коэффициентом ускорения 0,02, шагом ускорения 0,02 и максимальным ускорением 0,2. Эти настройки позволяют индикатору адаптироваться к волатильности рынка.
+- **Формирование свечей**: использует 5-минутный [таймфрейм](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для анализа ценового движения, обеспечивая эффективный захват краткосрочных рыночных движений.
+- **Индикатор Parabolic SAR**: [настроен](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) с начальным коэффициентом ускорения 0,02, шагом ускорения 0,02 и максимальным ускорением 0,2. Эти настройки позволяют индикатору адаптироваться к волатильности рынка.
 
 ### Исполнение сделок
 
-- **Сигнал входа**: сигнал на покупку генерируется, когда цена пересекает точки Parabolic SAR [снизу вверх](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html), указывая на возможный восходящий тренд.
-- **Сигнал выхода**: сигнал на продажу формируется, когда цена опускается [ниже](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) точек Parabolic SAR, сигнализируя о возможном нисходящем тренде.
+- **Сигнал входа**: сигнал на покупку генерируется, когда цена пересекает точки Parabolic SAR [снизу вверх](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html), указывая на возможный восходящий тренд.
+- **Сигнал выхода**: сигнал на продажу формируется, когда цена опускается [ниже](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) точек Parabolic SAR, сигнализируя о возможном нисходящем тренде.
 
 ### Визуализация
 
-- **Отображение на графике**: точки Parabolic SAR отображаются на [графике](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) рядом со свечами цены, обеспечивая визуальное представление тренда и потенциальных торговых сигналов.
+- **Отображение на графике**: точки Parabolic SAR отображаются на [графике](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) рядом со свечами цены, обеспечивая визуальное представление тренда и потенциальных торговых сигналов.
 
 ## Детали реализации
 

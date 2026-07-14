@@ -11,15 +11,15 @@ Este exemplo ilustra uma configuração dentro do StockSharp Strategy Designer f
 
 O esquema é composto por vários componentes interconectados projetados para buscar, processar e exibir informações de profundidade de mercado:
 
-1. **Nó de Instrumento**: este nó representa o [ativo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (por exemplo, uma ação, futuro ou outro instrumento financeiro) para o qual a profundidade de mercado será obtida. É um elemento fundamental, pois define qual mercado ou instrumento está sendo analisado.
+1. **Nó de Instrumento**: este nó representa o [ativo](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (por exemplo, uma ação, futuro ou outro instrumento financeiro) para o qual a profundidade de mercado será obtida. É um elemento fundamental, pois define qual mercado ou instrumento está sendo analisado.
 
-2. **Nó TimeFrameCandle**: lida com os [dados de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) do ativo, agregados em um intervalo de tempo especificado (5 minutos no exemplo). Pode ser usado para correlacionar mudanças na profundidade de mercado com movimentos de preços ao longo do tempo.
+2. **Nó TimeFrameCandle**: lida com os [dados de velas](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) do ativo, agregados em um intervalo de tempo especificado (5 minutos no exemplo). Pode ser usado para correlacionar mudanças na profundidade de mercado com movimentos de preços ao longo do tempo.
 
-3. **Nós de Profundidade de Mercado**: são projetados para capturar e possivelmente reagir a mudanças em tempo real na [profundidade de mercado](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html). Inclui configurações para processar dados de profundidade de mercado recebidos, fornecendo informações sobre as ordens de compra e venda atuais.
+3. **Nós de Profundidade de Mercado**: são projetados para capturar e possivelmente reagir a mudanças em tempo real na [profundidade de mercado](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html). Inclui configurações para processar dados de profundidade de mercado recebidos, fornecendo informações sobre as ordens de compra e venda atuais.
 
-4. **Nó do Painel de Gráfico**: indica que os dados de velas são visualizados em um [gráfico](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Isso pode ajudar traders ou algoritmos a visualizar melhor a situação do mercado e tomar decisões fundamentadas.
+4. **Nó do Painel de Gráfico**: indica que os dados de velas são visualizados em um [gráfico](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Isso pode ajudar traders ou algoritmos a visualizar melhor a situação do mercado e tomar decisões fundamentadas.
 
-5. **Nó do Painel de Profundidade de Mercado**: focado especificamente na exibição dos dados de profundidade de mercado em um [painel especial](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html), com funcionalidades como destaque dos melhores preços de compra e venda e visualização da profundidade de mercado.
+5. **Nó do Painel de Profundidade de Mercado**: focado especificamente na exibição dos dados de profundidade de mercado em um [painel especial](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html), com funcionalidades como destaque dos melhores preços de compra e venda e visualização da profundidade de mercado.
 
 ## Fluxo de Trabalho
 

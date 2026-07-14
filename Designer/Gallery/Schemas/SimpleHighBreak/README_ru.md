@@ -3,7 +3,7 @@
 
 ## Обзор стратегии
 
-Стратегия «SimpleHighBreak» предназначена для использования пробоев цены выше заранее определённого максимума в [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html). Стратегия сосредоточена на выявлении ситуаций, когда цена пробивает 15-периодный максимум, сигнализируя о возможном продолжении восходящего тренда.
+Стратегия «SimpleHighBreak» предназначена для использования пробоев цены выше заранее определённого максимума в [StockSharp Designer](https://doc.stocksharp.com/ru/topics/designer.html). Стратегия сосредоточена на выявлении ситуаций, когда цена пробивает 15-периодный максимум, сигнализируя о возможном продолжении восходящего тренда.
 
 ![schema](schema.png)
 
@@ -11,20 +11,20 @@
 
 ### Компоненты
 
-- **Формирование свечей**: использует 5-минутный таймфрейм для генерации [свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), отслеживая значимые ценовые движения на рынке.
-- **Индикатор максимума**: вычисляет [наибольшую цену](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) за последние 15 периодов для определения уровней пробоя.
-- **Определение пробоя**: стратегия генерирует ордер на покупку, когда текущая цена пробивает [вверх](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) недавний 15-периодный максимум.
+- **Формирование свечей**: использует 5-минутный таймфрейм для генерации [свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), отслеживая значимые ценовые движения на рынке.
+- **Индикатор максимума**: вычисляет [наибольшую цену](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) за последние 15 периодов для определения уровней пробоя.
+- **Определение пробоя**: стратегия генерирует ордер на покупку, когда текущая цена пробивает [вверх](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) недавний 15-периодный максимум.
 
 ### Исполнение сделок
 
-- **Тип ордера**: рыночный [ордер](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html).
+- **Тип ордера**: рыночный [ордер](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html).
 - **Вход**: ордер на покупку выставляется, когда цена превышает 15-периодный максимум.
 - **Стратегия выхода**: позиция закрывается на основе конкретных условий — например, заданного временного интервала или паттерна разворота, которые динамически управляются стратегией.
 
 ### Управление рисками
 
 - **Размер позиции**: адаптируется на основе предопределённых правил риск-менеджмента и текущей рыночной волатильности.
-- **Стоп-лосс и тейк-профит**: конфигурируемые уровни [стоп-лосса и тейк-профита](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) выставляются сразу после входа в позицию для управления рисками и фиксации прибыли.
+- **Стоп-лосс и тейк-профит**: конфигурируемые уровни [стоп-лосса и тейк-профита](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) выставляются сразу после входа в позицию для управления рисками и фиксации прибыли.
 
 ## Детали реализации
 

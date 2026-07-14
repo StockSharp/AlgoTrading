@@ -11,8 +11,8 @@ El diagrama muestra la configuración básica necesaria para recuperar datos de 
 
 ## Componentes del diagrama
 
-- **Fuente de datos Candles**: Es el nodo principal que obtiene [datos de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) del instrumento financiero seleccionado. Los usuarios pueden especificar el instrumento, el rango de datos y el marco temporal de la vela (por ejemplo, velas de 1 minuto, 5 minutos).
-- **Cubo Chart**: Este nodo se usa para [representar gráficamente](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) los datos obtenidos en una interfaz gráfica. Puede mostrar varios atributos de las velas, como precios de apertura, máximo, mínimo y cierre.
+- **Fuente de datos Candles**: Es el nodo principal que obtiene [datos de velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) del instrumento financiero seleccionado. Los usuarios pueden especificar el instrumento, el rango de datos y el marco temporal de la vela (por ejemplo, velas de 1 minuto, 5 minutos).
+- **Cubo Chart**: Este nodo se usa para [representar gráficamente](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) los datos obtenidos en una interfaz gráfica. Puede mostrar varios atributos de las velas, como precios de apertura, máximo, mínimo y cierre.
 
 ## Funcionalidad
 

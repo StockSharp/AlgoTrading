@@ -1,7 +1,7 @@
 # 戦略ソースコードディレクトリ
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-このディレクトリには、[Designer](https://stocksharp.com/store/strategy-designer/) プラットフォームの[ストラテジーギャラリー](https://doc.stocksharp.com/topics/designer/strategy_gallery.html)セクションで利用可能な取引戦略の図式表現が含まれています。戦略のソースコードファイルは [API](../../API) ディレクトリに保存されており、StockSharp API を通じてスタンドアロンプログラムとして読み込んだり、Designer にインポートしたりすることができます。
+このディレクトリには、[Designer](https://stocksharp.com/store/strategy-designer/) プラットフォームの[ストラテジーギャラリー](https://doc.stocksharp.com/ja/topics/designer/strategy_gallery.html)セクションで利用可能な取引戦略の図式表現が含まれています。戦略のソースコードファイルは [API](../../API) ディレクトリに保存されており、StockSharp API を通じてスタンドアロンプログラムとして読み込んだり、Designer にインポートしたりすることができます。
 
 ## 概要
 
@@ -9,12 +9,12 @@
 
 ## コンテンツ
 
-- **図式戦略**: 取引操作のフローと条件を[視覚的に表現](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html)した取引戦略のダイアグラム表現。戦略設計に視覚的なアプローチを好むユーザーに最適です。
+- **図式戦略**: 取引操作のフローと条件を[視覚的に表現](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer.html)した取引戦略のダイアグラム表現。戦略設計に視覚的なアプローチを好むユーザーに最適です。
 - **C# コード戦略**: 戦略のソースコードファイルは [API](../../API) ディレクトリにあります。StockSharp API 経由でスタンドアロンプログラムとして読み込んだり、さらなるカスタマイズのために Designer にインポートしたりできます。
 
 ## 使用方法
 
-ユーザーはこれらの戦略をダウンロードして基礎的なロジックを学習したり、シミュレーション環境で[テスト](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html)したり、実際の取引シナリオで展開したりできます。各戦略は Designer プラットフォームにインポートでき、そこでさらなるカスタマイズや新しい戦略開発の基盤として使用できます。
+ユーザーはこれらの戦略をダウンロードして基礎的なロジックを学習したり、シミュレーション環境で[テスト](https://doc.stocksharp.com/ja/topics/designer/backtesting/getting_started.html)したり、実際の取引シナリオで展開したりできます。各戦略は Designer プラットフォームにインポートでき、そこでさらなるカスタマイズや新しい戦略開発の基盤として使用できます。
 
 ## コントリビューション
 

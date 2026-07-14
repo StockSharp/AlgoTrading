@@ -11,19 +11,19 @@
 
 ### Компоненты
 
-- **Источники данных**: используются [ценовые данные в реальном времени](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) по ETHUSDT и BTCUSDT с биржи Binance.
+- **Источники данных**: используются [ценовые данные в реальном времени](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) по ETHUSDT и BTCUSDT с биржи Binance.
 - **Расчёт цены**:
-  - Отслеживает [цены закрытия](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) ETHUSDT и BTCUSDT.
+  - Отслеживает [цены закрытия](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) ETHUSDT и BTCUSDT.
   - Вычисляет отношение этих цен для формирования синтетического индекса, отражающего относительную динамику Ethereum по отношению к Bitcoin.
 
 ### Расчёт индекса
 
-- **Формирование свечей**: для обеих пар — ETH и BTC — используется [5-минутный таймфрейм](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для захвата краткосрочных ценовых движений.
-- **Расчёт отношения**: индекс рассчитывается как цена ETH, [делённая](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/formula.html) на цену BTC, что даёт меру изменения стоимости Ethereum относительно Bitcoin.
+- **Формирование свечей**: для обеих пар — ETH и BTC — используется [5-минутный таймфрейм](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для захвата краткосрочных ценовых движений.
+- **Расчёт отношения**: индекс рассчитывается как цена ETH, [делённая](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/formula.html) на цену BTC, что даёт меру изменения стоимости Ethereum относительно Bitcoin.
 
 ### Визуализация
 
-- **Отображение на графике**: полученный индекс строится на [графике](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) для визуального анализа, помогая определять тренды и потенциальные торговые сигналы на основе движения индекса.
+- **Отображение на графике**: полученный индекс строится на [графике](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) для визуального анализа, помогая определять тренды и потенциальные торговые сигналы на основе движения индекса.
 
 ## Детали реализации
 

@@ -7,14 +7,14 @@
 
 このディレクトリは、さまざまなトレーディング戦略サンプルを簡単に検索して活用できるように整理されています：
 
-- **スキーマサンプル**：Designer の[ビジュアルデザイン機能](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html)を使用して作成された戦略サンプルを収録しています。主に `.json` ファイルで、Designer に直接インポートできます。
-- **C# コードサンプル**：Designer 内でトレーディングロジックをプログラム的に定義する方法を示す、[C# で記述された](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html)戦略サンプルを収録しています。
+- **スキーマサンプル**：Designer の[ビジュアルデザイン機能](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer.html)を使用して作成された戦略サンプルを収録しています。主に `.json` ファイルで、Designer に直接インポートできます。
+- **C# コードサンプル**：Designer 内でトレーディングロジックをプログラム的に定義する方法を示す、[C# で記述された](https://doc.stocksharp.com/ja/topics/designer/strategies/using_csharp.html)戦略サンプルを収録しています。
 
 ## サンプルの目的
 
 これらのサンプルを提供する主な目的は次のとおりです：
 
-- **教育ツール**：[Designer](https://doc.stocksharp.com/topics/designer.html) プログラムの新規ユーザーおよび既存ユーザーが実践的なサンプルを通じて学習できるよう支援します。
+- **教育ツール**：[Designer](https://doc.stocksharp.com/ja/topics/designer.html) プログラムの新規ユーザーおよび既存ユーザーが実践的なサンプルを通じて学習できるよう支援します。
 - **開発のインスピレーション**：さまざまな技術やアプローチを示すことで、ユーザーが独自の戦略を開発・カスタマイズする意欲を高めます。
 - **コミュニティへの貢献**：ユーザーが自身のサンプルや改善点を共有することを奨励し、協力的でサポートし合える環境を育みます。
 
@@ -23,9 +23,9 @@
 これらのサンプルを最大限に活用するには、次の手順に従ってください：
 
 1. **サンプルを選択する**：ディレクトリを閲覧し、あなたのトレーディングの関心や学習ニーズに合ったサンプルを選択します。
-2. **ダウンロードしてインポートする**：スキーマサンプルの場合は `.json` ファイルをダウンロードし、Designer プログラムに[インポート](https://doc.stocksharp.com/topics/designer/export_import/import.html)します。C# サンプルの場合は、コードをコピーするかファイルをプロジェクトにダウンロードします。
+2. **ダウンロードしてインポートする**：スキーマサンプルの場合は `.json` ファイルをダウンロードし、Designer プログラムに[インポート](https://doc.stocksharp.com/ja/topics/designer/export_import/import.html)します。C# サンプルの場合は、コードをコピーするかファイルをプロジェクトにダウンロードします。
 3. **研究して修正する**：戦略がどのように構築されているかを調べ、特定のトレーディング条件に合わせたり、新しいアイデアを試したりするために修正することを検討します。
-4. **テストして展開する**：[ライブトレーディング](https://doc.stocksharp.com/topics/designer/live_execution/getting_started.html)に適用する前に、必ず Designer が提供するシミュレーション環境で[戦略をテスト](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html)し、期待どおりに機能することを確認します。
+4. **テストして展開する**：[ライブトレーディング](https://doc.stocksharp.com/ja/topics/designer/live_execution/getting_started.html)に適用する前に、必ず Designer が提供するシミュレーション環境で[戦略をテスト](https://doc.stocksharp.com/ja/topics/designer/backtesting/getting_started.html)し、期待どおりに機能することを確認します。
 
 ## 貢献
 

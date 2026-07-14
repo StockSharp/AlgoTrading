@@ -11,20 +11,20 @@ Die Strategie „Tief-Ausbruch mit Berechnung" nutzt eine Kombination aus Hoch- 
 
 ### Komponenten
 
-- **Kerzenbildung**: Verwendet einen Ein-Stunden-Zeitrahmen für die [Kerzengenerierung](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) und erfasst so signifikante Marktbewegungen.
+- **Kerzenbildung**: Verwendet einen Ein-Stunden-Zeitrahmen für die [Kerzengenerierung](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) und erfasst so signifikante Marktbewegungen.
 - **Hoch- und Tief-Indikatoren**:
-  - **Highest 25**: Verfolgt den [höchsten Kurs](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) über die letzten 25 Perioden.
-  - **Lowest 45**: Überwacht den [niedrigsten Kurs](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) über die letzten 45 Perioden.
-- **Berechnungslogik**: Bestimmt Trade-Ausführungspunkte durch [Vergleich](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) der aktuellen Kurse mit den aus den Indikatoren berechneten Hoch- und Tief-Niveaus.
+  - **Highest 25**: Verfolgt den [höchsten Kurs](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) über die letzten 25 Perioden.
+  - **Lowest 45**: Überwacht den [niedrigsten Kurs](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) über die letzten 45 Perioden.
+- **Berechnungslogik**: Bestimmt Trade-Ausführungspunkte durch [Vergleich](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) der aktuellen Kurse mit den aus den Indikatoren berechneten Hoch- und Tief-Niveaus.
 
 ### Trade-Ausführung
 
-- **Einstiegssignal**: Eine [Kauf](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Order wird initiiert, wenn der aktuelle Kurs [unter]() den vom Indikator „Lowest 45" berechneten niedrigsten Punkt fällt.
-- **Ausstiegssignal**: Eine [Verkauf](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Order wird ausgelöst, wenn die nachfolgende Kursentwicklung die Fortsetzung des Abwärtstrends nicht bestätigt, was durch spezifische Berechnungsparameter definiert wird.
+- **Einstiegssignal**: Eine [Kauf](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Order wird initiiert, wenn der aktuelle Kurs [unter]() den vom Indikator „Lowest 45" berechneten niedrigsten Punkt fällt.
+- **Ausstiegssignal**: Eine [Verkauf](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Order wird ausgelöst, wenn die nachfolgende Kursentwicklung die Fortsetzung des Abwärtstrends nicht bestätigt, was durch spezifische Berechnungsparameter definiert wird.
 
 ### Visualisierung
 
-- **Chart-Anzeige**: Die Werte der Indikatoren „Highest 25" und „Lowest 45" werden auf dem [Chart](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) neben den Kurskerzen dargestellt und liefern eine visuelle Repräsentation potenzieller Ausbruchspunkte.
+- **Chart-Anzeige**: Die Werte der Indikatoren „Highest 25" und „Lowest 45" werden auf dem [Chart](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html) neben den Kurskerzen dargestellt und liefern eine visuelle Repräsentation potenzieller Ausbruchspunkte.
 
 ## Implementierungsdetails
 

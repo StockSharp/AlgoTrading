@@ -11,7 +11,7 @@ Die Strategie implementiert Mechanismen zum Kauf einer Kryptowährung bei gleich
 
 ## Installation
 
-Zur Aktivierung und Nutzung dieser Strategie muss StockSharp Designer installiert sein. Die Strategie steht zum Download und zur Installation aus der [Strategie-Galerie](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) zur Verfügung. Dies ermöglicht eine einfache Integration und Anpassung der Strategie gemäß den individuellen Anforderungen des Traders.
+Zur Aktivierung und Nutzung dieser Strategie muss StockSharp Designer installiert sein. Die Strategie steht zum Download und zur Installation aus der [Strategie-Galerie](https://doc.stocksharp.com/de/topics/designer/strategy_gallery.html) zur Verfügung. Dies ermöglicht eine einfache Integration und Anpassung der Strategie gemäß den individuellen Anforderungen des Traders.
 
 ## Parameter
 
@@ -38,4 +38,4 @@ Es ist wichtig, die Strategie auf historischen Daten zu testen, um ihre Effektiv
 
 ## Weitere Ressourcen
 
-Für weitere Informationen und Ressourcen besuchen Sie die [StockSharp-Dokumentation](https://doc.stocksharp.com/).
+Für weitere Informationen und Ressourcen besuchen Sie die [StockSharp-Dokumentation](https://doc.stocksharp.com/de/).

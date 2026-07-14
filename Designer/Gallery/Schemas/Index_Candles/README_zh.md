@@ -7,12 +7,12 @@
 
 ## 策略概述
 
-该策略将多只证券的价格数据合并为单一[指数](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)。此过程通常采用归一化或加权技术，确保每只证券按比例贡献于最终指数值。
+该策略将多只证券的价格数据合并为单一[指数](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)。此过程通常采用归一化或加权技术，确保每只证券按比例贡献于最终指数值。
 
 ## 图表组件
 
-- **数据采集节点**：负责获取每只所选证券的[蜡烛数据](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)。
-- **归一化节点**：对蜡烛数据进行归一化处理，确保其对[最终指数计算](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)产生均匀影响，消除不同价格量级的干扰。
+- **数据采集节点**：负责获取每只所选证券的[蜡烛数据](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)。
+- **归一化节点**：对蜡烛数据进行归一化处理，确保其对[最终指数计算](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)产生均匀影响，消除不同价格量级的干扰。
 - **加权节点**：根据市值或历史波动率等预设标准，为每只证券分配权重。
 - **指数计算节点**：汇总归一化和加权后的价格数据，计算最终指数值。
 

@@ -22,7 +22,7 @@
   - 只有当价格相对入场价突破 `TrailingStopSteps + TrailingStepSteps` 后，止损才会前移。
   - 多头与空头分别维护独立的跟踪止损价位。
 - **指标**：
-  - [StochasticOscillator](https://doc.stocksharp.com/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm)，可配置 `KPeriod`、`DPeriod` 与 `Slowing`。
+  - [StochasticOscillator](https://doc.stocksharp.com/zh/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm)，可配置 `KPeriod`、`DPeriod` 与 `Slowing`。
 - **方向**：多空双向。
 - **止损**：仅使用跟踪止损，无固定 SL/TP。
 - **仓位管理**：使用策略的 `Volume` 参数；反手时下单量为 `Volume + |Position|`。

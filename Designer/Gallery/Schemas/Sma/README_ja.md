@@ -9,13 +9,13 @@
 
 この戦略は2本の移動平均線を組み合わせています。
 
-- **短期移動平均線**: 価格変動により敏感に反応する、より速い[移動平均線](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)。
-- **長期移動平均線**: 価格トレンドをよりなめらかに表現する、より遅い[移動平均線](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)。
+- **短期移動平均線**: 価格変動により敏感に反応する、より速い[移動平均線](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)。
+- **長期移動平均線**: 価格トレンドをよりなめらかに表現する、より遅い[移動平均線](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)。
 
 ## エントリーとエグジットのルール
 
-- **買いシグナル**: 短期移動平均線が長期移動平均線を下から[クロス](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)したとき、上昇トレンドを示唆する[買い](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)シグナルが生成されます。
-- **売りシグナル**: 逆に、短期移動平均線が長期移動平均線を上から[クロス](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)したとき、潜在的な下降トレンドを示す[売り](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)シグナルが発行されます。
+- **買いシグナル**: 短期移動平均線が長期移動平均線を下から[クロス](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)したとき、上昇トレンドを示唆する[買い](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)シグナルが生成されます。
+- **売りシグナル**: 逆に、短期移動平均線が長期移動平均線を上から[クロス](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/crossing.html)したとき、潜在的な下降トレンドを示す[売り](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)シグナルが発行されます。
 
 ## ダイアグラムの詳細
 

@@ -7,12 +7,12 @@ Diese Diagrammdatei veranschaulicht eine Strategie zur Erstellung eines zusammen
 
 ## Strategieübersicht
 
-Die Strategie kombiniert Preisdaten mehrerer Wertpapiere zu einem einzigen [Index](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). Dabei werden typischerweise Normalisierungs- oder Gewichtungsverfahren eingesetzt, um sicherzustellen, dass jedes Wertpapier proportional zum endgültigen Indexwert beiträgt.
+Die Strategie kombiniert Preisdaten mehrerer Wertpapiere zu einem einzigen [Index](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). Dabei werden typischerweise Normalisierungs- oder Gewichtungsverfahren eingesetzt, um sicherzustellen, dass jedes Wertpapier proportional zum endgültigen Indexwert beiträgt.
 
 ## Komponenten des Diagramms
 
-- **Datenerhebungsknoten**: sind für den Abruf der [Kerzendaten](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für jedes ausgewählte Wertpapier zuständig.
-- **Normalisierungsknoten**: wenden Normalisierung auf die Kerzendaten an, um einen gleichmäßigen Einfluss auf die endgültige [Indexberechnung](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html) zu gewährleisten und die Auswirkungen unterschiedlicher Preisskalen zu mildern.
+- **Datenerhebungsknoten**: sind für den Abruf der [Kerzendaten](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für jedes ausgewählte Wertpapier zuständig.
+- **Normalisierungsknoten**: wenden Normalisierung auf die Kerzendaten an, um einen gleichmäßigen Einfluss auf die endgültige [Indexberechnung](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html) zu gewährleisten und die Auswirkungen unterschiedlicher Preisskalen zu mildern.
 - **Gewichtungsknoten**: weisen jedem Wertpapier anhand vordefinierter Kriterien wie Marktkapitalisierung oder historischer Volatilität Gewichte zu.
 - **Indexberechnungsknoten**: aggregiert die normalisierten und gewichteten Preisdaten, um den endgültigen Indexwert zu berechnen.
 

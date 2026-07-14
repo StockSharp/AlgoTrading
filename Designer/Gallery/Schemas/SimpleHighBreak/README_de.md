@@ -3,7 +3,7 @@
 
 ## Strategieübersicht
 
-Die „SimpleHighBreak"-Strategie ist darauf ausgelegt, von Kursausbrüchen über ein vordefiniertes Hoch im [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html) zu profitieren. Die Strategie konzentriert sich auf die Identifizierung von Chancen, bei denen der Kurs über das 15-Perioden-Hoch ausbricht und damit eine mögliche Fortsetzung des Aufwärtstrends signalisiert.
+Die „SimpleHighBreak"-Strategie ist darauf ausgelegt, von Kursausbrüchen über ein vordefiniertes Hoch im [StockSharp Designer](https://doc.stocksharp.com/de/topics/designer.html) zu profitieren. Die Strategie konzentriert sich auf die Identifizierung von Chancen, bei denen der Kurs über das 15-Perioden-Hoch ausbricht und damit eine mögliche Fortsetzung des Aufwärtstrends signalisiert.
 
 ![schema](schema.png)
 
@@ -11,20 +11,20 @@ Die „SimpleHighBreak"-Strategie ist darauf ausgelegt, von Kursausbrüchen übe
 
 ### Komponenten
 
-- **Kerzenbildung**: Nutzt einen 5-Minuten-Zeitrahmen zur Erzeugung von [Kerzen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) und überwacht den Markt auf signifikante Kursbewegungen.
-- **Hoch-Indikator**: Berechnet den [höchsten Kurs](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) über die letzten 15 Perioden, um Ausbruchsniveaus zu bestimmen.
-- **Ausbruchserkennung**: Die Strategie löst eine Kauforder aus, wenn der aktuelle Kurs [über](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) das jüngste 15-Perioden-Hoch ausbricht.
+- **Kerzenbildung**: Nutzt einen 5-Minuten-Zeitrahmen zur Erzeugung von [Kerzen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) und überwacht den Markt auf signifikante Kursbewegungen.
+- **Hoch-Indikator**: Berechnet den [höchsten Kurs](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) über die letzten 15 Perioden, um Ausbruchsniveaus zu bestimmen.
+- **Ausbruchserkennung**: Die Strategie löst eine Kauforder aus, wenn der aktuelle Kurs [über](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) das jüngste 15-Perioden-Hoch ausbricht.
 
 ### Trade-Ausführung
 
-- **Ordertyp**: Markt-[Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html).
+- **Ordertyp**: Markt-[Order](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html).
 - **Einstieg**: Eine Kauforder wird platziert, wenn der Kurs das 15-Perioden-Hoch überschreitet.
 - **Ausstiegsstrategie**: Die Position wird auf Basis spezifischer Bedingungen, wie einem festgelegten Zeitrahmen oder einem Umkehrmuster, geschlossen, die von der Strategie dynamisch verwaltet werden.
 
 ### Risikomanagement
 
 - **Positionsgröße**: Passt die Positionsgröße anhand vordefinierter Risikomanagementregeln und der aktuellen Marktvolatilität an.
-- **Stop Loss und Take Profit**: Konfigurierbare [Stop Loss- und Take Profit](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html)-Niveaus werden unmittelbar nach dem Einstieg gesetzt, um das Risiko zu steuern und Gewinne zu sichern.
+- **Stop Loss und Take Profit**: Konfigurierbare [Stop Loss- und Take Profit](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html)-Niveaus werden unmittelbar nach dem Einstieg gesetzt, um das Risiko zu steuern und Gewinne zu sichern.
 
 ## Implementierungsdetails
 

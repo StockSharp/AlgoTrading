@@ -7,14 +7,14 @@ Willkommen im Beispielverzeichnis für [Designer](https://stocksharp.com/store/s
 
 Dieses Verzeichnis ist so organisiert, dass Sie verschiedene Handelsstrategiebeispiele leicht finden und nutzen können:
 
-- **Schematische Beispiele**: Enthält Strategiebeispiele, die mit den [visuellen Designfunktionen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) des Designer erstellt wurden. Dies sind hauptsächlich `.json`-Dateien, die direkt in Designer importiert werden können.
-- **C#-Codebeispiele**: Enthält Strategiebeispiele, die [in C# geschrieben](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html) sind und demonstrieren, wie Handelslogik innerhalb von Designer programmatisch definiert werden kann.
+- **Schematische Beispiele**: Enthält Strategiebeispiele, die mit den [visuellen Designfunktionen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer.html) des Designer erstellt wurden. Dies sind hauptsächlich `.json`-Dateien, die direkt in Designer importiert werden können.
+- **C#-Codebeispiele**: Enthält Strategiebeispiele, die [in C# geschrieben](https://doc.stocksharp.com/de/topics/designer/strategies/using_csharp.html) sind und demonstrieren, wie Handelslogik innerhalb von Designer programmatisch definiert werden kann.
 
 ## Zweck der Beispiele
 
 Die Hauptziele dieser Beispiele sind:
 
-- **Lernwerkzeug**: Neuen und bestehenden Benutzern des [Designer](https://doc.stocksharp.com/topics/designer.html)-Programms helfen, durch praktische Beispiele zu lernen.
+- **Lernwerkzeug**: Neuen und bestehenden Benutzern des [Designer](https://doc.stocksharp.com/de/topics/designer.html)-Programms helfen, durch praktische Beispiele zu lernen.
 - **Inspiration für die Entwicklung**: Benutzer dazu inspirieren, eigene Strategien zu entwickeln und anzupassen, indem verschiedene Techniken und Ansätze demonstriert werden.
 - **Community-Engagement**: Benutzer ermutigen, eigene Beispiele und Verbesserungen zu teilen und eine kollaborative und unterstützende Umgebung zu fördern.
 
@@ -23,9 +23,9 @@ Die Hauptziele dieser Beispiele sind:
 Um das Beste aus diesen Beispielen herauszuholen, befolgen Sie diese Schritte:
 
 1. **Wählen Sie ein Beispiel**: Durchsuchen Sie das Verzeichnis und wählen Sie ein Beispiel aus, das Ihren Handelsinteressen oder Lernbedürfnissen entspricht.
-2. **Herunterladen und Importieren**: Laden Sie für schematische Beispiele die `.json`-Datei herunter und [importieren](https://doc.stocksharp.com/topics/designer/export_import/import.html) Sie sie in Ihr Designer-Programm. Für C#-Beispiele kopieren Sie den Code oder laden Sie die Datei in Ihr Projekt.
+2. **Herunterladen und Importieren**: Laden Sie für schematische Beispiele die `.json`-Datei herunter und [importieren](https://doc.stocksharp.com/de/topics/designer/export_import/import.html) Sie sie in Ihr Designer-Programm. Für C#-Beispiele kopieren Sie den Code oder laden Sie die Datei in Ihr Projekt.
 3. **Studieren und Anpassen**: Untersuchen Sie, wie die Strategien aufgebaut sind, und erwägen Sie, sie anzupassen, um Ihren spezifischen Handelskriterien besser zu entsprechen oder mit neuen Ideen zu experimentieren.
-4. **Testen und Einsetzen**: [Testen Sie Ihre Strategien](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html) immer in der von Designer bereitgestellten Simulationsumgebung, bevor Sie sie im [Live-Trading](https://doc.stocksharp.com/topics/designer/live_execution/getting_started.html) einsetzen, um sicherzustellen, dass sie wie erwartet funktionieren.
+4. **Testen und Einsetzen**: [Testen Sie Ihre Strategien](https://doc.stocksharp.com/de/topics/designer/backtesting/getting_started.html) immer in der von Designer bereitgestellten Simulationsumgebung, bevor Sie sie im [Live-Trading](https://doc.stocksharp.com/de/topics/designer/live_execution/getting_started.html) einsetzen, um sicherzustellen, dass sie wie erwartet funktionieren.
 
 ## Mitwirken
 

@@ -3,7 +3,7 @@
 
 ## Descripción General de la Estrategia
 
-La estrategia "Parabolic SAR" está diseñada para capturar reversiones e continuaciones de tendencia utilizando el indicador Parabolic Stop and Reverse (SAR) dentro de [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html). Esta estrategia proporciona señales claras de entrada y salida basadas en el movimiento del precio en relación con los puntos del Parabolic SAR.
+La estrategia "Parabolic SAR" está diseñada para capturar reversiones e continuaciones de tendencia utilizando el indicador Parabolic Stop and Reverse (SAR) dentro de [StockSharp Designer](https://doc.stocksharp.com/es/topics/designer.html). Esta estrategia proporciona señales claras de entrada y salida basadas en el movimiento del precio en relación con los puntos del Parabolic SAR.
 
 ![schema](schema.png)
 
@@ -11,17 +11,17 @@ La estrategia "Parabolic SAR" está diseñada para capturar reversiones e contin
 
 ### Componentes
 
-- **Formación de Velas**: utiliza un marco de tiempo de 5 minutos para [analizar la acción del precio](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), garantizando que la estrategia capture los movimientos de mercado a corto plazo de forma efectiva.
-- **Indicador Parabolic SAR**: [configurado](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) con un factor de aceleración inicial de 0,02, un paso de aceleración de 0,02 y una aceleración máxima de 0,2. Estos ajustes permiten que el indicador se adapte a la volatilidad del mercado.
+- **Formación de Velas**: utiliza un marco de tiempo de 5 minutos para [analizar la acción del precio](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), garantizando que la estrategia capture los movimientos de mercado a corto plazo de forma efectiva.
+- **Indicador Parabolic SAR**: [configurado](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) con un factor de aceleración inicial de 0,02, un paso de aceleración de 0,02 y una aceleración máxima de 0,2. Estos ajustes permiten que el indicador se adapte a la volatilidad del mercado.
 
 ### Ejecución de Operaciones
 
-- **Señal de Entrada**: se genera una señal de compra cuando el precio cruza [por encima](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) de los puntos del Parabolic SAR, indicando una posible tendencia alcista.
-- **Señal de Salida**: se emite una señal de venta cuando el precio cae [por debajo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) de los puntos del Parabolic SAR, sugiriendo una posible tendencia bajista.
+- **Señal de Entrada**: se genera una señal de compra cuando el precio cruza [por encima](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) de los puntos del Parabolic SAR, indicando una posible tendencia alcista.
+- **Señal de Salida**: se emite una señal de venta cuando el precio cae [por debajo](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) de los puntos del Parabolic SAR, sugiriendo una posible tendencia bajista.
 
 ### Visualización
 
-- **Visualización en Gráfico**: los puntos del Parabolic SAR se trazan en el [gráfico](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) junto con las velas de precios, proporcionando una representación visual de la tendencia y las posibles señales de trading.
+- **Visualización en Gráfico**: los puntos del Parabolic SAR se trazan en el [gráfico](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) junto con las velas de precios, proporcionando una representación visual de la tendencia y las posibles señales de trading.
 
 ## Detalles de Implementación
 

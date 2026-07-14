@@ -11,20 +11,20 @@
 
 ### Компоненты
 
-- **Формирование свечей**: для [генерации свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) используется часовой таймфрейм, фиксирующий значимые рыночные движения.
+- **Формирование свечей**: для [генерации свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) используется часовой таймфрейм, фиксирующий значимые рыночные движения.
 - **Индикаторы максимума и минимума**:
-  - **Highest 25**: отслеживает [максимальную цену](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) за последние 25 периодов.
-  - **Lowest 45**: отслеживает [минимальную цену](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) за последние 45 периодов.
-- **Логика расчёта**: определяет точки исполнения сделок путём [сравнения](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) текущих цен с рассчитанными уровнями максимума и минимума от индикаторов.
+  - **Highest 25**: отслеживает [максимальную цену](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) за последние 25 периодов.
+  - **Lowest 45**: отслеживает [минимальную цену](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) за последние 45 периодов.
+- **Логика расчёта**: определяет точки исполнения сделок путём [сравнения](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) текущих цен с рассчитанными уровнями максимума и минимума от индикаторов.
 
 ### Исполнение сделок
 
-- **Сигнал входа**: ордер на [покупку](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) инициируется, когда текущая цена пробивает [вниз]() минимальную точку, рассчитанную индикатором «Lowest 45».
-- **Сигнал выхода**: ордер на [продажу](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) срабатывает, когда последующее ценовое движение не подтверждает продолжение нисходящего тренда, что определяется конкретными параметрами расчёта.
+- **Сигнал входа**: ордер на [покупку](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) инициируется, когда текущая цена пробивает [вниз]() минимальную точку, рассчитанную индикатором «Lowest 45».
+- **Сигнал выхода**: ордер на [продажу](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) срабатывает, когда последующее ценовое движение не подтверждает продолжение нисходящего тренда, что определяется конкретными параметрами расчёта.
 
 ### Визуализация
 
-- **Отображение на графике**: значения индикаторов «Highest 25» и «Lowest 45» отображаются на [графике](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) вместе со свечами цены, обеспечивая визуальное представление потенциальных точек пробоя.
+- **Отображение на графике**: значения индикаторов «Highest 25» и «Lowest 45» отображаются на [графике](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) вместе со свечами цены, обеспечивая визуальное представление потенциальных точек пробоя.
 
 ## Детали реализации
 

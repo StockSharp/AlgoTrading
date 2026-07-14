@@ -11,17 +11,17 @@
 
 该方案概述了一系列相互关联的组件，旨在捕获、分析并对实时市场数据作出响应：
 
-1. **Security 节点**：作为基础，指定策略所应用的[证券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（如股票、期货）。该节点至关重要，因为它决定了策略的数据输入。
+1. **Security 节点**：作为基础，指定策略所应用的[证券](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)（如股票、期货）。该节点至关重要，因为它决定了策略的数据输入。
 
-2. **TimeFrameCandle 节点**：处理传入的市场数据，并根据指定的时间框架将其组织成[K线](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)。对于依赖历史价格分析进行交易决策的策略，该节点不可或缺。
+2. **TimeFrameCandle 节点**：处理传入的市场数据，并根据指定的时间框架将其组织成[K线](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)。对于依赖历史价格分析进行交易决策的策略，该节点不可或缺。
 
-3. **Highest 节点**：分析K线数据以[确定指定时间段内](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)（如60分钟）的最高价。该值为识别重要价格突破设立基准。
+3. **Highest 节点**：分析K线数据以[确定指定时间段内](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)（如60分钟）的最高价。该值为识别重要价格突破设立基准。
 
-4. **比较节点**：将当前价格与 Highest 节点确定的历史高点进行[比较](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)。如果当前价格超过历史高点，则触发潜在交易信号。
+4. **比较节点**：将当前价格与 Highest 节点确定的历史高点进行[比较](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)。如果当前价格超过历史高点，则触发潜在交易信号。
 
-5. **图表面板节点**：[可视化](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)价格数据和策略操作，提供策略运行的图形化表示，有助于监控和调整。
+5. **图表面板节点**：[可视化](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)价格数据和策略操作，提供策略运行的图形化表示，有助于监控和调整。
 
-6. **交易执行节点（买入/卖出）**：负责在策略条件满足时[执行交易](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)。例如，当价格突破历史高点时，可能执行买入订单。
+6. **交易执行节点（买入/卖出）**：负责在策略条件满足时[执行交易](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)。例如，当价格突破历史高点时，可能执行买入订单。
 
 ## 工作流程
 

@@ -3,7 +3,7 @@
 
 ## 策略概述
 
-[Strategy Designer](https://doc.stocksharp.com/topics/designer.html) 中的"3 Black Crows Trend"策略采用特定的看跌反转K线形态来预测股市潜在的下跌走势。该自动化交易方案经过精心设计，用于识别并利用重要的价格形态，旨在从熊市趋势中获益。
+[Strategy Designer](https://doc.stocksharp.com/zh/topics/designer.html) 中的"3 Black Crows Trend"策略采用特定的看跌反转K线形态来预测股市潜在的下跌走势。该自动化交易方案经过精心设计，用于识别并利用重要的价格形态，旨在从熊市趋势中获益。
 
 ![schema](schema.png)
 
@@ -11,7 +11,7 @@
 
 ### 形态检测：3 Black Crows
 
-- **描述**：该模块识别"3 Black Crows"[形态](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)，该形态预示着上升趋势后可能出现看跌反转。该形态由三根连续的长实体K线组成，每根K线的收盘价均低于其开盘价，且每个交易时段的开盘价出现在前一根K线的实体内。
+- **描述**：该模块识别"3 Black Crows"[形态](https://doc.stocksharp.com/zh/topics/api/indicators/list_of_indicators/pattern.html)，该形态预示着上升趋势后可能出现看跌反转。该形态由三根连续的长实体K线组成，每根K线的收盘价均低于其开盘价，且每个交易时段的开盘价出现在前一根K线的实体内。
 - **条件**：
   - K线1：Open > Close
   - K线2：Open > Close 且 Open < Previous Open
@@ -19,17 +19,17 @@
 
 ### 交易执行
 
-- **订单类型**：市价[订单](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
+- **订单类型**：市价[订单](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
 - **入场**：确认"3 Black Crows"形态后，启动卖出订单。
 - **退出策略**：
   - **止盈**：设定在入场价格以上3%。
   - **止损**：设定在入场价格以下1%。
-- **风险管理**：该策略严格遵守初始[止损和止盈](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html)设置，不使用追踪止损。
+- **风险管理**：该策略严格遵守初始[止损和止盈](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html)设置，不使用追踪止损。
 
 ### 交易条件
 
-- **频率**：在[日线级别](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)运行，在每个交易日结束时处理新的K线形态。
-- **市价订单**：通过以当前市场价格[下单](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)确保快速执行。
+- **频率**：在[日线级别](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)运行，在每个交易日结束时处理新的K线形态。
+- **市价订单**：通过以当前市场价格[下单](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)确保快速执行。
 
 ## 实施详情
 

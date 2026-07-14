@@ -11,17 +11,17 @@ La estrategia "High Break" representada en el esquema JSON proporcionado está d
 
 El esquema describe una secuencia de componentes interconectados diseñados para capturar, analizar y actuar sobre datos de mercado en tiempo real:
 
-1. **Nodo Security**: Sirve como base, especificando el [valor](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (por ejemplo, acciones, futuros) al que se aplica la estrategia. Este nodo es crítico ya que determina la entrada de datos para la estrategia.
+1. **Nodo Security**: Sirve como base, especificando el [valor](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (por ejemplo, acciones, futuros) al que se aplica la estrategia. Este nodo es crítico ya que determina la entrada de datos para la estrategia.
 
-2. **Nodo TimeFrameCandle**: Procesa los datos de mercado entrantes y los organiza en [velas basadas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) en un marco temporal especificado. Este nodo es vital para las estrategias que se basan en el análisis histórico de precios para tomar decisiones de trading.
+2. **Nodo TimeFrameCandle**: Procesa los datos de mercado entrantes y los organiza en [velas basadas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) en un marco temporal especificado. Este nodo es vital para las estrategias que se basan en el análisis histórico de precios para tomar decisiones de trading.
 
-3. **Nodo Highest**: Analiza los datos de velas para [determinar el precio más alto](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) alcanzado durante un período de tiempo especificado (por ejemplo, 60 minutos). Este valor establece un punto de referencia para identificar rupturas de precio significativas.
+3. **Nodo Highest**: Analiza los datos de velas para [determinar el precio más alto](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) alcanzado durante un período de tiempo especificado (por ejemplo, 60 minutos). Este valor establece un punto de referencia para identificar rupturas de precio significativas.
 
-4. **Nodo de comparación**: [Compara](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) los precios actuales con el máximo histórico determinado por el nodo Highest. Si el precio actual supera este máximo, activa una posible señal de trading.
+4. **Nodo de comparación**: [Compara](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) los precios actuales con el máximo histórico determinado por el nodo Highest. Si el precio actual supera este máximo, activa una posible señal de trading.
 
-5. **Nodo Chart Panel**: [Visualiza](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) los datos de precio y las acciones de la estrategia, proporcionando una representación gráfica del funcionamiento de la estrategia, lo que facilita la monitorización y los ajustes.
+5. **Nodo Chart Panel**: [Visualiza](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) los datos de precio y las acciones de la estrategia, proporcionando una representación gráfica del funcionamiento de la estrategia, lo que facilita la monitorización y los ajustes.
 
-6. **Nodos de ejecución de operaciones (Compra/Venta)**: Responsables de [ejecutar operaciones](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) cuando se cumplen las condiciones de la estrategia. Por ejemplo, una orden de compra puede ejecutarse cuando el precio supera el máximo histórico.
+6. **Nodos de ejecución de operaciones (Compra/Venta)**: Responsables de [ejecutar operaciones](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) cuando se cumplen las condiciones de la estrategia. Por ejemplo, una orden de compra puede ejecutarse cuando el precio supera el máximo histórico.
 
 ## Flujo de trabajo
 

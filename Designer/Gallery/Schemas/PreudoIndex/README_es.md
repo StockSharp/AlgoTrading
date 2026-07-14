@@ -11,19 +11,19 @@ La estrategia "PseudoIndex" está diseñada para crear un índice sintético a p
 
 ### Componentes
 
-- **Fuentes de Datos**: utiliza datos de [precio en tiempo real](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) de ETHUSDT y BTCUSDT de Binance.
+- **Fuentes de Datos**: utiliza datos de [precio en tiempo real](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) de ETHUSDT y BTCUSDT de Binance.
 - **Cálculo de Precio**:
-  - Rastrea los [precios de cierre](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) tanto de ETHUSDT como de BTCUSDT.
+  - Rastrea los [precios de cierre](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) tanto de ETHUSDT como de BTCUSDT.
   - Calcula el ratio de estos precios para formar un índice sintético que representa el rendimiento relativo de Ethereum frente a Bitcoin.
 
 ### Cálculo del Índice
 
-- **Formación de Velas**: utiliza un [marco de tiempo de 5 minutos](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) tanto para ETH como para BTC, con el fin de capturar movimientos de precios a corto plazo.
-- **Cálculo del Ratio**: el índice se calcula como el precio de ETH [dividido](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/formula.html) por el precio de BTC, proporcionando una medida de cómo evoluciona el valor de Ethereum en relación con Bitcoin.
+- **Formación de Velas**: utiliza un [marco de tiempo de 5 minutos](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) tanto para ETH como para BTC, con el fin de capturar movimientos de precios a corto plazo.
+- **Cálculo del Ratio**: el índice se calcula como el precio de ETH [dividido](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/formula.html) por el precio de BTC, proporcionando una medida de cómo evoluciona el valor de Ethereum en relación con Bitcoin.
 
 ### Visualización
 
-- **Visualización en Gráfico**: el índice resultante se representa en un [gráfico](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) para análisis visual, ayudando a identificar tendencias y posibles señales de trading basadas en el movimiento del índice.
+- **Visualización en Gráfico**: el índice resultante se representa en un [gráfico](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) para análisis visual, ayudando a identificar tendencias y posibles señales de trading basadas en el movimiento del índice.
 
 ## Detalles de Implementación
 

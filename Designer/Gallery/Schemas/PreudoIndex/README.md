@@ -11,19 +11,19 @@ The "PseudoIndex" strategy is designed to create a synthetic index from the pric
 
 ### Components
 
-- **Data Sources**: Utilizes [real-time price](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) data of ETHUSDT and BTCUSDT from Binance.
+- **Data Sources**: Utilizes [real-time price](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) data of ETHUSDT and BTCUSDT from Binance.
 - **Price Calculation**: 
-  - Tracks the [closing prices](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) of both ETHUSDT and BTCUSDT.
+  - Tracks the [closing prices](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) of both ETHUSDT and BTCUSDT.
   - Computes the ratio of these prices to form a synthetic index, representing the relative performance of Ethereum against Bitcoin.
 
 ### Index Computation
 
-- **Candle Formation**: Uses a [5-minute timeframe](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) for both ETH and BTC to capture short-term price movements.
-- **Ratio Calculation**: The index is calculated as the price of ETH [divided](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/formula.html) by the price of BTC, providing a measure of how Ethereum's value trends relative to Bitcoin.
+- **Candle Formation**: Uses a [5-minute timeframe](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) for both ETH and BTC to capture short-term price movements.
+- **Ratio Calculation**: The index is calculated as the price of ETH [divided](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/formula.html) by the price of BTC, providing a measure of how Ethereum's value trends relative to Bitcoin.
 
 ### Visualization
 
-- **Chart Display**: The resulting index is plotted on a [chart](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) for visual analysis, helping to identify trends and potential trading signals based on the index's movement.
+- **Chart Display**: The resulting index is plotted on a [chart](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/chart.html) for visual analysis, helping to identify trends and potential trading signals based on the index's movement.
 
 ## Implementation Details
 

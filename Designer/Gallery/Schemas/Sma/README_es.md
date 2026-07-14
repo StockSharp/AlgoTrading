@@ -9,13 +9,13 @@ Este archivo contiene una representación diagramática de una estrategia de tra
 
 La estrategia incorpora dos medias móviles:
 
-- **Media Móvil a Corto Plazo**: una [media móvil](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) más rápida que reacciona más rápidamente a los cambios de precio.
-- **Media Móvil a Largo Plazo**: una [media móvil](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) más lenta que proporciona una imagen más suavizada de las tendencias de precios.
+- **Media Móvil a Corto Plazo**: una [media móvil](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) más rápida que reacciona más rápidamente a los cambios de precio.
+- **Media Móvil a Largo Plazo**: una [media móvil](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) más lenta que proporciona una imagen más suavizada de las tendencias de precios.
 
 ## Reglas de Entrada y Salida
 
-- **Señal de Compra**: la estrategia genera una señal de [compra](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) cuando la media móvil a corto plazo [cruza](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) por encima de la media móvil a largo plazo, lo que sugiere una tendencia alcista.
-- **Señal de Venta**: por el contrario, se emite una señal de [venta](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) cuando la media móvil a corto plazo [cruza](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) por debajo de la media móvil a largo plazo, indicando una posible tendencia bajista.
+- **Señal de Compra**: la estrategia genera una señal de [compra](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) cuando la media móvil a corto plazo [cruza](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) por encima de la media móvil a largo plazo, lo que sugiere una tendencia alcista.
+- **Señal de Venta**: por el contrario, se emite una señal de [venta](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) cuando la media móvil a corto plazo [cruza](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) por debajo de la media móvil a largo plazo, indicando una posible tendencia bajista.
 
 ## Detalles del Diagrama
 

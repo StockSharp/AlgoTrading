@@ -30,5 +30,5 @@
 
 ## 参考资料
 
-- [Average True Range 指标文档](https://doc.stocksharp.com/topics/indicator_average_true_range.html)
-- [Strategy Designer](https://doc.stocksharp.com/topics/designer.html)
+- [Average True Range 指标文档](https://doc.stocksharp.com/zh/topics/indicator_average_true_range.html)
+- [Strategy Designer](https://doc.stocksharp.com/zh/topics/designer.html)

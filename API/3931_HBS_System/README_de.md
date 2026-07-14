@@ -52,4 +52,4 @@ Die Logik spiegelt sich bei Shorts wider, wenn die Kerze unter EMA öffnet und s
 ## Referenzen
 
 - Ursprüngliches MT4-Skript: `MQL/8134/HBS_system.mq4`
-- StockSharp-Dokumentation: [https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- StockSharp-Dokumentation: [https://doc.stocksharp.com/de/](https://doc.stocksharp.com/de/)

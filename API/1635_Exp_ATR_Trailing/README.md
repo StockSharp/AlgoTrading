@@ -30,5 +30,5 @@ The trailing stop only moves in the direction of the trade and never retreats, p
 
 ## References
 
-- [Average True Range on StockSharp documentation](https://doc.stocksharp.com/topics/indicator_average_true_range.html)
-- [Strategy Designer](https://doc.stocksharp.com/topics/designer.html)
+- [Average True Range on StockSharp documentation](https://doc.stocksharp.com/en/topics/indicator_average_true_range.html)
+- [Strategy Designer](https://doc.stocksharp.com/en/topics/designer.html)

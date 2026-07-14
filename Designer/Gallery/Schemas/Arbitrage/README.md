@@ -11,7 +11,7 @@ The strategy implements mechanisms for buying one cryptocurrency while simultane
 
 ## Installation
 
-To activate and use this strategy, StockSharp Designer must be installed. The strategy is available for download and installation from the [strategy gallery](https://doc.stocksharp.com/topics/designer/strategy_gallery.html). This allows for easy integration and customization of the strategy according to individual trader requirements.
+To activate and use this strategy, StockSharp Designer must be installed. The strategy is available for download and installation from the [strategy gallery](https://doc.stocksharp.com/en/topics/designer/strategy_gallery.html). This allows for easy integration and customization of the strategy according to individual trader requirements.
 
 ## Parameters
 
@@ -38,4 +38,4 @@ It is important to test the strategy on historical data to assess its effectiven
 
 ## Additional Resources
 
-For more information and resources, visit the [StockSharp documentation](https://doc.stocksharp.com/).
+For more information and resources, visit the [StockSharp documentation](https://doc.stocksharp.com/en/).

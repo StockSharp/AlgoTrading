@@ -30,5 +30,5 @@
 
 ## 参考資料
 
-- [StockSharpドキュメントのAverage True Range](https://doc.stocksharp.com/topics/indicator_average_true_range.html)
-- [Strategy Designer](https://doc.stocksharp.com/topics/designer.html)
+- [StockSharpドキュメントのAverage True Range](https://doc.stocksharp.com/ja/topics/indicator_average_true_range.html)
+- [Strategy Designer](https://doc.stocksharp.com/ja/topics/designer.html)

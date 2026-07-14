@@ -1,7 +1,7 @@
 # Directorio de Código Fuente de Estrategias
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Este directorio contiene representaciones esquemáticas de estrategias de trading disponibles en la sección [Galería de Estrategias](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) de la plataforma [Designer](https://stocksharp.com/store/strategy-designer/). Los archivos de código fuente de las estrategias se almacenan en el directorio [API](../../API), desde donde pueden cargarse como programas independientes a través de la API de StockSharp o importarse en Designer.
+Este directorio contiene representaciones esquemáticas de estrategias de trading disponibles en la sección [Galería de Estrategias](https://doc.stocksharp.com/es/topics/designer/strategy_gallery.html) de la plataforma [Designer](https://stocksharp.com/store/strategy-designer/). Los archivos de código fuente de las estrategias se almacenan en el directorio [API](../../API), desde donde pueden cargarse como programas independientes a través de la API de StockSharp o importarse en Designer.
 
 ## Descripción general
 
@@ -9,12 +9,12 @@ La Galería de Estrategias en [Designer](https://stocksharp.com/store/strategy-d
 
 ## Contenido
 
-- **Estrategias esquemáticas**: Representaciones diagramáticas de estrategias de trading que [muestran visualmente](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) el flujo y las condiciones de las operaciones de trading. Son ideales para los usuarios que prefieren un enfoque visual en el diseño de estrategias.
+- **Estrategias esquemáticas**: Representaciones diagramáticas de estrategias de trading que [muestran visualmente](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer.html) el flujo y las condiciones de las operaciones de trading. Son ideales para los usuarios que prefieren un enfoque visual en el diseño de estrategias.
 - **Estrategias en C#**: Los archivos de código fuente de las estrategias se encuentran en el directorio [API](../../API). Pueden cargarse como programas independientes a través de la API de StockSharp o importarse en Designer para su personalización.
 
 ## Uso
 
-Los usuarios pueden descargar estas estrategias para estudiar la lógica subyacente, [probarlas](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html) en entornos de simulación o implementarlas en escenarios de trading en vivo. Cada estrategia puede importarse en la plataforma Designer, donde puede personalizarse aún más o utilizarse como base para el desarrollo de nuevas estrategias.
+Los usuarios pueden descargar estas estrategias para estudiar la lógica subyacente, [probarlas](https://doc.stocksharp.com/es/topics/designer/backtesting/getting_started.html) en entornos de simulación o implementarlas en escenarios de trading en vivo. Cada estrategia puede importarse en la plataforma Designer, donde puede personalizarse aún más o utilizarse como base para el desarrollo de nuevas estrategias.
 
 ## Contribuciones
 

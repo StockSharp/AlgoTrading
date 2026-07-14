@@ -11,20 +11,20 @@ A estratégia "Rompimento de Mínimas com Cálculo" utiliza uma combinação de 
 
 ### Componentes
 
-- **Formação de Velas**: utiliza um intervalo de tempo de uma hora para a geração de [velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), capturando movimentos de mercado significativos.
+- **Formação de Velas**: utiliza um intervalo de tempo de uma hora para a geração de [velas](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), capturando movimentos de mercado significativos.
 - **Indicadores de Máximas e Mínimas**:
-  - **Highest 25**: rastreia o [preço mais alto](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) durante os últimos 25 períodos.
-  - **Lowest 45**: monitora o [preço mais baixo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) durante os últimos 45 períodos.
-- **Lógica de Cálculo**: determina os pontos de execução de operações [comparando](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) os preços atuais com os níveis de máxima e mínima calculados pelos indicadores.
+  - **Highest 25**: rastreia o [preço mais alto](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) durante os últimos 25 períodos.
+  - **Lowest 45**: monitora o [preço mais baixo](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) durante os últimos 45 períodos.
+- **Lógica de Cálculo**: determina os pontos de execução de operações [comparando](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) os preços atuais com os níveis de máxima e mínima calculados pelos indicadores.
 
 ### Execução de Operações
 
-- **Sinal de Entrada**: uma ordem de [compra](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) é iniciada quando o preço atual cruza [abaixo]() do ponto mínimo calculado pelo indicador "Lowest 45".
-- **Sinal de Saída**: uma ordem de [venda](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) é acionada quando a ação do preço subsequente não sustenta a continuação da tendência de baixa, definida por parâmetros de cálculo específicos.
+- **Sinal de Entrada**: uma ordem de [compra](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) é iniciada quando o preço atual cruza [abaixo]() do ponto mínimo calculado pelo indicador "Lowest 45".
+- **Sinal de Saída**: uma ordem de [venda](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) é acionada quando a ação do preço subsequente não sustenta a continuação da tendência de baixa, definida por parâmetros de cálculo específicos.
 
 ### Visualização
 
-- **Exibição no Gráfico**: os valores dos indicadores "Highest 25" e "Lowest 45" são plotados no [gráfico](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) junto com as velas de preço, fornecendo uma representação visual dos possíveis pontos de rompimento.
+- **Exibição no Gráfico**: os valores dos indicadores "Highest 25" e "Lowest 45" são plotados no [gráfico](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/chart.html) junto com as velas de preço, fornecendo uma representação visual dos possíveis pontos de rompimento.
 
 ## Detalhes de Implementação
 

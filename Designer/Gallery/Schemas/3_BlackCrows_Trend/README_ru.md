@@ -3,7 +3,7 @@
 
 ## Обзор стратегии
 
-Стратегия «3 Black Crows Trend» в [Strategy Designer](https://doc.stocksharp.com/topics/designer.html) использует специфический медвежий разворотный паттерн свечей для прогнозирования потенциального нисходящего движения на фондовом рынке. Эта автоматизированная торговая схема тщательно разработана для распознавания и торговли на основе значимых ценовых паттернов, нацеленных на извлечение выгоды из медвежьих трендов.
+Стратегия «3 Black Crows Trend» в [Strategy Designer](https://doc.stocksharp.com/ru/topics/designer.html) использует специфический медвежий разворотный паттерн свечей для прогнозирования потенциального нисходящего движения на фондовом рынке. Эта автоматизированная торговая схема тщательно разработана для распознавания и торговли на основе значимых ценовых паттернов, нацеленных на извлечение выгоды из медвежьих трендов.
 
 ![schema](schema.png)
 
@@ -11,7 +11,7 @@
 
 ### Обнаружение паттерна: 3 Black Crows
 
-- **Описание**: Этот модуль идентифицирует паттерн «3 Black Crows» ([паттерн](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)), который сигнализирует о потенциальном медвежьем развороте после восходящего тренда. Паттерн состоит из трёх последовательных свечей с длинным телом, которые закрываются ниже своих цен открытия, при этом открытие каждой сессии происходит внутри тела предыдущей свечи.
+- **Описание**: Этот модуль идентифицирует паттерн «3 Black Crows» ([паттерн](https://doc.stocksharp.com/ru/topics/api/indicators/list_of_indicators/pattern.html)), который сигнализирует о потенциальном медвежьем развороте после восходящего тренда. Паттерн состоит из трёх последовательных свечей с длинным телом, которые закрываются ниже своих цен открытия, при этом открытие каждой сессии происходит внутри тела предыдущей свечи.
 - **Условия**:
   - Свеча 1: Open > Close
   - Свеча 2: Open > Close и Open < Previous Open
@@ -19,17 +19,17 @@
 
 ### Исполнение сделок
 
-- **Тип ордера**: Рыночный [ордер](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
+- **Тип ордера**: Рыночный [ордер](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
 - **Вход**: Инициирует ордер на продажу при подтверждении паттерна «3 Black Crows».
 - **Стратегия выхода**:
   - **Тейк-профит**: Установлен на 3% выше цены входа.
   - **Стоп-лосс**: Установлен на 1% ниже цены входа.
-- **Управление рисками**: Стратегия строго придерживается первоначальных настроек [стоп-лосса и тейк-профита](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) без трейлинга.
+- **Управление рисками**: Стратегия строго придерживается первоначальных настроек [стоп-лосса и тейк-профита](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) без трейлинга.
 
 ### Условия торговли
 
-- **Периодичность**: Работает на [дневном таймфрейме](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), обрабатывая новые формации свечей в конце каждого торгового дня.
-- **Рыночный ордер**: Обеспечивает быстрое исполнение путём [размещения сделок](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) по текущим рыночным ценам.
+- **Периодичность**: Работает на [дневном таймфрейме](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), обрабатывая новые формации свечей в конце каждого торгового дня.
+- **Рыночный ордер**: Обеспечивает быстрое исполнение путём [размещения сделок](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) по текущим рыночным ценам.
 
 ## Детали реализации
 

@@ -11,15 +11,15 @@ StockSharp Strategy Designer のこの例は、日付と時刻の処理を取引
 
 JSON ファイルで提示されるスキーマは、取引アクションをトリガーするために時間ベースのデータを処理するさまざまなノード間の複雑なやり取りを概説しています。
 
-1. **TimeFrameCandle ノード**: 指定した時間枠の[ローソク足データ](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を処理します。歴史的な価格変動を基に将来のトレンドを予測する戦略に不可欠です。
+1. **TimeFrameCandle ノード**: 指定した時間枠の[ローソク足データ](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を処理します。歴史的な価格変動を基に将来のトレンドを予測する戦略に不可欠です。
 
-2. **OpenTime と CloseTime ノード**: ローソク足データから開始時刻と終了時刻を[抽出](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)します。取引条件を評価する特定の時間帯を決定するために重要です。
+2. **OpenTime と CloseTime ノード**: ローソク足データから開始時刻と終了時刻を[抽出](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)します。取引条件を評価する特定の時間帯を決定するために重要です。
 
-3. **比較ノード（Equals、Greater Than）**: ローソク足データから抽出した現在時刻と特定の時刻（14:00:00 や 15:00:00 など）を[比較](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)します。この設定により、指定した時刻に一致するかどうかに基づいて戦略を有効化または無効化できます。
+3. **比較ノード（Equals、Greater Than）**: ローソク足データから抽出した現在時刻と特定の時刻（14:00:00 や 15:00:00 など）を[比較](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)します。この設定により、指定した時刻に一致するかどうかに基づいて戦略を有効化または無効化できます。
 
-4. **チャートパネルノード**: 取引データとインジケーターをわかりやすい形式で表示する[可視化コンポーネント](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)を実装し、リアルタイムの意思決定と戦略調整を支援します。
+4. **チャートパネルノード**: 取引データとインジケーターをわかりやすい形式で表示する[可視化コンポーネント](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/chart.html)を実装し、リアルタイムの意思決定と戦略調整を支援します。
 
-5. **取引ノード（買い、売り）**: 特定の時間条件が満たされたときに有効化され、比較結果と戦略内に定義された取引ロジックに基づいて[買い・売り注文](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)を実行できます。
+5. **取引ノード（買い、売り）**: 特定の時間条件が満たされたときに有効化され、比較結果と戦略内に定義された取引ロジックに基づいて[買い・売り注文](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)を実行できます。
 
 ## ワークフロー
 

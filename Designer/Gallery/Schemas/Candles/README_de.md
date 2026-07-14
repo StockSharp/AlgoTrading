@@ -11,8 +11,8 @@ Das Diagramm zeigt die grundlegende Konfiguration, die benötigt wird, um Kerzen
 
 ## Komponenten des Diagramms
 
-- **Candles-Datenquelle**: Dies ist der primäre Knoten, der [Kerzendaten](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) vom ausgewählten Finanzinstrument abruft. Benutzer können das Instrument, den Datenbereich und den Kerzen-Zeitrahmen angeben (z. B. 1-Minuten-, 5-Minuten-Kerzen).
-- **Chart-Baustein**: Dieser Knoten wird verwendet, um die abgerufenen Daten in einer grafischen Oberfläche zu [zeichnen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Er kann verschiedene Kerzenattribute wie Eröffnungs-, Hoch-, Tief- und Schlusskurse anzeigen.
+- **Candles-Datenquelle**: Dies ist der primäre Knoten, der [Kerzendaten](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) vom ausgewählten Finanzinstrument abruft. Benutzer können das Instrument, den Datenbereich und den Kerzen-Zeitrahmen angeben (z. B. 1-Minuten-, 5-Minuten-Kerzen).
+- **Chart-Baustein**: Dieser Knoten wird verwendet, um die abgerufenen Daten in einer grafischen Oberfläche zu [zeichnen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Er kann verschiedene Kerzenattribute wie Eröffnungs-, Hoch-, Tief- und Schlusskurse anzeigen.
 
 ## Funktionalität
 

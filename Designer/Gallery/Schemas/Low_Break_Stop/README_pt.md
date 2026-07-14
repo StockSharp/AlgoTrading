@@ -11,19 +11,19 @@ Este exemplo demonstra uma estratégia de trading de "Rompimento de Mínimas com
 
 O esquema fornecido no arquivo JSON descreve um fluxo de trabalho detalhado para negociar com base na ação do preço em relação às mínimas históricas:
 
-1. **Nó de Instrumento**: este é o nó de entrada principal onde o [instrumento-alvo é definido](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), servindo como base para a entrada de dados relacionados aos preços de mercado.
+1. **Nó de Instrumento**: este é o nó de entrada principal onde o [instrumento-alvo é definido](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), servindo como base para a entrada de dados relacionados aos preços de mercado.
 
-2. **Nó TimeFrameCandle**: processa os dados de mercado recebidos para gerar [velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), que são fundamentais para analisar os movimentos de preços em intervalos de tempo específicos.
+2. **Nó TimeFrameCandle**: processa os dados de mercado recebidos para gerar [velas](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), que são fundamentais para analisar os movimentos de preços em intervalos de tempo específicos.
 
-3. **Nós de Indicador de Mínimas**: esses nós [calculam o preço mais baixo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) durante um determinado número de períodos, identificando níveis potenciais de rompimento para iniciar operações.
+3. **Nós de Indicador de Mínimas**: esses nós [calculam o preço mais baixo](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) durante um determinado número de períodos, identificando níveis potenciais de rompimento para iniciar operações.
 
-4. **Nós de Comparação**: são usados para [comparar](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) o preço atual com a mínima histórica, acionando sinais de trading quando o preço cai abaixo do limite estabelecido, indicando um rompimento de baixa.
+4. **Nós de Comparação**: são usados para [comparar](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) o preço atual com a mínima histórica, acionando sinais de trading quando o preço cai abaixo do limite estabelecido, indicando um rompimento de baixa.
 
-5. **Nó do Painel de Gráfico**: visualiza os dados de trading e indicadores, fornecendo uma [representação gráfica](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) das operações da estratégia, essencial para o monitoramento em tempo real e ajustes da estratégia.
+5. **Nó do Painel de Gráfico**: visualiza os dados de trading e indicadores, fornecendo uma [representação gráfica](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/chart.html) das operações da estratégia, essencial para o monitoramento em tempo real e ajustes da estratégia.
 
-6. **Nós de Execução de Operações (Compra/Venda)**: são responsáveis por [executar as operações](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) com base na lógica da estratégia. Neste caso, uma ordem de venda pode ser executada para aproveitar o movimento esperado de queda do preço.
+6. **Nós de Execução de Operações (Compra/Venda)**: são responsáveis por [executar as operações](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) com base na lógica da estratégia. Neste caso, uma ordem de venda pode ser executada para aproveitar o movimento esperado de queda do preço.
 
-7. **Nó de Ordem Stop**: implementa condições de [stop-loss](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) para gerenciar o risco de forma eficaz. Isso garante que as operações sejam encerradas em um limite de perda predefinido para proteger contra movimentos adversos significativos.
+7. **Nó de Ordem Stop**: implementa condições de [stop-loss](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) para gerenciar o risco de forma eficaz. Isso garante que as operações sejam encerradas em um limite de perda predefinido para proteger contra movimentos adversos significativos.
 
 ## Fluxo de Trabalho
 

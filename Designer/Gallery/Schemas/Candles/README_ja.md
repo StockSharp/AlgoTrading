@@ -11,8 +11,8 @@
 
 ## ダイアグラムのコンポーネント
 
-- **Candles データソース**：選択した金融商品から[ローソク足データ](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を取得する主要ノードです。ユーザーは銘柄、データ範囲、ローソク足の時間足（例：1分足、5分足）を指定できます。
-- **チャートキューブ**：取得したデータをグラフィカルインターフェースに[プロット](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)するために使用されるノードです。始値、高値、安値、終値などのローソク足の様々な属性を表示できます。
+- **Candles データソース**：選択した金融商品から[ローソク足データ](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を取得する主要ノードです。ユーザーは銘柄、データ範囲、ローソク足の時間足（例：1分足、5分足）を指定できます。
+- **チャートキューブ**：取得したデータをグラフィカルインターフェースに[プロット](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/chart.html)するために使用されるノードです。始値、高値、安値、終値などのローソク足の様々な属性を表示できます。
 
 ## 機能
 

@@ -11,15 +11,15 @@ Dieses Beispiel im StockSharp Strategy Designer demonstriert eine ausgefeilte Ko
 
 Das im JSON-File dargestellte Schema beschreibt eine komplexe Interaktion zwischen verschiedenen Knoten, die zeitbasierte Daten verarbeiten, um Handelsaktionen auszulösen:
 
-1. **TimeFrameCandle-Knoten**: Verarbeitet [Kerzendaten](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für einen bestimmten Zeitrahmen. Unverzichtbar für Strategien, die auf historischen Kursbewegungen basieren, um zukünftige Trends vorherzusagen.
+1. **TimeFrameCandle-Knoten**: Verarbeitet [Kerzendaten](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für einen bestimmten Zeitrahmen. Unverzichtbar für Strategien, die auf historischen Kursbewegungen basieren, um zukünftige Trends vorherzusagen.
 
-2. **OpenTime- und CloseTime-Knoten**: [Extrahieren](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) Öffnungs- und Schlusszeiten aus den Kerzendaten, die für die Bestimmung der Zeiträume, in denen Handelsbedingungen ausgewertet werden, entscheidend sind.
+2. **OpenTime- und CloseTime-Knoten**: [Extrahieren](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) Öffnungs- und Schlusszeiten aus den Kerzendaten, die für die Bestimmung der Zeiträume, in denen Handelsbedingungen ausgewertet werden, entscheidend sind.
 
-3. **Vergleichsknoten (Equals, Greater Than)**: [Vergleichen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) bestimmte Uhrzeiten (z. B. 14:00:00 oder 15:00:00) mit der aus den Kerzendaten extrahierten aktuellen Uhrzeit. Diese Konfiguration ermöglicht es der Strategie, sich zu aktivieren oder zu deaktivieren, je nachdem ob die angegebenen Zeiten übereinstimmen.
+3. **Vergleichsknoten (Equals, Greater Than)**: [Vergleichen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) bestimmte Uhrzeiten (z. B. 14:00:00 oder 15:00:00) mit der aus den Kerzendaten extrahierten aktuellen Uhrzeit. Diese Konfiguration ermöglicht es der Strategie, sich zu aktivieren oder zu deaktivieren, je nachdem ob die angegebenen Zeiten übereinstimmen.
 
-4. **Chart-Panel-Knoten**: Implementiert [Visualisierungskomponenten](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html), die Handelsdaten und Indikatoren in einem verständlichen Format anzeigen und die Echtzeit-Entscheidungsfindung sowie Strategieanpassungen unterstützen.
+4. **Chart-Panel-Knoten**: Implementiert [Visualisierungskomponenten](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html), die Handelsdaten und Indikatoren in einem verständlichen Format anzeigen und die Echtzeit-Entscheidungsfindung sowie Strategieanpassungen unterstützen.
 
-5. **Handelsknoten (Kauf, Verkauf)**: Werden aktiviert, wenn bestimmte Zeitbedingungen erfüllt sind, und ermöglichen der Strategie die Ausführung von [Kauf- oder Verkaufsorders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) auf Basis der Vergleichsergebnisse und der in der Strategie definierten Handelslogik.
+5. **Handelsknoten (Kauf, Verkauf)**: Werden aktiviert, wenn bestimmte Zeitbedingungen erfüllt sind, und ermöglichen der Strategie die Ausführung von [Kauf- oder Verkaufsorders](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) auf Basis der Vergleichsergebnisse und der in der Strategie definierten Handelslogik.
 
 ## Arbeitsablauf
 

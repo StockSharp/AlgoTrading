@@ -11,19 +11,19 @@
 
 ### 组件
 
-- **数据源**：使用 Binance 上 ETHUSDT 和 BTCUSDT 的[实时价格](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)数据。
+- **数据源**：使用 Binance 上 ETHUSDT 和 BTCUSDT 的[实时价格](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)数据。
 - **价格计算**：
-  - 追踪 ETHUSDT 和 BTCUSDT 的[收盘价](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)。
+  - 追踪 ETHUSDT 和 BTCUSDT 的[收盘价](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/converters/converter.html)。
   - 计算两者的价格比率，形成合成指数，代表以太坊相对于比特币的相对表现。
 
 ### 指数计算
 
-- **蜡烛图形成**：ETH 和 BTC 均采用[5分钟时间框架](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)捕捉短期价格走势。
-- **比率计算**：指数计算为 ETH 价格[除以](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/formula.html) BTC 价格，衡量以太坊相对于比特币的价值趋势。
+- **蜡烛图形成**：ETH 和 BTC 均采用[5分钟时间框架](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)捕捉短期价格走势。
+- **比率计算**：指数计算为 ETH 价格[除以](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/formula.html) BTC 价格，衡量以太坊相对于比特币的价值趋势。
 
 ### 可视化
 
-- **图表显示**：计算所得指数绘制在[图表](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上进行视觉分析，帮助识别趋势并基于指数走势发现潜在交易信号。
+- **图表显示**：计算所得指数绘制在[图表](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)上进行视觉分析，帮助识别趋势并基于指数走势发现潜在交易信号。
 
 ## 实现细节
 

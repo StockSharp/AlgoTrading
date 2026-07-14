@@ -52,4 +52,4 @@
 ## Источники
 
 - Исходный советник: `MQL/8134/HBS_system.mq4`
-- Документация StockSharp: [https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- Документация StockSharp: [https://doc.stocksharp.com/ru/](https://doc.stocksharp.com/ru/)

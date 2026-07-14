@@ -11,7 +11,7 @@ BTC 与 ETH 配对交易策略专为交易两种热门加密货币——比特�
 
 ## 安装
 
-要激活和使用该策略，必须安装 StockSharp Designer。该策略可从[策略库](https://doc.stocksharp.com/topics/designer/strategy_gallery.html)下载和安装，便于根据个人交易者需求进行集成和定制。
+要激活和使用该策略，必须安装 StockSharp Designer。该策略可从[策略库](https://doc.stocksharp.com/zh/topics/designer/strategy_gallery.html)下载和安装，便于根据个人交易者需求进行集成和定制。
 
 ## 参数
 
@@ -38,4 +38,4 @@ BTC 与 ETH 配对交易策略专为交易两种热门加密货币——比特�
 
 ## 更多资源
 
-如需更多信息和资源，请访问 [StockSharp 文档](https://doc.stocksharp.com/)。
+如需更多信息和资源，请访问 [StockSharp 文档](https://doc.stocksharp.com/zh/)。

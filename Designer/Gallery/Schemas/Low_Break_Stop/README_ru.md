@@ -11,19 +11,19 @@
 
 Схема, представленная в файле JSON, описывает подробный рабочий процесс торговли на основе ценового движения относительно исторических минимумов:
 
-1. **Узел инструмента**: основной входной узел, в котором [определяется целевой инструмент](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) — база для ввода данных о рыночных ценах.
+1. **Узел инструмента**: основной входной узел, в котором [определяется целевой инструмент](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) — база для ввода данных о рыночных ценах.
 
-2. **Узел TimeFrameCandle**: обрабатывает поступающие рыночные данные для формирования [свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), которые необходимы для анализа ценовых движений за определённые временные интервалы.
+2. **Узел TimeFrameCandle**: обрабатывает поступающие рыночные данные для формирования [свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), которые необходимы для анализа ценовых движений за определённые временные интервалы.
 
-3. **Узлы индикатора минимума**: эти узлы [рассчитывают минимальную цену](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) за заданное количество периодов, определяя потенциальные уровни пробоя для открытия сделок.
+3. **Узлы индикатора минимума**: эти узлы [рассчитывают минимальную цену](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) за заданное количество периодов, определяя потенциальные уровни пробоя для открытия сделок.
 
-4. **Узлы сравнения**: используются для [сравнения](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) текущей цены с историческим минимумом, генерируя торговые сигналы, когда текущая цена опускается ниже установленного порога, что указывает на медвежий пробой.
+4. **Узлы сравнения**: используются для [сравнения](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) текущей цены с историческим минимумом, генерируя торговые сигналы, когда текущая цена опускается ниже установленного порога, что указывает на медвежий пробой.
 
-5. **Узел панели графика**: визуализирует торговые данные и индикаторы, обеспечивая [графическое отображение](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) операций стратегии, что необходимо для мониторинга в реальном времени и корректировки стратегии.
+5. **Узел панели графика**: визуализирует торговые данные и индикаторы, обеспечивая [графическое отображение](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) операций стратегии, что необходимо для мониторинга в реальном времени и корректировки стратегии.
 
-6. **Узлы исполнения сделок (Покупка/Продажа)**: отвечают за [выполнение сделок](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) в соответствии с логикой стратегии. В данном случае может быть выставлен ордер на продажу для получения прибыли от ожидаемого снижения цены.
+6. **Узлы исполнения сделок (Покупка/Продажа)**: отвечают за [выполнение сделок](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) в соответствии с логикой стратегии. В данном случае может быть выставлен ордер на продажу для получения прибыли от ожидаемого снижения цены.
 
-7. **Узел стоп-ордера**: реализует условия [стоп-лосса](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) для эффективного управления рисками. Это гарантирует выход из сделок при достижении заранее определённого порога убытка, защищая от значительных неблагоприятных движений.
+7. **Узел стоп-ордера**: реализует условия [стоп-лосса](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) для эффективного управления рисками. Это гарантирует выход из сделок при достижении заранее определённого порога убытка, защищая от значительных неблагоприятных движений.
 
 ## Рабочий процесс
 

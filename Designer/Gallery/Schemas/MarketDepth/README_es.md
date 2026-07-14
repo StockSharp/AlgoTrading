@@ -11,15 +11,15 @@ Este ejemplo ilustra una configuración dentro de StockSharp Strategy Designer c
 
 El esquema comprende varios componentes interconectados diseñados para obtener, procesar y mostrar información de profundidad de mercado:
 
-1. **Nodo de Instrumento**: este nodo representa el [instrumento](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (por ejemplo, una acción, un futuro u otro instrumento financiero) para el que se obtendrá la profundidad de mercado. Es un elemento fundamental, ya que define qué mercado o instrumento se está analizando.
+1. **Nodo de Instrumento**: este nodo representa el [instrumento](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (por ejemplo, una acción, un futuro u otro instrumento financiero) para el que se obtendrá la profundidad de mercado. Es un elemento fundamental, ya que define qué mercado o instrumento se está analizando.
 
-2. **Nodo TimeFrameCandle**: gestiona los [datos de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) del instrumento, agregados en un marco de tiempo determinado (5 minutos en el ejemplo). Puede utilizarse para correlacionar cambios en la profundidad de mercado con los movimientos de precios a lo largo del tiempo.
+2. **Nodo TimeFrameCandle**: gestiona los [datos de velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) del instrumento, agregados en un marco de tiempo determinado (5 minutos en el ejemplo). Puede utilizarse para correlacionar cambios en la profundidad de mercado con los movimientos de precios a lo largo del tiempo.
 
-3. **Nodos de Profundidad de Mercado**: están diseñados para capturar y posiblemente reaccionar ante cambios en tiempo real en la [profundidad de mercado](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html). Incluye configuraciones para procesar datos entrantes de profundidad de mercado, proporcionando información sobre las órdenes de compra y venta actuales.
+3. **Nodos de Profundidad de Mercado**: están diseñados para capturar y posiblemente reaccionar ante cambios en tiempo real en la [profundidad de mercado](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html). Incluye configuraciones para procesar datos entrantes de profundidad de mercado, proporcionando información sobre las órdenes de compra y venta actuales.
 
-4. **Nodo del Panel de Gráfico**: sugiere que los datos de velas se visualizan en un [gráfico](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Esto ayuda a los traders o algoritmos a visualizar mejor la situación del mercado y a tomar decisiones fundamentadas.
+4. **Nodo del Panel de Gráfico**: sugiere que los datos de velas se visualizan en un [gráfico](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Esto ayuda a los traders o algoritmos a visualizar mejor la situación del mercado y a tomar decisiones fundamentadas.
 
-5. **Nodo del Panel de Profundidad de Mercado**: centrado específicamente en mostrar los datos de profundidad de mercado en un [panel especial](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html), con funciones como el resaltado de los mejores precios de oferta y demanda y la visualización de la profundidad del mercado.
+5. **Nodo del Panel de Profundidad de Mercado**: centrado específicamente en mostrar los datos de profundidad de mercado en un [panel especial](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html), con funciones como el resaltado de los mejores precios de oferta y demanda y la visualización de la profundidad del mercado.
 
 ## Flujo de Trabajo
 

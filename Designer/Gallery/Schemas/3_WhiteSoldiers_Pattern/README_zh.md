@@ -9,17 +9,17 @@
 
 ## 方案描述
 
-该方案概述了一个复杂的工作流程，旨在检测"Three White Soldiers"[形态](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)并相应地执行交易。以下是关键组件及其作用：
+该方案概述了一个复杂的工作流程，旨在检测"Three White Soldiers"[形态](https://doc.stocksharp.com/zh/topics/api/indicators/list_of_indicators/pattern.html)并相应地执行交易。以下是关键组件及其作用：
 
-1. **Security 节点**：指定策略应用的[证券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)。作为主要数据输入源，提供后续分析所需的市场数据。
+1. **Security 节点**：指定策略应用的[证券](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)。作为主要数据输入源，提供后续分析所需的市场数据。
 
-2. **TimeFrameCandle 节点**：为指定证券生成[K线数据](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)。该节点至关重要，因为它将传入的市场数据处理为形态检测算法可以分析的可用格式（K线）。
+2. **TimeFrameCandle 节点**：为指定证券生成[K线数据](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)。该节点至关重要，因为它将传入的市场数据处理为形态检测算法可以分析的可用格式（K线）。
 
-3. **形态检测节点**：专门配置用于通过[指标](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)检测"Three White Soldiers"[形态](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)。该节点分析K线数据，并在识别到形态时触发动作。
+3. **形态检测节点**：专门配置用于通过[指标](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)检测"Three White Soldiers"[形态](https://doc.stocksharp.com/zh/topics/api/indicators/list_of_indicators/pattern.html)。该节点分析K线数据，并在识别到形态时触发动作。
 
-4. **图表面板节点**：可视化交易数据，包括K线形态和策略执行的交易。此[组件](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)有助于监控策略的表现，并了解形态如何影响交易决策。
+4. **图表面板节点**：可视化交易数据，包括K线形态和策略执行的交易。此[组件](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)有助于监控策略的表现，并了解形态如何影响交易决策。
 
-5. **交易节点（买入、卖出）**：这些[节点](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)配置为在检测到形态时执行交易。操作可能因策略中设置的附加条件（如市场状况或其他技术指标）而有所不同。
+5. **交易节点（买入、卖出）**：这些[节点](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)配置为在检测到形态时执行交易。操作可能因策略中设置的附加条件（如市场状况或其他技术指标）而有所不同。
 
 ## 工作流程
 

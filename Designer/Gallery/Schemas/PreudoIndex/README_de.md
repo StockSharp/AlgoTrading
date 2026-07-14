@@ -11,19 +11,19 @@ Die „PseudoIndex"-Strategie ist darauf ausgelegt, einen synthetischen Index au
 
 ### Komponenten
 
-- **Datenquellen**: Nutzt [Echtzeit-Kursdaten](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) von ETHUSDT und BTCUSDT von Binance.
+- **Datenquellen**: Nutzt [Echtzeit-Kursdaten](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) von ETHUSDT und BTCUSDT von Binance.
 - **Kursberechnung**:
-  - Verfolgt die [Schlusskurse](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) von ETHUSDT und BTCUSDT.
+  - Verfolgt die [Schlusskurse](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) von ETHUSDT und BTCUSDT.
   - Berechnet das Verhältnis dieser Kurse, um einen synthetischen Index zu bilden, der die relative Entwicklung von Ethereum gegenüber Bitcoin darstellt.
 
 ### Indexberechnung
 
-- **Kerzenbildung**: Verwendet einen [5-Minuten-Zeitrahmen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für ETH und BTC, um kurzfristige Kursbewegungen zu erfassen.
-- **Verhältnisberechnung**: Der Index wird als Kurs von ETH [geteilt](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/formula.html) durch den Kurs von BTC berechnet und liefert ein Maß dafür, wie sich der Wert von Ethereum relativ zu Bitcoin entwickelt.
+- **Kerzenbildung**: Verwendet einen [5-Minuten-Zeitrahmen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für ETH und BTC, um kurzfristige Kursbewegungen zu erfassen.
+- **Verhältnisberechnung**: Der Index wird als Kurs von ETH [geteilt](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/formula.html) durch den Kurs von BTC berechnet und liefert ein Maß dafür, wie sich der Wert von Ethereum relativ zu Bitcoin entwickelt.
 
 ### Visualisierung
 
-- **Chart-Anzeige**: Der resultierende Index wird auf einem [Chart](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) zur visuellen Analyse dargestellt, um Trends zu identifizieren und potenzielle Handelssignale auf Basis der Indexbewegung zu erkennen.
+- **Chart-Anzeige**: Der resultierende Index wird auf einem [Chart](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html) zur visuellen Analyse dargestellt, um Trends zu identifizieren und potenzielle Handelssignale auf Basis der Indexbewegung zu erkennen.
 
 ## Implementierungsdetails
 

@@ -1,7 +1,7 @@
 # Verzeichnis des Strategie-Quellcodes
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Dieses Verzeichnis enthält schematische Darstellungen von Handelsstrategien, die im Bereich [Strategie-Galerie](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) der [Designer](https://stocksharp.com/store/strategy-designer/)-Plattform verfügbar sind. Die Quellcode-Dateien der Strategien befinden sich im [API](../../API)-Verzeichnis, wo sie als eigenständige Programme über die StockSharp-API geladen oder in Designer importiert werden können.
+Dieses Verzeichnis enthält schematische Darstellungen von Handelsstrategien, die im Bereich [Strategie-Galerie](https://doc.stocksharp.com/de/topics/designer/strategy_gallery.html) der [Designer](https://stocksharp.com/store/strategy-designer/)-Plattform verfügbar sind. Die Quellcode-Dateien der Strategien befinden sich im [API](../../API)-Verzeichnis, wo sie als eigenständige Programme über die StockSharp-API geladen oder in Designer importiert werden können.
 
 ## Überblick
 
@@ -9,12 +9,12 @@ Die Strategie-Galerie in [Designer](https://stocksharp.com/store/strategy-design
 
 ## Inhalt
 
-- **Schematische Strategien**: Diagrammatische Darstellungen von Handelsstrategien, die den Ablauf und die Bedingungen von Handelsoperationen [visuell darstellen](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html). Diese sind ideal für Benutzer, die einen visuellen Ansatz für das Strategie-Design bevorzugen.
+- **Schematische Strategien**: Diagrammatische Darstellungen von Handelsstrategien, die den Ablauf und die Bedingungen von Handelsoperationen [visuell darstellen](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer.html). Diese sind ideal für Benutzer, die einen visuellen Ansatz für das Strategie-Design bevorzugen.
 - **C#-Code-Strategien**: Quellcode-Dateien von Strategien befinden sich im [API](../../API)-Verzeichnis. Sie können als eigenständige Programme über die StockSharp-API geladen oder zur weiteren Anpassung in Designer importiert werden.
 
 ## Verwendung
 
-Benutzer können diese Strategien herunterladen, um die zugrundeliegende Logik zu studieren, sie in Simulationsumgebungen zu [testen](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html) oder im Live-Handel einzusetzen. Jede Strategie kann in die Designer-Plattform importiert werden, wo sie weiter angepasst oder als Grundlage für die Entwicklung neuer Strategien verwendet werden kann.
+Benutzer können diese Strategien herunterladen, um die zugrundeliegende Logik zu studieren, sie in Simulationsumgebungen zu [testen](https://doc.stocksharp.com/de/topics/designer/backtesting/getting_started.html) oder im Live-Handel einzusetzen. Jede Strategie kann in die Designer-Plattform importiert werden, wo sie weiter angepasst oder als Grundlage für die Entwicklung neuer Strategien verwendet werden kann.
 
 ## Beitragen
 

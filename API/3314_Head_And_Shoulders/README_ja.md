@@ -50,4 +50,4 @@
 
 ## 参考
 - MetaTrader Expert Advisor: `HEAD AND SHOULDERS.mq4`（MQL ID 26066）。
-- StockSharpドキュメント: [高レベル戦略](https://doc.stocksharp.com/topics/strategy/highlevel.html) および [指標バインディング](https://doc.stocksharp.com/topics/strategy/highlevel/bind.html)。
+- StockSharpドキュメント: [高レベル戦略](https://doc.stocksharp.com/ja/topics/strategy/highlevel.html) および [指標バインディング](https://doc.stocksharp.com/ja/topics/strategy/highlevel/bind.html)。

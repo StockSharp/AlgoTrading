@@ -22,7 +22,7 @@
   - Стоп подтягивается только после того, как цена уйдёт дальше, чем `TrailingStopSteps + TrailingStepSteps` от входа.
   - Отдельная обработка трейлинга для длинной и короткой стороны.
 - **Индикаторы**:
-  - [StochasticOscillator](https://doc.stocksharp.com/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) с параметрами `KPeriod`, `DPeriod` и `Slowing`.
+  - [StochasticOscillator](https://doc.stocksharp.com/ru/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) с параметрами `KPeriod`, `DPeriod` и `Slowing`.
 - **Направление**: Лонг и шорт.
 - **Стопы**: Только трейлинг (фиксированных SL/TP нет).
 - **Размер позиции**: Используется параметр `Volume`; при развороте отправляется объём `Volume + |Position|`.

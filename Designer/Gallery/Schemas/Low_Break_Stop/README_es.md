@@ -11,19 +11,19 @@ Este ejemplo demuestra una estrategia de trading de "Ruptura de Mínimos con Sto
 
 El esquema proporcionado en el archivo JSON describe un flujo de trabajo detallado para operar en función de la acción del precio en relación con los mínimos históricos:
 
-1. **Nodo de Instrumento**: es el nodo de entrada principal donde se [define el instrumento objetivo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), sirviendo como base para la entrada de datos relacionados con los precios de mercado.
+1. **Nodo de Instrumento**: es el nodo de entrada principal donde se [define el instrumento objetivo](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), sirviendo como base para la entrada de datos relacionados con los precios de mercado.
 
-2. **Nodo TimeFrameCandle**: procesa los datos de mercado entrantes para generar [velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), que son fundamentales para analizar los movimientos de precios en intervalos de tiempo específicos.
+2. **Nodo TimeFrameCandle**: procesa los datos de mercado entrantes para generar [velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), que son fundamentales para analizar los movimientos de precios en intervalos de tiempo específicos.
 
-3. **Nodos de Indicador de Mínimos**: estos nodos [calculan el precio más bajo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) durante un número determinado de períodos, identificando niveles potenciales de ruptura para iniciar operaciones.
+3. **Nodos de Indicador de Mínimos**: estos nodos [calculan el precio más bajo](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) durante un número determinado de períodos, identificando niveles potenciales de ruptura para iniciar operaciones.
 
-4. **Nodos de Comparación**: se utilizan para [comparar](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) el precio actual con el mínimo histórico, activando señales de trading cuando el precio cae por debajo del umbral establecido, indicando una ruptura bajista.
+4. **Nodos de Comparación**: se utilizan para [comparar](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) el precio actual con el mínimo histórico, activando señales de trading cuando el precio cae por debajo del umbral establecido, indicando una ruptura bajista.
 
-5. **Nodo del Panel de Gráficos**: visualiza los datos de trading e indicadores, proporcionando una [representación gráfica](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) de las operaciones de la estrategia, esencial para el monitoreo en tiempo real y los ajustes de la estrategia.
+5. **Nodo del Panel de Gráficos**: visualiza los datos de trading e indicadores, proporcionando una [representación gráfica](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) de las operaciones de la estrategia, esencial para el monitoreo en tiempo real y los ajustes de la estrategia.
 
-6. **Nodos de Ejecución de Operaciones (Compra/Venta)**: son responsables de [ejecutar las operaciones](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) según la lógica de la estrategia. En este caso, se puede ejecutar una orden de venta para aprovechar el movimiento esperado a la baja.
+6. **Nodos de Ejecución de Operaciones (Compra/Venta)**: son responsables de [ejecutar las operaciones](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) según la lógica de la estrategia. En este caso, se puede ejecutar una orden de venta para aprovechar el movimiento esperado a la baja.
 
-7. **Nodo de Orden Stop**: implementa condiciones de [stop-loss](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) para gestionar el riesgo de manera efectiva. Esto garantiza que las operaciones se cierren en un umbral de pérdida predefinido para protegerse contra movimientos adversos significativos.
+7. **Nodo de Orden Stop**: implementa condiciones de [stop-loss](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) para gestionar el riesgo de manera efectiva. Esto garantiza que las operaciones se cierren en un umbral de pérdida predefinido para protegerse contra movimientos adversos significativos.
 
 ## Flujo de Trabajo
 

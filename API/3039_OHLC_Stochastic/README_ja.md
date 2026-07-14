@@ -22,7 +22,7 @@ OHLCローソク足でクラシックな%K/%D Stochasticオシレーターを使
   - ストップはエントリー価格から`TrailingStopSteps + TrailingStepSteps`を超えてトレードが移動した後にのみ前進します。
   - ロングとショートサイドのトレーリングロジックを分離。
 - **インジケーター**:
-  - 調整可能な`KPeriod`、`DPeriod`、`Slowing`を持つ[StochasticOscillator](https://doc.stocksharp.com/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm)。
+  - 調整可能な`KPeriod`、`DPeriod`、`Slowing`を持つ[StochasticOscillator](https://doc.stocksharp.com/ja/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm)。
 - **ロング/ショート**: 両方。
 - **ストップ**: トレーリングストップのみ（固定SL/TP注文なし）。
 - **ポジションサイジング**: 戦略の`Volume`パラメータを使用；リバーサルは方向を変えるために`Volume + |Position|`を送信。

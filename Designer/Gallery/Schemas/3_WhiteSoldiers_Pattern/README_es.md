@@ -9,17 +9,17 @@ Este ejemplo demuestra la implementación de una estrategia de trading en el Sto
 
 ## Descripción del esquema
 
-El esquema describe un flujo de trabajo complejo diseñado para detectar el [patrón](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" y ejecutar operaciones en consecuencia. A continuación se presentan los componentes clave y sus funciones:
+El esquema describe un flujo de trabajo complejo diseñado para detectar el [patrón](https://doc.stocksharp.com/es/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" y ejecutar operaciones en consecuencia. A continuación se presentan los componentes clave y sus funciones:
 
-1. **Nodo Security**: Especifica el [valor](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) para el que se aplica la estrategia. Actúa como la fuente principal de entrada de datos, proporcionando los datos de mercado necesarios para el análisis posterior.
+1. **Nodo Security**: Especifica el [valor](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) para el que se aplica la estrategia. Actúa como la fuente principal de entrada de datos, proporcionando los datos de mercado necesarios para el análisis posterior.
 
-2. **Nodo TimeFrameCandle**: Genera [datos de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) para el valor especificado. Este nodo es crucial ya que procesa los datos de mercado entrantes en un formato utilizable (velas) que el algoritmo de detección de patrones puede analizar.
+2. **Nodo TimeFrameCandle**: Genera [datos de velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) para el valor especificado. Este nodo es crucial ya que procesa los datos de mercado entrantes en un formato utilizable (velas) que el algoritmo de detección de patrones puede analizar.
 
-3. **Nodo de Detección de Patrón**: Configurado específicamente para detectar el [patrón](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" mediante un [indicador](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). Este nodo analiza los datos de velas y desencadena una acción cuando se identifica el patrón.
+3. **Nodo de Detección de Patrón**: Configurado específicamente para detectar el [patrón](https://doc.stocksharp.com/es/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" mediante un [indicador](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). Este nodo analiza los datos de velas y desencadena una acción cuando se identifica el patrón.
 
-4. **Nodo Chart Panel**: Visualiza los datos de trading, incluyendo patrones de velas y posiblemente las operaciones ejecutadas por la estrategia. Este [componente](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) ayuda a monitorear el rendimiento de la estrategia y a entender cómo el patrón influye en las decisiones de trading.
+4. **Nodo Chart Panel**: Visualiza los datos de trading, incluyendo patrones de velas y posiblemente las operaciones ejecutadas por la estrategia. Este [componente](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) ayuda a monitorear el rendimiento de la estrategia y a entender cómo el patrón influye en las decisiones de trading.
 
-5. **Nodos de Trading (Compra, Venta)**: Estos [nodos](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) están configurados para ejecutar operaciones cuando se detecta el patrón. Las acciones pueden variar según las condiciones adicionales establecidas dentro de la estrategia, como las condiciones de mercado u otros indicadores técnicos.
+5. **Nodos de Trading (Compra, Venta)**: Estos [nodos](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) están configurados para ejecutar operaciones cuando se detecta el patrón. Las acciones pueden variar según las condiciones adicionales establecidas dentro de la estrategia, como las condiciones de mercado u otros indicadores técnicos.
 
 ## Flujo de trabajo
 

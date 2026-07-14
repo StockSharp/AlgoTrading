@@ -11,19 +11,19 @@
 
 JSON 文件中的图表描述了一套基于价格行为与历史低点关系进行交易的详细工作流程：
 
-1. **证券节点**：主要输入节点，用于[定义目标证券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)，作为市场价格数据输入的基础。
+1. **证券节点**：主要输入节点，用于[定义目标证券](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)，作为市场价格数据输入的基础。
 
-2. **TimeFrameCandle 节点**：处理传入的市场数据，生成[蜡烛图](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)，这对于分析特定时间段内的价格走势至关重要。
+2. **TimeFrameCandle 节点**：处理传入的市场数据，生成[蜡烛图](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)，这对于分析特定时间段内的价格走势至关重要。
 
-3. **最低值指标节点**：这些节点[计算给定周期内的最低价格](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)，确定发起交易的潜在突破位。
+3. **最低值指标节点**：这些节点[计算给定周期内的最低价格](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)，确定发起交易的潜在突破位。
 
-4. **比较节点**：用于[比较](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)当前价格与历史低点，当当前价格跌破设定阈值时触发交易信号，表明出现看跌突破。
+4. **比较节点**：用于[比较](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)当前价格与历史低点，当当前价格跌破设定阈值时触发交易信号，表明出现看跌突破。
 
-5. **图表面板节点**：可视化交易数据和指标，提供策略运行的[图形展示](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)，对于实时监控和策略调整至关重要。
+5. **图表面板节点**：可视化交易数据和指标，提供策略运行的[图形展示](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)，对于实时监控和策略调整至关重要。
 
-6. **交易执行节点（买入/卖出）**：根据策略逻辑负责[执行交易](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)。本例中，可执行卖出订单以把握预期的价格下跌行情。
+6. **交易执行节点（买入/卖出）**：根据策略逻辑负责[执行交易](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)。本例中，可执行卖出订单以把握预期的价格下跌行情。
 
-7. **止损订单节点**：实施[止损](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html)条件以有效管理风险，确保在达到预设亏损阈值时平仓，防范重大不利走势。
+7. **止损订单节点**：实施[止损](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html)条件以有效管理风险，确保在达到预设亏损阈值时平仓，防范重大不利走势。
 
 ## 工作流程
 

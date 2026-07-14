@@ -22,7 +22,7 @@ The algorithm reacts to crossovers in oversold/overbought zones and protects ope
   - Stop only advances after the trade moves beyond `TrailingStopSteps + TrailingStepSteps` from the entry price.
   - Separate trailing logic for long and short sides.
 - **Indicators**:
-  - [StochasticOscillator](https://doc.stocksharp.com/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) with adjustable `KPeriod`, `DPeriod`, and `Slowing`.
+  - [StochasticOscillator](https://doc.stocksharp.com/en/html/T_StockSharp_Algo_Indicators_StochasticOscillator.htm) with adjustable `KPeriod`, `DPeriod`, and `Slowing`.
 - **Long/Short**: Both.
 - **Stops**: Trailing stop only (no fixed SL/TP orders).
 - **Position Sizing**: Uses the strategy `Volume` parameter; reversals send `Volume + |Position|` to flip direction.

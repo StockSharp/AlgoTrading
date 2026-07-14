@@ -30,5 +30,5 @@ Der Trailing-Stop bewegt sich nur in Richtung des Trades und zieht sich nie zur√
 
 ## Referenzen
 
-- [Average True Range in der StockSharp-Dokumentation](https://doc.stocksharp.com/topics/indicator_average_true_range.html)
-- [Strategy Designer](https://doc.stocksharp.com/topics/designer.html)
+- [Average True Range in der StockSharp-Dokumentation](https://doc.stocksharp.com/de/topics/indicator_average_true_range.html)
+- [Strategy Designer](https://doc.stocksharp.com/de/topics/designer.html)

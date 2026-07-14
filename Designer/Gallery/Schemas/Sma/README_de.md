@@ -9,13 +9,13 @@ Diese Datei enthält eine diagrammatische Darstellung einer Handelsstrategie auf
 
 Die Strategie umfasst zwei gleitende Durchschnitte:
 
-- **Kurzfristiger Gleitender Durchschnitt**: Ein schnellerer [gleitender Durchschnitt](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), der schneller auf Kursänderungen reagiert.
-- **Langfristiger Gleitender Durchschnitt**: Ein langsamerer [gleitender Durchschnitt](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), der ein geglättetes Bild der Kurstrends liefert.
+- **Kurzfristiger Gleitender Durchschnitt**: Ein schnellerer [gleitender Durchschnitt](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), der schneller auf Kursänderungen reagiert.
+- **Langfristiger Gleitender Durchschnitt**: Ein langsamerer [gleitender Durchschnitt](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), der ein geglättetes Bild der Kurstrends liefert.
 
 ## Ein- und Ausstiegsregeln
 
-- **Kaufsignal**: Die Strategie generiert ein [Kauf](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Signal, wenn der kurzfristige gleitende Durchschnitt den langfristigen [von unten nach oben kreuzt](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html), was auf einen Aufwärtstrend hindeutet.
-- **Verkaufssignal**: Umgekehrt wird ein [Verkauf](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Signal ausgegeben, wenn der kurzfristige gleitende Durchschnitt den langfristigen [von oben nach unten kreuzt](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html), was auf einen möglichen Abwärtstrend hindeutet.
+- **Kaufsignal**: Die Strategie generiert ein [Kauf](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Signal, wenn der kurzfristige gleitende Durchschnitt den langfristigen [von unten nach oben kreuzt](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/crossing.html), was auf einen Aufwärtstrend hindeutet.
+- **Verkaufssignal**: Umgekehrt wird ein [Verkauf](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)-Signal ausgegeben, wenn der kurzfristige gleitende Durchschnitt den langfristigen [von oben nach unten kreuzt](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/crossing.html), was auf einen möglichen Abwärtstrend hindeutet.
 
 ## Diagrammdetails
 

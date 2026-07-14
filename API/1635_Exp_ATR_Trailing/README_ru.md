@@ -30,5 +30,5 @@
 
 ## Дополнительные материалы
 
-- [Описание индикатора Average True Range](https://doc.stocksharp.com/topics/indicator_average_true_range.html)
-- [Strategy Designer](https://doc.stocksharp.com/topics/designer.html)
+- [Описание индикатора Average True Range](https://doc.stocksharp.com/ru/topics/indicator_average_true_range.html)
+- [Strategy Designer](https://doc.stocksharp.com/ru/topics/designer.html)

@@ -11,15 +11,15 @@
 
 Схема состоит из нескольких взаимосвязанных компонентов, предназначенных для получения, обработки и отображения данных стакана заявок:
 
-1. **Узел инструмента**: этот узел представляет [инструмент](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (например, акцию, фьючерс или другой финансовый инструмент), для которого будет получен стакан заявок. Это ключевой элемент, определяющий, какой рынок или инструмент анализируется.
+1. **Узел инструмента**: этот узел представляет [инструмент](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (например, акцию, фьючерс или другой финансовый инструмент), для которого будет получен стакан заявок. Это ключевой элемент, определяющий, какой рынок или инструмент анализируется.
 
-2. **Узел TimeFrameCandle**: обрабатывает [данные свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) по инструменту, агрегированные за заданный таймфрейм (в примере — 5 минут). Может использоваться для сопоставления изменений в стакане заявок с ценовыми движениями во времени.
+2. **Узел TimeFrameCandle**: обрабатывает [данные свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) по инструменту, агрегированные за заданный таймфрейм (в примере — 5 минут). Может использоваться для сопоставления изменений в стакане заявок с ценовыми движениями во времени.
 
-3. **Узлы стакана заявок**: предназначены для захвата изменений [стакана заявок](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html) в реальном времени и реагирования на них. Включают настройки обработки входящих данных стакана для получения актуальной информации о ордерах на покупку и продажу.
+3. **Узлы стакана заявок**: предназначены для захвата изменений [стакана заявок](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html) в реальном времени и реагирования на них. Включают настройки обработки входящих данных стакана для получения актуальной информации о ордерах на покупку и продажу.
 
-4. **Узел панели графика**: предполагает визуализацию данных свечей на [графике](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Помогает трейдерам и алгоритмам лучше понять рыночную ситуацию и принимать обоснованные решения.
+4. **Узел панели графика**: предполагает визуализацию данных свечей на [графике](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html). Помогает трейдерам и алгоритмам лучше понять рыночную ситуацию и принимать обоснованные решения.
 
-5. **Узел панели стакана заявок**: специально предназначен для отображения данных стакана в [специальной панели](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html) с такими функциями, как подсветка лучших цен спроса и предложения, визуализация глубины рынка и другими возможностями.
+5. **Узел панели стакана заявок**: специально предназначен для отображения данных стакана в [специальной панели](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html) с такими функциями, как подсветка лучших цен спроса и предложения, визуализация глубины рынка и другими возможностями.
 
 ## Рабочий процесс
 

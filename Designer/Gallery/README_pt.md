@@ -1,7 +1,7 @@
 # Diretório de Código-Fonte de Estratégias
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Este diretório contém representações esquemáticas de estratégias de negociação disponíveis na seção [Galeria de Estratégias](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) da plataforma [Designer](https://stocksharp.com/store/strategy-designer/). Os arquivos de código-fonte das estratégias são armazenados no diretório [API](../../API), onde podem ser carregados como programas autônomos por meio da API do StockSharp ou importados para o Designer.
+Este diretório contém representações esquemáticas de estratégias de negociação disponíveis na seção [Galeria de Estratégias](https://doc.stocksharp.com/pt/topics/designer/strategy_gallery.html) da plataforma [Designer](https://stocksharp.com/store/strategy-designer/). Os arquivos de código-fonte das estratégias são armazenados no diretório [API](../../API), onde podem ser carregados como programas autônomos por meio da API do StockSharp ou importados para o Designer.
 
 ## Visão geral
 
@@ -9,12 +9,12 @@ A Galeria de Estratégias no [Designer](https://stocksharp.com/store/strategy-de
 
 ## Conteúdo
 
-- **Estratégias Esquemáticas**: Representações diagramáticas de estratégias de negociação que [descrevem visualmente](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) o fluxo e as condições das operações de negociação. São ideais para usuários que preferem uma abordagem visual ao design de estratégias.
+- **Estratégias Esquemáticas**: Representações diagramáticas de estratégias de negociação que [descrevem visualmente](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer.html) o fluxo e as condições das operações de negociação. São ideais para usuários que preferem uma abordagem visual ao design de estratégias.
 - **Estratégias em C#**: Os arquivos de código-fonte das estratégias estão localizados no diretório [API](../../API). Podem ser carregados como programas autônomos via API do StockSharp ou importados para o Designer para personalização adicional.
 
 ## Uso
 
-Os usuários podem baixar essas estratégias para estudar a lógica subjacente, [testá-las](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html) em ambientes de simulação ou implantá-las em cenários de negociação ao vivo. Cada estratégia pode ser importada para a plataforma Designer, onde pode ser personalizada ou usada como base para o desenvolvimento de novas estratégias.
+Os usuários podem baixar essas estratégias para estudar a lógica subjacente, [testá-las](https://doc.stocksharp.com/pt/topics/designer/backtesting/getting_started.html) em ambientes de simulação ou implantá-las em cenários de negociação ao vivo. Cada estratégia pode ser importada para a plataforma Designer, onde pode ser personalizada ou usada como base para o desenvolvimento de novas estratégias.
 
 ## Contribuição
 

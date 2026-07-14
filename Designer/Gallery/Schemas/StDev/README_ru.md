@@ -3,7 +3,7 @@
 
 ## Обзор стратегии
 
-Стратегия «StDevStrategy» разработана для [StockSharp Designer](https://doc.stocksharp.com/topics/designer.html) с целью использования статистических паттернов волатильности с помощью индикатора Standard Deviation. Стратегия построена для выявления потенциальных торговых возможностей на основе отклонений от средней цены, сигнализирующих о перекупленности или перепроданности.
+Стратегия «StDevStrategy» разработана для [StockSharp Designer](https://doc.stocksharp.com/ru/topics/designer.html) с целью использования статистических паттернов волатильности с помощью индикатора Standard Deviation. Стратегия построена для выявления потенциальных торговых возможностей на основе отклонений от средней цены, сигнализирующих о перекупленности или перепроданности.
 
 ![schema](schema.png)
 
@@ -12,13 +12,13 @@
 ### Компоненты
 
 - **Индикаторы Standard Deviation**: используются различные длины для захвата краткосрочной и долгосрочной волатильности.
-  - **Std Dev 20**: измеряет волатильность за [20 периодов](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html).
+  - **Std Dev 20**: измеряет волатильность за [20 периодов](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html).
   - **Lowest 15 и Highest 15**: отслеживают минимальные и максимальные значения за 15 периодов для определения условий пробоя.
   - **Lowest 50**: фиксирует долгосрочные ценовые минимумы для оценки расширенных рыночных условий.
 
 ### Исполнение сделок
 
-- **Тип ордера**: сделки исполняются с использованием [рыночных ордеров](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) для обеспечения быстрой реакции на изменения сигнала.
+- **Тип ордера**: сделки исполняются с использованием [рыночных ордеров](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) для обеспечения быстрой реакции на изменения сигнала.
 - **Вход и выход**:
   - **Покупка**: срабатывает, когда ценовое движение указывает на отскок от условий перепроданности.
   - **Продажа**: инициируется, когда ценовое движение указывает на возможное снижение с условий перекупленности.
@@ -27,8 +27,8 @@
 ### Управление рисками
 
 - **Стоп-лосс и тейк-профит**:
-  - [Стоп-лосс](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) устанавливается на 1% ниже цены входа для минимизации риска.
-  - [Тейк-профит](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) установлен на уровне 2%, фиксируя потенциальный рост при защите прибыли.
+  - [Стоп-лосс](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) устанавливается на 1% ниже цены входа для минимизации риска.
+  - [Тейк-профит](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) установлен на уровне 2%, фиксируя потенциальный рост при защите прибыли.
 
 ## Детали реализации
 

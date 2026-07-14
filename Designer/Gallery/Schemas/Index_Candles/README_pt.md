@@ -7,12 +7,12 @@ Este arquivo de diagrama ilustra uma estratégia para criar um índice composto 
 
 ## Visão Geral da Estratégia
 
-A estratégia consiste em combinar dados de preços de múltiplos ativos em um único [índice](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). Esse processo normalmente utiliza técnicas de normalização ou ponderação para garantir que cada ativo contribua proporcionalmente para o valor final do índice.
+A estratégia consiste em combinar dados de preços de múltiplos ativos em um único [índice](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). Esse processo normalmente utiliza técnicas de normalização ou ponderação para garantir que cada ativo contribua proporcionalmente para o valor final do índice.
 
 ## Componentes do Diagrama
 
-- **Nós de Coleta de Dados**: são responsáveis por buscar os [dados de velas](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) de cada ativo selecionado.
-- **Nós de Normalização**: aplicam normalização aos dados de velas para garantir um impacto uniforme no [cálculo do índice](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html) final, mitigando os efeitos de escalas de preços diferentes.
+- **Nós de Coleta de Dados**: são responsáveis por buscar os [dados de velas](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) de cada ativo selecionado.
+- **Nós de Normalização**: aplicam normalização aos dados de velas para garantir um impacto uniforme no [cálculo do índice](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html) final, mitigando os efeitos de escalas de preços diferentes.
 - **Nós de Ponderação**: atribuem pesos a cada ativo com base em critérios predefinidos, como capitalização de mercado ou volatilidade histórica.
 - **Nó de Cálculo do Índice**: agrega os dados de preços normalizados e ponderados para calcular o valor final do índice.
 

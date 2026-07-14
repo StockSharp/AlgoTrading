@@ -11,8 +11,8 @@ O diagrama mostra a configuração básica necessária para recuperar dados de c
 
 ## Componentes do diagrama
 
-- **Fonte de dados Candles**: Este é o nó principal que obtém [dados de candles](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) do instrumento financeiro selecionado. Os usuários podem especificar o instrumento, o intervalo de dados e o período do candle (por exemplo, candles de 1 minuto, 5 minutos).
-- **Bloco Chart**: Este nó é usado para [plotar](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) os dados obtidos em uma interface gráfica. Ele pode exibir vários atributos dos candles, como preços de abertura, máximo, mínimo e fechamento.
+- **Fonte de dados Candles**: Este é o nó principal que obtém [dados de candles](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) do instrumento financeiro selecionado. Os usuários podem especificar o instrumento, o intervalo de dados e o período do candle (por exemplo, candles de 1 minuto, 5 minutos).
+- **Bloco Chart**: Este nó é usado para [plotar](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/chart.html) os dados obtidos em uma interface gráfica. Ele pode exibir vários atributos dos candles, como preços de abertura, máximo, mínimo e fechamento.
 
 ## Funcionalidade
 

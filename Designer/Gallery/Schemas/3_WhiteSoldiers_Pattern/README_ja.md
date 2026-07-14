@@ -9,17 +9,17 @@
 
 ## スキーマの説明
 
-スキーマは、「Three White Soldiers」[パターン](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)を検出し、それに応じて取引を実行するために設計された複雑なワークフローを概説しています。主なコンポーネントとその役割は以下の通りです：
+スキーマは、「Three White Soldiers」[パターン](https://doc.stocksharp.com/ja/topics/api/indicators/list_of_indicators/pattern.html)を検出し、それに応じて取引を実行するために設計された複雑なワークフローを概説しています。主なコンポーネントとその役割は以下の通りです：
 
-1. **Security ノード**：戦略が適用される[証券](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)を指定します。主要なデータ入力ソースとして機能し、後続の分析に必要な市場データを提供します。
+1. **Security ノード**：戦略が適用される[証券](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html)を指定します。主要なデータ入力ソースとして機能し、後続の分析に必要な市場データを提供します。
 
-2. **TimeFrameCandle ノード**：指定された証券の[ローソク足データ](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を生成します。このノードは、入力される市場データをパターン検出アルゴリズムが分析できる使用可能な形式（ローソク足）に処理するため、重要な役割を担います。
+2. **TimeFrameCandle ノード**：指定された証券の[ローソク足データ](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を生成します。このノードは、入力される市場データをパターン検出アルゴリズムが分析できる使用可能な形式（ローソク足）に処理するため、重要な役割を担います。
 
-3. **パターン検出ノード**：[インジケーター](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)を介して「Three White Soldiers」[パターン](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)を検出するために専用に設定されています。このノードはローソク足データを分析し、パターンが識別されたときにアクションをトリガーします。
+3. **パターン検出ノード**：[インジケーター](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/indicator.html)を介して「Three White Soldiers」[パターン](https://doc.stocksharp.com/ja/topics/api/indicators/list_of_indicators/pattern.html)を検出するために専用に設定されています。このノードはローソク足データを分析し、パターンが識別されたときにアクションをトリガーします。
 
-4. **Chart Panel ノード**：ローソク足パターンや戦略によって実行された取引を含む取引データを視覚化します。この[コンポーネント](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)は、戦略のパフォーマンスを監視し、パターンが取引判断にどう影響するかを理解するのに役立ちます。
+4. **Chart Panel ノード**：ローソク足パターンや戦略によって実行された取引を含む取引データを視覚化します。この[コンポーネント](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/common/chart.html)は、戦略のパフォーマンスを監視し、パターンが取引判断にどう影響するかを理解するのに役立ちます。
 
-5. **取引ノード（買い、売り）**：これらの[ノード](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)は、パターンが検出されたときに取引を実行するよう設定されています。アクションは、市場状況やその他のテクニカルインジケーターなど、戦略内に設定された追加条件に基づいて異なる場合があります。
+5. **取引ノード（買い、売り）**：これらの[ノード](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)は、パターンが検出されたときに取引を実行するよう設定されています。アクションは、市場状況やその他のテクニカルインジケーターなど、戦略内に設定された追加条件に基づいて異なる場合があります。
 
 ## ワークフロー
 

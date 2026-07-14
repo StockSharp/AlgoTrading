@@ -11,7 +11,7 @@ La estrategia implementa mecanismos para comprar una criptomoneda mientras simul
 
 ## Instalación
 
-Para activar y usar esta estrategia, es necesario instalar StockSharp Designer. La estrategia está disponible para descargar e instalar desde la [galería de estrategias](https://doc.stocksharp.com/topics/designer/strategy_gallery.html). Esto permite una fácil integración y personalización de la estrategia según los requisitos individuales del trader.
+Para activar y usar esta estrategia, es necesario instalar StockSharp Designer. La estrategia está disponible para descargar e instalar desde la [galería de estrategias](https://doc.stocksharp.com/es/topics/designer/strategy_gallery.html). Esto permite una fácil integración y personalización de la estrategia según los requisitos individuales del trader.
 
 ## Parámetros
 
@@ -38,4 +38,4 @@ Es importante probar la estrategia con datos históricos para evaluar su efectiv
 
 ## Recursos adicionales
 
-Para más información y recursos, visite la [documentación de StockSharp](https://doc.stocksharp.com/).
+Para más información y recursos, visite la [documentación de StockSharp](https://doc.stocksharp.com/es/).

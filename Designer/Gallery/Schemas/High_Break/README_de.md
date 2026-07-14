@@ -11,17 +11,17 @@ Die im bereitgestellten JSON-Schema dargestellte „High Break"-Strategie ist da
 
 Das Schema beschreibt eine Sequenz von miteinander verbundenen Komponenten, die dazu dienen, Echtzeit-Marktdaten zu erfassen, zu analysieren und darauf zu reagieren:
 
-1. **Security Node**: Dient als Grundlage und gibt das [Wertpapier](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (z. B. Aktien, Futures) an, auf das die Strategie angewendet wird. Dieser Node ist entscheidend, da er den Dateneingabe für die Strategie bestimmt.
+1. **Security Node**: Dient als Grundlage und gibt das [Wertpapier](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (z. B. Aktien, Futures) an, auf das die Strategie angewendet wird. Dieser Node ist entscheidend, da er den Dateneingabe für die Strategie bestimmt.
 
-2. **TimeFrameCandle Node**: Verarbeitet eingehende Marktdaten und organisiert sie in [Kerzen basierend](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) auf einem angegebenen Zeitrahmen. Dieser Node ist für Strategien, die historische Preisanalysen zur Handelsentscheidung nutzen, unverzichtbar.
+2. **TimeFrameCandle Node**: Verarbeitet eingehende Marktdaten und organisiert sie in [Kerzen basierend](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) auf einem angegebenen Zeitrahmen. Dieser Node ist für Strategien, die historische Preisanalysen zur Handelsentscheidung nutzen, unverzichtbar.
 
-3. **Highest Node**: Analysiert die Kerzendaten, um [den höchsten Kurs](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) über einen bestimmten Zeitraum (z. B. 60 Minuten) zu ermitteln. Dieser Wert setzt einen Benchmark für die Identifizierung bedeutender Kursausbrüche.
+3. **Highest Node**: Analysiert die Kerzendaten, um [den höchsten Kurs](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) über einen bestimmten Zeitraum (z. B. 60 Minuten) zu ermitteln. Dieser Wert setzt einen Benchmark für die Identifizierung bedeutender Kursausbrüche.
 
-4. **Vergleichs-Node**: [Vergleicht](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) aktuelle Kurse mit dem historischen Hoch, das der Highest Node ermittelt hat. Wenn der aktuelle Kurs dieses Hoch überschreitet, löst er ein potenzielles Handelssignal aus.
+4. **Vergleichs-Node**: [Vergleicht](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) aktuelle Kurse mit dem historischen Hoch, das der Highest Node ermittelt hat. Wenn der aktuelle Kurs dieses Hoch überschreitet, löst er ein potenzielles Handelssignal aus.
 
-5. **Chart Panel Node**: [Visualisiert](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) die Kursdaten und die Aktionen der Strategie und liefert eine grafische Darstellung des Strategiebetriebs, die bei Überwachung und Anpassungen hilft.
+5. **Chart Panel Node**: [Visualisiert](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html) die Kursdaten und die Aktionen der Strategie und liefert eine grafische Darstellung des Strategiebetriebs, die bei Überwachung und Anpassungen hilft.
 
-6. **Handelsausführungs-Nodes (Kaufen/Verkaufen)**: Verantwortlich für die [Ausführung von Trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html), wenn die Bedingungen der Strategie erfüllt sind. Beispielsweise kann eine Kauforder ausgeführt werden, wenn der Kurs das historische Hoch überschreitet.
+6. **Handelsausführungs-Nodes (Kaufen/Verkaufen)**: Verantwortlich für die [Ausführung von Trades](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html), wenn die Bedingungen der Strategie erfüllt sind. Beispielsweise kann eine Kauforder ausgeführt werden, wenn der Kurs das historische Hoch überschreitet.
 
 ## Workflow
 

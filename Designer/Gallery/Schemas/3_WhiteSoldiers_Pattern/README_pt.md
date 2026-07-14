@@ -9,17 +9,17 @@ Este exemplo demonstra a implementação de uma estratégia de negociação no S
 
 ## Descrição do esquema
 
-O esquema descreve um fluxo de trabalho complexo projetado para detectar o [padrão](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" e executar negociações de acordo. Aqui estão os componentes principais e seus papéis:
+O esquema descreve um fluxo de trabalho complexo projetado para detectar o [padrão](https://doc.stocksharp.com/pt/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" e executar negociações de acordo. Aqui estão os componentes principais e seus papéis:
 
-1. **Nó Security**: Especifica o [ativo](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) ao qual a estratégia é aplicada. Atua como a principal fonte de entrada de dados, fornecendo os dados de mercado necessários para a análise subsequente.
+1. **Nó Security**: Especifica o [ativo](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) ao qual a estratégia é aplicada. Atua como a principal fonte de entrada de dados, fornecendo os dados de mercado necessários para a análise subsequente.
 
-2. **Nó TimeFrameCandle**: Gera [dados de candles](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) para o ativo especificado. Este nó é crucial, pois processa os dados de mercado recebidos em um formato utilizável (candles) que o algoritmo de detecção de padrões pode analisar.
+2. **Nó TimeFrameCandle**: Gera [dados de candles](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) para o ativo especificado. Este nó é crucial, pois processa os dados de mercado recebidos em um formato utilizável (candles) que o algoritmo de detecção de padrões pode analisar.
 
-3. **Nó de Detecção de Padrão**: Configurado especificamente para detectar o [padrão](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" via [indicador](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). Este nó analisa os dados de candles e aciona uma ação quando o padrão é identificado.
+3. **Nó de Detecção de Padrão**: Configurado especificamente para detectar o [padrão](https://doc.stocksharp.com/pt/topics/api/indicators/list_of_indicators/pattern.html) "Three White Soldiers" via [indicador](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). Este nó analisa os dados de candles e aciona uma ação quando o padrão é identificado.
 
-4. **Nó Chart Panel**: Visualiza os dados de negociação, incluindo padrões de candles e possivelmente as negociações executadas pela estratégia. Este [componente](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) ajuda a monitorar o desempenho da estratégia e a entender como o padrão influencia as decisões de negociação.
+4. **Nó Chart Panel**: Visualiza os dados de negociação, incluindo padrões de candles e possivelmente as negociações executadas pela estratégia. Este [componente](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/chart.html) ajuda a monitorar o desempenho da estratégia e a entender como o padrão influencia as decisões de negociação.
 
-5. **Nós de Negociação (Compra, Venda)**: Estes [nós](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) estão configurados para executar negociações quando o padrão é detectado. As ações podem variar com base em condições adicionais definidas dentro da estratégia, como condições de mercado ou outros indicadores técnicos.
+5. **Nós de Negociação (Compra, Venda)**: Estes [nós](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) estão configurados para executar negociações quando o padrão é detectado. As ações podem variar com base em condições adicionais definidas dentro da estratégia, como condições de mercado ou outros indicadores técnicos.
 
 ## Fluxo de trabalho
 

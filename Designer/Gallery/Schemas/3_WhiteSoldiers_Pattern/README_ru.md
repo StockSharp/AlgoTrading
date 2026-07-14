@@ -9,17 +9,17 @@
 
 ## Описание схемы
 
-Схема описывает сложный рабочий процесс, разработанный для обнаружения паттерна «Three White Soldiers» ([паттерн](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)) и соответствующего исполнения сделок. Вот ключевые компоненты и их роли:
+Схема описывает сложный рабочий процесс, разработанный для обнаружения паттерна «Three White Soldiers» ([паттерн](https://doc.stocksharp.com/ru/topics/api/indicators/list_of_indicators/pattern.html)) и соответствующего исполнения сделок. Вот ключевые компоненты и их роли:
 
-1. **Узел Security**: Определяет [инструмент](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), к которому применяется стратегия. Выступает в качестве основного источника входных данных, предоставляя рыночные данные, необходимые для последующего анализа.
+1. **Узел Security**: Определяет [инструмент](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), к которому применяется стратегия. Выступает в качестве основного источника входных данных, предоставляя рыночные данные, необходимые для последующего анализа.
 
-2. **Узел TimeFrameCandle**: Генерирует [данные свечей](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для указанного инструмента. Этот узел имеет ключевое значение, поскольку преобразует входящие рыночные данные в удобный формат (свечи), который алгоритм обнаружения паттернов может анализировать.
+2. **Узел TimeFrameCandle**: Генерирует [данные свечей](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) для указанного инструмента. Этот узел имеет ключевое значение, поскольку преобразует входящие рыночные данные в удобный формат (свечи), который алгоритм обнаружения паттернов может анализировать.
 
-3. **Узел обнаружения паттерна**: Специально настроен для обнаружения паттерна «Three White Soldiers» ([паттерн](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html)) через [индикатор](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). Анализирует данные свечей и инициирует действие при обнаружении паттерна.
+3. **Узел обнаружения паттерна**: Специально настроен для обнаружения паттерна «Three White Soldiers» ([паттерн](https://doc.stocksharp.com/ru/topics/api/indicators/list_of_indicators/pattern.html)) через [индикатор](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). Анализирует данные свечей и инициирует действие при обнаружении паттерна.
 
-4. **Узел Chart Panel**: Визуализирует торговые данные, включая свечные паттерны и исполненные стратегией сделки. Этот [компонент](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) помогает отслеживать эффективность стратегии и понимать, как паттерн влияет на торговые решения.
+4. **Узел Chart Panel**: Визуализирует торговые данные, включая свечные паттерны и исполненные стратегией сделки. Этот [компонент](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) помогает отслеживать эффективность стратегии и понимать, как паттерн влияет на торговые решения.
 
-5. **Торговые узлы (покупка, продажа)**: Эти [узлы](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) настроены на исполнение сделок при обнаружении паттерна. Действия могут варьироваться в зависимости от дополнительных условий, заданных в стратегии, таких как рыночные условия или другие технические индикаторы.
+5. **Торговые узлы (покупка, продажа)**: Эти [узлы](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) настроены на исполнение сделок при обнаружении паттерна. Действия могут варьироваться в зависимости от дополнительных условий, заданных в стратегии, таких как рыночные условия или другие технические индикаторы.
 
 ## Рабочий процесс
 

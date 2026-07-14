@@ -52,4 +52,4 @@
 ## 参考資料
 
 - 元の MT4 スクリプト: `MQL/8134/HBS_system.mq4`
-- StockSharp ドキュメント: [https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- StockSharp ドキュメント: [https://doc.stocksharp.com/ja/](https://doc.stocksharp.com/ja/)

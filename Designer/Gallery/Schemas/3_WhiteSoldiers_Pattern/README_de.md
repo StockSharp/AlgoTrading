@@ -9,17 +9,17 @@ Dieses Beispiel demonstriert die Implementierung einer Handelsstrategie im Stock
 
 ## Beschreibung des Schemas
 
-Das Schema beschreibt einen komplexen Workflow, der dazu dient, das „Three White Soldiers"-[Muster](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) zu erkennen und entsprechend Trades auszuführen. Hier sind die wichtigsten Komponenten und ihre Rollen:
+Das Schema beschreibt einen komplexen Workflow, der dazu dient, das „Three White Soldiers"-[Muster](https://doc.stocksharp.com/de/topics/api/indicators/list_of_indicators/pattern.html) zu erkennen und entsprechend Trades auszuführen. Hier sind die wichtigsten Komponenten und ihre Rollen:
 
-1. **Security Node**: Gibt das [Wertpapier](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) an, für das die Strategie angewendet wird. Dient als primäre Dateneingabequelle und liefert die Marktdaten für die anschließende Analyse.
+1. **Security Node**: Gibt das [Wertpapier](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) an, für das die Strategie angewendet wird. Dient als primäre Dateneingabequelle und liefert die Marktdaten für die anschließende Analyse.
 
-2. **TimeFrameCandle Node**: Generiert [Kerzendaten](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für das angegebene Wertpapier. Dieser Node ist entscheidend, da er eingehende Marktdaten in ein nutzbares Format (Kerzen) verarbeitet, das der Mustererkennungsalgorithmus analysieren kann.
+2. **TimeFrameCandle Node**: Generiert [Kerzendaten](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) für das angegebene Wertpapier. Dieser Node ist entscheidend, da er eingehende Marktdaten in ein nutzbares Format (Kerzen) verarbeitet, das der Mustererkennungsalgorithmus analysieren kann.
 
-3. **Mustererkennungs-Node**: Speziell konfiguriert, um das „Three White Soldiers"-[Muster](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) über einen [Indikator](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) zu erkennen. Dieser Node analysiert die Kerzendaten und löst eine Aktion aus, wenn das Muster identifiziert wird.
+3. **Mustererkennungs-Node**: Speziell konfiguriert, um das „Three White Soldiers"-[Muster](https://doc.stocksharp.com/de/topics/api/indicators/list_of_indicators/pattern.html) über einen [Indikator](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) zu erkennen. Dieser Node analysiert die Kerzendaten und löst eine Aktion aus, wenn das Muster identifiziert wird.
 
-4. **Chart Panel Node**: Visualisiert die Handelsdaten, einschließlich Candlestick-Muster und möglicherweise von der Strategie ausgeführte Trades. Diese [Komponente](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) hilft bei der Überwachung der Strategieleistung und dem Verständnis, wie das Muster Handelsentscheidungen beeinflusst.
+4. **Chart Panel Node**: Visualisiert die Handelsdaten, einschließlich Candlestick-Muster und möglicherweise von der Strategie ausgeführte Trades. Diese [Komponente](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/common/chart.html) hilft bei der Überwachung der Strategieleistung und dem Verständnis, wie das Muster Handelsentscheidungen beeinflusst.
 
-5. **Handels-Nodes (Kaufen, Verkaufen)**: Diese [Nodes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) sind konfiguriert, um Trades auszuführen, wenn das Muster erkannt wird. Die Aktionen können je nach zusätzlichen Bedingungen in der Strategie variieren, etwa Marktbedingungen oder anderen technischen Indikatoren.
+5. **Handels-Nodes (Kaufen, Verkaufen)**: Diese [Nodes](https://doc.stocksharp.com/de/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) sind konfiguriert, um Trades auszuführen, wenn das Muster erkannt wird. Die Aktionen können je nach zusätzlichen Bedingungen in der Strategie variieren, etwa Marktbedingungen oder anderen technischen Indikatoren.
 
 ## Workflow
 

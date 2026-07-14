@@ -11,17 +11,17 @@
 
 Схема описывает последовательность взаимосвязанных компонентов, предназначенных для захвата, анализа и реагирования на данные рынка в режиме реального времени:
 
-1. **Узел Security**: Служит основой, определяя [инструмент](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (например, акции, фьючерсы), к которому применяется стратегия. Этот узел критически важен, так как определяет источник данных для стратегии.
+1. **Узел Security**: Служит основой, определяя [инструмент](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (например, акции, фьючерсы), к которому применяется стратегия. Этот узел критически важен, так как определяет источник данных для стратегии.
 
-2. **Узел TimeFrameCandle**: Обрабатывает входящие рыночные данные и организует их в [свечи на основе](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) указанного таймфрейма. Этот узел необходим для стратегий, которые опираются на исторический анализ цен для принятия торговых решений.
+2. **Узел TimeFrameCandle**: Обрабатывает входящие рыночные данные и организует их в [свечи на основе](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) указанного таймфрейма. Этот узел необходим для стратегий, которые опираются на исторический анализ цен для принятия торговых решений.
 
-3. **Узел Highest**: Анализирует данные свечей для [определения максимальной цены](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) за определённый период (например, 60 минут). Это значение устанавливает ориентир для определения значимых ценовых пробоев.
+3. **Узел Highest**: Анализирует данные свечей для [определения максимальной цены](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) за определённый период (например, 60 минут). Это значение устанавливает ориентир для определения значимых ценовых пробоев.
 
-4. **Узел сравнения**: [Сравнивает](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) текущие цены с историческим максимумом, определённым узлом Highest. Если текущая цена превышает этот максимум, генерируется потенциальный торговый сигнал.
+4. **Узел сравнения**: [Сравнивает](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) текущие цены с историческим максимумом, определённым узлом Highest. Если текущая цена превышает этот максимум, генерируется потенциальный торговый сигнал.
 
-5. **Узел Chart Panel**: [Визуализирует](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) ценовые данные и действия стратегии, предоставляя графическое представление работы стратегии, что помогает в мониторинге и корректировке.
+5. **Узел Chart Panel**: [Визуализирует](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/common/chart.html) ценовые данные и действия стратегии, предоставляя графическое представление работы стратегии, что помогает в мониторинге и корректировке.
 
-6. **Узлы исполнения сделок (покупка/продажа)**: Отвечают за [исполнение сделок](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) при выполнении условий стратегии. Например, ордер на покупку может исполняться при пробое цены выше исторического максимума.
+6. **Узлы исполнения сделок (покупка/продажа)**: Отвечают за [исполнение сделок](https://doc.stocksharp.com/ru/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) при выполнении условий стратегии. Например, ордер на покупку может исполняться при пробое цены выше исторического максимума.
 
 ## Рабочий процесс
 

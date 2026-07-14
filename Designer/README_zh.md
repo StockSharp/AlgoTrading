@@ -7,14 +7,14 @@
 
 本目录经过精心组织，帮助您轻松查找和使用各种交易策略示例：
 
-- **图形化示例**：包含使用 Designer 的[可视化设计功能](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html)创建的策略示例。这些主要是 `.json` 文件，可以直接导入 Designer。
-- **C# 代码示例**：包含[用 C# 编写](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html)的策略示例，演示如何在 Designer 中以编程方式定义交易逻辑。
+- **图形化示例**：包含使用 Designer 的[可视化设计功能](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer.html)创建的策略示例。这些主要是 `.json` 文件，可以直接导入 Designer。
+- **C# 代码示例**：包含[用 C# 编写](https://doc.stocksharp.com/zh/topics/designer/strategies/using_csharp.html)的策略示例，演示如何在 Designer 中以编程方式定义交易逻辑。
 
 ## 示例的目的
 
 提供这些示例的主要目标是：
 
-- **教育工具**：帮助 [Designer](https://doc.stocksharp.com/topics/designer.html) 程序的新老用户通过实际示例进行学习。
+- **教育工具**：帮助 [Designer](https://doc.stocksharp.com/zh/topics/designer.html) 程序的新老用户通过实际示例进行学习。
 - **开发灵感**：通过展示各种技术和方法，激发用户开发和定制自己的策略。
 - **社区互动**：鼓励用户分享自己的示例和改进成果，营造协作和互助的环境。
 
@@ -23,9 +23,9 @@
 要充分利用这些示例，请按以下步骤操作：
 
 1. **选择示例**：浏览目录并选择符合您的交易兴趣或学习需求的示例。
-2. **下载并导入**：对于图形化示例，下载 `.json` 文件并将其[导入](https://doc.stocksharp.com/topics/designer/export_import/import.html)到您的 Designer 程序中。对于 C# 示例，将代码复制或将文件下载到您的项目中。
+2. **下载并导入**：对于图形化示例，下载 `.json` 文件并将其[导入](https://doc.stocksharp.com/zh/topics/designer/export_import/import.html)到您的 Designer 程序中。对于 C# 示例，将代码复制或将文件下载到您的项目中。
 3. **研究并修改**：了解策略的构建方式，考虑对其进行修改，以更好地符合您的特定交易标准或尝试新想法。
-4. **测试并部署**：在将策略应用于[实盘交易](https://doc.stocksharp.com/topics/designer/live_execution/getting_started.html)之前，始终在 Designer 提供的模拟环境中[测试您的策略](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html)，以确保其表现符合预期。
+4. **测试并部署**：在将策略应用于[实盘交易](https://doc.stocksharp.com/zh/topics/designer/live_execution/getting_started.html)之前，始终在 Designer 提供的模拟环境中[测试您的策略](https://doc.stocksharp.com/zh/topics/designer/backtesting/getting_started.html)，以确保其表现符合预期。
 
 ## 贡献
 

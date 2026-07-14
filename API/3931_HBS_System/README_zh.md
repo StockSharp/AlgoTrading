@@ -53,4 +53,4 @@
 ## 参考
 
 - 原始 MT4 脚本：`MQL/8134/HBS_system.mq4`
-- StockSharp 官方文档：[https://doc.stocksharp.com/](https://doc.stocksharp.com/)
+- StockSharp 官方文档：[https://doc.stocksharp.com/zh/](https://doc.stocksharp.com/zh/)

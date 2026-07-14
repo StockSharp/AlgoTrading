@@ -7,12 +7,12 @@
 
 ## 戦略の概要
 
-この戦略は、複数の証券の価格データを単一の[インデックス](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)に統合します。このプロセスでは通常、各証券が最終インデックス値に比例して貢献するよう、正規化または加重技術が使用されます。
+この戦略は、複数の証券の価格データを単一の[インデックス](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)に統合します。このプロセスでは通常、各証券が最終インデックス値に比例して貢献するよう、正規化または加重技術が使用されます。
 
 ## ダイアグラムのコンポーネント
 
-- **データ収集ノード**: 選択した各証券の[ローソク足データ](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を取得する役割を担います。
-- **正規化ノード**: ローソク足データに正規化を適用し、最終的な[インデックス計算](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)への影響を均一にして、価格スケールの差異による影響を軽減します。
+- **データ収集ノード**: 選択した各証券の[ローソク足データ](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)を取得する役割を担います。
+- **正規化ノード**: ローソク足データに正規化を適用し、最終的な[インデックス計算](https://doc.stocksharp.com/ja/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html)への影響を均一にして、価格スケールの差異による影響を軽減します。
 - **加重ノード**: 市場時価総額や過去の変動率など、あらかじめ定義した基準に基づいて各証券にウェイトを割り当てます。
 - **インデックス計算ノード**: 正規化・加重された価格データを集約し、最終インデックス値を算出します。
 

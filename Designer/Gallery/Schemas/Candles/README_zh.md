@@ -11,8 +11,8 @@
 
 ## 示意图组件
 
-- **Candles 数据源**：这是从所选金融工具获取[K线数据](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)的主要节点。用户可以指定工具、数据范围和K线时间框架（如1分钟、5分钟K线）。
-- **图表方块**：该节点用于在图形界面上[绘制](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html)获取的数据，可显示K线的各种属性，如开盘、最高、最低和收盘价格。
+- **Candles 数据源**：这是从所选金融工具获取[K线数据](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html)的主要节点。用户可以指定工具、数据范围和K线时间框架（如1分钟、5分钟K线）。
+- **图表方块**：该节点用于在图形界面上[绘制](https://doc.stocksharp.com/zh/topics/designer/strategies/using_visual_designer/elements/common/chart.html)获取的数据，可显示K线的各种属性，如开盘、最高、最低和收盘价格。
 
 ## 功能
 
