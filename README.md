@@ -28,7 +28,7 @@ We welcome contributions from all users! If you have a strategy, a feature from 
 
 ## Resources
 
-- [Telegram Chat](https://t.me/stocksharpchat)
+- [Telegram Chat](https://stocksharp.com/en/chat/)
 - [StockSharp Documentation](https://doc.stocksharp.com)
 
 ## Usage
