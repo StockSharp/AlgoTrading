@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Parabolic SAR CCI strategy logo for Python</title>
+  <desc id="description">Round parabolic SAR markers arc above a symmetric CCI plumb gauge.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#347858; } .primary-light { fill:#7fbc99; } .primary-shade { fill:#23513d; } .secondary { fill:#c4872e; } .secondary-light { fill:#edbb69; } .secondary-shade { fill:#895b1e; }
+    .accent { fill:#7a65ad; } .positive { fill:#388960; } .positive-light { fill:#82c49f; } .negative { fill:#b94c46; } .negative-light { fill:#e78b7f; } .violet { fill:#3f75a7; } .violet-light { fill:#8db7db; } .neutral { fill:#273a36; } .pale { fill:#cbd8cb; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#347858; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#c4872e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-neutral { fill:none; stroke:#273a36; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#7a65ad; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; } .thin-primary { fill:none; stroke:#347858; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#c4872e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#273a36; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#66bf91; } .primary-light { fill:#aae0be; } .primary-shade { fill:#3d8e69; } .secondary { fill:#e6ad57; } .secondary-light { fill:#ffd08a; } .secondary-shade { fill:#a97735; } .accent { fill:#ac9ae0; } .positive { fill:#67c391; } .positive-light { fill:#a7ddbb; } .negative { fill:#ee746c; } .negative-light { fill:#ffaea3; } .violet { fill:#73ace0; } .violet-light { fill:#b5d5ee; } .neutral { fill:#edf3ef; } .pale { fill:#718378; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#66bf91; } .line-secondary { stroke:#e6ad57; } .line-neutral { stroke:#edf3ef; } .line-accent { stroke:#ac9ae0; } .thin-primary { stroke:#66bf91; } .thin-secondary { stroke:#e6ad57; } .thin-neutral { stroke:#edf3ef; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <circle class="secondary" cx="61" cy="196" r="18" />
+    <circle class="secondary" cx="111" cy="150" r="18" />
+    <circle class="secondary" cx="171" cy="113" r="18" />
+    <circle class="secondary" cx="239" cy="84" r="18" />
+    <circle class="secondary" cx="314" cy="66" r="18" />
+    <circle class="secondary" cx="397" cy="57" r="18" />
+    <path class="line-primary" d="M53 305 C126 279 180 249 237 202 C294 156 349 126 447 111" />
+    <path class="primary" d="M417 82 L481 94 L443 150 L442 115 Z" />
+    <path class="primary-shade" d="M113 250 L421 250 L421 462 L113 462 Z" />
+    <path class="pale" d="M133 270 L401 270 L401 442 L133 442 Z" />
+    <path class="primary-light" d="M133 270 L401 270 L401 304 L133 304 Z M133 408 L401 408 L401 442 L133 442 Z" />
+    <path class="thin-neutral" d="M267 286 L267 421" />
+    <path class="accent" d="M267 310 L309 365 L267 420 L225 365 Z" />
+    <path class="secondary" d="M188 351 L346 351 L346 377 L188 377 Z" />
+  </g>
+</svg>

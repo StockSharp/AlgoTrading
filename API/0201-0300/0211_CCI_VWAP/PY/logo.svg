@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">CCI VWAP strategy logo for Python</title>
+  <desc id="description">A CCI plumb gauge measures symmetric deviation beside the weighted VWAP anchor of fair value.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#347858; } .primary-light { fill:#7fbc99; } .primary-shade { fill:#23513d; } .secondary { fill:#c4872e; } .secondary-light { fill:#edbb69; } .secondary-shade { fill:#895b1e; }
+    .accent { fill:#7a65ad; } .positive { fill:#388960; } .positive-light { fill:#82c49f; } .negative { fill:#b94c46; } .negative-light { fill:#e78b7f; } .violet { fill:#3f75a7; } .violet-light { fill:#8db7db; } .neutral { fill:#273a36; } .pale { fill:#cbd8cb; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#347858; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#c4872e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-neutral { fill:none; stroke:#273a36; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#7a65ad; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; } .thin-primary { fill:none; stroke:#347858; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#c4872e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#273a36; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#66bf91; } .primary-light { fill:#aae0be; } .primary-shade { fill:#3d8e69; } .secondary { fill:#e6ad57; } .secondary-light { fill:#ffd08a; } .secondary-shade { fill:#a97735; } .accent { fill:#ac9ae0; } .positive { fill:#67c391; } .positive-light { fill:#a7ddbb; } .negative { fill:#ee746c; } .negative-light { fill:#ffaea3; } .violet { fill:#73ace0; } .violet-light { fill:#b5d5ee; } .neutral { fill:#edf3ef; } .pale { fill:#718378; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#66bf91; } .line-secondary { stroke:#e6ad57; } .line-neutral { stroke:#edf3ef; } .line-accent { stroke:#ac9ae0; } .thin-primary { stroke:#66bf91; } .thin-secondary { stroke:#e6ad57; } .thin-neutral { stroke:#edf3ef; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M213 56 L253 56 L253 127 L295 127 L295 159 L253 159 L253 352 C291 345 317 324 334 292 L369 311 C343 368 299 397 233 397 C167 397 123 368 97 311 L132 292 C149 324 175 345 213 352 L213 159 L171 159 L171 127 L213 127 Z" />
+    <path class="primary" d="M46 220 C143 187 309 187 382 220 L382 252 C309 219 143 219 46 252 Z" />
+    <path class="accent" d="M118 194 L150 194 L150 276 L118 276 Z M278 194 L310 194 L310 276 L278 276 Z" />
+    <path class="neutral" d="M327 83 L467 83 L467 430 L327 430 Z" />
+    <path class="pale" d="M345 103 L449 103 L449 410 L345 410 Z" />
+    <path class="secondary-light" d="M345 136 L449 136 L449 156 L345 156 Z M345 357 L449 357 L449 377 L345 377 Z" />
+    <path class="thin-neutral" d="M397 154 L397 329" />
+    <path class="secondary" d="M367 307 L427 307 L397 360 Z" />
+  </g>
+</svg>

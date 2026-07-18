@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VWAP Volume strategy logo for C#</title>
+  <desc id="description">A VWAP anchor fixes a weighted value rail while rising volume pistons drive price decisively through it.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#2867a8; } .primary-light { fill:#79b9e8; } .primary-shade { fill:#174575; } .secondary { fill:#d87532; } .secondary-light { fill:#f1ad72; } .secondary-shade { fill:#9e4b20; }
+    .accent { fill:#e3b93f; } .positive { fill:#3d8b61; } .positive-light { fill:#83c5a3; } .negative { fill:#bd4b43; } .negative-light { fill:#eb8b7d; }
+    .violet { fill:#6f62aa; } .violet-light { fill:#aaa0d4; } .neutral { fill:#283743; } .pale { fill:#c9d5df; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#2867a8; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#d87532; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#283743; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#e3b93f; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#2867a8; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#d87532; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#283743; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#5db4ee; } .primary-light { fill:#a6d8f7; } .primary-shade { fill:#307daf; } .secondary { fill:#f1a064; } .secondary-light { fill:#ffc394; } .secondary-shade { fill:#b96a3b; }
+      .accent { fill:#ffd166; } .positive { fill:#69c793; } .positive-light { fill:#aae0bd; } .negative { fill:#f27769; } .negative-light { fill:#ffb2a3; }
+      .violet { fill:#a99bdd; } .violet-light { fill:#d2c8ee; } .neutral { fill:#edf2f6; } .pale { fill:#738797; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#5db4ee; } .line-secondary { stroke:#f1a064; } .line-neutral { stroke:#edf2f6; } .line-accent { stroke:#ffd166; } .thin-primary { stroke:#5db4ee; } .thin-secondary { stroke:#f1a064; } .thin-neutral { stroke:#edf2f6; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M230 52 L274 52 L274 127 L321 127 L321 161 L274 161 L274 356 C318 349 348 326 367 290 L405 310 C376 372 329 404 252 404 C175 404 128 372 99 310 L137 290 C156 326 186 349 230 356 L230 161 L183 161 L183 127 L230 127 Z" />
+    <path class="primary" d="M48 232 C155 196 354 196 464 232 L464 268 C354 232 155 232 48 268 Z" />
+    <path class="accent" d="M126 198 L160 198 L160 286 L126 286 Z M344 198 L378 198 L378 286 L344 286 Z" />
+    <path class="secondary" d="M76 351 L121 351 L121 428 L76 428 Z M137 315 L182 315 L182 428 L137 428 Z M198 271 L243 271 L243 428 L198 428 Z M259 220 L304 220 L304 428 L259 428 Z" />
+    <path class="line-primary" d="M285 300 C333 271 370 226 414 160" />
+    <path class="primary" d="M382 155 L445 101 L448 183 L420 163 Z" />
+  </g>
+</svg>

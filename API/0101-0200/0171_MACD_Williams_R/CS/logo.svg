@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">MACD Williams R strategy logo for C#</title>
+  <desc id="description">A MACD crossover and histogram feed a fast Williams-percent-R depth hook that times the reversal at an extreme.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#2867a8; } .primary-light { fill:#79b9e8; } .primary-shade { fill:#174575; } .secondary { fill:#d87532; } .secondary-light { fill:#f1ad72; } .secondary-shade { fill:#9e4b20; }
+    .accent { fill:#e3b93f; } .positive { fill:#3d8b61; } .positive-light { fill:#83c5a3; } .negative { fill:#bd4b43; } .negative-light { fill:#eb8b7d; } .violet { fill:#6f62aa; } .violet-light { fill:#aaa0d4; } .neutral { fill:#283743; } .pale { fill:#c9d5df; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#2867a8; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#d87532; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-neutral { fill:none; stroke:#283743; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#e3b93f; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; } .thin-primary { fill:none; stroke:#2867a8; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#d87532; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#283743; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#5db4ee; } .primary-light { fill:#a6d8f7; } .primary-shade { fill:#307daf; } .secondary { fill:#f1a064; } .secondary-light { fill:#ffc394; } .secondary-shade { fill:#b96a3b; } .accent { fill:#ffd166; } .positive { fill:#69c793; } .positive-light { fill:#aae0bd; } .negative { fill:#f27769; } .negative-light { fill:#ffb2a3; } .violet { fill:#a99bdd; } .violet-light { fill:#d2c8ee; } .neutral { fill:#edf2f6; } .pale { fill:#738797; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#5db4ee; } .line-secondary { stroke:#f1a064; } .line-neutral { stroke:#edf2f6; } .line-accent { stroke:#ffd166; } .thin-primary { stroke:#5db4ee; } .thin-secondary { stroke:#f1a064; } .thin-neutral { stroke:#edf2f6; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M40 417 L254 417 L254 437 L40 437 Z" />
+    <path class="primary-light" d="M57 353 L89 353 L89 417 L57 417 Z M98 302 L130 302 L130 417 L98 417 Z M139 247 L171 247 L171 417 L139 417 Z M180 285 L212 285 L212 417 L180 417 Z" />
+    <path class="line-primary" d="M47 328 C90 314 117 250 152 257 C190 265 206 340 246 312" />
+    <path class="line-secondary" d="M47 368 C90 353 122 289 158 295 C196 301 220 366 246 337" />
+    <path class="neutral" d="M279 72 L466 72 L466 440 L279 440 Z" />
+    <path class="pale" d="M298 92 L447 92 L447 420 L298 420 Z" />
+    <path class="secondary-light" d="M298 92 L447 92 L447 133 L298 133 Z M298 379 L447 379 L447 420 L298 420 Z" />
+    <path class="line-secondary" d="M320 340 L353 381 C367 398 390 386 389 365 L385 202 C384 166 422 152 441 183" />
+    <path class="secondary" d="M416 173 L454 140 L454 193 L439 183 Z" />
+  </g>
+</svg>

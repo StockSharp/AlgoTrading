@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">MA CCI strategy logo for C#</title>
+  <desc id="description">A rising moving-average road carries trend while a plumb-bob CCI gauge turns upward from its lower deviation threshold.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#347858; } .primary-light { fill:#7fbc99; } .primary-shade { fill:#23513d; } .secondary { fill:#c4872e; } .secondary-light { fill:#edbb69; } .secondary-shade { fill:#895b1e; }
+    .accent { fill:#7a65ad; } .positive { fill:#388960; } .positive-light { fill:#82c49f; } .negative { fill:#b94c46; } .negative-light { fill:#e78b7f; }
+    .violet { fill:#3f75a7; } .violet-light { fill:#8db7db; } .neutral { fill:#273a36; } .pale { fill:#cbd8cb; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#347858; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#c4872e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#273a36; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#7a65ad; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#347858; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#c4872e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#273a36; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#66bf91; } .primary-light { fill:#aae0be; } .primary-shade { fill:#3d8e69; } .secondary { fill:#e6ad57; } .secondary-light { fill:#ffd08a; } .secondary-shade { fill:#a97735; }
+      .accent { fill:#ac9ae0; } .positive { fill:#67c391; } .positive-light { fill:#a7ddbb; } .negative { fill:#ee746c; } .negative-light { fill:#ffaea3; }
+      .violet { fill:#73ace0; } .violet-light { fill:#b5d5ee; } .neutral { fill:#edf3ef; } .pale { fill:#718378; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#66bf91; } .line-secondary { stroke:#e6ad57; } .line-neutral { stroke:#edf3ef; } .line-accent { stroke:#ac9ae0; } .thin-primary { stroke:#66bf91; } .thin-secondary { stroke:#e6ad57; } .thin-neutral { stroke:#edf3ef; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="line-primary" d="M42 353 C134 336 198 292 258 231 C316 171 374 127 468 105" />
+    <path class="primary-light" d="M57 324 C133 309 187 270 239 216 L258 235 C202 293 146 335 64 351 Z" />
+    <path class="neutral" d="M72 126 L224 126 L224 446 L72 446 Z" />
+    <path class="pale" d="M90 150 L206 150 L206 422 L90 422 Z" />
+    <path class="secondary-light" d="M90 173 L206 173 L206 193 L90 193 Z M90 379 L206 379 L206 399 L90 399 Z" />
+    <path class="thin-neutral" d="M148 190 L148 348" />
+    <path class="secondary" d="M116 326 L180 326 L148 382 Z" />
+    <path class="line-secondary" d="M148 326 C184 298 204 259 218 219" />
+    <path class="secondary" d="M190 222 L229 181 L232 237 L216 224 Z" />
+  </g>
+</svg>
