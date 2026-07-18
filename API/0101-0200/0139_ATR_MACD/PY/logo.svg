@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ATR MACD strategy logo for Python</title>
+  <desc id="description">An ATR shock absorber compresses beside a MACD crossover, visibly scaling the momentum signal as volatility expands.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #b24f42; } .primary-light { fill: #e48b74; } .primary-shade { fill: #7d342c; }
+    .secondary { fill: #2a82a4; } .secondary-light { fill: #7bbdd4; } .secondary-shade { fill: #1c5d75; }
+    .accent { fill: #dca93e; } .positive { fill: #3c8e68; } .positive-light { fill: #82c8a5; } .negative { fill: #b94b4b; } .negative-light { fill: #e98b83; }
+    .violet { fill: #745ba8; } .violet-light { fill: #af9ed2; } .neutral { fill: #2f383e; } .pale { fill: #d9c9bf; } .shadow { fill: #14262c; opacity: 0.22; }
+    .line-primary { fill:none; stroke:#b24f42; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-secondary { fill:none; stroke:#2a82a4; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#2f383e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-accent { fill:none; stroke:#dca93e; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#b24f42; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-secondary { fill:none; stroke:#2a82a4; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-neutral { fill:none; stroke:#2f383e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:0.08; } .python-upper { fill:#7ec5ed; opacity:0.08; } .python-lower { fill:#f1ca50; opacity:0.08; }
+      .primary { fill:#ed806d; } .primary-light { fill:#f7b09b; } .primary-shade { fill:#a94f43; }
+      .secondary { fill:#55b8d7; } .secondary-light { fill:#9ed7e8; } .secondary-shade { fill:#2f819a; }
+      .accent { fill:#f2cb61; } .positive { fill:#68c69a; } .positive-light { fill:#a9dfc2; } .negative { fill:#ef7474; } .negative-light { fill:#ffb0aa; }
+      .violet { fill:#aa97da; } .violet-light { fill:#d1c4ec; } .neutral { fill:#eff3f2; } .pale { fill:#8a786e; } .shadow { fill:#02090b; opacity:0.34; }
+      .line-primary { stroke:#ed806d; } .line-secondary { stroke:#55b8d7; } .line-neutral { stroke:#eff3f2; } .line-accent { stroke:#f2cb61; }
+      .thin-primary { stroke:#ed806d; } .thin-secondary { stroke:#55b8d7; } .thin-neutral { stroke:#eff3f2; }
+    }
+  </style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" /><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" /></g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M74 62 L206 62 L206 100 L74 100 Z M74 412 L206 412 L206 450 L74 450 Z" />
+    <path class="primary" d="M111 100 L169 100 L169 150 L111 150 Z M111 362 L169 362 L169 412 L111 412 Z" />
+    <path class="line-secondary" d="M140 150 L92 190 L188 230 L92 270 L188 310 L140 362" />
+    <path class="accent" d="M91 239 L189 239 L189 273 L91 273 Z" />
+    <path class="neutral" d="M238 420 L474 420 L474 440 L238 440 Z" />
+    <path class="primary-light" d="M255 358 L287 358 L287 420 L255 420 Z M296 302 L328 302 L328 420 L296 420 Z M337 241 L369 241 L369 420 L337 420 Z M378 281 L410 281 L410 420 L378 420 Z" />
+    <path class="line-primary" d="M245 326 C290 315 314 247 350 251 C389 256 412 341 463 300" />
+    <path class="line-secondary" d="M245 363 C288 351 319 282 356 287 C394 293 425 363 463 329" />
+  </g>
+</svg>
+

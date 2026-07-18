@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ADX MACD strategy logo for C#</title>
+  <desc id="description">A high-reading strength dial sits beside a MACD crossover and histogram, combining trend force with momentum direction.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #2867a8; } .primary-light { fill: #79b9e8; } .primary-shade { fill: #174575; }
+    .secondary { fill: #d87532; } .secondary-light { fill: #f1ad72; } .secondary-shade { fill: #9e4b20; }
+    .accent { fill: #e3b93f; } .positive { fill: #3d8b61; } .positive-light { fill: #83c5a3; } .negative { fill: #bd4b43; } .negative-light { fill: #eb8b7d; }
+    .violet { fill: #6f62aa; } .violet-light { fill: #aaa0d4; } .neutral { fill: #283743; } .pale { fill: #c9d5df; } .shadow { fill: #14262c; opacity: 0.22; }
+    .line-primary { fill:none; stroke:#2867a8; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-secondary { fill:none; stroke:#d87532; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#283743; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-accent { fill:none; stroke:#e3b93f; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#2867a8; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-secondary { fill:none; stroke:#d87532; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-neutral { fill:none; stroke:#283743; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:0.08; } .python-upper { fill:#7ec5ed; opacity:0.08; } .python-lower { fill:#f1ca50; opacity:0.08; }
+      .primary { fill:#5db4ee; } .primary-light { fill:#a6d8f7; } .primary-shade { fill:#307daf; }
+      .secondary { fill:#f1a064; } .secondary-light { fill:#ffc394; } .secondary-shade { fill:#b96a3b; }
+      .accent { fill:#ffd166; } .positive { fill:#69c793; } .positive-light { fill:#aae0bd; } .negative { fill:#f27769; } .negative-light { fill:#ffb2a3; }
+      .violet { fill:#a99bdd; } .violet-light { fill:#d2c8ee; } .neutral { fill:#edf2f6; } .pale { fill:#738797; } .shadow { fill:#02090b; opacity:0.34; }
+      .line-primary { stroke:#5db4ee; } .line-secondary { stroke:#f1a064; } .line-neutral { stroke:#edf2f6; } .line-accent { stroke:#ffd166; }
+      .thin-primary { stroke:#5db4ee; } .thin-secondary { stroke:#f1a064; } .thin-neutral { stroke:#edf2f6; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" /><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" /></g>
+  <g aria-hidden="true">
+    <path class="neutral" fill-rule="evenodd" d="M52 246 A148 148 0 0 1 348 246 L312 246 A112 112 0 0 0 88 246 Z" />
+    <path class="primary-light" d="M75 195 C103 118 173 78 244 93 L235 128 C181 117 127 148 107 205 Z" />
+    <path class="secondary" d="M235 92 C287 102 327 141 345 197 L310 207 C296 163 266 135 226 127 Z" />
+    <path class="line-accent" d="M200 239 L284 134" />
+    <path class="accent" d="M182 221 A20 20 0 1 0 222 221 A20 20 0 1 0 182 221 Z" />
+    <path class="neutral" d="M264 420 L474 420 L474 440 L264 440 Z" />
+    <path class="primary-light" d="M282 360 L312 360 L312 420 L282 420 Z M320 302 L350 302 L350 420 L320 420 Z M358 236 L388 236 L388 420 L358 420 Z M396 276 L426 276 L426 420 L396 420 Z" />
+    <path class="line-primary" d="M272 332 C312 321 340 245 375 254 C413 263 429 344 463 311" />
+    <path class="line-secondary" d="M272 366 C314 351 342 281 380 286 C417 291 437 365 463 337" />
+  </g>
+</svg>
+

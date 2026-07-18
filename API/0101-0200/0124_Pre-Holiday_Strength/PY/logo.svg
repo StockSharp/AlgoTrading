@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Pre-Holiday Strength strategy logo for Python</title>
+  <desc id="description">A sealed holiday gift lifts on a rising price arrow, representing strength concentrated just before the market break.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #347858; } .primary-light { fill: #7fbc99; } .primary-shade { fill: #23513d; }
+    .secondary { fill: #c4872e; } .secondary-light { fill: #edbb69; } .secondary-shade { fill: #895b1e; }
+    .accent { fill: #7a65ad; } .positive { fill: #388960; } .positive-light { fill: #82c49f; }
+    .negative { fill: #b94c46; } .negative-light { fill: #e78b7f; }
+    .violet { fill: #3f75a7; } .violet-light { fill: #8db7db; }
+    .neutral { fill: #273a36; } .pale { fill: #cbd8cb; } .shadow { fill: #14262c; opacity: 0.22; }
+    .line-primary { fill: none; stroke: #347858; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-secondary { fill: none; stroke: #c4872e; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-neutral { fill: none; stroke: #273a36; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-accent { fill: none; stroke: #7a65ad; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-primary { fill: none; stroke: #347858; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-secondary { fill: none; stroke: #c4872e; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-neutral { fill: none; stroke: #273a36; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #66bf91; } .primary-light { fill: #aae0be; } .primary-shade { fill: #3d8e69; }
+      .secondary { fill: #e6ad57; } .secondary-light { fill: #ffd08a; } .secondary-shade { fill: #a97735; }
+      .accent { fill: #ac9ae0; } .positive { fill: #67c391; } .positive-light { fill: #a7ddbb; }
+      .negative { fill: #ee746c; } .negative-light { fill: #ffaea3; }
+      .violet { fill: #73ace0; } .violet-light { fill: #b5d5ee; }
+      .neutral { fill: #edf3ef; } .pale { fill: #718378; } .shadow { fill: #02090b; opacity: 0.34; }
+      .line-primary { stroke: #66bf91; } .line-secondary { stroke: #e6ad57; }
+      .line-neutral { stroke: #edf3ef; } .line-accent { stroke: #ac9ae0; }
+      .thin-primary { stroke: #66bf91; } .thin-secondary { stroke: #e6ad57; } .thin-neutral { stroke: #edf3ef; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="line-primary" d="M50 402 C128 370 183 315 232 245 C275 184 323 140 412 113" />
+    <path class="primary" d="M383 90 L465 99 L418 166 L412 128 Z" />
+    <path class="secondary" d="M161 216 L367 216 L367 404 L161 404 Z" />
+    <path class="secondary-light" d="M142 180 L386 180 L386 243 L142 243 Z" />
+    <path class="accent" d="M245 180 L283 180 L283 404 L245 404 Z M142 279 L386 279 L386 317 L142 317 Z" />
+    <path class="positive" d="M250 180 C204 157 190 118 213 94 C237 70 263 94 264 132 C265 94 291 70 315 94 C338 118 324 157 278 180 Z" />
+    <path class="pale" d="M169 244 L238 244 L238 278 L169 278 Z M290 244 L359 244 L359 278 L290 278 Z" />
+  </g>
+</svg>
+
