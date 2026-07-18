@@ -1,162 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">Triple MA strategy logo for C#</title>
-  <desc id="description">Three independent ribbons align and become one decisive route.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
+  <title id="title">Triple Moving Average strategy logo for C#</title>
+  <desc id="description">Three independent ribbons converge and leave as one reinforced directional route.</desc>
 
   <style>
-    :root {
-      color-scheme: light dark;
-    }
+    :root { color-scheme: light dark; }
 
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .badge-fill {
-      fill: #f4f7f8;
-    }
-
-    .badge-stroke {
-      stroke: #f4f7f8;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .python-upper {
-      fill: #2874a6;
-      opacity: 0.09;
-    }
-
-    .python-lower {
-      fill: #a77b00;
-      opacity: 0.09;
-    }
-
-    .python-eye {
-      fill: #f4f7f8;
-    }
-
-    .accent-fill {
-      fill: #079b7e;
-    }
-
-    .accent-stroke {
-      stroke: #079b7e;
-    }
-
-    .solid-fill {
-      fill: #17364a;
-    }
-
-    .solid-stroke {
-      stroke: #17364a;
-    }
-
-    .muted-fill {
-      fill: #526b78;
-    }
-
-    .muted-stroke {
-      stroke: #526b78;
-    }
-
-    .warm-fill {
-      fill: #d97706;
-    }
-
-    .warm-stroke {
-      stroke: #d97706;
-    }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0e8c83; }
+    .primary-light { fill: #5dcabd; }
+    .primary-shade { fill: #086860; }
+    .secondary { fill: #6752a3; }
+    .secondary-light { fill: #a494d2; }
+    .secondary-shade { fill: #49357e; }
+    .accent { fill: #de8a33; }
+    .neutral { fill: #28393f; }
+    .shadow { fill: #15262c; opacity: 0.22; }
 
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .badge-fill {
-        fill: #0d2638;
-      }
-
-      .badge-stroke {
-        stroke: #0d2638;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .python-upper {
-        fill: #79b7df;
-        opacity: 0.1;
-      }
-
-      .python-lower {
-        fill: #f0c84b;
-        opacity: 0.1;
-      }
-
-      .python-eye {
-        fill: #0d2638;
-      }
-
-      .accent-fill {
-        fill: #43d6b1;
-      }
-
-      .accent-stroke {
-        stroke: #43d6b1;
-      }
-
-      .solid-fill {
-        fill: #edf2f3;
-      }
-
-      .solid-stroke {
-        stroke: #edf2f3;
-      }
-
-      .muted-fill {
-        fill: #8fa2aa;
-      }
-
-      .muted-stroke {
-        stroke: #8fa2aa;
-      }
-
-      .warm-fill {
-        fill: #f6b73c;
-      }
-
-      .warm-stroke {
-        stroke: #f6b73c;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #3fc5b9; }
+      .primary-light { fill: #82dfd3; }
+      .primary-shade { fill: #1c9389; }
+      .secondary { fill: #9d87d8; }
+      .secondary-light { fill: #c8b9ed; }
+      .secondary-shade { fill: #7159ad; }
+      .accent { fill: #f1b052; }
+      .neutral { fill: #e5efec; }
+      .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
 
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+  <text class="language-mark" x="247" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="316" font-weight="800" letter-spacing="-20" text-anchor="middle" aria-hidden="true">C#</text>
 
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
-
-    <!-- Strategy metaphor. -->
-    <path class="solid-stroke" d="M70 151 C151 151 177 219 246 236 C304 250 334 249 397 249" fill="none" stroke-width="15" stroke-linecap="round" />
-    <path class="accent-stroke" d="M70 249 C150 249 183 249 246 249 C306 249 338 249 397 249" fill="none" stroke-width="15" stroke-linecap="round" />
-    <path class="warm-stroke" d="M70 347 C151 347 178 280 246 263 C305 249 337 249 397 249" fill="none" stroke-width="15" stroke-linecap="round" />
-    <path class="solid-fill" d="M438 249 L389 215 V283 Z" />
-    <circle class="muted-fill" cx="112" cy="151" r="9" />
-    <circle class="muted-fill" cx="112" cy="249" r="9" />
-    <circle class="muted-fill" cx="112" cy="347" r="9" />
+  <g aria-hidden="true">
+    <path class="primary" d="M35 87 C133 101 195 151 273 261 L241 291 C168 189 111 147 30 137 Z" />
+    <path class="primary-light" d="M48 104 C127 119 181 163 251 261 L239 273 C168 177 116 137 42 124 Z" />
+    <path class="secondary" d="M29 208 C122 204 185 226 269 270 L246 313 C166 270 109 252 29 256 Z" />
+    <path class="secondary-light" d="M47 220 C121 220 174 237 250 276 L243 291 C169 254 116 238 43 239 Z" />
+    <path class="accent" d="M38 420 C128 390 188 344 257 286 L287 321 C216 382 150 430 55 466 Z" />
+    <path class="neutral" d="M247 279 C318 223 353 157 416 98 L386 88 L488 51 L459 155 L439 121 C382 177 354 244 282 310 Z" />
+    <path class="secondary-light" d="M270 287 C327 236 358 177 407 124 L427 115 C375 171 348 231 291 293 Z" />
   </g>
 </svg>

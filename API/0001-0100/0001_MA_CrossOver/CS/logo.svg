@@ -1,167 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">HMA Seasonal Divergence strategy logo for C#</title>
-  <desc id="description">Two signals diverge across a repeating seasonal orbit.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
+  <title id="title">Moving Average Crossover strategy logo for C#</title>
+  <desc id="description">Two broad directional ribbons exchange levels at a clean crossover.</desc>
 
   <style>
-    :root {
-      color-scheme: light dark;
-    }
+    :root { color-scheme: light dark; }
 
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .badge-fill {
-      fill: #f4f7f8;
-    }
-
-    .badge-stroke {
-      stroke: #f4f7f8;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .python-upper {
-      fill: #2874a6;
-      opacity: 0.09;
-    }
-
-    .python-lower {
-      fill: #a77b00;
-      opacity: 0.09;
-    }
-
-    .python-eye {
-      fill: #f4f7f8;
-    }
-
-    .accent-fill {
-      fill: #079b7e;
-    }
-
-    .accent-stroke {
-      stroke: #079b7e;
-    }
-
-    .solid-fill {
-      fill: #17364a;
-    }
-
-    .solid-stroke {
-      stroke: #17364a;
-    }
-
-    .muted-fill {
-      fill: #526b78;
-    }
-
-    .muted-stroke {
-      stroke: #526b78;
-    }
-
-    .warm-fill {
-      fill: #d97706;
-    }
-
-    .warm-stroke {
-      stroke: #d97706;
-    }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .slow { fill: #cf4455; }
+    .slow-light { fill: #f07c72; }
+    .slow-shade { fill: #a92f42; }
+    .fast { fill: #078b84; }
+    .fast-light { fill: #56c9b9; }
+    .fast-fold { fill: #056963; }
+    .overlap-shadow { fill: #172f36; opacity: 0.2; }
 
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .badge-fill {
-        fill: #0d2638;
-      }
-
-      .badge-stroke {
-        stroke: #0d2638;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .python-upper {
-        fill: #79b7df;
-        opacity: 0.1;
-      }
-
-      .python-lower {
-        fill: #f0c84b;
-        opacity: 0.1;
-      }
-
-      .python-eye {
-        fill: #0d2638;
-      }
-
-      .accent-fill {
-        fill: #43d6b1;
-      }
-
-      .accent-stroke {
-        stroke: #43d6b1;
-      }
-
-      .solid-fill {
-        fill: #edf2f3;
-      }
-
-      .solid-stroke {
-        stroke: #edf2f3;
-      }
-
-      .muted-fill {
-        fill: #8fa2aa;
-      }
-
-      .muted-stroke {
-        stroke: #8fa2aa;
-      }
-
-      .warm-fill {
-        fill: #f6b73c;
-      }
-
-      .warm-stroke {
-        stroke: #f6b73c;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .slow { fill: #f0646c; }
+      .slow-light { fill: #ff9b88; }
+      .slow-shade { fill: #c44352; }
+      .fast { fill: #35bdb2; }
+      .fast-light { fill: #79dfd0; }
+      .fast-fold { fill: #168e87; }
+      .overlap-shadow { fill: #02090c; opacity: 0.34; }
     }
   </style>
 
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+  <text class="language-mark" x="247" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="316" font-weight="800" letter-spacing="-20" text-anchor="middle" aria-hidden="true">C#</text>
 
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
+  <!-- The slower ribbon changes direction underneath the faster one. -->
+  <path class="slow" d="M38 104 C138 88 200 132 249 200 C300 271 343 337 426 358 L410 326 L489 374 L427 442 L432 405 C314 381 259 310 212 245 C170 187 131 161 44 176 Z" />
+  <path class="slow-light" d="M58 117 C140 106 189 143 230 200 C258 239 281 277 312 310 L294 328 C262 296 236 254 208 216 C173 168 137 149 53 160 Z" />
+  <path class="slow-shade" d="M303 329 C343 356 380 370 429 377 L423 405 C370 395 334 378 291 347 Z" />
 
-    <!-- Strategy metaphor. -->
-    <circle class="muted-stroke badge-fill" cx="240" cy="256" r="126" stroke-width="13" />
-    <path class="warm-stroke" d="M137 184 C178 109 278 94 344 146" fill="none" stroke-width="12" stroke-linecap="round" />
-    <path class="warm-fill" d="M366 166 L329 151 L357 126 Z" />
-    <circle class="warm-fill" cx="240" cy="130" r="15" />
-    <circle class="accent-fill" cx="366" cy="256" r="15" />
-    <circle class="solid-fill" cx="240" cy="382" r="15" />
-    <circle class="muted-fill" cx="114" cy="256" r="15" />
-    <path class="accent-stroke" d="M73 328 C145 311 187 279 240 256 C301 230 349 165 422 111" fill="none" stroke-width="18" stroke-linecap="round" />
-    <path class="solid-stroke" d="M73 328 C146 313 190 281 240 256 C302 272 355 334 425 390" fill="none" stroke-width="18" stroke-linecap="round" />
-    <circle class="warm-fill" cx="240" cy="256" r="21" />
-    <path class="accent-fill" d="M448 92 L411 102 L435 133 Z" />
-    <path class="solid-fill" d="M451 408 L414 398 L439 369 Z" />
-  </g>
+  <!-- A single shadow explains which ribbon passes above the other. -->
+  <path class="overlap-shadow" d="M190 327 C214 307 234 286 252 263 L294 296 C274 321 253 345 226 367 Z" />
+
+  <!-- The faster ribbon overtakes, rises, and resolves into one directional point. -->
+  <path class="fast" d="M43 392 C133 372 184 335 231 282 C288 218 319 146 407 88 L376 74 L489 45 L459 158 L439 119 C368 166 333 242 276 307 C224 367 169 415 70 458 Z" />
+  <path class="fast-light" d="M70 401 C144 381 189 347 231 299 C283 240 314 169 397 109 L419 97 C337 154 307 226 254 286 C208 338 160 379 80 425 Z" />
+  <path class="fast-fold" d="M407 88 L489 45 L459 158 L439 119 L448 87 Z" />
 </svg>

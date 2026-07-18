@@ -1,107 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">N-Day Breakout strategy logo for C#</title>
-  <desc id="description">A green sprout fractures a thick stone slab, sending cracks and fragments outward.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
+  <desc id="description">A growing shoot forces apart a rigid price shelf and rises through the opening.</desc>
 
   <style>
-    :root {
-      color-scheme: light dark;
-    }
+    :root { color-scheme: light dark; }
 
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .sprout-fill {
-      fill: #079b7e;
-    }
-
-    .sprout-stroke {
-      stroke: #079b7e;
-    }
-
-    .slab {
-      fill: #17364a;
-    }
-
-    .slab-side {
-      fill: #526b78;
-    }
-
-    .crack-stroke {
-      stroke: #f4f7f8;
-    }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #16865f; }
+    .primary-light { fill: #68c892; }
+    .primary-shade { fill: #0d6848; }
+    .secondary { fill: #59666d; }
+    .secondary-light { fill: #aeb8ba; }
+    .secondary-shade { fill: #37464c; }
+    .accent { fill: #e5a93f; }
+    .neutral { fill: #22343a; }
+    .shadow { fill: #14262c; opacity: 0.22; }
 
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .sprout-fill {
-        fill: #43d6b1;
-      }
-
-      .sprout-stroke {
-        stroke: #43d6b1;
-      }
-
-      .slab {
-        fill: #edf2f3;
-      }
-
-      .slab-side {
-        fill: #8fa2aa;
-      }
-
-      .crack-stroke {
-        stroke: #0d2638;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #4dce91; }
+      .primary-light { fill: #91e4b5; }
+      .primary-shade { fill: #279d6c; }
+      .secondary { fill: #a9b7ba; }
+      .secondary-light { fill: #d8dfdf; }
+      .secondary-shade { fill: #718187; }
+      .accent { fill: #f4c65f; }
+      .neutral { fill: #e6efec; }
+      .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
 
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+  <text class="language-mark" x="247" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="316" font-weight="800" letter-spacing="-20" text-anchor="middle" aria-hidden="true">C#</text>
 
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
-
-    <!-- The sprout represents momentum emerging from a long-held range. -->
-    <path class="sprout-stroke" d="M256 363 C253 323 259 282 256 239 C254 211 259 180 267 151" fill="none" stroke-width="18" stroke-linecap="round" />
-    <path class="sprout-stroke" d="M255 340 C237 351 222 369 211 386 M258 344 C277 356 292 371 303 388" fill="none" stroke-width="10" stroke-linecap="round" />
-    <path class="sprout-fill" d="M244 210 C207 211 182 187 182 151 C219 150 245 174 244 210 Z" />
-    <path class="sprout-fill" d="M272 177 C275 140 300 116 337 119 C333 156 309 179 272 177 Z" />
-
-    <!-- The thick lower faces give the N-day boundary physical weight. -->
-    <path class="slab-side" d="M52 286 H224 L242 267 V285 L228 304 H52 Z" />
-    <path class="slab-side" d="M460 286 H290 L270 268 V286 L288 304 H460 Z" />
-
-    <!-- Irregular top faces split around the emerging stem. -->
-    <path class="slab" d="M52 222 H211 L232 238 L219 250 L242 267 L224 286 H52 Z" />
-    <path class="slab" d="M460 222 H300 L279 239 L291 252 L270 268 L290 286 H460 Z" />
-
-    <!-- Secondary fractures spread the impact beyond the central break. -->
-    <path class="crack-stroke" d="M176 222 L190 238 L181 253 M190 238 L207 229 M337 222 L323 239 L333 253 M323 239 L306 230" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-
-    <!-- Uneven fragments freeze the instant of breakout. -->
-    <path class="slab" d="M139 213 L153 184 L174 205 L160 216 Z" />
-    <path class="slab" d="M337 208 L351 179 L373 202 L357 214 Z" />
-    <path class="slab-side" d="M301 217 L311 200 L324 216 Z" />
+  <g aria-hidden="true" transform="translate(0 -25.6) scale(1 1.1)">
+    <path class="secondary" d="M34 276 L205 267 L232 298 L210 341 L36 355 Z" />
+    <path class="secondary-light" d="M34 276 L205 267 L218 282 L199 302 L39 311 Z" />
+    <path class="secondary-shade" d="M36 331 L201 317 L210 341 L36 355 Z" />
+    <path class="secondary" d="M283 293 L467 273 L484 344 L306 360 L278 327 Z" />
+    <path class="secondary-light" d="M283 293 L467 273 L474 302 L301 321 Z" />
+    <path class="secondary-shade" d="M300 337 L481 322 L484 344 L306 360 Z" />
+    <path class="primary" d="M232 451 C235 378 236 326 251 278 C267 226 299 174 361 112 L394 143 C337 199 309 240 294 286 C279 333 280 385 286 451 Z" />
+    <path class="primary-shade" d="M253 286 C197 278 160 241 150 190 C207 188 247 218 267 262 Z" />
+    <path class="primary-light" d="M278 246 C289 183 329 143 382 126 C378 181 344 226 289 261 Z" />
+    <path class="accent" d="M218 251 L247 278 L229 307 L195 278 Z" />
+    <path class="secondary-shade" d="M282 260 L311 233 L337 268 L302 291 Z" />
   </g>
 </svg>
