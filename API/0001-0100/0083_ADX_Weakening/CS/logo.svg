@@ -29,13 +29,11 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M44 177 L130 177 L157 215 L130 253 L44 253 L17 215 Z M59 197 L115 197 L128 215 L115 233 L59 233 L46 215 Z" fill-rule="evenodd" />
-    <path class="primary" d="M144 210 L219 194 L249 224 L229 267 L154 283 L124 253 Z M159 226 L208 216 L224 231 L213 251 L165 261 L149 246 Z" fill-rule="evenodd" />
-    <path class="accent" d="M239 235 L301 235 L323 267 L301 299 L239 299 L217 267 Z M253 252 L287 252 L298 267 L287 282 L253 282 L242 267 Z" fill-rule="evenodd" />
-    <path class="negative" d="M320 277 L369 293 L378 329 L348 350 L299 334 L290 298 Z M328 296 L354 304 L359 321 L343 330 L317 322 L312 305 Z" fill-rule="evenodd" />
-    <path class="secondary-shade" d="M374 319 L402 341 L391 370 L359 372 L346 344 Z" />
+    <path class="secondary" d="M95 174 A58 42 0 1 1 95 258 A58 42 0 1 1 95 174 Z M95 194 A38 22 0 1 0 95 238 A38 22 0 1 0 95 194 Z" fill-rule="evenodd" transform="rotate(-4 95 216)" />
+    <path class="primary" d="M187 199 A55 37 0 1 1 187 273 A55 37 0 1 1 187 199 Z M187 217 A36 19 0 1 0 187 255 A36 19 0 1 0 187 217 Z" fill-rule="evenodd" transform="rotate(-12 187 236)" />
+    <path class="accent" d="M270 235 A50 32 0 1 1 270 299 A50 32 0 1 1 270 235 Z M270 251 A32 16 0 1 0 270 283 A32 16 0 1 0 270 251 Z" fill-rule="evenodd" />
+    <path class="negative" d="M334 286 A42 29 0 1 1 334 344 A42 29 0 1 1 334 286 Z M334 301 A27 14 0 1 0 334 329 A27 14 0 1 0 334 301 Z" fill-rule="evenodd" transform="rotate(18 334 315)" />
     <path class="negative" d="M413 343 L449 343 L449 382 L478 382 L428 437 L378 382 L413 382 Z" />
     <path class="negative-light" d="M421 358 L441 358 L441 393 L449 393 L428 416 L407 393 L421 393 Z" />
-    <path class="pale" d="M177 319 L208 302 L235 320 L229 347 L194 354 L171 339 Z M271 349 L294 336 L316 350 L311 373 L283 379 L265 365 Z" />
   </g>
 </svg>

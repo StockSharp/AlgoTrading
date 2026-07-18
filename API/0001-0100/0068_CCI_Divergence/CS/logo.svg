@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">CCI Divergence strategy logo for C#</title>
-  <desc id="description">A mountain flag rises while a calibrated compass needle turns toward the opposite extreme.</desc>
+  <desc id="description">Two synchronized charts show price making a lower low while CCI turns upward to a higher low between its threshold rails.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -29,15 +29,13 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M42 407 L156 210 L229 308 L301 170 L470 407 Z" />
-    <path class="secondary-light" d="M76 386 L156 245 L184 283 L157 276 L102 386 Z M277 315 L301 207 L414 386 L378 352 L317 264 Z" />
-    <path class="accent" d="M285 153 L285 83 L371 101 L332 130 L371 159 Z" />
-    <path class="neutral" d="M274 137 L296 137 L296 261 L274 261 Z" />
-    <path class="pale" d="M73 407 A183 183 0 0 1 439 407 L398 407 A142 142 0 0 0 114 407 Z" />
-    <path class="violet" d="M234 365 L256 269 L278 365 L267 414 L245 414 Z" />
-    <path class="accent" d="M232 365 L256 341 L280 365 L280 398 L256 421 L232 398 Z" />
-    <path class="negative" d="M105 371 L137 337 L169 371 L157 407 L117 407 Z" />
-    <path class="primary" d="M359 371 L391 337 L423 371 L411 407 L371 407 Z" />
-    <path class="neutral" d="M179 393 L205 393 L205 425 L179 425 Z M307 393 L333 393 L333 425 L307 425 Z" />
+    <path class="pale" d="M170 64 L182 64 L182 452 L170 452 Z M382 64 L394 64 L394 452 L382 452 Z" />
+    <path class="secondary-shade" d="M42 70 L58 70 L58 238 L42 238 Z M42 222 L470 222 L470 238 L42 238 Z M42 278 L58 278 L58 460 L42 460 Z M42 444 L470 444 L470 460 L42 460 Z" />
+    <path class="secondary-light" d="M58 292 L470 292 L470 308 L58 308 Z M58 424 L470 424 L470 440 L58 440 Z" />
+    <path class="neutral" d="M58 360 L470 360 L470 374 L58 374 Z" />
+    <path class="negative" d="M58 92 L176 184 L258 116 L388 218 L458 154 L458 190 L390 254 L258 154 L176 220 L58 130 Z" />
+    <path class="negative-light" d="M168 198 L390 228 L388 244 L166 214 Z" />
+    <path class="violet" d="M58 312 L176 406 L258 328 L388 364 L458 302 L458 338 L390 400 L258 366 L176 442 L58 350 Z" />
+    <path class="positive-light" d="M170 414 L390 366 L394 382 L174 430 Z" />
   </g>
 </svg>

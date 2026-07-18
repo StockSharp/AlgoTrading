@@ -23,8 +23,8 @@
     <path class="secondary-light" d="M26 103 C139 137 228 151 317 129 L306 153 C220 172 133 158 26 128 Z" />
     <path class="secondary" d="M26 409 C139 375 228 361 317 383 C379 398 427 425 486 457 L486 382 C431 353 380 329 322 316 C224 293 133 310 26 342 Z" />
     <path class="secondary-shade" d="M26 384 C136 351 226 338 316 359 L322 383 C228 361 139 375 26 409 Z" />
-    <path class="primary" d="M370 109 L415 87 L456 113 L458 163 L417 191 L372 170 L355 137 Z" />
-    <path class="primary-light" d="M381 112 L414 96 L441 113 L414 131 L374 134 Z" />
+    <path class="primary" d="M407 87 A52 52 0 1 1 407 191 A52 52 0 1 1 407 87 Z" />
+    <path class="primary-light" d="M403 99 A26 26 0 1 1 403 151 A26 26 0 1 1 403 99 Z" />
     <path class="accent" d="M391 190 C351 218 315 238 267 256 L255 228 C300 211 333 192 372 165 Z" />
     <path class="neutral" d="M297 226 L243 256 L297 286 L286 266 L331 266 L331 246 L286 246 Z" />
   </g>

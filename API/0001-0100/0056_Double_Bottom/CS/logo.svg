@@ -1,27 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Double Bottom strategy logo for C#</title>
-  <desc id="description">Two matching stone basins absorb repeated pressure before a springboard launches from their shared neckline.</desc>
+  <desc id="description">A literal W-shaped price path touches two equal lows and exits upward from the second bottom.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
     .python-upper { fill: #2874a6; opacity: 0.07; }
     .python-lower { fill: #aa8108; opacity: 0.07; }
-    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
-    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
-    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
-    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
-    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
-    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    .primary { fill: #16875f; } .primary-light { fill: #6bc49f; } .primary-shade { fill: #0d5b42; }
+    .secondary { fill: #357da8; } .secondary-light { fill: #8bc5df; } .secondary-shade { fill: #24536e; }
+    .accent { fill: #efad32; } .positive { fill: #269869; } .positive-light { fill: #82d0aa; }
+    .negative { fill: #c94f5f; } .negative-light { fill: #ef909b; }
+    .violet { fill: #705ca3; } .violet-light { fill: #b1a0d3; }
+    .neutral { fill: #27373a; } .pale { fill: #c7d9d2; } .shadow { fill: #14231f; opacity: 0.22; }
     @media (prefers-color-scheme: dark) {
       .language-mark { fill: #edf6f3; opacity: 0.08; }
       .python-upper { fill: #7ec5ed; opacity: 0.08; }
       .python-lower { fill: #f1ca50; opacity: 0.08; }
-      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
-      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
-      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
-      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
-      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
-      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+      .primary { fill: #4dcc96; } .primary-light { fill: #9be2c3; } .primary-shade { fill: #27966d; }
+      .secondary { fill: #74b9df; } .secondary-light { fill: #b9ddf0; } .secondary-shade { fill: #477f9f; }
+      .accent { fill: #ffd060; } .positive { fill: #5fd49d; } .positive-light { fill: #a8e9c9; }
+      .negative { fill: #f37e8b; } .negative-light { fill: #ffb6bf; }
+      .violet { fill: #aa98d7; } .violet-light { fill: #d4c8ec; }
+      .neutral { fill: #e8f1ed; } .pale { fill: #71877f; } .shadow { fill: #020a07; opacity: 0.34; }
     }
   </style>
   <g class="language-mark" aria-hidden="true">
@@ -29,14 +29,14 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M24 147 C95 151 127 191 151 264 C171 326 204 360 256 360 C308 360 341 326 361 264 C385 191 417 151 488 147 L488 205 C438 205 423 236 406 292 C376 389 326 432 256 432 C186 432 136 389 106 292 C89 236 74 205 24 205 Z" />
-    <path class="secondary-light" d="M39 159 C99 166 121 202 141 270 L121 279 C103 224 86 190 39 184 Z M473 159 C413 166 391 202 371 270 L391 279 C409 224 426 190 473 184 Z" />
-    <path class="primary" d="M86 319 C111 287 143 282 169 307 C194 331 194 371 169 396 C142 422 102 412 82 379 Z" />
-    <path class="primary" d="M426 319 C401 287 369 282 343 307 C318 331 318 371 343 396 C370 422 410 412 430 379 Z" />
-    <path class="accent" d="M133 323 L153 311 L173 323 L173 347 L153 359 L133 347 Z M339 323 L359 311 L379 323 L379 347 L359 359 L339 347 Z" />
-    <path class="neutral" d="M151 229 L361 229 L361 263 L151 263 Z" />
-    <path class="primary-shade" d="M193 263 L319 263 L304 293 L208 293 Z" />
-    <path class="primary-light" d="M236 292 L236 173 L204 173 L256 111 L308 173 L276 173 L276 292 Z" />
-    <path class="accent" d="M238 173 L256 152 L274 173 L256 194 Z" />
+    <path class="secondary-shade" d="M35 117 L71 91 L154 335 L256 171 L358 335 L441 91 L477 117 L371 410 L256 239 L141 410 Z" />
+    <path class="primary" d="M35 105 L65 88 L152 330 L256 158 L360 330 L447 88 L477 105 L477 145 L447 145 L367 383 L256 215 L145 383 L65 145 L35 145 Z" />
+    <path class="primary-light" d="M66 117 L79 110 L157 314 L256 150 L355 314 L433 110 L446 117 L367 357 L256 190 L145 357 Z" />
+    <path class="accent" d="M113 356 L191 356 L191 378 L113 378 Z M321 356 L399 356 L399 378 L321 378 Z" />
+    <path class="negative" d="M118 276 L174 276 L174 337 L118 337 Z" />
+    <path class="positive" d="M334 276 L390 276 L390 337 L334 337 Z" />
+    <path class="neutral" d="M138 235 L154 235 L154 276 L138 276 Z M354 235 L370 235 L370 276 L354 276 Z" />
+    <path class="secondary" d="M182 203 L230 203 L230 226 L182 226 Z M282 203 L330 203 L330 226 L282 226 Z" />
+    <path class="primary" d="M427 88 L471 64 L502 98 L477 145 L477 117 L447 145 Z" />
   </g>
 </svg>

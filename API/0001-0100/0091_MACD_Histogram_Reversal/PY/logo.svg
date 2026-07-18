@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">MACD Histogram Reversal strategy logo for Python</title>
-  <desc id="description">Histogram keys flip across a rigid zero bridge while a central toggle confirms the momentum reversal.</desc>
+    <desc id="description">Histogram columns flip from negative to positive across a rigid zero bridge as momentum reverses.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -34,8 +34,6 @@
     <path class="negative-light" d="M82 296 L106 296 L106 374 L82 374 Z M144 296 L168 296 L168 334 L144 334 Z" />
     <path class="positive" d="M270 207 L318 207 L318 242 L270 242 Z M332 164 L380 164 L380 242 L332 242 Z M394 111 L442 111 L442 242 L394 242 Z" />
     <path class="positive-light" d="M282 219 L306 219 L306 242 L282 242 Z M344 181 L368 181 L368 242 L344 242 Z M406 129 L430 129 L430 242 L406 242 Z" />
-    <path class="accent" d="M224 226 L256 203 L288 226 L288 290 L256 313 L224 290 Z" />
-    <path class="secondary-shade" d="M238 240 L274 240 L274 276 L238 276 Z" />
     <path class="primary" d="M288 188 C341 129 385 100 447 83 L433 57 L491 85 L451 135 L449 108 C397 124 358 150 314 203 Z" />
     <path class="negative" d="M194 330 C150 374 112 395 63 402 L72 430 C131 420 178 394 220 350 Z" />
   </g>

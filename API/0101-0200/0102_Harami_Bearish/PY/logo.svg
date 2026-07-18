@@ -36,7 +36,6 @@
     <path class="negative" d="M223 192 L289 192 L289 264 L223 264 Z" />
     <path class="negative-light" d="M236 205 L276 205 L276 227 L236 227 Z" />
     <path class="neutral" d="M247 156 L265 156 L265 192 L247 192 Z M247 264 L265 264 L265 299 L247 299 Z" />
-    <path class="accent" d="M231 272 L256 293 L281 272 L269 250 L243 250 Z" />
     <path class="negative" d="M238 264 L274 264 L274 318 L301 318 L256 370 L211 318 L238 318 Z" />
     <path class="negative-light" d="M247 294 L265 294 L265 322 L277 322 L256 346 L235 322 L247 322 Z" />
     <path class="shadow" d="M98 386 L414 386 L395 422 L117 422 Z" />

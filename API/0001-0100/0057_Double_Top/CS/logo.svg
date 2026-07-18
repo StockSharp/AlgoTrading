@@ -33,11 +33,10 @@
     <path class="secondary-light" d="M72 336 L126 190 L153 263 L130 252 L104 320 Z" />
     <path class="secondary" d="M302 376 L386 161 L467 376 Z" />
     <path class="secondary-light" d="M329 336 L386 190 L412 260 L389 247 L361 320 Z" />
-    <path class="accent" d="M89 161 L126 124 L163 161 L148 192 L104 192 Z M349 161 L386 124 L423 161 L408 192 L364 192 Z" />
+    <path class="accent" d="M82 150 L170 150 L170 174 L82 174 Z M342 150 L430 150 L430 174 L342 174 Z" />
     <path class="neutral" d="M163 185 L349 185 L349 218 L163 218 Z" />
     <path class="negative" d="M238 201 L274 201 L274 330 L315 330 L256 421 L197 330 L238 330 Z" />
     <path class="negative-light" d="M248 219 L264 219 L264 342 L281 342 L256 381 L231 342 L248 342 Z" />
     <path class="shadow" d="M191 376 L321 376 L300 414 L212 414 Z" />
-    <path class="accent" d="M233 185 L256 165 L279 185 L256 209 Z" />
   </g>
 </svg>

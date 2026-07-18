@@ -31,7 +31,7 @@
   <g aria-hidden="true">
     <path class="secondary-shade" d="M41 393 L471 393 L471 437 L41 437 Z" />
     <path class="neutral" d="M232 254 L280 254 L305 393 L207 393 Z" />
-    <path class="accent" d="M218 222 L256 197 L294 222 L294 275 L256 300 L218 275 Z" />
+    <path class="accent" d="M256 197 A52 52 0 1 1 256 301 A52 52 0 1 1 256 197 Z" />
     <path class="negative" d="M69 297 L230 248 L243 290 L82 339 Z" />
     <path class="negative-light" d="M92 297 L222 258 L228 278 L98 317 Z" />
     <path class="primary" d="M269 222 L429 136 L451 177 L291 263 Z" />

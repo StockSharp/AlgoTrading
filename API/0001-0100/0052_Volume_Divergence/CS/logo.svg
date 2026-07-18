@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Volume Divergence strategy logo for C#</title>
-  <desc id="description">Price climbs strongly while its participation echo fades underneath.</desc>
+  <desc id="description">Price falls to a lower low on the upper chart while volume columns rise across the same two time points.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,12 +19,11 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="primary" d="M34 331 C117 310 177 270 229 222 C284 171 328 121 414 82 L388 68 L486 52 L451 147 L435 115 C361 151 321 197 269 247 C211 302 145 347 52 374 Z" />
-    <path class="primary-light" d="M61 331 C126 307 178 272 224 230 C276 182 318 134 399 96 L420 91 C341 133 301 178 251 225 C204 269 151 305 76 344 Z" />
-    <path class="primary-shade" d="M414 82 L486 52 L451 147 L435 115 L455 84 Z" />
-    <path class="secondary" d="M49 401 L185 401 L185 447 L49 447 Z" />
-    <path class="secondary-light" d="M207 371 L320 371 L320 417 L207 417 Z" />
-    <path class="secondary-shade" d="M343 345 L431 345 L431 391 L343 391 Z" />
-    <path class="accent" d="M443 326 L489 326 L489 372 L443 372 Z" />
+    <path class="neutral" opacity="0.14" d="M170 64 L182 64 L182 452 L170 452 Z M382 64 L394 64 L394 452 L382 452 Z" />
+    <path class="secondary-shade" d="M42 70 L58 70 L58 238 L42 238 Z M42 222 L470 222 L470 238 L42 238 Z M42 278 L58 278 L58 460 L42 460 Z M42 444 L470 444 L470 460 L42 460 Z" />
+    <path class="secondary" d="M58 92 L176 184 L258 116 L388 218 L458 154 L458 190 L390 254 L258 154 L176 220 L58 130 Z" />
+    <path class="secondary-light" d="M168 198 L390 228 L388 244 L166 214 Z" />
+    <path class="accent" d="M82 400 L126 400 L126 444 L82 444 Z M146 370 L190 370 L190 444 L146 444 Z M224 334 L268 334 L268 444 L224 444 Z M302 296 L346 296 L346 444 L302 444 Z M382 252 L426 252 L426 444 L382 444 Z" />
+    <path class="primary" d="M76 392 L432 244 L440 264 L84 412 Z" />
   </g>
 </svg>

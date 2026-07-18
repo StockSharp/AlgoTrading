@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Williams Percent R strategy logo for Python</title>
-  <desc id="description">A faceted slingshot stores force at an extreme and releases it into direction.</desc>
+  <desc id="description">A bounded oscillator travels between a clear overbought ceiling and oversold floor on a calibrated vertical scale.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -23,12 +23,12 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="primary-shade" d="M214 459 L237 269 L133 105 L177 75 L258 209 L337 75 L381 105 L279 269 L301 459 Z" />
-    <path class="primary" d="M232 446 L252 266 L157 111 L176 98 L258 232 L339 98 L358 112 L264 266 L283 446 Z" />
-    <path class="secondary" d="M150 96 C122 153 103 203 78 252 L102 267 C133 213 154 160 184 113 Z" />
-    <path class="secondary" d="M366 96 C392 151 414 204 438 252 L414 267 C384 212 362 160 333 113 Z" />
-    <path class="secondary-light" d="M78 252 L103 267 L257 253 L257 231 Z" />
-    <path class="secondary-light" d="M438 252 L414 267 L257 253 L257 231 Z" />
-    <path class="accent" d="M67 226 L96 203 L126 226 L117 263 L80 271 L56 249 Z" />
+    <path class="secondary-shade" d="M78 54 L112 54 L112 458 L78 458 Z M400 54 L434 54 L434 458 L400 458 Z M78 54 L434 54 L434 88 L78 88 Z M78 424 L434 424 L434 458 L78 458 Z" />
+    <path class="primary" d="M112 96 L400 96 L400 154 L112 154 Z" />
+    <path class="primary-light" d="M136 112 L376 112 L376 132 L136 132 Z" />
+    <path class="secondary" d="M112 356 L400 356 L400 416 L112 416 Z" />
+    <path class="secondary-light" d="M136 382 L376 382 L376 402 L136 402 Z" />
+    <path class="neutral" d="M112 201 L150 201 L150 221 L112 221 Z M112 252 L166 252 L166 272 L112 272 Z M112 303 L150 303 L150 323 L112 323 Z M362 201 L400 201 L400 221 L362 221 Z M346 252 L400 252 L400 272 L346 272 Z M362 303 L400 303 L400 323 L362 323 Z" />
+    <path class="accent" d="M128 368 L191 297 L242 326 L314 174 L384 226 L384 263 L322 218 L253 365 L196 334 L128 410 Z" />
   </g>
 </svg>

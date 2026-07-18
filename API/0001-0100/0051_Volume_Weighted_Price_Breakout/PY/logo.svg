@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Volume Weighted Price Breakout strategy logo for Python</title>
-  <desc id="description">A heavily loaded ram converts participation into force and breaks a gate.</desc>
+  <desc id="description">A price arrow breaks through both the simple average rail and a lower volume-weighted rail carrying three visible weights.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,15 +19,12 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M391 75 L437 75 L442 224 L398 236 Z" />
-    <path class="secondary-shade" d="M403 315 L449 304 L458 451 L412 451 Z" />
-    <path class="primary" d="M31 231 L342 231 L391 256 L342 281 L31 281 Z" />
-    <path class="primary-light" d="M58 241 L337 241 L366 256 L337 271 L58 271 Z" />
-    <path class="neutral" d="M336 205 L405 205 L433 256 L405 307 L336 307 L367 256 Z" />
-    <path class="accent" d="M93 164 L161 164 L161 230 L93 230 Z" />
-    <path class="secondary-light" d="M180 132 L254 132 L254 230 L180 230 Z" />
-    <path class="accent" d="M273 178 L335 178 L335 230 L273 230 Z" />
-    <path class="secondary-light" d="M397 229 L437 201 L455 235 L425 260 Z" />
-    <path class="secondary-shade" d="M425 271 L463 247 L480 281 L446 305 Z" />
+    <path class="secondary" d="M42 152 C142 119 239 125 329 163 C381 185 425 187 476 171 L488 211 C426 232 371 227 311 202 C232 169 151 165 55 194 Z" />
+    <path class="primary" d="M42 292 C141 254 227 260 305 294 C359 318 410 320 476 296 L489 340 C410 369 344 363 286 337 C220 308 149 303 57 340 Z" />
+    <path class="primary-light" d="M58 298 C143 270 216 277 291 307 L283 327 C218 300 151 293 64 320 Z" />
+    <path class="neutral" d="M132 332 L150 332 L150 382 L132 382 Z M244 346 L262 346 L262 414 L244 414 Z M356 344 L374 344 L374 392 L356 392 Z" />
+    <path class="accent" d="M108 382 L174 382 L174 428 L108 428 Z M220 414 L286 414 L286 460 L220 460 Z M332 392 L398 392 L398 438 L332 438 Z" />
+    <path class="secondary-shade" d="M76 416 L305 193 L272 163 L464 84 L391 270 L361 238 L112 448 Z" />
+    <path class="secondary-light" d="M116 409 L318 212 L339 233 L137 431 Z" />
   </g>
 </svg>

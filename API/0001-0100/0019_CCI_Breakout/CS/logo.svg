@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">CCI Breakout strategy logo for C#</title>
-  <desc id="description">A calibrated compass needle escapes through a broken section of its dial.</desc>
+  <desc id="description">A rising CCI impulse breaks a split upper threshold while the lower zero rail remains intact beneath it.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,13 +19,11 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" fill-rule="evenodd" d="M66 291 C58 193 119 106 210 73 C296 42 390 73 445 143 L405 174 C363 122 294 100 231 119 C164 139 119 198 119 268 C119 337 162 397 228 419 C294 441 365 420 407 366 L449 397 C391 472 289 503 196 468 C104 434 59 358 66 291 Z M142 284 C137 221 176 165 235 147 C294 129 357 151 388 201 L349 225 C329 193 289 180 252 191 C215 202 191 237 194 277 C197 316 222 348 258 359 C295 370 334 356 354 324 L393 348 C361 399 297 421 237 403 C178 385 145 338 142 284 Z" />
-    <path class="secondary-light" d="M91 201 L119 144 L153 164 L128 218 Z" />
-    <path class="accent" d="M173 112 L212 91 L229 127 L191 146 Z" />
-    <path class="secondary-light" d="M85 333 L129 322 L139 362 L96 374 Z" />
-    <path class="primary" d="M237 291 L393 104 L367 96 L466 51 L429 154 L417 127 L269 313 Z" />
-    <path class="primary-light" d="M254 286 L394 119 L415 109 L277 296 Z" />
-    <path class="accent" d="M223 276 L252 255 L282 276 L274 311 L240 321 L214 301 Z" />
-    <path class="secondary-shade" d="M410 154 L450 131 L469 163 L431 189 Z" />
+    <path class="secondary-shade" d="M44 174 L278 174 L294 194 L278 214 L44 214 Z M468 174 L346 174 L330 194 L346 214 L468 214 Z" />
+    <path class="secondary-light" d="M44 326 L468 326 L468 354 L44 354 Z" />
+    <path class="neutral" d="M44 420 L468 420 L468 446 L44 446 Z" />
+    <path class="primary" d="M65 398 L307 173 L275 143 L460 66 L391 246 L362 216 L105 430 Z" />
+    <path class="primary-light" d="M104 392 L321 190 L342 211 L126 413 Z" />
+    <path class="accent" d="M278 174 L294 194 L278 214 L306 202 L330 194 L306 184 Z" />
   </g>
 </svg>

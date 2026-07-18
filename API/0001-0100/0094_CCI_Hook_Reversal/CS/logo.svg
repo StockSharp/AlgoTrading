@@ -32,10 +32,10 @@
     <path class="secondary-shade" d="M45 69 L467 69 L443 112 L69 112 Z" />
     <path class="secondary" d="M78 112 L119 112 L119 430 L78 430 Z M393 112 L434 112 L434 430 L393 430 Z" />
     <path class="neutral" d="M213 112 L299 112 L299 155 L213 155 Z" />
-    <path class="accent" d="M232 129 L280 129 L292 159 L256 180 L220 159 Z" />
+    <path class="accent" d="M220 129 L292 129 L292 174 L220 174 Z" />
     <path class="neutral" d="M244 174 L268 174 L268 283 C268 337 235 371 189 371 C151 371 124 348 124 315 C124 286 146 266 175 266 L175 299 C164 299 157 306 157 317 C157 331 170 339 189 339 C217 339 236 317 236 283 L236 174 Z" />
-    <path class="violet" d="M166 340 L226 340 L252 378 L226 416 L166 416 L140 378 Z" />
-    <path class="violet-light" d="M178 356 L214 356 L228 378 L214 400 L178 400 L164 378 Z" />
+    <path class="violet" d="M196 336 A42 42 0 1 1 196 420 A42 42 0 1 1 196 336 Z" />
+    <path class="violet-light" d="M196 354 A24 24 0 1 1 196 402 A24 24 0 1 1 196 354 Z" />
     <path class="negative" d="M295 304 L323 276 L351 304 L351 352 L381 352 L323 412 L265 352 L295 352 Z" />
     <path class="primary" d="M268 278 C319 238 357 201 389 154 L365 138 L440 118 L426 196 L407 175 C371 224 333 261 284 300 Z" />
     <path class="pale" d="M119 228 L183 228 L183 252 L119 252 Z M329 228 L393 228 L393 252 L329 252 Z" />

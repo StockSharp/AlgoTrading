@@ -21,8 +21,8 @@
   <g aria-hidden="true">
     <path class="primary" d="M23 177 C102 139 177 137 250 173 C324 209 397 208 489 162 L489 215 C397 257 317 255 238 217 C171 185 105 188 23 227 Z" />
     <path class="primary-light" d="M23 177 C102 139 177 137 250 173 L236 192 C171 163 105 165 23 202 Z" />
-    <path class="accent" d="M330 85 L373 69 L410 95 L406 146 L364 170 L325 143 Z" />
-    <path class="secondary-light" d="M342 89 L373 77 L396 94 L369 110 L335 110 Z" />
+    <path class="accent" d="M368 72 A48 48 0 1 1 368 168 A48 48 0 1 1 368 72 Z" />
+    <path class="secondary-light" d="M362 80 A23 23 0 1 1 362 126 A23 23 0 1 1 362 80 Z" />
     <path class="secondary" d="M354 162 C337 231 325 285 309 346 L281 337 C297 277 311 221 330 153 Z" />
     <path class="neutral" d="M248 330 L291 330 L291 409 L348 381 L365 413 L270 470 L175 413 L192 381 L248 409 Z" />
     <path class="secondary-shade" d="M234 316 L326 316 L326 346 L234 346 Z" />

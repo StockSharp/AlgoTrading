@@ -43,10 +43,10 @@
     <path class="primary" d="M42 421 C146 410 210 365 253 298 C296 231 327 155 401 101 L365 90 L482 49 L452 168 L426 128 C365 188 344 269 304 337 C256 420 181 476 62 487 Z" />
     <path class="primary-light" d="M70 430 C156 409 209 364 247 304 C288 239 316 170 386 113 L411 103 C343 168 323 238 282 307 C239 381 178 432 86 461 Z" />
     <path class="primary-shade" d="M401 101 L482 49 L452 168 L426 128 L444 88 Z" />
-    <path class="secondary" d="M79 353 L101 333 L124 353 L102 375 Z" />
-    <path class="secondary-light" d="M133 296 L156 275 L180 296 L157 319 Z" />
-    <path class="accent" d="M190 232 L215 210 L240 233 L215 257 Z" />
-    <path class="secondary" d="M257 163 L283 140 L309 164 L283 189 Z" />
-    <path class="neutral" d="M331 111 L354 91 L377 111 L354 132 Z" />
+    <path class="secondary" d="M102 333 A21 21 0 1 1 102 375 A21 21 0 1 1 102 333 Z" />
+    <path class="secondary-light" d="M157 275 A22 22 0 1 1 157 319 A22 22 0 1 1 157 275 Z" />
+    <path class="accent" d="M215 209 A24 24 0 1 1 215 257 A24 24 0 1 1 215 209 Z" />
+    <path class="secondary" d="M283 140 A24 24 0 1 1 283 188 A24 24 0 1 1 283 140 Z" />
+    <path class="neutral" d="M354 91 A21 21 0 1 1 354 133 A21 21 0 1 1 354 91 Z" />
   </g>
 </svg>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">OBV Divergence strategy logo for Python</title>
-  <desc id="description">A hidden volume reservoir keeps filling while the visible price cart rolls down a separate staircase.</desc>
+  <desc id="description">Price reaches a lower low while the cumulative OBV staircase holds a higher low at the same two time points.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -29,14 +29,11 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary-shade" d="M41 122 L275 122 L275 433 L41 433 Z" />
-    <path class="pale" d="M70 151 L246 151 L246 404 L70 404 Z" />
-    <path class="primary" d="M70 288 C112 269 147 301 183 278 C209 261 227 263 246 275 L246 404 L70 404 Z" />
-    <path class="primary-light" d="M70 288 C112 269 147 301 183 278 C209 261 227 263 246 275 L246 303 C221 290 203 290 181 305 C143 328 111 296 70 315 Z" />
-    <path class="accent" d="M99 327 L132 310 L165 327 L165 365 L132 382 L99 365 Z M169 294 L202 277 L235 294 L235 332 L202 349 L169 332 Z" />
-    <path class="neutral" d="M306 151 L463 151 L463 189 L306 189 Z M330 222 L463 222 L463 260 L330 260 Z M354 293 L463 293 L463 331 L354 331 Z M378 364 L463 364 L463 402 L378 402 Z" />
-    <path class="negative" d="M296 143 L335 143 L335 206 L359 206 L359 277 L383 277 L383 348 L420 348 L420 325 L474 382 L420 439 L420 416 L345 416 L345 344 L321 344 L321 273 L297 273 Z" />
-    <path class="negative-light" d="M310 161 L321 161 L321 220 L345 220 L345 291 L369 291 L369 362 L402 362 L402 381 L359 381 L359 310 L335 310 L335 239 L310 239 Z" />
-    <path class="shadow" d="M32 433 L284 433 L265 461 L51 461 Z" />
+    <path class="pale" d="M170 64 L182 64 L182 452 L170 452 Z M382 64 L394 64 L394 452 L382 452 Z" />
+    <path class="secondary-shade" d="M42 70 L58 70 L58 238 L42 238 Z M42 222 L470 222 L470 238 L42 238 Z M42 278 L58 278 L58 460 L42 460 Z M42 444 L470 444 L470 460 L42 460 Z" />
+    <path class="negative" d="M58 92 L176 184 L258 116 L388 218 L458 154 L458 190 L390 254 L258 154 L176 220 L58 130 Z" />
+    <path class="negative-light" d="M168 198 L390 228 L388 244 L166 214 Z" />
+    <path class="primary" d="M62 410 L118 410 L118 370 L174 370 L174 414 L230 414 L230 350 L286 350 L286 382 L342 382 L342 332 L398 332 L398 292 L458 292 L458 326 L414 326 L414 366 L358 366 L358 416 L302 416 L302 384 L246 384 L246 448 L158 448 L158 406 L102 406 L102 444 L62 444 Z" />
+    <path class="accent" d="M166 414 L390 332 L396 348 L172 430 Z" />
   </g>
 </svg>

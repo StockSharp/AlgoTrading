@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">Volume Weighted Moving Average Cross strategy logo for Python</title>
-  <desc id="description">A weighted route and a lighter route cross while carrying visibly different loads.</desc>
+  <title id="title">Volume Weighted Moving Average strategy logo for Python</title>
+  <desc id="description">A price arrow crosses a moving-average ribbon visibly loaded by three rectangular volume weights.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,12 +19,11 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M35 115 C141 123 211 168 270 236 C327 302 381 356 480 378 L464 431 C349 405 287 343 229 277 C176 216 119 178 31 171 Z" />
-    <path class="secondary-light" d="M51 131 C137 141 197 181 250 242 L238 255 C184 195 129 158 48 149 Z" />
-    <path class="primary" d="M34 402 C129 374 184 328 233 272 C289 208 329 143 426 85 L399 75 L486 51 L469 141 L447 112 C367 161 330 224 276 288 C222 351 158 405 55 457 Z" />
-    <path class="primary-light" d="M63 409 C141 381 190 340 235 289 C286 230 326 165 414 107 L434 98 C347 159 309 221 258 278 C212 330 163 371 76 428 Z" />
-    <path class="accent" d="M120 292 L169 266 L214 293 L206 347 L157 372 L113 344 Z" />
-    <path class="secondary-shade" d="M268 303 L318 278 L362 306 L354 360 L305 385 L261 357 Z" />
-    <path class="neutral" d="M324 134 L358 116 L389 135 L383 174 L349 192 L318 172 Z" />
+    <path class="secondary" d="M40 282 C139 238 226 245 305 280 C358 304 408 307 474 282 L489 326 C410 356 344 350 286 324 C219 294 148 290 57 329 Z" />
+    <path class="secondary-light" d="M58 286 C142 255 218 261 291 292 L283 312 C218 284 151 277 64 308 Z" />
+    <path class="neutral" d="M130 313 L150 313 L150 373 L130 373 Z M244 326 L264 326 L264 397 L244 397 Z M363 326 L383 326 L383 382 L363 382 Z" />
+    <path class="accent" d="M104 373 L176 373 L176 424 L104 424 Z M218 397 L290 397 L290 448 L218 448 Z M337 382 L409 382 L409 433 L337 433 Z" />
+    <path class="primary" d="M54 374 L309 174 L278 143 L466 80 L375 254 L348 220 L91 414 Z" />
+    <path class="primary-light" d="M91 380 L320 201 L340 224 L112 402 Z" />
   </g>
 </svg>

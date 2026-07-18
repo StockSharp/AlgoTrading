@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Tweezer Bottom strategy logo for C#</title>
-  <desc id="description">Precision forceps meet at two matching candle lows, grip the shared bottom, and lift the reversal seed.</desc>
+    <desc id="description">Precision forceps meet at two matching candle lows, clamp the shared bottom, and lift the reversal upward.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -32,7 +32,7 @@
     <path class="secondary" d="M71 60 L130 60 C141 172 176 264 241 343 L209 371 C135 281 93 181 71 60 Z" />
     <path class="secondary" d="M382 60 L441 60 C419 181 377 281 303 371 L271 343 C336 264 371 172 382 60 Z" />
     <path class="secondary-light" d="M91 76 L114 76 C132 177 166 259 225 333 L211 345 C149 268 111 181 91 76 Z M398 76 L421 76 C401 181 363 268 301 345 L287 333 C346 259 380 177 398 76 Z" />
-    <path class="accent" d="M195 345 L226 329 L256 347 L256 382 L225 399 L195 381 Z M256 347 L286 329 L317 345 L317 381 L287 399 L256 382 Z" />
+    <path class="accent" d="M190 346 L322 346 L322 382 L190 382 Z" />
     <path class="negative" d="M139 239 L201 239 L201 350 L139 350 Z" />
     <path class="positive" d="M311 239 L373 239 L373 350 L311 350 Z" />
     <path class="neutral" d="M162 189 L178 189 L178 239 L162 239 Z M334 189 L350 189 L350 239 L334 239 Z" />

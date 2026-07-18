@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Low Volatility Reversion strategy logo for Python</title>
-  <desc id="description">A quiet pond absorbs one disturbance and restores a smooth center.</desc>
+  <desc id="description">A quiet low-amplitude price wave stays inside a narrow channel while a curved arrow returns a small deviation to the mean.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,12 +19,12 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="primary" d="M30 287 C88 215 170 181 258 187 C348 193 427 235 482 309 C418 368 344 397 258 397 C168 397 91 360 30 287 Z" />
-    <path class="primary-light" d="M54 281 C111 232 180 210 254 215 C331 220 397 250 454 305 C394 283 330 273 257 274 C183 274 116 277 54 281 Z" />
-    <path class="primary-shade" d="M54 326 C119 349 185 359 258 359 C329 359 393 348 455 323 C399 369 334 389 258 389 C179 389 113 367 54 326 Z" />
-    <path class="secondary" fill-rule="evenodd" d="M133 294 C165 248 210 227 258 229 C308 231 350 255 381 299 C349 340 307 360 258 360 C208 360 165 338 133 294 Z M181 294 C203 274 230 264 258 265 C288 266 312 276 333 298 C312 316 287 325 258 325 C229 325 204 315 181 294 Z" />
-    <path class="secondary-light" d="M206 292 C220 282 239 277 258 278 C278 278 296 284 310 296 C294 305 277 309 258 309 C239 309 222 304 206 292 Z" />
-    <path class="accent" d="M238 92 L268 70 L298 92 L289 128 L254 139 L228 118 Z" />
-    <path class="secondary-shade" d="M247 132 L278 132 L273 207 L245 207 Z" />
+    <path class="secondary-shade" d="M48 142 L464 142 L464 174 L48 174 Z M48 352 L464 352 L464 384 L48 384 Z" />
+    <path class="neutral" d="M48 250 L464 250 L464 274 L48 274 Z" />
+    <path class="primary" d="M48 271 C102 239 146 238 198 267 C247 294 294 292 344 263 C385 240 424 240 464 260 L464 294 C424 274 388 276 352 296 C294 329 239 328 183 297 C141 273 104 275 48 307 Z" />
+    <path class="primary-light" d="M64 275 C105 253 143 253 187 278 L177 296 C139 276 107 276 68 296 Z" />
+    <path class="secondary" d="M350 194 L390 194 L390 248 L424 248 L370 316 L316 248 L350 248 Z" />
+    <path class="secondary-light" d="M361 211 L379 211 L379 260 L397 260 L370 292 L343 260 L361 260 Z" />
+    <path class="accent" d="M328 181 L410 181 L410 205 L328 205 Z" />
   </g>
 </svg>

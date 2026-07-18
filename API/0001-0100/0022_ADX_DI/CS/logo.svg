@@ -25,6 +25,6 @@
     <path class="primary-light" d="M270 260 L381 137 L405 126 L288 270 Z" />
     <path class="secondary" d="M268 244 L149 373 L173 379 L75 428 L117 326 L129 351 L239 229 Z" />
     <path class="secondary-shade" d="M149 373 L75 428 L117 326 L129 351 L102 392 Z" />
-    <path class="accent" d="M226 226 L258 208 L290 226 L308 258 L290 290 L258 308 L226 290 L208 258 Z" />
+    <path class="accent" d="M258 208 A50 50 0 1 1 258 308 A50 50 0 1 1 258 208 Z" />
   </g>
 </svg>

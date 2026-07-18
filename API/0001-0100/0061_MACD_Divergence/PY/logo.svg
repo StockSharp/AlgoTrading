@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">MACD Divergence strategy logo for Python</title>
-  <desc id="description">A rail switch sends price and momentum trains onto opposing tracks while the signal lamp marks the crossover.</desc>
+    <desc id="description">Price makes a lower low while the MACD histogram and signal path form a higher low at matching times.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -29,14 +29,13 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M37 385 C143 371 196 319 250 258 C307 194 363 139 475 126 L481 178 C389 190 346 231 291 293 C227 365 160 424 45 440 Z" />
-    <path class="negative" d="M39 126 C145 139 203 191 258 255 C312 318 362 370 475 386 L466 440 C338 421 278 360 220 293 C170 235 122 193 31 181 Z" />
-    <path class="secondary-light" d="M58 397 C144 380 192 335 238 282 L252 296 C204 352 154 397 64 417 Z" />
-    <path class="negative-light" d="M52 143 C139 158 188 202 233 255 L218 269 C174 218 128 180 48 164 Z" />
-    <path class="neutral" d="M230 214 L282 214 L302 264 L256 294 L210 264 Z" />
-    <path class="accent" d="M237 230 L275 230 L286 260 L256 279 L226 260 Z" />
-    <path class="primary" d="M399 106 L482 126 L421 188 L423 158 L385 167 Z" />
-    <path class="negative" d="M398 379 L475 386 L425 452 L424 421 L388 421 Z" />
-    <path class="pale" d="M142 238 L169 219 L190 247 L163 266 Z M327 246 L354 227 L375 255 L348 274 Z" />
+    <path class="pale" d="M170 64 L182 64 L182 452 L170 452 Z M382 64 L394 64 L394 452 L382 452 Z" />
+    <path class="secondary-shade" d="M42 70 L58 70 L58 238 L42 238 Z M42 222 L470 222 L470 238 L42 238 Z M42 278 L58 278 L58 460 L42 460 Z M42 444 L470 444 L470 460 L42 460 Z" />
+    <path class="negative" d="M58 92 L176 184 L258 116 L388 218 L458 154 L458 190 L390 254 L258 154 L176 220 L58 130 Z" />
+    <path class="negative-light" d="M168 198 L390 228 L388 244 L166 214 Z" />
+    <path class="secondary-light" d="M78 366 L112 366 L112 444 L78 444 Z M126 338 L160 338 L160 444 L126 444 Z M208 366 L242 366 L242 444 L208 444 Z M256 390 L290 390 L290 444 L256 444 Z M340 350 L374 350 L374 444 L340 444 Z M400 318 L434 318 L434 444 L400 444 Z" />
+    <path class="neutral" d="M58 382 L470 382 L470 396 L58 396 Z" />
+    <path class="primary" d="M58 312 L176 406 L258 328 L388 364 L458 302 L458 338 L390 400 L258 366 L176 442 L58 350 Z" />
+    <path class="accent" d="M170 414 L390 366 L394 382 L174 430 Z" />
   </g>
 </svg>

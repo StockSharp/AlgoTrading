@@ -36,7 +36,6 @@
     <path class="negative-light" d="M222 242 L258 242 L258 266 L222 266 Z" />
     <path class="neutral" d="M232 187 L248 187 L248 229 L232 229 Z M232 322 L248 322 L248 357 L232 357 Z" />
     <path class="accent" d="M237 335 L237 282 L205 282 L256 225 L307 282 L275 282 L275 335 Z" />
-    <path class="positive-light" d="M219 354 L256 335 L293 354 L280 382 L232 382 Z" />
     <path class="shadow" d="M122 419 L390 419 L365 449 L147 449 Z" />
   </g>
 </svg>

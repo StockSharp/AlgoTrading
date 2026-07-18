@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Stochastic Overbought Oversold strategy logo for C#</title>
-  <desc id="description">A pinball oscillator rebounds between two calibrated bumpers before committing to the opposite side.</desc>
+    <desc id="description">An oscillator ribbon travels between calibrated upper and lower bands, turns at an extreme, and heads back across the range.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -35,9 +35,6 @@
     <path class="pale" d="M113 160 L147 160 L147 352 L113 352 Z M365 160 L399 160 L399 352 L365 352 Z" />
     <path class="violet" d="M139 330 C177 279 205 263 251 252 C301 240 333 217 371 174 L394 197 C351 249 311 277 258 289 C219 298 195 313 166 353 Z" />
     <path class="violet-light" d="M155 326 C185 290 211 276 252 266 L258 286 C221 296 201 308 177 338 Z" />
-    <path class="accent" d="M223 219 L256 200 L289 219 L289 257 L256 276 L223 257 Z" />
     <path class="neutral" d="M237 143 L275 143 L275 190 L237 190 Z" />
-    <path class="primary" d="M331 319 L365 291 L399 319 L385 354 L347 354 Z" />
-    <path class="negative-light" d="M113 110 L146 98 L176 116 L171 141 L126 141 Z" />
   </g>
 </svg>

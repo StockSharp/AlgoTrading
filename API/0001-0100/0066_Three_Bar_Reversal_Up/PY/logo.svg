@@ -40,6 +40,5 @@
     <path class="positive-light" d="M343 171 L399 171 L399 215 L343 215 Z" />
     <path class="neutral" d="M360 92 L382 92 L382 154 L360 154 Z M360 360 L382 360 L382 411 L360 411 Z" />
     <path class="primary" d="M336 154 L371 104 L406 154 Z" />
-    <path class="accent" d="M350 119 L371 91 L392 119 L371 144 Z" />
   </g>
 </svg>

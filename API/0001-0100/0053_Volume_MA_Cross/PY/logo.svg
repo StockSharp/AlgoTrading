@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Volume Moving Average Cross strategy logo for Python</title>
-  <desc id="description">Two smoothed conveyor flows cross as the size of their carried volume changes.</desc>
+  <desc id="description">Fast and slow volume moving-average ribbons cross clearly above a row of volume columns.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,13 +19,13 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M33 111 C137 121 205 166 264 234 C323 302 378 357 480 380 L465 433 C349 407 286 344 228 278 C175 217 118 178 29 170 Z" />
-    <path class="secondary-light" d="M49 128 C135 139 193 179 246 240 L235 253 C181 193 127 157 46 147 Z" />
-    <path class="primary" d="M32 404 C128 376 184 330 233 274 C289 210 329 145 427 86 L400 76 L487 52 L470 142 L448 113 C368 162 331 226 276 290 C222 353 158 407 54 459 Z" />
-    <path class="primary-light" d="M61 411 C140 383 190 342 235 291 C286 232 326 167 415 108 L435 99 C348 161 310 223 258 280 C212 332 163 373 74 430 Z" />
-    <path class="accent" d="M93 280 L133 260 L170 282 L164 328 L124 349 L87 326 Z" />
-    <path class="accent" d="M167 233 L218 208 L264 235 L257 293 L206 319 L160 290 Z" />
-    <path class="secondary-shade" d="M272 297 L326 270 L375 300 L368 361 L314 388 L265 357 Z" />
-    <path class="neutral" d="M329 134 L364 116 L396 136 L390 177 L355 195 L323 175 Z" />
+    <path class="neutral" d="M42 420 L470 420 L470 448 L42 448 Z" />
+    <path class="accent" d="M66 350 L112 350 L112 420 L66 420 Z M126 310 L172 310 L172 420 L126 420 Z M186 334 L232 334 L232 420 L186 420 Z M246 250 L292 250 L292 420 L246 420 Z M306 278 L352 278 L352 420 L306 420 Z M366 210 L412 210 L412 420 L366 420 Z" />
+    <path class="primary" d="M42 306 C130 371 203 356 261 291 C320 225 373 170 454 134 L470 174 C398 207 350 257 294 323 C218 411 126 419 42 355 Z" />
+    <path class="primary-light" d="M61 315 C132 359 191 348 245 289 L261 304 C199 372 132 384 57 338 Z" />
+    <path class="secondary" d="M42 164 C127 124 210 143 276 211 C333 270 383 301 454 314 L446 358 C362 341 302 305 241 243 C187 188 126 174 57 207 Z" />
+    <path class="secondary-light" d="M59 174 C126 148 193 162 253 221 L238 237 C184 187 128 173 65 195 Z" />
+    <path class="primary" d="M425 113 L480 148 L430 188 L436 164 L412 160 Z" />
+    <path class="secondary" d="M426 295 L480 331 L430 370 L436 347 L411 342 Z" />
   </g>
 </svg>

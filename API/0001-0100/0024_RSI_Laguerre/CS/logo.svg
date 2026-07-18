@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">RSI Laguerre strategy logo for C#</title>
-  <desc id="description">A signal passes through alternating chambers and exits as a filtered route.</desc>
+  <title id="title">Laguerre RSI strategy logo for C#</title>
+  <desc id="description">A four-stage filter turns a jagged RSI input into a smooth bounded oscillator output.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,10 +19,13 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" fill-rule="evenodd" d="M46 99 H196 C245 99 274 132 274 178 V224 H229 V181 C229 156 214 142 190 142 H91 V370 H190 C214 370 229 356 229 331 V288 H274 V334 C274 380 245 413 196 413 H46 Z M297 99 H466 V142 H340 V224 H297 Z M297 288 H340 V370 H466 V413 H297 Z" />
-    <path class="secondary-light" d="M68 119 H190 C229 119 250 142 250 179 V208 H236 V181 C236 151 219 134 190 134 H68 Z" />
-    <path class="primary" d="M28 275 C92 211 151 203 206 251 C258 296 304 302 354 258 C390 226 424 206 480 208 L480 254 C437 251 412 265 383 291 C316 351 247 342 177 282 C140 250 106 255 62 306 Z" />
-    <path class="primary-light" d="M51 271 C99 229 143 226 189 265 C252 319 309 325 370 273 C400 248 429 229 470 230 L470 242 C431 239 407 255 379 280 C313 338 250 329 182 273 C140 238 103 241 59 283 Z" />
-    <path class="accent" d="M442 191 L489 231 L442 271 L450 245 L411 245 L411 217 L450 217 Z" />
+    <path class="neutral" d="M180 82 L332 82 L332 116 L180 116 Z M180 396 L332 396 L332 430 L180 430 Z" />
+    <path class="primary" d="M42 322 L88 252 L124 300 L164 214 L196 252 L196 292 L166 259 L128 345 L90 298 L42 370 Z" />
+    <path class="primary-light" d="M42 338 L88 270 L126 319 L164 235 L180 252 L166 276 L128 360 L89 314 L42 382 Z" />
+    <path class="secondary-shade" d="M188 116 L212 116 L212 396 L188 396 Z M228 116 L252 116 L252 396 L228 396 Z M268 116 L292 116 L292 396 L268 396 Z M308 116 L332 116 L332 396 L308 396 Z" />
+    <path class="accent" d="M180 242 L212 242 L212 274 L228 274 L228 234 L252 234 L252 267 L268 267 L268 221 L292 221 L292 254 L308 254 L308 210 L332 210 L332 290 L308 290 L308 275 L292 275 L292 300 L268 300 L268 287 L252 287 L252 310 L228 310 L228 294 L212 294 L212 314 L180 314 Z" />
+    <path class="secondary" d="M332 284 C370 284 392 261 409 223 C425 187 447 165 480 157 L480 199 C458 207 446 222 434 249 C413 298 380 327 332 327 Z" />
+    <path class="secondary-light" d="M332 296 C366 296 385 276 400 244 L420 253 C401 292 374 314 332 314 Z" />
+    <path class="primary-shade" d="M332 142 L480 142 L480 164 L332 164 Z M332 350 L480 350 L480 372 L332 372 Z" />
   </g>
 </svg>

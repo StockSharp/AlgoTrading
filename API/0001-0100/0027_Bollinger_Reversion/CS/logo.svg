@@ -23,9 +23,9 @@
     <path class="secondary-light" d="M27 141 C142 96 252 101 357 148 L341 166 C248 127 151 127 27 170 Z" />
     <path class="secondary" d="M27 371 C144 415 251 410 355 365 C402 345 441 346 486 371 L486 318 C437 295 392 296 339 319 C246 359 150 362 27 317 Z" />
     <path class="secondary-shade" d="M27 342 C151 381 248 377 339 338 C394 314 438 314 486 337 L486 371 C441 346 402 345 355 365 C251 410 144 415 27 371 Z" />
-    <path class="primary" d="M397 83 L443 62 L482 92 L477 144 L431 167 L391 138 Z" />
-    <path class="primary-light" d="M405 87 L443 70 L465 88 L437 105 L400 111 Z" />
-    <path class="accent" d="M251 230 L279 256 L251 282 L223 256 Z" />
+    <path class="primary" d="M435 66 A48 48 0 1 1 435 162 A48 48 0 1 1 435 66 Z" />
+    <path class="primary-light" d="M426 78 A25 25 0 1 1 426 128 A25 25 0 1 1 426 78 Z" />
+    <path class="accent" d="M251 226 A30 30 0 1 1 251 286 A30 30 0 1 1 251 226 Z" />
     <path class="primary-shade" d="M427 151 C367 190 330 220 279 256 L260 232 C312 195 352 162 410 126 Z" />
   </g>
 </svg>

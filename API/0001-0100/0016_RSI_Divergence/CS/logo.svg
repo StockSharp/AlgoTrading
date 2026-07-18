@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">RSI Divergence strategy logo for C#</title>
-  <desc id="description">Two filled routes leave one pivot and accelerate toward opposite outcomes.</desc>
+  <desc id="description">Two aligned charts show price making a lower low while the bounded RSI oscillator makes a higher low.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
@@ -23,11 +23,13 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="neutral" d="M28 225 C112 225 174 235 246 255 L246 303 C172 281 110 271 28 271 Z" />
-    <path class="primary" d="M220 260 C298 228 349 170 411 100 L382 92 L482 54 L455 157 L435 125 C377 191 330 250 254 290 Z" />
-    <path class="primary-light" d="M252 259 C316 225 355 174 402 119 L424 111 C376 170 337 224 274 267 Z" />
-    <path class="secondary" d="M221 273 C302 304 354 351 418 411 L402 377 L487 443 L384 462 L401 438 C340 383 294 340 249 313 Z" />
-    <path class="secondary-light" d="M257 298 C318 323 359 361 407 405 L419 429 C365 382 321 346 267 323 Z" />
-    <path class="accent" d="M224 253 L255 239 L283 265 L270 298 L237 305 L214 280 Z" />
+    <path class="neutral" opacity="0.14" d="M170 64 L182 64 L182 452 L170 452 Z M382 64 L394 64 L394 452 L382 452 Z" />
+    <path class="secondary-shade" d="M42 70 L58 70 L58 238 L42 238 Z M42 222 L470 222 L470 238 L42 238 Z M42 278 L58 278 L58 460 L42 460 Z M42 444 L470 444 L470 460 L42 460 Z" />
+    <path class="secondary-light" d="M58 278 L470 278 L470 298 L58 298 Z" />
+    <path class="primary-light" d="M58 424 L470 424 L470 444 L58 444 Z" />
+    <path class="secondary" d="M58 92 L176 184 L258 116 L388 218 L458 154 L458 190 L390 254 L258 154 L176 220 L58 130 Z" />
+    <path class="secondary-light" d="M168 198 L390 228 L388 244 L166 214 Z" />
+    <path class="primary" d="M58 312 L176 406 L258 328 L388 364 L458 302 L458 338 L390 400 L258 366 L176 442 L58 350 Z" />
+    <path class="primary-light" d="M170 414 L390 366 L394 382 L174 430 Z" />
   </g>
 </svg>

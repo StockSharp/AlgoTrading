@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Moving Average Deviation strategy logo for C#</title>
-  <desc id="description">A faceted satellite strays from a smooth orbit while remaining visibly tethered.</desc>
+  <desc id="description">A price candle is measured far above its moving-average ribbon while a return arrow points back toward the mean.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,13 +19,13 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" fill-rule="evenodd" d="M66 313 C54 202 130 101 238 78 C322 60 409 97 455 169 L415 195 C378 140 312 113 249 127 C169 144 112 219 117 301 C122 381 186 447 267 454 L263 505 C154 497 78 421 66 313 Z M143 301 C139 240 181 184 241 171 C286 161 334 176 367 210 L333 243 C311 221 280 211 251 218 C214 226 188 260 190 299 C192 338 221 370 260 375 L254 423 C192 417 148 365 143 301 Z" />
-    <path class="secondary-light" d="M87 220 C119 143 185 91 264 77 L275 120 C207 133 152 177 124 239 Z" />
-    <path class="primary" d="M354 83 L399 58 L443 82 L452 133 L412 164 L365 147 L344 111 Z" />
-    <path class="primary-light" d="M365 86 L400 67 L425 82 L400 100 L359 107 Z" />
-    <path class="primary-shade" d="M368 147 L412 164 L452 133 L424 177 L378 181 Z" />
-    <path class="accent" d="M258 282 C294 226 322 181 368 139 L389 160 C345 201 316 244 282 300 Z" />
-    <path class="neutral" d="M315 61 L351 76 L330 128 L294 113 Z" />
-    <path class="neutral" d="M443 99 L482 115 L461 168 L422 151 Z" />
+    <path class="secondary" d="M42 352 C138 314 232 326 318 365 C365 386 412 389 474 369 L488 411 C417 434 355 429 300 405 C223 371 144 362 57 395 Z" />
+    <path class="secondary-light" d="M58 356 C143 329 226 340 304 374 L296 394 C225 365 149 353 64 379 Z" />
+    <path class="neutral" d="M195 62 L219 62 L219 112 L195 112 Z M195 202 L219 202 L219 240 L195 240 Z" />
+    <path class="primary" d="M160 112 L254 112 L254 202 L160 202 Z" />
+    <path class="primary-light" d="M177 128 L237 128 L237 154 L177 154 Z" />
+    <path class="accent" d="M92 108 L116 108 L116 346 L92 346 Z M92 108 L150 108 L150 132 L92 132 Z M92 322 L150 322 L150 346 L92 346 Z" />
+    <path class="neutral" d="M335 142 L375 142 L375 294 L418 294 L355 376 L292 294 L335 294 Z" />
+    <path class="primary-light" d="M347 168 L363 168 L363 310 L385 310 L355 348 L325 310 L347 310 Z" />
   </g>
 </svg>

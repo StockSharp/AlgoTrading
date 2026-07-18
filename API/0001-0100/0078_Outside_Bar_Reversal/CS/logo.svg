@@ -36,7 +36,7 @@
     <path class="secondary" d="M228 213 L284 213 L284 307 L228 307 Z" />
     <path class="secondary-light" d="M239 225 L273 225 L273 248 L239 248 Z" />
     <path class="neutral" d="M247 174 L265 174 L265 213 L247 213 Z M247 307 L265 307 L265 347 L247 347 Z" />
-    <path class="accent" d="M346 88 L382 88 L399 112 L382 136 L346 136 Z" />
+    <path class="accent" d="M370 82 A30 30 0 1 1 370 142 A30 30 0 1 1 370 82 Z" />
     <path class="primary" d="M334 350 C393 316 417 276 414 226 L384 225 L431 158 L477 226 L447 226 C450 293 419 349 352 389 Z" />
     <path class="primary-light" d="M350 351 C390 320 406 281 405 242 L424 242 C426 290 405 335 361 370 Z" />
   </g>

@@ -33,8 +33,8 @@
     <path class="secondary" d="M53 285 L199 285 L199 312 L53 312 Z M313 285 L459 285 L459 312 L313 312 Z" />
     <path class="neutral" d="M77 73 L435 73 L435 112 L77 112 Z" />
     <path class="neutral" d="M238 112 L274 112 L274 225 L238 225 Z" />
-    <path class="accent" d="M205 218 L307 218 L323 250 L307 282 L205 282 L189 250 Z" />
-    <path class="secondary-light" d="M220 230 L292 230 L301 250 L292 270 L220 270 L211 250 Z" />
+    <path class="accent" d="M190 218 L322 218 L322 282 L190 282 Z" />
+    <path class="secondary-light" d="M209 232 L303 232 L303 268 L209 268 Z" />
     <path class="pale" d="M199 312 L313 312 L313 367 L199 367 Z" />
     <path class="primary" d="M314 345 C360 378 399 385 443 369 L431 342 L492 373 L448 424 L447 397 C390 415 341 404 295 371 Z" />
     <path class="primary-light" d="M329 352 C365 376 398 381 433 370 L441 389 C398 403 358 395 319 369 Z" />

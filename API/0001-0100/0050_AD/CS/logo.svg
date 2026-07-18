@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">Accumulation Distribution Trend strategy logo for C#</title>
-  <desc id="description">A faceted hourglass alternates between collecting flow and distributing it outward.</desc>
+  <title id="title">Accumulation Distribution strategy logo for C#</title>
+  <desc id="description">A central market silo visibly accumulates blocks from one side and distributes them through an outbound chute on the other.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,15 +19,12 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="neutral" d="M125 66 L387 66 L387 104 L125 104 Z" />
-    <path class="neutral" d="M125 408 L387 408 L387 446 L125 446 Z" />
-    <path class="secondary" d="M157 104 L355 104 L327 193 L278 244 L234 244 L185 193 Z" />
-    <path class="secondary-light" d="M180 121 L332 121 L310 177 L256 224 L202 177 Z" />
-    <path class="primary" d="M234 268 L278 268 L327 319 L355 408 L157 408 L185 319 Z" />
-    <path class="primary-light" d="M256 286 L310 335 L332 391 L180 391 L202 335 Z" />
-    <path class="accent" d="M244 220 L268 220 L268 292 L244 292 Z" />
-    <path class="accent" d="M223 340 L256 317 L289 340 L280 378 L242 389 L214 366 Z" />
-    <path class="secondary-shade" d="M142 286 L78 319 L99 278 L31 278 L31 236 L99 236 L78 195 L142 228 Z" />
-    <path class="primary-shade" d="M370 228 L434 195 L413 236 L481 236 L481 278 L413 278 L434 319 L370 286 Z" />
+    <path class="neutral" d="M154 58 L358 58 L358 90 L154 90 Z M154 418 L358 418 L358 450 L154 450 Z M154 90 L186 90 L186 418 L154 418 Z M326 90 L358 90 L358 418 L326 418 Z" />
+    <path class="secondary-light" d="M186 106 L326 106 L326 402 L186 402 Z" opacity="0.34" />
+    <path class="accent" d="M198 344 L254 344 L254 402 L198 402 Z M260 314 L316 314 L316 402 L260 402 Z M198 278 L254 278 L254 336 L198 336 Z M260 244 L316 244 L316 306 L260 306 Z" />
+    <path class="primary" d="M32 174 L116 174 L116 140 L178 204 L116 268 L116 234 L32 234 Z" />
+    <path class="primary-light" d="M55 191 L130 191 L130 177 L156 204 L130 231 L130 217 L55 217 Z" />
+    <path class="secondary" d="M334 282 L396 218 L396 252 L480 252 L480 312 L396 312 L396 346 Z" />
+    <path class="secondary-light" d="M356 282 L410 255 L410 270 L458 270 L458 294 L410 294 L410 309 Z" />
   </g>
 </svg>

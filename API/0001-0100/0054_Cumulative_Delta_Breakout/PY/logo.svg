@@ -1,27 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Cumulative Delta Breakout strategy logo for Python</title>
-  <desc id="description">Opposing order-flow blocks accumulate in a counter tower until the dominant side breaks its cap.</desc>
+  <desc id="description">A literal impulse breaks through a brick wall, establishing the reusable visual sign for breakout strategies.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; }
     .python-upper { fill: #2874a6; opacity: 0.07; }
     .python-lower { fill: #aa8108; opacity: 0.07; }
-    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
-    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
-    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
-    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .primary { fill: #2867a8; } .primary-light { fill: #79b9e8; } .primary-shade { fill: #174575; }
+    .secondary { fill: #a65e43; } .secondary-light { fill: #d9936d; } .secondary-shade { fill: #6e3b2c; }
+    .accent { fill: #f2b63f; } .positive { fill: #3e8d6c; } .positive-light { fill: #82c5a8; }
+    .negative { fill: #c24e3a; } .negative-light { fill: #ef8b70; }
     .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
-    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    .neutral { fill: #28343f; } .pale { fill: #d9c2aa; } .shadow { fill: #1b2027; opacity: 0.24; }
     @media (prefers-color-scheme: dark) {
       .language-mark { fill: #edf6f3; opacity: 0.08; }
       .python-upper { fill: #7ec5ed; opacity: 0.08; }
       .python-lower { fill: #f1ca50; opacity: 0.08; }
-      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
-      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
-      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
-      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .primary { fill: #5db4ee; } .primary-light { fill: #a6d8f7; } .primary-shade { fill: #307daf; }
+      .secondary { fill: #d88a64; } .secondary-light { fill: #f2b28c; } .secondary-shade { fill: #9b5c43; }
+      .accent { fill: #ffd166; } .positive { fill: #69c79a; } .positive-light { fill: #a8e0c2; }
+      .negative { fill: #f4775f; } .negative-light { fill: #ffb19e; }
       .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
-      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+      .neutral { fill: #edf2f6; } .pale { fill: #927a68; } .shadow { fill: #02090b; opacity: 0.36; }
     }
   </style>
   <g aria-hidden="true">
@@ -29,15 +29,13 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary-shade" d="M112 414 L400 414 L384 456 L128 456 Z" />
-    <path class="secondary" d="M132 178 L176 178 L176 400 L132 400 Z M336 178 L380 178 L380 400 L336 400 Z" />
-    <path class="pale" d="M176 362 L336 362 L336 400 L176 400 Z" />
-    <path class="negative" d="M44 326 L94 300 L132 320 L132 371 L82 396 L44 376 Z M64 238 L106 217 L132 231 L132 278 L90 299 L64 284 Z" />
-    <path class="positive" d="M380 282 L424 260 L468 282 L468 329 L424 351 L380 329 Z M380 194 L416 176 L452 194 L452 233 L416 251 L380 233 Z" />
-    <path class="accent" d="M176 305 L218 284 L256 306 L256 350 L214 371 L176 349 Z" />
-    <path class="primary" d="M256 350 L256 284 L222 284 L256 241 L290 284 L272 284 L272 350 Z" />
-    <path class="neutral" d="M112 150 L232 150 L232 183 L112 183 Z M280 150 L400 150 L400 183 L280 183 Z" />
-    <path class="primary-light" d="M232 165 L232 108 L202 108 L256 49 L310 108 L280 108 L280 165 Z" />
-    <path class="accent" d="M238 111 L256 91 L274 111 L256 131 Z" />
+    <path class="secondary" d="M38 91 L134 91 L134 145 L38 145 Z M144 91 L240 91 L240 145 L144 145 Z M250 91 L346 91 L346 145 L250 145 Z" />
+    <path class="secondary-light" d="M38 155 L104 155 L104 213 L38 213 Z M114 155 L210 155 L210 213 L114 213 Z M220 155 L316 155 L316 213 L220 213 Z M326 155 L410 155 L410 213 L326 213 Z" />
+    <path class="negative" d="M38 223 L134 223 L134 281 L38 281 Z M144 223 L240 223 L240 281 L144 281 Z M250 223 L346 223 L346 281 L250 281 Z M356 223 L410 223 L410 281 L356 281 Z" />
+    <path class="negative-light" d="M38 291 L104 291 L104 349 L38 349 Z M114 291 L210 291 L210 349 L114 349 Z M220 291 L316 291 L316 349 L220 349 Z M326 291 L410 291 L410 349 L326 349 Z" />
+    <path class="secondary-shade" d="M38 359 L134 359 L134 417 L38 417 Z M144 359 L240 359 L240 417 L144 417 Z M250 359 L346 359 L346 417 L250 417 Z" />
+    <path class="neutral" d="M182 160 L226 143 L252 178 L294 162 L320 207 L297 244 L326 280 L288 307 L271 348 L226 323 L189 344 L169 304 L132 279 L158 238 L139 199 Z" />
+    <path class="primary" d="M160 327 L365 209 L341 170 L486 142 L431 279 L406 239 L199 359 Z" />
+    <path class="primary-light" d="M196 324 L374 222 L364 206 L446 189 L414 265 L402 246 L213 354 Z" />
   </g>
 </svg>

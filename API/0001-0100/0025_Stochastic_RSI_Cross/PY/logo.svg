@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Stochastic RSI Cross strategy logo for Python</title>
-  <desc id="description">Two calibrated signal arcs intersect inside a faceted target.</desc>
+  <desc id="description">Two bounded Stochastic RSI lines cross near the oversold floor and then separate upward.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,14 +19,13 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="neutral" fill-rule="evenodd" d="M256 48 L421 91 L464 256 L421 421 L256 464 L91 421 L48 256 L91 91 Z M256 105 L374 138 L407 256 L374 374 L256 407 L138 374 L105 256 L138 138 Z" />
-    <path class="secondary-light" d="M95 75 L132 96 L112 133 L75 112 Z" />
-    <path class="accent" d="M380 83 L420 104 L399 143 L360 122 Z" />
-    <path class="secondary-light" d="M399 369 L438 390 L417 429 L378 408 Z" />
-    <path class="accent" d="M81 374 L121 353 L142 392 L102 413 Z" />
-    <path class="primary" d="M91 330 C143 203 233 169 421 174 L404 143 L480 190 L411 248 L424 215 C254 208 178 236 130 351 Z" />
-    <path class="secondary" d="M91 184 C177 303 271 332 423 296 L403 272 L482 302 L424 372 L430 337 C257 376 149 337 57 209 Z" />
-    <path class="primary-light" d="M123 318 C172 222 247 195 401 194 L416 205 C257 205 183 230 139 326 Z" />
-    <path class="secondary-light" d="M119 204 C197 298 282 319 411 296 L425 305 C285 339 190 314 104 214 Z" />
+    <path class="neutral" d="M50 64 L70 64 L70 450 L50 450 Z M50 430 L466 430 L466 450 L50 450 Z" />
+    <path class="secondary-shade" d="M70 92 L466 92 L466 122 L70 122 Z" />
+    <path class="primary-shade" d="M70 378 L466 378 L466 408 L70 408 Z" />
+    <path class="primary" d="M70 384 C145 417 204 391 252 332 C310 261 357 171 438 112 L466 147 C391 202 347 286 278 367 C216 438 139 452 70 420 Z" />
+    <path class="primary-light" d="M88 393 C149 414 201 386 241 339 L258 354 C210 410 150 433 84 410 Z" />
+    <path class="secondary" d="M70 302 C145 246 203 257 252 326 C306 402 356 341 438 224 L466 250 C366 390 292 443 228 350 C191 296 149 289 70 340 Z" />
+    <path class="secondary-light" d="M88 304 C145 270 191 278 229 327 L212 341 C181 304 147 299 91 329 Z" />
+    <path class="accent" d="M425 99 L480 118 L445 166 L441 145 L420 155 Z M429 211 L480 232 L443 278 L441 255 L419 265 Z" />
   </g>
 </svg>

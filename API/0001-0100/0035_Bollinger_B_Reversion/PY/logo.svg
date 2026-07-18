@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Bollinger Percent B Reversion strategy logo for Python</title>
-  <desc id="description">A measured slider stretches beyond its envelope and is reeled back inside.</desc>
+  <desc id="description">A measured price candle extends beyond the upper Bollinger band and is directed back toward the center line.</desc>
   <style>
     :root { color-scheme: light dark; }
     .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
@@ -19,14 +19,13 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="secondary" d="M79 95 L114 95 L127 421 L92 421 Z" />
-    <path class="secondary-light" d="M105 132 L192 132 L192 153 L106 153 Z" />
-    <path class="secondary-light" d="M109 223 L174 223 L174 244 L109 244 Z" />
-    <path class="secondary-light" d="M113 313 L192 313 L192 334 L113 334 Z" />
-    <path class="primary" d="M152 174 C236 135 324 136 414 179 L398 219 C320 182 246 182 169 218 Z" />
-    <path class="primary" d="M160 344 C244 382 326 379 414 335 L397 296 C322 334 246 337 176 304 Z" />
-    <path class="accent" d="M400 67 L447 49 L484 80 L478 132 L434 156 L394 128 Z" />
-    <path class="primary-shade" d="M416 151 C375 184 346 211 312 251 L289 232 C323 191 355 161 397 127 Z" />
-    <path class="neutral" d="M323 222 L275 253 L323 284 L312 263 L355 263 L355 242 L312 242 Z" />
+    <path class="secondary" d="M40 124 C148 82 274 91 472 151 L458 197 C279 144 164 136 54 176 Z M40 382 C150 426 276 420 472 360 L458 314 C281 365 165 371 54 332 Z" />
+    <path class="secondary-light" d="M58 136 C160 107 273 114 454 163 L448 183 C278 138 168 130 63 158 Z M58 370 C160 399 273 392 454 344 L448 324 C278 368 168 376 63 348 Z" />
+    <path class="neutral" d="M50 247 C158 214 276 219 462 270 L456 296 C279 249 168 245 56 276 Z" />
+    <path class="primary" d="M280 76 L354 76 L354 148 L280 148 Z" />
+    <path class="primary-light" d="M294 90 L340 90 L340 112 L294 112 Z" />
+    <path class="neutral" d="M306 42 L328 42 L328 76 L306 76 Z M306 148 L328 148 L328 184 L306 184 Z" />
+    <path class="accent" d="M386 84 L410 84 L410 185 L386 185 Z M366 84 L430 84 L430 106 L366 106 Z M366 163 L430 163 L430 185 L366 185 Z" />
+    <path class="primary-shade" d="M354 151 C394 176 413 208 411 246 L443 246 L397 306 L351 246 L383 246 C385 221 371 201 344 184 Z" />
   </g>
 </svg>

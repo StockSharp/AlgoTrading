@@ -40,6 +40,6 @@
     <path class="neutral" d="M70 295 L421 295 L421 320 L70 320 Z" />
     <path class="negative" d="M99 102 C181 128 244 173 299 236 L269 263 C218 207 163 168 87 144 Z" />
     <path class="primary" d="M276 248 C321 215 352 180 378 137 L352 122 L428 99 L416 178 L397 157 C366 207 331 246 286 279 Z" />
-    <path class="accent" d="M259 268 L286 240 L313 268 L300 295 L272 295 Z" />
+    <path class="accent" d="M250 262 L322 262 L322 286 L250 286 Z" />
   </g>
 </svg>

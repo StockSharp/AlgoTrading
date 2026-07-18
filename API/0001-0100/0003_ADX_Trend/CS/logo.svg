@@ -46,7 +46,7 @@
     <path class="secondary" d="M75 215 L244 177 L244 153 L432 201 L351 231 L273 207 L273 242 L244 242 L244 210 L128 250 Z" />
     <path class="secondary-light" d="M92 215 L244 183 L244 199 L133 235 Z" />
     <path class="secondary-shade" d="M351 178 L432 201 L361 246 L329 221 Z" />
-    <path class="accent" d="M238 185 L258 168 L280 188 L260 210 Z" />
+    <path class="accent" d="M259 165 A24 24 0 1 1 259 213 A24 24 0 1 1 259 165 Z" />
     <path class="neutral" d="M145 442 L258 348 L372 442 L340 464 L258 397 L177 464 Z" />
   </g>
 </svg>
