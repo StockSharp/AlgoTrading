@@ -1,166 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">DMI Power Move strategy logo for Python</title>
-  <desc id="description">One directional force overwhelms its opponent and drives through the center.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
-
+  <desc id="description">One broad directional force compresses its opponent and drives through the center.</desc>
   <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .badge-fill {
-      fill: #f4f7f8;
-    }
-
-    .badge-stroke {
-      stroke: #f4f7f8;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .python-upper {
-      fill: #2874a6;
-      opacity: 0.09;
-    }
-
-    .python-lower {
-      fill: #a77b00;
-      opacity: 0.09;
-    }
-
-    .python-eye {
-      fill: #f4f7f8;
-    }
-
-    .accent-fill {
-      fill: #079b7e;
-    }
-
-    .accent-stroke {
-      stroke: #079b7e;
-    }
-
-    .solid-fill {
-      fill: #17364a;
-    }
-
-    .solid-stroke {
-      stroke: #17364a;
-    }
-
-    .muted-fill {
-      fill: #526b78;
-    }
-
-    .muted-stroke {
-      stroke: #526b78;
-    }
-
-    .warm-fill {
-      fill: #d97706;
-    }
-
-    .warm-stroke {
-      stroke: #d97706;
-    }
-
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0d8b83; } .primary-light { fill: #5ecabd; } .primary-shade { fill: #08655f; }
+    .secondary { fill: #c54b5d; } .secondary-light { fill: #ed8490; } .secondary-shade { fill: #963244; }
+    .accent { fill: #e2a63d; } .neutral { fill: #28383e; } .shadow { fill: #14262c; opacity: 0.22; }
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .badge-fill {
-        fill: #0d2638;
-      }
-
-      .badge-stroke {
-        stroke: #0d2638;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .python-upper {
-        fill: #79b7df;
-        opacity: 0.1;
-      }
-
-      .python-lower {
-        fill: #f0c84b;
-        opacity: 0.1;
-      }
-
-      .python-eye {
-        fill: #0d2638;
-      }
-
-      .accent-fill {
-        fill: #43d6b1;
-      }
-
-      .accent-stroke {
-        stroke: #43d6b1;
-      }
-
-      .solid-fill {
-        fill: #edf2f3;
-      }
-
-      .solid-stroke {
-        stroke: #edf2f3;
-      }
-
-      .muted-fill {
-        fill: #8fa2aa;
-      }
-
-      .muted-stroke {
-        stroke: #8fa2aa;
-      }
-
-      .warm-fill {
-        fill: #f6b73c;
-      }
-
-      .warm-stroke {
-        stroke: #f6b73c;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #3dc6ba; } .primary-light { fill: #81dfd3; } .primary-shade { fill: #1c9389; }
+      .secondary { fill: #ef6978; } .secondary-light { fill: #ffa0aa; } .secondary-shade { fill: #bd4758; }
+      .accent { fill: #f2c75e; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
-
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
-
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <g aria-hidden="true">
-      <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
-      <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
-      <circle class="python-eye" cx="278" cy="67" r="11" />
-      <circle class="python-eye" cx="234" cy="445" r="11" />
-    </g>
-
-    <!-- Strategy metaphor. -->
-    <path class="solid-fill" d="M62 252 L173 174 V221 H252 V283 H173 V330 Z" />
-    <path class="accent-fill" d="M450 252 L307 145 V213 H229 V291 H307 V359 Z" />
-    <circle class="warm-fill" cx="256" cy="252" r="24" />
-    <path class="badge-stroke" d="M256 211 V293" fill="none" stroke-width="9" stroke-linecap="round" />
-    <path class="accent-stroke" d="M330 119 L352 87 M363 139 L396 112" fill="none" stroke-width="12" stroke-linecap="round" />
-    <path class="muted-stroke" d="M164 367 L137 395 M126 349 L91 373" fill="none" stroke-width="10" stroke-linecap="round" />
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M482 145 L365 194 L309 256 L365 318 L482 367 L446 293 L384 256 L446 219 Z" />
+    <path class="secondary" d="M456 181 L376 211 L335 256 L376 301 L456 331 L428 278 L388 256 L428 234 Z" />
+    <path class="primary" d="M25 198 L275 198 L275 145 L423 256 L275 367 L275 314 L25 314 L104 256 Z" />
+    <path class="primary-light" d="M54 216 L286 216 L286 185 L379 256 L286 327 L286 296 L54 296 L111 256 Z" />
+    <path class="primary-shade" d="M275 314 L423 256 L275 367 Z" />
+    <path class="accent" d="M298 226 L326 256 L298 286 L270 256 Z" />
   </g>
 </svg>

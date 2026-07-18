@@ -1,167 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">Heikin Ashi Consecutive strategy logo for Python</title>
-  <desc id="description">A disciplined sequence of balanced steps builds a stable climb.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
-
+  <desc id="description">Balanced solid steps build a stable consecutive climb.</desc>
   <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .badge-fill {
-      fill: #f4f7f8;
-    }
-
-    .badge-stroke {
-      stroke: #f4f7f8;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .python-upper {
-      fill: #2874a6;
-      opacity: 0.09;
-    }
-
-    .python-lower {
-      fill: #a77b00;
-      opacity: 0.09;
-    }
-
-    .python-eye {
-      fill: #f4f7f8;
-    }
-
-    .accent-fill {
-      fill: #079b7e;
-    }
-
-    .accent-stroke {
-      stroke: #079b7e;
-    }
-
-    .solid-fill {
-      fill: #17364a;
-    }
-
-    .solid-stroke {
-      stroke: #17364a;
-    }
-
-    .muted-fill {
-      fill: #526b78;
-    }
-
-    .muted-stroke {
-      stroke: #526b78;
-    }
-
-    .warm-fill {
-      fill: #d97706;
-    }
-
-    .warm-stroke {
-      stroke: #d97706;
-    }
-
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #168a83; } .primary-light { fill: #65cbbf; } .primary-shade { fill: #0d665f; }
+    .secondary { fill: #526f84; } .secondary-light { fill: #94aabc; } .secondary-shade { fill: #344d60; }
+    .accent { fill: #dfa13a; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .badge-fill {
-        fill: #0d2638;
-      }
-
-      .badge-stroke {
-        stroke: #0d2638;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .python-upper {
-        fill: #79b7df;
-        opacity: 0.1;
-      }
-
-      .python-lower {
-        fill: #f0c84b;
-        opacity: 0.1;
-      }
-
-      .python-eye {
-        fill: #0d2638;
-      }
-
-      .accent-fill {
-        fill: #43d6b1;
-      }
-
-      .accent-stroke {
-        stroke: #43d6b1;
-      }
-
-      .solid-fill {
-        fill: #edf2f3;
-      }
-
-      .solid-stroke {
-        stroke: #edf2f3;
-      }
-
-      .muted-fill {
-        fill: #8fa2aa;
-      }
-
-      .muted-stroke {
-        stroke: #8fa2aa;
-      }
-
-      .warm-fill {
-        fill: #f6b73c;
-      }
-
-      .warm-stroke {
-        stroke: #f6b73c;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #43c7bb; } .primary-light { fill: #87e1d6; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #88a9c1; } .secondary-light { fill: #bfd1df; } .secondary-shade { fill: #5b7f99; }
+      .accent { fill: #f2c35d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
-
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
-
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <g aria-hidden="true">
-      <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
-      <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
-      <circle class="python-eye" cx="278" cy="67" r="11" />
-      <circle class="python-eye" cx="234" cy="445" r="11" />
-    </g>
-
-    <!-- Strategy metaphor. -->
-    <rect class="muted-fill" x="69" y="326" width="72" height="76" rx="12" />
-    <rect class="solid-fill" x="155" y="275" width="72" height="127" rx="12" />
-    <rect class="accent-fill" x="241" y="216" width="72" height="186" rx="12" />
-    <rect class="warm-fill" x="327" y="145" width="72" height="257" rx="12" />
-    <path class="badge-stroke" d="M105 346 V382 M191 295 V382 M277 236 V382 M363 165 V382" fill="none" stroke-width="8" stroke-linecap="round" />
-    <path class="solid-stroke" d="M86 122 C174 94 286 106 393 88" fill="none" stroke-width="11" stroke-linecap="round" />
-    <path class="solid-fill" d="M424 84 L386 65 V108 Z" />
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="primary-shade" d="M43 378 L165 378 L165 450 L43 450 Z" />
+    <path class="primary-light" d="M43 378 L87 349 L209 349 L165 378 Z" />
+    <path class="primary" d="M165 291 L287 291 L287 378 L165 378 Z" />
+    <path class="primary-light" d="M165 291 L209 262 L331 262 L287 291 Z" />
+    <path class="secondary-shade" d="M287 196 L409 196 L409 291 L287 291 Z" />
+    <path class="secondary-light" d="M287 196 L331 167 L453 167 L409 196 Z" />
+    <path class="secondary" d="M409 108 L480 108 L480 196 L409 196 Z" />
+    <path class="accent" d="M409 108 L444 84 L480 108 L445 132 Z" />
   </g>
 </svg>

@@ -1,166 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">ATR Reversion strategy logo for Python</title>
-  <desc id="description">An overstretched spring snaps back after exceeding its normal travel.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
-
+  <desc id="description">An overstretched spring releases a faceted weight back toward normal travel.</desc>
   <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .badge-fill {
-      fill: #f4f7f8;
-    }
-
-    .badge-stroke {
-      stroke: #f4f7f8;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .python-upper {
-      fill: #2874a6;
-      opacity: 0.09;
-    }
-
-    .python-lower {
-      fill: #a77b00;
-      opacity: 0.09;
-    }
-
-    .python-eye {
-      fill: #f4f7f8;
-    }
-
-    .accent-fill {
-      fill: #079b7e;
-    }
-
-    .accent-stroke {
-      stroke: #079b7e;
-    }
-
-    .solid-fill {
-      fill: #17364a;
-    }
-
-    .solid-stroke {
-      stroke: #17364a;
-    }
-
-    .muted-fill {
-      fill: #526b78;
-    }
-
-    .muted-stroke {
-      stroke: #526b78;
-    }
-
-    .warm-fill {
-      fill: #d97706;
-    }
-
-    .warm-stroke {
-      stroke: #d97706;
-    }
-
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #b84b77; } .primary-light { fill: #e288ad; } .primary-shade { fill: #873154; }
+    .secondary { fill: #596d7b; } .secondary-light { fill: #9cabb3; } .secondary-shade { fill: #394a54; }
+    .accent { fill: #dfa23a; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .badge-fill {
-        fill: #0d2638;
-      }
-
-      .badge-stroke {
-        stroke: #0d2638;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .python-upper {
-        fill: #79b7df;
-        opacity: 0.1;
-      }
-
-      .python-lower {
-        fill: #f0c84b;
-        opacity: 0.1;
-      }
-
-      .python-eye {
-        fill: #0d2638;
-      }
-
-      .accent-fill {
-        fill: #43d6b1;
-      }
-
-      .accent-stroke {
-        stroke: #43d6b1;
-      }
-
-      .solid-fill {
-        fill: #edf2f3;
-      }
-
-      .solid-stroke {
-        stroke: #edf2f3;
-      }
-
-      .muted-fill {
-        fill: #8fa2aa;
-      }
-
-      .muted-stroke {
-        stroke: #8fa2aa;
-      }
-
-      .warm-fill {
-        fill: #f6b73c;
-      }
-
-      .warm-stroke {
-        stroke: #f6b73c;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; } .python-upper { fill: #7ec5ed; opacity: 0.08; } .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #e16fa0; } .primary-light { fill: #ffacd0; } .primary-shade { fill: #ad4778; }
+      .secondary { fill: #99abb4; } .secondary-light { fill: #cfd9dc; } .secondary-shade { fill: #687b83; }
+      .accent { fill: #f2c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
-
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
-
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <g aria-hidden="true">
-      <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
-      <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
-      <circle class="python-eye" cx="278" cy="67" r="11" />
-      <circle class="python-eye" cx="234" cy="445" r="11" />
-    </g>
-
-    <!-- Strategy metaphor. -->
-    <rect class="solid-fill" x="61" y="158" width="30" height="196" rx="12" />
-    <path class="accent-stroke" d="M91 256 H125 L151 196 L190 316 L229 196 L268 316 L307 196 L346 316 L376 256 H416" fill="none" stroke-width="15" stroke-linejoin="round" stroke-linecap="round" />
-    <circle class="warm-fill" cx="419" cy="256" r="29" />
-    <path class="solid-stroke" d="M421 139 V205 M421 307 V373" fill="none" stroke-width="11" stroke-linecap="round" />
-    <path class="solid-stroke" d="M374 406 C299 439 207 419 155 365" fill="none" stroke-width="14" stroke-linecap="round" />
-    <path class="solid-fill" d="M131 339 L174 360 L142 390 Z" />
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M30 105 L100 105 L112 407 L42 407 Z" />
+    <path class="secondary" d="M47 123 L84 123 L95 389 L58 389 Z" />
+    <path class="primary" d="M89 239 L147 169 L198 237 L249 169 L300 237 L351 169 L405 239 L373 271 L351 242 L300 310 L249 242 L198 310 L147 242 L117 276 Z" />
+    <path class="primary-light" d="M109 236 L147 190 L198 258 L249 190 L300 258 L351 190 L385 236 L370 252 L351 227 L300 295 L249 227 L198 295 L147 227 L124 255 Z" />
+    <path class="secondary-shade" d="M389 191 L441 170 L482 205 L477 265 L429 292 L383 265 L369 224 Z" />
+    <path class="accent" d="M411 298 L350 298 L372 273 L299 256 L372 239 L350 214 L431 214 L431 298 Z" />
+    <path class="secondary-light" d="M397 199 L439 182 L468 207 L440 225 L390 224 Z" />
   </g>
 </svg>

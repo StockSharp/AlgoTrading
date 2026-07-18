@@ -1,161 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">Williams %R strategy logo for C#</title>
-  <desc id="description">A slingshot stretches to an extreme before releasing stored direction.</desc>
-
-  <defs>
-    <clipPath id="badge-clip">
-      <circle cx="256" cy="256" r="232" />
-    </clipPath>
-  </defs>
-
+  <title id="title">Williams Percent R strategy logo for C#</title>
+  <desc id="description">A faceted slingshot stores force at an extreme and releases it into direction.</desc>
   <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    .badge {
-      fill: #f4f7f8;
-      stroke: #277785;
-    }
-
-    .badge-fill {
-      fill: #f4f7f8;
-    }
-
-    .badge-stroke {
-      stroke: #f4f7f8;
-    }
-
-    .language-mark {
-      fill: #17364a;
-      opacity: 0.06;
-    }
-
-    .python-upper {
-      fill: #2874a6;
-      opacity: 0.09;
-    }
-
-    .python-lower {
-      fill: #a77b00;
-      opacity: 0.09;
-    }
-
-    .python-eye {
-      fill: #f4f7f8;
-    }
-
-    .accent-fill {
-      fill: #079b7e;
-    }
-
-    .accent-stroke {
-      stroke: #079b7e;
-    }
-
-    .solid-fill {
-      fill: #17364a;
-    }
-
-    .solid-stroke {
-      stroke: #17364a;
-    }
-
-    .muted-fill {
-      fill: #526b78;
-    }
-
-    .muted-stroke {
-      stroke: #526b78;
-    }
-
-    .warm-fill {
-      fill: #d97706;
-    }
-
-    .warm-stroke {
-      stroke: #d97706;
-    }
-
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #88563a; } .primary-light { fill: #bd8962; } .primary-shade { fill: #603c29; }
+    .secondary { fill: #1a8a83; } .secondary-light { fill: #68cabe; } .secondary-shade { fill: #0f655f; }
+    .accent { fill: #dfa13b; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
     @media (prefers-color-scheme: dark) {
-      .badge {
-        fill: #0d2638;
-        stroke: #277785;
-      }
-
-      .badge-fill {
-        fill: #0d2638;
-      }
-
-      .badge-stroke {
-        stroke: #0d2638;
-      }
-
-      .language-mark {
-        fill: #edf2f3;
-        opacity: 0.07;
-      }
-
-      .python-upper {
-        fill: #79b7df;
-        opacity: 0.1;
-      }
-
-      .python-lower {
-        fill: #f0c84b;
-        opacity: 0.1;
-      }
-
-      .python-eye {
-        fill: #0d2638;
-      }
-
-      .accent-fill {
-        fill: #43d6b1;
-      }
-
-      .accent-stroke {
-        stroke: #43d6b1;
-      }
-
-      .solid-fill {
-        fill: #edf2f3;
-      }
-
-      .solid-stroke {
-        stroke: #edf2f3;
-      }
-
-      .muted-fill {
-        fill: #8fa2aa;
-      }
-
-      .muted-stroke {
-        stroke: #8fa2aa;
-      }
-
-      .warm-fill {
-        fill: #f6b73c;
-      }
-
-      .warm-stroke {
-        stroke: #f6b73c;
-      }
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #c18a65; } .primary-light { fill: #e3b28f; } .primary-shade { fill: #8e5d42; }
+      .secondary { fill: #48c7bb; } .secondary-light { fill: #88e1d6; } .secondary-shade { fill: #23948a; }
+      .accent { fill: #f1c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
-
-  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
-
-  <g clip-path="url(#badge-clip)">
-    <!-- The implementation language stays visible as a quiet background watermark. -->
-    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
-
-    <!-- Strategy metaphor. -->
-    <path class="solid-stroke" d="M143 108 L199 244 V394 M313 108 L257 244 V394" fill="none" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
-    <path class="accent-stroke" d="M145 111 C204 186 267 207 343 252 C268 298 207 319 145 392" fill="none" stroke-width="13" stroke-linecap="round" />
-    <circle class="warm-fill" cx="343" cy="252" r="27" />
-    <path class="accent-stroke" d="M367 252 H421" fill="none" stroke-width="15" stroke-linecap="round" />
-    <path class="accent-fill" d="M451 252 L413 226 V278 Z" />
-    <path class="muted-stroke" d="M95 110 H125 M95 394 H125" fill="none" stroke-width="10" stroke-linecap="round" />
+  <text class="language-mark" x="247" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="316" font-weight="800" letter-spacing="-20" text-anchor="middle" aria-hidden="true">C#</text>
+  <g aria-hidden="true">
+    <path class="primary-shade" d="M214 459 L237 269 L133 105 L177 75 L258 209 L337 75 L381 105 L279 269 L301 459 Z" />
+    <path class="primary" d="M232 446 L252 266 L157 111 L176 98 L258 232 L339 98 L358 112 L264 266 L283 446 Z" />
+    <path class="secondary" d="M150 96 C122 153 103 203 78 252 L102 267 C133 213 154 160 184 113 Z" />
+    <path class="secondary" d="M366 96 C392 151 414 204 438 252 L414 267 C384 212 362 160 333 113 Z" />
+    <path class="secondary-light" d="M78 252 L103 267 L257 253 L257 231 Z" />
+    <path class="secondary-light" d="M438 252 L414 267 L257 253 L257 231 Z" />
+    <path class="accent" d="M67 226 L96 203 L126 226 L117 263 L80 271 L56 249 Z" />
   </g>
 </svg>
