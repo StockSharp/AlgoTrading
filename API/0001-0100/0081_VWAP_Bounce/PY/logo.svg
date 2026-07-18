@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VWAP Bounce strategy logo for Python</title>
+  <desc id="description">A weighted market buoy stretches the average line, then rebounds as the tether restores balance.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M33 250 C137 205 256 209 479 273 L464 321 C265 265 157 260 50 300 Z" />
+    <path class="secondary-light" d="M53 258 C151 224 258 228 460 283 L454 302 C260 251 158 246 58 280 Z" />
+    <path class="neutral" d="M237 72 L275 72 L275 185 L237 185 Z" />
+    <path class="accent" d="M213 171 L299 171 L321 224 L256 263 L191 224 Z" />
+    <path class="secondary-shade" d="M225 188 L287 188 L299 217 L256 243 L213 217 Z" />
+    <path class="neutral" d="M247 263 L265 263 L265 333 L247 333 Z" />
+    <path class="primary" d="M224 331 L288 331 L318 374 L290 421 L222 421 L194 374 Z" />
+    <path class="primary-light" d="M235 347 L277 347 L296 375 L278 405 L234 405 L216 375 Z" />
+    <path class="positive" d="M288 333 C339 304 377 267 408 216 L382 202 L458 177 L449 257 L428 235 C393 290 354 328 303 357 Z" />
+    <path class="accent" d="M392 195 L458 177 L449 257 L428 235 L437 210 Z" />
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Three White Soldiers strategy logo for Python</title>
+  <desc id="description">Three armored bullish guards advance in formation, each shield and spear standing higher than the last.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M39 418 L473 418 L453 459 L59 459 Z" />
+    <path class="secondary-light" d="M70 258 L152 258 L164 291 L152 383 L111 411 L70 383 L58 291 Z" />
+    <path class="primary" d="M84 282 L138 282 L146 303 L138 366 L111 385 L84 366 L76 303 Z" />
+    <path class="accent" d="M80 224 L111 198 L142 224 L131 258 L91 258 Z" />
+    <path class="neutral" d="M100 129 L122 129 L122 224 L100 224 Z" />
+    <path class="secondary-light" d="M194 212 L282 212 L295 247 L282 378 L238 410 L194 378 L181 247 Z" />
+    <path class="primary" d="M210 238 L266 238 L276 260 L266 360 L238 382 L210 360 L200 260 Z" />
+    <path class="accent" d="M204 174 L238 145 L272 174 L260 212 L216 212 Z" />
+    <path class="neutral" d="M227 79 L249 79 L249 174 L227 174 Z" />
+    <path class="secondary-light" d="M324 157 L418 157 L432 194 L418 374 L371 411 L324 374 L310 194 Z" />
+    <path class="primary" d="M341 184 L401 184 L412 207 L401 355 L371 382 L341 355 L330 207 Z" />
+    <path class="accent" d="M335 116 L371 85 L407 116 L394 157 L348 157 Z" />
+    <path class="neutral" d="M360 37 L382 37 L382 116 L360 116 Z" />
+  </g>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Hull Moving Average Reversal strategy logo for Python</title>
+  <desc id="description">A fast hull boat carves a smooth low-lag turn, leaving a clean wake that curls back without wobble.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M31 159 C145 116 263 131 347 208 C410 266 433 342 425 427 L374 419 C382 349 363 291 313 246 C245 184 152 174 49 211 Z" />
+    <path class="secondary-light" d="M48 170 C151 139 250 151 325 218 L311 234 C242 175 154 164 54 191 Z" />
+    <path class="primary" d="M362 407 C319 348 283 322 230 309 C176 296 122 310 55 350 L34 310 C111 263 180 247 244 263 C312 280 359 314 405 379 Z" />
+    <path class="primary-light" d="M348 387 C311 346 276 327 226 316 L231 338 C270 347 299 364 330 399 Z" />
+    <path class="accent" d="M188 267 L282 249 L345 285 L284 329 L181 310 L142 288 Z" />
+    <path class="secondary-shade" d="M183 282 L277 265 L317 288 L276 314 L186 298 L158 287 Z" />
+    <path class="neutral" d="M239 199 L257 199 L257 263 L239 263 Z" />
+    <path class="accent" d="M225 187 L270 187 L290 213 L260 235 L218 224 L205 207 Z" />
+    <path class="primary" d="M35 310 L55 350 L21 371 L12 334 Z" />
+    <path class="pale" d="M373 419 L425 427 L411 452 L366 445 Z" />
+  </g>
+</svg>

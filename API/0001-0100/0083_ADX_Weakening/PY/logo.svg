@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ADX Weakening strategy logo for Python</title>
+  <desc id="description">A strong directional chain thins link by link until the final connection breaks and the pull sags.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M44 177 L130 177 L157 215 L130 253 L44 253 L17 215 Z M59 197 L115 197 L128 215 L115 233 L59 233 L46 215 Z" fill-rule="evenodd" />
+    <path class="primary" d="M144 210 L219 194 L249 224 L229 267 L154 283 L124 253 Z M159 226 L208 216 L224 231 L213 251 L165 261 L149 246 Z" fill-rule="evenodd" />
+    <path class="accent" d="M239 235 L301 235 L323 267 L301 299 L239 299 L217 267 Z M253 252 L287 252 L298 267 L287 282 L253 282 L242 267 Z" fill-rule="evenodd" />
+    <path class="negative" d="M320 277 L369 293 L378 329 L348 350 L299 334 L290 298 Z M328 296 L354 304 L359 321 L343 330 L317 322 L312 305 Z" fill-rule="evenodd" />
+    <path class="secondary-shade" d="M374 319 L402 341 L391 370 L359 372 L346 344 Z" />
+    <path class="negative" d="M413 343 L449 343 L449 382 L478 382 L428 437 L378 382 L413 382 Z" />
+    <path class="negative-light" d="M421 358 L441 358 L441 393 L449 393 L428 416 L407 393 L421 393 Z" />
+    <path class="pale" d="M177 319 L208 302 L235 320 L229 347 L194 354 L171 339 Z M271 349 L294 336 L316 350 L311 373 L283 379 L265 365 Z" />
+  </g>
+</svg>

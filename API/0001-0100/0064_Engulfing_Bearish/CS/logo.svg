@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Bearish Engulfing strategy logo for C#</title>
+  <desc id="description">A broad descending shield closes around a smaller bullish candle and redirects its lift into a fall.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="negative" d="M73 128 L439 128 L439 245 C429 335 363 404 256 449 C149 404 83 335 73 245 Z" />
+    <path class="negative-light" d="M108 160 L404 160 L404 237 C396 304 351 355 299 386 C333 333 350 280 343 224 L169 224 C162 280 179 333 213 386 C161 355 116 304 108 237 Z" />
+    <path class="positive" d="M243 186 L301 186 L301 279 L243 279 Z" />
+    <path class="positive-light" d="M254 199 L290 199 L290 223 L254 223 Z" />
+    <path class="neutral" d="M264 144 L280 144 L280 186 L264 186 Z M264 279 L280 279 L280 314 L264 314 Z" />
+    <path class="accent" d="M237 240 L275 240 L275 293 L307 293 L256 350 L205 293 L237 293 Z" />
+    <path class="secondary-shade" d="M122 112 L390 112 L414 145 L98 145 Z" />
+    <path class="negative" d="M219 365 L256 350 L293 365 L280 393 L232 393 Z" />
+    <path class="shadow" d="M170 438 L342 438 L321 465 L191 465 Z" />
+  </g>
+</svg>

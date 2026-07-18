@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Fibonacci Retracement Reversal strategy logo for Python</title>
+  <desc id="description">A golden recursive staircase guides a deep pullback to a marked landing where the trend springs forward again.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M48 407 L464 407 L464 448 L48 448 Z" />
+    <path class="secondary" d="M70 318 L170 318 L170 407 L70 407 Z" />
+    <path class="secondary-light" d="M70 318 L170 318 L170 344 L70 344 Z" />
+    <path class="primary" d="M170 249 L252 249 L252 407 L170 407 Z" />
+    <path class="primary-light" d="M170 249 L252 249 L252 277 L170 277 Z" />
+    <path class="violet" d="M252 194 L320 194 L320 407 L252 407 Z" />
+    <path class="violet-light" d="M252 194 L320 194 L320 222 L252 222 Z" />
+    <path class="accent" d="M320 151 L376 151 L376 407 L320 407 Z M376 119 L421 119 L421 407 L376 407 Z" />
+    <path class="neutral" d="M70 295 L421 295 L421 320 L70 320 Z" />
+    <path class="negative" d="M99 102 C181 128 244 173 299 236 L269 263 C218 207 163 168 87 144 Z" />
+    <path class="primary" d="M276 248 C321 215 352 180 378 137 L352 122 L428 99 L416 178 L397 157 C366 207 331 246 286 279 Z" />
+    <path class="accent" d="M259 268 L286 240 L313 268 L300 295 L272 295 Z" />
+  </g>
+</svg>

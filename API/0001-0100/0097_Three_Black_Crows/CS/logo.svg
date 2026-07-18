@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Three Black Crows strategy logo for C#</title>
+  <desc id="description">Three dark crows descend from perch to perch, turning the pattern into an unmistakable bearish formation.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M42 160 L470 160 L470 190 L42 190 Z M74 278 L438 278 L438 308 L74 308 Z M108 394 L404 394 L404 424 L108 424 Z" />
+    <path class="neutral" d="M79 108 C103 78 145 78 169 108 L198 96 L177 126 C181 161 155 184 123 180 C91 176 72 147 79 108 Z" />
+    <path class="secondary" d="M108 118 L57 93 L78 141 L112 157 Z" />
+    <path class="neutral" d="M116 174 L102 205 L121 198 L135 205 L130 176 Z" />
+    <path class="accent" d="M168 108 L205 119 L172 134 Z" />
+    <path class="neutral" d="M198 224 C222 194 264 194 288 224 L317 212 L296 242 C300 277 274 300 242 296 C210 292 191 263 198 224 Z" />
+    <path class="secondary" d="M227 234 L176 209 L197 257 L231 273 Z" />
+    <path class="neutral" d="M235 290 L221 321 L240 314 L254 321 L249 292 Z" />
+    <path class="accent" d="M287 224 L324 235 L291 250 Z" />
+    <path class="neutral" d="M317 340 C341 310 383 310 407 340 L436 328 L415 358 C419 393 393 416 361 412 C329 408 310 379 317 340 Z" />
+    <path class="secondary" d="M346 350 L295 325 L316 373 L350 389 Z" />
+    <path class="neutral" d="M354 406 L340 437 L359 430 L373 437 L368 408 Z" />
+    <path class="accent" d="M406 340 L443 351 L410 366 Z" />
+  </g>
+</svg>

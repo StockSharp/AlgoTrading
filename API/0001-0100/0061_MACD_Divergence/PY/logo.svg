@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">MACD Divergence strategy logo for Python</title>
+  <desc id="description">A rail switch sends price and momentum trains onto opposing tracks while the signal lamp marks the crossover.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M37 385 C143 371 196 319 250 258 C307 194 363 139 475 126 L481 178 C389 190 346 231 291 293 C227 365 160 424 45 440 Z" />
+    <path class="negative" d="M39 126 C145 139 203 191 258 255 C312 318 362 370 475 386 L466 440 C338 421 278 360 220 293 C170 235 122 193 31 181 Z" />
+    <path class="secondary-light" d="M58 397 C144 380 192 335 238 282 L252 296 C204 352 154 397 64 417 Z" />
+    <path class="negative-light" d="M52 143 C139 158 188 202 233 255 L218 269 C174 218 128 180 48 164 Z" />
+    <path class="neutral" d="M230 214 L282 214 L302 264 L256 294 L210 264 Z" />
+    <path class="accent" d="M237 230 L275 230 L286 260 L256 279 L226 260 Z" />
+    <path class="primary" d="M399 106 L482 126 L421 188 L423 158 L385 167 Z" />
+    <path class="negative" d="M398 379 L475 386 L425 452 L424 421 L388 421 Z" />
+    <path class="pale" d="M142 238 L169 219 L190 247 L163 266 Z M327 246 L354 227 L375 255 L348 274 Z" />
+  </g>
+</svg>

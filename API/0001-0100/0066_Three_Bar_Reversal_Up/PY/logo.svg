@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Three Bar Reversal Up strategy logo for Python</title>
+  <desc id="description">Two descending bearish pistons compress a base spring before the third bar launches above the middle high.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M54 411 L458 411 L438 451 L74 451 Z" />
+    <path class="neutral" d="M103 111 L125 111 L125 176 L103 176 Z M201 177 L223 177 L223 240 L201 240 Z" />
+    <path class="negative" d="M69 176 L159 176 L159 298 L69 298 Z" />
+    <path class="negative-light" d="M86 192 L142 192 L142 222 L86 222 Z" />
+    <path class="negative" d="M167 240 L257 240 L257 347 L167 347 Z" />
+    <path class="negative-light" d="M184 256 L240 256 L240 283 L184 283 Z" />
+    <path class="secondary" d="M151 347 L270 347 L253 373 L269 397 L151 397 L168 373 Z" />
+    <path class="positive" d="M326 154 L416 154 L416 360 L326 360 Z" />
+    <path class="positive-light" d="M343 171 L399 171 L399 215 L343 215 Z" />
+    <path class="neutral" d="M360 92 L382 92 L382 154 L360 154 Z M360 360 L382 360 L382 411 L360 411 Z" />
+    <path class="primary" d="M336 154 L371 104 L406 154 Z" />
+    <path class="accent" d="M350 119 L371 91 L392 119 L371 144 Z" />
+  </g>
+</svg>

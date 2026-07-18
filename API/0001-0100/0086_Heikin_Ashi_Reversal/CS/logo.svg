@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Heikin Ashi Reversal strategy logo for C#</title>
+  <desc id="description">A falling red domino chain reaches a hinge where the smoothed sequence changes color and climbs back.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M40 416 L472 416 L451 454 L61 454 Z" />
+    <path class="negative" d="M69 119 L130 99 L171 226 L110 246 Z" />
+    <path class="negative-light" d="M83 125 L116 114 L139 184 L106 195 Z" />
+    <path class="negative" d="M158 196 L223 180 L247 307 L182 323 Z" />
+    <path class="negative-light" d="M173 203 L208 194 L221 260 L186 269 Z" />
+    <path class="accent" d="M224 312 L256 286 L288 312 L288 350 L256 376 L224 350 Z" />
+    <path class="primary" d="M276 307 L341 323 L365 196 L300 180 Z" />
+    <path class="primary-light" d="M291 260 L326 269 L339 203 L304 194 Z" />
+    <path class="primary" d="M341 226 L402 246 L443 119 L382 99 Z" />
+    <path class="primary-light" d="M373 184 L406 195 L429 125 L396 114 Z" />
+    <path class="neutral" d="M245 376 L267 376 L267 416 L245 416 Z" />
+    <path class="primary" d="M382 99 L412 57 L443 119 L417 110 Z" />
+  </g>
+</svg>

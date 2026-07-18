@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Donchian Reversal strategy logo for Python</title>
+  <desc id="description">A boomerang briefly leaves the price canyon, catches the outer wall, and returns through the channel gate.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M39 116 C160 80 288 84 475 139 L459 191 C292 142 171 138 53 169 Z" />
+    <path class="secondary" d="M38 389 C158 431 287 428 477 372 L461 320 C290 369 170 374 52 337 Z" />
+    <path class="secondary-light" d="M57 128 C168 101 286 104 457 151 L451 171 C287 127 172 123 61 149 Z" />
+    <path class="primary" d="M359 115 C420 142 445 184 439 238 L470 239 L417 302 L370 234 L400 236 C406 199 389 173 345 154 Z" />
+    <path class="primary-light" d="M369 128 C414 151 430 185 426 224 L407 222 C411 190 397 166 360 147 Z" />
+    <path class="negative" d="M417 302 C376 339 326 353 270 342 C229 334 194 313 161 278 L188 251 C215 279 242 294 277 301 C321 310 358 300 390 270 Z" />
+    <path class="negative-light" d="M391 298 C356 326 317 335 275 326 L280 306 C315 313 348 306 377 284 Z" />
+    <path class="accent" d="M398 284 L417 302 L393 324 L373 304 Z" />
+    <path class="neutral" d="M116 253 L196 253 L196 286 L116 286 Z" />
+  </g>
+</svg>

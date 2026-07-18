@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ATR Exhaustion strategy logo for Python</title>
+  <desc id="description">A volatility shock absorber reaches its heated travel limit, compresses the final spring, and rebounds.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M127 62 L385 62 L385 105 L127 105 Z M127 408 L385 408 L385 451 L127 451 Z" />
+    <path class="secondary" d="M151 105 L196 105 L196 408 L151 408 Z M316 105 L361 105 L361 408 L316 408 Z" />
+    <path class="pale" d="M196 132 L316 132 L316 382 L196 382 Z" />
+    <path class="negative" d="M196 158 L316 158 L316 211 L196 211 Z" />
+    <path class="negative-light" d="M214 171 L298 171 L298 188 L214 188 Z" />
+    <path class="neutral" d="M239 105 L273 105 L273 158 L239 158 Z" />
+    <path class="accent" d="M213 232 L299 232 L299 267 L213 267 Z" />
+    <path class="secondary-shade" d="M218 267 L294 267 L274 291 L294 315 L218 315 L238 291 L218 267 Z M218 315 L294 315 L274 339 L294 363 L218 363 L238 339 Z" />
+    <path class="primary" d="M302 332 C358 305 393 267 411 216 L383 205 L456 171 L457 251 L434 232 C411 292 373 335 318 363 Z" />
+    <path class="primary-light" d="M321 334 C363 309 390 277 406 237 L425 245 C405 292 376 327 333 351 Z" />
+    <path class="negative" d="M171 118 L194 82 L217 118 L205 148 L183 148 Z M295 118 L318 82 L341 118 L329 148 L307 148 Z" />
+  </g>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Double Top strategy logo for C#</title>
+  <desc id="description">Twin capped towers share a fragile ridge that gives way into a decisive central drop.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M45 376 L126 161 L210 376 Z" />
+    <path class="secondary-light" d="M72 336 L126 190 L153 263 L130 252 L104 320 Z" />
+    <path class="secondary" d="M302 376 L386 161 L467 376 Z" />
+    <path class="secondary-light" d="M329 336 L386 190 L412 260 L389 247 L361 320 Z" />
+    <path class="accent" d="M89 161 L126 124 L163 161 L148 192 L104 192 Z M349 161 L386 124 L423 161 L408 192 L364 192 Z" />
+    <path class="neutral" d="M163 185 L349 185 L349 218 L163 218 Z" />
+    <path class="negative" d="M238 201 L274 201 L274 330 L315 330 L256 421 L197 330 L238 330 Z" />
+    <path class="negative-light" d="M248 219 L264 219 L264 342 L281 342 L256 381 L231 342 L248 342 Z" />
+    <path class="shadow" d="M191 376 L321 376 L300 414 L212 414 Z" />
+    <path class="accent" d="M233 185 L256 165 L279 185 L256 209 Z" />
+  </g>
+</svg>

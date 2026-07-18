@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Tweezer Top strategy logo for Python</title>
+  <desc id="description">Precision forceps meet at two matching candle highs, clamp the shared top, and press the reversal downward.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M71 452 L130 452 C141 340 176 248 241 169 L209 141 C135 231 93 331 71 452 Z" />
+    <path class="secondary" d="M382 452 L441 452 C419 331 377 231 303 141 L271 169 C336 248 371 340 382 452 Z" />
+    <path class="secondary-light" d="M91 436 L114 436 C132 335 166 253 225 179 L211 167 C149 244 111 331 91 436 Z M398 436 L421 436 C401 331 363 244 301 167 L287 179 C346 253 380 335 398 436 Z" />
+    <path class="accent" d="M195 131 L226 113 L256 130 L256 165 L225 183 L195 167 Z M256 130 L286 113 L317 131 L317 167 L287 183 L256 165 Z" />
+    <path class="positive" d="M139 162 L201 162 L201 273 L139 273 Z" />
+    <path class="negative" d="M311 162 L373 162 L373 273 L311 273 Z" />
+    <path class="neutral" d="M162 123 L178 123 L178 162 L162 162 Z M334 123 L350 123 L350 162 L334 162 Z" />
+    <path class="neutral" d="M162 273 L178 273 L178 323 L162 323 Z M334 273 L350 273 L350 323 L334 323 Z" />
+    <path class="negative" d="M238 165 L274 165 L274 231 L302 231 L256 285 L210 231 L238 231 Z" />
+    <path class="shadow" d="M119 80 L393 80 L374 123 L138 123 Z" />
+  </g>
+</svg>

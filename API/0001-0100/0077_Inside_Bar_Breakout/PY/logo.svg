@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Inside Bar Breakout strategy logo for Python</title>
+  <desc id="description">A small candle grows inside a parent cage, cracks its roof, and escapes through the newly opened range.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M88 90 L424 90 L424 130 L88 130 Z M88 382 L424 382 L424 422 L88 422 Z" />
+    <path class="secondary" d="M88 130 L128 130 L128 382 L88 382 Z M384 130 L424 130 L424 382 L384 382 Z" />
+    <path class="pale" d="M153 155 L359 155 L359 357 L153 357 Z" />
+    <path class="positive" d="M220 242 L292 242 L292 338 L220 338 Z" />
+    <path class="positive-light" d="M234 255 L278 255 L278 279 L234 279 Z" />
+    <path class="neutral" d="M246 190 L266 190 L266 242 L246 242 Z M246 338 L266 338 L266 382 L246 382 Z" />
+    <path class="accent" d="M206 130 L230 162 L256 130 L282 162 L306 130 L293 180 L219 180 Z" />
+    <path class="primary" d="M236 242 L236 157 L207 157 L256 100 L305 157 L276 157 L276 242 Z" />
+    <path class="primary-light" d="M245 190 L245 155 L232 155 L256 128 L280 155 L267 155 L267 190 Z" />
+    <path class="shadow" d="M74 422 L438 422 L420 452 L92 452 Z" />
+  </g>
+</svg>

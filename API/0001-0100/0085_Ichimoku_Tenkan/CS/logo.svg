@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Ichimoku Tenkan strategy logo for C#</title>
+  <desc id="description">Fast and slow bridge rails cross beneath a Japanese gate while price clears the cloud beyond them.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M52 77 L460 77 L436 126 L76 126 Z" />
+    <path class="secondary" d="M97 126 L142 126 L142 431 L97 431 Z M370 126 L415 126 L415 431 L370 431 Z" />
+    <path class="neutral" d="M66 177 L446 177 L446 215 L66 215 Z" />
+    <path class="pale" d="M90 324 C127 279 176 276 211 309 C242 255 315 247 349 306 C385 279 432 293 449 340 L421 386 L111 386 L73 353 Z" />
+    <path class="primary" d="M61 315 C146 279 204 279 261 309 C320 340 370 334 452 286 L469 326 C374 381 307 384 242 349 C194 323 148 326 78 355 Z" />
+    <path class="primary-light" d="M82 318 C148 295 199 297 250 323 L241 341 C194 318 150 316 89 337 Z" />
+    <path class="negative" d="M75 263 C154 302 218 302 278 268 C334 236 383 231 445 245 L435 285 C384 273 346 278 298 305 C226 346 151 344 57 299 Z" />
+    <path class="negative-light" d="M88 276 C157 306 215 306 268 277 L278 295 C217 328 154 327 80 295 Z" />
+    <path class="accent" d="M245 285 L270 270 L295 285 L295 315 L270 330 L245 315 Z" />
+    <path class="accent" d="M231 55 L256 24 L281 55 L270 77 L242 77 Z" />
+  </g>
+</svg>

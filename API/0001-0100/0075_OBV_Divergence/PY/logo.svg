@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">OBV Divergence strategy logo for Python</title>
+  <desc id="description">A hidden volume reservoir keeps filling while the visible price cart rolls down a separate staircase.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M41 122 L275 122 L275 433 L41 433 Z" />
+    <path class="pale" d="M70 151 L246 151 L246 404 L70 404 Z" />
+    <path class="primary" d="M70 288 C112 269 147 301 183 278 C209 261 227 263 246 275 L246 404 L70 404 Z" />
+    <path class="primary-light" d="M70 288 C112 269 147 301 183 278 C209 261 227 263 246 275 L246 303 C221 290 203 290 181 305 C143 328 111 296 70 315 Z" />
+    <path class="accent" d="M99 327 L132 310 L165 327 L165 365 L132 382 L99 365 Z M169 294 L202 277 L235 294 L235 332 L202 349 L169 332 Z" />
+    <path class="neutral" d="M306 151 L463 151 L463 189 L306 189 Z M330 222 L463 222 L463 260 L330 260 Z M354 293 L463 293 L463 331 L354 331 Z M378 364 L463 364 L463 402 L378 402 Z" />
+    <path class="negative" d="M296 143 L335 143 L335 206 L359 206 L359 277 L383 277 L383 348 L420 348 L420 325 L474 382 L420 439 L420 416 L345 416 L345 344 L321 344 L321 273 L297 273 Z" />
+    <path class="negative-light" d="M310 161 L321 161 L321 220 L345 220 L345 291 L369 291 L369 362 L402 362 L402 381 L359 381 L359 310 L335 310 L335 239 L310 239 Z" />
+    <path class="shadow" d="M32 433 L284 433 L265 461 L51 461 Z" />
+  </g>
+</svg>

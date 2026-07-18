@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Tweezer Bottom strategy logo for C#</title>
+  <desc id="description">Precision forceps meet at two matching candle lows, grip the shared bottom, and lift the reversal seed.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M71 60 L130 60 C141 172 176 264 241 343 L209 371 C135 281 93 181 71 60 Z" />
+    <path class="secondary" d="M382 60 L441 60 C419 181 377 281 303 371 L271 343 C336 264 371 172 382 60 Z" />
+    <path class="secondary-light" d="M91 76 L114 76 C132 177 166 259 225 333 L211 345 C149 268 111 181 91 76 Z M398 76 L421 76 C401 181 363 268 301 345 L287 333 C346 259 380 177 398 76 Z" />
+    <path class="accent" d="M195 345 L226 329 L256 347 L256 382 L225 399 L195 381 Z M256 347 L286 329 L317 345 L317 381 L287 399 L256 382 Z" />
+    <path class="negative" d="M139 239 L201 239 L201 350 L139 350 Z" />
+    <path class="positive" d="M311 239 L373 239 L373 350 L311 350 Z" />
+    <path class="neutral" d="M162 189 L178 189 L178 239 L162 239 Z M334 189 L350 189 L350 239 L334 239 Z" />
+    <path class="neutral" d="M162 350 L178 350 L178 389 L162 389 Z M334 350 L350 350 L350 389 L334 389 Z" />
+    <path class="primary" d="M238 347 L238 281 L210 281 L256 227 L302 281 L274 281 L274 347 Z" />
+    <path class="shadow" d="M119 389 L393 389 L374 432 L138 432 Z" />
+  </g>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Evening Star strategy logo for C#</title>
+  <desc id="description">A small star between a strong light candle and a descending dark candle sinks beneath the evening horizon.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M34 389 L478 389 L478 431 L34 431 Z" />
+    <path class="violet" d="M162 389 A94 94 0 0 0 350 389 Z" />
+    <path class="positive-light" d="M70 151 L156 151 L156 350 L70 350 Z" />
+    <path class="positive" d="M84 168 L142 168 L142 333 L84 333 Z" />
+    <path class="neutral" d="M104 99 L126 99 L126 151 L104 151 Z M104 350 L126 350 L126 389 L104 389 Z" />
+    <path class="accent" d="M218 303 L274 303 L274 355 L218 355 Z" />
+    <path class="neutral" d="M238 256 L254 256 L254 303 L238 303 Z M238 355 L254 355 L254 389 L238 389 Z" />
+    <path class="negative-light" d="M350 183 L438 183 L438 352 L350 352 Z" />
+    <path class="negative" d="M365 200 L423 200 L423 335 L365 335 Z" />
+    <path class="neutral" d="M383 128 L405 128 L405 183 L383 183 Z M383 352 L405 352 L405 389 L383 389 Z" />
+    <path class="accent" d="M235 246 L246 220 L257 246 L284 235 L270 260 L294 275 L266 278 L267 307 L246 287 L225 307 L227 278 L198 274 L222 259 L208 234 Z" />
+    <path class="negative" d="M373 355 L394 386 L415 355 L394 332 Z" />
+  </g>
+</svg>

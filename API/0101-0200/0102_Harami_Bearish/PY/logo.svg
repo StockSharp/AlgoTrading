@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Bearish Harami strategy logo for Python</title>
+  <desc id="description">A small red seed hangs inside a large bullish shell, then sends a root downward as the contained reversal develops.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M244 58 L268 58 L268 109 L244 109 Z M244 386 L268 386 L268 444 L244 444 Z" />
+    <path class="positive" d="M112 109 L400 109 L400 386 L112 386 Z" />
+    <path class="positive-light" d="M139 136 L373 136 L373 359 L139 359 Z" />
+    <path class="pale" d="M181 178 L331 178 L331 336 L181 336 Z" />
+    <path class="negative" d="M223 192 L289 192 L289 264 L223 264 Z" />
+    <path class="negative-light" d="M236 205 L276 205 L276 227 L236 227 Z" />
+    <path class="neutral" d="M247 156 L265 156 L265 192 L247 192 Z M247 264 L265 264 L265 299 L247 299 Z" />
+    <path class="accent" d="M231 272 L256 293 L281 272 L269 250 L243 250 Z" />
+    <path class="negative" d="M238 264 L274 264 L274 318 L301 318 L256 370 L211 318 L238 318 Z" />
+    <path class="negative-light" d="M247 294 L265 294 L265 322 L277 322 L256 346 L235 322 L247 322 Z" />
+    <path class="shadow" d="M98 386 L414 386 L395 422 L117 422 Z" />
+  </g>
+</svg>

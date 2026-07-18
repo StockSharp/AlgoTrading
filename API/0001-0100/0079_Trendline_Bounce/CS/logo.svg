@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Trendline Bounce strategy logo for C#</title>
+  <desc id="description">A loaded wheel strikes an inclined trend ramp and rebounds forward without losing the direction of travel.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M36 376 L432 158 L464 211 L68 430 Z" />
+    <path class="secondary" d="M48 359 L420 154 L435 180 L62 385 Z" />
+    <path class="secondary-light" d="M76 347 L399 170 L409 188 L86 366 Z" />
+    <path class="accent" d="M185 278 L221 258 L257 278 L257 319 L221 339 L185 319 Z" />
+    <path class="neutral" d="M199 286 L221 274 L243 286 L243 311 L221 323 L199 311 Z" />
+    <path class="pale" d="M118 388 L180 354 L199 386 L137 420 Z" />
+    <path class="primary" d="M225 260 C270 204 328 159 401 126 L386 101 L466 108 L441 185 L423 159 C358 189 308 228 269 280 Z" />
+    <path class="primary-light" d="M245 257 C282 215 330 177 393 147 L404 166 C347 193 302 228 267 269 Z" />
+    <path class="accent" d="M385 96 L466 108 L441 185 L423 159 L436 132 Z" />
+    <path class="shadow" d="M71 430 L167 377 L187 411 L92 464 Z" />
+  </g>
+</svg>

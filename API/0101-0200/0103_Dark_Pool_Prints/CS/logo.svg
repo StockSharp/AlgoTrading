@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Dark Pool Prints strategy logo for C#</title>
+  <desc id="description">A large hidden footprint crosses beneath dark water until one bright print reaches the surface and releases price.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M36 190 C137 149 258 151 476 214 L476 419 L36 419 Z" />
+    <path class="secondary" d="M36 190 C137 149 258 151 476 214 L464 259 C263 203 157 201 48 238 Z" />
+    <path class="primary" d="M48 271 C156 235 262 239 464 295 L464 346 C265 291 158 287 48 323 Z" />
+    <path class="primary-light" d="M58 280 C158 251 264 254 450 306 L444 326 C264 278 162 274 62 301 Z" />
+    <path class="shadow" d="M147 329 C161 283 199 252 245 254 C291 256 323 292 322 337 C321 382 282 414 233 411 C184 408 136 374 147 329 Z" />
+    <path class="shadow" d="M302 271 L326 257 L350 271 L350 299 L326 313 L302 299 Z M350 244 L370 232 L390 244 L390 267 L370 279 L350 267 Z M392 226 L409 216 L426 226 L426 246 L409 256 L392 246 Z" />
+    <path class="accent" d="M225 233 L256 215 L287 233 L287 269 L256 287 L225 269 Z" />
+    <path class="primary" d="M238 233 L238 151 L207 151 L256 94 L305 151 L274 151 L274 233 Z" />
+    <path class="primary-light" d="M247 198 L247 150 L235 150 L256 126 L277 150 L265 150 L265 198 Z" />
+    <path class="neutral" d="M36 419 L476 419 L454 458 L58 458 Z" />
+  </g>
+</svg>

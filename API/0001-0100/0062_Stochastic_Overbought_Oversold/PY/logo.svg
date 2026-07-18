@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Stochastic Overbought Oversold strategy logo for Python</title>
+  <desc id="description">A pinball oscillator rebounds between two calibrated bumpers before committing to the opposite side.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M106 54 L406 54 L431 87 L431 425 L393 458 L119 458 L81 425 L81 87 Z" />
+    <path class="negative" d="M121 93 L391 93 L391 143 L121 143 Z" />
+    <path class="positive" d="M121 369 L391 369 L391 419 L121 419 Z" />
+    <path class="pale" d="M113 160 L147 160 L147 352 L113 352 Z M365 160 L399 160 L399 352 L365 352 Z" />
+    <path class="violet" d="M139 330 C177 279 205 263 251 252 C301 240 333 217 371 174 L394 197 C351 249 311 277 258 289 C219 298 195 313 166 353 Z" />
+    <path class="violet-light" d="M155 326 C185 290 211 276 252 266 L258 286 C221 296 201 308 177 338 Z" />
+    <path class="accent" d="M223 219 L256 200 L289 219 L289 257 L256 276 L223 257 Z" />
+    <path class="neutral" d="M237 143 L275 143 L275 190 L237 190 Z" />
+    <path class="primary" d="M331 319 L365 291 L399 319 L385 354 L347 354 Z" />
+    <path class="negative-light" d="M113 110 L146 98 L176 116 L171 141 L126 141 Z" />
+  </g>
+</svg>

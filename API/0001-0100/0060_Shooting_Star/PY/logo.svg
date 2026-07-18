@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Shooting Star strategy logo for Python</title>
+  <desc id="description">A fast comet grazes an overhead limit, flashes at the turning point, and leaves a falling confirmation trail.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M51 101 L461 101 L461 137 L51 137 Z" />
+    <path class="primary" d="M42 391 C128 372 185 326 236 261 C274 212 312 161 382 126 L404 166 C344 197 312 244 273 293 C215 366 149 418 61 438 Z" />
+    <path class="primary-light" d="M65 393 C137 371 187 332 231 276 L248 289 C200 350 148 391 72 414 Z" />
+    <path class="accent" d="M365 105 L392 76 L399 116 L438 101 L418 137 L451 158 L411 164 L414 205 L385 177 L355 204 L359 164 L319 157 L352 136 L332 101 Z" />
+    <path class="negative" d="M390 177 C419 223 431 268 425 315 C419 358 394 397 354 431 L323 391 C358 360 374 332 377 301 C381 266 371 233 349 202 Z" />
+    <path class="negative-light" d="M393 202 C410 236 416 272 412 307 C408 337 395 363 375 387 L359 372 C377 349 386 327 389 303 C393 272 387 242 374 216 Z" />
+    <path class="neutral" d="M322 383 L354 431 L327 455 L292 405 Z" />
+    <path class="pale" d="M92 161 L168 161 L168 181 L92 181 Z M186 161 L250 161 L250 181 L186 181 Z" />
+  </g>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Stochastic Hook Reversal strategy logo for Python</title>
+  <desc id="description">A double grappling hook catches the two stochastic lines together and pulls their turn away from the limit.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M42 94 L470 94 L470 130 L42 130 Z" />
+    <path class="violet" d="M38 337 C126 296 185 298 243 340 C303 384 362 379 475 319 L492 361 C363 430 286 428 218 378 C171 344 126 342 56 376 Z" />
+    <path class="violet-light" d="M58 339 C126 314 179 315 230 351 L219 369 C173 339 129 336 65 359 Z" />
+    <path class="primary" d="M36 278 C122 240 191 247 250 290 C309 333 369 326 477 267 L494 308 C373 374 295 378 225 327 C177 293 127 288 53 318 Z" />
+    <path class="primary-light" d="M58 281 C125 257 183 264 237 302 L226 320 C178 287 128 282 65 301 Z" />
+    <path class="neutral" d="M220 92 L246 92 L246 248 C246 288 221 314 185 314 C157 314 136 296 136 271 C136 249 153 232 176 232 L176 262 C168 262 164 266 164 273 C164 281 173 286 185 286 C204 286 216 272 216 248 Z" />
+    <path class="neutral" d="M292 92 L318 92 L318 248 C318 288 343 314 379 314 C407 314 428 296 428 271 C428 249 411 232 388 232 L388 262 C396 262 400 266 400 273 C400 281 391 286 379 286 C360 286 348 272 348 248 Z" />
+    <path class="accent" d="M201 76 L258 76 L270 105 L229 127 L189 105 Z M254 76 L311 76 L323 105 L282 127 L242 105 Z" />
+    <path class="positive" d="M249 323 L282 303 L315 323 L315 361 L282 381 L249 361 Z" />
+  </g>
+</svg>
