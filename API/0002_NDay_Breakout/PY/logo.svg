@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">N-Day Breakout strategy logo for Python</title>
+  <desc id="description">A green sprout fractures a thick stone slab, with a faded Python emblem in the background.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .sprout-fill {
+      fill: #079b7e;
+    }
+
+    .sprout-stroke {
+      stroke: #079b7e;
+    }
+
+    .slab {
+      fill: #17364a;
+    }
+
+    .slab-side {
+      fill: #526b78;
+    }
+
+    .crack-stroke {
+      stroke: #f4f7f8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .sprout-fill {
+        fill: #43d6b1;
+      }
+
+      .sprout-stroke {
+        stroke: #43d6b1;
+      }
+
+      .slab {
+        fill: #edf2f3;
+      }
+
+      .slab-side {
+        fill: #8fa2aa;
+      }
+
+      .crack-stroke {
+        stroke: #0d2638;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- A large, quiet Python emblem identifies the implementation language. -->
+    <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
+    <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
+    <circle class="python-eye" cx="278" cy="67" r="11" />
+    <circle class="python-eye" cx="234" cy="445" r="11" />
+
+    <!-- The sprout represents momentum emerging from a long-held range. -->
+    <path class="sprout-stroke" d="M256 363 C253 323 259 282 256 239 C254 211 259 180 267 151" fill="none" stroke-width="18" stroke-linecap="round" />
+    <path class="sprout-stroke" d="M255 340 C237 351 222 369 211 386 M258 344 C277 356 292 371 303 388" fill="none" stroke-width="10" stroke-linecap="round" />
+    <path class="sprout-fill" d="M244 210 C207 211 182 187 182 151 C219 150 245 174 244 210 Z" />
+    <path class="sprout-fill" d="M272 177 C275 140 300 116 337 119 C333 156 309 179 272 177 Z" />
+
+    <!-- The thick lower faces give the N-day boundary physical weight. -->
+    <path class="slab-side" d="M52 286 H224 L242 267 V285 L228 304 H52 Z" />
+    <path class="slab-side" d="M460 286 H290 L270 268 V286 L288 304 H460 Z" />
+
+    <!-- Irregular top faces split around the emerging stem. -->
+    <path class="slab" d="M52 222 H211 L232 238 L219 250 L242 267 L224 286 H52 Z" />
+    <path class="slab" d="M460 222 H300 L279 239 L291 252 L270 268 L290 286 H460 Z" />
+
+    <!-- Secondary fractures spread the impact beyond the central break. -->
+    <path class="crack-stroke" d="M176 222 L190 238 L181 253 M190 238 L207 229 M337 222 L323 239 L333 253 M323 239 L306 230" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Uneven fragments freeze the instant of breakout. -->
+    <path class="slab" d="M139 213 L153 184 L174 205 L160 216 Z" />
+    <path class="slab" d="M337 208 L351 179 L373 202 L357 214 Z" />
+    <path class="slab-side" d="M301 217 L311 200 L324 216 Z" />
+  </g>
+</svg>

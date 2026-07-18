@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Supertrend Flip strategy logo for C#</title>
+  <desc id="description">A hinged directional plate flips as pressure builds underneath it.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .badge-stroke {
+      stroke: #f4f7f8;
+    }
+
+    .language-mark {
+      fill: #17364a;
+      opacity: 0.06;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    .muted-fill {
+      fill: #526b78;
+    }
+
+    .muted-stroke {
+      stroke: #526b78;
+    }
+
+    .warm-fill {
+      fill: #d97706;
+    }
+
+    .warm-stroke {
+      stroke: #d97706;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .badge-stroke {
+        stroke: #0d2638;
+      }
+
+      .language-mark {
+        fill: #edf2f3;
+        opacity: 0.07;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+
+      .muted-fill {
+        fill: #8fa2aa;
+      }
+
+      .muted-stroke {
+        stroke: #8fa2aa;
+      }
+
+      .warm-fill {
+        fill: #f6b73c;
+      }
+
+      .warm-stroke {
+        stroke: #f6b73c;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- The implementation language stays visible as a quiet background watermark. -->
+    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
+
+    <!-- Strategy metaphor. -->
+    <circle class="solid-stroke badge-fill" cx="256" cy="217" r="90" stroke-width="16" />
+    <path class="accent-fill" d="M256 142 L322 217 L256 292 L190 217 Z" />
+    <circle class="badge-fill" cx="256" cy="217" r="22" />
+    <path class="warm-stroke" d="M147 162 C110 212 116 277 161 315 M365 272 C402 221 396 159 351 121" fill="none" stroke-width="14" stroke-linecap="round" />
+    <path class="warm-fill" d="M150 326 L122 288 L174 291 Z M362 109 L390 147 L338 144 Z" />
+    <rect class="muted-fill" x="130" y="352" width="44" height="55" rx="7" />
+    <rect class="solid-fill" x="191" y="327" width="44" height="80" rx="7" />
+    <rect class="accent-fill" x="252" y="293" width="44" height="114" rx="7" />
+    <rect class="warm-fill" x="313" y="252" width="44" height="155" rx="7" />
+  </g>
+</svg>

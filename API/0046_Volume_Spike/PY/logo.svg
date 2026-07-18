@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Volume Spike Trend strategy logo for Python</title>
+  <desc id="description">A stack of stored participation erupts into a sudden high-volume burst.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .badge-stroke {
+      stroke: #f4f7f8;
+    }
+
+    .language-mark {
+      fill: #17364a;
+      opacity: 0.06;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    .muted-fill {
+      fill: #526b78;
+    }
+
+    .muted-stroke {
+      stroke: #526b78;
+    }
+
+    .warm-fill {
+      fill: #d97706;
+    }
+
+    .warm-stroke {
+      stroke: #d97706;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .badge-stroke {
+        stroke: #0d2638;
+      }
+
+      .language-mark {
+        fill: #edf2f3;
+        opacity: 0.07;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+
+      .muted-fill {
+        fill: #8fa2aa;
+      }
+
+      .muted-stroke {
+        stroke: #8fa2aa;
+      }
+
+      .warm-fill {
+        fill: #f6b73c;
+      }
+
+      .warm-stroke {
+        stroke: #f6b73c;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- The implementation language stays visible as a quiet background watermark. -->
+    <g aria-hidden="true">
+      <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
+      <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
+      <circle class="python-eye" cx="278" cy="67" r="11" />
+      <circle class="python-eye" cx="234" cy="445" r="11" />
+    </g>
+
+    <!-- Strategy metaphor. -->
+    <rect class="muted-fill" x="75" y="315" width="52" height="93" rx="9" />
+    <rect class="solid-fill" x="146" y="277" width="52" height="131" rx="9" />
+    <rect class="accent-fill" x="217" y="229" width="52" height="179" rx="9" />
+    <rect class="warm-fill" x="288" y="111" width="58" height="297" rx="9" />
+    <rect class="solid-fill" x="365" y="249" width="52" height="159" rx="9" />
+    <path class="warm-stroke" d="M317 83 V51 M277 95 L257 66 M357 95 L378 66 M369 126 L402 112" fill="none" stroke-width="11" stroke-linecap="round" />
+    <path class="accent-stroke" d="M70 433 H431" fill="none" stroke-width="13" stroke-linecap="round" />
+  </g>
+</svg>

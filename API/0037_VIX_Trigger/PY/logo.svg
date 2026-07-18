@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VIX Trigger strategy logo for Python</title>
+  <desc id="description">A sudden storm strikes a pressure alarm and trips its warning mechanism.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .badge-stroke {
+      stroke: #f4f7f8;
+    }
+
+    .language-mark {
+      fill: #17364a;
+      opacity: 0.06;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    .muted-fill {
+      fill: #526b78;
+    }
+
+    .muted-stroke {
+      stroke: #526b78;
+    }
+
+    .warm-fill {
+      fill: #d97706;
+    }
+
+    .warm-stroke {
+      stroke: #d97706;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .badge-stroke {
+        stroke: #0d2638;
+      }
+
+      .language-mark {
+        fill: #edf2f3;
+        opacity: 0.07;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+
+      .muted-fill {
+        fill: #8fa2aa;
+      }
+
+      .muted-stroke {
+        stroke: #8fa2aa;
+      }
+
+      .warm-fill {
+        fill: #f6b73c;
+      }
+
+      .warm-stroke {
+        stroke: #f6b73c;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- The implementation language stays visible as a quiet background watermark. -->
+    <g aria-hidden="true">
+      <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
+      <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
+      <circle class="python-eye" cx="278" cy="67" r="11" />
+      <circle class="python-eye" cx="234" cy="445" r="11" />
+    </g>
+
+    <!-- Strategy metaphor. -->
+    <path class="muted-fill" d="M101 210 C67 210 50 184 61 157 C70 136 90 126 112 130 C126 91 165 73 201 88 C225 63 270 68 289 99 C323 91 354 112 361 145 C390 143 416 162 419 190 C422 211 404 226 381 226 H101 Z" />
+    <path class="warm-fill" d="M263 207 L214 298 H252 L225 381 L316 272 H276 L309 207 Z" />
+    <path class="solid-stroke" d="M101 357 A124 124 0 0 1 349 357" fill="none" stroke-width="18" stroke-linecap="round" />
+    <path class="accent-stroke" d="M225 357 L309 285" fill="none" stroke-width="16" stroke-linecap="round" />
+    <circle class="accent-fill" cx="225" cy="357" r="22" />
+    <path class="solid-stroke" d="M225 244 V267 M132 282 L150 298 M318 282 L300 298" fill="none" stroke-width="10" stroke-linecap="round" />
+  </g>
+</svg>

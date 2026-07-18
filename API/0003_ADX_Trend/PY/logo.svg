@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ADX Trend strategy logo for Python</title>
+  <desc id="description">A weather vane turns into strong wind above a roof, with a faded Python emblem in the background.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- A large, quiet Python emblem identifies the implementation language. -->
+    <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
+    <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
+    <circle class="python-eye" cx="278" cy="67" r="11" />
+    <circle class="python-eye" cx="234" cy="445" r="11" />
+
+    <!-- Layered streams show that the directional force is firmly established. -->
+    <path class="accent-stroke" d="M63 119 C111 90 167 92 209 117 C244 137 282 135 315 111 M59 278 C107 249 158 248 198 269 M321 283 C364 255 414 259 450 286" fill="none" stroke-width="12" stroke-linecap="round" />
+
+    <!-- A roof grounds the directional instrument in a physical metaphor. -->
+    <path class="solid-stroke" d="M172 397 L256 327 L340 397" fill="none" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" />
+    <path class="accent-stroke" d="M256 337 V203" fill="none" stroke-width="16" stroke-linecap="round" />
+
+    <!-- The lower crossbar echoes the directional axes measured by ADX. -->
+    <path class="solid-stroke" d="M210 283 H302" fill="none" stroke-width="12" stroke-linecap="round" />
+    <path class="solid-fill" d="M193 283 L213 269 V297 Z M319 283 L299 269 V297 Z" />
+
+    <!-- Arrow, feather and bearing form a recognizable rotating weather vane. -->
+    <path class="solid-stroke" d="M121 187 H380" fill="none" stroke-width="14" stroke-linecap="round" />
+    <path class="solid-fill" d="M420 187 L366 151 V223 Z" />
+    <path class="accent-fill" d="M96 149 L169 175 V199 L96 225 L119 187 Z" />
+    <circle class="badge-fill accent-stroke" cx="256" cy="187" r="18" stroke-width="10" />
+  </g>
+</svg>

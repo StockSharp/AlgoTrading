@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VWAP Reversion strategy logo for C#</title>
+  <desc id="description">A displaced buoy is pulled back toward its volume-weighted anchor.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .badge-stroke {
+      stroke: #f4f7f8;
+    }
+
+    .language-mark {
+      fill: #17364a;
+      opacity: 0.06;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    .muted-fill {
+      fill: #526b78;
+    }
+
+    .muted-stroke {
+      stroke: #526b78;
+    }
+
+    .warm-fill {
+      fill: #d97706;
+    }
+
+    .warm-stroke {
+      stroke: #d97706;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .badge-stroke {
+        stroke: #0d2638;
+      }
+
+      .language-mark {
+        fill: #edf2f3;
+        opacity: 0.07;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+
+      .muted-fill {
+        fill: #8fa2aa;
+      }
+
+      .muted-stroke {
+        stroke: #8fa2aa;
+      }
+
+      .warm-fill {
+        fill: #f6b73c;
+      }
+
+      .warm-stroke {
+        stroke: #f6b73c;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- The implementation language stays visible as a quiet background watermark. -->
+    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
+
+    <!-- Strategy metaphor. -->
+    <path class="accent-stroke" d="M58 224 C120 193 178 237 240 211 C300 186 362 226 454 197" fill="none" stroke-width="15" stroke-linecap="round" />
+    <path class="accent-stroke" d="M64 277 C127 247 185 291 244 265 C307 238 364 279 448 251" fill="none" stroke-width="11" stroke-linecap="round" />
+    <path class="solid-fill" d="M319 166 C348 166 370 189 370 217 C370 245 348 267 319 267 C291 267 269 245 269 217 C269 189 291 166 319 166 Z" />
+    <path class="solid-stroke" d="M319 267 C318 313 301 340 256 365" fill="none" stroke-width="12" stroke-linecap="round" />
+    <path class="warm-fill" d="M221 363 H291 L276 399 H236 Z" />
+    <path class="accent-stroke" d="M402 142 C369 112 329 107 293 126" fill="none" stroke-width="11" stroke-linecap="round" />
+    <path class="accent-fill" d="M274 139 L299 107 L311 143 Z" />
+  </g>
+</svg>

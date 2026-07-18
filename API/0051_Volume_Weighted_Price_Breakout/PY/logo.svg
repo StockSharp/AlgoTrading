@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Volume Weighted Price Breakout strategy logo for Python</title>
+  <desc id="description">A heavily weighted ram converts participation into force and breaks a gate.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .badge-stroke {
+      stroke: #f4f7f8;
+    }
+
+    .language-mark {
+      fill: #17364a;
+      opacity: 0.06;
+    }
+
+    .python-upper {
+      fill: #2874a6;
+      opacity: 0.09;
+    }
+
+    .python-lower {
+      fill: #a77b00;
+      opacity: 0.09;
+    }
+
+    .python-eye {
+      fill: #f4f7f8;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    .muted-fill {
+      fill: #526b78;
+    }
+
+    .muted-stroke {
+      stroke: #526b78;
+    }
+
+    .warm-fill {
+      fill: #d97706;
+    }
+
+    .warm-stroke {
+      stroke: #d97706;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .badge-stroke {
+        stroke: #0d2638;
+      }
+
+      .language-mark {
+        fill: #edf2f3;
+        opacity: 0.07;
+      }
+
+      .python-upper {
+        fill: #79b7df;
+        opacity: 0.1;
+      }
+
+      .python-lower {
+        fill: #f0c84b;
+        opacity: 0.1;
+      }
+
+      .python-eye {
+        fill: #0d2638;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+
+      .muted-fill {
+        fill: #8fa2aa;
+      }
+
+      .muted-stroke {
+        stroke: #8fa2aa;
+      }
+
+      .warm-fill {
+        fill: #f6b73c;
+      }
+
+      .warm-stroke {
+        stroke: #f6b73c;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- The implementation language stays visible as a quiet background watermark. -->
+    <g aria-hidden="true">
+      <path class="python-upper" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" />
+      <path class="python-lower" d="M151 54 C151 32 169 14 191 14 H286 C310 14 329 33 329 57 V148 C329 172 310 191 286 191 H212 C187 191 167 211 167 236 V258 H111 C87 258 68 239 68 215 V181 C68 157 87 138 111 138 H151 Z" transform="rotate(180 256 256)" />
+      <circle class="python-eye" cx="278" cy="67" r="11" />
+      <circle class="python-eye" cx="234" cy="445" r="11" />
+    </g>
+
+    <!-- Strategy metaphor. -->
+    <path class="solid-stroke" d="M76 256 H330" fill="none" stroke-width="28" stroke-linecap="round" />
+    <path class="accent-fill" d="M381 256 L315 207 V305 Z" />
+    <circle class="warm-fill" cx="141" cy="213" r="27" />
+    <circle class="warm-fill" cx="206" cy="213" r="34" />
+    <circle class="warm-fill" cx="277" cy="213" r="42" />
+    <path class="solid-fill" d="M398 105 H426 V214 H398 Z M398 298 H426 V407 H398 Z" />
+    <path class="solid-stroke" d="M412 214 L394 233 L417 249 L394 269 L415 285 L398 298" fill="none" stroke-width="13" stroke-linejoin="round" stroke-linecap="round" />
+    <path class="muted-fill" d="M430 228 L458 208 L462 240 Z M431 281 L460 272 L451 306 Z" />
+  </g>
+</svg>

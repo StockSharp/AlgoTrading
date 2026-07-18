@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ADX Trend strategy logo for C#</title>
+  <desc id="description">A weather vane turns into strong wind above a roof, with a faded C# mark in the background.</desc>
+
+  <defs>
+    <clipPath id="badge-clip">
+      <circle cx="256" cy="256" r="232" />
+    </clipPath>
+  </defs>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    .badge {
+      fill: #f4f7f8;
+      stroke: #277785;
+    }
+
+    .badge-fill {
+      fill: #f4f7f8;
+    }
+
+    .language-mark {
+      fill: #17364a;
+      opacity: 0.06;
+    }
+
+    .accent-fill {
+      fill: #079b7e;
+    }
+
+    .accent-stroke {
+      stroke: #079b7e;
+    }
+
+    .solid-fill {
+      fill: #17364a;
+    }
+
+    .solid-stroke {
+      stroke: #17364a;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #0d2638;
+        stroke: #277785;
+      }
+
+      .badge-fill {
+        fill: #0d2638;
+      }
+
+      .language-mark {
+        fill: #edf2f3;
+        opacity: 0.07;
+      }
+
+      .accent-fill {
+        fill: #43d6b1;
+      }
+
+      .accent-stroke {
+        stroke: #43d6b1;
+      }
+
+      .solid-fill {
+        fill: #edf2f3;
+      }
+
+      .solid-stroke {
+        stroke: #edf2f3;
+      }
+    }
+  </style>
+
+  <circle class="badge" cx="256" cy="256" r="240" stroke-width="12" />
+
+  <g clip-path="url(#badge-clip)">
+    <!-- The implementation language is a quiet, full-badge watermark. -->
+    <text class="language-mark" x="256" y="388" font-family="Segoe UI, Arial, sans-serif" font-size="360" font-weight="800" letter-spacing="-18" text-anchor="middle" aria-hidden="true">C#</text>
+
+    <!-- Layered streams show that the directional force is firmly established. -->
+    <path class="accent-stroke" d="M63 119 C111 90 167 92 209 117 C244 137 282 135 315 111 M59 278 C107 249 158 248 198 269 M321 283 C364 255 414 259 450 286" fill="none" stroke-width="12" stroke-linecap="round" />
+
+    <!-- A roof grounds the directional instrument in a physical metaphor. -->
+    <path class="solid-stroke" d="M172 397 L256 327 L340 397" fill="none" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" />
+    <path class="accent-stroke" d="M256 337 V203" fill="none" stroke-width="16" stroke-linecap="round" />
+
+    <!-- The lower crossbar echoes the directional axes measured by ADX. -->
+    <path class="solid-stroke" d="M210 283 H302" fill="none" stroke-width="12" stroke-linecap="round" />
+    <path class="solid-fill" d="M193 283 L213 269 V297 Z M319 283 L299 269 V297 Z" />
+
+    <!-- Arrow, feather and bearing form a recognizable rotating weather vane. -->
+    <path class="solid-stroke" d="M121 187 H380" fill="none" stroke-width="14" stroke-linecap="round" />
+    <path class="solid-fill" d="M420 187 L366 151 V223 Z" />
+    <path class="accent-fill" d="M96 149 L169 175 V199 L96 225 L119 187 Z" />
+    <circle class="badge-fill accent-stroke" cx="256" cy="187" r="18" stroke-width="10" />
+  </g>
+</svg>
