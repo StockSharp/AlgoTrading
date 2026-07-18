@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Keltner Kalman Filter strategy logo for C#</title><desc id="description">A jagged signal is strained through a Kalman funnel and becomes smooth between flexible Keltner banks.</desc>
+  <style>:root{color-scheme:light dark;--p:#2867a8;--pl:#79b9e8;--ps:#174575;--s:#d87532;--sl:#f1ad72;--a:#e3b93f;--n:#283743;--pale:#c9d5df}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#5db4ee;--pl:#a6d8f7;--ps:#307daf;--s:#f1a064;--sl:#ffc394;--a:#ffd166;--n:#edf2f6;--pale:#738797}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="none" stroke="var(--pl)" stroke-width="30" d="M34 131 C109 83 174 104 231 136 C297 174 366 121 478 86"/>
+    <path fill="none" stroke="var(--sl)" stroke-width="30" d="M34 382 C111 425 170 400 228 371 C302 334 371 397 478 431"/>
+    <path fill="none" stroke="var(--s)" stroke-width="18" d="M36 273 L74 210 L108 315 L145 225 L184 295 L221 238"/>
+    <path fill="var(--ps)" d="M202 169 H346 L317 260 L280 302 V358 H268 V302 L231 260 Z"/>
+    <path fill="var(--pale)" d="M226 190 H322 L295 249 L274 271 L253 249 Z"/>
+    <path fill="none" stroke="var(--p)" stroke-width="20" d="M291 348 C335 310 370 330 402 301 C432 274 447 248 474 231"/>
+    <path fill="var(--p)" d="M454 203 L493 219 L469 258 Z"/>
+  </g>
+</svg>

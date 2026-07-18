@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Supertrend Distance Breakout strategy logo for Python</title><desc id="description">A red-to-green trend switch stretches beyond a ruler and breaks its distance stop.</desc>
+  <style>
+:root{color-scheme:light dark}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}.primary{fill:#078b84}.primary-light{fill:#56c9b9}.primary-shade{fill:#056963}.secondary{fill:#cf4455}.secondary-light{fill:#f07c72}.secondary-shade{fill:#a92f42}.accent{fill:#e4a62d}.positive{fill:#2f936c}.positive-light{fill:#7bc6a5}.negative{fill:#c84d4d}.negative-light{fill:#ef8a80}.violet{fill:#725bb3}.violet-light{fill:#af9be0}.neutral{fill:#233842}.pale{fill:#c8d8d7}.shadow{fill:#14262c;opacity:.22}.line-primary{fill:none;stroke:#078b84;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-secondary{fill:none;stroke:#cf4455;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-neutral{fill:none;stroke:#233842;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-accent{fill:none;stroke:#e4a62d;stroke-width:14;stroke-linecap:round;stroke-linejoin:round}.thin-primary{fill:none;stroke:#078b84;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-secondary{fill:none;stroke:#cf4455;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-neutral{fill:none;stroke:#233842;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}@media(prefers-color-scheme:dark){.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}.primary{fill:#35bdb2}.primary-light{fill:#79dfd0}.primary-shade{fill:#168e87}.secondary{fill:#f0646c}.secondary-light{fill:#ff9b88}.secondary-shade{fill:#c44352}.accent{fill:#f2c45d}.positive{fill:#69c79a}.positive-light{fill:#a8e0c2}.negative{fill:#f47768}.negative-light{fill:#ffb09e}.violet{fill:#a99adb}.violet-light{fill:#d0c5ed}.neutral{fill:#edf3f1}.pale{fill:#71848a}.shadow{fill:#02090b;opacity:.34}.line-primary{stroke:#35bdb2}.line-secondary{stroke:#f0646c}.line-neutral{stroke:#edf3f1}.line-accent{stroke:#f2c45d}.thin-primary{stroke:#35bdb2}.thin-secondary{stroke:#f0646c}.thin-neutral{stroke:#edf3f1}}
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="primary-shade" d="M55 379 L457 379 L457 417 L55 417 Z" />
+    <path class="primary" d="M83 337 L83 379 L105 379 L105 337 Z M147 351 L147 379 L169 379 L169 351 Z M211 337 L211 379 L233 379 L233 337 Z M275 351 L275 379 L297 379 L297 351 Z M339 337 L339 379 L361 379 L361 337 Z" />
+    <path class="negative" d="M47 224 L185 224 L185 264 L47 264 Z" />
+    <circle class="accent" cx="211" cy="244" r="32" />
+    <path class="positive-light" d="M230 230 C301 206 351 159 424 92 L451 122 C375 193 320 242 241 270 Z" />
+    <path class="positive" d="M410 65 L480 79 L439 140 L440 104 Z" />
+  </g>
+</svg>

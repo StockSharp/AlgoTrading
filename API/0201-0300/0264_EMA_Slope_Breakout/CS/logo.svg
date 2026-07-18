@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">EMA Slope Breakout strategy logo for C#</title><desc id="description">A weighted moving road accelerates up a ramp and punches through a ceiling.</desc>
+  <style>
+:root{color-scheme:light dark}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}.primary{fill:#3b5384}.primary-light{fill:#8b9fcb}.primary-shade{fill:#293a5d}.secondary{fill:#ba4e79}.secondary-light{fill:#e68cac}.secondary-shade{fill:#823653}.accent{fill:#dfa63b}.positive{fill:#378c6d}.positive-light{fill:#7bc7aa}.negative{fill:#bd4a4a}.negative-light{fill:#eb8980}.violet{fill:#765aa8}.violet-light{fill:#ad9ad1}.neutral{fill:#293640}.pale{fill:#ced4df}.shadow{fill:#14262c;opacity:.22}.line-primary{fill:none;stroke:#3b5384;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-secondary{fill:none;stroke:#ba4e79;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-neutral{fill:none;stroke:#293640;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-accent{fill:none;stroke:#dfa63b;stroke-width:14;stroke-linecap:round;stroke-linejoin:round}.thin-primary{fill:none;stroke:#3b5384;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-secondary{fill:none;stroke:#ba4e79;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-neutral{fill:none;stroke:#293640;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}@media(prefers-color-scheme:dark){.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}.primary{fill:#718bc7}.primary-light{fill:#b1c1e7}.primary-shade{fill:#49639a}.secondary{fill:#e675a4}.secondary-light{fill:#ffacc8}.secondary-shade{fill:#ac4a73}.accent{fill:#f2c75d}.positive{fill:#63c49b}.positive-light{fill:#a4dec2}.negative{fill:#f17470}.negative-light{fill:#ffada5}.violet{fill:#aa94db}.violet-light{fill:#d1c2ec}.neutral{fill:#edf1f5}.pale{fill:#747f92}.shadow{fill:#02090b;opacity:.34}.line-primary{stroke:#718bc7}.line-secondary{stroke:#e675a4}.line-neutral{stroke:#edf1f5}.line-accent{stroke:#f2c75d}.thin-primary{stroke:#718bc7}.thin-secondary{stroke:#e675a4}.thin-neutral{stroke:#edf1f5}}
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="primary-light" d="M42 417 C132 397 196 348 256 285 C320 218 370 164 443 130 L460 167 C394 197 348 245 286 312 C219 383 151 436 50 455 Z" />
+    <path class="line-primary" d="M49 438 C143 417 208 367 271 299 C335 231 381 183 451 148" />
+    <circle class="secondary-light" cx="100" cy="387" r="25" /><circle class="secondary" cx="180" cy="337" r="21" /><circle class="accent" cx="254" cy="273" r="17" />
+    <path class="primary" d="M420 115 L488 129 L449 187 L450 152 Z" />
+    <path class="primary-shade" d="M307 77 L476 77 L476 115 L307 115 Z M333 123 L476 123 L476 161 L333 161 Z" />
+  </g>
+</svg>

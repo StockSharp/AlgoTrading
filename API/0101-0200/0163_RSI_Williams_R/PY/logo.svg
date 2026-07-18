@@ -23,13 +23,14 @@
     <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
   </g>
   <g aria-hidden="true">
-    <path class="neutral" d="M43 87 L246 87 L246 436 L43 436 Z M266 87 L469 87 L469 436 L266 436 Z" />
-    <path class="pale" d="M62 108 L227 108 L227 415 L62 415 Z M285 108 L450 108 L450 415 L285 415 Z" />
-    <path class="primary-light" d="M62 108 L227 108 L227 149 L62 149 Z M62 374 L227 374 L227 415 L62 415 Z" />
-    <path class="secondary-light" d="M285 108 L450 108 L450 149 L285 149 Z M285 374 L450 374 L450 415 L285 415 Z" />
-    <path class="line-primary" d="M78 362 C111 374 121 313 151 316 C182 319 190 260 218 235" />
-    <path class="line-secondary" d="M305 339 L338 376 C351 390 373 379 372 360 L368 203 C367 171 410 164 426 191" />
-    <path class="secondary" d="M397 181 L440 148 L440 204 L423 191 Z" />
-    <path class="accent" d="M236 245 L276 245 L276 278 L236 278 Z" />
+    <path class="primary-shade" d="M52 79 L460 79 L460 111 L52 111 Z M52 409 L460 409 L460 441 L52 441 Z M52 79 L84 79 L84 441 L52 441 Z M428 79 L460 79 L460 441 L428 441 Z" />
+    <path class="pale" d="M84 111 L428 111 L428 409 L84 409 Z" />
+    <path class="primary-light" d="M84 111 L428 111 L428 151 L84 151 Z M84 369 L428 369 L428 409 L84 409 Z" />
+    <path class="line-primary" d="M102 349 C142 376 168 302 208 316 C246 330 264 267 301 245" />
+    <circle class="accent" cx="151" cy="340" r="25" />
+    <path class="line-secondary" d="M329 136 L329 337 C329 383 381 396 400 356 C410 335 395 316 374 322" />
+    <circle class="secondary-light" cx="329" cy="159" r="22" />
+    <path class="secondary" d="M363 302 L417 316 L380 355 L378 323 Z" />
+    <path class="accent" d="M282 213 L335 237 L290 272 L299 242 Z" />
   </g>
 </svg>

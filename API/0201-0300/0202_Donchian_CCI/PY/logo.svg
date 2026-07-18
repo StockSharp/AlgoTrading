@@ -24,8 +24,9 @@
     <path class="secondary" d="M247 239 L470 239 L470 458 L247 458 Z" />
     <path class="pale" d="M266 258 L451 258 L451 439 L266 439 Z" />
     <path class="secondary-light" d="M266 258 L451 258 L451 294 L266 294 Z M266 403 L451 403 L451 439 L266 439 Z" />
-    <path class="thin-neutral" d="M358 277 L358 407" />
-    <path class="accent" d="M358 309 L396 365 L358 421 L320 365 Z" />
+    <path class="thin-primary" d="M358 277 L358 329" />
     <path class="primary" d="M300 345 L416 345 L416 369 L300 369 Z" />
+    <circle class="accent" cx="358" cy="329" r="11" />
+    <path class="accent" d="M358 329 C376 329 388 341 385 357 C382 377 370 397 358 419 C346 397 334 377 331 357 C328 341 340 329 358 329 Z" />
   </g>
 </svg>

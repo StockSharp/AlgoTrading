@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">VWAP Stochastic Divergence strategy logo for C#</title><desc id="description">An anchored weighted VWAP beam rises while two stochastic racers roll down parallel tracks.</desc>
+  <style>:root{color-scheme:light dark;--p:#3b5384;--pl:#8b9fcb;--ps:#293a5d;--s:#ba4e79;--sl:#e68cac;--a:#dfa63b;--n:#293640;--pale:#ced4df}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#718bc7;--pl:#b1c1e7;--ps:#49639a;--s:#e675a4;--sl:#ffacc8;--a:#f2c75d;--n:#edf1f5;--pale:#747f92}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--p)" d="M84 333 L416 105 L391 69 L468 68 L486 143 L452 119 L109 354 Z"/>
+    <path fill="var(--a)" d="M178 267 L221 238 L248 278 L205 307 Z M275 201 L318 171 L346 211 L303 241 Z"/>
+    <path fill="none" stroke="var(--n)" stroke-width="15" d="M104 299 V405 M70 342 H139 M104 405 C66 405 51 379 51 354 M104 405 C142 405 157 379 157 354"/>
+    <circle fill="none" stroke="var(--n)" stroke-width="15" cx="104" cy="287" r="23"/>
+    <path fill="none" stroke="var(--pale)" stroke-width="23" d="M75 111 L444 296 M59 178 L428 363"/>
+    <g transform="translate(274 205) rotate(27)"><path fill="var(--s)" d="M-57-24 H45 L65 0 L45 24 H-57 Z"/><path fill="var(--sl)" d="M-31-46 H27 L43-24 H-43 Z"/><circle fill="var(--a)" cx="-29" cy="30" r="14"/><circle fill="var(--a)" cx="34" cy="30" r="14"/></g>
+    <g transform="translate(204 238) rotate(27)"><path fill="var(--ps)" d="M-57-24 H45 L65 0 L45 24 H-57 Z"/><path fill="var(--pl)" d="M-31-46 H27 L43-24 H-43 Z"/><circle fill="var(--a)" cx="-29" cy="30" r="14"/><circle fill="var(--a)" cx="34" cy="30" r="14"/></g>
+    <path fill="var(--s)" d="M409 328 L475 342 L432 394 Z"/>
+  </g>
+</svg>

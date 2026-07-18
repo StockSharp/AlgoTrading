@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Ichimoku Hurst Exponent strategy logo for C#</title><desc id="description">A linked memory chain keeps climbing through an Ichimoku cloud.</desc>
+  <style>:root{color-scheme:light dark;--p:#7650a4;--pl:#b59bd4;--ps:#513370;--s:#198f7c;--sl:#70cbb8;--a:#dda63e;--n:#303542;--pale:#d7cedd;--shadow:#19131f}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#aa8cdd;--pl:#d1bdeb;--ps:#7455a7;--s:#45c3aa;--sl:#91e2d1;--a:#f2ca61;--n:#f0eff5;--pale:#82778e;--shadow:#050308}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--sl)" d="M81 330 C47 330 29 306 38 279 C45 256 66 244 88 247 C89 208 119 180 157 184 C174 143 226 129 261 159 C296 128 349 141 367 183 C406 178 438 207 438 246 C469 249 489 272 483 301 C478 321 461 334 438 334 Z"/>
+    <path fill="var(--s)" opacity=".5" d="M70 306 C139 287 194 310 253 294 C315 277 373 310 455 289 L438 334 L81 330 Z"/>
+    <g fill="none" stroke="var(--p)" stroke-width="22">
+      <rect x="76" y="292" width="126" height="64" rx="32" transform="rotate(-31 139 324)"/>
+      <rect x="171" y="229" width="126" height="64" rx="32" transform="rotate(-31 234 261)"/>
+      <rect x="266" y="166" width="126" height="64" rx="32" transform="rotate(-31 329 198)"/>
+    </g>
+    <path fill="var(--a)" d="M389 105 L447 124 L415 177 L407 151 L365 176 L347 146 L389 121 Z"/>
+    <path fill="var(--ps)" d="M89 377 C155 395 224 385 284 407 C342 429 400 420 454 389 L464 420 C398 455 327 462 263 437 C207 416 145 425 79 407 Z" opacity=".28"/>
+  </g>
+</svg>

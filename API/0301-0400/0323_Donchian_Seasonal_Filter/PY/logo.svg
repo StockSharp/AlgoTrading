@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Donchian Seasonal Filter strategy logo for Python</title><desc id="description">A price arrow passes through the open season of a calendar set in a rigid Donchian gate.</desc>
+  <style>:root{color-scheme:light dark;--p:#347858;--pl:#7fbc99;--ps:#23513d;--s:#c4872e;--sl:#edbb69;--a:#7a65ad;--n:#273a36;--pale:#cbd8cb}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#66bf91;--pl:#aae0be;--ps:#3d8e69;--s:#e6ad57;--sl:#ffd08a;--a:#ac9ae0;--n:#edf3ef;--pale:#718378}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z"/><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--ps)" d="M46 76 H466 V119 H46 Z M46 393 H466 V436 H46 Z M46 76 H87 V436 H46 Z M425 76 H466 V436 H425 Z"/>
+    <rect x="137" y="105" width="238" height="308" rx="22" fill="var(--pale)" stroke="var(--n)" stroke-width="15"/>
+    <path fill="var(--s)" d="M145 113 H367 V178 H145 Z"/>
+    <path fill="none" stroke="var(--n)" stroke-width="15" d="M197 86 V137 M315 86 V137"/>
+    <path fill="var(--pl)" d="M163 204 H236 V276 H163 Z M276 204 H349 V276 H276 Z M163 306 H236 V378 H163 Z"/>
+    <path fill="var(--sl)" d="M276 306 H349 V378 H276 Z"/>
+    <path fill="none" stroke="var(--a)" stroke-width="15" d="M293 342 L311 359 L340 322"/>
+    <path fill="var(--p)" d="M24 319 H283 V286 L348 342 L283 398 V365 H24 Z"/>
+    <path fill="var(--p)" d="M342 320 H488 V365 H342 Z"/>
+  </g>
+</svg>

@@ -23,10 +23,10 @@
     <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
   </g>
   <g aria-hidden="true">
-    <path class="neutral" d="M46 91 L432 91 L432 127 L46 127 Z M46 377 L432 377 L432 413 L46 413 Z" />
+    <path class="primary-shade" d="M46 91 L432 91 L432 127 L46 127 Z M46 377 L432 377 L432 413 L46 413 Z" />
     <path class="line-primary" d="M62 348 C145 327 209 271 271 203 C326 143 368 101 437 76" />
     <path class="primary" d="M405 51 L481 56 L439 123 L433 88 Z" />
-    <path class="neutral" d="M63 247 L246 247 L246 453 L63 453 Z" />
+    <path class="primary-shade" d="M63 247 L246 247 L246 453 L63 453 Z" />
     <path class="pale" d="M82 267 L227 267 L227 433 L82 433 Z" />
     <path class="secondary-light" d="M82 267 L227 267 L227 297 L82 297 Z M82 403 L227 403 L227 433 L82 433 Z" />
     <path class="line-secondary" d="M95 395 C123 402 130 346 157 349 C184 352 192 306 216 291" />

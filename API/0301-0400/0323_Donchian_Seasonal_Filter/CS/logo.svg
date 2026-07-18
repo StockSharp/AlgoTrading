@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Donchian Seasonal Filter strategy logo for C#</title><desc id="description">A price arrow passes through the open season of a calendar set in a rigid Donchian gate.</desc>
+  <style>:root{color-scheme:light dark;--p:#347858;--pl:#7fbc99;--ps:#23513d;--s:#c4872e;--sl:#edbb69;--a:#7a65ad;--n:#273a36;--pale:#cbd8cb}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#66bf91;--pl:#aae0be;--ps:#3d8e69;--s:#e6ad57;--sl:#ffd08a;--a:#ac9ae0;--n:#edf3ef;--pale:#718378}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--ps)" d="M46 76 H466 V119 H46 Z M46 393 H466 V436 H46 Z M46 76 H87 V436 H46 Z M425 76 H466 V436 H425 Z"/>
+    <rect x="137" y="105" width="238" height="308" rx="22" fill="var(--pale)" stroke="var(--n)" stroke-width="15"/>
+    <path fill="var(--s)" d="M145 113 H367 V178 H145 Z"/>
+    <path fill="none" stroke="var(--n)" stroke-width="15" d="M197 86 V137 M315 86 V137"/>
+    <path fill="var(--pl)" d="M163 204 H236 V276 H163 Z M276 204 H349 V276 H276 Z M163 306 H236 V378 H163 Z"/>
+    <path fill="var(--sl)" d="M276 306 H349 V378 H276 Z"/>
+    <path fill="none" stroke="var(--a)" stroke-width="15" d="M293 342 L311 359 L340 322"/>
+    <path fill="var(--p)" d="M24 319 H283 V286 L348 342 L283 398 V365 H24 Z"/>
+    <path fill="var(--p)" d="M342 320 H488 V365 H342 Z"/>
+  </g>
+</svg>
