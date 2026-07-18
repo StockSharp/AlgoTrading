@@ -120,7 +120,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			{
 				var path = file.Path.Replace('\\', '/');
 
-				// extract part after /API/ — e.g. "0001_MA_CrossOver/PY/ma_crossover_strategy.py"
+				// Extract the path below API, including its numeric range directory.
 				var apiIdx = path.IndexOf("/API/");
 				if (apiIdx < 0)
 					continue;
@@ -176,8 +176,11 @@ public class StrategyTestGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
-	/// Extract folder name from a full file path under API/ and convert to PascalCase method name.
-	/// E.g. ".../API/0256_Bollinger_Band_Width_Breakout/CS/SomeStrategy.cs" → "BollingerBandWidthBreakout"
+	/// Extract the numeric-prefixed strategy folder from a full file path under API/
+	/// and convert it to a PascalCase method name. The strategy may be placed directly
+	/// below API or below a numeric range directory such as 0201-0300.
+	/// E.g. ".../API/0201-0300/0256_Bollinger_Band_Width_Breakout/CS/SomeStrategy.cs"
+	/// becomes "BollingerBandWidthBreakout".
 	/// </summary>
 	private static string FolderToMethodName(string filePath)
 	{
@@ -186,16 +189,20 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			return null;
 
 		var afterApi = filePath.Substring(idx + "/API/".Length);
-		var slashIdx = afterApi.IndexOf('/');
-		if (slashIdx < 0)
+		string folderName = null;
+
+		foreach (var segment in afterApi.Split('/'))
+		{
+			var underscoreIdx = segment.IndexOf('_');
+			if (underscoreIdx <= 0 || !int.TryParse(segment.Substring(0, underscoreIdx), out _))
+				continue;
+
+			folderName = segment.Substring(underscoreIdx + 1);
+			break;
+		}
+
+		if (folderName == null)
 			return null;
-
-		var folderName = afterApi.Substring(0, slashIdx);
-
-		// Remove numeric prefix: "0256_Bollinger_Band_Width_Breakout" → "Bollinger_Band_Width_Breakout"
-		var underscoreIdx = folderName.IndexOf('_');
-		if (underscoreIdx >= 0 && int.TryParse(folderName.Substring(0, underscoreIdx), out _))
-			folderName = folderName.Substring(underscoreIdx + 1);
 
 		var result = SnakeToPascal(folderName, null);
 
