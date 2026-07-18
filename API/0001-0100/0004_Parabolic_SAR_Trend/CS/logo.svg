@@ -34,7 +34,10 @@
     }
   </style>
 
-  <text class="language-mark" x="247" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="316" font-weight="800" letter-spacing="-20" text-anchor="middle" aria-hidden="true">C#</text>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
 
   <g aria-hidden="true">
     <path class="primary" d="M42 421 C146 410 210 365 253 298 C296 231 327 155 401 101 L365 90 L482 49 L452 168 L426 128 C365 188 344 269 304 337 C256 420 181 476 62 487 Z" />

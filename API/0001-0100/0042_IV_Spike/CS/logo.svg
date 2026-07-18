@@ -14,7 +14,10 @@
       .accent { fill: #f3ca61; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
     }
   </style>
-  <text class="language-mark" x="247" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="316" font-weight="800" letter-spacing="-20" text-anchor="middle" aria-hidden="true">C#</text>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
   <g aria-hidden="true">
     <path class="secondary" fill-rule="evenodd" d="M64 357 C72 217 156 110 280 81 C365 61 442 91 485 147 L442 180 C409 140 352 120 291 134 C195 156 128 242 120 357 Z M143 357 C151 254 211 181 300 160 C344 150 386 158 419 180 L390 224 C369 211 342 207 313 214 C253 228 214 278 207 357 Z" />
     <path class="secondary-light" d="M90 243 C123 168 188 112 267 87 L279 134 C210 156 157 202 128 264 Z" />
