@@ -21,9 +21,21 @@ Every catalog entry links directly to both implementation folders and uses a tra
 - [Grid, DCA & Position Management (143)](StrategyTypes/grid-dca-position-management.md) — Strategies focused on order ladders, averaging, staged entries, position sizing, exits, and ongoing trade management.
 - [Scalping & Execution (133)](StrategyTypes/scalping-execution.md) — Short-horizon systems where entry timing, spread, order placement, and execution behaviour are central to the trading edge.
 - [Volatility & Options (78)](StrategyTypes/volatility-options.md) — Strategies based on volatility regimes, range expansion or contraction, derivatives, options pricing, and volatility risk.
-- [Trend Following & Momentum (1033)](StrategyTypes/trend-following-momentum.md) — Directional systems that follow persistent movement, accelerating price, moving-average structure, or momentum continuation.
+- [Moving Averages & Crossovers (191)](StrategyTypes/moving-averages-crossovers.md) — Trend systems centered on moving-average direction, alignment, displacement, ribbons, and fast/slow crossover logic.
+- [Directional Trend Indicators (264)](StrategyTypes/directional-trend-indicators.md) — Strategies led by ADX/DMI, SuperTrend, Parabolic SAR, Ichimoku, Alligator, and other dedicated trend tools.
+- [Momentum & Oscillator Trend (206)](StrategyTypes/momentum-oscillator-trend.md) — Directional strategies confirmed by momentum, MACD, RSI, CCI, stochastic, ROC, and divergence.
+- [Breakouts, Pullbacks & Price Action (95)](StrategyTypes/breakouts-pullbacks-price-action.md) — Trend-continuation entries expressed through breakouts, pullbacks, channels, swings, candles, and retracements.
+- [Adaptive, Multi-Timeframe & Specialized Trend (277)](StrategyTypes/adaptive-multitimeframe-specialized-trend.md) — Adaptive, model-driven, hybrid, multi-timeframe, and specialized trend systems.
 - [Oscillators & Indicator Signals (203)](StrategyTypes/oscillators-indicator-signals.md) — Strategies whose primary trigger comes from oscillators, indicator thresholds, indicator crosses, or indicator divergence.
-- [Multi-Signal & Other (1131)](StrategyTypes/multi-signal-other.md) — Combined, specialized, educational, or infrastructure-oriented strategies that do not fit cleanly into one primary trading family.
+- [Order, Risk & Position Management (194)](StrategyTypes/order-risk-position-management.md) — Order handling, sizing, protection, grids, recovery, trailing logic, and management of existing positions.
+- [Indicator Combinations & Signal Logic (319)](StrategyTypes/indicator-combinations-signal-logic.md) — Composite entries built from indicator agreement, thresholds, crosses, divergences, and signal selection.
+- [Price Levels, Patterns & Market Structure (263)](StrategyTypes/price-levels-patterns-market-structure.md) — Specialized systems based on levels, ranges, pivots, Fibonacci geometry, waves, candles, and market structure.
+- [Quantitative, Adaptive & Experimental (25)](StrategyTypes/quantitative-adaptive-experimental.md) — Mathematical, statistical, machine-learning, adaptive, randomized, and experimental designs.
+- [Tools, Panels, Alerts & Templates (74)](StrategyTypes/tools-panels-alerts-templates.md) — Trading utilities, UI panels, alerts, templates, test harnesses, chart helpers, and integrations.
+- [Fundamental, Macro & Asset-Specific (22)](StrategyTypes/fundamental-macro-asset-specific.md) — Logic tied to fundamentals, macro data, filings, asset classes, or named instruments and markets.
+- [Time, Session & Event Rules (13)](StrategyTypes/time-session-event-rules.md) — Strategies distinguished by a session, clock window, calendar event, or recurring schedule.
+- [Directional & Rule-Based Trading (111)](StrategyTypes/directional-rule-based-trading.md) — Explicit long/short, buy/sell, trend, reversal, and entry/exit rules.
+- [Composite Expert Systems (110)](StrategyTypes/composite-expert-systems.md) — Multi-component, hybrid, ensemble, robot, trader, and expert-advisor systems.
 
 ## Repository layout
 
