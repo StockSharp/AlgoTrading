@@ -5,8 +5,6 @@
 
 趋势系统围绕移动平均线的方向、排列、位移、均线带以及快慢线交叉构建。
 
-**策略数量:** 191
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0001 HMA Seasonal Divergence Strategy|市场指标交叉信号|<a href=../0001-0100/0001_MA_CrossOver/CS><img src=../0001-0100/0001_MA_CrossOver/CS/logo.svg width=40></a>|<a href=../0001-0100/0001_MA_CrossOver/PY><img src=../0001-0100/0001_MA_CrossOver/PY/logo.svg width=40></a>|

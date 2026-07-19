@@ -5,8 +5,6 @@
 
 时间驱动系统依据交易时段、日历、预定事件、开盘区间或季节性规律运行。
 
-**策略数量:** 92
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0116 Day of Week Effect Strategy|重复出现的市场日历规律|<a href=../0101-0200/0116_Day_of_Week/CS><img src=../0101-0200/0116_Day_of_Week/CS/logo.svg width=40></a>|<a href=../0101-0200/0116_Day_of_Week/PY><img src=../0101-0200/0116_Day_of_Week/PY/logo.svg width=40></a>|

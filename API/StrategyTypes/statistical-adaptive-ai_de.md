@@ -5,8 +5,6 @@
 
 Quantitative Strategien mit statistischer Schätzung, adaptiven Modellen, maschinellem Lernen, neuronalen Netzen oder Signalklassifikation.
 
-**Strategien:** 77
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0354 Betting Against Beta Stocks|Adaptives oder statistisches Marktmodell|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/CS><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/CS/logo.svg width=40></a>|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/PY><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/PY/logo.svg width=40></a>|

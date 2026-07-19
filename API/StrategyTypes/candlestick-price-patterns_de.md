@@ -5,8 +5,6 @@
 
 Strategien, die Kerzenformationen, Chartstrukturen, Gaps, Pivots und andere wiederkehrende Muster direkt in der Price Action erkennen.
 
-**Strategien:** 191
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0056 Double Bottom Pattern|Signal aus einem wiederkehrenden Preismuster|<a href=../0001-0100/0056_Double_Bottom/CS><img src=../0001-0100/0056_Double_Bottom/CS/logo.svg width=40></a>|<a href=../0001-0100/0056_Double_Bottom/PY><img src=../0001-0100/0056_Double_Bottom/PY/logo.svg width=40></a>|

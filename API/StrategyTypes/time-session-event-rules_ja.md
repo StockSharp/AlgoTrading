@@ -5,8 +5,6 @@
 
 取引セッション、時間枠、カレンダーイベント、または反復スケジュールが主要制約となる複合戦略です。
 
-**戦略数:** 13
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |1176 Power Hour Money Strategy|複合または特化型の取引ロジック|<a href=../1101-1200/1176_Power_Hour_Money/CS><img src=../1101-1200/1176_Power_Hour_Money/CS/logo.svg width=40></a>|<a href=../1101-1200/1176_Power_Hour_Money/PY><img src=../1101-1200/1176_Power_Hour_Money/PY/logo.svg width=40></a>|

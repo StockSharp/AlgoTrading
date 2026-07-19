@@ -5,8 +5,6 @@
 
 策略直接从价格行为中识别K线组合、图表结构、跳空、枢轴点及其他重复形态。
 
-**策略数量:** 191
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0056 Double Bottom Pattern|重复价格形态信号|<a href=../0001-0100/0056_Double_Bottom/CS><img src=../0001-0100/0056_Double_Bottom/CS/logo.svg width=40></a>|<a href=../0001-0100/0056_Double_Bottom/PY><img src=../0001-0100/0056_Double_Bottom/PY/logo.svg width=40></a>|

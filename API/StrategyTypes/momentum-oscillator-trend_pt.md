@@ -5,8 +5,6 @@
 
 Estratégias direcionais confirmadas por momentum, MACD, RSI, CCI, estocástico, ROC, divergências e osciladores relacionados.
 
-**Estratégias:** 206
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0009 MACD Trend|Seguimento da direção do mercado|<a href=../0001-0100/0009_MACD_Trend/CS><img src=../0001-0100/0009_MACD_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0009_MACD_Trend/PY><img src=../0001-0100/0009_MACD_Trend/PY/logo.svg width=40></a>|

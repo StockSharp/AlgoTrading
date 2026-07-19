@@ -5,8 +5,6 @@
 
 Strategien auf Basis von Volatilitätsregimen, Spannenexpansion oder -kontraktion, Derivaten, Optionsbewertung und Volatilitätsrisiko.
 
-**Strategien:** 78
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0042 Implied Volatility Spike|Reaktion auf einen abrupten Marktschub|<a href=../0001-0100/0042_IV_Spike/CS><img src=../0001-0100/0042_IV_Spike/CS/logo.svg width=40></a>|<a href=../0001-0100/0042_IV_Spike/PY><img src=../0001-0100/0042_IV_Spike/PY/logo.svg width=40></a>|

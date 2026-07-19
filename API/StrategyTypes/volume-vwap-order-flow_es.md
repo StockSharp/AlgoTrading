@@ -5,8 +5,6 @@
 
 Sistemas que usan volumen negociado, VWAP, liquidez, profundidad de mercado o flujo de órdenes para identificar entradas y salidas.
 
-**Estrategias:** 63
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0103 Dark Pool Prints Strategy|Confirmación por volumen y flujo|<a href=../0101-0200/0103_Dark_Pool_Prints/CS><img src=../0101-0200/0103_Dark_Pool_Prints/CS/logo.svg width=40></a>|<a href=../0101-0200/0103_Dark_Pool_Prints/PY><img src=../0101-0200/0103_Dark_Pool_Prints/PY/logo.svg width=40></a>|

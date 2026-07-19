@@ -5,8 +5,6 @@
 
 Специализированные системы на основе ценовых уровней, диапазонов, пивотов, геометрии Фибоначчи, волн, свечей и структуры рынка.
 
-**Стратегий:** 263
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0601 Captain Backtest Model Strategy|Комбинированная или специализированная торговая логика|<a href=../0601-0700/0601_Captain_Backtest_Model/CS><img src=../0601-0700/0601_Captain_Backtest_Model/CS/logo.svg width=40></a>|<a href=../0601-0700/0601_Captain_Backtest_Model/PY><img src=../0601-0700/0601_Captain_Backtest_Model/PY/logo.svg width=40></a>|

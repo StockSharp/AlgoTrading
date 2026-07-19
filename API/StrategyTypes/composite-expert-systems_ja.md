@@ -5,8 +5,6 @@
 
 複数の仕組みを組み合わせる、多要素、ハイブリッド、アンサンブル、ロボット、トレーダー、Expert Advisorシステムです。
 
-**戦略数:** 110
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0539 Autonomous 5-Minute Robot Strategy|複合または特化型の取引ロジック|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/CS><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/CS/logo.svg width=40></a>|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/PY><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/PY/logo.svg width=40></a>|

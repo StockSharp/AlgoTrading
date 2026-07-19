@@ -5,8 +5,6 @@
 
 主要触发来自振荡器、指标阈值、指标交叉或指标背离的策略。
 
-**策略数量:** 203
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0052 Volume Divergence|价格与确认信号之间的背离|<a href=../0001-0100/0052_Volume_Divergence/CS><img src=../0001-0100/0052_Volume_Divergence/CS/logo.svg width=40></a>|<a href=../0001-0100/0052_Volume_Divergence/PY><img src=../0001-0100/0052_Volume_Divergence/PY/logo.svg width=40></a>|

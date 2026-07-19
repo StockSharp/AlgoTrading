@@ -5,8 +5,6 @@
 
 Composite strategies whose distinguishing constraint is a trading session, clock window, calendar event, or recurring schedule.
 
-**Strategies:** 13
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |1176 Power Hour Money Strategy|Combined or specialized trading logic|<a href=../1101-1200/1176_Power_Hour_Money/CS><img src=../1101-1200/1176_Power_Hour_Money/CS/logo.svg width=40></a>|<a href=../1101-1200/1176_Power_Hour_Money/PY><img src=../1101-1200/1176_Power_Hour_Money/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Sistemas direccionales especializados expresados mediante reglas explícitas de largo/corto, compra/venta, tendencia, giro, entrada o salida.
 
-**Estrategias:** 111
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0524 AO AC Trading Zones Strategy|Lógica de trading combinada o especializada|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/CS><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/CS/logo.svg width=40></a>|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/PY><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/PY/logo.svg width=40></a>|

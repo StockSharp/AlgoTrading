@@ -5,8 +5,6 @@
 
 Strategies built around price escaping a range, crossing support or resistance, or moving through a calculated channel boundary.
 
-**Strategies:** 319
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0002 NDay Breakout|Breakout beyond a monitored boundary|<a href=../0001-0100/0002_NDay_Breakout/CS><img src=../0001-0100/0002_NDay_Breakout/CS/logo.svg width=40></a>|<a href=../0001-0100/0002_NDay_Breakout/PY><img src=../0001-0100/0002_NDay_Breakout/PY/logo.svg width=40></a>|

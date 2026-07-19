@@ -5,8 +5,6 @@
 
 単一の方向予測ではなく、商品間の価格関係、スプレッド、または連動資産を取引する戦略です。
 
-**戦略数:** 25
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0217 Pairs Trading Strategy|関連資産間の相対価値取引|<a href=../0201-0300/0217_Pairs_Trading/CS><img src=../0201-0300/0217_Pairs_Trading/CS/logo.svg width=40></a>|<a href=../0201-0300/0217_Pairs_Trading/PY><img src=../0201-0300/0217_Pairs_Trading/PY/logo.svg width=40></a>|

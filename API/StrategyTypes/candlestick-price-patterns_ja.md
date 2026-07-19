@@ -5,8 +5,6 @@
 
 ローソク足形成、チャート構造、ギャップ、ピボットなど、価格動作に現れる反復パターンを認識する戦略です。
 
-**戦略数:** 191
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0056 Double Bottom Pattern|反復する価格パターンからのシグナル|<a href=../0001-0100/0056_Double_Bottom/CS><img src=../0001-0100/0056_Double_Bottom/CS/logo.svg width=40></a>|<a href=../0001-0100/0056_Double_Bottom/PY><img src=../0001-0100/0056_Double_Bottom/PY/logo.svg width=40></a>|

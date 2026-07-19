@@ -5,8 +5,6 @@
 
 Краткосрочные системы, в которых точность входа, спред, размещение заявок и исполнение определяют торговое преимущество.
 
-**Стратегий:** 133
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0475 Scalping EMA RSI MACD Strategy|Краткосрочные сигналы исполнения|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS/logo.svg width=40></a>|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Zusammengesetzte Einstiegsregeln aus Indikatorübereinstimmung, Schwellen, Kreuzungen, Divergenzen und Signalauswahl.
 
-**Strategien:** 319
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0438 Omar MMR Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../0401-0500/0438_Omar_Mmr/CS><img src=../0401-0500/0438_Omar_Mmr/CS/logo.svg width=40></a>|<a href=../0401-0500/0438_Omar_Mmr/PY><img src=../0401-0500/0438_Omar_Mmr/PY/logo.svg width=40></a>|

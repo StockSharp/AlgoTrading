@@ -5,8 +5,6 @@
 
 主要以明确的多空、买卖、趋势、反转或进出场规则表达的专用方向性系统。
 
-**策略数量:** 111
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0524 AO AC Trading Zones Strategy|组合式或专用交易逻辑|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/CS><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/CS/logo.svg width=40></a>|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/PY><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/PY/logo.svg width=40></a>|

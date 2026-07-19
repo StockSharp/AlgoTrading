@@ -5,8 +5,6 @@
 
 不由单一传统指标主导的自适应、多时间框架、模型驱动、混合和专用趋势系统。
 
-**策略数量:** 277
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0040 ATR Trailing Stops|响应市场波动率变化|<a href=../0001-0100/0040_ATR_Trailing/CS><img src=../0001-0100/0040_ATR_Trailing/CS/logo.svg width=40></a>|<a href=../0001-0100/0040_ATR_Trailing/PY><img src=../0001-0100/0040_ATR_Trailing/PY/logo.svg width=40></a>|

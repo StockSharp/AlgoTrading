@@ -5,8 +5,6 @@
 
 Multi-Asset-Ansätze, die Instrumente einstufen, Kapital nach Faktoren verteilen, Portfolios neu gewichten oder zwischen Märkten rotieren.
 
-**Strategien:** 24
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0351 Accrual Anomaly|Faktorauswahl und Portfoliorotation|<a href=../0301-0400/0351_Accrual_Anomaly/CS><img src=../0301-0400/0351_Accrual_Anomaly/CS/logo.svg width=40></a>|<a href=../0301-0400/0351_Accrual_Anomaly/PY><img src=../0301-0400/0351_Accrual_Anomaly/PY/logo.svg width=40></a>|

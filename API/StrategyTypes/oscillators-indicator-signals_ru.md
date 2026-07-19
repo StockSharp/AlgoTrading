@@ -5,8 +5,6 @@
 
 Стратегии, где основной триггер задают осцилляторы, пороги, пересечения или дивергенции индикаторов.
 
-**Стратегий:** 203
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0052 Volume Divergence|Расхождение цены и подтверждающего сигнала|<a href=../0001-0100/0052_Volume_Divergence/CS><img src=../0001-0100/0052_Volume_Divergence/CS/logo.svg width=40></a>|<a href=../0001-0100/0052_Volume_Divergence/PY><img src=../0001-0100/0052_Volume_Divergence/PY/logo.svg width=40></a>|

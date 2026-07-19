@@ -5,8 +5,6 @@
 
 Количественные стратегии используют статистическое оценивание, адаптивные модели, машинное обучение, нейросети или классификацию сигналов.
 
-**Стратегий:** 77
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0354 Betting Against Beta Stocks|Адаптивная или статистическая модель рынка|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/CS><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/CS/logo.svg width=40></a>|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/PY><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/PY/logo.svg width=40></a>|

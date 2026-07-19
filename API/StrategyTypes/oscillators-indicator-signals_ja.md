@@ -5,8 +5,6 @@
 
 主なトリガーがオシレーター、指標のしきい値、クロス、またはダイバージェンスから得られる戦略です。
 
-**戦略数:** 203
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0052 Volume Divergence|価格と確認指標のダイバージェンス|<a href=../0001-0100/0052_Volume_Divergence/CS><img src=../0001-0100/0052_Volume_Divergence/CS/logo.svg width=40></a>|<a href=../0001-0100/0052_Volume_Divergence/PY><img src=../0001-0100/0052_Volume_Divergence/PY/logo.svg width=40></a>|

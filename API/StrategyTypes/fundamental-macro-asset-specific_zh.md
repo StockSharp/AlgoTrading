@@ -5,8 +5,6 @@
 
 与基本面、宏观数据、监管文件、资产类别或特定工具和市场相关的专用逻辑。
 
-**策略数量:** 22
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0353 Asset Growth Effect Strategy|组合式或专用交易逻辑|<a href=../0301-0400/0353_Asset_Growth_Effect/CS><img src=../0301-0400/0353_Asset_Growth_Effect/CS/logo.svg width=40></a>|<a href=../0301-0400/0353_Asset_Growth_Effect/PY><img src=../0301-0400/0353_Asset_Growth_Effect/PY/logo.svg width=40></a>|

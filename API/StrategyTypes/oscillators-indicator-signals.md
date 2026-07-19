@@ -5,8 +5,6 @@
 
 Strategies whose primary trigger comes from oscillators, indicator thresholds, indicator crosses, or indicator divergence.
 
-**Strategies:** 203
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0052 Volume Divergence|Divergence between price and confirmation|<a href=../0001-0100/0052_Volume_Divergence/CS><img src=../0001-0100/0052_Volume_Divergence/CS/logo.svg width=40></a>|<a href=../0001-0100/0052_Volume_Divergence/PY><img src=../0001-0100/0052_Volume_Divergence/PY/logo.svg width=40></a>|

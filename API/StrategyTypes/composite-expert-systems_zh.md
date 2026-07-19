@@ -5,8 +5,6 @@
 
 组合多种机制的多组件、混合、集成、机器人、交易员和专家顾问系统。
 
-**策略数量:** 110
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0539 Autonomous 5-Minute Robot Strategy|组合式或专用交易逻辑|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/CS><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/CS/logo.svg width=40></a>|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/PY><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Estratégias focadas em escadas de ordens, preço médio, entradas em etapas, tamanho de posição, saídas e gestão contínua das operações.
 
-**Estratégias:** 143
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0425 Grid Bot Strategy|Ordens em camadas numa grade de preços|<a href=../0401-0500/0425_Grid_Bot/CS><img src=../0401-0500/0425_Grid_Bot/CS/logo.svg width=40></a>|<a href=../0401-0500/0425_Grid_Bot/PY><img src=../0401-0500/0425_Grid_Bot/PY/logo.svg width=40></a>|

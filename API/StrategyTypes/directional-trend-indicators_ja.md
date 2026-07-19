@@ -5,8 +5,6 @@
 
 ADX/DMI、SuperTrend、Parabolic SAR、Ichimoku、Alligatorなどのトレンド方向・強度指標を主に使う戦略です。
 
-**戦略数:** 264
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0003 ADX Trend|市場方向への追随|<a href=../0001-0100/0003_ADX_Trend/CS><img src=../0001-0100/0003_ADX_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0003_ADX_Trend/PY><img src=../0001-0100/0003_ADX_Trend/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 統計推定、適応モデル、機械学習、ニューラルネットワーク、またはシグナル分類を使う定量戦略です。
 
-**戦略数:** 77
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0354 Betting Against Beta Stocks|適応型または統計的な市場モデル|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/CS><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/CS/logo.svg width=40></a>|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/PY><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/PY/logo.svg width=40></a>|

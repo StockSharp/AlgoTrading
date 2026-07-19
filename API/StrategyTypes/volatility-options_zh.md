@@ -5,8 +5,6 @@
 
 策略基于波动率状态、区间扩张或收缩、衍生品、期权定价和波动率风险。
 
-**策略数量:** 78
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0042 Implied Volatility Spike|对市场突然急涨急跌的反应|<a href=../0001-0100/0042_IV_Spike/CS><img src=../0001-0100/0042_IV_Spike/CS/logo.svg width=40></a>|<a href=../0001-0100/0042_IV_Spike/PY><img src=../0001-0100/0042_IV_Spike/PY/logo.svg width=40></a>|

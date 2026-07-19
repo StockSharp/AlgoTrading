@@ -5,8 +5,6 @@
 
 短周期系统以进场时机、点差、订单放置和执行质量作为核心优势。
 
-**策略数量:** 133
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0475 Scalping EMA RSI MACD Strategy|短周期执行信号|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS/logo.svg width=40></a>|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY/logo.svg width=40></a>|

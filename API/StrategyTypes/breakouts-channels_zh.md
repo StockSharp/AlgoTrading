@@ -5,8 +5,6 @@
 
 策略围绕价格脱离区间、突破支撑阻力或穿越计算通道边界构建。
 
-**策略数量:** 319
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0002 NDay Breakout|突破受监控的边界|<a href=../0001-0100/0002_NDay_Breakout/CS><img src=../0001-0100/0002_NDay_Breakout/CS/logo.svg width=40></a>|<a href=../0001-0100/0002_NDay_Breakout/PY><img src=../0001-0100/0002_NDay_Breakout/PY/logo.svg width=40></a>|

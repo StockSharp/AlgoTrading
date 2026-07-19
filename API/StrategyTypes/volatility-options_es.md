@@ -5,8 +5,6 @@
 
 Estrategias basadas en regímenes de volatilidad, expansión o contracción del rango, derivados, valoración de opciones y riesgo de volatilidad.
 
-**Estrategias:** 78
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0042 Implied Volatility Spike|Reacción a un movimiento brusco del mercado|<a href=../0001-0100/0042_IV_Spike/CS><img src=../0001-0100/0042_IV_Spike/CS/logo.svg width=40></a>|<a href=../0001-0100/0042_IV_Spike/PY><img src=../0001-0100/0042_IV_Spike/PY/logo.svg width=40></a>|

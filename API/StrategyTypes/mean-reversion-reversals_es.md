@@ -5,8 +5,6 @@
 
 Sistemas contra tendencia que buscan precios extendidos, movimientos agotados o tendencias fallidas para operar un retorno al equilibrio o a un punto de giro.
 
-**Estrategias:** 299
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0026 RSI Reversion|Retorno hacia la media estadística|<a href=../0001-0100/0026_RSI_Reversion/CS><img src=../0001-0100/0026_RSI_Reversion/CS/logo.svg width=40></a>|<a href=../0001-0100/0026_RSI_Reversion/PY><img src=../0001-0100/0026_RSI_Reversion/PY/logo.svg width=40></a>|

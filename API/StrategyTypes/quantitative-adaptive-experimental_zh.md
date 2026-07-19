@@ -5,8 +5,6 @@
 
 数学、统计、机器学习、自适应、随机化和实验性策略设计。
 
-**策略数量:** 25
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0365 Dispersion Trading Strategy|组合式或专用交易逻辑|<a href=../0301-0400/0365_Dispersion_Trading/CS><img src=../0301-0400/0365_Dispersion_Trading/CS/logo.svg width=40></a>|<a href=../0301-0400/0365_Dispersion_Trading/PY><img src=../0301-0400/0365_Dispersion_Trading/PY/logo.svg width=40></a>|

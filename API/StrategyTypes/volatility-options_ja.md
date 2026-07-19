@@ -5,8 +5,6 @@
 
 ボラティリティ局面、レンジの拡大・縮小、デリバティブ、オプション評価、ボラティリティリスクに基づく戦略です。
 
-**戦略数:** 78
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0042 Implied Volatility Spike|急激な市場変動への反応|<a href=../0001-0100/0042_IV_Spike/CS><img src=../0001-0100/0042_IV_Spike/CS/logo.svg width=40></a>|<a href=../0001-0100/0042_IV_Spike/PY><img src=../0001-0100/0042_IV_Spike/PY/logo.svg width=40></a>|

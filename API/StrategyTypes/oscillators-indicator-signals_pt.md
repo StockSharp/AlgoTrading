@@ -5,8 +5,6 @@
 
 Estratégias cujo gatilho principal vem de osciladores, limites, cruzamentos ou divergências de indicadores.
 
-**Estratégias:** 203
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0052 Volume Divergence|Divergência entre preço e confirmação|<a href=../0001-0100/0052_Volume_Divergence/CS><img src=../0001-0100/0052_Volume_Divergence/CS/logo.svg width=40></a>|<a href=../0001-0100/0052_Volume_Divergence/PY><img src=../0001-0100/0052_Volume_Divergence/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Многокомпонентные, гибридные, ансамблевые системы, роботы, трейдеры и советники, объединяющие несколько механизмов.
 
-**Стратегий:** 110
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0539 Autonomous 5-Minute Robot Strategy|Комбинированная или специализированная торговая логика|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/CS><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/CS/logo.svg width=40></a>|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/PY><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/PY/logo.svg width=40></a>|

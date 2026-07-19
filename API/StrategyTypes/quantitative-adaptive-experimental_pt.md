@@ -5,8 +5,6 @@
 
 Projetos matemáticos, estatísticos, de aprendizado de máquina, adaptativos, aleatórios e deliberadamente experimentais.
 
-**Estratégias:** 25
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0365 Dispersion Trading Strategy|Lógica de trading combinada ou especializada|<a href=../0301-0400/0365_Dispersion_Trading/CS><img src=../0301-0400/0365_Dispersion_Trading/CS/logo.svg width=40></a>|<a href=../0301-0400/0365_Dispersion_Trading/PY><img src=../0301-0400/0365_Dispersion_Trading/PY/logo.svg width=40></a>|

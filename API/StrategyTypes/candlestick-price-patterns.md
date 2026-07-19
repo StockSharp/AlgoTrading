@@ -5,8 +5,6 @@
 
 Strategies that recognize candle formations, chart structures, gaps, pivots, and other recurring patterns directly in price action.
 
-**Strategies:** 191
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0056 Double Bottom Pattern|Signal from a recurring price pattern|<a href=../0001-0100/0056_Double_Bottom/CS><img src=../0001-0100/0056_Double_Bottom/CS/logo.svg width=40></a>|<a href=../0001-0100/0056_Double_Bottom/PY><img src=../0001-0100/0056_Double_Bottom/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 ファンダメンタル、マクロデータ、開示情報、資産クラス、または特定の商品や市場に結び付いた専用ロジックです。
 
-**戦略数:** 22
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0353 Asset Growth Effect Strategy|複合または特化型の取引ロジック|<a href=../0301-0400/0353_Asset_Growth_Effect/CS><img src=../0301-0400/0353_Asset_Growth_Effect/CS/logo.svg width=40></a>|<a href=../0301-0400/0353_Asset_Growth_Effect/PY><img src=../0301-0400/0353_Asset_Growth_Effect/PY/logo.svg width=40></a>|

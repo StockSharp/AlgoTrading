@@ -5,8 +5,6 @@
 
 量化策略使用统计估计、自适应模型、机器学习、神经网络或信号分类。
 
-**策略数量:** 77
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0354 Betting Against Beta Stocks|自适应或统计市场模型|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/CS><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/CS/logo.svg width=40></a>|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/PY><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/PY/logo.svg width=40></a>|

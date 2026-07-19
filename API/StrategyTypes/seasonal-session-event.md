@@ -5,8 +5,6 @@
 
 Time-aware systems driven by sessions, calendars, scheduled events, opening ranges, or recurring seasonal behaviour.
 
-**Strategies:** 92
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0116 Day of Week Effect Strategy|Recurring calendar-based market behavior|<a href=../0101-0200/0116_Day_of_Week/CS><img src=../0101-0200/0116_Day_of_Week/CS/logo.svg width=40></a>|<a href=../0101-0200/0116_Day_of_Week/PY><img src=../0101-0200/0116_Day_of_Week/PY/logo.svg width=40></a>|

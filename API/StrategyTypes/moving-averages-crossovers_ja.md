@@ -5,8 +5,6 @@
 
 移動平均線の方向、整列、シフト、リボン、および短期線と長期線のクロスを中心とするトレンドシステムです。
 
-**戦略数:** 191
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0001 HMA Seasonal Divergence Strategy|市場指標のクロスによるシグナル|<a href=../0001-0100/0001_MA_CrossOver/CS><img src=../0001-0100/0001_MA_CrossOver/CS/logo.svg width=40></a>|<a href=../0001-0100/0001_MA_CrossOver/PY><img src=../0001-0100/0001_MA_CrossOver/PY/logo.svg width=40></a>|

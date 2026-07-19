@@ -5,8 +5,6 @@
 
 Sistemas de corto plazo donde el momento de entrada, el spread, la colocación de órdenes y la ejecución son fundamentales para la ventaja operativa.
 
-**Estrategias:** 133
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0475 Scalping EMA RSI MACD Strategy|Señales de ejecución a corto plazo|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS/logo.svg width=40></a>|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY/logo.svg width=40></a>|

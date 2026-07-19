@@ -5,8 +5,6 @@
 
 策略由 ADX/DMI、SuperTrend、Parabolic SAR、Ichimoku、Alligator 等方向和趋势强度工具主导。
 
-**策略数量:** 264
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0003 ADX Trend|跟随市场方向|<a href=../0001-0100/0003_ADX_Trend/CS><img src=../0001-0100/0003_ADX_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0003_ADX_Trend/PY><img src=../0001-0100/0003_ADX_Trend/PY/logo.svg width=40></a>|

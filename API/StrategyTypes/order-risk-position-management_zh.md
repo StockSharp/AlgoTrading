@@ -5,8 +5,6 @@
 
 围绕订单处理、规模、保护、网格、恢复、跟踪止损和现有仓位管理的系统。
 
-**策略数量:** 194
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0960 LANZ Strategy 1.0 [Backtest]|组合式或专用交易逻辑|<a href=../0901-1000/0960_Lanz_1_0_Backtest/CS><img src=../0901-1000/0960_Lanz_1_0_Backtest/CS/logo.svg width=40></a>|<a href=../0901-1000/0960_Lanz_1_0_Backtest/PY><img src=../0901-1000/0960_Lanz_1_0_Backtest/PY/logo.svg width=40></a>|

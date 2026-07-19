@@ -5,8 +5,6 @@
 
 注文ラダー、平均化、段階的エントリー、ポジションサイズ、手仕舞い、継続的な取引管理に重点を置く戦略です。
 
-**戦略数:** 143
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0425 Grid Bot Strategy|価格グリッド上の階層注文|<a href=../0401-0500/0425_Grid_Bot/CS><img src=../0401-0500/0425_Grid_Bot/CS/logo.svg width=40></a>|<a href=../0401-0500/0425_Grid_Bot/PY><img src=../0401-0500/0425_Grid_Bot/PY/logo.svg width=40></a>|

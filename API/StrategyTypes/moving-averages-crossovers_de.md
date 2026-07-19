@@ -5,8 +5,6 @@
 
 Trendsysteme rund um Richtung, Ausrichtung, Verschiebung und Bänder gleitender Durchschnitte sowie schnelle und langsame Kreuzungen.
 
-**Strategien:** 191
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0001 HMA Seasonal Divergence Strategy|Signal durch Kreuzung von Marktkennzahlen|<a href=../0001-0100/0001_MA_CrossOver/CS><img src=../0001-0100/0001_MA_CrossOver/CS/logo.svg width=40></a>|<a href=../0001-0100/0001_MA_CrossOver/PY><img src=../0001-0100/0001_MA_CrossOver/PY/logo.svg width=40></a>|

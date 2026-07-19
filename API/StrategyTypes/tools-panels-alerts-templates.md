@@ -5,8 +5,6 @@
 
 Trading utilities, UI panels, alerts, templates, test harnesses, chart helpers, libraries, and integration examples.
 
-**Strategies:** 74
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0446 Strategy Base Template|Combined or specialized trading logic|<a href=../0401-0500/0446_Strat_Base/CS><img src=../0401-0500/0446_Strat_Base/CS/logo.svg width=40></a>|<a href=../0401-0500/0446_Strat_Base/PY><img src=../0401-0500/0446_Strat_Base/PY/logo.svg width=40></a>|

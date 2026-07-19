@@ -5,8 +5,6 @@
 
 交易工具、界面面板、提醒、模板、测试框架、图表助手、库和集成示例。
 
-**策略数量:** 74
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0446 Strategy Base Template|组合式或专用交易逻辑|<a href=../0401-0500/0446_Strat_Base/CS><img src=../0401-0500/0446_Strat_Base/CS/logo.svg width=40></a>|<a href=../0401-0500/0446_Strat_Base/PY><img src=../0401-0500/0446_Strat_Base/PY/logo.svg width=40></a>|

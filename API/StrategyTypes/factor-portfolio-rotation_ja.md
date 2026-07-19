@@ -5,8 +5,6 @@
 
 銘柄を順位付けし、ファクターで資金配分し、ポートフォリオを再調整または市場間でローテーションするマルチ資産手法です。
 
-**戦略数:** 24
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0351 Accrual Anomaly|ファクター選択とポートフォリオ・ローテーション|<a href=../0301-0400/0351_Accrual_Anomaly/CS><img src=../0301-0400/0351_Accrual_Anomaly/CS/logo.svg width=40></a>|<a href=../0301-0400/0351_Accrual_Anomaly/PY><img src=../0301-0400/0351_Accrual_Anomaly/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Kurzfristige Systeme, bei denen Einstiegstiming, Spread, Orderplatzierung und Ausführung den Handelsvorteil bestimmen.
 
-**Strategien:** 133
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0475 Scalping EMA RSI MACD Strategy|Kurzfristige Ausführungssignale|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS/logo.svg width=40></a>|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY/logo.svg width=40></a>|

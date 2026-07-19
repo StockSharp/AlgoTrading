@@ -5,8 +5,6 @@
 
 Systems that use traded volume, VWAP, liquidity, market depth, or order-flow behaviour to identify entries and exits.
 
-**Strategies:** 63
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0103 Dark Pool Prints Strategy|Confirmation from volume and flow|<a href=../0101-0200/0103_Dark_Pool_Prints/CS><img src=../0101-0200/0103_Dark_Pool_Prints/CS/logo.svg width=40></a>|<a href=../0101-0200/0103_Dark_Pool_Prints/PY><img src=../0101-0200/0103_Dark_Pool_Prints/PY/logo.svg width=40></a>|

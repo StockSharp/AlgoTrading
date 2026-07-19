@@ -5,8 +5,6 @@
 
 数学、統計、機械学習、適応、ランダム化、および意図的に実験的な戦略設計です。
 
-**戦略数:** 25
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0365 Dispersion Trading Strategy|複合または特化型の取引ロジック|<a href=../0301-0400/0365_Dispersion_Trading/CS><img src=../0301-0400/0365_Dispersion_Trading/CS/logo.svg width=40></a>|<a href=../0301-0400/0365_Dispersion_Trading/PY><img src=../0301-0400/0365_Dispersion_Trading/PY/logo.svg width=40></a>|

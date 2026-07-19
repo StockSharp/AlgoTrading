@@ -5,8 +5,6 @@
 
 Entradas de continuación de tendencia expresadas mediante rupturas, retrocesos, canales, swings, velas, correcciones y estructura de mercado.
 
-**Estrategias:** 95
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0005 Donchian Channel|Operación del movimiento en o a través de un canal de precios|<a href=../0001-0100/0005_Donchian_Channel/CS><img src=../0001-0100/0005_Donchian_Channel/CS/logo.svg width=40></a>|<a href=../0001-0100/0005_Donchian_Channel/PY><img src=../0001-0100/0005_Donchian_Channel/PY/logo.svg width=40></a>|

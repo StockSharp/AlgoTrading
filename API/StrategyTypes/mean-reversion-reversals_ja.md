@@ -5,8 +5,6 @@
 
 行き過ぎた価格、勢いの枯渇、失敗したトレンドを探し、均衡または反転点への回帰を取引する逆張りシステムです。
 
-**戦略数:** 299
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0026 RSI Reversion|統計的平均への回帰|<a href=../0001-0100/0026_RSI_Reversion/CS><img src=../0001-0100/0026_RSI_Reversion/CS/logo.svg width=40></a>|<a href=../0001-0100/0026_RSI_Reversion/PY><img src=../0001-0100/0026_RSI_Reversion/PY/logo.svg width=40></a>|

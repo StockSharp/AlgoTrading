@@ -5,8 +5,6 @@
 
 Estrategias centradas en escaleras de órdenes, promediado, entradas escalonadas, tamaño de posición, salidas y gestión continua de operaciones.
 
-**Estrategias:** 143
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0425 Grid Bot Strategy|Órdenes escalonadas en una cuadrícula de precios|<a href=../0401-0500/0425_Grid_Bot/CS><img src=../0401-0500/0425_Grid_Bot/CS/logo.svg width=40></a>|<a href=../0401-0500/0425_Grid_Bot/PY><img src=../0401-0500/0425_Grid_Bot/PY/logo.svg width=40></a>|

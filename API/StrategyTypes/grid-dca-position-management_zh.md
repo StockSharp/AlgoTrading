@@ -5,8 +5,6 @@
 
 策略专注于订单阶梯、均价、分阶段入场、仓位规模、退出及持续交易管理。
 
-**策略数量:** 143
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0425 Grid Bot Strategy|价格网格中的分层订单|<a href=../0401-0500/0425_Grid_Bot/CS><img src=../0401-0500/0425_Grid_Bot/CS/logo.svg width=40></a>|<a href=../0401-0500/0425_Grid_Bot/PY><img src=../0401-0500/0425_Grid_Bot/PY/logo.svg width=40></a>|

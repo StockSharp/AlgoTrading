@@ -5,8 +5,6 @@
 
 基于价格水平、区间、枢轴点、斐波那契几何、波浪、K线和市场结构的专用系统。
 
-**策略数量:** 263
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0601 Captain Backtest Model Strategy|组合式或专用交易逻辑|<a href=../0601-0700/0601_Captain_Backtest_Model/CS><img src=../0601-0700/0601_Captain_Backtest_Model/CS/logo.svg width=40></a>|<a href=../0601-0700/0601_Captain_Backtest_Model/PY><img src=../0601-0700/0601_Captain_Backtest_Model/PY/logo.svg width=40></a>|

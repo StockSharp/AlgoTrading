@@ -5,8 +5,6 @@
 
 Sistemas sensibles al tiempo impulsados por sesiones, calendarios, eventos programados, rangos de apertura o comportamientos estacionales.
 
-**Estrategias:** 92
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0116 Day of Week Effect Strategy|Comportamiento recurrente basado en el calendario|<a href=../0101-0200/0116_Day_of_Week/CS><img src=../0101-0200/0116_Day_of_Week/CS/logo.svg width=40></a>|<a href=../0101-0200/0116_Day_of_Week/PY><img src=../0101-0200/0116_Day_of_Week/PY/logo.svg width=40></a>|

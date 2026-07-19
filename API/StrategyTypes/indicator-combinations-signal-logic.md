@@ -5,8 +5,6 @@
 
 Composite entry rules built from indicator agreement, thresholds, crosses, divergences, and signal-selection logic.
 
-**Strategies:** 319
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0438 Omar MMR Strategy|Combined or specialized trading logic|<a href=../0401-0500/0438_Omar_Mmr/CS><img src=../0401-0500/0438_Omar_Mmr/CS/logo.svg width=40></a>|<a href=../0401-0500/0438_Omar_Mmr/PY><img src=../0401-0500/0438_Omar_Mmr/PY/logo.svg width=40></a>|

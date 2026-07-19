@@ -5,8 +5,6 @@
 
 Estrategias cuyo disparador principal procede de osciladores, umbrales, cruces o divergencias de indicadores.
 
-**Estrategias:** 203
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0052 Volume Divergence|Divergencia entre el precio y la confirmación|<a href=../0001-0100/0052_Volume_Divergence/CS><img src=../0001-0100/0052_Volume_Divergence/CS/logo.svg width=40></a>|<a href=../0001-0100/0052_Volume_Divergence/PY><img src=../0001-0100/0052_Volume_Divergence/PY/logo.svg width=40></a>|

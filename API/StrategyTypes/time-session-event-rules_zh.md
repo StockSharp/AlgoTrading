@@ -5,8 +5,6 @@
 
 主要约束来自交易时段、时间窗口、日历事件或重复计划的复合策略。
 
-**策略数量:** 13
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |1176 Power Hour Money Strategy|组合式或专用交易逻辑|<a href=../1101-1200/1176_Power_Hour_Money/CS><img src=../1101-1200/1176_Power_Hour_Money/CS/logo.svg width=40></a>|<a href=../1101-1200/1176_Power_Hour_Money/PY><img src=../1101-1200/1176_Power_Hour_Money/PY/logo.svg width=40></a>|

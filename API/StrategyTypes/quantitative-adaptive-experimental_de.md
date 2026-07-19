@@ -5,8 +5,6 @@
 
 Mathematische, statistische, lernende, adaptive, randomisierte und bewusst experimentelle Strategieentwürfe.
 
-**Strategien:** 25
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0365 Dispersion Trading Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../0301-0400/0365_Dispersion_Trading/CS><img src=../0301-0400/0365_Dispersion_Trading/CS/logo.svg width=40></a>|<a href=../0301-0400/0365_Dispersion_Trading/PY><img src=../0301-0400/0365_Dispersion_Trading/PY/logo.svg width=40></a>|

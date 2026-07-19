@@ -5,8 +5,6 @@
 
 方向性策略由动量、MACD、RSI、CCI、随机指标、ROC、背离及相关振荡器确认。
 
-**策略数量:** 206
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0009 MACD Trend|跟随市场方向|<a href=../0001-0100/0009_MACD_Trend/CS><img src=../0001-0100/0009_MACD_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0009_MACD_Trend/PY><img src=../0001-0100/0009_MACD_Trend/PY/logo.svg width=40></a>|

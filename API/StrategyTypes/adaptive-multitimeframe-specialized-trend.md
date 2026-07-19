@@ -5,8 +5,6 @@
 
 Adaptive, multi-timeframe, model-driven, hybrid, and specialized trend systems not dominated by one conventional indicator family.
 
-**Strategies:** 277
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0040 ATR Trailing Stops|Response to changing market volatility|<a href=../0001-0100/0040_ATR_Trailing/CS><img src=../0001-0100/0040_ATR_Trailing/CS/logo.svg width=40></a>|<a href=../0001-0100/0040_ATR_Trailing/PY><img src=../0001-0100/0040_ATR_Trailing/PY/logo.svg width=40></a>|

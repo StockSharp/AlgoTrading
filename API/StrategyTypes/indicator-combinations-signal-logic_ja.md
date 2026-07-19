@@ -5,8 +5,6 @@
 
 指標の合意、しきい値、クロス、ダイバージェンス、シグナル選択から構成される複合エントリールールです。
 
-**戦略数:** 319
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0438 Omar MMR Strategy|複合または特化型の取引ロジック|<a href=../0401-0500/0438_Omar_Mmr/CS><img src=../0401-0500/0438_Omar_Mmr/CS/logo.svg width=40></a>|<a href=../0401-0500/0438_Omar_Mmr/PY><img src=../0401-0500/0438_Omar_Mmr/PY/logo.svg width=40></a>|

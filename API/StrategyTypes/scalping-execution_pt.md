@@ -5,8 +5,6 @@
 
 Sistemas de curto prazo em que timing de entrada, spread, colocação de ordens e execução são centrais para a vantagem de trading.
 
-**Estratégias:** 133
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0475 Scalping EMA RSI MACD Strategy|Sinais de execução de curto prazo|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/CS/logo.svg width=40></a>|<a href=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY><img src=../0401-0500/0475_Scalping_Ema_Rsi_Macd/PY/logo.svg width=40></a>|

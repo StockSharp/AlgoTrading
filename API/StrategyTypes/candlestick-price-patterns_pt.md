@@ -5,8 +5,6 @@
 
 Estratégias que reconhecem formações de candles, estruturas gráficas, gaps, pivôs e outros padrões recorrentes diretamente na ação do preço.
 
-**Estratégias:** 191
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0056 Double Bottom Pattern|Sinal de um padrão de preço recorrente|<a href=../0001-0100/0056_Double_Bottom/CS><img src=../0001-0100/0056_Double_Bottom/CS/logo.svg width=40></a>|<a href=../0001-0100/0056_Double_Bottom/PY><img src=../0001-0100/0056_Double_Bottom/PY/logo.svg width=40></a>|

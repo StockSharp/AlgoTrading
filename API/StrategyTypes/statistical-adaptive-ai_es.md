@@ -5,8 +5,6 @@
 
 Estrategias cuantitativas que usan estimación estadística, modelos adaptativos, aprendizaje automático, redes neuronales o clasificación de señales.
 
-**Estrategias:** 77
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0354 Betting Against Beta Stocks|Modelo de mercado adaptativo o estadístico|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/CS><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/CS/logo.svg width=40></a>|<a href=../0301-0400/0354_Betting_Against_Beta_Stocks/PY><img src=../0301-0400/0354_Betting_Against_Beta_Stocks/PY/logo.svg width=40></a>|

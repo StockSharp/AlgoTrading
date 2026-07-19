@@ -5,8 +5,6 @@
 
 セッション、カレンダー、予定イベント、寄付きレンジ、または季節性に基づく時間依存のシステムです。
 
-**戦略数:** 92
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0116 Day of Week Effect Strategy|反復するカレンダーベースの市場特性|<a href=../0101-0200/0116_Day_of_Week/CS><img src=../0101-0200/0116_Day_of_Week/CS/logo.svg width=40></a>|<a href=../0101-0200/0116_Day_of_Week/PY><img src=../0101-0200/0116_Day_of_Week/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Sistemas especializados baseados em níveis, faixas, pivôs, geometria de Fibonacci, ondas, candles e estrutura de mercado.
 
-**Estratégias:** 263
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0601 Captain Backtest Model Strategy|Lógica de trading combinada ou especializada|<a href=../0601-0700/0601_Captain_Backtest_Model/CS><img src=../0601-0700/0601_Captain_Backtest_Model/CS/logo.svg width=40></a>|<a href=../0601-0700/0601_Captain_Backtest_Model/PY><img src=../0601-0700/0601_Captain_Backtest_Model/PY/logo.svg width=40></a>|

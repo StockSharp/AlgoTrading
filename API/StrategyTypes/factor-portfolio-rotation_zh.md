@@ -5,8 +5,6 @@
 
 多资产方法对工具排序，按因子配置资金，进行投资组合再平衡或市场轮动。
 
-**策略数量:** 24
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0351 Accrual Anomaly|因子筛选与投资组合轮动|<a href=../0301-0400/0351_Accrual_Anomaly/CS><img src=../0301-0400/0351_Accrual_Anomaly/CS/logo.svg width=40></a>|<a href=../0301-0400/0351_Accrual_Anomaly/PY><img src=../0301-0400/0351_Accrual_Anomaly/PY/logo.svg width=40></a>|

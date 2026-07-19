@@ -5,8 +5,6 @@
 
 Zusammengesetzte Strategien, deren prägende Einschränkung eine Sitzung, ein Zeitfenster, ein Kalenderereignis oder ein wiederkehrender Zeitplan ist.
 
-**Strategien:** 13
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |1176 Power Hour Money Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../1101-1200/1176_Power_Hour_Money/CS><img src=../1101-1200/1176_Power_Hour_Money/CS/logo.svg width=40></a>|<a href=../1101-1200/1176_Power_Hour_Money/PY><img src=../1101-1200/1176_Power_Hour_Money/PY/logo.svg width=40></a>|

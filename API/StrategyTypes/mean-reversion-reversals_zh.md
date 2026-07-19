@@ -5,8 +5,6 @@
 
 逆势系统寻找价格过度延伸、动能衰竭或趋势失败，并交易价格回归均衡或反转点。
 
-**策略数量:** 299
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0026 RSI Reversion|回归统计均值|<a href=../0001-0100/0026_RSI_Reversion/CS><img src=../0001-0100/0026_RSI_Reversion/CS/logo.svg width=40></a>|<a href=../0001-0100/0026_RSI_Reversion/PY><img src=../0001-0100/0026_RSI_Reversion/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Enfoques multiactivo que clasifican instrumentos, asignan capital por factores, reequilibran carteras o rotan entre mercados.
 
-**Estrategias:** 24
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0351 Accrual Anomaly|Selección por factores y rotación de cartera|<a href=../0301-0400/0351_Accrual_Anomaly/CS><img src=../0301-0400/0351_Accrual_Anomaly/CS/logo.svg width=40></a>|<a href=../0301-0400/0351_Accrual_Anomaly/PY><img src=../0301-0400/0351_Accrual_Anomaly/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Adaptive, zeitrahmenübergreifende, modellgetriebene, hybride und spezialisierte Trendsysteme ohne Dominanz einer einzelnen klassischen Indikatorfamilie.
 
-**Strategien:** 277
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0040 ATR Trailing Stops|Reaktion auf veränderte Marktvolatilität|<a href=../0001-0100/0040_ATR_Trailing/CS><img src=../0001-0100/0040_ATR_Trailing/CS/logo.svg width=40></a>|<a href=../0001-0100/0040_ATR_Trailing/PY><img src=../0001-0100/0040_ATR_Trailing/PY/logo.svg width=40></a>|

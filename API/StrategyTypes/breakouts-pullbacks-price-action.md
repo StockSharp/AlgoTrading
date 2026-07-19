@@ -5,8 +5,6 @@
 
 Trend-continuation entries expressed through breakouts, pullbacks, channels, swings, candles, retracements, and market structure.
 
-**Strategies:** 95
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0005 Donchian Channel|Trading movement through a price channel|<a href=../0001-0100/0005_Donchian_Channel/CS><img src=../0001-0100/0005_Donchian_Channel/CS/logo.svg width=40></a>|<a href=../0001-0100/0005_Donchian_Channel/PY><img src=../0001-0100/0005_Donchian_Channel/PY/logo.svg width=40></a>|

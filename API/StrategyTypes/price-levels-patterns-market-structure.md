@@ -5,8 +5,6 @@
 
 Specialized systems based on price levels, ranges, pivots, Fibonacci geometry, waves, candles, and other market structures.
 
-**Strategies:** 263
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0601 Captain Backtest Model Strategy|Combined or specialized trading logic|<a href=../0601-0700/0601_Captain_Backtest_Model/CS><img src=../0601-0700/0601_Captain_Backtest_Model/CS/logo.svg width=40></a>|<a href=../0601-0700/0601_Captain_Backtest_Model/PY><img src=../0601-0700/0601_Captain_Backtest_Model/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 由指标共振、阈值、交叉、背离和信号选择逻辑组成的复合入场规则。
 
-**策略数量:** 319
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0438 Omar MMR Strategy|组合式或专用交易逻辑|<a href=../0401-0500/0438_Omar_Mmr/CS><img src=../0401-0500/0438_Omar_Mmr/CS/logo.svg width=40></a>|<a href=../0401-0500/0438_Omar_Mmr/PY><img src=../0401-0500/0438_Omar_Mmr/PY/logo.svg width=40></a>|

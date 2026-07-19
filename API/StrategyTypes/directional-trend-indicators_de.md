@@ -5,8 +5,6 @@
 
 Strategien, die von Trend- und Richtungsstärke-Werkzeugen wie ADX/DMI, SuperTrend, Parabolic SAR, Ichimoku und Alligator geführt werden.
 
-**Strategien:** 264
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0003 ADX Trend|Der Marktrichtung folgen|<a href=../0001-0100/0003_ADX_Trend/CS><img src=../0001-0100/0003_ADX_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0003_ADX_Trend/PY><img src=../0001-0100/0003_ADX_Trend/PY/logo.svg width=40></a>|

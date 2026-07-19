@@ -5,8 +5,6 @@
 
 Estrategias compuestas cuya restricción distintiva es una sesión, ventana horaria, evento de calendario o programación recurrente.
 
-**Estrategias:** 13
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |1176 Power Hour Money Strategy|Lógica de trading combinada o especializada|<a href=../1101-1200/1176_Power_Hour_Money/CS><img src=../1101-1200/1176_Power_Hour_Money/CS/logo.svg width=40></a>|<a href=../1101-1200/1176_Power_Hour_Money/PY><img src=../1101-1200/1176_Power_Hour_Money/PY/logo.svg width=40></a>|

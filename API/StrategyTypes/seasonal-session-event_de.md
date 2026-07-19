@@ -5,8 +5,6 @@
 
 Zeitabhängige Systeme auf Basis von Sitzungen, Kalendern, geplanten Ereignissen, Eröffnungsspannen oder saisonalem Verhalten.
 
-**Strategien:** 92
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0116 Day of Week Effect Strategy|Wiederkehrendes kalenderbasiertes Marktverhalten|<a href=../0101-0200/0116_Day_of_Week/CS><img src=../0101-0200/0116_Day_of_Week/CS/logo.svg width=40></a>|<a href=../0101-0200/0116_Day_of_Week/PY><img src=../0101-0200/0116_Day_of_Week/PY/logo.svg width=40></a>|

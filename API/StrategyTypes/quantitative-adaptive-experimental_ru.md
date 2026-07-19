@@ -5,8 +5,6 @@
 
 Математические, статистические, адаптивные, рандомизированные и экспериментальные стратегии, включая машинное обучение.
 
-**Стратегий:** 25
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0365 Dispersion Trading Strategy|Комбинированная или специализированная торговая логика|<a href=../0301-0400/0365_Dispersion_Trading/CS><img src=../0301-0400/0365_Dispersion_Trading/CS/logo.svg width=40></a>|<a href=../0301-0400/0365_Dispersion_Trading/PY><img src=../0301-0400/0365_Dispersion_Trading/PY/logo.svg width=40></a>|

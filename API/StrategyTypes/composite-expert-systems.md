@@ -5,8 +5,6 @@
 
 Multi-component, hybrid, ensemble, robot, trader, and expert-advisor systems that combine several mechanisms.
 
-**Strategies:** 110
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0539 Autonomous 5-Minute Robot Strategy|Combined or specialized trading logic|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/CS><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/CS/logo.svg width=40></a>|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/PY><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/PY/logo.svg width=40></a>|

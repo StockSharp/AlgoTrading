@@ -5,8 +5,6 @@
 
 Estratégias que negociam relações de preços entre instrumentos, spreads ou ativos relacionados, em vez de depender de uma única previsão direcional.
 
-**Estratégias:** 25
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0217 Pairs Trading Strategy|Operação de valor relativo entre ativos relacionados|<a href=../0201-0300/0217_Pairs_Trading/CS><img src=../0201-0300/0217_Pairs_Trading/CS/logo.svg width=40></a>|<a href=../0201-0300/0217_Pairs_Trading/PY><img src=../0201-0300/0217_Pairs_Trading/PY/logo.svg width=40></a>|

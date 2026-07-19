@@ -5,8 +5,6 @@
 
 Mehrkomponenten-, Hybrid- und Ensemble-Systeme sowie Roboter, Trader und Expert Advisors, die mehrere Mechanismen verbinden.
 
-**Strategien:** 110
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0539 Autonomous 5-Minute Robot Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/CS><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/CS/logo.svg width=40></a>|<a href=../0501-0600/0539_Autonomous_5_Minute_Robot/PY><img src=../0501-0600/0539_Autonomous_5_Minute_Robot/PY/logo.svg width=40></a>|

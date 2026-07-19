@@ -5,8 +5,6 @@
 
 Sistemas de tendência adaptativos, multitemporais, orientados por modelos, híbridos e especializados sem domínio de uma única família de indicadores.
 
-**Estratégias:** 277
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0040 ATR Trailing Stops|Resposta à mudança da volatilidade do mercado|<a href=../0001-0100/0040_ATR_Trailing/CS><img src=../0001-0100/0040_ATR_Trailing/CS/logo.svg width=40></a>|<a href=../0001-0100/0040_ATR_Trailing/PY><img src=../0001-0100/0040_ATR_Trailing/PY/logo.svg width=40></a>|

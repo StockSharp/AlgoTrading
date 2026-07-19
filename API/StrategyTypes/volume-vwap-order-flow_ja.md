@@ -5,8 +5,6 @@
 
 取引高、VWAP、流動性、板の厚み、またはオーダーフローを使ってエントリーと手仕舞いを判断するシステムです。
 
-**戦略数:** 63
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0103 Dark Pool Prints Strategy|出来高とフローによる確認|<a href=../0101-0200/0103_Dark_Pool_Prints/CS><img src=../0101-0200/0103_Dark_Pool_Prints/CS/logo.svg width=40></a>|<a href=../0101-0200/0103_Dark_Pool_Prints/PY><img src=../0101-0200/0103_Dark_Pool_Prints/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Strategies focused on order ladders, averaging, staged entries, position sizing, exits, and ongoing trade management.
 
-**Strategies:** 143
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0425 Grid Bot Strategy|Layered orders across a price grid|<a href=../0401-0500/0425_Grid_Bot/CS><img src=../0401-0500/0425_Grid_Bot/CS/logo.svg width=40></a>|<a href=../0401-0500/0425_Grid_Bot/PY><img src=../0401-0500/0425_Grid_Bot/PY/logo.svg width=40></a>|

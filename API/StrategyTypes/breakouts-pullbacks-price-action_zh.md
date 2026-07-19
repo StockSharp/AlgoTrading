@@ -5,8 +5,6 @@
 
 通过突破、回调、通道、波段、K线、回撤和市场结构寻找趋势延续入场。
 
-**策略数量:** 95
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0005 Donchian Channel|价格通道内或穿越通道的交易|<a href=../0001-0100/0005_Donchian_Channel/CS><img src=../0001-0100/0005_Donchian_Channel/CS/logo.svg width=40></a>|<a href=../0001-0100/0005_Donchian_Channel/PY><img src=../0001-0100/0005_Donchian_Channel/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Abordagens multiativos que classificam instrumentos, alocam capital por fatores, rebalanceiam portfólios ou fazem rotação entre mercados.
 
-**Estratégias:** 24
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0351 Accrual Anomaly|Seleção por fatores e rotação de portfólio|<a href=../0301-0400/0351_Accrual_Anomaly/CS><img src=../0301-0400/0351_Accrual_Anomaly/CS/logo.svg width=40></a>|<a href=../0301-0400/0351_Accrual_Anomaly/PY><img src=../0301-0400/0351_Accrual_Anomaly/PY/logo.svg width=40></a>|

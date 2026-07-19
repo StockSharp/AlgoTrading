@@ -5,8 +5,6 @@
 
 Multi-asset approaches that rank instruments, allocate capital by factors, rebalance portfolios, or rotate between markets.
 
-**Strategies:** 24
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0351 Accrual Anomaly|Factor selection and portfolio rotation|<a href=../0301-0400/0351_Accrual_Anomaly/CS><img src=../0301-0400/0351_Accrual_Anomaly/CS/logo.svg width=40></a>|<a href=../0301-0400/0351_Accrual_Anomaly/PY><img src=../0301-0400/0351_Accrual_Anomaly/PY/logo.svg width=40></a>|

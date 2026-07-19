@@ -5,8 +5,6 @@
 
 Specialized logic tied to fundamentals, macro data, filings, asset classes, or named instruments and markets.
 
-**Strategies:** 22
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0353 Asset Growth Effect Strategy|Combined or specialized trading logic|<a href=../0301-0400/0353_Asset_Growth_Effect/CS><img src=../0301-0400/0353_Asset_Growth_Effect/CS/logo.svg width=40></a>|<a href=../0301-0400/0353_Asset_Growth_Effect/PY><img src=../0301-0400/0353_Asset_Growth_Effect/PY/logo.svg width=40></a>|

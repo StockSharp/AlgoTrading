@@ -5,8 +5,6 @@
 
 Spezialisierte direktionale Systeme mit ausdrücklichen Long/Short-, Kauf/Verkauf-, Trend-, Umkehr-, Einstiegs- oder Ausstiegsregeln.
 
-**Strategien:** 111
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0524 AO AC Trading Zones Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/CS><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/CS/logo.svg width=40></a>|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/PY><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/PY/logo.svg width=40></a>|

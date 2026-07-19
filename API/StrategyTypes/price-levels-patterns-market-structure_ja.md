@@ -5,8 +5,6 @@
 
 価格水準、レンジ、ピボット、フィボナッチ幾何、波動、ローソク足、市場構造に基づく特化型システムです。
 
-**戦略数:** 263
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0601 Captain Backtest Model Strategy|複合または特化型の取引ロジック|<a href=../0601-0700/0601_Captain_Backtest_Model/CS><img src=../0601-0700/0601_Captain_Backtest_Model/CS/logo.svg width=40></a>|<a href=../0601-0700/0601_Captain_Backtest_Model/PY><img src=../0601-0700/0601_Captain_Backtest_Model/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Системы используют объём торгов, VWAP, ликвидность, глубину рынка или поток заявок для определения входов и выходов.
 
-**Стратегий:** 63
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0103 Dark Pool Prints Strategy|Подтверждение объёмом и потоком|<a href=../0101-0200/0103_Dark_Pool_Prints/CS><img src=../0101-0200/0103_Dark_Pool_Prints/CS/logo.svg width=40></a>|<a href=../0101-0200/0103_Dark_Pool_Prints/PY><img src=../0101-0200/0103_Dark_Pool_Prints/PY/logo.svg width=40></a>|

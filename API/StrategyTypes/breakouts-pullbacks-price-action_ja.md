@@ -5,8 +5,6 @@
 
 ブレイクアウト、押し戻り、チャネル、スイング、ローソク足、リトレースメント、市場構造によるトレンド継続エントリーです。
 
-**戦略数:** 95
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0005 Donchian Channel|価格チャネル内またはチャネル突破の取引|<a href=../0001-0100/0005_Donchian_Channel/CS><img src=../0001-0100/0005_Donchian_Channel/CS/logo.svg width=40></a>|<a href=../0001-0100/0005_Donchian_Channel/PY><img src=../0001-0100/0005_Donchian_Channel/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Strategies led by dedicated trend and directional-strength tools such as ADX/DMI, SuperTrend, Parabolic SAR, Ichimoku, and Alligator.
 
-**Strategies:** 264
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0003 ADX Trend|Following market direction|<a href=../0001-0100/0003_ADX_Trend/CS><img src=../0001-0100/0003_ADX_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0003_ADX_Trend/PY><img src=../0001-0100/0003_ADX_Trend/PY/logo.svg width=40></a>|

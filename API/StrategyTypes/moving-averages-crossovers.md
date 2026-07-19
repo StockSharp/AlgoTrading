@@ -5,8 +5,6 @@
 
 Trend systems centered on moving-average direction, alignment, displacement, ribbons, and fast/slow crossover logic.
 
-**Strategies:** 191
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0001 HMA Seasonal Divergence Strategy|Signal from crossing market measures|<a href=../0001-0100/0001_MA_CrossOver/CS><img src=../0001-0100/0001_MA_CrossOver/CS/logo.svg width=40></a>|<a href=../0001-0100/0001_MA_CrossOver/PY><img src=../0001-0100/0001_MA_CrossOver/PY/logo.svg width=40></a>|

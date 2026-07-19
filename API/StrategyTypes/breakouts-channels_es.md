@@ -5,8 +5,6 @@
 
 Estrategias basadas en la salida del precio de un rango, el cruce de soporte o resistencia o el paso por el límite calculado de un canal.
 
-**Estrategias:** 319
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0002 NDay Breakout|Ruptura de un límite supervisado|<a href=../0001-0100/0002_NDay_Breakout/CS><img src=../0001-0100/0002_NDay_Breakout/CS/logo.svg width=40></a>|<a href=../0001-0100/0002_NDay_Breakout/PY><img src=../0001-0100/0002_NDay_Breakout/PY/logo.svg width=40></a>|

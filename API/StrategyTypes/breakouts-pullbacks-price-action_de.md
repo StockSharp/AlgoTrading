@@ -5,8 +5,6 @@
 
 Trendfortsetzungs-Einstiege über Ausbrüche, Rücksetzer, Kanäle, Swings, Kerzen, Retracements und Marktstruktur.
 
-**Strategien:** 95
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0005 Donchian Channel|Handel einer Bewegung im oder durch einen Preiskanal|<a href=../0001-0100/0005_Donchian_Channel/CS><img src=../0001-0100/0005_Donchian_Channel/CS/logo.svg width=40></a>|<a href=../0001-0100/0005_Donchian_Channel/PY><img src=../0001-0100/0005_Donchian_Channel/PY/logo.svg width=40></a>|

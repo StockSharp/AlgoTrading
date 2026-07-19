@@ -5,8 +5,6 @@
 
 Estrategias que operan relaciones de precios entre instrumentos, diferenciales o activos vinculados, en lugar de depender de una única previsión direccional.
 
-**Estrategias:** 25
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0217 Pairs Trading Strategy|Operación de valor relativo entre activos vinculados|<a href=../0201-0300/0217_Pairs_Trading/CS><img src=../0201-0300/0217_Pairs_Trading/CS/logo.svg width=40></a>|<a href=../0201-0300/0217_Pairs_Trading/PY><img src=../0201-0300/0217_Pairs_Trading/PY/logo.svg width=40></a>|

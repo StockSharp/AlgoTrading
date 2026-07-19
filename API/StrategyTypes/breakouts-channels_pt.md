@@ -5,8 +5,6 @@
 
 Estratégias construídas em torno da saída do preço de uma faixa, do cruzamento de suporte ou resistência ou da passagem por um limite calculado de canal.
 
-**Estratégias:** 319
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0002 NDay Breakout|Rompimento de um limite monitorado|<a href=../0001-0100/0002_NDay_Breakout/CS><img src=../0001-0100/0002_NDay_Breakout/CS/logo.svg width=40></a>|<a href=../0001-0100/0002_NDay_Breakout/PY><img src=../0001-0100/0002_NDay_Breakout/PY/logo.svg width=40></a>|

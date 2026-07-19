@@ -5,8 +5,6 @@
 
 単一の従来型指標に支配されない、適応型、マルチタイムフレーム、モデル駆動、ハイブリッド、特化型のトレンドシステムです。
 
-**戦略数:** 277
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0040 ATR Trailing Stops|市場ボラティリティの変化への対応|<a href=../0001-0100/0040_ATR_Trailing/CS><img src=../0001-0100/0040_ATR_Trailing/CS/logo.svg width=40></a>|<a href=../0001-0100/0040_ATR_Trailing/PY><img src=../0001-0100/0040_ATR_Trailing/PY/logo.svg width=40></a>|

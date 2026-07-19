@@ -5,8 +5,6 @@
 
 Regras de entrada compostas por concordância de indicadores, limites, cruzamentos, divergências e seleção de sinais.
 
-**Estratégias:** 319
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0438 Omar MMR Strategy|Lógica de trading combinada ou especializada|<a href=../0401-0500/0438_Omar_Mmr/CS><img src=../0401-0500/0438_Omar_Mmr/CS/logo.svg width=40></a>|<a href=../0401-0500/0438_Omar_Mmr/PY><img src=../0401-0500/0438_Omar_Mmr/PY/logo.svg width=40></a>|

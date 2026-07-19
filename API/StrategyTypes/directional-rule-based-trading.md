@@ -5,8 +5,6 @@
 
 Specialized directional systems expressed primarily as explicit long/short, buy/sell, trend, reversal, or entry/exit rules.
 
-**Strategies:** 111
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0524 AO AC Trading Zones Strategy|Combined or specialized trading logic|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/CS><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/CS/logo.svg width=40></a>|<a href=../0501-0600/0524_Ao_Ac_Trading_Zones/PY><img src=../0501-0600/0524_Ao_Ac_Trading_Zones/PY/logo.svg width=40></a>|

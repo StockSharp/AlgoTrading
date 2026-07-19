@@ -5,8 +5,6 @@
 
 Mathematical, statistical, machine-learning, adaptive, randomized, and deliberately experimental strategy designs.
 
-**Strategies:** 25
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0365 Dispersion Trading Strategy|Combined or specialized trading logic|<a href=../0301-0400/0365_Dispersion_Trading/CS><img src=../0301-0400/0365_Dispersion_Trading/CS/logo.svg width=40></a>|<a href=../0301-0400/0365_Dispersion_Trading/PY><img src=../0301-0400/0365_Dispersion_Trading/PY/logo.svg width=40></a>|

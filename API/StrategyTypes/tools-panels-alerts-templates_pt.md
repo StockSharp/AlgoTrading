@@ -5,8 +5,6 @@
 
 Utilitários de trading, painéis de interface, alertas, modelos, ambientes de teste, auxiliares gráficos, bibliotecas e exemplos de integração.
 
-**Estratégias:** 74
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0446 Strategy Base Template|Lógica de trading combinada ou especializada|<a href=../0401-0500/0446_Strat_Base/CS><img src=../0401-0500/0446_Strat_Base/CS/logo.svg width=40></a>|<a href=../0401-0500/0446_Strat_Base/PY><img src=../0401-0500/0446_Strat_Base/PY/logo.svg width=40></a>|

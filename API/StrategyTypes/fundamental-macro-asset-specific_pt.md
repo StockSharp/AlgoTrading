@@ -5,8 +5,6 @@
 
 Lógica especializada ligada a fundamentos, dados macro, relatórios, classes de ativos ou instrumentos e mercados específicos.
 
-**Estratégias:** 22
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0353 Asset Growth Effect Strategy|Lógica de trading combinada ou especializada|<a href=../0301-0400/0353_Asset_Growth_Effect/CS><img src=../0301-0400/0353_Asset_Growth_Effect/CS/logo.svg width=40></a>|<a href=../0301-0400/0353_Asset_Growth_Effect/PY><img src=../0301-0400/0353_Asset_Growth_Effect/PY/logo.svg width=40></a>|

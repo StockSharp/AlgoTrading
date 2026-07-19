@@ -5,8 +5,6 @@
 
 Стратегии под управлением ADX/DMI, SuperTrend, Parabolic SAR, Ichimoku, Alligator и других индикаторов направления и силы тренда.
 
-**Стратегий:** 264
-
 | Стратегия | Краткое описание | C# | Python |
 |---|---|:---:|:---:|
 |0003 ADX Trend|Следование за направлением рынка|<a href=../0001-0100/0003_ADX_Trend/CS><img src=../0001-0100/0003_ADX_Trend/CS/logo.svg width=40></a>|<a href=../0001-0100/0003_ADX_Trend/PY><img src=../0001-0100/0003_ADX_Trend/PY/logo.svg width=40></a>|

@@ -5,8 +5,6 @@
 
 Sistemas centrados em tratamento de ordens, dimensionamento, proteção, grids, recuperação, trailing e gestão de posições existentes.
 
-**Estratégias:** 194
-
 | Estratégia | Descrição breve | C# | Python |
 |---|---|:---:|:---:|
 |0960 LANZ Strategy 1.0 [Backtest]|Lógica de trading combinada ou especializada|<a href=../0901-1000/0960_Lanz_1_0_Backtest/CS><img src=../0901-1000/0960_Lanz_1_0_Backtest/CS/logo.svg width=40></a>|<a href=../0901-1000/0960_Lanz_1_0_Backtest/PY><img src=../0901-1000/0960_Lanz_1_0_Backtest/PY/logo.svg width=40></a>|

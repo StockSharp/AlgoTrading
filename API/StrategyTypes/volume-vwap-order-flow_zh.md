@@ -5,8 +5,6 @@
 
 系统利用成交量、VWAP、流动性、市场深度或订单流来确定进出场。
 
-**策略数量:** 63
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0103 Dark Pool Prints Strategy|成交量与流量确认|<a href=../0101-0200/0103_Dark_Pool_Prints/CS><img src=../0101-0200/0103_Dark_Pool_Prints/CS/logo.svg width=40></a>|<a href=../0101-0200/0103_Dark_Pool_Prints/PY><img src=../0101-0200/0103_Dark_Pool_Prints/PY/logo.svg width=40></a>|

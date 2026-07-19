@@ -5,8 +5,6 @@
 
 这些策略交易工具、价差或相关资产之间的定价关系，而不是依赖单一方向预测。
 
-**策略数量:** 25
-
 | 策略 | 简短说明 | C# | Python |
 |---|---|:---:|:---:|
 |0217 Pairs Trading Strategy|相关资产之间的相对价值交易|<a href=../0201-0300/0217_Pairs_Trading/CS><img src=../0201-0300/0217_Pairs_Trading/CS/logo.svg width=40></a>|<a href=../0201-0300/0217_Pairs_Trading/PY><img src=../0201-0300/0217_Pairs_Trading/PY/logo.svg width=40></a>|

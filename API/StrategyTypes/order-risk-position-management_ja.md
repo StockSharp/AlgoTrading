@@ -5,8 +5,6 @@
 
 注文処理、サイズ調整、保護、グリッド、回復、トレーリング、既存ポジション管理を中心とするシステムです。
 
-**戦略数:** 194
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0960 LANZ Strategy 1.0 [Backtest]|複合または特化型の取引ロジック|<a href=../0901-1000/0960_Lanz_1_0_Backtest/CS><img src=../0901-1000/0960_Lanz_1_0_Backtest/CS/logo.svg width=40></a>|<a href=../0901-1000/0960_Lanz_1_0_Backtest/PY><img src=../0901-1000/0960_Lanz_1_0_Backtest/PY/logo.svg width=40></a>|

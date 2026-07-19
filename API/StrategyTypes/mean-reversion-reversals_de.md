@@ -5,8 +5,6 @@
 
 Gegentrend-Systeme suchen überdehnte Preise, erschöpfte Bewegungen oder gescheiterte Trends und handeln die Rückkehr zum Gleichgewicht oder zu einem Umkehrpunkt.
 
-**Strategien:** 299
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0026 RSI Reversion|Rückkehr zum statistischen Mittelwert|<a href=../0001-0100/0026_RSI_Reversion/CS><img src=../0001-0100/0026_RSI_Reversion/CS/logo.svg width=40></a>|<a href=../0001-0100/0026_RSI_Reversion/PY><img src=../0001-0100/0026_RSI_Reversion/PY/logo.svg width=40></a>|

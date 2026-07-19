@@ -5,8 +5,6 @@
 
 取引ユーティリティ、UIパネル、アラート、テンプレート、テスト環境、チャート補助、ライブラリ、統合例です。
 
-**戦略数:** 74
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0446 Strategy Base Template|複合または特化型の取引ロジック|<a href=../0401-0500/0446_Strat_Base/CS><img src=../0401-0500/0446_Strat_Base/CS/logo.svg width=40></a>|<a href=../0401-0500/0446_Strat_Base/PY><img src=../0401-0500/0446_Strat_Base/PY/logo.svg width=40></a>|

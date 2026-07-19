@@ -5,8 +5,6 @@
 
 Spezialisierte Logik zu Fundamentaldaten, Makrodaten, Berichten, Anlageklassen oder bestimmten Instrumenten und Märkten.
 
-**Strategien:** 22
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0353 Asset Growth Effect Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../0301-0400/0353_Asset_Growth_Effect/CS><img src=../0301-0400/0353_Asset_Growth_Effect/CS/logo.svg width=40></a>|<a href=../0301-0400/0353_Asset_Growth_Effect/PY><img src=../0301-0400/0353_Asset_Growth_Effect/PY/logo.svg width=40></a>|

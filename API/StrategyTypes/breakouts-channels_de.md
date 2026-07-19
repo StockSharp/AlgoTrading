@@ -5,8 +5,6 @@
 
 Strategien rund um das Verlassen einer Spanne, das Überschreiten von Unterstützung oder Widerstand oder das Durchlaufen einer berechneten Kanalgrenze.
 
-**Strategien:** 319
-
 | Strategie | Kurzbeschreibung | C# | Python |
 |---|---|:---:|:---:|
 |0002 NDay Breakout|Ausbruch über eine überwachte Grenze|<a href=../0001-0100/0002_NDay_Breakout/CS><img src=../0001-0100/0002_NDay_Breakout/CS/logo.svg width=40></a>|<a href=../0001-0100/0002_NDay_Breakout/PY><img src=../0001-0100/0002_NDay_Breakout/PY/logo.svg width=40></a>|

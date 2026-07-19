@@ -5,8 +5,6 @@
 
 価格がレンジを離れる動き、支持・抵抗の突破、または計算されたチャネル境界の通過を取引する戦略です。
 
-**戦略数:** 319
-
 | 戦略 | 概要 | C# | Python |
 |---|---|:---:|:---:|
 |0002 NDay Breakout|監視境界を越えるブレイクアウト|<a href=../0001-0100/0002_NDay_Breakout/CS><img src=../0001-0100/0002_NDay_Breakout/CS/logo.svg width=40></a>|<a href=../0001-0100/0002_NDay_Breakout/PY><img src=../0001-0100/0002_NDay_Breakout/PY/logo.svg width=40></a>|

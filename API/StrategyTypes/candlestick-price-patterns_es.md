@@ -5,8 +5,6 @@
 
 Estrategias que reconocen formaciones de velas, estructuras gráficas, huecos, pivotes y otros patrones recurrentes directamente en la acción del precio.
 
-**Estrategias:** 191
-
 | Estrategia | Descripción breve | C# | Python |
 |---|---|:---:|:---:|
 |0056 Double Bottom Pattern|Señal de un patrón de precio recurrente|<a href=../0001-0100/0056_Double_Bottom/CS><img src=../0001-0100/0056_Double_Bottom/CS/logo.svg width=40></a>|<a href=../0001-0100/0056_Double_Bottom/PY><img src=../0001-0100/0056_Double_Bottom/PY/logo.svg width=40></a>|

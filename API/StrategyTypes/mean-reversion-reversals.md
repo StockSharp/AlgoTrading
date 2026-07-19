@@ -5,8 +5,6 @@
 
 Counter-trend systems that look for stretched prices, exhausted moves, or failed trends and trade a return toward balance or a reversal point.
 
-**Strategies:** 299
-
 | Strategy | Short description | C# | Python |
 |---|---|:---:|:---:|
 |0026 RSI Reversion|Return toward a statistical mean|<a href=../0001-0100/0026_RSI_Reversion/CS><img src=../0001-0100/0026_RSI_Reversion/CS/logo.svg width=40></a>|<a href=../0001-0100/0026_RSI_Reversion/PY><img src=../0001-0100/0026_RSI_Reversion/PY/logo.svg width=40></a>|
