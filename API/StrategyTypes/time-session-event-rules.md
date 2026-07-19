@@ -1,4 +1,5 @@
 # Time, Session & Event Rules
+[Русский](time-session-event-rules_ru.md) | [中文](time-session-event-rules_zh.md) | [Español](time-session-event-rules_es.md) | [Deutsch](time-session-event-rules_de.md) | [Português](time-session-event-rules_pt.md) | [日本語](time-session-event-rules_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

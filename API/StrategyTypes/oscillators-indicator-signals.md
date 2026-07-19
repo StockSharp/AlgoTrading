@@ -1,4 +1,5 @@
 # Oscillators & Indicator Signals
+[Русский](oscillators-indicator-signals_ru.md) | [中文](oscillators-indicator-signals_zh.md) | [Español](oscillators-indicator-signals_es.md) | [Deutsch](oscillators-indicator-signals_de.md) | [Português](oscillators-indicator-signals_pt.md) | [日本語](oscillators-indicator-signals_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

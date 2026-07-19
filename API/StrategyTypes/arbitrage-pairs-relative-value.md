@@ -1,4 +1,5 @@
 # Arbitrage, Pairs & Relative Value
+[Русский](arbitrage-pairs-relative-value_ru.md) | [中文](arbitrage-pairs-relative-value_zh.md) | [Español](arbitrage-pairs-relative-value_es.md) | [Deutsch](arbitrage-pairs-relative-value_de.md) | [Português](arbitrage-pairs-relative-value_pt.md) | [日本語](arbitrage-pairs-relative-value_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

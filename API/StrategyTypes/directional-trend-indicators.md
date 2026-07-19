@@ -1,4 +1,5 @@
 # Directional Trend Indicators
+[Русский](directional-trend-indicators_ru.md) | [中文](directional-trend-indicators_zh.md) | [Español](directional-trend-indicators_es.md) | [Deutsch](directional-trend-indicators_de.md) | [Português](directional-trend-indicators_pt.md) | [日本語](directional-trend-indicators_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

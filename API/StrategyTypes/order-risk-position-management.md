@@ -1,4 +1,5 @@
 # Order, Risk & Position Management
+[Русский](order-risk-position-management_ru.md) | [中文](order-risk-position-management_zh.md) | [Español](order-risk-position-management_es.md) | [Deutsch](order-risk-position-management_de.md) | [Português](order-risk-position-management_pt.md) | [日本語](order-risk-position-management_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

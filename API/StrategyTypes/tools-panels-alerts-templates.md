@@ -1,4 +1,5 @@
 # Tools, Panels, Alerts & Templates
+[Русский](tools-panels-alerts-templates_ru.md) | [中文](tools-panels-alerts-templates_zh.md) | [Español](tools-panels-alerts-templates_es.md) | [Deutsch](tools-panels-alerts-templates_de.md) | [Português](tools-panels-alerts-templates_pt.md) | [日本語](tools-panels-alerts-templates_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

@@ -1,4 +1,5 @@
 # Fundamental, Macro & Asset-Specific
+[Русский](fundamental-macro-asset-specific_ru.md) | [中文](fundamental-macro-asset-specific_zh.md) | [Español](fundamental-macro-asset-specific_es.md) | [Deutsch](fundamental-macro-asset-specific_de.md) | [Português](fundamental-macro-asset-specific_pt.md) | [日本語](fundamental-macro-asset-specific_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

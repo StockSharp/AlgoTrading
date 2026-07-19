@@ -1,4 +1,5 @@
 # Directional & Rule-Based Trading
+[Русский](directional-rule-based-trading_ru.md) | [中文](directional-rule-based-trading_zh.md) | [Español](directional-rule-based-trading_es.md) | [Deutsch](directional-rule-based-trading_de.md) | [Português](directional-rule-based-trading_pt.md) | [日本語](directional-rule-based-trading_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

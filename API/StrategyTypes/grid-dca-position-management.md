@@ -1,4 +1,5 @@
 # Grid, DCA & Position Management
+[Русский](grid-dca-position-management_ru.md) | [中文](grid-dca-position-management_zh.md) | [Español](grid-dca-position-management_es.md) | [Deutsch](grid-dca-position-management_de.md) | [Português](grid-dca-position-management_pt.md) | [日本語](grid-dca-position-management_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

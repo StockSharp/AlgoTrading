@@ -1,4 +1,5 @@
 # Candlestick & Price Patterns
+[Русский](candlestick-price-patterns_ru.md) | [中文](candlestick-price-patterns_zh.md) | [Español](candlestick-price-patterns_es.md) | [Deutsch](candlestick-price-patterns_de.md) | [Português](candlestick-price-patterns_pt.md) | [日本語](candlestick-price-patterns_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

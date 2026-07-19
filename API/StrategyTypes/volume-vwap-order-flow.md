@@ -1,4 +1,5 @@
 # Volume, VWAP & Order Flow
+[Русский](volume-vwap-order-flow_ru.md) | [中文](volume-vwap-order-flow_zh.md) | [Español](volume-vwap-order-flow_es.md) | [Deutsch](volume-vwap-order-flow_de.md) | [Português](volume-vwap-order-flow_pt.md) | [日本語](volume-vwap-order-flow_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

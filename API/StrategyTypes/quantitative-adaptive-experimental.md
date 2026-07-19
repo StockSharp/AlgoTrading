@@ -1,4 +1,5 @@
 # Quantitative, Adaptive & Experimental
+[Русский](quantitative-adaptive-experimental_ru.md) | [中文](quantitative-adaptive-experimental_zh.md) | [Español](quantitative-adaptive-experimental_es.md) | [Deutsch](quantitative-adaptive-experimental_de.md) | [Português](quantitative-adaptive-experimental_pt.md) | [日本語](quantitative-adaptive-experimental_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

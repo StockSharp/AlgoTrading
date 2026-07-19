@@ -1,4 +1,5 @@
 # StockSharp API Strategy Catalog
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 This directory contains StockSharp API strategy examples implemented in C# and Python. Strategy folders are split into numbered ranges (`0001-0100`, `0101-0200`, and so on), while the pages below group every strategy by its primary trading idea.
 

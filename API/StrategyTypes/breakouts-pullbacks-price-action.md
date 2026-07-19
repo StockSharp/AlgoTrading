@@ -1,4 +1,5 @@
 # Breakouts, Pullbacks & Price Action
+[Русский](breakouts-pullbacks-price-action_ru.md) | [中文](breakouts-pullbacks-price-action_zh.md) | [Español](breakouts-pullbacks-price-action_es.md) | [Deutsch](breakouts-pullbacks-price-action_de.md) | [Português](breakouts-pullbacks-price-action_pt.md) | [日本語](breakouts-pullbacks-price-action_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

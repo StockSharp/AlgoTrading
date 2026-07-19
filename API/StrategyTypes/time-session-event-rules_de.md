@@ -1,0 +1,24 @@
+# Zeit-, Sitzungs- und Ereignisregeln
+[English](time-session-event-rules.md) | [Русский](time-session-event-rules_ru.md) | [中文](time-session-event-rules_zh.md) | [Español](time-session-event-rules_es.md) | [Português](time-session-event-rules_pt.md) | [日本語](time-session-event-rules_ja.md)
+
+[Zurück zum Strategiekatalog](../README_de.md)
+
+Zusammengesetzte Strategien, deren prägende Einschränkung eine Sitzung, ein Zeitfenster, ein Kalenderereignis oder ein wiederkehrender Zeitplan ist.
+
+**Strategien:** 13
+
+| Strategie | Kurzbeschreibung | C# | Python |
+|---|---|:---:|:---:|
+|1176 Power Hour Money Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../1101-1200/1176_Power_Hour_Money/CS><img src=../1101-1200/1176_Power_Hour_Money/CS/logo.svg width=40></a>|<a href=../1101-1200/1176_Power_Hour_Money/PY><img src=../1101-1200/1176_Power_Hour_Money/PY/logo.svg width=40></a>|
+|1398 Table to Filter Trades Per Day Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../1301-1400/1398_Table_to_filter_trades_per_day/CS><img src=../1301-1400/1398_Table_to_filter_trades_per_day/CS/logo.svg width=40></a>|<a href=../1301-1400/1398_Table_to_filter_trades_per_day/PY><img src=../1301-1400/1398_Table_to_filter_trades_per_day/PY/logo.svg width=40></a>|
+|2145 I Gap Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../2101-2200/2145_I_Gap/CS><img src=../2101-2200/2145_I_Gap/CS/logo.svg width=40></a>|<a href=../2101-2200/2145_I_Gap/PY><img src=../2101-2200/2145_I_Gap/PY/logo.svg width=40></a>|
+|2460 Price Rollback Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../2401-2500/2460_Price_Rollback/CS><img src=../2401-2500/2460_Price_Rollback/CS/logo.svg width=40></a>|<a href=../2401-2500/2460_Price_Rollback/PY><img src=../2401-2500/2460_Price_Rollback/PY/logo.svg width=40></a>|
+|2629 XROC2 VG Time Filter Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../2601-2700/2629_XROC2_VG_Tm/CS><img src=../2601-2700/2629_XROC2_VG_Tm/CS/logo.svg width=40></a>|<a href=../2601-2700/2629_XROC2_VG_Tm/PY><img src=../2601-2700/2629_XROC2_VG_Tm/PY/logo.svg width=40></a>|
+|2675 Open Time Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../2601-2700/2675_Open_Time/CS><img src=../2601-2700/2675_Open_Time/CS/logo.svg width=40></a>|<a href=../2601-2700/2675_Open_Time/PY><img src=../2601-2700/2675_Open_Time/PY/logo.svg width=40></a>|
+|2914 Global Stop Timer Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../2901-3000/2914_Global_Stop_Timer/CS><img src=../2901-3000/2914_Global_Stop_Timer/CS/logo.svg width=40></a>|<a href=../2901-3000/2914_Global_Stop_Timer/PY><img src=../2901-3000/2914_Global_Stop_Timer/PY/logo.svg width=40></a>|
+|2925 Twenty 200 Pips Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../2901-3000/2925_Twenty_200_Pips/CS><img src=../2901-3000/2925_Twenty_200_Pips/CS/logo.svg width=40></a>|<a href=../2901-3000/2925_Twenty_200_Pips/PY><img src=../2901-3000/2925_Twenty_200_Pips/PY/logo.svg width=40></a>|
+|3426 Market Master Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../3401-3500/3426_MarketMaster/CS><img src=../3401-3500/3426_MarketMaster/CS/logo.svg width=40></a>|<a href=../3401-3500/3426_MarketMaster/PY><img src=../3401-3500/3426_MarketMaster/PY/logo.svg width=40></a>|
+|3732 Tuyul Gap End Of Week|Wiederkehrendes kalenderbasiertes Marktverhalten|<a href=../3701-3800/3732_Tuyul_Gap_End_Of_Week/CS><img src=../3701-3800/3732_Tuyul_Gap_End_Of_Week/CS/logo.svg width=40></a>|<a href=../3701-3800/3732_Tuyul_Gap_End_Of_Week/PY><img src=../3701-3800/3732_Tuyul_Gap_End_Of_Week/PY/logo.svg width=40></a>|
+|3840 Franks 4 Hour Limit Orders Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../3801-3900/3840_Franks_4Hour_Limit_Orders/CS><img src=../3801-3900/3840_Franks_4Hour_Limit_Orders/CS/logo.svg width=40></a>|<a href=../3801-3900/3840_Franks_4Hour_Limit_Orders/PY><img src=../3801-3900/3840_Franks_4Hour_Limit_Orders/PY/logo.svg width=40></a>|
+|3955 She Kanskigor Daily Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../3901-4000/3955_SHE_Kanskigor/CS><img src=../3901-4000/3955_SHE_Kanskigor/CS/logo.svg width=40></a>|<a href=../3901-4000/3955_SHE_Kanskigor/PY><img src=../3901-4000/3955_SHE_Kanskigor/PY/logo.svg width=40></a>|
+|4030 Regularities of Exchange Rates Strategy|Kombinierte oder spezialisierte Handelslogik|<a href=../4001-4100/4030_Regularities_of_Exchange_Rates/CS><img src=../4001-4100/4030_Regularities_of_Exchange_Rates/CS/logo.svg width=40></a>|<a href=../4001-4100/4030_Regularities_of_Exchange_Rates/PY><img src=../4001-4100/4030_Regularities_of_Exchange_Rates/PY/logo.svg width=40></a>|

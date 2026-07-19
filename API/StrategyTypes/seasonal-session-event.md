@@ -1,4 +1,5 @@
 # Seasonal, Session & Event
+[Русский](seasonal-session-event_ru.md) | [中文](seasonal-session-event_zh.md) | [Español](seasonal-session-event_es.md) | [Deutsch](seasonal-session-event_de.md) | [Português](seasonal-session-event_pt.md) | [日本語](seasonal-session-event_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

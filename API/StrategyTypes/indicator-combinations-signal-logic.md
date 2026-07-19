@@ -1,4 +1,5 @@
 # Indicator Combinations & Signal Logic
+[Русский](indicator-combinations-signal-logic_ru.md) | [中文](indicator-combinations-signal-logic_zh.md) | [Español](indicator-combinations-signal-logic_es.md) | [Deutsch](indicator-combinations-signal-logic_de.md) | [Português](indicator-combinations-signal-logic_pt.md) | [日本語](indicator-combinations-signal-logic_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

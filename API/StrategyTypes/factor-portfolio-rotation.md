@@ -1,4 +1,5 @@
 # Factor, Portfolio & Rotation
+[Русский](factor-portfolio-rotation_ru.md) | [中文](factor-portfolio-rotation_zh.md) | [Español](factor-portfolio-rotation_es.md) | [Deutsch](factor-portfolio-rotation_de.md) | [Português](factor-portfolio-rotation_pt.md) | [日本語](factor-portfolio-rotation_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

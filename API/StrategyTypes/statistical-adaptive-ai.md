@@ -1,4 +1,5 @@
 # Statistical, Adaptive & AI
+[Русский](statistical-adaptive-ai_ru.md) | [中文](statistical-adaptive-ai_zh.md) | [Español](statistical-adaptive-ai_es.md) | [Deutsch](statistical-adaptive-ai_de.md) | [Português](statistical-adaptive-ai_pt.md) | [日本語](statistical-adaptive-ai_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

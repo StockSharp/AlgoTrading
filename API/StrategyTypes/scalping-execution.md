@@ -1,4 +1,5 @@
 # Scalping & Execution
+[Русский](scalping-execution_ru.md) | [中文](scalping-execution_zh.md) | [Español](scalping-execution_es.md) | [Deutsch](scalping-execution_de.md) | [Português](scalping-execution_pt.md) | [日本語](scalping-execution_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

@@ -1,4 +1,5 @@
 # Price Levels, Patterns & Market Structure
+[Русский](price-levels-patterns-market-structure_ru.md) | [中文](price-levels-patterns-market-structure_zh.md) | [Español](price-levels-patterns-market-structure_es.md) | [Deutsch](price-levels-patterns-market-structure_de.md) | [Português](price-levels-patterns-market-structure_pt.md) | [日本語](price-levels-patterns-market-structure_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

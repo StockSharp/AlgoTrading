@@ -1,4 +1,5 @@
 # Breakouts & Channels
+[Русский](breakouts-channels_ru.md) | [中文](breakouts-channels_zh.md) | [Español](breakouts-channels_es.md) | [Deutsch](breakouts-channels_de.md) | [Português](breakouts-channels_pt.md) | [日本語](breakouts-channels_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

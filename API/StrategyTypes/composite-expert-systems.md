@@ -1,4 +1,5 @@
 # Composite Expert Systems
+[Русский](composite-expert-systems_ru.md) | [中文](composite-expert-systems_zh.md) | [Español](composite-expert-systems_es.md) | [Deutsch](composite-expert-systems_de.md) | [Português](composite-expert-systems_pt.md) | [日本語](composite-expert-systems_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

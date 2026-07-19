@@ -1,4 +1,5 @@
 # Adaptive, Multi-Timeframe & Specialized Trend
+[Русский](adaptive-multitimeframe-specialized-trend_ru.md) | [中文](adaptive-multitimeframe-specialized-trend_zh.md) | [Español](adaptive-multitimeframe-specialized-trend_es.md) | [Deutsch](adaptive-multitimeframe-specialized-trend_de.md) | [Português](adaptive-multitimeframe-specialized-trend_pt.md) | [日本語](adaptive-multitimeframe-specialized-trend_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

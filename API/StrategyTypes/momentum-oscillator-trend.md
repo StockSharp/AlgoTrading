@@ -1,4 +1,5 @@
 # Momentum & Oscillator Trend
+[Русский](momentum-oscillator-trend_ru.md) | [中文](momentum-oscillator-trend_zh.md) | [Español](momentum-oscillator-trend_es.md) | [Deutsch](momentum-oscillator-trend_de.md) | [Português](momentum-oscillator-trend_pt.md) | [日本語](momentum-oscillator-trend_ja.md)
 
 [Back to the strategy catalog](../README.md)
 

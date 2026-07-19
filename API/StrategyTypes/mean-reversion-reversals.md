@@ -1,4 +1,5 @@
 # Mean Reversion & Reversals
+[Русский](mean-reversion-reversals_ru.md) | [中文](mean-reversion-reversals_zh.md) | [Español](mean-reversion-reversals_es.md) | [Deutsch](mean-reversion-reversals_de.md) | [Português](mean-reversion-reversals_pt.md) | [日本語](mean-reversion-reversals_ja.md)
 
 [← Back to the strategy catalog](../README.md)
 

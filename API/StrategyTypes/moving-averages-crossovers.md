@@ -1,4 +1,5 @@
 # Moving Averages & Crossovers
+[Русский](moving-averages-crossovers_ru.md) | [中文](moving-averages-crossovers_zh.md) | [Español](moving-averages-crossovers_es.md) | [Deutsch](moving-averages-crossovers_de.md) | [Português](moving-averages-crossovers_pt.md) | [日本語](moving-averages-crossovers_ja.md)
 
 [Back to the strategy catalog](../README.md)
 
