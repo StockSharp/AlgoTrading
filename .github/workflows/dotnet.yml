@@ -8,12 +8,35 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AlgoTrading
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Checkout AlgoTrading
+        uses: actions/checkout@v4
         with:
-          dotnet-version: '9.0.x'
+          path: AlgoTrading
+
+      - name: Checkout StockSharp
+        uses: actions/checkout@v4
+        with:
+          repository: StockSharp/StockSharp
+          ref: master
+          path: 'StockSharp (GitHub)'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Validate API structure
+        run: python Tools/validate_api_structure.py
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
 
       - name: Build
         run: dotnet build --restore --configuration Release
