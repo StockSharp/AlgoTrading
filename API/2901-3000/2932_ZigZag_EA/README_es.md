@@ -47,4 +47,4 @@ La estrategia replica la lógica original del MT5 "ZigZag EA" esperando tres pun
 * Los valores en pips se calculan a partir del tamaño del tick del instrumento. Los instrumentos con 3 o 5 decimales multiplican automáticamente el tick por 10, replicando la lógica de "punto ajustado" usada en el EA.
 * El código utiliza métodos auxiliares de alto nivel como `BuyStop`, `SellStop`, `SellLimit` y `BuyLimit`, en línea con las pautas del proyecto.
 * Los comentarios se mantienen en inglés para cumplir con los requisitos del repositorio, mientras que la descripción detallada se proporciona en varios idiomas en los archivos README.
-* No se crea un port en Python; la carpeta contiene solo la implementación en C# según lo solicitado.
+* Las implementaciones están disponibles en C# y Python.

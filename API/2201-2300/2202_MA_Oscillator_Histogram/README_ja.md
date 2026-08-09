@@ -31,4 +31,4 @@
 ## 注意事項
 - 戦略はStockSharpの高レベルAPIを `SubscribeCandles` とインジケーターのバインディングで使用します。
 - `StartProtection` は安全な実行のために成行注文で有効化されています。
-- Pythonバージョンは提供されていません。
+- C# と Python の両方の実装が提供されています。

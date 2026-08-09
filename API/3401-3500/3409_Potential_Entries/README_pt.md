@@ -54,5 +54,5 @@ Quando `Pattern Side = Bearish`, as seguintes configurações acionam uma entrad
 ## Notas de uso
 - Escolha o modo `Bullish` ou `Bearish` dependendo se você deseja procurar oportunidades longas ou curtas.
 - As velas horárias padrão podem ser substituídas por qualquer outro tipo de dados de vela disponível.
-- Ainda não há porta Python, conforme solicitado. Somente a implementação C# é fornecida.
+- As implementações estão disponíveis em C# e Python.
 - A estratégia não estabelece metas de lucro. As saídas dependem exclusivamente da lógica de parada baseada em velas ou de intervenção manual.

@@ -53,8 +53,9 @@ static stop-loss and take-profit levels.
 ## Files
 
 - `CS/BollTradeStrategy.cs` – C# implementation of the strategy.
+- `PY/boll_trade_strategy.py` – Python implementation of the strategy.
 - `README.md` – English documentation (this file).
 - `README_ru.md` – Russian documentation.
 - `README_zh.md` – Chinese documentation.
 
-No Python translation is provided yet, as requested.
+Implementations are available in both C# and Python.

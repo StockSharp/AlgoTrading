@@ -54,6 +54,6 @@ TCI 由三个步骤组成：
 - **Candle Type** (`CandleType`)：参与计算的蜡烛时间框架。
 
 ## 备注
-- 根据要求未创建 Python 版本。
+- 同时提供 C# 和 Python 实现。
 - 代码遵循项目的制表符缩进规范，并在关键位置添加了英文注释。
 - 自定义的 `TradingChannelIndexValue` 同时提供数值和颜色索引，便于将来扩展可视化。

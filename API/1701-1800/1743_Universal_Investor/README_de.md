@@ -27,4 +27,4 @@ Die Strategie reduziert die Positionsgröße nach aufeinanderfolgenden Verlusttr
 
 - Funktioniert nur mit abgeschlossenen Kerzen.
 - Verwendet die High-Level-StockSharp-API mit Indikatorbindung.
-- Keine Python-Version vorhanden.
+- Implementierungen sind in C# und Python verfügbar.

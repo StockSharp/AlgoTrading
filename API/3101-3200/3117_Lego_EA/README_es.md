@@ -48,4 +48,4 @@ La **Estrategia Lego EA** es un puerto directo del asesor experto "Lego EA" de M
 - Monitoree la exposición de la cuenta cuando use valores altos de `LotMultiplier`; el riesgo crece rápidamente durante rachas de pérdidas.
 - Combine la estrategia con el Backtester para confirmar si su mezcla de filtros elegida se alinea con los instrumentos que planea operar.
 
-Esta estrategia actualmente no tiene versión en Python.
+Las implementaciones están disponibles en C# y Python.

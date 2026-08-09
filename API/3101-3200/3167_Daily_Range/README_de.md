@@ -49,5 +49,5 @@ Diese Strategie ist eine StockSharp-Konvertierung des MetaTrader-5-Expert-Adviso
 * Die Strategie verlässt sich ausschließlich auf StockSharp's hochrangige `Strategy`-Infrastruktur (`SubscribeCandles`, `WhenNew` und Marktorders) und manipuliert keine rohen Orderbücher.
 * Bereichsstatistiken werden ohne Indikatorwert-Lookups gespeichert; alle Berechnungen erfolgen innerhalb der Strategie, entsprechend den Repository-Richtlinien.
 * Schutzorders werden durch Überwachung von Kerzenextremen simuliert statt separate Stop-/Limit-Orders zu registrieren, was die Implementierung über verschiedene Adapter portierbar hält.
-* Python-Unterstützung ist wie gewünscht absichtlich weggelassen. Nur die C#-Version ist in diesem Ordner vorhanden.
+* Implementierungen sind in C# und Python verfügbar.
 * Für den Live-Handel stellen Sie sicher, dass ausreichend historische Kerzen verfügbar sind, damit die erste Bereichsberechnung genug Daten hat.

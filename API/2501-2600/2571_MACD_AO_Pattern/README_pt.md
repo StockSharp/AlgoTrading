@@ -48,4 +48,4 @@ Esta estratégia é uma fiel portagem para StockSharp do consultor especialista 
 - A estratégia reage apenas uma vez por vela concluída, imitando o guardião `PrevBars` original no MQL.
 - A gestão de stop-loss/take-profit é puramente baseada em preço; não há ajustes de trailing ou reentradas até que o ciclo completo da máquina de estado se repita.
 - Projetado para contas de cobertura no EA fonte, mas esta portagem impõe uma única posição líquida verificando `Position` antes de enviar novas ordens.
-- Nenhuma versão Python foi fornecida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

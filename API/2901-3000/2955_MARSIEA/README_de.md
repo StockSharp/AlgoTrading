@@ -57,4 +57,4 @@ Das berechnete Volumen wird auf das nächste `Security.VolumeStep` gerundet (wen
 ## Hinweise
 - Orders werden nur generiert, wenn die Strategie online ist und die Kerze beendet ist, was dem ursprünglichen EA entspricht, der bei neuen Balken auslöst.
 - Da StockSharp eine Netto-Position hält, reduzieren oder drehen Mittelungssignale automatisch das aktuelle Exposure, anstatt Hedge-Positionen zu erstellen.
-- Python-Implementierung wird auf Anfrage absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

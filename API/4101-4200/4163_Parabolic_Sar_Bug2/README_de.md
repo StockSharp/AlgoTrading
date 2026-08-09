@@ -32,4 +32,4 @@ Der StockSharp-Port behält die gleiche Absicht bei und nutzt gleichzeitig das �
 ## Hinweise zur Konvertierung
 - Die maklerseitigen Stop-Loss- und Take-Profit-Orders von MetaTrader werden durch die Überwachung von Candle-Extremen und die Übermittlung von Marktausstiegen nachgeahmt, wenn die Schwellenwerte überschritten werden.
 - Die MetaTrader EA erforderten eine manuelle Verwaltung von `OrdersTotal()` und expliziten `OrderClose()`-Aufrufen. Die StockSharp-Version erreicht das gleiche Verhalten, indem sie eine einzelne Marktorder mit der Größe `TradeVolume + |Position|` sendet, die gleichzeitig jede entgegengesetzte Position schließt und die neue eröffnet.
-- Es wird keine Python-Implementierung bereitgestellt, die der Aufgabenanforderung entspricht. Der Ordner enthält derzeit nur die C#-Version der Strategie.
+- Implementierungen sind in C# und Python verfügbar.

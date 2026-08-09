@@ -36,4 +36,4 @@ Todos los parámetros se pueden optimizar directamente dentro de StockSharp Desi
 ## Notas
 - La estrategia llama a `StartProtection()` una vez para habilitar las funciones de protección de posición integradas.
 - Los comandos comerciales utilizan los ayudantes `BuyMarket` y `SellMarket` para aplanar la posición actual antes de abrir una nueva, coincidiendo con el comportamiento del asesor experto MetaTrader.
-- No se proporciona ningún puerto Python de acuerdo con los requisitos del proyecto.
+- Las implementaciones están disponibles en C# y Python.

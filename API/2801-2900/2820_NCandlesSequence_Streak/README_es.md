@@ -39,4 +39,4 @@ La estrategia de Secuencia de N Velas replica el comportamiento del experto Meta
 - La estrategia opera con posiciones netas; no se crean múltiples tickets de estilo cobertura. Esto difiere del experto original donde varias posiciones cubiertas podían coexistir.
 - El beneficio flotante se aproxima como `(precio actual - precio de entrada) * volumen` para posiciones largas y lo inverso para posiciones cortas.
 - La conversión de pips depende del `PriceStep` del instrumento. Para símbolos donde no se proporciona el paso mínimo, se asume un pip predeterminado de 0.0001.
-- No se proporciona portación a Python, según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.

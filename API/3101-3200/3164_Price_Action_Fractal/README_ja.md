@@ -63,4 +63,4 @@
 ## ファイル
 
 - `CS/PriceActionFractalStrategy.cs` – C#での戦略実装。
-- Pythonバージョンはまだ提供されていません。
+- C# と Python の両方の実装が提供されています。

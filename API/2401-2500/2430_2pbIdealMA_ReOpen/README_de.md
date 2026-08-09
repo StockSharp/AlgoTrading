@@ -37,4 +37,4 @@
 
 ## Hinweise
 - Funktioniert mit jedem Instrument, das `Security.PriceStep` bereitstellt; die Standardkonfiguration zielt auf H4-Kerzen ab.
-- Es wird kein Python-Port bereitgestellt, entsprechend der ursprünglichen Anforderung.
+- Implementierungen sind in C# und Python verfügbar.

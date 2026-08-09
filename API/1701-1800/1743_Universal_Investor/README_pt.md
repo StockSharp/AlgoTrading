@@ -27,4 +27,4 @@ A estratégia reduz o tamanho da posição após operações perdedoras consecut
 
 - Funciona apenas com candles fechados.
 - Usa a API de alto nível do StockSharp com vinculação de indicadores.
-- Não há versão em Python disponível.
+- As implementações estão disponíveis em C# e Python.

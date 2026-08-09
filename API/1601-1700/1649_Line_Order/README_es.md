@@ -23,4 +23,4 @@ La estrategia expone parámetros para controlar la dirección, el nivel de entra
 ## Notas
 - Funciona con cualquier valor soportado por StockSharp.
 - Diseñado con fines educativos para ilustrar la traducción del trading manual por líneas desde MQL.
-- La versión en Python está intencionalmente omitida.
+- Las implementaciones están disponibles en C# y Python.

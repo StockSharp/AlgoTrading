@@ -41,7 +41,7 @@ Como los módulos comparten una única posición de cuenta, solo puede existir u
 - Las señales operan estrictamente en velas completadas para prevenir el redibujado intra-barra.
 - El enum *AppliedPrices* reproduce las opciones del indicador original, incluyendo dos variantes de precio de seguimiento de tendencia y el precio DeMark.
 - La lógica de recuperación de gestión monetaria de la versión MQL no está reproducida. En cambio, el riesgo se puede gestionar mediante las protecciones de StockSharp o ajustando los volúmenes de los módulos.
-- Los comentarios en inglés dentro del código explican cada paso de la conversión para facilitar el mantenimiento y el futuro port a Python.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Extendiendo la estrategia
 

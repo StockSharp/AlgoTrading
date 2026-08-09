@@ -65,4 +65,4 @@ La vela se cierra
 ## Archivos
 
 - `CS/DaydreamStrategy.cs` – implementación de estrategia en C#.
-- Versión de Python: aún no implementada.
+- Las implementaciones están disponibles en C# y Python.

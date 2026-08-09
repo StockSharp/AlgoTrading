@@ -40,4 +40,4 @@
 ## Hinweise
 - Alle Kommentare im C#-Code werden gemäß den Repository-Richtlinien auf Englisch gehalten.
 - Die Strategie basiert ausschließlich auf StockSharp-High-Level-Subscriptions über `Bind` und vermeidet manuelle Indikatorbuffer.
-- Die Python-Übersetzung wird gemäß den Aufgabenanweisungen absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

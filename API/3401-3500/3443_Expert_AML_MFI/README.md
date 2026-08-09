@@ -36,4 +36,4 @@ All parameters can be optimised directly inside StockSharp Designer thanks to th
 ## Notes
 - The strategy calls `StartProtection()` once to enable built-in position protection facilities.
 - Trade commands use `BuyMarket` and `SellMarket` helpers to flatten the current position before opening a new one, matching the MetaTrader expert advisor behaviour.
-- No Python port is provided in accordance with the project requirements.
+- Implementations are available in both C# and Python.

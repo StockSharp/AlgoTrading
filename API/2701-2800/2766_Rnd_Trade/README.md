@@ -39,4 +39,4 @@
 1. Attach the strategy to a portfolio and security within the StockSharp environment.
 2. Configure `IntervalMinutes` and `Volume` according to the desired trading frequency and size.
 3. Start the strategy. It will automatically flatten and reopen positions at each interval without any additional input.
-4. No Python implementation is provided at this time; only the C# version is available.
+4. Implementations are available in both C# and Python.

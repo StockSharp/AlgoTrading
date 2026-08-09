@@ -49,4 +49,4 @@ Invest System 4.5 原本是一个 MetaTrader 5 智能交易系统，此处将其
 - 需要确保所选证券同时提供 4 小时和分钟级蜡烛数据，`OnStarted` 会自动创建对应订阅。
 - 点值通过 `Security.PriceStep` 计算，并在遇到三位或五位小数报价时乘以 10，以匹配 MetaTrader 的点数定义。
 - 阶梯逻辑依赖 `Portfolio.CurrentValue` 的实时更新。在仿真或回测时，请确认投资组合模型会及时刷新该数值，否则手数调整会失真。
-- 根据需求，本版本仅提供 C# 实现，不包含 Python 代码。
+- 同时提供 C# 和 Python 实现。

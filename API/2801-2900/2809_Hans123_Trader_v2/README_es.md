@@ -38,4 +38,4 @@ Hans123 Trader v2 es una estrategia de rompimiento que coloca órdenes de stop p
 - El tamaño del pip se deriva del paso de precio del instrumento. Para símbolos forex de 3 y 5 dígitos, el valor del punto se ajusta para coincidir con la definición MQL de un pip.
 - La estrategia depende de las instantáneas `Security.BestBid`/`BestAsk` cuando están disponibles. Si no hay datos de profundidad, recurre al precio de cierre de vela actual para evaluar la distancia mínima del mercado.
 - Las órdenes protectoras se recrean cada vez que necesitan moverse, reflejando la lógica `PositionModify` del expert advisor original.
-- La implementación mantiene la lógica puramente en C# sin traducción a Python, como se solicitó.
+- Las implementaciones están disponibles en C# y Python.

@@ -48,4 +48,4 @@ A **Estratégia Harami Stochastic de alta e baixa** é a versão StockSharp do M
 - `README_ru.md` — Documentação russa.
 - `README_zh.md` — Documentação chinesa.
 
-> **Observação:** A versão Python não está incluída nas instruções de conversão.
+> As implementações estão disponíveis em C# e Python.

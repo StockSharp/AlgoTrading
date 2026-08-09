@@ -51,4 +51,4 @@ Diese Strategie repliziert den ursprünglichen MetaTrader-Roboter "MACD Expert" 
 - Ein gemeinsamer Helfer konvertiert die MACD-/Signalbeziehung in `{-1, 0, 1}`-Flags, um Bestätigungsprüfungen zu vereinfachen.
 - Die Spread-Validierung teilt das beste Briefangebot minus bestes Geldangebot durch `Security.PriceStep`, damit der Schwellenwert dem MetaTrader-"Punkte"-Verhalten entspricht.
 - Trade-Ereignisse werden mit `LogInfo` protokolliert, um das Debugging beim Testen in Designer oder Runner zu unterstützen.
-- Keine Python-Übersetzung ist gemäß den Aufgabenanforderungen vorgesehen; nur die C#-Version ist enthalten.
+- Implementierungen sind in C# und Python verfügbar.

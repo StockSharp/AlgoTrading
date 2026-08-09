@@ -34,4 +34,4 @@ All parameters support optimisation inside the StockSharp environment.
 - The code relies on the high-level candle subscription API (`SubscribeCandles`) combined with indicator binding (`Bind`) to avoid manual history handling.
 - Orders are normalised through `Security.ShrinkPrice` to respect exchange tick size.
 - Protective stops are managed explicitly to mimic the behaviour of the original MetaTrader expert advisor.
-- The project intentionally omits a Python implementation as per the task requirements.
+- Implementations are available in both C# and Python.

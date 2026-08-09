@@ -23,4 +23,4 @@ The strategy exposes parameters to control direction, entry level and risk manag
 ## Notes
 - Works with any security supported by StockSharp.
 - Designed for educational purposes to illustrate translation of manual line trading from MQL.
-- Python version is intentionally omitted.
+- Implementations are available in both C# and Python.

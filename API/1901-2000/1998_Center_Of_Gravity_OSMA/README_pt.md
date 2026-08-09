@@ -32,5 +32,5 @@ as posições compradas são fechadas e shorts opcionais são abertos.
 - `CandleType` – tipo de candle (período) para cálculos.
 
 ## Notas
-- Apenas a versão em C# é fornecida. A pasta Python está intencionalmente ausente.
+- As implementações estão disponíveis em C# e Python.
 - Use tabulações para indentação ao modificar o código.

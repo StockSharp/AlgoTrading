@@ -57,4 +57,4 @@ All pip-based parameters are automatically converted to price units using the se
 - `README_ru.md` – Russian documentation.
 - `README_zh.md` – Chinese documentation.
 
-The Python translation is intentionally omitted, matching the request to deliver only the C# version at this stage.
+Implementations are available in both C# and Python.

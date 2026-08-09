@@ -46,4 +46,4 @@ Early Bird Range Breakout é uma versão C# do MetaTrader 4 consultor especialis
 * O tamanho do pip é derivado do nível de preço atual (≥ 10 unidades → `0.01`, caso contrário `0.0001`) exatamente como o cálculo `Fakt` no script MT4.
 * As estatísticas finais usam as últimas 16 velas concluídas, excluindo a barra atual, correspondendo à lógica de média original.
 * A estratégia StockSharp usa posições líquidas, portanto, posições longas e curtas simultâneas são emuladas pela compra ou venda excessiva da exposição existente quando o hedge está ativado.
-* Somente a implementação C# é fornecida; nenhuma versão Python acompanha esta estratégia.
+* As implementações estão disponíveis em C# e Python.

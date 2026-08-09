@@ -56,4 +56,4 @@ All indicators update once per finished candle. The port mirrors the original "b
 * The strategy processes only finished candles and uses their open prices for indicator updates, matching the "new bar" logic in the MQL4 code.
 * Trailing levels keep at least a five-point buffer away from the current price just like the original helper function `SlLastBar`.
 * When counter-position closing is disabled, the strategy never hedges—only a single net position is managed at a time.
-* No Python implementation is included in this package.
+* Implementations are available in both C# and Python.

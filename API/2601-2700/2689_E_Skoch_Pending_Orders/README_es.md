@@ -5,7 +5,7 @@
 
 La **Estrategia de Órdenes Pendientes E Skoch** recrea el asesor experto original de MetaTrader que espera una nueva barra, analiza los dos máximos y mínimos más recientes tanto en el marco temporal de trading como en el diario, y coloca órdenes de ruptura pendientes. El objetivo es capturar momentum cuando el mercado rompe a través de la barra anterior después de un retroceso a corto plazo confirmado por la tendencia diaria.
 
-La implementación de StockSharp mantiene las ideas originales pero usa características de la API de alto nivel como suscripciones a velas, órdenes de protección automáticas y parámetros de estrategia. La versión en C# se almacena en la carpeta `CS/` y aún no se proporciona un puerto en Python.
+La implementación de StockSharp mantiene las ideas originales pero usa características de la API de alto nivel como suscripciones a velas, órdenes de protección automáticas y parámetros de estrategia. Las implementaciones están disponibles en C# y Python.
 
 ## Lógica de Trading
 

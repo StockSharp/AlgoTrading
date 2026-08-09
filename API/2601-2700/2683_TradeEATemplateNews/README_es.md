@@ -73,4 +73,4 @@ Ejemplo:
 3. Configura `Volume`, portafolio e instrumento en la interfaz o en código, luego inicia la estrategia.
 4. Observa el registro de la estrategia para mensajes como "Trading paused due to high news" o "Next scheduled news" para confirmar la lógica de silencio.
 
-La traducción a Python se omite intencionalmente según lo solicitado.
+Las implementaciones están disponibles en C# y Python.

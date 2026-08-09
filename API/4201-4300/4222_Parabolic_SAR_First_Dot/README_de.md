@@ -32,4 +32,4 @@ Die **Parabolic SAR First Dot Strategy** ist die StockSharp High-Level-Konvertie
 ## Hinweise zur Konvertierung
 - MetaTrader Stop-Loss- und Take-Profit-Orders waren Broker-seitige Schutzorder. StockSharp reproduziert sie, indem es Kerzenhochs und -tiefs überwacht und Marktausgänge sendet, wenn die Schwellenwerte überschritten werden.
 - Der MetaTrader-Experte multiplizierte die Stop-Distanzen mit zehn, wenn `StopMult` wahr war, um die Kompatibilität mit Brokern zu verbessern, die mit gebrochenen Pips quotieren. Der Parameter `UseStopMultiplier` implementiert das gleiche Verhalten.
-- Bei der Konvertierung werden die übergeordneten API von StockSharp (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`) gemäß den Projektrichtlinien verwendet. Es wird noch keine zusätzliche Python-Version bereitgestellt, die der Aufgabenanforderung entspricht.
+- Bei der Konvertierung werden die übergeordneten API von StockSharp (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`) gemäß den Projektrichtlinien verwendet. Implementierungen sind in C# und Python verfügbar.

@@ -67,4 +67,4 @@ Gewinnschecks. Die eigentliche Signalauswertung erfolgt nur einmal pro Handelsta
 ng), so dass es innerhalb der Plattform wiederverwendet werden kann, ohne dass manuelle Installationsarbeiten erforderlich sind.
 * Für den Trailing-Stop-Vorgang sind Level-1-Daten erforderlich, da der Algorithmus die besten Geld-/Briefkurse zum Bewegen und Auslösen verwendet
 virtueller Halt.
-* Das Paket enthält keine Python-Übersetzung; Es werden lediglich die C#-Strategie und die mehrsprachige Dokumentation bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

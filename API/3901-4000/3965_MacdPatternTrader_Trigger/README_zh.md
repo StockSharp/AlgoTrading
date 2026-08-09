@@ -42,4 +42,4 @@ Macd Pattern Trader Trigger Strategy 将 MetaTrader 4 顾问 `MacdPatternTraderv
 ## 实现细节
 * 完全依赖 StockSharp 高级 API：`SubscribeCandles` 提供数据流，`StartProtection` 复现 MT4 的止损/止盈行为。
 * MACD 缓存确保决策基于最近三根完整蜡烛，与 MetaTrader 的 `shift=1..3` 调用保持一致。
-* 当前包内仅提供 C# 版本，暂无 Python 实现。
+* 同时提供 C# 和 Python 实现。

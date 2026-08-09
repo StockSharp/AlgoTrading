@@ -49,7 +49,7 @@ Notas clave de diseño:
 - **Filtro de sesión** – Implementa los dos escenarios del código fuente MQL: ventanas intradía (`StartHour < EndHour`) y ventanas nocturnas (`StartHour > EndHour`). Cuando `StartHour == EndHour`, el trading está deshabilitado, coincidiendo con la lógica original.
 - **Vinculación de indicadores** – Usa `SubscribeCandles().Bind(...)` para que el CCI y la LWMA reciban actualizaciones automáticas sin buffering manual. Los valores se almacenan solo para soportar el desplazamiento opcional de la LWMA.
 - **Gestión de órdenes** – `CancelActiveOrders()` se ejecuta antes de cada orden de mercado, reflejando el comportamiento del EA de mantener un libro de órdenes limpio.
-- **Sin versión Python** – Solo se proporciona la estrategia C#, según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Uso
 1. Adjuntar la estrategia a un instrumento y configurar `CandleType` al marco temporal deseado.

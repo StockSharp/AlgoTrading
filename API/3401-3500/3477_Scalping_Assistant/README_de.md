@@ -31,4 +31,4 @@ Die Strategie **Scalping Assistant** ist eine direkte Umsetzung des MetaTrader 4
 - ✅ Kernlogik: Break-Even-Stop-Verarbeitung basierend auf MetaTrader-Eingabeparametern.
 - ✅ API-Nutzung auf hoher Ebene: `SubscribeLevel1()` mit Delegatenbindung.
 - ✅ Schutzbefehle: erstellt über die Helfer `SellStop`, `BuyStop`, `SellLimit` und `BuyLimit`.
-- ❌ Kein Python-Port – es wird nur die C#-Strategie entsprechend der Anfrage bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.

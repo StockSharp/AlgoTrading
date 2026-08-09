@@ -57,4 +57,4 @@
 - ✅ 保留了每周调度、区间计算、保护价位与马丁格尔补偿等核心逻辑。
 - ✅ 将 MetaTrader 特有函数（`iATR`、`CopyBuffer`、`OrderSend` 等）替换为 StockSharp 的 `SubscribeCandles`、`AverageTrueRange`、`BuyMarket`/`SellMarket` 等高级接口。
 - ✅ 代码中的注释均为英文，并提供了详尽的多语文档说明。
-- ✅ 未创建 Python 版本，也未修改测试项目，符合任务要求。
+- 同时提供 C# 和 Python 实现。

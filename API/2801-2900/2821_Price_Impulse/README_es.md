@@ -28,4 +28,4 @@ El enfoque es neutral al mercado: se abre una posición larga cuando el precio a
 - Los parámetros de distancia en puntos se convierten automáticamente usando `Security.PriceStep` (o `Security.MinPriceStep` como respaldo), por lo que la misma configuración se adapta a diferentes tamaños de tick.
 - El trading solo comienza cuando la estrategia está en línea, los búferes de historial contienen suficientes datos y se cumple la condición de impulso.
 - Dado que las decisiones se toman en actualizaciones de cotizaciones en bruto, la estrategia funciona mejor en instrumentos líquidos con feeds Level1 confiables.
-- No existe versión en Python para esta estrategia. Solo se proporciona la versión en C#, cumpliendo con la solicitud del usuario.
+- Las implementaciones están disponibles en C# y Python.

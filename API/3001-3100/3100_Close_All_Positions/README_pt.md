@@ -22,7 +22,7 @@
 6. O sinalizador `_closeAllRequested` permanece definido até que `HasAnyOpenPosition()` detecte que o portfólio está zerado, correspondendo ao comportamento MQL onde `m_close_all` permanecia verdadeiro até que todos os tickets estivessem fechados.
 
 ## Notas adicionais
-- Apenas a implementação em C# é fornecida; a pasta Python é intencionalmente deixada vazia conforme os requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.
 - A estratégia não cancela ordens pendentes porque o script original apenas fechava posições de mercado.
 - Usar `SetOptimize` em `ProfitThreshold` para explorar alvos de lucro alternativos através do otimizador do Designer se necessário.
 

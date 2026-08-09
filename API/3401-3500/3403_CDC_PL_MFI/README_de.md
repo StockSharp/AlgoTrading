@@ -30,4 +30,4 @@ Die **CDC PL MFI Strategy** reproduziert den MetaTrader-Expertenberater `Expert_
 - Das Volumen beträgt standardmäßig `1` Lot. When the strategy flips direction it sends a single market order sized to close the existing position and open the new one, matching the MQL behavior.
 - Die Mustererkennung spiegelt die MetaTrader-Logik wider: Es werden nur abgeschlossene Kerzen ausgewertet, Lücken müssen über das vorherige Hoch/Tief hinausgehen und ein einfacher gleitender Durchschnitt erzwingt die vorherrschende Trendbedingung.
 - Die Werte des Geldflussindex stammen direkt vom gebundenen Indikator. Es ist keine manuelle Pufferung des Indikatorverlaufs erforderlich. Die Strategie speichert nur die aktuellsten Werte, um Schwellenwertüberschreitungen zu erkennen.
-- Es wird kein Python-Port bereitgestellt. In diesem Verzeichnis ist nur die C#-Implementierung enthalten.
+- Implementierungen sind in C# und Python verfügbar.

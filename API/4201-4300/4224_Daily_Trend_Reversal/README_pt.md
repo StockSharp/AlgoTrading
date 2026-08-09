@@ -47,4 +47,4 @@ Daily Trend Reversal é uma versão do MetaTrader 4 consultor especialista `dail
 ## Notas adicionais
 * A estratégia detecta o tamanho do pip a partir da etapa de preço do título. Os símbolos FX de cinco e três dígitos convertem automaticamente as distâncias de pip configuradas em incrementos de preço.
 * O rastreamento de lucro diário é redefinido com a primeira vela de cada novo dia de negociação, capturando o PnL realizado atual como a nova linha de base.
-* Não há implementação Python para esta estratégia; apenas a versão C# é fornecida no pacote API.
+* As implementações estão disponíveis em C# e Python.

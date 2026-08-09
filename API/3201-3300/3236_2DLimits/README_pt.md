@@ -49,5 +49,5 @@ A implementação depende das assinaturas de velas de alto nível do StockSharp 
 
 ## Notas adicionais
 * A estratégia gerencia cada ordem diretamente através da API de alto nível; não há dependência de coleções personalizadas ou buffers de indicadores.
-* Apenas a implementação C# é fornecida neste pacote. Nenhuma versão Python é criada para esta conversão.
+* As implementações estão disponíveis em C# e Python.
 * Os testes permanecem inalterados conforme solicitado.

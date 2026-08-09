@@ -51,7 +51,7 @@
 - Margin-based lot sizing (`MM` and `MMMode`) is replaced by a fixed `Volume` parameter. This keeps the behaviour deterministic across brokers and avoids replicating account-specific leverage logic.
 - Slippage (`Deviation_`) is not emulated because StockSharp market orders do not expose a slippage parameter.
 - Indicator smoothing is fully reconstructed using StockSharp indicators (including Jurik phase handling through reflection), so signal values are consistent with the original buffers.
-- Python implementation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.
 
 ## Usage notes
 - Ensure the selected security provides the candle type requested by `CandleType`. For standard timeframes use `TimeSpan.FromHours(x).TimeFrame()`.

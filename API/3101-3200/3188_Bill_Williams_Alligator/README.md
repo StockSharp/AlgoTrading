@@ -37,4 +37,4 @@ This strategy ports the MetaTrader 5 expert advisor **"Bill Williams.mq5"** by V
 - To emulate the MetaTrader 5 pip calculation, the strategy multiplies the exchange `PriceStep` by 10 when the security has 3 or 5 decimal places.
 - Protective orders and the trailing stop are managed internally. When a stop or target condition is met within the next candle, the position is closed at market to mimic the EA's order management.
 - The Alligator indicators are drawn automatically if a chart area is available, allowing visual comparison between the StockSharp port and the MetaTrader template.
-- Python and test projects are intentionally omitted according to the repository guidelines for new conversions.
+- Implementations are available in both C# and Python.

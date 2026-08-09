@@ -41,7 +41,7 @@
 - 所有信号都在蜡烛收盘后触发，避免重绘。
 - *AppliedPrices* 枚举完整复制了原指标的选项，包括两个 TrendFollow 价格和 DeMark 价格。
 - 未移植 MQL 中的补仓算法，可通过调整 Volume 或 `StartProtection()` 控制风险。
-- 代码中包含英文注释，方便维护及后续可能的 Python 版本移植。
+- 同时提供 C# 和 Python 实现。
 
 ## 扩展方向
 

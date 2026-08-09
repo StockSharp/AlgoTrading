@@ -48,4 +48,4 @@ Diese Strategie ist ein StockSharp-Port des MetaTrader-Expertenberaters `Exp_XPe
 - `SignalBar` muss innerhalb des gespeicherten Verlaufs bleiben (bis zu 14 Positionen nach dem aktuellen Balken). Werte größer als der verfügbare Verlauf überspringen das Trading automatisch.
 - Der Ausbruchs-Offset wird mit `PriceStep` multipliziert, wenn das Wertpapier eine Tick-Größe offenlegt. Dies hält das Verhalten ähnlich zur MetaTrader-Version, wo `Deviation` in Punkten definiert ist.
 - `StopLoss` und `TakeProfit` werden in absoluten Preiseinheiten angegeben. Auf null setzen, um Schutzorders zu deaktivieren, während die Verwaltungsinfrastruktur aktiv bleibt.
-- Noch keine Python-Übersetzung vorhanden; dieser Ordner enthält nur die C#-Implementierung.
+- Implementierungen sind in C# und Python verfügbar.

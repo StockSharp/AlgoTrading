@@ -51,7 +51,7 @@
 - El sizing de lote basado en margen (`MM` y `MMMode`) se reemplaza por un parámetro `Volume` fijo. Esto mantiene el comportamiento determinista entre brokers y evita replicar la lógica de apalancamiento específica de cada cuenta.
 - El deslizamiento (`Deviation_`) no se emula porque las órdenes de mercado de StockSharp no exponen un parámetro de deslizamiento.
 - El suavizado del indicador se reconstruye completamente usando indicadores de StockSharp (incluido el manejo de fase Jurik a través de reflexión), por lo que los valores de señal son consistentes con los buffers originales.
-- La implementación de Python se omite intencionalmente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Notas de uso
 - Asegurarse de que el instrumento seleccionado proporcione el tipo de vela solicitado por `CandleType`. Para marcos temporales estándar usar `TimeSpan.FromHours(x).TimeFrame()`.

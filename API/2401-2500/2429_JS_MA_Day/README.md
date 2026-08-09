@@ -40,5 +40,5 @@ The **JS MA Day Strategy** trades based on a simple moving average calculated on
 
 - The strategy processes only completed candles.
 - The volume of orders is defined by the `Volume` property of the base class.
-- There is no Python version of this strategy yet.
+- Implementations are available in both C# and Python.
 

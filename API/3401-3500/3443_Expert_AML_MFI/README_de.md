@@ -36,4 +36,4 @@ Dank der `StrategyParam`-Wrapper können alle Parameter direkt im StockSharp-Des
 ## Notizen
 - Die Strategie ruft `StartProtection()` einmal auf, um integrierte Positionsschutzfunktionen zu aktivieren.
 - Handelsbefehle verwenden die Helfer `BuyMarket` und `SellMarket`, um die aktuelle Position zu reduzieren, bevor eine neue eröffnet wird, was dem Verhalten des Expertenberaters MetaTrader entspricht.
-- Gemäß den Projektanforderungen wird kein Python-Port bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.

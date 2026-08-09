@@ -31,7 +31,7 @@ Alle Pip-basierten Eingaben (`PipStep`, `TakeProfitPips`) werden mithilfe der In
 - Die Preise werden durch `Security.ShrinkPrice` normalisiert, sodass der Broker gültige, an Ticks ausgerichtete Werte erhält.
 - Das Volumen wird angepasst, um `VolumeStep`, `MinVolume` und `MaxVolume` zu berücksichtigen, bevor jede Bestellung gesendet wird.
 - Alle Diagnosemeldungen werden über `AddInfoLog` / `AddWarningLog` weitergeleitet und spiegeln die ausführliche Ausgabe des Skripts MetaTrader wider.
-- Auf die Python-Implementierung wird, wie gewünscht, bewusst verzichtet.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Nutzungstipps
 1. Weisen Sie ein liquides Instrument und Portfolio zu und starten Sie dann die Strategie. Ausstehende Leitern werden sofort nach dem ersten Level-1-Update angezeigt.

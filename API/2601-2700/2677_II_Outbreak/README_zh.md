@@ -55,4 +55,4 @@ II Outbreak 是一套最初在 MetaTrader 4 上实现的高频突破策略。它
 ## 实现注意事项
 * 点差过滤依赖 Level 1 行情数据（`Security.BestBid` / `BestAsk`）。若行情缺失则视为点差为零。
 * 保证金与权益检验仅为近似值，原策略依赖 MetaTrader 的账户属性与合约面值。请根据经纪商实际情况调整 `AccountLeverage`、`MaximumRisk` 或 `Volume`。
-* 代码完全使用 StockSharp 高层 API（`SubscribeCandles` + `Bind`），并按要求保留英文注释。本任务未生成 Python 版本。
+* 代码完全使用 StockSharp 高层 API（`SubscribeCandles` + `Bind`），并按要求保留英文注释。同时提供 C# 和 Python 实现。

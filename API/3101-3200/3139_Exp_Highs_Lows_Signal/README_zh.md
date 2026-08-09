@@ -41,4 +41,4 @@ Exp Highs Lows Signal 是 MetaTrader 5 专家顾问 `Exp_HighsLowsSignal` 的移
 * 策略仅缓存序列检测所需的最小 K 线数量，因此行为与原始自定义指标保持一致。
 * 所有的止损止盈均通过 `StartProtection` 自动下达，便于回测和实盘维持一致的风险控制。
 * 通过关闭 `Allow` 系列参数，可以将策略切换为单向交易或纯信号模式。
-* 本策略仅提供 C# 版本，暂无 Python 翻译。
+* 同时提供 C# 和 Python 实现。

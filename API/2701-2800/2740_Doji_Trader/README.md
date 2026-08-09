@@ -48,4 +48,4 @@ close beyond the doji range to enter the market in the breakout direction.
   match traditional pip measurements.
 - Set the desired lot size in the `Volume` property before running the strategy.
 - No additional indicators are required; the logic depends only on raw candle data.
-- There is no Python port yet per request, only the C# implementation.
+- Implementations are available in both C# and Python.

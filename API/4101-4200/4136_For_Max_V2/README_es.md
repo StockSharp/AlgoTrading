@@ -41,4 +41,4 @@ El perito original expone dos bloques de entrada y ambos se conservan:
 * Las compensaciones de precios expresadas en “puntos” dependen del valor `PriceStep`. Los símbolos con cinco (o tres) decimales se convierten automáticamente a tamaños de pips fraccionarios como en MetaTrader.
 * Stop Loss y Take Profits se ejecutan a través de órdenes de mercado dentro de la estrategia para reflejar el comportamiento de EA de gestionar niveles en velas cerradas.
 * La estrategia no implementa la función `vhod_3` no utilizada de la fuente original; sólo se trasladaron los dos bloques de entrada activos.
-* Este paquete contiene sólo la implementación de C#; no se proporciona ninguna versión de Python.
+* Las implementaciones están disponibles en C# y Python.

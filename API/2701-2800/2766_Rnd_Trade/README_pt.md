@@ -39,4 +39,4 @@
 1. Anexar a estratégia a um portfólio e instrumento dentro do ambiente StockSharp.
 2. Configurar `IntervalMinutes` e `Volume` de acordo com a frequência de trading e o tamanho desejados.
 3. Iniciar a estratégia. Ela aplanará e reabrirá posições automaticamente em cada intervalo sem nenhuma entrada adicional.
-4. Nenhuma implementação em Python está disponível no momento; apenas a versão C# está disponível.
+4. As implementações estão disponíveis em C# e Python.

@@ -32,4 +32,4 @@ A porta StockSharp mantém a mesma intenção enquanto aproveita o API de alto n
 ## Notas sobre a conversão
 - As ordens de stop-loss e take-profit do lado do corretor MetaTrader são emuladas monitorando os extremos das velas e enviando saídas de mercado quando os limites são violados.
 - O MetaTrader EA exigia gerenciamento manual de `OrdersTotal()` e chamadas `OrderClose()` explícitas. A versão StockSharp atinge o mesmo comportamento enviando uma única ordem de mercado dimensionada como `TradeVolume + |Position|`, que fecha simultaneamente qualquer posição oposta e abre a nova.
-- Nenhuma implementação Python é fornecida, correspondendo à solicitação da tarefa. A pasta atualmente contém apenas a versão C# da estratégia.
+- As implementações estão disponíveis em C# e Python.

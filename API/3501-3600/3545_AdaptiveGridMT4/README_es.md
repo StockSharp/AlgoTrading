@@ -49,4 +49,4 @@ el EA original.
 mientras produce el mismo diseño simétrico en todo el mercado.
 - La instantánea ATR utilizada para la cuadrícula también se utiliza para que las órdenes de protección imiten la parada por boleto y la toma de ganancias de MetaTrader
 valores.
-- Aún no existe ninguna traducción de Python que coincida con la solicitud.
+- Las implementaciones están disponibles en C# y Python.

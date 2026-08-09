@@ -43,4 +43,4 @@
 ## 说明
 - 策略完全基于 StockSharp 的高级 API：使用 `SubscribeCandles` 处理 K 线、指标绑定计算移动平均线，并借助 `StartProtection` 管理止盈止损及跟踪止损。
 - 平仓操作采用市价单，模拟 MT4 EA 中立即关闭反向挂单与持仓的方式。
-- 本目录仅包含 C# 实现，不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

@@ -34,4 +34,4 @@ Dynamic Averaging é um port direto do assessor especialista do MetaTrader 5 "Dy
 - Velas, valores de Stochastic e desvio padrão são processados através da API de alto nível com `BindEx`, evitando o gerenciamento manual de buffers.
 - A janela deslizante de volatilidade converte dias calendário em contagens de barras usando o período das velas quando disponível.
 - O controle de lucro flutuante depende do fechamento da vela atual e `PositionAvgPrice`, correspondendo à implementação MQL que soma apenas o lucro de posição aberta.
-- Todos os comentários de código estão em inglês; nenhuma versão em Python é fornecida conforme os requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.

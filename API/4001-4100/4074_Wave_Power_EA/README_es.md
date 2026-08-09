@@ -73,4 +73,4 @@ comportamiento.
 - `CS/WavePowerEAStrategy.cs` – StockSharp implementación de la lógica de red Wave Power EA.
 - `README.md` / `README_ru.md` / `README_zh.md` – documentación en inglés, ruso y chino.
 
-La versión de Python se omite intencionalmente según los requisitos de la tarea.
+Las implementaciones están disponibles en C# y Python.

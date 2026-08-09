@@ -34,4 +34,4 @@ Die **MartingaleEA-5 Levels-Strategie** ist eine direkte Portierung des MetaTrad
 - Die Implementierung spiegelt die ursprüngliche EA wider, einschließlich der Annahme, dass jeweils nur ein Richtungskorb aktiv ist. Das gleichzeitige Öffnen von Positionen in beide Richtungen führt dazu, dass jede Seite unabhängig verwaltet wird.
 - Da die Strategie nur auf Kerzenschließungen reagiert, wählen Sie einen Zeitrahmen, der der gewünschten Reaktionsfähigkeit entspricht. Kürzere Zeitrahmen ahmen das Verhalten auf Tick-Ebene besser nach.
 - Martingale-Techniken erhöhen das Risiko. Testen Sie immer mit realistischen Slippage- und Provisionsmodellen und definieren Sie konservative Stop-Levels, bevor Sie die Strategie auf Live-Märkten aktivieren.
-- Die Strategie erstellt noch keinen Python-Port. Wie gewünscht ist nur die C#-High-Level-Implementierung enthalten.
+- Implementierungen sind in C# und Python verfügbar.

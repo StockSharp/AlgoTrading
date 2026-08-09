@@ -38,4 +38,4 @@ Signals can be delayed with the `SignalBar` parameters so that the strategy acts
 - The strategy sets the global `Volume` property from `TradeVolume`, so standard `BuyMarket()` and `SellMarket()` calls use that size automatically.
 - Both indicator instances read the instrument`s `PriceStep`. If it is zero the indicator waits silently until a valid price step becomes available.
 - `StartProtection()` is invoked on start so platform-level protections are active before the first order is submitted.
-- There is no separate Python implementation; the `PY` directory is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

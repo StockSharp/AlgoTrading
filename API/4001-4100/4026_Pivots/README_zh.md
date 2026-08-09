@@ -57,4 +57,4 @@ StockSharp 采用净头寸模型，因此相反方向的成交会互相抵消（
 2. 如有需要调整 `PriceStep`，系统会自动读取，兜底值为 `0.0001`。
 3. 可根据需要修改 `OrderVolume`、`TrailingStopPoints` 以及时间框架，以复现原策略参数。
 
-按照要求，此版本暂不提供 Python 实现。
+同时提供 C# 和 Python 实现。

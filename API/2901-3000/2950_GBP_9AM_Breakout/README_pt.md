@@ -54,4 +54,4 @@ Todas as distâncias em pips se adaptam automaticamente a cotações FX de 3 ou 
 - `README_ru.md` – Documentação em russo.
 - `README_zh.md` – Documentação em chinês.
 
-A implementação em Python é intencionalmente omitida conforme os requisitos do projeto.
+As implementações estão disponíveis em C# e Python.

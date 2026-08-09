@@ -42,4 +42,4 @@ As decisões de trading são tomadas no cruzamento do oscilador e da linha de si
 - As verificações manuais de stop/alvo e o trailing stop baseado em passos são executados em cada vela terminada, refletindo de perto o comportamento da versão MQL.
 - Os sinais são processados apenas quando todos os valores necessários estão disponíveis; estados parciais do indicador são ignorados até que dados suficientes tenham se acumulado.
 
-Nenhuma tradução Python é fornecida neste diretório.
+As implementações estão disponíveis em C# e Python.

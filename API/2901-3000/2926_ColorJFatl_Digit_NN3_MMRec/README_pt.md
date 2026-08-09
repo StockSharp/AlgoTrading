@@ -41,7 +41,7 @@ Como os módulos compartilham um único portfólio de conta, apenas uma posiçã
 - Os sinais operam estritamente em velas concluídas para evitar o redesenho intra-barra.
 - O enum *AppliedPrices* reproduz as opções do indicador original, incluindo duas variantes de preço de seguimento de tendência e o preço DeMark.
 - A lógica de recuperação de gestão de dinheiro da versão MQL não está reproduzida. Em vez disso, o risco pode ser gerenciado pelas proteções do StockSharp ou ajustando os volumes dos módulos.
-- Comentários em inglês dentro do código explicam cada etapa da conversão para manutenção mais fácil e port futuro para Python.
+- As implementações estão disponíveis em C# e Python.
 
 ## Estendendo a estratégia
 

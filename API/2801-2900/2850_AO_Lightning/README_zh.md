@@ -41,5 +41,5 @@ AO Lightning 使用 StockSharp 的高级 API 复刻 MT5 专家顾问 “AO_Light
 ## 备注
 
 - 原 MT5 专家顾问使用 `Period_sma_slow` 与 `Period_sma_fast` 作为输入，但数值 5 和 34 实际上互换。该移植版本以 `AoShortPeriod`/`AoLongPeriod` 直观地暴露参数，同时保持相同行为。
-- 根据任务要求，此次未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 - 仓库未附带测试，请在投入真实环境前通过 Designer 或自有回测平台进行验证。

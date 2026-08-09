@@ -63,4 +63,4 @@ La versión convertida mantiene la filosofía del asesor experto original:
 4. Ajuste `ProfitClose`/`LossClose` a valores consistentes con la moneda de su cuenta.
 5. Inicie la estrategia; esperará la primera instantánea del libro de órdenes antes de construir la cuadrícula.
 
-> **Versión Python** – no proporcionada. Solo se incluye la implementación en C#, como se solicitó.
+> Las implementaciones están disponibles en C# y Python.

@@ -54,4 +54,4 @@
 
 - `CS/PreviousCandleBreakdownStrategy.cs` – 戦略の C# 実装。
 
-この戦略に対する Python 翻訳はリクエストにより提供されていません。
+C# と Python の両方の実装が提供されています。

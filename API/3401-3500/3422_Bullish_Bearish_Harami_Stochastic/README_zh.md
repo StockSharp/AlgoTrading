@@ -48,4 +48,4 @@
 - `README_ru.md` — 俄文文档。
 - `README_zh.md` — 本文件，中文说明。
 
-> **提示：** 根据任务要求，暂未提供 Python 版本。
+> 同时提供 C# 和 Python 实现。

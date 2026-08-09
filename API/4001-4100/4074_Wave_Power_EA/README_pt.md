@@ -73,4 +73,4 @@ comportamento.
 - `CS/WavePowerEAStrategy.cs` – StockSharp implementação da lógica de grade Wave Power EA.
 - `README.md` / `README_ru.md` / `README_zh.md` – documentação em inglês, russo e chinês.
 
-A versão Python é omitida intencionalmente de acordo com os requisitos da tarefa.
+As implementações estão disponíveis em C# e Python.

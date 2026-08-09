@@ -27,5 +27,5 @@
 
 - 仅处理完成的蜡烛。
 - 使用带指示器绑定的 StockSharp 高级 API。
-- 未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 

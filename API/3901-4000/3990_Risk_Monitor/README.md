@@ -51,4 +51,4 @@ additional panels.
   hedging) just like StockSharp itself.
 * The strategy tolerates manual trading: it reacts to any trade confirmations to keep the statistics in sync.
 * The comment is cleared automatically when the strategy stops or resets, preventing stale values from persisting across sessions.
-* No Python implementation is provided; the API package contains only the C# version.
+* Implementations are available in both C# and Python.

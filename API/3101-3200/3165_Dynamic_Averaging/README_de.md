@@ -34,4 +34,4 @@ Dynamic Averaging ist ein direkter Port des MetaTrader-5-Expert-Advisors „Dyna
 - Kerzen, Stochastic- und Standardabweichungswerte werden über die hochrangige API mit `BindEx` verarbeitet, was manuelle Pufferverwaltung vermeidet.
 - Das gleitende Volatilitätsfenster wandelt Kalendertage in Baranzahlen um, indem der Kerzen-Zeitrahmen verwendet wird, wenn verfügbar.
 - Die Schwebgewinn-Kontrolle basiert auf dem aktuellen Kerzenschluss und `PositionAvgPrice`, was der MQL-Implementierung entspricht, die nur den Gewinn offener Positionen summiert.
-- Alle Codekommentare sind auf Englisch; keine Python-Version gemäß Aufgabenanforderungen.
+- Implementierungen sind in C# und Python verfügbar.

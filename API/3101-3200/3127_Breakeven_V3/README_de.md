@@ -38,4 +38,4 @@ sodass das gesamte Buch rund um diesen Break-Even-Preis mit einem optionalen Puf
   Falls der Broker Overnight-Swaps anwendet, müssen diese manuell behandelt werden.
 * Das Skript setzt voraus, dass das Konto Hedging (gleichzeitige Long- und Short-Positionen) erlaubt. Wenn der Broker Positionen nettet,
   reduzieren sich die Long- und Short-Aggregate genau wie in MetaTrader auf eine einzelne Nettoexposition.
-* Es gibt keine Python-Version dieses Ports. Nur die C#-Implementierung wird bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

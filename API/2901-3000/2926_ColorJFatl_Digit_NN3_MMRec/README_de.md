@@ -41,7 +41,7 @@ Da Module ein einzelnes Kontoportfolio teilen, kann nur jeweils eine Netto-Long-
 - Signale operieren ausschließlich auf abgeschlossenen Kerzen, um Intrabar-Neuzeichnung zu verhindern.
 - Der *AppliedPrices*-Enum reproduziert die Optionen des ursprünglichen Indikators, einschließlich zweier Trendfolge-Preisvarianten und des DeMark-Preises.
 - Die Money-Management-Recovery-Logik aus der MQL-Version ist nicht reproduziert. Stattdessen kann das Risiko über StockSharp-Schutzmaßnahmen oder durch Anpassen der Modulvolumina verwaltet werden.
-- Englische Kommentare im Code erläutern jeden Schritt der Konvertierung für einfachere Wartung und zukünftiges Python-Porting.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Strategie erweitern
 

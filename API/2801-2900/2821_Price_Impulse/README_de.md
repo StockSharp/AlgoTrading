@@ -28,4 +28,4 @@ Der Ansatz ist marktneutral: Eine Long-Position wird eröffnet, wenn der Ask-Pre
 - Die Punktabstandsparameter werden automatisch mit `Security.PriceStep` (oder `Security.MinPriceStep` als Fallback) konvertiert, sodass dieselbe Konfiguration sich an verschiedene Tick-Größen anpasst.
 - Trading beginnt erst, wenn die Strategie online ist, die Historien-Puffer genügend Daten enthalten und die Impulsbedingung erfüllt ist.
 - Da Entscheidungen auf Basis roher Kurs-Updates getroffen werden, funktioniert die Strategie am besten bei liquiden Instrumenten mit zuverlässigen Level1-Feeds.
-- Es gibt keine Python-Version für diese Strategie. Nur die C#-Version wird bereitgestellt, entsprechend der Benutzeranfrage.
+- Implementierungen sind in C# und Python verfügbar.

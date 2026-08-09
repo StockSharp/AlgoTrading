@@ -27,4 +27,4 @@ Dieses Beispiel portiert den klassischen **Frank Ud** MetaTrader-Expertenberater
 - Die Positionsbuchhaltung speichert jede Ausführung (Preis und Volumen) in Listen, anstatt kumulative Statistiken abzufragen, und behält dabei das Verhalten der MQL-Arrays bei, die zum Auffinden des größten Loses und seines Einstiegspreises verwendet wurden.
 - Der zusätzliche 25-Pip-Puffer, den der ursprüngliche Experte bei jeder Take-Profit-Order platziert hat, wird als zusätzliche Ausstiegsbedingung beibehalten.
 
-> **Hinweis:** Der Python-Port wird wie gewünscht vorerst absichtlich weggelassen. Der Ordner enthält nur die C#-Implementierung und die mehrsprachige Dokumentation.
+> Implementierungen sind in C# und Python verfügbar.

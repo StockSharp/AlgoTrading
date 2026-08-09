@@ -34,4 +34,4 @@ The **MartingaleEA-5 Levels Strategy** is a direct port of the MetaTrader 5 expe
 - The implementation mirrors the original EA, including its assumption that only one directional basket is active at a time. Opening positions simultaneously in both directions will cause each side to be managed independently.
 - Because the strategy reacts only on candle closes, choose a timeframe that matches the desired responsiveness. Lower timeframes emulate tick-level behaviour more closely.
 - Martingale techniques amplify risk. Always backtest with realistic slippage and commission models and define conservative stop levels before enabling the strategy on live markets.
-- The strategy does not create a Python port yet. Only the C# high-level implementation is included as requested.
+- Implementations are available in both C# and Python.

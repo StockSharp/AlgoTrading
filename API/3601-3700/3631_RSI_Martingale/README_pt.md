@@ -48,4 +48,4 @@ RSI Martingale é uma versão do MetaTrader 5 consultor especialista `RSI&Martin
 ## Notas adicionais
 * A estratégia opera apenas em velas finalizadas e não avalia ticks intrabarras.
 * Os cálculos de lucro diário combinam o PnL da estratégia realizada com o PnL flutuante com base no último preço de fechamento.
-* Não há implementação Python para esta estratégia no pacote; apenas a versão C# é fornecida.
+* As implementações estão disponíveis em C# e Python.

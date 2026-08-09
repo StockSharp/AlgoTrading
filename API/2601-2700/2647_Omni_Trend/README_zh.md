@@ -64,4 +64,4 @@ Omni Trend 策略是 MetaTrader 专家顾问 "Exp_Omni_Trend" 的 StockSharp 版
 - `CS/OmniTrendStrategy.cs` — 策略的 C# 实现。
 - `README.md`, `README_ru.md`, `README_zh.md` — 英语、俄语、中文说明文档。
 
-根据任务要求，本次未提供 Python 版本。
+同时提供 C# 和 Python 实现。

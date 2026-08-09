@@ -47,5 +47,5 @@ The strategy operates on a single security using finished candles. When the stra
 ## Notes
 - Stops and targets are executed with market orders when triggered, which keeps the implementation simple and mirrors the original stop modifications.
 - `SpreadMultiplier` approximates the MQL behavior where stop levels cannot be placed closer than the current spread. Adjust this value to match the execution venue.
-- The strategy intentionally avoids a Python version and focuses solely on the C# implementation, as requested.
+- Implementations are available in both C# and Python.
 - Consider combining the trailing engine with your own entry filter by disabling the built-in entries and injecting external orders if required.

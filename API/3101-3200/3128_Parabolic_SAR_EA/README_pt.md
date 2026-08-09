@@ -43,4 +43,4 @@ A **Estratégia de Parabolic SAR EA** é a conversão de alto nível do StockSha
 ## Notas de Conversão
 - MetaTrader `InpBarCurrent` equivale a 1, significando que o EA avalia o candle finalizado anterior. O port do StockSharp atinge o mesmo resultado processando apenas candles `Finished` no callback `Bind`.
 - O consultor especializado original usava `CheckVolumeValue` para validar lotes e restrições do corretor. O StockSharp delega essas verificações ao conector, enquanto o parâmetro `TradeVolume` ainda impõe um requisito de volume positivo.
-- A implementação Python é intencionalmente omitida, atendendo aos requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.

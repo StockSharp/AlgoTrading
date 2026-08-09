@@ -48,4 +48,4 @@ Grail Expert MA é uma versão StockSharp do MetaTrader 4 consultor especialista
 * A estratégia usa atualizações brutas de velas (incluindo estados parciais) para emular o monitoramento intrabar original de alta/baixa.
 * Os valores EMA são processados apenas em velas finalizadas para replicar as chamadas MQL `iMA` com mudanças de uma e duas barras.
 * Os intervalos históricos são rastreados com filas limitadas em vez de pesquisas de indicadores para evitar novas varreduras dispendiosas e, ao mesmo tempo, manter a lógica fiel à fonte.
-* Nenhuma versão do Python é fornecida; o pacote API contém apenas a implementação C#.
+* As implementações estão disponíveis em C# e Python.

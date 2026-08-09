@@ -57,4 +57,4 @@ El volumen calculado se redondea al `Security.VolumeStep` más cercano (cuando e
 ## Notas
 - Las órdenes se generan solo cuando la estrategia está en línea y la vela ha terminado, coincidiendo con el EA original que se activa en nuevas barras.
 - Dado que StockSharp mantiene una posición neta, las señales de promediado automáticamente reducen o invierten la exposición actual en lugar de crear posiciones de cobertura.
-- La implementación en Python se omite intencionalmente según se solicitó.
+- Las implementaciones están disponibles en C# y Python.

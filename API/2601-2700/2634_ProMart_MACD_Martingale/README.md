@@ -38,5 +38,5 @@ This strategy is a StockSharp port of the historical MQL expert **MartGreg_1 / P
 
 - The implementation approximates intrabar stop-loss and take-profit fills using candle highs and lows because the StockSharp example operates on finished candles.
 - Position volume falls back to the strategy `Volume` or the instrument minimum volume whenever portfolio data is not available.
-- No Python version is provided yet; only the C# strategy is included.
+- Implementations are available in both C# and Python.
 - Always validate the configuration on historical data before enabling real trading. The martingale component significantly increases risk.

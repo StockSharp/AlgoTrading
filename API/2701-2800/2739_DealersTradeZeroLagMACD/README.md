@@ -42,4 +42,4 @@ This strategy ports the MetaTrader expert advisor "Dealers Trade v 7.91 ZeroLag 
 1. Connect the strategy to a portfolio and security before starting it.
 2. Review the instrument step and price settings to ensure pip conversions are correct.
 3. The default parameters replicate the original expert advisor behaviour but can be optimised through StockSharp optimisers.
-4. Python translation is not included for this strategy.
+4. Implementations are available in both C# and Python.

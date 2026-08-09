@@ -39,4 +39,4 @@ marca y registra una nueva línea base de PnL.
 MQL experto.
 - PnL flotante utiliza la mejor oferta para posiciones largas y la mejor demanda para posiciones cortas. Si no hay cotización disponible, la última operación
 El precio actúa como un respaldo para evitar detener la evaluación.
-- No se proporciona ningún puerto Python; En este paquete solo se incluye la implementación de alto nivel de C#.
+- Las implementaciones están disponibles en C# y Python.

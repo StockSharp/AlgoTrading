@@ -30,4 +30,4 @@ After a position is opened, the thresholds are reduced to monitor the opposite s
 - `SlPips` – stop loss in price points (default: 500)
 
 ## Notes
-The strategy does not include a Python version.
+Implementations are available in both C# and Python.

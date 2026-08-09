@@ -50,4 +50,4 @@ Die Strategie ist auf der High-Level-API von StockSharp implementiert. Alle Hand
 
 - Die Strategie verwendet ausschließlich kerzenbasierte Verarbeitung; eine Tick-für-Tick-Replikation des ursprünglichen EAs wird absichtlich vermieden, um mit der High-Level-StockSharp-Architektur konsistent zu bleiben.
 - Kommentare im Code sind gemäß den Projektrichtlinien auf Englisch verfasst.
-- Eine Python-Version wird entsprechend der Benutzeranforderung absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

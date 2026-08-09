@@ -58,4 +58,4 @@ O tamanho do pedido é multiplicado por `2^n` para grades pequenas (até 12 entr
 - Exponha parâmetros finais separados para grades longas e curtas ou permita grades assimétricas.
 - Combine a inclinação MACD com filtros de tendência (médias móveis, confirmação de período de tempo mais alto) para reduzir o número de grades de contra-tendência.
 
-> **Observação:** Nenhuma implementação Python é fornecida para esta estratégia, correspondendo à solicitação e à estrutura atual do projeto.
+> As implementações estão disponíveis em C# e Python.

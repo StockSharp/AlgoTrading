@@ -51,4 +51,4 @@ additional panels.
 hedging) just like StockSharp itself.
 * この戦略は手動取引を許容します。統計の同期を保つためにあらゆる取引確認に反応します。
 * コメントは戦略が停止またはリセットされると自動的にクリアされ、古い値がセッション間で持続するのを防ぎます。
-* No Python implementation is provided; API パッケージには C# バージョンのみが含まれています。
+* C# と Python の両方の実装が提供されています。

@@ -58,4 +58,4 @@ The Reduce Risks Strategy is a multi-timeframe trend-following system converted 
 
 ## Notes
 - The strategy expects instruments quoted with pip sizes similar to major forex pairs. Adjust the pip-based parameters when using other markets.
-- Only the C# implementation is provided; the Python version is intentionally omitted per requirements.
+- Implementations are available in both C# and Python.

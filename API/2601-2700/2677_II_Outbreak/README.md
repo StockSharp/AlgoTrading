@@ -55,4 +55,4 @@ The II Outbreak strategy is a high-frequency breakout system originally written 
 ## Implementation notes
 * Spread filtering requires live level 1 data (`Security.BestBid`/`BestAsk`). When the feed is absent the strategy assumes zero spread.
 * Margin and equity checks are approximations because the original EA relied on MetaTrader-specific account properties and contract sizes. Adjust `AccountLeverage`, `MaximumRisk` or `Volume` to fit the broker model.
-* The conversion uses the StockSharp high-level API (candle subscriptions with `Bind`) and keeps all comments in English as requested. No Python port is generated for this strategy.
+* The conversion uses the StockSharp high-level API (candle subscriptions with `Bind`) and keeps all comments in English as requested. Implementations are available in both C# and Python.

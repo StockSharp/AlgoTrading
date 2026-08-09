@@ -48,4 +48,4 @@ Die **Lego EA-Strategie** ist ein direkter Port des MetaTrader-Expertenberaters 
 - Überwachen Sie die Kontoexposition bei hohen `LotMultiplier`-Werten; das Risiko wächst schnell während Verlustserien.
 - Kombinieren Sie die Strategie mit dem Backtester, um zu überprüfen, ob Ihre gewählte Filterkombination zu den Instrumenten passt, die Sie handeln möchten.
 
-Diese Strategie hat aktuell keine Python-Version.
+Implementierungen sind in C# und Python verfügbar.

@@ -48,6 +48,6 @@
 ## Hinweise
 - Der ursprüngliche Expertenberater enthielt Geldmanagement-Modi basierend auf Balance oder Margin. Der Port exponiert einen einfacheren festen `OrderVolume`-Parameter. Passen Sie ihn auf das gewünschte Positionsgrößen-Sizing an.
 - `StartProtection` wird nur aufgerufen, wenn das Instrument einen gültigen Preisschritt (`Security.Step > 0`) hat.
-- Keine Python-Version ist absichtlich vorgesehen.
+- Implementierungen sind in C# und Python verfügbar.
 - Chart-Bereiche werden automatisch erstellt: wenn Long- und Short-Kerzenfeeds abweichen, werden zwei separate Panels angezeigt; andernfalls wird nur eines gezeigt.
 - Die Strategie beruht auf abgeschlossenen Kerzen; sie reagiert nicht auf Intrabar-Updates.

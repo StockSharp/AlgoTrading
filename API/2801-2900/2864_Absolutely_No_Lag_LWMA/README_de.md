@@ -38,4 +38,4 @@ Die Strategie repliziert den MetaTrader-Expertenberater **Exp_AbsolutelyNoLagLwm
 ## Hinweise
 - Der Standard-Zeitrahmen beträgt 4 Stunden, was der ursprünglichen Expertenkonfiguration entspricht, kann aber über den Parameter *Kerzentyp* angepasst werden.
 - Es werden keine Take-Profit- oder Stop-Loss-Aufträge automatisch platziert; Benutzer können die Strategie bei Bedarf mit StockSharp-Risikomanagementkomponenten kombinieren.
-- Der Python-Port wird absichtlich ausgelassen, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.

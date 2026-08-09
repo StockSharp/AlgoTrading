@@ -29,4 +29,4 @@ Die Harami CCI-Bestätigung ist eine hochrangige StockSharp-Portierung des MetaT
 ## Zusätzliche Hinweise
 * Alle Berechnungen werden auf abgeschlossenen Kerzen ausgeführt, die von `SubscribeCandles` bereitgestellt werden. Intrabar-Signale werden absichtlich ignoriert, um dem MetaTrader-Ausführungsmodell zu entsprechen.
 * Die Strategie behält einen kurzen gleitenden Verlauf von Kerzen und CCI-Werten bei, um die Harami-Regeln auszuwerten, ohne volle Indikatorpuffer neu zu erstellen.
-* In diesem Ordner wird nur die C#-Implementierung bereitgestellt. Für diese Konvertierung gibt es keine Python-Version.
+* Implementierungen sind in C# und Python verfügbar.

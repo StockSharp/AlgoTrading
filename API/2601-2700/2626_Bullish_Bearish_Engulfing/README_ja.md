@@ -47,4 +47,4 @@
 ## ファイル
 - `CS/BullishBearishEngulfingStrategy.cs` – StockSharpの高レベル戦略APIをベースに構築されたメインC#実装。
 
-> **注意：** このIDにはPython実装は提供されていません；要求通りC#バージョンのみが含まれています。
+> C# と Python の両方の実装が提供されています。

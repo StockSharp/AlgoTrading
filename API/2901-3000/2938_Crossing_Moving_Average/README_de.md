@@ -5,7 +5,7 @@
 - Konvertierung des MetaTrader 5-Expertenberaters **"Crossing Moving Average (barabashkakvn's edition)"** aus dem Quellcode `MQL/21515`.
 - Implementiert die Logik auf der StockSharp-High-Level-API mit Kerzen-Abonnements und Indikator-Bindung.
 - Entwickelt für Instrumente, bei denen Momentum und gleitende Durchschnittskruzungen Trendumkehrungen erfassen.
-- Dieses Paket enthält nur die C#-Version. Eine Python-Übersetzung wird gemäß Anfrage absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Kernidee
 Die Strategie überwacht zwei konfigurierbare gleitende Durchschnitte (schnell und langsam) mit optionalen Vorwärtsverschiebungen und kombiniert ihre Kreuzung mit einem Momentum-Bestätigungsfilter. Ein Trade wird nur geöffnet, wenn:

@@ -31,4 +31,4 @@ The Market Predictor strategy is a high-level adaptation of the original MetaTra
 ## Notes
 - The high-level StockSharp API handles candle subscriptions, indicator binding, and market order execution.
 - Comments in the source code explain each step of the process for easier maintenance.
-- The Python port is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

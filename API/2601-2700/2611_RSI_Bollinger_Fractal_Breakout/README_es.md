@@ -44,6 +44,6 @@ Esta estrategia reproduce el asesor experto de MetaTrader "RSI and Bollinger Ban
 | `CandleType` | Tipo de datos / marco temporal para el procesamiento. | Velas de 4 horas |
 
 ## Notas
-- La versión Python se omite intencionadamente, según se solicitó.
+- Las implementaciones están disponibles en C# y Python.
 - Use `Volume` en la clase base para configurar el tamaño del lote (por defecto 1 si no se especifica).
 - La estrategia debe ejecutarse en el mismo marco temporal que la configuración del EA original (EURUSD H4 según el archivo `.set` proporcionado).

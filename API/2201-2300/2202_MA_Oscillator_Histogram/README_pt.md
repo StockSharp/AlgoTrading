@@ -31,4 +31,4 @@ Esta estratégia é uma tradução do consultor especialista MQL5 **Exp_MAOscill
 ## Notas
 - A estratégia utiliza a API de alto nível do StockSharp com `SubscribeCandles` e ligação de indicadores.
 - `StartProtection` está ativado com ordens de mercado para execução mais segura.
-- Nenhuma versão Python disponível.
+- As implementações estão disponíveis em C# e Python.

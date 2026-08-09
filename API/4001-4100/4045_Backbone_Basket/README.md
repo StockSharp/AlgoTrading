@@ -41,7 +41,7 @@ The **Backbone Basket Strategy** ports the original MetaTrader 4 "Backbone.mq4" 
 - Volume sizing relies on `Security.PriceStepCost`. If the connector does not provide this value, the strategy falls back to the configured `Volume` property.
 - Trailing updates are applied when a new candle arrives, matching the "once per bar" behaviour of the MT4 script (which only acted when `Bars > PrevBars`).
 - The alternating logic keeps the last executed direction in `_lastPositionDirection`, so once a basket is closed the next candle automatically opens a basket in the opposite direction, just like the source code.
-- Only the C# implementation is provided; there is no Python port in this directory.
+- Implementations are available in both C# and Python.
 
 ## Usage Tips
 - Assign instruments with accurate `PriceStep`, `PriceStepCost`, and volume metadata to obtain realistic position sizes.

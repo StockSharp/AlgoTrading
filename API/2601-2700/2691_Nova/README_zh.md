@@ -23,4 +23,4 @@
 - 为完整复刻 MT5 行为，策略需要 Level1 (最优买/卖) 数据；若不可用则回退为蜡烛的收盘价。
 - 手数归一化过程会遵循 `Security.VolumeStep`、`Security.MinVolume` 与 `Security.MaxVolume` 的限制，避免无效订单。
 - 价格换算基于 `Security.PriceStep` 与 `Security.Decimals`，可适配 4/5 位外汇品种及其他市场品种。
-- 本策略不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

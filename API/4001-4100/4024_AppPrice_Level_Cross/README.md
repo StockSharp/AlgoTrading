@@ -58,4 +58,4 @@
 - Set `AppPrice` to the horizontal level you want to monitor (e.g., psychological price, daily pivot, etc.).
 - Switch `BuyOnly` off to replicate the original "sell-only" mode; leave it on to run the provided default long-only behaviour.
 - When enabling money management, verify that the portfolio connection supplies balance updates; otherwise, the strategy reverts to the fixed volume.
-- No Python port is provided per request; only the C# strategy is generated.
+- Implementations are available in both C# and Python.

@@ -43,4 +43,4 @@ Todos los parámetros se pueden optimizar a través de la interfaz de usuario St
 | `MQL/8539/AwesomeFxTradera.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Recrea el oscilador abierto EMA y su lógica de color ascendente/descendente. |
 | `MQL/8539/t_ma.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Implementa la LWMA de 34 períodos con un SMA más suave de 6 períodos para la detección de tendencias. |
 
-La versión de Python se omite intencionalmente según lo solicitado.
+Las implementaciones están disponibles en C# y Python.

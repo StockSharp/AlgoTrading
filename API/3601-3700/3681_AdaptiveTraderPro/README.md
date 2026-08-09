@@ -36,4 +36,4 @@ The strategy works on a configurable primary timeframe (default 5 minutes) and c
 ## Notes
 - The strategy uses StockSharp high-level API with candle subscriptions and indicator binding.
 - Spreads are monitored through the best bid/ask quotes; trading is suspended until the spread is within the configured limit.
-- Python implementation is intentionally omitted per instructions.
+- Implementations are available in both C# and Python.

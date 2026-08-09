@@ -5,7 +5,7 @@
 
 Die **E Skoch-Strategie für schwebende Orders** recreiert den ursprünglichen MetaTrader-Expertenberater, der auf eine neue Bar wartet, die zwei neuesten Hochs und Tiefs sowohl im Trading-Zeitrahmen als auch im Tages-Zeitrahmen analysiert und schwebende Breakout-Orders platziert. Das Ziel ist es, Momentum zu erfassen, wenn der Markt nach einem kurzfristigen Rücksetzer, der durch den Tagestrend bestätigt wird, durch die vorherige Bar bricht.
 
-Die StockSharp-Implementierung behält die ursprünglichen Ideen bei, verwendet jedoch High-Level-API-Funktionen wie Kerzenabonnements, automatische Schutzorders und Strategieparameter. Die C#-Version ist im Ordner `CS/` gespeichert und es wird noch kein Python-Port bereitgestellt.
+Die StockSharp-Implementierung behält die ursprünglichen Ideen bei, verwendet jedoch High-Level-API-Funktionen wie Kerzenabonnements, automatische Schutzorders und Strategieparameter. Implementierungen sind in C# und Python verfügbar.
 
 ## Handelslogik
 

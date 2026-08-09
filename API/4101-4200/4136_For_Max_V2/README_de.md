@@ -41,4 +41,4 @@ Der ursprüngliche Fachberater legt zwei Einstiegsblöcke offen und beide bleibe
 * In „Punkten“ ausgedrückte Preisversätze basieren auf dem `PriceStep` des Wertpapiers. Symbole mit fünf (oder drei) Dezimalstellen werden automatisch in gebrochene Pip-Größen umgewandelt, genau wie in MetaTrader.
 * Stop-Losses und Take-Profits werden über Marktaufträge innerhalb der Strategie ausgeführt, um das Verhalten von EA bei der Verwaltung von Levels bei geschlossenen Kerzen widerzuspiegeln.
 * Die Strategie implementiert nicht die ungenutzte `vhod_3`-Funktion aus der Originalquelle; Es wurden nur die beiden aktiven Eintrittsblöcke portiert.
-* Dieses Paket enthält nur die C#-Implementierung; Es wird keine Python-Version bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

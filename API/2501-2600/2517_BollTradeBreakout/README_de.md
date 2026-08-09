@@ -40,6 +40,7 @@ Diese Strategie repliziert den originalen **BollTrade**-Expertenberater durch da
 ## Dateien
 
 - `CS/BollTradeStrategy.cs` – C#-Implementierung der Strategie.
+- `PY/boll_trade_strategy.py` – Python-Implementierung der Strategie.
 - `README.md` – englische Dokumentation (diese Datei).
 - `README_ru.md` – russische Dokumentation.
 - `README_zh.md` – chinesische Dokumentation.

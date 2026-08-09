@@ -46,4 +46,4 @@ La **Estrategia Universal MA Cross** es una conversión directa del asesor exper
 ## Notas de conversión
 * Las órdenes de protección se manejan internamente verificando los máximos y mínimos de las velas, porque las estrategias de StockSharp operan sobre velas finalizadas en lugar de eventos de tick sin procesar. Esto refleja el comportamiento del experto original mientras se mantiene dentro de la API de alto nivel.
 * Los ajustes del trailing stop siguen la implementación MQL, requiriendo un movimiento de **TrailingStop + TrailingStep** antes de que el stop se desplace.
-* No se proporciona versión en Python en esta conversión según lo solicitado.
+* Las implementaciones están disponibles en C# y Python.

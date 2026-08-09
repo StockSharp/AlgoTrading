@@ -27,4 +27,4 @@ Wenn der Indikator unter das **Low Level** fällt, signalisiert er eine möglich
 ## Hinweise
 
 - Kommentare im Code sind auf Englisch.
-- Nur die C#-Version ist implementiert; die Python-Version ist absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

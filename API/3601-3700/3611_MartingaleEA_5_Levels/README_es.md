@@ -34,4 +34,4 @@ La **Estrategia de niveles MartingaleEA-5** es una adaptación directa del MetaT
 - La implementación refleja el EA original, incluida la suposición de que solo una cesta direccional está activa a la vez. Abrir posiciones simultáneamente en ambas direcciones hará que cada lado se gestione de forma independiente.
 - Debido a que la estrategia reacciona solo al cierre de la vela, elija un período de tiempo que coincida con la capacidad de respuesta deseada. Los plazos más bajos emulan más fielmente el comportamiento a nivel de tick.
 - Las técnicas Martingale amplifican el riesgo. Realice siempre una prueba retrospectiva con modelos realistas de deslizamiento y comisión y defina niveles de parada conservadores antes de habilitar la estrategia en los mercados reales.
-- La estrategia aún no crea un puerto Python. Solo se incluye la implementación de alto nivel de C# según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.

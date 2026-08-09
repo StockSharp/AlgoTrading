@@ -42,4 +42,4 @@ Macd Pattern Trader Trigger Strategy ports the MetaTrader 4 expert advisor `Macd
 ## Implementation notes
 * The StockSharp high-level API is used throughout: `SubscribeCandles` feeds the indicator and `StartProtection` mirrors the MT4 trade management.
 * The MACD history buffer ensures the decision logic operates on the previous three finished bars, matching MetaTrader's `shift=1..3` calls.
-* There is no Python version of this strategy in the API package, only the C# implementation.
+* Implementations are available in both C# and Python.

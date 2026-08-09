@@ -45,5 +45,5 @@ Diese Implementierung stellt den gleitenden Durchschnittswert zusammen mit einem
 
 ## Verwendungshinweise
 - Die Implementierung verwendet die StockSharp High-Level-API (`SubscribeCandles` + `BindEx`) und vermeidet Low-Level-Pufferverwaltung.
-- Es ist keine Python-Version enthalten, wie angefordert. Nur der C#-Port befindet sich in `CS/SerialMASwingStrategy.cs`.
+- Implementierungen sind in C# und Python verfügbar.
 - Die Strategie ist für Swing-artige Ausführung ähnlich dem ursprünglichen EA gedacht; das Aktivieren beider Richtungen und das Beibehalten des Standard-`AllSwing`-Modus ähnelt am ehesten dem MQL-Verhalten.

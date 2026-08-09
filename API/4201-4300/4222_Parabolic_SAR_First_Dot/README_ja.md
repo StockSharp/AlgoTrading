@@ -32,4 +32,4 @@
 ## 変換時の注意点
 - MetaTrader のストップロス注文とテイクプロフィット注文はブローカー側の保護注文でした。 StockSharp は、ローソク足の高値と安値を監視し、しきい値を超えたときに市場退場を送信することでそれらを再現します。
 - MetaTrader の専門家は、`StopMult` が true の場合は常にストップ距離を 10 倍にして、端数ピップでクオートするブローカーとの互換性を向上させました。 `UseStopMultiplier` パラメータは同じ動作を実装します。
-- 変換では、プロジェクト ガイドラインの要求に応じて、StockSharp の高レベルの API (`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`) を使用します。タスクのリクエストに一致する追加の Python バージョンはまだ提供されていません。
+- 変換では、プロジェクト ガイドラインの要求に応じて、StockSharp の高レベルの API (`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`) を使用します。C# と Python の両方の実装が提供されています。

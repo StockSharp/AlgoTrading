@@ -42,7 +42,7 @@ Only one net position is active at a time. When the signal flips, the strategy s
 - Candles, indicators and orders are wired through the high-level API (`SubscribeCandles().BindEx(...)`).
 - The pip size automatically adjusts to 3/5-digit forex symbols by multiplying the `PriceStep` when needed.
 - Trailing logic runs on completed candles. If intrabar trailing is required, hook the logic into tick-level data.
-- No Python port is provided; the `PY` folder is intentionally absent as requested.
+- Implementations are available in both C# and Python.
 
 ## Differences compared to MetaTrader version
 - Risk sizing is explicit and based on StockSharp portfolio metrics instead of the `CMoneyFixedMargin` helper class. The resulting lots match the original behaviour when stop-loss is enabled; with zero stop-loss the position size remains zero, mirroring the MQL safeguard.

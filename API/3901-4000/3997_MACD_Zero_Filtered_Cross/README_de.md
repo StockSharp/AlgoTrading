@@ -60,6 +60,6 @@ Sowohl der Anschluss als auch die Anzeigen sind bereit.
 * Die Strategie nutzt die `BindEx`-Überladung, sodass der MACD-Indikator sowohl den MACD- als auch den Signalwert auf einmal liefern kann
 Rückruf ohne manuelle Anrufe an `GetValue`.
 * Alle Kommentare im C#-Code sind in englischer Sprache verfasst und entsprechen den Projektrichtlinien.
-* Für diese Strategie gibt es keine Python-Übersetzung. Im Paket API wird nur die C#-Implementierung bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.
 * Um das ursprüngliche MT4-Verhalten möglichst genau zu reproduzieren, wählen Sie einen Kerzenzeitrahmen aus, der mit dem Diagramm übereinstimmt, in dem der EA früher ausgeführt wurde
 und halten Sie den Volumenparameter im Einklang mit der zuvor gehandelten Losgröße.

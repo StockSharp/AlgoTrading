@@ -56,4 +56,4 @@
 - The strategy operates on net positions. Unlike the hedging-friendly MQL version, longs and shorts are not held simultaneously; signals in the opposite direction are ignored until the current exposure is closed by protective orders.
 - `MaxPositions` works as a cap on the aggregate position (base volume multiplied by the stacking factor). Adjust it carefully when changing the base or boosted volumes.
 - Volume tolerance uses half of the instrument volume step to absorb minor rounding differences when checking the stacking cap.
-- Python translation is not included yet and can be added later if needed.
+- Implementations are available in both C# and Python.

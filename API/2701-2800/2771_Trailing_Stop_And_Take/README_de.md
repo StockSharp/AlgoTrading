@@ -47,5 +47,5 @@ Die Strategie operiert auf einem einzigen Wertpapier mit fertigen Kerzen. Wenn d
 ## Hinweise
 - Stops und Ziele werden mit Marktorders ausgeführt, wenn sie ausgelöst werden, was die Implementierung einfach hält und die ursprünglichen Stop-Modifikationen widerspiegelt.
 - `SpreadMultiplier` approximiert das MQL-Verhalten, bei dem Stop-Niveaus nicht näher als der aktuelle Spread platziert werden können. Diesen Wert anpassen, um dem Ausführungsort zu entsprechen.
-- Die Strategie vermeidet bewusst eine Python-Version und konzentriert sich ausschließlich auf die C#-Implementierung, wie gewünscht.
+- Implementierungen sind in C# und Python verfügbar.
 - Erwägen Sie, den Trailing-Engine mit Ihrem eigenen Einstiegsfilter zu kombinieren, indem Sie die integrierten Einstiege deaktivieren und bei Bedarf externe Orders injizieren.

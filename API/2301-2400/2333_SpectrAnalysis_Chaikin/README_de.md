@@ -19,4 +19,4 @@ Diese Strategie verwendet den Chaikin-Oszillator, um Momentum-Wechsel zu erkenne
 
 - Für Ein- und Ausstiege werden Marktorders verwendet.
 - Die Strategie setzt keine Stop-Loss- oder Take-Profit-Orders.
-- Es wird nur die C#-Version bereitgestellt; eine Python-Implementierung ist nicht enthalten.
+- Implementierungen sind in C# und Python verfügbar.

@@ -41,4 +41,4 @@ Exp Highs Lows Signal is a direct port of the MetaTrader 5 expert advisor `Exp_H
 * The strategy stores only the minimal amount of candle history required for the detector, keeping the behaviour identical to the MT5 custom indicator.
 * Because all order management occurs through `StartProtection`, backtests and live trading automatically receive matching stop and take-profit orders without extra code.
 * Disable the corresponding `Allow` flags to turn the strategy into a directional filter or a pure signalling tool.
-* No Python translation is provided; only the C# version is available in this package.
+* Implementations are available in both C# and Python.

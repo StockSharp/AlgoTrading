@@ -48,4 +48,4 @@ Grail Expert MA 是 MetaTrader 4 专家 `_GrailExpertMAV1_0` 在 StockSharp 平�
 * 订阅的蜡烛数据包含未完成的更新，以模拟原策略对盘中高低点的监控。
 * EMA 仅在蜡烛收盘时更新，等效于 MQL4 中对 `iMA` 指标使用 1 和 2 的偏移量。
 * 为了避免昂贵的重新遍历，突破区间通过有界队列维护，而非在每个步骤重新扫描历史。
-* 该目录仅提供 C# 版本，暂不包含 Python 代码。
+* 同时提供 C# 和 Python 实现。

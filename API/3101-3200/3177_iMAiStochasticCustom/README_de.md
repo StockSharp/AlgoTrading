@@ -42,7 +42,7 @@ Nur eine Nettoposition ist gleichzeitig aktiv. Wenn das Signal wechselt, sendet 
 - Kerzen, Indikatoren und Orders sind über die High-Level-API (`SubscribeCandles().BindEx(...)`) verbunden.
 - Die Pip-Größe passt sich automatisch an 3/5-stellige Forex-Symbole an, indem der `PriceStep` bei Bedarf multipliziert wird.
 - Trailing-Logik läuft auf abgeschlossenen Kerzen. Wenn Intrabar-Trailing erforderlich ist, die Logik in Tick-Daten einhängen.
-- Kein Python-Port bereitgestellt; der `PY`-Ordner ist wie gewünscht absichtlich nicht vorhanden.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Unterschiede zur MetaTrader-Version
 - Die Risikodimensionierung ist explizit und basiert auf StockSharp Portfolio-Metriken anstelle der `CMoneyFixedMargin`-Hilfsklasse. Die resultierenden Lots stimmen mit dem Originalverhalten überein, wenn Stop-Loss aktiviert ist; bei null Stop-Loss bleibt die Positionsgröße null, was die MQL-Schutzmaßnahme widerspiegelt.

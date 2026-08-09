@@ -58,4 +58,4 @@ Todas las distancias se multiplican por `PriceStep` en tiempo de ejecución, lo 
 
 - Reproduce fielmente las rutinas matemáticas de `SilverTrend v3.mq5`, incluyendo el algoritmo J_TPO de arrays anidados.
 - Aplica buenas prácticas de C#: los parámetros se exponen vía `StrategyParam<T>`, todos los comentarios están en inglés, y la indentación usa tabulaciones según las directrices del repositorio.
-- No se incluye versión en Python en esta versión según los requisitos de la tarea.
+- Las implementaciones están disponibles en C# y Python.

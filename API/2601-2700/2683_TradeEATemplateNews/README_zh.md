@@ -73,4 +73,4 @@ YYYY-MM-DD HH:MM,CURRENCIES,IMPORTANCE[,TITLE]
 3. 设置好 `Volume`、投资组合和交易品种，然后启动策略。
 4. 关注日志输出，确认是否出现“暂停交易”或“下一次新闻”的提示信息。
 
-根据要求未提供 Python 版本。
+同时提供 C# 和 Python 实现。

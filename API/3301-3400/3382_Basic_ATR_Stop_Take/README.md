@@ -35,4 +35,4 @@ Basic ATR Stop Take ports the MetaTrader 4 expert advisor **“Basic ATR stop_ta
 * The default parameters replicate the EA’s behavior (long-only mode, 0.01 lot volume, ATR period 14, stop factor 1.5, take factor 2.0).
 * Price comparisons use candle highs and lows, meaning stop-loss and take-profit triggers occur as soon as the level is pierced within the candle range.
 * The strategy does not stack or reverse positions; instead it always flattens and waits for the next bar close before placing a fresh order.
-* Only the C# implementation is provided in this package; there is no Python version for this strategy.
+* Implementations are available in both C# and Python.

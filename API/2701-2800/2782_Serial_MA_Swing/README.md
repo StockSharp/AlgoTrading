@@ -45,5 +45,5 @@ This implementation exposes the moving average value together with a boolean fla
 
 ## Usage notes
 - The implementation uses the StockSharp high-level API (`SubscribeCandles` + `BindEx`) and avoids low-level buffer management.
-- No Python version is included, as requested. Only the C# port resides in `CS/SerialMASwingStrategy.cs`.
+- Implementations are available in both C# and Python.
 - The strategy is intended for swing-style execution similar to the original EA; enabling both directions and keeping the default `AllSwing` mode most closely resembles the MQL behaviour.

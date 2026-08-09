@@ -32,4 +32,4 @@ Die NRTR Revers-Strategie ist eine C#-Konvertierung des originalen MetaTrader 5 
 - Die Indikatorberechnungen und Umkehrprüfungen verwenden nur abgeschlossene Kerzen; unvollständige Kerzen werden ignoriert.
 - Der vom Binding gelieferte ATR-Wert entspricht dem ATR der vorherigen Kerze, der im Quell-EA verwendet wird, da Berechnungen nach der Kerzenfertigstellung erfolgen.
 - Die angepasste Punktberechnung verarbeitet automatisch 3- und 5-stellige Forex-Kurse, um pip-basierte Parameter mit dem ursprünglichen Skript kompatibel zu halten.
-- Kein Python-Port ist auf Anfrage vorgesehen. Der Ordner enthält derzeit nur die C#-Implementierung und Dokumentation.
+- Implementierungen sind in C# und Python verfügbar.

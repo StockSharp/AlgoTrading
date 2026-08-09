@@ -73,4 +73,4 @@ YYYY-MM-DD HH:MM,通貨,重要度[,タイトル]
 3. UI またはコードで `Volume`、ポートフォリオ、銘柄を設定してから戦略を開始します。
 4. ブラックアウトロジックを確認するために、"Trading paused due to high news" または "Next scheduled news" などのメッセージについて戦略ログを確認します。
 
-Python 翻訳はリクエスト通り意図的に省略されています。
+C# と Python の両方の実装が提供されています。

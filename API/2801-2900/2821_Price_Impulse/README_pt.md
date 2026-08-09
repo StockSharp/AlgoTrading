@@ -28,4 +28,4 @@ A abordagem é neutra ao mercado: uma posição comprada é aberta quando o pre�
 - Os parâmetros de distância em pontos são convertidos automaticamente usando `Security.PriceStep` (ou `Security.MinPriceStep` como fallback), para que a mesma configuração se adapte a diferentes tamanhos de tick.
 - O trading só começa quando a estratégia está online, os buffers de histórico contêm dados suficientes e a condição de impulso é satisfeita.
 - Como as decisões são tomadas em atualizações de cotações brutas, a estratégia funciona melhor em instrumentos líquidos com feeds Level1 confiáveis.
-- Não existe versão em Python para esta estratégia. Apenas a versão em C# é fornecida, atendendo à solicitação do usuário.
+- As implementações estão disponíveis em C# e Python.

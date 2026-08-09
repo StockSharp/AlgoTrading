@@ -23,4 +23,4 @@ Esta estratégia implementa a ideia de scalping de reversão **Genie Pivot** ori
 
 ## Notas
 
-A estratégia processa apenas candles concluídos. Nenhuma versão em Python foi disponibilizada ainda.
+A estratégia processa apenas candles concluídos. As implementações estão disponíveis em C# e Python.

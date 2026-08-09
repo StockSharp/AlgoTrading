@@ -46,4 +46,4 @@ Zitatänderungen, genau wie der MT4-Tick-Handler `start()`.
 Preisniveaus. Stellen Sie sicher, dass der verbundene Veranstaltungsort die korrekten Werte für `PriceStep`, `StepPrice` und `VolumeStep` bereitstellt.
 - Der synthetische Korbzähler ermöglicht es der Strategie, Sicherungskonten nachzuahmen, obwohl StockSharp die Position aggregiert.
 Teilfüllungen und Stopptreffer werden über den Callback `OnPositionChanged` verarbeitet, der die FIFO-Warteschlangen verwaltet.
-- Gemäß den Repository-Richtlinien wird bewusst auf eine Python-Implementierung verzichtet.
+- Implementierungen sind in C# und Python verfügbar.

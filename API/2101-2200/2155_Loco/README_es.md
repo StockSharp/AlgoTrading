@@ -14,4 +14,4 @@ Esta estrategia implementa el indicador "Loco" escrito originalmente en MQL5. El
 - **Price Type** – precio utilizado en el cálculo del indicador.
 
 ## Notas
-La estrategia utiliza una implementación personalizada del indicador Loco. No se proporciona versión en Python.
+La estrategia utiliza una implementación personalizada del indicador Loco. Las implementaciones están disponibles en C# y Python.

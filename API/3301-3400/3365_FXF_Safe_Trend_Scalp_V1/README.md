@@ -40,7 +40,7 @@ The FXF Safe Trend Scalp V1 strategy trades breakouts from ZigZag-based trendlin
 
 - Only one position is held at a time. Signals are ignored while a trade is open.
 - The spread filter relies on best bid/ask quotes, so the strategy should be connected to a data source providing level 1 information.
-- The Python version of the strategy is intentionally omitted as requested.
+- Implementations are available in both C# and Python.
 
 ## Files
 

@@ -24,4 +24,4 @@ This strategy trades Fibonacci retracement breakouts derived from ZigZag pivots.
 
 ## Notes
 
-This file contains only the C# implementation. A Python version is not yet provided.
+Implementations are available in both C# and Python.

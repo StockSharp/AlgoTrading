@@ -56,4 +56,4 @@ Alle Indikatoren werden einmal pro fertiger Kerze aktualisiert. Der Port spiegel
 * Die Strategie verarbeitet nur fertige Kerzen und verwendet ihre offenen Preise für Indikatoraktualisierungen, entsprechend der „Neuer Balken“-Logik im MQL4-Code.
 * Nachfolgende Niveaus halten mindestens einen Puffer von fünf Punkten vom aktuellen Preis entfernt, genau wie die ursprüngliche Hilfsfunktion `SlLastBar`.
 * Wenn das Schließen von Gegenpositionen deaktiviert ist, sichert die Strategie nie ab – es wird immer nur eine einzige Nettoposition verwaltet.
-* In diesem Paket ist keine Python-Implementierung enthalten.
+* Implementierungen sind in C# und Python verfügbar.

@@ -36,4 +36,4 @@ All parameters are registered through `Param()` and can be optimized in the Stoc
 - Run the strategy on instruments that provide both intraday and daily candle histories. The default configuration requires minute and daily candles.
 - Align the `EntryHourLimit` and `MarketCloseHour` with the trading session of the selected instrument.
 - The algorithm expects exchange-local time in the candle timestamps; adjust data sources accordingly.
-- The logic mirrors the original MQL expert advisor, allowing the behaviour to be replicated inside the StockSharp environment without Python components.
+- Implementations are available in both C# and Python.

@@ -42,4 +42,4 @@ A estratégia de gatilho do Macd Pattern Trader transporta o MetaTrader 4 consul
 ## Notas de implementação
 * O StockSharp API de alto nível é usado em: `SubscribeCandles` alimenta o indicador e `StartProtection` espelha o gerenciamento de negociação MT4.
 * O buffer de histórico MACD garante que a lógica de decisão opere nas três barras concluídas anteriores, correspondendo às chamadas `shift=1..3` de MetaTrader.
-* Não há versão Python desta estratégia no pacote API, apenas a implementação C#.
+* As implementações estão disponíveis em C# e Python.

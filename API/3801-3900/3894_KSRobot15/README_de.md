@@ -67,4 +67,4 @@ Alle Pip-basierten Parameter werden mit `Security.PriceStep` (oder `MinPriceStep
 3. Behalten Sie die Protokollausgabe im Auge: Einträge, Break-Even-Bewegungen, nachlaufende Anpassungen und Notausgänge werden über `LogInfo`-Aufrufe gemeldet.
 4. Hängen Sie den generierten Diagrammbereich (Kerzen, Ichimoku, LWMA, eigene Trades) im Designer oder Backtester an, um den Handelsfluss zu visualisieren.
 
-Es wird nur die C#-Version bereitgestellt. Gemäß den Anforderungen wird kein Python-Ordner erstellt.
+Implementierungen sind in C# und Python verfügbar.

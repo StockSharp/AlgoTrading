@@ -51,4 +51,4 @@ Es kann jeweils nur ein Exit-Modul aktiv sein, genau wie die Parametervalidierun
 * Tägliche Pivot-Level werden anhand der letzten abgeschlossenen täglichen Kerze berechnet, die von einem sekundären Abonnement bereitgestellt wird.
 * Preispunkte und Pip-Konvertierungen hängen vom `PriceStep` des Wertpapiers ab. Symbole mit unterschiedlichen Tick-Größen passen sich automatisch an.
 * Die Strategie abonniert nur Indikatoren auf hoher Ebene und vermeidet direkte Pufferlesevorgänge, wobei die API-Richtlinien des Projekts auf hoher Ebene eingehalten werden.
-* In diesem Paket ist keine Python-Implementierung enthalten.
+* Implementierungen sind in C# und Python verfügbar.

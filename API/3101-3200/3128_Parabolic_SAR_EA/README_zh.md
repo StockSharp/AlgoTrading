@@ -43,4 +43,4 @@
 ## 移植细节
 - MetaTrader 中的 `InpBarCurrent` 为1，即使用上一根已完成的K线做判断。移植版通过仅处理 `Finished` 状态的K线达到同样效果。
 - 原专家顾问通过 `CheckVolumeValue` 检测手数与经纪商限制。StockSharp 交由连接器验证，但 `TradeVolume` 仍要求正数。
-- 按照任务要求，本策略暂未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

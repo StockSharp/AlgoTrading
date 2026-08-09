@@ -38,5 +38,5 @@ Esta estratégia é um port do StockSharp do especialista MQL histórico **MartG
 
 - A implementação aproxima os preenchimentos de stop-loss e take-profit intrabar usando os máximos e mínimos das velas porque o exemplo do StockSharp opera em velas concluídas.
 - O volume da posição recorre à propriedade `Volume` da estratégia ou ao volume mínimo do instrumento quando os dados do portfólio não estão disponíveis.
-- Ainda não há versão Python; apenas a estratégia C# está incluída.
+- As implementações estão disponíveis em C# e Python.
 - Sempre validar a configuração em dados históricos antes de habilitar o trading real. O componente martingale aumenta significativamente o risco.

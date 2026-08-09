@@ -22,7 +22,7 @@ The Karacatica strategy is a trend-following approach that combines price action
 ## Usage Notes
 - Designed for StockSharp high-level API; it subscribes to candles and binds the ADX indicator.
 - The strategy automatically closes opposite positions when a new signal appears.
-- No Python implementation is provided for now.
+- Implementations are available in both C# and Python.
 
 ## Disclaimer
 This example is for educational purposes only and does not guarantee profits. Trading involves significant risk. Always test strategies thoroughly before deploying them on live markets.

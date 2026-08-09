@@ -72,4 +72,4 @@ Utilice únicamente precios de cierre. El conjunto de parámetros aún se puede 
 es necesario.
 * La estrategia se basa únicamente en órdenes de mercado (`BuyMarket`, `SellMarket`) al igual que el script MQL4, que utilizaba órdenes de mercado para
 emular la ejecución de la línea pendiente.
-* No existe una implementación de Python; En este paquete solo se proporciona la versión C#.
+* Las implementaciones están disponibles en C# y Python.

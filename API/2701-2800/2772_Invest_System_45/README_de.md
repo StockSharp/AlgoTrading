@@ -49,4 +49,4 @@ Diese Regeln reproduzieren die kaskadierende Lot-Eskalation der MetaTrader-Versi
 - Die Strategie erwartet, dass das angehängte Wertpapier sowohl die 4-Stunden-Kerzenreihe als auch die schnellere Zeitrahmen-Reihe bereitstellt. Diese Abonnements werden automatisch innerhalb von `OnStarted` erstellt.
 - Die Pip-Größe wird aus `Security.PriceStep` bestimmt und für Bruchquotierungen (3 oder 5 Dezimalstellen) angepasst, um der Behandlung von Pip-Werten durch MetaTrader zu entsprechen.
 - Da der ursprüngliche Roboter Kontostand-Schwellenwerte verwendet, liest die StockSharp-Implementierung `Portfolio.CurrentValue` bei jeder Einstiegskerzen-Aktualisierung. Bei der Ausführung in der Simulation stellen Sie sicher, dass das Portfoliomodell das aktuelle Eigenkapital aktualisiert, damit die Lot-Skalierung konsistent bleibt.
-- Die Python-Übersetzung wird wie gewünscht absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

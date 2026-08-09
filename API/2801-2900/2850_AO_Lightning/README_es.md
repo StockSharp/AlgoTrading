@@ -41,5 +41,5 @@ La lógica refleja el asesor experto original: la pendiente de AO define la dire
 ## Notas
 
 - El experto MT5 original nombra las entradas `Period_sma_slow` y `Period_sma_fast` pero intercambia los valores (5 y 34). El puerto StockSharp mantiene el mapeo funcional exponiendo parámetros intuitivos `AoShortPeriod`/`AoLongPeriod`.
-- No se proporciona versión Python aún, según la solicitud de tarea.
+- Las implementaciones están disponibles en C# y Python.
 - No se incluyen pruebas; ejecute las validaciones necesarias a través de Designer o su propio arnés de backtesting antes de desplegar a producción.

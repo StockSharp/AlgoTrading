@@ -41,4 +41,4 @@ Este port mantém o comportamento contrário: novos máximos acionam operações
 ## Arquivos
 
 * `CS/ZigZagEvgeTrofiStrategy.cs` – Implementação em C# da estratégia.
-* A versão em Python não é fornecida intencionalmente.
+* As implementações estão disponíveis em C# e Python.

@@ -49,4 +49,4 @@ Estas reglas reproducen fielmente la escalada de lotes en cascada de la versión
 - La estrategia espera que el instrumento adjunto proporcione tanto la serie de velas de 4 horas como la serie de marco temporal más rápido. Estas suscripciones se crean automáticamente dentro de `OnStarted`.
 - El tamaño del pip se determina a partir de `Security.PriceStep` y se ajusta para cotizaciones fraccionarias (3 o 5 decimales) para coincidir con el tratamiento de MetaTrader de los valores de pip.
 - Debido a que el robot original usa umbrales de saldo de cuenta, la implementación de StockSharp lee `Portfolio.CurrentValue` en cada actualización de vela de entrada. Al ejecutar en simulación, asegúrese de que el modelo de portafolio actualice el capital actual para que el escalado de lotes permanezca consistente.
-- La traducción a Python se omite intencionalmente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.

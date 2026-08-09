@@ -36,4 +36,4 @@ Alle in Pips ausgedrückten Abstände werden über den `PriceStep` des Instrumen
 3. Passen Sie die Pip-Parameter an die Volatilität des Instruments an. Große `Grid Step`-Werte reduzieren die Häufigkeit zusätzlicher Orders, während ein größerer `Min Lots Multiplier` das Martingale-Wachstum beschleunigt.
 4. Überwachen Sie das resultierende Exposure sorgfältig; das Martingale-Verhalten kann das Volumen schnell eskalieren, wenn mehrere Stops nacheinander ausgelöst werden.
 
-Eine Python-Implementierung wird in diesem Ordner absichtlich nicht bereitgestellt, entsprechend den Anforderungen dieser Konvertierungsaufgabe.
+Implementierungen sind in C# und Python verfügbar.

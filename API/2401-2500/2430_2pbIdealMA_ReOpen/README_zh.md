@@ -37,4 +37,4 @@
 
 ## 说明
 - 适用于任何提供 `Security.PriceStep` 的交易品种，默认配置针对 H4 周期。
-- 根据要求未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

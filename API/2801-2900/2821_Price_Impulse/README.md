@@ -28,4 +28,4 @@ The approach is market-neutral: a long position opens when the ask price surges 
 - The point distance parameters are automatically converted using `Security.PriceStep` (or `Security.MinPriceStep` as a fallback), so the same configuration adapts to different tick sizes.
 - Trading only begins once the strategy is online, the history buffers contain enough data, and the impulse condition is satisfied.
 - Because decisions are taken on raw quote updates, the strategy works best on liquid instruments with reliable Level1 feeds.
-- There is no Python port for this strategy. Only the C# version is provided, matching the user request.
+- Implementations are available in both C# and Python.

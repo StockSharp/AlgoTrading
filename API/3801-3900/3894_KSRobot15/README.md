@@ -67,4 +67,4 @@ All pip-based parameters are converted into price units using `Security.PriceSte
 3. Keep an eye on the log output: entries, break-even moves, trailing adjustments and emergency exits are reported through `LogInfo` calls.
 4. Attach the generated chart area (candles, Ichimoku, LWMA, own trades) in the designer or backtester to visualize the trade flow.
 
-Only the C# version is provided. No Python folder is created according to the requirements.
+Implementations are available in both C# and Python.

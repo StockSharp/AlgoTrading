@@ -38,4 +38,4 @@ Hans123 Trader v2 是 Vladimir Karputov 编写的 MetaTrader 策略在 StockShar
 - 点值基于证券的价格步长推导。对于 3 位和 5 位报价的外汇品种，会按照 MQL 的定义将步长乘以 10。
 - 如果行情中缺少最佳买卖价信息，会退回使用当前蜡烛的收盘价来判断距离要求。
 - 当需要移动止损时，策略会取消旧单并重新挂单，以模拟原程序中的 `PositionModify` 调用。
-- 本任务仅提供 C# 版本，未创建 Python 文件夹或实现。
+- 同时提供 C# 和 Python 实现。

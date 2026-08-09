@@ -65,4 +65,4 @@ PIP サイズはセキュリティ `PriceStep` から導出されます。 JPY �
 ## ファイル
 
 - `CS/DaydreamStrategy.cs` – C# での戦略の実装。
-- Python バージョン: まだ実装されていません。
+- C# と Python の両方の実装が提供されています。

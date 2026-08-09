@@ -27,5 +27,5 @@ The strategy reduces position size after consecutive losing trades when the decr
 
 - Works on finished candles only.
 - Uses high-level StockSharp API with indicator binding.
-- No Python version is provided.
+- Implementations are available in both C# and Python.
 

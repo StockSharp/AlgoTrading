@@ -42,4 +42,4 @@ Ein Port des historischen "Gordago EA" MetaTrader 5-Expert-Advisors. Die Strateg
 - Pip-Abstände werden mit dem `PriceStep` des Wertpapiers in Preise umgerechnet. Wenn der Schritt drei oder fünf Nachkommastellen hat, multipliziert die Strategie ihn mit zehn und reproduziert damit die Pip-Anpassung der ursprünglichen MQL-Implementierung für 3/5-stellige Forex-Kurse.
 - Der Trailing Stop wird ignoriert, wenn `TrailingStopPips` positiv ist, `TrailingStepPips` jedoch nicht; in diesem Fall wird eine Warnung protokolliert.
 - Da die StockSharp-Version auf Kerzen-Schließereignissen arbeitet, wird die Schutzlogik einmal pro abgeschlossener Kerze ausgeführt statt bei jedem Tick wie in der MT5-Version. Das Handelsverwaltungsverhalten folgt ansonsten den ursprünglichen Regeln.
-- Nur die C#-Implementierung wird bereitgestellt; keine Python-Übersetzung oder -Ordner ist auf Anfrage enthalten.
+- Implementierungen sind in C# und Python verfügbar.

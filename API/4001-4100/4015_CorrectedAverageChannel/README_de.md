@@ -59,7 +59,7 @@ Alle numerischen Parameter unterstützen die Optimierung durch `SetCanOptimize(t
 - `Security.PriceStep` wird verwendet, um alle „Punkte“-Eingaben in tatsächliche Preisentfernungen zu übersetzen. Instrumente ohne konfigurierten Schritt greifen auf `1` zurück, wodurch sinnvolles Verhalten für Indizes oder Kryptowährungen erhalten bleibt.
 - Die Strategie wird nur bei fertigen Kerzen ausgeführt. Wenn Intrabar-Präzision erforderlich ist, verringern Sie den Zeitrahmen auf die gewünschte Granularität.
 - Trailing-Stops werden bei Verletzung mit Marktaufträgen implementiert und ahmen den ursprünglichen EA nach, der die Stop-Loss-Preise modifizierte. Dieser Ansatz vermeidet die Platzierung zusätzlicher Stop-Orders und sorgt dafür, dass das Risikomanagement in der Strategie selbst enthalten bleibt.
-- Gemäß den Aufgabenanforderungen wird für diese Konvertierung keine Python-Version bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Unterschiede zum Original EA
 - Das kerzenbasierte API von StockSharp ersetzt die Verarbeitung auf Tick-Ebene. Alle Entscheidungen werden getroffen, wenn eine Kerze schließt.

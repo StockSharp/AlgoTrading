@@ -41,4 +41,4 @@ La lógica nunca afloja el stop: para posiciones largas el stop sólo puede move
 
 ## Notas
 - El código está escrito en el nivel alto StockSharp API con enlace de indicador y suscripciones de vela únicamente.
-- No se proporciona ningún puerto Python. La carpeta `CS` contiene la única implementación.
+- Las implementaciones están disponibles en C# y Python.

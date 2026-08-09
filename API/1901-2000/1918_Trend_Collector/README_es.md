@@ -25,4 +25,4 @@ Esta estrategia es una conversión del algoritmo MQL original `TrendCollector.mq
 | EndHour | Hora de fin de la ventana de trading | 24 |
 | CandleTimeFrame | Marco temporal de las velas procesadas | 5 minutos |
 
-La versión de Python no está disponible actualmente.
+Las implementaciones están disponibles en C# y Python.

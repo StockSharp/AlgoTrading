@@ -23,4 +23,4 @@
 - Die Strategie erfordert Level1-Daten (bester Bid/Ask), um das ursprüngliche MT5-Verhalten zu replizieren; Kerzen stellen einen Fallback mit ihrem Schlusskurs bereit, wenn Level1 nicht verfügbar ist.
 - Die Volumen-Neuberechnung respektiert `Security.VolumeStep`, `Security.MinVolume` und `Security.MaxVolume`, um ungültige Orders zu vermeiden.
 - Preiskonvertierungen basieren auf `Security.PriceStep` und `Security.Decimals`, damit sich die Strategie sowohl an 4/5-stellige Forex-Symbole als auch an andere Instrumente anpasst.
-- Für diese Strategie wird keine Python-Version bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.

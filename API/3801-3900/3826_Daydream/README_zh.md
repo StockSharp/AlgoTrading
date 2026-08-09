@@ -65,4 +65,4 @@
 ## 文件结构
 
 - `CS/DaydreamStrategy.cs` — C# 策略实现。
-- Python 版本尚未提供。
+- 同时提供 C# 和 Python 实现。

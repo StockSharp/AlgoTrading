@@ -41,7 +41,7 @@ A **Backbone Basket Strategy** transporta o consultor especialista original Meta
 - O dimensionamento do volume depende de `Security.PriceStepCost`. Se o conector não fornecer esse valor, a estratégia retornará à propriedade `Volume` configurada.
 - As atualizações finais são aplicadas quando uma nova vela chega, correspondendo ao comportamento "uma vez por barra" do script MT4 (que só agiu quando `Bars > PrevBars`).
 - A lógica alternada mantém a última direção executada em `_lastPositionDirection`, portanto, assim que uma cesta é fechada, a próxima vela abre automaticamente uma cesta na direção oposta, assim como o código-fonte.
-- Somente a implementação C# é fornecida; não há porta Python neste diretório.
+- As implementações estão disponíveis em C# e Python.
 
 ## Dicas de uso
 - Atribua instrumentos com `PriceStep`, `PriceStepCost` precisos e metadados de volume para obter tamanhos de posição realistas.

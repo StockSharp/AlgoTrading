@@ -38,4 +38,4 @@ A estratégia replica o assessor especialista do MetaTrader **Exp_AbsolutelyNoLa
 ## Notas
 - O timeframe padrão é 4 horas, correspondendo à configuração do assessor especialista original, mas pode ser ajustado através do parâmetro *Tipo de vela*.
 - Nenhuma ordem de take-profit ou stop-loss é colocada automaticamente; os usuários podem combinar a estratégia com os componentes de gerenciamento de risco do StockSharp, se necessário.
-- A portação em Python é intencionalmente omitida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

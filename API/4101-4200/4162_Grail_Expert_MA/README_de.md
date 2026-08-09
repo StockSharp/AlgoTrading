@@ -48,4 +48,4 @@ Grail Expert MA ist ein StockSharp-Port des MetaTrader 4 Expert Advisors `_Grail
 * Die Strategie verwendet Rohkerzenaktualisierungen (einschließlich Teilzuständen), um die ursprüngliche Intrabar-Hoch/Tief-Überwachung zu emulieren.
 * EMA-Werte werden nur bei fertigen Kerzen verarbeitet, um die MQL `iMA`-Aufrufe mit Verschiebungen von einem und zwei Balken zu reproduzieren.
 * Historische Bereiche werden mit begrenzten Warteschlangen anstelle von Indikatorsuchen verfolgt, um teure Neuscans zu vermeiden und gleichzeitig die Logik der Quelle treu zu halten.
-* Es wird keine Python-Version bereitgestellt. Das Paket API enthält nur die C#-Implementierung.
+* Implementierungen sind in C# und Python verfügbar.

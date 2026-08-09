@@ -34,4 +34,4 @@ This strategy replicates the "Bollinger Bands N positions v2" expert advisor by 
 - Only finished candles are processed to mirror the original "new bar" logic from MetaTrader.
 - Because StockSharp operates in a netting mode, the conversion closes the opposite exposure before opening a new pyramid layer in the other direction.
 - Trailing step must remain greater than zero whenever the trailing stop is active, matching the safety check of the original expert advisor.
-- Python implementation is not included in this release.
+- Implementations are available in both C# and Python.

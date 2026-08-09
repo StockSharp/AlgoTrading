@@ -51,4 +51,4 @@ A estratégia espelha as distâncias fixas originais de take profit e stop-loss.
 - O valor do passo de preço do instrumento ativo é usado ao comparar diferenças de SMA para garantir que a distância necessária seja pelo menos um tick.
 - Os níveis de stop-loss e take profit dependem do passo de preço do instrumento. Para instrumentos de três e cinco decimais, o tamanho do pip é automaticamente expandido dez vezes, correspondendo ao comportamento do MetaTrader.
 - Nenhum dimensionamento automático de posição é implementado. A estratégia aguarda o fechamento de todas as posições abertas antes de procurar o próximo sinal de entrada.
-- Este repositório contém apenas a implementação em C#; não há port em Python para esta estratégia.
+- As implementações estão disponíveis em C# e Python.

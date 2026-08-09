@@ -51,4 +51,4 @@ La estrategia dibuja automáticamente:
 ## Notas
 - La lógica del arco iris se aproxima a los indicadores personalizados originales de RainbowMMA mediante la creación de paquetes EMA configurables. Ajuste las longitudes de la base para que coincidan con una plantilla de arcoíris específica si es necesario.
 - Todos los comentarios de código, registros y documentación se proporcionan en inglés según sea necesario.
-- La estrategia se centra únicamente en la implementación de C#. No se genera ningún puerto Python en esta tarea.
+- Las implementaciones están disponibles en C# y Python.

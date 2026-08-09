@@ -42,4 +42,4 @@ Each indicator can subscribe to its own timeframe. A timeframe value of `0` reus
 ## Notes
 * Indicator queues honour the configured `Shift`, ensuring signals are based on historical values in the same way as the MQL expert.
 * The trailing logic only activates once the trade is already in profit by more than the trailing distance and the stop is more than that distance away from price, matching the original EA's behaviour.
-* No Python version is provided for this strategy package.
+* Implementations are available in both C# and Python.

@@ -41,5 +41,5 @@ Die Logik spiegelt den ursprünglichen Expertenberater wider: Die AO-Steigung de
 ## Hinweise
 
 - Der ursprüngliche MT5-Experte benennt die Eingaben `Period_sma_slow` und `Period_sma_fast`, tauscht jedoch die Werte (5 und 34). Der StockSharp-Port behält das funktionale Mapping bei, indem er intuitive `AoShortPeriod`/`AoLongPeriod`-Parameter bereitstellt.
-- Es gibt noch keine Python-Version, entsprechend der Aufgabenanforderung.
+- Implementierungen sind in C# und Python verfügbar.
 - Keine Tests enthalten; führen Sie notwendige Validierungen über Designer oder Ihr eigenes Backtesting-Framework durch, bevor Sie in die Produktion deployen.

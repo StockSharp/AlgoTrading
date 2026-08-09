@@ -48,4 +48,4 @@ RSI Martingale es un puerto del MetaTrader 5 asesor experto `RSI&Martingale1.5`.
 ## Notas adicionales
 * La estrategia opera únicamente con velas terminadas y no evalúa los ticks intrabar.
 * Los cálculos de ganancias diarias combinan la estrategia realizada PnL con PnL flotante basada en el último precio de cierre.
-* No hay ninguna implementación de Python para esta estrategia en el paquete; sólo se proporciona la versión C#.
+* Las implementaciones están disponibles en C# y Python.

@@ -57,4 +57,4 @@ All numeric parameters are exposed through `StrategyParam<T>` so they can be opt
 2. Adjust the instrument's step if necessary (`PriceStep` is auto-detected; the fallback is `0.0001`).
 3. Optionally tune `OrderVolume`, `TrailingStopPoints`, or the candle types to match the original MT4 setup.
 
-No Python version is provided for this port as requested.
+Implementations are available in both C# and Python.

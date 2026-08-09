@@ -56,4 +56,4 @@
 - A estratégia opera sobre posições líquidas. Ao contrário da versão MQL compatível com hedge, comprados e vendidos não são mantidos simultaneamente; sinais na direção oposta são ignorados até que a exposição atual seja fechada por ordens protetoras.
 - `MaxPositions` funciona como um limite para a posição agregada (volume base multiplicado pelo fator de empilhamento). Ajuste-o cuidadosamente ao alterar os volumes base ou aumentados.
 - A tolerância de volume usa metade do passo de volume do instrumento para absorver pequenas diferenças de arredondamento ao verificar o limite de empilhamento.
-- A tradução para Python ainda não está incluída e pode ser adicionada mais tarde se necessário.
+- As implementações estão disponíveis em C# e Python.

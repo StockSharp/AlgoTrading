@@ -73,4 +73,4 @@ Beispiel:
 3. Setze `Volume`, Portfolio und Wertpapier in der Benutzeroberfläche oder im Code, dann starte die Strategie.
 4. Beobachte das Strategieprotokoll auf Nachrichten wie "Trading paused due to high news" oder "Next scheduled news", um die Sperrlogik zu bestätigen.
 
-Die Python-Übersetzung wird absichtlich weggelassen, wie angefordert.
+Implementierungen sind in C# und Python verfügbar.

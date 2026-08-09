@@ -29,4 +29,4 @@ Esta estratégia reproduz o consultor especialista MetaTrader **pSAR_alert2** de
 - O script MetaTrader original dependia de `Sleep` para limitar a execução. StockSharp é orientado a eventos, portanto a estratégia reage a novas velas imediatamente, sem atrasos manuais.
 - Os alertas são produzidos por meio de `AddInfoLog`, mantendo o comportamento original das notificações pop-up sem exigir componentes de UI adicionais.
 - A negociação automática opcional é fornecida para integrar a lógica de alerta em fluxos de trabalho automatizados. Desative o parâmetro `Enable Auto Trading` para corresponder ao comportamento exato de MetaTrader.
-- A implementação do Python é omitida intencionalmente conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

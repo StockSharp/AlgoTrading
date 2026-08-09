@@ -25,4 +25,4 @@ Esta estratégia recria o consultor especialista original de "breakdown" do Meta
 - Configurar a estratégia em instrumentos que publiquem velas diárias para que o intervalo da sessão anterior possa ser obtido.
 - A lógica assume um tamanho de tick constante. Para instrumentos com incrementos de tick variáveis, ajustar os padrões adequadamente.
 - A estratégia não implementa o dimensionamento baseado em porcentagem do script MQL original; o volume é definido explicitamente através do parâmetro `Order Volume`.
-- Nenhuma versão Python ainda é fornecida para esta estratégia.
+- As implementações estão disponíveis em C# e Python.

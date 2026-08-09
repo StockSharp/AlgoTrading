@@ -40,4 +40,4 @@ Esta estrategia opera utilizando el **Oscilador Stochastic** en el marco tempora
 ## Notas
 
 - Los comentarios en el código están en inglés.
-- La versión de Python se omite intencionalmente.
+- Las implementaciones están disponibles en C# y Python.

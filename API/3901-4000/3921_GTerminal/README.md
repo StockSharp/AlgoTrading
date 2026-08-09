@@ -72,4 +72,4 @@ use closing prices only. The parameter set can still be combined with other Stoc
 is required.
 * The strategy relies solely on market orders (`BuyMarket`, `SellMarket`) just like the MQL4 script, which used market orders to
 emulate pending line execution.
-* There is no Python implementation; only the C# version is provided in this package.
+* Implementations are available in both C# and Python.

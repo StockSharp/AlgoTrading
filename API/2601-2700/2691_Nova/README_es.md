@@ -23,4 +23,4 @@
 - La estrategia requiere datos Level1 (mejor bid/ask) para replicar el comportamiento original de MT5; las velas proporcionan un respaldo usando su precio de cierre cuando Level1 no está disponible.
 - El recálculo de volumen respeta `Security.VolumeStep`, `Security.MinVolume` y `Security.MaxVolume` para evitar órdenes inválidas.
 - Las conversiones de precio dependen de `Security.PriceStep` y `Security.Decimals` para que la estrategia se adapte tanto a símbolos forex de 4/5 dígitos como a otros instrumentos.
-- No se proporciona versión en Python para esta estrategia.
+- Las implementaciones están disponibles en C# y Python.

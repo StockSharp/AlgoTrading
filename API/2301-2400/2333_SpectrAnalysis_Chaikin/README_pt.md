@@ -19,4 +19,4 @@ Esta estratégia usa o oscilador Chaikin para detectar mudanças de momentum. O 
 
 - Ordens a mercado são usadas para entradas e saídas.
 - A estratégia não define ordens de stop-loss ou take-profit.
-- Apenas a versão em C# é fornecida; não há implementação em Python.
+- As implementações estão disponíveis em C# e Python.

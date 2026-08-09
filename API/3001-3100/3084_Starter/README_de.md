@@ -76,4 +76,4 @@ optionaler Trailing-Mechanismus reproduzieren die Geldmanagement-Regeln des Orig
 - Die Pip-Größe wird aus `Security.PriceStep` abgeleitet. Wenn das Instrument keinen gültigen Preisschritt meldet, werden die Stop-
   und Trailing-Abstände als null behandelt.
 - Alle Kommentare im Code sind gemäß den Repository-Richtlinien in Englisch verfasst.
-- Die Python-Version ist absichtlich ausgelassen, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.

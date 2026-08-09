@@ -58,4 +58,4 @@ All distances are multiplied by `PriceStep` during runtime, which automatically 
 
 - Faithfully reproduces the mathematical routines from `SilverTrend v3.mq5`, including the nested-array J_TPO algorithm.
 - Applies C# best practices: parameters are exposed via `StrategyParam<T>`, all comments are in English, and indentation uses tabs as mandated by the repository guidelines.
-- No Python version is provided in this release per the task requirements.
+- Implementations are available in both C# and Python.

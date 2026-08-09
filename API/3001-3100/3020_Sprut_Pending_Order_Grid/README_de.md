@@ -63,4 +63,4 @@ Die konvertierte Version behält die Philosophie des ursprünglichen Experten-Ad
 4. Passen Sie `ProfitClose`/`LossClose` an Werte an, die mit Ihrer Kontowährung konsistent sind.
 5. Starten Sie die Strategie; sie wartet auf den ersten Order-Book-Snapshot, bevor sie das Raster aufbaut.
 
-> **Python-Version** – nicht bereitgestellt. Nur die C#-Implementierung ist enthalten, wie angefordert.
+> Implementierungen sind in C# und Python verfügbar.

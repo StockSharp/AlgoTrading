@@ -25,4 +25,4 @@ Diese Strategie ist eine Konvertierung des ursprünglichen MQL-Algorithmus `Tren
 | EndHour | Endstunde des Handelsfensters | 24 |
 | CandleTimeFrame | Zeitrahmen der verarbeiteten Kerzen | 5 Minuten |
 
-Die Python-Version ist derzeit nicht verfügbar.
+Implementierungen sind in C# und Python verfügbar.

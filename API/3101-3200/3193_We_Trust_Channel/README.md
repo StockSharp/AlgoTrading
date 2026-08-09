@@ -40,5 +40,5 @@ The **WE TRUST Channel Strategy** is a high-level StockSharp port of the MetaTra
 
 ## Notes
 - The strategy relies on valid `PriceStep` metadata. If the exchange does not provide it the code falls back to `Security.Step` and finally to `1`.
-- Only the C# implementation is included in this directory. The Python port is intentionally omitted per instructions.
+- Implementations are available in both C# and Python.
 - The logic processes finished candles only and does not attempt to accumulate partial bar data.

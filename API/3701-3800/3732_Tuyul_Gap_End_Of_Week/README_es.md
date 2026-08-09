@@ -24,4 +24,4 @@ Tuyul Gap End Of Week transfiere el asesor experto MetaTrader 5 `TuyulGAP` a Sto
 ## Notas adicionales
 * La orden de stop loss se envía solo después de que se abre una posición, porque StockSharp no admite adjuntar un stop de protección directamente a una orden de stop pendiente.
 * Los niveles de volumen, precio y parada se normalizan utilizando la información de precisión y pasos del valor que proporciona StockSharp.
-* No existe una traducción de Python para esta estrategia; En este paquete solo se incluye la implementación de C#.
+* Las implementaciones están disponibles en C# y Python.

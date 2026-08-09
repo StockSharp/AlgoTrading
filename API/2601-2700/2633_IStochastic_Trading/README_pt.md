@@ -35,4 +35,4 @@ A Estratégia de Trading IStochastic é um port direto do StockSharp do assessor
 - As distâncias em pips são convertidas para preços com `PriceStep`. Para cotações de 3 e 5 dígitos um fator adicional de 10 é usado para imitar a lógica de ponto ajustado do MetaTrader.
 - As verificações de stop-loss, take-profit e trailing stop dependem dos preços de fechamento das velas para manter a lógica determinística dentro do backtester. A execução em tempo real pode ser personalizada se o gerenciamento intrabar for necessário.
 - A estratégia abre apenas uma escada direcional por vez; todas as posições devem ser fechadas antes de mudar de direção.
-- A implementação em Python é intencionalmente omitida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

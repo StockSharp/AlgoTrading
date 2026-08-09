@@ -35,4 +35,4 @@ Die Surefirething-Strategie recreiert den klassischen MetaTrader 5-Expertenberat
 
 ## Hinweise
 - Die Implementierung entspricht der ursprünglichen MQL-Logik, indem sichergestellt wird, dass der Trailing-Schritt ungleich null ist, wenn Trailing aktiv ist.
-- Für diese Strategie wird keine Python-Implementierung bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.

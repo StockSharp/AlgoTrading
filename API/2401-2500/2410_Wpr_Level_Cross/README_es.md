@@ -27,4 +27,4 @@ Cuando el indicador cruza por debajo del **Low Level**, señala una posible reve
 ## Notas
 
 - Los comentarios en el código están en inglés.
-- Solo se implementa la versión C#; la versión Python se omite intencionalmente.
+- Las implementaciones están disponibles en C# y Python.

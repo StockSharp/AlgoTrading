@@ -25,4 +25,4 @@ This strategy recreates the original MetaTrader "breakdown" expert advisor. It p
 - Configure the strategy on instruments that publish daily candles so the previous session range can be obtained.
 - The logic assumes a constant tick size. For instruments with variable tick increments, adjust the defaults accordingly.
 - The strategy does not implement percentage-based sizing from the original MQL script; volume is defined explicitly through the `Order Volume` parameter.
-- No Python version is provided for this strategy yet.
+- Implementations are available in both C# and Python.

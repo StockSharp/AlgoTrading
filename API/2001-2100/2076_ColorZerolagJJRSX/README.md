@@ -27,7 +27,7 @@ This strategy replicates the logic of the **ColorZerolagJJRSX** MetaTrader exper
 
 - The implementation uses built-in indicators and high-level `Bind` API.
 - Volume is taken from the strategy's `Volume` property.
-- No Python version is provided for this strategy.
+- Implementations are available in both C# and Python.
 
 ## References
 

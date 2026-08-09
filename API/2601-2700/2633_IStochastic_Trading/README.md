@@ -35,4 +35,4 @@ IStochastic Trading Strategy is a direct StockSharp port of the "IStochastic_Tra
 - Pip distances are converted to prices with `PriceStep`. For 3- and 5-digit quotes an additional factor of 10 is used to mimic MetaTrader's adjusted point logic.
 - Stop loss, take profit and trailing stop checks rely on closed candle prices to keep the logic deterministic inside the backtester. Real-time execution can be customised if intrabar management is required.
 - The strategy only opens one directional ladder at a time; all positions must be closed before switching direction.
-- Python implementation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

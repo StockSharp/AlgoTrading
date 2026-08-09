@@ -41,4 +41,4 @@ The logic never loosens the stop: for longs the stop can only move upwards, whil
 
 ## Notes
 - The code is written against the high-level StockSharp API with indicator binding and candle subscriptions only.
-- No Python port is provided. The `CS` folder contains the sole implementation.
+- Implementations are available in both C# and Python.

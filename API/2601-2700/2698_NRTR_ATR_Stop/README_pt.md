@@ -50,4 +50,4 @@ A estratégia é implementada sobre a API de alto nível do StockSharp. Toda a l
 
 - A estratégia usa apenas processamento em nível de candle; a replicação tick a tick do EA original é evitada intencionalmente para permanecer consistente com a arquitetura de alto nível do StockSharp.
 - Os comentários dentro do código estão em inglês conforme exigido pelas diretrizes do projeto.
-- Uma versão em Python é intencionalmente omitida para atender à solicitação do usuário.
+- As implementações estão disponíveis em C# e Python.

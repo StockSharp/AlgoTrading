@@ -24,4 +24,4 @@ Esta estrategia opera rupturas de niveles de retroceso de Fibonacci derivados de
 
 ## Notas
 
-Este archivo contiene solo la implementación en C#. Aún no se proporciona una versión en Python.
+Las implementaciones están disponibles en C# y Python.

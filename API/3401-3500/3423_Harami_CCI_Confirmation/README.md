@@ -29,4 +29,4 @@ Harami CCI Confirmation is a high-level StockSharp port of the MetaTrader 5 expe
 ## Additional notes
 * All calculations run on completed candles supplied by `SubscribeCandles`. Intrabar signals are intentionally ignored to match the MetaTrader execution model.
 * The strategy keeps a short sliding history of candles and CCI values to evaluate the Harami rules without recreating full indicator buffers.
-* Only the C# implementation is provided in this folder; there is no Python version for this conversion.
+* Implementations are available in both C# and Python.

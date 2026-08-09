@@ -55,4 +55,4 @@ Las señales se programan a través de una cola FIFO. Cuando `SignalBar` es cero
 - `CS/OmniTrendStrategy.cs` — Implementación en C# de la estrategia.
 - `README.md`, `README_ru.md`, `README_zh.md` — Documentación en inglés, ruso y chino.
 
-El soporte de Python se omite intencionalmente según lo solicitado.
+Las implementaciones están disponibles en C# y Python.

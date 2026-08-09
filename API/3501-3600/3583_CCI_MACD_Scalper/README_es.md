@@ -51,4 +51,4 @@ El CCI MACD Scalper traslada el MetaTrader 5 asesores expertos "CCI + MACD Scalp
 ## Notas adicionales
 * La conversión de precio-punto se basa en el valor `PriceStep`. Los símbolos sin un paso válido retroceden a una distancia de una unidad de precio.
 * El capital de la cartera se obtiene de `Portfolio.CurrentValue` y vuelve a caer a `BeginValue` cuando la valoración actual no está disponible. Si faltan ambos, la estrategia vuelve a la propiedad base `Volume`.
-* No existe un puerto Python para esta estrategia; sólo la versión C# está incluida en el paquete API.
+* Las implementaciones están disponibles en C# y Python.

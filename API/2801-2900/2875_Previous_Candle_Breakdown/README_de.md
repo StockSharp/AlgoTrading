@@ -54,4 +54,4 @@ Die **Strategie für den Ausbruch der vorherigen Kerze** beobachtet das Hoch und
 
 - `CS/PreviousCandleBreakdownStrategy.cs` – C#-Implementierung der Strategie.
 
-Die Python-Übersetzung wird für diese Strategie nicht bereitgestellt.
+Implementierungen sind in C# und Python verfügbar.

@@ -30,4 +30,4 @@ A **CDC PL MFI Strategy** reproduz o MetaTrader consultor especialista `Expert_A
 - O volume padrão é `1` lote. Quando a estratégia muda de direção, ela envia uma única ordem de mercado dimensionada para fechar a posição existente e abrir a nova, correspondendo ao comportamento MQL.
 - A detecção de padrões reflete a lógica MetaTrader: apenas velas concluídas são avaliadas, as lacunas devem ocorrer além da máxima/mínima anterior e uma média móvel simples impõe a condição de tendência predominante.
 - Os valores do Índice de Fluxo de Dinheiro vêm diretamente do indicador vinculado. Nenhum buffer manual do histórico do indicador é necessário; a estratégia armazena apenas os valores mais recentes para detectar cruzamentos de limites.
-- Nenhuma porta Python é fornecida; apenas a implementação do C# está incluída neste diretório.
+- As implementações estão disponíveis em C# e Python.

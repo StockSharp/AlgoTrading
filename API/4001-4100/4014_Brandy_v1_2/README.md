@@ -43,7 +43,7 @@ Both stop parameters operate in instrument points. The helper method converts th
 - State (entry price, stop level, SMA histories) resets automatically on `OnReseted()` ensuring clean backtests and restarts.
 - Indicator histories are stored in short rolling buffers to reproduce the `iMA(..., shift)` offsets without calling `GetValue()`.
 - All inline comments remain in English as required by the repository guidelines.
-- No Python counterpart is provided. Only the C# high-level implementation is delivered in `CS/BrandyV12Strategy.cs` as requested.
+- Implementations are available in both C# and Python.
 
 ## Usage
 1. Place the strategy into a StockSharp solution, select the desired instrument, and ensure the candle data matches the timeframe specified by `CandleType`.

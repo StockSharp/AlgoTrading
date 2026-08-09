@@ -48,4 +48,4 @@ Defina a propriedade `Volume` da estratégia para controlar o dimensionamento de
 
 * A estratégia espera histórico suficiente para formar o canal deslizante (aproximadamente `max(shift + 2 × range)` candles). Gerencia automaticamente os buffers internos e ignora sinais até que dados suficientes estejam disponíveis.
 * O arredondamento de preço é realizado usando dígitos decimais, refletindo o comportamento de arredondamento do indicador MQL.
-* A implementação Python é omitida intencionalmente conforme as instruções do projeto; apenas a versão C# é fornecida.
+* As implementações estão disponíveis em C# e Python.

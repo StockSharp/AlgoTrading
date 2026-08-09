@@ -30,4 +30,4 @@ The **CDC PL MFI Strategy** reproduces the MetaTrader expert advisor `Expert_ADC
 - Volume defaults to `1` lot. When the strategy flips direction it sends a single market order sized to close the existing position and open the new one, matching the MQL behavior.
 - Pattern detection mirrors the MetaTrader logic: only completed candles are evaluated, gaps must occur beyond the previous high/low, and a simple moving average enforces the prevailing trend condition.
 - The Money Flow Index values come directly from the bound indicator. No manual buffering of indicator history is required; the strategy stores only the most recent values to detect threshold crossings.
-- No Python port is provided; only the C# implementation is included in this directory.
+- Implementations are available in both C# and Python.

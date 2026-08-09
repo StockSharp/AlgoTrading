@@ -57,4 +57,4 @@ The StockSharp version keeps the same money-management options, stop/target cont
 
 ## Conversion status
 * **C# version** – implemented (`CS/ExpColorPemaDigitTmPlusStrategy.cs`).
-* **Python version** – not created (per instruction).
+* Implementations are available in both C# and Python.

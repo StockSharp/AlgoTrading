@@ -73,4 +73,4 @@ layers.追加のエントリはすべて、最初の指示に従います。残�
 - `CS/WavePowerEAStrategy.cs` – Wave Power EA グリッド ロジックの StockSharp 実装。
 - `README.md` / `README_ru.md` / `README_zh.md` – 英語、ロシア語、中国語のドキュメント。
 
-Python のバージョンは、タスク要件に従って意図的に省略されています。
+C# と Python の両方の実装が提供されています。

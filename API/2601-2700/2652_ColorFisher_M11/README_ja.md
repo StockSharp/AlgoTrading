@@ -43,5 +43,5 @@ Color Fisher M11は、MetaTrader 5のExp_ColorFisher_m11エキスパートアド
 
 ## 注意事項
 - 戦略はStockSharpの高レベルバインディング（`SubscribeCandles().BindEx`）を使用し、遅延シグナルに必要な最小限のカラー履歴を超えた履歴コレクションを保存しません。
-- この版ではPythonポートは提供されていません（仕様に従っています）。
+- C# と Python の両方の実装が提供されています。
 - 価格とColor Fisherオシレーターの両方を視覚化するために、戦略をチャートエリアに追加してください。

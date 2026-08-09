@@ -31,7 +31,7 @@ MACD No Sample is a port of the MetaTrader 5 expert advisor `MACD No Sample`. Th
 * Indicator inputs honor the applied price selections and rely on StockSharp’s moving-average and MACD indicator implementations.
 * Pip size detection mirrors the original EA logic by multiplying the price step by ten on three- and five-digit instruments.
 * Stop and trailing logic closes the position via market orders when the calculated levels are breached; no separate stop orders are registered.
-* Only the C# implementation is provided; there is no Python version for this strategy.
+* Implementations are available in both C# and Python.
 
 ## Parameters
 * **Volume** – fixed trade volume for market orders.

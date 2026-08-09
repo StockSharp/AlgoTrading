@@ -57,7 +57,7 @@ Key ideas:
 * ATR(8) is computed with `AverageTrueRange` and cached so that the original stop/take distances remain constant for each trade.
 * The pip conversion reproduces the MetaTrader adjustment for 3- and 5-digit quotes. If the security lacks `PriceStep`, a default step of `1` is used.
 * Up to 120 historical candles are stored to replicate the original `CopyRates` look-back of 100 bars with some safety margin.
-* No Python port is provided for this strategy.
+* Implementations are available in both C# and Python.
 
 ## Usage
 1. Attach the strategy to the desired security and portfolio.

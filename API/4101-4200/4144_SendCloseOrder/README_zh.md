@@ -41,4 +41,4 @@ Send Close Order 是 2009 年由 Vladimir Hlystov 编写的 MetaTrader 4 专家�
 - 调高 `MaxOrders` 可以模拟原版 EA 的加仓行为，设置 `TradeVolume` 时请考虑品种的最小交易单位。
 - 线条偏移固定为 15 个点，如需修改 MetaTrader 中的参数请同步调整源代码。
 
-当前仅提供 C# 实现，如需 Python 版本可在后续添加。
+同时提供 C# 和 Python 实现。

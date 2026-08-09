@@ -46,4 +46,4 @@ strongly typed parameters through the high-level `Strategy` API.
   price levels. Ensure the connected venue exposes correct `PriceStep`, `StepPrice`, and `VolumeStep` values.
 - The synthetic basket counter allows the strategy to mimic hedging accounts even though StockSharp aggregates the position.
   Partial fills and stop hits are handled via the `OnPositionChanged` callback that maintains the FIFO queues.
-- Python implementation is intentionally omitted according to the repository guidelines.
+- Implementations are available in both C# and Python.

@@ -28,4 +28,4 @@ Price Impulse 策略直接订阅 Level1 行情，监控最佳买卖价的瞬间�
 - 所有以点数表示的距离都会自动乘以 `Security.PriceStep`（若不存在则回退到 `Security.MinPriceStep`），从而适配不同 tick 大小的品种。
 - 只有在策略连接正常、历史缓存满足 `HistoryGap` 要求并且冲击条件成立时才会下单。
 - 该策略对 Level1 数据的质量要求较高，更适合流动性充足的市场。
-- 本目录仅包含 C# 版本，暂未提供 Python 实现，符合任务要求。
+- 同时提供 C# 和 Python 实现。

@@ -58,4 +58,4 @@
 - Expose separate trailing parameters for long and short grids or allow asymmetric grids.
 - Combine the MACD slope with trend filters (moving averages, higher timeframe confirmation) to reduce the number of counter-trend grids.
 
-> **Note:** No Python implementation is provided for this strategy, matching the request and the current project structure.
+> Implementations are available in both C# and Python.

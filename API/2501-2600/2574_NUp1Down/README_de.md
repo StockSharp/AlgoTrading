@@ -31,4 +31,4 @@ Die **NUp1Down-Strategie** ist eine direkte Konvertierung des MetaTrader 5-Exper
 - Konfigurieren Sie die `Volume`-Eigenschaft auf die von Ihrem Broker erlaubte Mindestordergröße. Die risikobasierte Größenbestimmung kann die Handelsgröße erhöhen, reduziert sie aber nie unter `Volume`.
 - Die Strategie hält jederzeit nur eine aggregierte Short-Position. Wenn eine Long-Position vorhanden ist, wird diese vor dem Eröffnen der Short-Position geschlossen.
 - Der Algorithmus arbeitet mit Kerzendaten. Intrabar-Stop-Loss- oder Take-Profit-Treffer werden mit dem Kerzenhoch/-tief erkannt, sodass der tatsächliche Ausführungszeitpunkt vom Tick-Level-Execution abweichen kann.
-- In dieser Version wird keine Python-Version bereitgestellt. Nur die C#-Implementierung in `API/2574/CS/NUp1DownStrategy.cs` ist verfügbar.
+- Implementierungen sind in C# und Python verfügbar.

@@ -63,4 +63,4 @@ parâmetros baseados em pontos compatíveis com a maioria dos símbolos FX.
 * Todos os cálculos dos indicadores dependem de velas finalizadas para corresponder à implementação do MT4 que funcionou em barras totalmente fechadas.
 * Ao contrário do EA original, não há painel de controle manual ou carregador de perfil baseado em arquivo. As zonas são reconstruídas puramente a partir de live
 dados da vela para manter a porta independente.
-* A versão StockSharp não inclui uma tradução Python.
+* As implementações estão disponíveis em C# e Python.

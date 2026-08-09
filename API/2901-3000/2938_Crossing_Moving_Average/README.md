@@ -5,7 +5,7 @@
 - Conversion of the MetaTrader 5 expert advisor **"Crossing Moving Average (barabashkakvn's edition)"** from the `MQL/21515` source.
 - Implements the logic on top of the StockSharp high-level API with candle subscriptions and indicator binding.
 - Designed for instruments where momentum and moving average crossovers capture trend reversals.
-- This package contains only the C# version. A Python translation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.
 
 ## Core Idea
 The strategy monitors two configurable moving averages (fast and slow) with optional forward shifts and combines their crossover with a momentum confirmation filter. A trade is opened only when:

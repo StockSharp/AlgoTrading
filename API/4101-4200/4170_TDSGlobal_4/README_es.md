@@ -67,4 +67,4 @@ cheques de ganancias. La evaluación de la señal real solo ocurre una vez por d
 ng) para que pueda ser reutilizado dentro de la plataforma sin necesidad de realizar un pedido manual de plomería.
 * Se requieren datos de nivel 1 para la operación de trailing stop porque el algoritmo utiliza las mejores cotizaciones de oferta y demanda para mover y activar el
 parada virtual.
-* El paquete no incluye una traducción de Python; Solo se proporcionan la estrategia C# y la documentación multilingüe.
+* Las implementaciones están disponibles en C# y Python.

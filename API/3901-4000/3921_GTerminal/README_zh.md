@@ -61,4 +61,4 @@ GTerminal 策略是 MetaTrader 4 专家顾问 `GTerminal_V5a` 的 C# 版本。�
 * 原脚本对 RSI、CCI、Momentum 等指标窗口的联动在本版本中未实现，所有触发均基于收盘价。如需指标驱动行为，可
 结合其他 StockSharp 组件自行扩展。
 * 策略仅使用市价单（`BuyMarket`, `SellMarket`），与 MQL4 版本通过市价模拟挂单触发的方式一致。
-* 本包仅提供 C# 实现，不包含 Python 版本。
+* 同时提供 C# 和 Python 实现。

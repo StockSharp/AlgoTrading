@@ -61,4 +61,4 @@ Todas las distancias expresadas en pips se convierten a precios absolutos utiliz
 - `README_zh.md` – Traducción al chino.
 - `README_ru.md` – traducción al ruso.
 
-La implementación de Python se omite intencionalmente según lo solicitado.
+Las implementaciones están disponibles en C# y Python.

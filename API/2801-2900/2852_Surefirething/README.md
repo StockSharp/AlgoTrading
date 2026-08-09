@@ -35,4 +35,4 @@ The Surefirething strategy recreates the classic MetaTrader 5 expert advisor tha
 
 ## Notes
 - The implementation matches the original MQL logic by enforcing that the trailing step is non-zero whenever trailing is active.
-- No Python implementation is provided for this strategy.
+- Implementations are available in both C# and Python.

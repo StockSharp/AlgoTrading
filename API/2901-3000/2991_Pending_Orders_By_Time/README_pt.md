@@ -36,4 +36,4 @@ Esta estratégia reproduz o comportamento do expert original MetaTrader "Pending
 - `OnOwnTradeReceived` é aproveitado para manter as ordens protetoras sincronizadas com a ordem de entrada executada e para limpar quando o stop-loss ou take-profit é executado.
 - A lógica de trailing deliberadamente evita chamar `GetValue` do indicador e depende apenas da vela recebida e do estado armazenado, cumprindo com as diretrizes de conversão.
 - As distâncias são baseadas em passos de preço, espelhando a aritmética original baseada em pips da implementação MQL e permanecendo independente do instrumento.
-- A implementação em Python é intencionalmente omitida de acordo com os requisitos da tarefa; apenas a versão em C# é fornecida nesta pasta.
+- As implementações estão disponíveis em C# e Python.

@@ -54,6 +54,6 @@ Stops are checked on every finished candle. If both stop and target would trigge
 - **Candle Type** (`CandleType`): timeframe used for indicator calculations.
 
 ## Notes
-- Python port is intentionally omitted as requested.
+- Implementations are available in both C# and Python.
 - The StockSharp version keeps the tab-based indentation guideline and adds English comments throughout the code.
 - The indicator does not draw colour histograms; however, both the numeric value and the colour index are available via the custom `TradingChannelIndexValue` class for further visualisation if desired.

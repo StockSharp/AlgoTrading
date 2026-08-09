@@ -38,4 +38,4 @@ The **EMA LWMA RSI Strategy** reproduces the MetaTrader expert advisor "EMA LWMA
 2. Adjust pip-based protections and indicator settings if the broker uses different defaults.
 3. Enable trading once the subscription is live. The strategy will manage one position at a time and use `ClosePosition()` before flipping direction.
 
-No Python translation is provided for this strategy yet.
+Implementations are available in both C# and Python.

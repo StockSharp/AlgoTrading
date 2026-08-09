@@ -34,4 +34,4 @@ Flat Trend EA Strategy is a StockSharp port of the MQL5 expert advisor "Flat Tre
 ## Additional Notes
 - Pip size is computed from the security settings: for three- and five-decimal instruments the price step is multiplied by ten to match the MQL definition of a pip.
 - The strategy always closes existing positions when opposite or end signals appear before evaluating new entries, reproducing the original EA workflow.
-- Only the C# implementation is supplied; no Python version or folder is created, as requested.
+- Implementations are available in both C# and Python.

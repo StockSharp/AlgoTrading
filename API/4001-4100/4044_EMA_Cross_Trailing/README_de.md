@@ -29,4 +29,4 @@ Diese Strategie ist die StockSharp-Umstellung des MetaTrader 4-Expertenberaters 
 ## Notizen
 - Die Strategie wartet, bis beide EMAs vollständig gebildet sind, bevor sie auf einen Crossover reagiert. Dabei wird die `Bars < 100`-Prüfung aus dem MQL-Skript entfernt und gleichzeitig die gleiche Stabilität erreicht.
 - Da nur Marktaufträge verwendet werden, gibt es keine einzelnen `OrderModify`-Aufrufe. Das integrierte Schutzmodul positioniert den Trailing Stop automatisch auf die gleiche Weise neu, wie die MetaTrader-Schleife `OrderStopLoss` aktualisiert hat.
-- Es wird kein Python-Port bereitgestellt (auf Anfrage); Es ist nur die C#-Implementierung enthalten.
+- Implementierungen sind in C# und Python verfügbar.

@@ -36,4 +36,4 @@ Todas as distâncias expressas em pips são convertidas em deslocamentos de pre�
 3. Ajuste os parâmetros de pips para alinhar com a volatilidade do instrumento. Valores grandes de `Grid Step` reduzem a frequência de ordens adicionais, enquanto um `Min Lots Multiplier` maior acelera o crescimento martingale.
 4. Monitore a exposição resultante com cuidado; o comportamento martingale pode escalar o volume rapidamente quando múltiplos stops são atingidos consecutivamente.
 
-A implementação em Python não é fornecida intencionalmente nesta pasta, conforme os requisitos desta tarefa de conversão.
+As implementações estão disponíveis em C# e Python.

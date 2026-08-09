@@ -67,4 +67,4 @@ Todos os parâmetros baseados em pip são convertidos em unidades de preço usan
 3. Fique de olho na saída do registro: entradas, movimentos de ponto de equilíbrio, ajustes posteriores e saídas de emergência são relatados por meio de chamadas `LogInfo`.
 4. Anexe a área do gráfico gerado (velas, Ichimoku, LWMA, negociações próprias) no designer ou backtester para visualizar o fluxo de negociação.
 
-Somente a versão C# é fornecida. Nenhuma pasta Python é criada de acordo com os requisitos.
+As implementações estão disponíveis em C# e Python.

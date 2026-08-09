@@ -60,6 +60,6 @@ tanto a conexão quanto os indicadores estão prontos.
 * A estratégia usa a sobrecarga `BindEx` para que o indicador MACD possa fornecer os valores de MACD e de sinal em um único
 retorno de chamada sem chamadas manuais para `GetValue`.
 * Todos os comentários dentro do código C# são escritos em inglês, correspondendo às diretrizes do projeto.
-* Não há tradução em Python para esta estratégia; apenas a implementação C# é fornecida no pacote API.
+* As implementações estão disponíveis em C# e Python.
 * Para replicar melhor o comportamento original do MT4, selecione um período de vela que corresponda ao gráfico onde o EA costumava ser executado
 e manter o parâmetro de volume consistente com o tamanho do lote negociado anteriormente.

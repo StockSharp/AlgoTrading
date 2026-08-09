@@ -42,4 +42,4 @@ Diese Strategie portiert den MetaTrader Expert Advisor "Dealers Trade v 7.91 Zer
 1. Verbinden Sie die Strategie mit einem Portfolio und einem Instrument, bevor Sie sie starten.
 2. Überprüfen Sie den Instrument-Schritt und die Preiseinstellungen, um sicherzustellen, dass Pip-Konvertierungen korrekt sind.
 3. Die Standard-Parameter replizieren das Verhalten des ursprünglichen Expert Advisors, können aber durch StockSharp-Optimierer optimiert werden.
-4. Eine Python-Übersetzung ist für diese Strategie nicht enthalten.
+4. Implementierungen sind in C# und Python verfügbar.

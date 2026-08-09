@@ -32,4 +32,4 @@ Cash Machine 5 min Legacy is a StockSharp port of the MetaTrader 4 expert adviso
 ## Additional notes
 * The strategy opens only one position at a time and will not reverse immediately; it waits for the current trade to close before a new signal is acted upon.
 * Protective levels are enforced in code via market exits, so there are no pending stop orders in the order book.
-* The package contains only the C# implementation; no Python version is provided.
+* Implementations are available in both C# and Python.

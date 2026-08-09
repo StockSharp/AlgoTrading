@@ -41,5 +41,5 @@ A lógica reflete o assessor especialista original: a inclinação do AO define 
 ## Notas
 
 - O especialista MT5 original nomeia as entradas `Period_sma_slow` e `Period_sma_fast` mas troca os valores (5 e 34). O porto StockSharp mantém o mapeamento funcional expondo parâmetros intuitivos `AoShortPeriod`/`AoLongPeriod`.
-- Nenhuma versão Python é fornecida ainda, conforme a solicitação da tarefa.
+- As implementações estão disponíveis em C# e Python.
 - Nenhum teste está incluído; execute as validações necessárias via Designer ou seu próprio conjunto de backtesting antes de implantar em produção.

@@ -34,4 +34,4 @@ Esta estrategia replica el expert advisor "Bollinger Bands N positions v2" de Vl
 - Solo se procesan las velas terminadas para replicar la lógica original de "nueva barra" de MetaTrader.
 - Dado que StockSharp opera en modo de compensación, la conversión cierra la exposición opuesta antes de abrir una nueva capa de pirámide en la otra dirección.
 - El paso del trailing debe mantenerse mayor que cero siempre que el trailing stop esté activo, coincidiendo con la verificación de seguridad del expert advisor original.
-- La implementación en Python no está incluida en esta versión.
+- Las implementaciones están disponibles en C# y Python.

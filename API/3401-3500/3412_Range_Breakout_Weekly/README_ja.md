@@ -57,4 +57,4 @@
 - ✅ `RangeBreakout.mq5` からの毎週のスケジュール、範囲計算、保護レベル、およびマーチンゲール動作が維持されます。
 - ✅ MetaTrader 固有の API 呼び出し (`iATR`、`CopyBuffer`、`OrderSend` など) を慣用的な StockSharp 抽象化 (`SubscribeCandles`、`AverageTrueRange`、`BuyMarket`/`SellMarket`) に置き換えました。
 - ✅ 要求に応じて、英語のインライン コメントと広範なドキュメントを実装しました。
-- ✅ テストプロジェクトはそのままにし、タスクの制約に従って Python バリアントを作成しませんでした。
+- C# と Python の両方の実装が提供されています。

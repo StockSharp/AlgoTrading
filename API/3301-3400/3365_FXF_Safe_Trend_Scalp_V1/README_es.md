@@ -40,7 +40,7 @@ La estrategia FXF Safe Trend Scalp V1 opera con rupturas de líneas de tendencia
 
 - Sólo se ocupa un puesto a la vez. Las señales se ignoran mientras una operación está abierta.
 - El filtro de diferencial se basa en las mejores cotizaciones de oferta y demanda, por lo que la estrategia debe estar conectada a una fuente de datos que proporcione información de nivel 1.
-- La versión Python de la estrategia se omite intencionalmente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Archivos
 

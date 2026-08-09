@@ -73,4 +73,4 @@ A **Estratégia KA-Gold Bot** é uma conversão StockSharp de alto nível do con
 - A conversão do pip segue os decimais do instrumento de câmbio: uma cotação de cinco dígitos (número ímpar de decimais) multiplica o passo do preço por 10 para emular a lógica do tamanho do pip MT4.
 - A estratégia assina velas e dados de nível 1, mas **não** registra indicadores adicionais no gráfico, em conformidade com as diretrizes de alto nível API.
 - As saídas protetoras dependem de ordens de mercado emitidas pela estratégia; nenhuma ordem stop ou limite separada é colocada na bolsa.
-- O suporte Python não está incluído nesta entrega, correspondendo à solicitação original.
+- As implementações estão disponíveis em C# e Python.

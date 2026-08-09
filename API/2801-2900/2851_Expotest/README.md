@@ -27,4 +27,4 @@ The Expotest Strategy is a direct StockSharp conversion of the original `Expotes
 ## Additional Notes
 - The strategy processes only finished candles in order to stay close to the original tick-based MQL implementation while remaining compatible with StockSharp subscriptions.
 - Protective levels are tracked internally instead of separate stop/limit orders, which keeps the logic transparent and easy to backtest.
-- Python implementation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

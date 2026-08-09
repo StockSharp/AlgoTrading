@@ -51,4 +51,4 @@ Solo puede haber un módulo de salida activo a la vez, al igual que la validaci�
 * Los niveles de pivote diarios se calculan a partir de la última vela diaria terminada proporcionada por una suscripción secundaria.
 * Los puntos de precio y las conversiones de pips dependen del valor `PriceStep`. Los símbolos con diferentes tamaños de tick se adaptan automáticamente.
 * La estrategia se suscribe únicamente a indicadores de alto nivel y evita lecturas directas del búfer, adhiriéndose a las pautas de alto nivel API del proyecto.
-* No se proporciona ninguna implementación de Python en este paquete.
+* Las implementaciones están disponibles en C# y Python.

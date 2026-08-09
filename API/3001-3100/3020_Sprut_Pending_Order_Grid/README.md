@@ -63,4 +63,4 @@ The converted version keeps the original expert advisor philosophy:
 4. Adjust `ProfitClose`/`LossClose` to values consistent with your account currency.
 5. Start the strategy; it will wait for the first order book snapshot before building the grid.
 
-> **Python version** – not provided. Only the C# implementation is included, as requested.
+> Implementations are available in both C# and Python.

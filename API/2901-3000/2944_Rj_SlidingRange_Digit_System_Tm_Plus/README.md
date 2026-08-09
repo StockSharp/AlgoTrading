@@ -48,4 +48,4 @@ Set the strategy `Volume` property to control position sizing. The stop-loss and
 
 * The strategy expects sufficient history to form the sliding channel (roughly `max(shift + 2 × range)` candles). It automatically manages the internal buffers and ignores signals until enough data is available.
 * Price rounding is performed using decimal digits, mirroring the MQL indicator rounding behaviour.
-* Python implementation is intentionally omitted as per the project instructions; only the C# version is provided.
+* Implementations are available in both C# and Python.

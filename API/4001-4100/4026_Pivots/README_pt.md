@@ -57,4 +57,4 @@ Todos os parâmetros numéricos são expostos por meio de `StrategyParam<T>` par
 2. Ajuste a etapa do instrumento, se necessário (`PriceStep` é detectado automaticamente; o substituto é `0.0001`).
 3. Opcionalmente, ajuste `OrderVolume`, `TrailingStopPoints` ou os tipos de velas para corresponder à configuração original do MT4.
 
-Nenhuma versão do Python é fornecida para esta porta conforme solicitado.
+As implementações estão disponíveis em C# e Python.

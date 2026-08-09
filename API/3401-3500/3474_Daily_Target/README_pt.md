@@ -39,4 +39,4 @@ sinalizador e registra uma nova linha de base do PnL.
 MQL especialista.
 - O PnL flutuante utiliza o melhor lance para posições longas e o melhor pedido para posições curtas. Se nenhuma cotação estiver disponível, a última negociação
 o preço atua como um substituto para evitar a paralisação da avaliação.
-- Nenhuma porta Python é fornecida; apenas a implementação de alto nível do C# está incluída neste pacote.
+- As implementações estão disponíveis em C# e Python.

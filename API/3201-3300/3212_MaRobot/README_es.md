@@ -40,4 +40,4 @@
 ## Notas
 - Todos los comentarios en el código C# se mantienen en inglés según las directrices del repositorio.
 - La estrategia depende únicamente de suscripciones de alto nivel de StockSharp a través de `Bind`, evitando búferes de indicadores manuales.
-- La traducción a Python se omite intencionalmente según las instrucciones de la tarea.
+- Las implementaciones están disponibles en C# y Python.

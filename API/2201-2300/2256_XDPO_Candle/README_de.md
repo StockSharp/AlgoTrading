@@ -30,4 +30,4 @@ Diese Strategie ist eine Konvertierung des originalen MQL5-Expertenberaters **Ex
 ## Hinweise
 
 - Das Risikomanagement wird durch `StartProtection()` mit Standardeinstellungen gehandhabt. Passen Sie `Volume` und Schutzparameter extern nach Bedarf an.
-- Dieses Repository enthält derzeit nur die C#-Version; der Python-Port ist nicht verfügbar.
+- Implementierungen sind in C# und Python verfügbar.

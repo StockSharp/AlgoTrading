@@ -23,4 +23,4 @@
 - 戦略はオリジナルのMT5動作を再現するためにLevel1データ（最良ビッド/アスク）を必要とします。Level1が利用できない場合、ローソク足の終値をフォールバックとして提供します。
 - ボリューム再計算は無効な注文を避けるために`Security.VolumeStep`、`Security.MinVolume`、`Security.MaxVolume`を尊重します。
 - 価格変換は`Security.PriceStep`と`Security.Decimals`に依存し、戦略が4/5桁のFXシンボルと他の銘柄の両方に適応できるようにします。
-- この戦略にはPythonバージョンは提供されていません。
+- C# と Python の両方の実装が提供されています。

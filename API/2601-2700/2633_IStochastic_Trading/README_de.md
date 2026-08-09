@@ -35,4 +35,4 @@ Die IStochastic Handelsstrategie ist ein direkter StockSharp-Port des MetaTrader
 - Pip-Abstände werden mit `PriceStep` in Preise umgerechnet. Für 3- und 5-stellige Kurse wird ein zusätzlicher Faktor von 10 verwendet, um MetaTraders angepasste Punkt-Logik zu imitieren.
 - Stop-Loss-, Take-Profit- und Trailing-Stop-Überprüfungen basieren auf geschlossenen Kerzenpreisen, um die Logik im Backtester deterministisch zu halten. Echtzeit-Ausführung kann angepasst werden, wenn Intrabar-Management erforderlich ist.
 - Die Strategie öffnet nur eine Richtungsleiter gleichzeitig; alle Positionen müssen geschlossen sein, bevor die Richtung gewechselt wird.
-- Die Python-Implementierung wird wie angefordert absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

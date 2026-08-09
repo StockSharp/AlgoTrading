@@ -51,4 +51,4 @@ painéis adicionais.
 hedge) assim como o próprio StockSharp.
 * A estratégia tolera a negociação manual: ela reage a qualquer confirmação de negociação para manter as estatísticas sincronizadas.
 * O comentário é limpo automaticamente quando a estratégia é interrompida ou redefinida, evitando que valores obsoletos persistam nas sessões.
-* Nenhuma implementação Python é fornecida; o pacote API contém apenas a versão C#.
+* As implementações estão disponíveis em C# e Python.

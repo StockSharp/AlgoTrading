@@ -5,7 +5,7 @@
 
 A **Estratégia ExpICustomV1** é uma versão StockSharp do MetaTrader especialista `exp_iCustom_v1`. A estratégia lê sinais comerciais de uma instância de indicador configurável e reage a valores diferentes de zero nos buffers selecionados. Quando o buffer de compra é diferente de zero, a estratégia abre uma posição longa, enquanto o buffer de venda desencadeia uma entrada curta. A lógica protetora de stop-loss, take-profit, trailing e ponto de equilíbrio reproduz as opções de gerenciamento de dinheiro do especialista original.
 
-> **Observação:** Somente a implementação C# é fornecida. Uma versão Python ainda não está disponível.
+> As implementações estão disponíveis em C# e Python.
 
 ## Lógica de negociação
 

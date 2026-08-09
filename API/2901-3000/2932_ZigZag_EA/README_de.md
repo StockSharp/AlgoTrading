@@ -47,4 +47,4 @@ Die Strategie repliziert die ursprüngliche MT5 "ZigZag EA"-Logik, indem sie auf
 * Pip-Werte werden aus der Instrument-Tick-Größe berechnet. Instrumente mit 3 oder 5 Dezimalstellen multiplizieren den Tick automatisch mit 10, was die "adjusted point"-Logik des EA repliziert.
 * Der Code verwendet High-Level-Hilfsmethoden wie `BuyStop`, `SellStop`, `SellLimit` und `BuyLimit`, in Übereinstimmung mit den Projektrichtlinien.
 * Kommentare werden auf Englisch gehalten, um die Repository-Anforderungen zu erfüllen, während die detaillierte Beschreibung in mehreren Sprachen über die README-Dateien bereitgestellt wird.
-* Es wird kein Python-Port erstellt; der Ordner enthält nur die C#-Implementierung wie angefordert.
+* Implementierungen sind in C# und Python verfügbar.

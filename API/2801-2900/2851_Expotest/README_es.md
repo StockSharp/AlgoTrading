@@ -27,4 +27,4 @@ La Estrategia Expotest es una conversión directa a StockSharp del asesor expert
 ## Notas adicionales
 - La estrategia procesa solo velas terminadas para mantenerse cerca de la implementación MQL original basada en ticks mientras permanece compatible con las suscripciones de StockSharp.
 - Los niveles de protección se rastrean internamente en lugar de órdenes stop/limit separadas, lo que mantiene la lógica transparente y fácil de backtestear.
-- La implementación Python se omite intencionalmente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.

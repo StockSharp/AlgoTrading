@@ -36,4 +36,4 @@ Die Strategie arbeitet mit einem konfigurierbaren primären Zeitrahmen (Standard
 ## Notizen
 - Die Strategie verwendet StockSharp auf hoher Ebene API mit Kerzenabonnements und Indikatorbindung.
 - Spreads werden anhand der besten Geld-/Briefkurse überwacht; Der Handel wird ausgesetzt, bis der Spread innerhalb des konfigurierten Limits liegt.
-- Gemäß den Anweisungen wird absichtlich auf die Python-Implementierung verzichtet.
+- Implementierungen sind in C# und Python verfügbar.

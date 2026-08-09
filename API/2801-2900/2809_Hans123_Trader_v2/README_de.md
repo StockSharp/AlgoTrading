@@ -38,4 +38,4 @@ Hans123 Trader v2 ist eine Ausbruch-Strategie, die ausstehende Stop-Orders rund 
 - Die Pip-Größe wird vom Preisschritt des Wertpapiers abgeleitet. Für 3- und 5-stellige Forex-Symbole wird der Punktwert angepasst, um der MQL-Definition eines Pips zu entsprechen.
 - Die Strategie verlässt sich auf `Security.BestBid`/`BestAsk`-Snapshots wenn verfügbar. Wenn keine Tiefendaten vorhanden sind, greift sie auf den aktuellen Kerzenschlusskurs zurück, um den Mindestabstand vom Markt zu bewerten.
 - Schutzorders werden bei Bedarf neu erstellt, was die `PositionModify`-Logik aus dem ursprünglichen Expert Advisor widerspiegelt.
-- Die Implementierung hält die Logik rein in C# ohne Python-Übersetzung, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.

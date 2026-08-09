@@ -31,4 +31,4 @@ Boring EA2 Alert bildet die Benachrichtigungslogik des MetaTrader-4-Expert-Advis
 * Die Strategie sendet, ändert oder storniert keine Orders. Sie ist rein informativ.
 * Da `Bind` finalisierte Werte liefert, wird jedes Crossover auf abgeschlossenen Kerzen bewertet. Dies vermeidet die lauten Intrabar-Wechsel, die der ursprüngliche EA durch Tick-Zählung abmilderte.
 * Logging-basierte Benachrichtigungen können mit eigenen Handlern integriert werden, indem innerhalb einer Host-Anwendung Strategie-Logereignisse abonniert werden.
-* Derzeit wird keine Python-Übersetzung bereitgestellt; nur die C#-Version ist im API-Paket enthalten.
+* Implementierungen sind in C# und Python verfügbar.

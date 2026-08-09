@@ -30,4 +30,4 @@ Após abrir uma posição, os limiares são reduzidos para monitorar o lado opos
 - `SlPips` – stop loss em pontos de preço (padrão: 500)
 
 ## Notas
-A estratégia não inclui uma versão em Python.
+As implementações estão disponíveis em C# e Python.

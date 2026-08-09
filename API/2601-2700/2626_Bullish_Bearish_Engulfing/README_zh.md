@@ -47,4 +47,4 @@
 ## 文件结构
 - `CS/BullishBearishEngulfingStrategy.cs` – 基于 StockSharp 高层策略 API 的 C# 实现。
 
-> **提示：** 按需求仅提供 C# 版本，本目录中没有 Python 实现或 Python 子目录。
+> 同时提供 C# 和 Python 实现。

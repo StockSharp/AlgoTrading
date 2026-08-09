@@ -49,5 +49,5 @@ Esta estratégia é uma conversão StockSharp do assessor especialista do MetaTr
 * A estratégia depende exclusivamente da infraestrutura de alto nível `Strategy` do StockSharp (`SubscribeCandles`, `WhenNew` e ordens de mercado) e não manipula livros de ordens brutos.
 * As estatísticas de intervalo são armazenadas sem usar pesquisas de valores de indicadores; todos os cálculos ocorrem dentro da estratégia, de acordo com as diretrizes do repositório.
 * As ordens protetoras são simuladas monitorando os extremos das velas em vez de registrar ordens stop/limite separadas, o que mantém a implementação portável entre diferentes adaptadores.
-* O suporte ao Python é intencionalmente omitido conforme solicitado. Apenas a versão em C# é fornecida nesta pasta.
+* As implementações estão disponíveis em C# e Python.
 * Para negociação ao vivo, certifique-se de que haja velas históricas suficientes disponíveis para que o primeiro cálculo do intervalo tenha dados suficientes para trabalhar.

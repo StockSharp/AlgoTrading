@@ -62,4 +62,4 @@
 ## 文件
 
 - `CS/PriceActionFractalStrategy.cs` – C# 实现。
-- 暂无 Python 版本。
+- 同时提供 C# 和 Python 实现。

@@ -37,4 +37,4 @@ Diese Strategie portiert den MetaTrader 5 Expert Advisor **„Bill Williams.mq5"
 - Um die MetaTrader 5 Pip-Berechnung zu emulieren, multipliziert die Strategie den Exchange-`PriceStep` um 10, wenn das Instrument 3 oder 5 Dezimalstellen hat.
 - Schutzorders und der Trailing Stop werden intern verwaltet. Wenn eine Stop- oder Zielbedingung innerhalb der nächsten Kerze erfüllt ist, wird die Position zum Markt geschlossen, um das Order-Management des EA nachzuahmen.
 - Die Alligator-Indikatoren werden automatisch gezeichnet, wenn ein Diagrammbereich verfügbar ist, was einen visuellen Vergleich zwischen dem StockSharp-Port und der MetaTrader-Vorlage ermöglicht.
-- Python- und Testprojekte werden gemäß den Repository-Richtlinien für neue Konvertierungen absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

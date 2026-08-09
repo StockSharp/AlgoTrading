@@ -31,7 +31,7 @@ All pip-based inputs (`PipStep`, `TakeProfitPips`) are converted into absolute p
 - Prices are normalised through `Security.ShrinkPrice` so that the broker receives valid tick-aligned values.
 - Volume is adjusted to respect `VolumeStep`, `MinVolume`, and `MaxVolume` before each order is sent.
 - All diagnostic messages are routed through `AddInfoLog` / `AddWarningLog`, mirroring the verbose output of the MetaTrader script.
-- Python implementation is intentionally omitted, as requested.
+- Implementations are available in both C# and Python.
 
 ## Usage Tips
 1. Assign a liquid instrument and portfolio, then start the strategy. Pending ladders will appear instantly after the first level-1 update.

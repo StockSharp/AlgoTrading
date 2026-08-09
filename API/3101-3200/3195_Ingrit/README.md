@@ -36,4 +36,4 @@ Ingrit is a conversion of the MetaTrader 5 expert advisor `Ingrit.mq5`. The stra
 
 ## Notes
 * Pip values are derived from the security price step. When the instrument uses three or five decimal places the strategy multiplies the step by ten so that one pip equals the standard FX definition.
-* There is no Python version for this strategy in the repository.
+* Implementations are available in both C# and Python.

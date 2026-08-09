@@ -30,4 +30,4 @@ Esta estrategia es una conversión del experto MQL5 original **Exp_XDPOCandle**.
 ## Notas
 
 - La gestión de riesgos se maneja mediante `StartProtection()` con configuración predeterminada. Ajuste `Volume` y los parámetros de protección externamente según sea necesario.
-- Este repositorio actualmente solo contiene la versión en C#; el port en Python no está disponible.
+- Las implementaciones están disponibles en C# y Python.

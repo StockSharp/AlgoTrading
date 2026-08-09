@@ -32,4 +32,4 @@ La estrategia NRTR Revers es una conversión en C# del expert advisor original d
 - Los cálculos de indicadores y las verificaciones de reversión solo usan velas terminadas; las velas incompletas se ignoran.
 - El valor ATR suministrado por la vinculación es equivalente al ATR de la barra anterior utilizado en el EA fuente porque los cálculos ocurren después de la finalización de la vela.
 - El cálculo del punto ajustado maneja automáticamente cotizaciones forex de 3 y 5 decimales para mantener los parámetros basados en pips compatibles con el script original.
-- No se proporciona un port de Python por solicitud. La carpeta actualmente contiene solo la implementación en C# y la documentación.
+- Las implementaciones están disponibles en C# y Python.

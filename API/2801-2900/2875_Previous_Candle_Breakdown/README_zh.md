@@ -54,4 +54,4 @@
 
 - `CS/PreviousCandleBreakdownStrategy.cs` – C# 实现文件。
 
-根据要求，本策略不提供 Python 版本。
+同时提供 C# 和 Python 实现。

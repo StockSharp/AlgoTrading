@@ -73,4 +73,4 @@ indicator filters remain compatible with the MQL4 reference implementation.
 - `CS/WavePowerEAStrategy.cs` – StockSharp implementation of the Wave Power EA grid logic.
 - `README.md` / `README_ru.md` / `README_zh.md` – documentation in English, Russian and Chinese.
 
-The Python version is intentionally omitted per the task requirements.
+Implementations are available in both C# and Python.

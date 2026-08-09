@@ -63,7 +63,7 @@ The strategy subscribes to:
 * Stop-loss and take-profit management is executed via market orders rather than by modifying broker-side protective orders. This mirrors the original behaviour while keeping the implementation simple.
 * The strategy uses the instrument `PriceStep` to approximate pip size. For exotic instruments adjust parameters accordingly.
 * The shutdown command is evaluated only when new candle data arrive. For immediate action reduce the candle timeframe.
-* Python implementation is intentionally omitted as requested.
+* Implementations are available in both C# and Python.
 
 ## Conversion Notes
 

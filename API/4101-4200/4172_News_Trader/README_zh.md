@@ -36,4 +36,4 @@
 
 - `CS/NewsTraderStrategy.cs` — C# 实现。
 
-按需求未提供 Python 版本。
+同时提供 C# 和 Python 实现。

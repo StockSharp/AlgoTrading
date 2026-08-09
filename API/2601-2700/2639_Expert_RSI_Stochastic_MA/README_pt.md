@@ -56,7 +56,7 @@ A estratégia expõe as mesmas entradas que a versão MetaTrader e mantém seus 
 - As entradas de RSI e média móvel suportam múltiplos preços aplicados para corresponder às opções do MetaTrader. Os cálculos do Stochastic dependem do oscilador integrado do StockSharp (modo Low/High) e respeitam os comprimentos de suavização configurados.
 - Os limites de trailing e perda são medidos em *pontos*. O auxiliar escala automaticamente o valor para tamanhos de tick típicos de FX (3 ou 5 decimais) e por padrão usa um `PriceStep`.
 - A saída do gráfico inclui velas, a média móvel, RSI e indicadores Stochastic, permitindo validação visual semelhante ao modelo original.
-- Não há versão Python adjunta por solicitação; apenas a implementação em C# é fornecida.
+- As implementações estão disponíveis em C# e Python.
 
 ## Dicas de Uso
 - Ao implantar em ativos com tamanhos de tick não convencionais, verifique se `Security.PriceStep` está preenchido; caso contrário, a conversão padrão será usada (1 ponto = 1 unidade de preço).

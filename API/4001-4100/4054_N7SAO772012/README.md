@@ -68,5 +68,5 @@ The bot operates on the primary instrument selected in the strategy and uses:
 
 - High level StockSharp bindings (`SubscribeCandles().Bind(...)`) are used to stream AO values without direct indicator queries.
 - Historical buffers are kept as fixed-size lists to emulate the original shift-based indexing while avoiding direct indicator lookups.
-- No Python version is provided, as requested.
+- Implementations are available in both C# and Python.
 - Tests were not modified.

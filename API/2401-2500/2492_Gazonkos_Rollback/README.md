@@ -33,4 +33,4 @@ This sequence closely mirrors the MT5 version that used `STATE` and `Trade` vari
 ## Notes
 * The strategy works with any instrument that has a reasonable tick size; adjust `Delta`, `Rollback`, `TakeProfit`, and `StopLoss` to match the instrument's point value.
 * All inline comments are written in English as required by the project guidelines.
-* No Python port is provided for this strategy yet.
+* Implementations are available in both C# and Python.

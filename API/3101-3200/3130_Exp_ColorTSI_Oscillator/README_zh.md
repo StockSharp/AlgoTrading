@@ -51,7 +51,7 @@
 - `MM` 与 `MMMode` 资金管理被固定下单量 `Volume` 取代，使不同账户环境下的行为更可控。
 - 未模拟 `Deviation_` 滑点，因为 StockSharp 的市价单没有该参数。
 - 指标平滑完全用 StockSharp 指标还原（包括通过反射设置 Jurik 的 Phase），因此数值与 MQL 缓冲区一致。
-- 根据要求，不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用建议
 - 确认所选品种可以提供 `CandleType` 指定的蜡烛流；标准时间周期可使用 `TimeSpan.FromHours(x).TimeFrame()`。

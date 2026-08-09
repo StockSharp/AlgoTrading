@@ -41,4 +41,4 @@ ZigZag EvgeTrofi ストラテジーは、クラシックなMetaTraderのエキ�
 ## ファイル
 
 * `CS/ZigZagEvgeTrofiStrategy.cs` – ストラテジーのC#実装。
-* Python版は意図的に提供されていません。
+* C# と Python の両方の実装が提供されています。

@@ -39,7 +39,7 @@
 - 策略使用 `SubscribeCandles` 与高层次下单接口（`BuyMarket`、`SellMarket`），符合转换指南的要求。
 - Jurik 平滑的相位通过反射赋值；若运行环境不提供该属性，则采用默认行为。
 - 若 `Security.PriceStep` 不可用，指标值不会进行量化。
-- 根据需求未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用方法
 1. 连接到能够提供 `SignalCandleType` 周期行情的数据源，并将策略附加到目标标的。

@@ -31,4 +31,4 @@ Boring EA2 Alert recria a lógica de notificação do expert advisor `boring-ea2
 * A estratégia não envia, modifica nem cancela ordens. Ela é puramente informativa.
 * Como `Bind` alimenta valores finalizados, cada cruzamento é avaliado em candles concluídos. Isso evita as viradas intrabar ruidosas que o EA original mitigava contando ticks.
 * Notificações baseadas em logging podem ser integradas a handlers personalizados assinando eventos de log da estratégia dentro de uma aplicação hospedeira.
-* Nenhuma tradução Python é fornecida neste momento; apenas a versão C# está incluída no pacote API.
+* As implementações estão disponíveis em C# e Python.

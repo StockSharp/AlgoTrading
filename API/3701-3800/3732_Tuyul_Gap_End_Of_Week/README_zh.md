@@ -24,4 +24,4 @@ Tuyul Gap End Of Week 将 MetaTrader 5 智能交易系统 `TuyulGAP` 迁移到 S
 ## 其他说明
 * 由于 StockSharp 无法直接在挂单上附带保护止损，止损会在仓位真正打开后才提交。
 * 订单数量、价格和止损都会按照交易品种的最小变动和精度信息进行规范化。
-* 本策略仅提供 C# 实现，不包含 Python 版本。
+* 同时提供 C# 和 Python 实现。

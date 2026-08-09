@@ -27,4 +27,4 @@ La estrategia de reequilibrio de Grid es una versión StockSharp de alto nivel d
 ## Notas
 - Todas las configuraciones basadas en puntos se convierten a precios con `Security.PriceStep`. Si el paso es cero la estrategia espera hasta que el instrumento lo proporcione.
 - La implementación se basa exclusivamente en el nivel alto API (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`, `BuyLimit`, `SellLimit`) según sea necesario.
-- En esta tarea no se incluye intencionalmente una versión de Python.
+- Las implementaciones están disponibles en C# y Python.

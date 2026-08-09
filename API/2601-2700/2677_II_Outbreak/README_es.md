@@ -55,4 +55,4 @@ La Estrategia de Rompimiento II es un sistema de ruptura de alta frecuencia escr
 ## Notas de implementación
 * El filtro de spread requiere datos de nivel 1 en vivo (`Security.BestBid`/`BestAsk`). Cuando el feed está ausente, la estrategia asume spread cero.
 * Las verificaciones de margen y patrimonio son aproximaciones porque el EA original dependía de propiedades de cuenta y tamaños de contrato específicos de MetaTrader. Ajusta `AccountLeverage`, `MaximumRisk` o `Volume` para adaptarlos al modelo del broker.
-* La conversión usa la API de alto nivel de StockSharp (suscripciones de velas con `Bind`) y mantiene todos los comentarios en inglés. No se genera un port de Python para esta estrategia.
+* La conversión usa la API de alto nivel de StockSharp (suscripciones de velas con `Bind`) y mantiene todos los comentarios en inglés. Las implementaciones están disponibles en C# y Python.

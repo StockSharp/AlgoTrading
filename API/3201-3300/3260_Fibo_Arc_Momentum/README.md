@@ -116,5 +116,4 @@ original EA.
 3. Launch the strategy. All decisions rely on finished candles; intrabar execution is not required.
 4. Review the built-in charting helpers for the fast/slow LWMA and MACD panels if the host supports visualization.
 
-The strategy is self-contained and does not modify the shared test suite. No Python version is provided per the task
-requirements.
+The strategy is self-contained and does not modify the shared test suite. Implementations are available in both C# and Python.

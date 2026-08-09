@@ -62,4 +62,4 @@
 ## Файлы
 
 - `CS/PriceActionFractalStrategy.cs` – реализация стратегии на C#.
-- Python-версия пока отсутствует.
+- Реализации доступны на C# и Python.

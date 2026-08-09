@@ -49,4 +49,4 @@ Todos os parâmetros são expostos através de objetos `StrategyParam<T>` do Sto
 - `README_zh.md` – documentação em chinês.
 - `README_ru.md` – documentação em russo.
 
-Um port em Python é intencionalmente omitido de acordo com as instruções do projeto; crie-o mais tarde se necessário.
+As implementações estão disponíveis em C# e Python.

@@ -54,6 +54,6 @@ Stops werden bei jeder abgeschlossenen Kerze geprüft. Wenn sowohl Stop als auch
 - **Candle Type** (`CandleType`): Zeitrahmen für Indikatorberechnungen.
 
 ## Hinweise
-- Der Python-Port wird wie gewünscht bewusst weggelassen.
+- Implementierungen sind in C# und Python verfügbar.
 - Die StockSharp-Version hält die Tab-basierte Einrückungsrichtlinie ein und fügt englische Kommentare im gesamten Code hinzu.
 - Der Indikator zeichnet keine Farbhistogramme; jedoch sind sowohl der numerische Wert als auch der Farbindex über die benutzerdefinierte `TradingChannelIndexValue`-Klasse für weitere Visualisierungen verfügbar.

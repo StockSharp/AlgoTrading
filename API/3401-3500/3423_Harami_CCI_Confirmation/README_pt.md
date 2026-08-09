@@ -29,4 +29,4 @@ Harami CCI Confirmação é uma porta StockSharp de alto nível do MetaTrader 5 
 ## Notas adicionais
 * Todos os cálculos são executados em velas concluídas fornecidas por `SubscribeCandles`. Os sinais intrabar são intencionalmente ignorados para corresponder ao modelo de execução MetaTrader.
 * A estratégia mantém um breve histórico deslizante de velas e valores CCI para avaliar as regras Harami sem recriar buffers completos de indicadores.
-* Somente a implementação do C# é fornecida nesta pasta; não há versão Python para esta conversão.
+* As implementações estão disponíveis em C# e Python.

@@ -37,4 +37,4 @@ A estratégia **não** abre posições por conta própria. Ele espera que as neg
 - A estratégia usa o fluxo de trabalho de alto nível `SubscribeCandles().Bind(...)` e processa apenas velas concluídas, espelhando o loop baseado em ticks MT4, evitando atualizações prematuras.
 - A detecção fractal é implementada manualmente usando uma lista contínua de instantâneos de velas. Isso reproduz o comportamento do indicador MT4 `iFractals` sem depender de indicadores StockSharp extras.
 - Os preços dos pedidos são arredondados para o tick válido mais próximo e os volumes respeitam as restrições `VolumeStep`, `MinVolume` e `MaxVolume` para garantir a compatibilidade de troca.
-- Nenhuma tradução Python está incluída. O diretório `PY` está ausente intencionalmente, atendendo aos requisitos das diretrizes de conversão.
+- As implementações estão disponíveis em C# e Python.

@@ -5,7 +5,7 @@
 
 Die **ExpICustomV1-Strategie** ist ein StockSharp-Port des MetaTrader-Experten `exp_iCustom_v1`. Die Strategie liest Handelssignale von einer konfigurierbaren Indikatorinstanz und reagiert auf Werte ungleich Null in den ausgewählten Puffern. Wenn der Kaufpuffer ungleich Null ist, eröffnet die Strategie eine Long-Position, während der Verkaufspuffer einen Short-Einstieg auslöst. Schützende Stop-Loss-, Take-Profit-, Trailing- und Break-Even-Logik reproduzieren die Geldverwaltungsoptionen des ursprünglichen Experten.
 
-> **Hinweis:** Es wird nur die C#-Implementierung bereitgestellt. Eine Python-Version ist noch nicht verfügbar.
+> Implementierungen sind in C# und Python verfügbar.
 
 ## Handelslogik
 

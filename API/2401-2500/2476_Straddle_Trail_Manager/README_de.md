@@ -63,7 +63,7 @@ Die Strategie abonniert:
 * Stop-Loss- und Take-Profit-Management wird über Marktorders ausgeführt, anstatt broker-seitige Schutzorders zu modifizieren. Dies spiegelt das ursprüngliche Verhalten wider, während die Implementierung einfach bleibt.
 * Die Strategie verwendet den Instrument-`PriceStep` zur Annäherung der Pip-Größe. Für exotische Instrumente passen Sie die Parameter entsprechend an.
 * Der Shutdown-Befehl wird nur ausgewertet, wenn neue Kerzendaten eintreffen. Für sofortige Aktion reduzieren Sie den Kerzen-Zeitrahmen.
-* Die Python-Implementierung wird absichtlich ausgelassen, wie angefordert.
+* Implementierungen sind in C# und Python verfügbar.
 
 ## Konversionshinweise
 

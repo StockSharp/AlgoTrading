@@ -38,4 +38,4 @@ de modo que todo el libro se cierre alrededor de ese precio de break-even con un
   el precio de break-even. Si el broker aplica swaps nocturnos, deben manejarse manualmente.
 * El script asume que la cuenta permite cobertura (posiciones largas y cortas simultáneas). Si el broker neta posiciones,
   los agregados largo y corto se reducirán a una única exposición neta igual que en MetaTrader.
-* No hay versión Python de este port. Solo se proporciona la implementación C#.
+* Las implementaciones están disponibles en C# y Python.

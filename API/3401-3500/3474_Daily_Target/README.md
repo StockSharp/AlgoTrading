@@ -39,4 +39,4 @@ next day begins.
   MQL expert.
 - Floating PnL uses the best bid for long positions and the best ask for short positions. If no quote is available, the last trade
   price acts as a fallback to avoid stalling the evaluation.
-- No Python port is provided; only the C# high-level implementation is included in this package.
+- Implementations are available in both C# and Python.

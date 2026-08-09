@@ -55,4 +55,4 @@ Un color fuertemente alcista (`4`) indica que el precio alcanzó el extremo supe
 - Las señales solo se procesan en velas terminadas; los recálculos intrabarra se ignoran, igual que en la implementación de MetaTrader.
 - El manejo del deslizamiento en el experto original dependía de la configuración de ejecución. Las órdenes de mercado de StockSharp ya respetan las reglas del exchange, por lo tanto el parámetro `SlippagePoints` se mantiene solo con fines de documentación.
 - El indicador almacena solo la cantidad mínima de historial requerida para evaluar la ventana, evitando el uso innecesario de memoria.
-- La versión en Python se omite intencionalmente según las directrices del proyecto.
+- Las implementaciones están disponibles en C# y Python.

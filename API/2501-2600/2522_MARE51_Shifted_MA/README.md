@@ -51,4 +51,4 @@ The strategy mirrors the original fixed take-profit and stop-loss distances. The
 - The price-step value of the active security is used when comparing SMA differences to ensure the required distance equals at least one tick.
 - Stop-loss and take-profit levels rely on the security price step. For three- and five-decimal instruments the pip size is automatically expanded tenfold, matching the MetaTrader behaviour.
 - No automated position scaling is implemented. The strategy waits for all open positions to be closed before looking for the next entry signal.
-- This repository contains only the C# implementation; there is no Python port for this strategy.
+- Implementations are available in both C# and Python.

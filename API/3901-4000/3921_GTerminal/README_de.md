@@ -72,4 +72,4 @@ Verwenden Sie nur Schlusskurse. Der Parametersatz kann bei indikatorgesteuertem 
 ist erforderlich.
 * Die Strategie basiert ausschließlich auf Marktaufträgen (`BuyMarket`, `SellMarket`), genau wie das MQL4-Skript, das dazu Marktaufträge verwendete
 Emulieren Sie die ausstehende Zeilenausführung.
-* Es gibt keine Python-Implementierung; In diesem Paket wird nur die C#-Version bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

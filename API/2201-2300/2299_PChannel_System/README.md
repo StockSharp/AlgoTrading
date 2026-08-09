@@ -16,4 +16,4 @@ The **PChannel System** uses a price channel breakout with delayed confirmation.
 3. Close the opposite position, if any, before opening a new one.
 4. Monitor active trades and exit when `StopLoss` or `TakeProfit` is reached.
 
-This strategy has no Python implementation yet.
+Implementations are available in both C# and Python.

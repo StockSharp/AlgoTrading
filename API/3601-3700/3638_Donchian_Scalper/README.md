@@ -32,4 +32,4 @@ Donchian Scalper is a StockSharp port of the MetaTrader 4 expert advisor `Donchi
 * The strategy aligns every stop and entry price to the instrument’s price step to ensure exchange compliance.
 * When both long and short stop orders are active, filling one side will automatically cancel the opposite pending order to avoid hedging.
 * If *Take Profit (points)* is set to zero while the profit mode remains *Close At Profit*, the strategy will keep positions open until the protective stop is hit.
-* The conversion focuses on the high-level StockSharp API: indicator binding, candle subscriptions, and helper methods (`BuyStop`, `SellStop`, `SellMarket`, etc.). Python implementation is not included in this package.
+* The conversion focuses on the high-level StockSharp API: indicator binding, candle subscriptions, and helper methods (`BuyStop`, `SellStop`, `SellMarket`, etc.). Implementations are available in both C# and Python.

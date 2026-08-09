@@ -27,7 +27,7 @@ Esta estratégia replica a lógica do especialista **ColorZerolagJJRSX** do Meta
 
 - A implementação usa indicadores integrados e a API `Bind` de alto nível.
 - O volume é obtido da propriedade `Volume` da estratégia.
-- Não há versão em Python para esta estratégia.
+- As implementações estão disponíveis em C# e Python.
 
 ## Referências
 

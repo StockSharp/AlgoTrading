@@ -31,4 +31,4 @@ This strategy is a translation of the MQL5 expert **Exp_MAOscillatorHist.mq5**. 
 ## Notes
 - The strategy uses high-level StockSharp API with `SubscribeCandles` and indicator binding.
 - `StartProtection` is enabled with market orders for safer execution.
-- No Python version is provided.
+- Implementations are available in both C# and Python.

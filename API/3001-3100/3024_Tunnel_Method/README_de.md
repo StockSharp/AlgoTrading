@@ -56,4 +56,4 @@ Alle pip-basierten Parameter werden automatisch in Preiseinheiten umgerechnet un
 - `README_ru.md` – Russische Dokumentation.
 - `README_zh.md` – Chinesische Dokumentation.
 
-Die Python-Übersetzung wird absichtlich ausgelassen, entsprechend der Anforderung, in dieser Phase nur die C#-Version zu liefern.
+Implementierungen sind in C# und Python verfügbar.

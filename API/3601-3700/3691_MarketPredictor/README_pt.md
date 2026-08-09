@@ -31,4 +31,4 @@ A estratégia Market Predictor é uma adaptação de alto nível do consultor es
 ## Notas
 - O StockSharp API de alto nível lida com assinaturas de velas, vinculação de indicadores e execução de ordens de mercado.
 - Os comentários no código-fonte explicam cada etapa do processo para facilitar a manutenção.
-- A porta Python é omitida intencionalmente conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

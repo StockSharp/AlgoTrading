@@ -45,4 +45,4 @@ Esta estrategia es una conversión API de alto nivel de StockSharp del experto M
 - El tamaño en puntos se deriva de `Security.PriceStep` o, cuando no esté disponible, de los decimales de seguridad. Se utiliza un valor predeterminado de `0.0001` como respaldo seguro.
 - El historial de velas se almacena (hasta 1024 entradas) para replicar las funciones auxiliares MQL `iHighest`, `iLowest` y el escaneo extremo secuencial de `TakeProfit()`.
 - Todos los comentarios dentro de la estrategia permanecen en inglés, como lo exigen las pautas del repositorio.
-- Los puertos de Python se omiten intencionalmente para esta tarea.
+- Las implementaciones están disponibles en C# y Python.

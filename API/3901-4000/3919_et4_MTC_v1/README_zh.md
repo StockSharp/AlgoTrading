@@ -55,7 +55,7 @@
 - 原始 EA 仅包含函数框架，没有具体交易策略，因此本转换侧重保留辅助结构。
 - 所有代码注释均为英文，符合项目规范。
 - 按照 `AGENTS.md` 的要求统一使用制表符缩进。
-- 根据任务要求，不提供 Python 版本或目录。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用步骤
 1. 在 StockSharp 项目中引用 `Et4MtcV1Strategy`，并提前设置 `Security` 与 `Portfolio`。

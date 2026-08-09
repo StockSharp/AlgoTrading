@@ -23,4 +23,4 @@
 - The strategy requires Level1 data (best bid/ask) to replicate the original MT5 behaviour; candles provide a fallback using their close price when Level1 is unavailable.
 - Volume recalculation respects `Security.VolumeStep`, `Security.MinVolume`, and `Security.MaxVolume` to avoid invalid orders.
 - Price conversions rely on `Security.PriceStep` and `Security.Decimals` so the strategy adapts to both 4/5-digit forex symbols and other instruments.
-- No Python version is provided for this strategy.
+- Implementations are available in both C# and Python.

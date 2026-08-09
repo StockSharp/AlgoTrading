@@ -62,4 +62,4 @@ Die Two MA RSI Strategie ist eine Konvertierung des ursprünglichen MetaTrader-E
 ## Verwendungshinweise
 - Ein Portfolio und ein Wertpapier mit gültigen `PriceStep`- und `VolumeStep`-Metadaten bereitstellen, damit das punktebasierte Risikomanagement und die Positionsgrößenbestimmung konsistent bleiben.
 - Da Marktorders für Ausstiege verwendet werden, sind Slippage und Spreads im Vergleich zu den Limit-Orders der MetaTrader-Version möglich, aber die Stop/Take-Auswertungslogik ist erhalten.
-- Die Strategie erstellt keine Python-Version; nur die C#-Implementierung wird wie angefordert geliefert.
+- Implementierungen sind in C# und Python verfügbar.

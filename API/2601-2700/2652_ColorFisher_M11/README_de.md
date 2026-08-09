@@ -43,5 +43,5 @@ Um mehrere Orders pro Signal zu verhindern, merkt sich die Strategie die nächst
 
 ## Hinweise
 - Die Strategie verwendet High-Level-StockSharp-Bindings (`SubscribeCandles().BindEx`) und speichert keine historischen Sammlungen über das minimale Farbhistorie hinaus, das für das verzögerte Signal benötigt wird.
-- In dieser Version ist kein Python-Port enthalten, gemäß der Anforderungsspezifikation.
+- Implementierungen sind in C# und Python verfügbar.
 - Fügen Sie die Strategie einem Diagrammbereich hinzu, um sowohl den Preis als auch den berechneten Color-Fisher-Oszillator zu visualisieren.

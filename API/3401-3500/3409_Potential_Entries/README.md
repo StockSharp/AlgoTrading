@@ -54,5 +54,5 @@ When `Pattern Side = Bearish`, the following setups trigger a short entry:
 ## Usage Notes
 - Choose `Bullish` or `Bearish` mode depending on whether you want to scan for long or short opportunities.
 - The default hourly candles can be replaced with any other available candle data type.
-- There is no Python port yet, as requested. Only the C# implementation is provided.
+- Implementations are available in both C# and Python.
 - The strategy does not place profit targets. Exits rely solely on the candle-based stop logic or manual intervention.

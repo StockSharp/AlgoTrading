@@ -34,4 +34,4 @@ Rapid Doji 策略忠实重现原始 “Rapid Doji EA” 专家顾问的逻辑。
 - 使用高层次的 `SubscribeCandles` API，并通过 `Bind` 将 ATR 指标与行情绑定，无需手动加载历史数据。
 - 通过 `Security.ShrinkPrice` 对价格进行标准化，确保符合交易所的最小价格步长。
 - 保护性止损的放置与移动均由代码显式控制，以贴近原始 MQL5 版本的行为。
-- 根据任务要求，本项目暂未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

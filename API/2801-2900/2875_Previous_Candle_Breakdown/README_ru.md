@@ -54,4 +54,4 @@
 
 - `CS/PreviousCandleBreakdownStrategy.cs` — реализация стратегии на C#.
 
-Python-версия умышленно не добавлялась.
+Реализации доступны на C# и Python.

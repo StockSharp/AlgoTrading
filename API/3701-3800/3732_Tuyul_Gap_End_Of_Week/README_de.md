@@ -24,4 +24,4 @@ Tuyul Gap End Of Week portiert den MetaTrader 5 Expertenberater `TuyulGAP` nach 
 ## Zusätzliche Hinweise
 * Die Stop-Loss-Order wird erst übermittelt, nachdem eine Position eröffnet wurde, da StockSharp das direkte Anhängen eines Schutzstopps an eine ausstehende Stop-Order nicht unterstützt.
 * Volumen, Preis und Stop-Level werden mithilfe der Schritt- und Präzisionsinformationen des Wertpapiers normalisiert, die StockSharp bereitstellt.
-* Für diese Strategie gibt es keine Python-Übersetzung. In diesem Paket ist nur die C#-Implementierung enthalten.
+* Implementierungen sind in C# und Python verfügbar.

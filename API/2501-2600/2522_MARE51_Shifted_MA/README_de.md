@@ -51,4 +51,4 @@ Die Strategie spiegelt die ursprünglichen festen Take-Profit- und Stop-Loss-Abs
 - Der Preisschrittswert des aktiven Wertpapiers wird beim Vergleich von SMA-Unterschieden verwendet, um sicherzustellen, dass der erforderliche Abstand mindestens einem Tick entspricht.
 - Stop-Loss- und Take-Profit-Niveaus basieren auf dem Wertpapier-Preisschritt. Bei Drei- und Fünf-Dezimal-Instrumenten wird die Pip-Größe automatisch um das Zehnfache erhöht, was dem MetaTrader-Verhalten entspricht.
 - Kein automatisches Positionsskalierung ist implementiert. Die Strategie wartet, bis alle offenen Positionen geschlossen sind, bevor sie nach dem nächsten Eintrittssignal sucht.
-- Dieses Repository enthält nur die C#-Implementierung; es gibt keinen Python-Port für diese Strategie.
+- Implementierungen sind in C# und Python verfügbar.

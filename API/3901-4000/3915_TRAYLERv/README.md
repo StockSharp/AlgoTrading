@@ -37,4 +37,4 @@ The strategy does **not** open positions on its own. It expects trades to be cre
 - The strategy uses the high-level `SubscribeCandles().Bind(...)` workflow and processes only finished candles, mirroring the MT4 tick-based loop while avoiding premature updates.
 - Fractal detection is implemented manually using a rolling list of candle snapshots. This reproduces the behaviour of the MT4 `iFractals` indicator without relying on extra StockSharp indicators.
 - Order prices are rounded to the nearest valid tick, and volumes respect `VolumeStep`, `MinVolume`, and `MaxVolume` constraints to guarantee exchange compatibility.
-- No Python translation is included. The `PY` directory is intentionally absent, matching the requirements of the conversion guidelines.
+- Implementations are available in both C# and Python.

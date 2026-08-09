@@ -48,4 +48,4 @@ RSI Martingale is a port of the MetaTrader 5 expert advisor `RSI&Martingale1.5`.
 ## Additional notes
 * The strategy operates on finished candles only and does not evaluate intrabar ticks.
 * Daily profit calculations combine realized strategy PnL with floating PnL based on the latest close price.
-* There is no Python implementation for this strategy in the package; only the C# version is provided.
+* Implementations are available in both C# and Python.

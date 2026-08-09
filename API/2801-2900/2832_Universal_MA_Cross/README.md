@@ -46,4 +46,4 @@ The **Universal MA Cross Strategy** is a direct conversion of the original MQL5 
 ## Conversion Notes
 * Protective orders are handled internally by checking candle highs and lows, because StockSharp strategies operate on finalized candles instead of raw tick events. This mirrors the behaviour of the original expert while staying within the high-level API.
 * Trailing stop adjustments follow the MQL implementation, requiring a move of **TrailingStop + TrailingStep** before the stop is shifted.
-* No Python version is provided in this conversion as requested.
+* Implementations are available in both C# and Python.

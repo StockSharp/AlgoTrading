@@ -22,7 +22,7 @@
 6. The `_closeAllRequested` flag remains set until `HasAnyOpenPosition()` detects that the portfolio is flat, matching the MQL behaviour where `m_close_all` stayed true until all tickets were closed.
 
 ## Additional Notes
-- Only the C# implementation is provided; the Python folder is intentionally left empty per the task requirements.
+- Implementations are available in both C# and Python.
 - The strategy does not cancel pending orders because the original script only closed market positions.
 - Use `SetOptimize` on `ProfitThreshold` to explore alternative profit targets through the Designer optimizer if needed.
 

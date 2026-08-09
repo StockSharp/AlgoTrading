@@ -37,7 +37,7 @@
 - `StartProtection` 将 point 单位的止盈止损转换为 StockSharp 的绝对价格 `Unit`，确保价格偏移与 MT4 保持一致。
 - 通过 `SubscribeCandles().Bind(...)` 绑定指标，保证只在完成蜡烛时计算信号，无需直接调用指标的 `GetValue()`。
 - 源码中加入了英文注释，标注核心的移植决策与差异点。
-- 目录仅包含 C# 版本，未提供 Python 实现，以符合当前需求。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用建议
 - 降低 `SlopeThresholdPoints` 会显著增加交易次数，因为较小的均线变化也会触发信号；提高该值则可过滤噪音，要求更强的动量。
@@ -53,5 +53,3 @@
 ## 文件
 - `CS/SpeedMAStrategy.cs` – 策略实现。
 - `README.md`, `README_zh.md`, `README_ru.md` – 分别为英文、中文、俄文的详细说明文档。
-
-目录中未包含 Python 子目录或实现文件。

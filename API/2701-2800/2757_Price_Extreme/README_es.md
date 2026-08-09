@@ -69,4 +69,4 @@ Todos los parámetros usan `StrategyParam<T>` con metadatos de UI para que pueda
 
 - La estrategia opera intencionalmente sobre una sola posición neta, replicando la lógica de cobertura del experto MQL al aplanar el lado opuesto antes de entrar en una nueva operación.
 - Los stops y objetivos de protección se evalúan en velas completadas. En trading en vivo, esto aproxima las órdenes de protección del lado del servidor usadas por el script original.
-- No se incluye versión en Python, según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.

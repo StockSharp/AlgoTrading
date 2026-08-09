@@ -34,4 +34,4 @@ Alle Parameter unterstützen die Optimierung innerhalb der StockSharp-Umgebung.
 - Der Code basiert auf dem High-Level-Kerzenabonnement API (`SubscribeCandles`) in Kombination mit der Indikatorbindung (`Bind`), um eine manuelle Verlaufsverarbeitung zu vermeiden.
 - Aufträge werden bis `Security.ShrinkPrice` normalisiert, um die Tick-Größe der Börse zu berücksichtigen.
 - Schutzstopps werden explizit verwaltet, um das Verhalten des ursprünglichen MetaTrader-Expertenberaters nachzuahmen.
-- Das Projekt verzichtet bewusst auf eine Python-Implementierung gemäß den Aufgabenanforderungen.
+- Implementierungen sind in C# und Python verfügbar.

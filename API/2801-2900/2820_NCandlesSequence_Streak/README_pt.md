@@ -39,4 +39,4 @@ A estratégia de Sequência de N Velas replica o comportamento do assessor espec
 - A estratégia opera com posições líquidas; múltiplos tickets de estilo hedging não são criados. Isso difere do assessor original onde várias posições cobertas podiam coexistir.
 - O lucro flutuante é aproximado como `(preço atual - preço de entrada) * volume` para posições compradas e o inverso para posições vendidas.
 - A conversão de pips depende do `PriceStep` do instrumento. Para símbolos onde o passo mínimo não é fornecido, um pip padrão de 0.0001 é assumido.
-- Nenhuma portação para Python é fornecida, conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

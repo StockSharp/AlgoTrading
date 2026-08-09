@@ -49,4 +49,4 @@ La **Estrategia Martingale Bone Crusher** replica el comportamiento del expert a
 
 - El volumen de posición se alinea con el paso de volumen del instrumento, los límites mínimos y máximos.
 - Los cálculos de ganancia flotante dependen del `PriceStep` y `StepPrice` del instrumento. Si son cero, las protecciones basadas en dinero se omiten automáticamente.
-- Solo se proporciona la implementación en C#. La versión en Python se omite intencionalmente según los requisitos de la tarea.
+- Las implementaciones están disponibles en C# y Python.

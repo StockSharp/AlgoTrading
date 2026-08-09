@@ -49,4 +49,4 @@ Die **Martingale Bone Crusher Strategie** repliziert das Verhalten des ursprüng
 
 - Das Positionsvolumen wird am Volumen-Step des Instruments sowie den minimalen und maximalen Limits ausgerichtet.
 - Die Berechnungen des schwebenden Gewinns hängen vom `PriceStep` und `StepPrice` des Instruments ab. Wenn sie null sind, werden die geldbasierten Schutzmaßnahmen automatisch übersprungen.
-- Nur die C#-Implementierung wird bereitgestellt. Der Python-Port wird gemäß den Aufgabenanforderungen absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

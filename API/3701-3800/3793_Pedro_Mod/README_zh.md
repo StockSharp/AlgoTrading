@@ -43,4 +43,4 @@
   `VolumeStep` 等交易参数。
 - 通过 FIFO 队列维护的“虚拟仓位”可以模拟对冲账户，即便 StockSharp 采用净头寸模型也不会丢失 EA 的行为。
   局部成交或止损都会在 `OnPositionChanged` 回调中更新该队列。
-- 根据仓库要求，暂不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

@@ -29,4 +29,4 @@ Harami CCI Confirmation 是对 MetaTrader 5 专家顾问 `Expert_ABH_BH_CCI` 的
 ## 其他说明
 * 策略通过 `SubscribeCandles` 订阅的收盘 K 线进行计算，忽略盘中信号，以匹配 MetaTrader 的执行方式。
 * 仅维护短期历史和 CCI 序列即可完成判断，无需构建完整的指标缓冲区。
-* 本目录仅包含 C# 实现，本次移植没有 Python 版本。
+* 同时提供 C# 和 Python 实现。

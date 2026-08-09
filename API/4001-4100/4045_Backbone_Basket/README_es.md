@@ -41,7 +41,7 @@ La **Estrategia Backbone Basket** traslada el asesor experto original MetaTrader
 - El tamaño del volumen depende de `Security.PriceStepCost`. Si el conector no proporciona este valor, la estrategia recurre a la propiedad `Volume` configurada.
 - Las actualizaciones finales se aplican cuando llega una nueva vela, coincidiendo con el comportamiento "una vez por barra" del script MT4 (que solo actuó cuando `Bars > PrevBars`).
 - La lógica alterna mantiene la última dirección ejecutada en `_lastPositionDirection`, por lo que una vez que se cierra una canasta, la siguiente vela abre automáticamente una canasta en la dirección opuesta, al igual que el código fuente.
-- Sólo se proporciona la implementación de C#; no hay ningún puerto Python en este directorio.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Consejos de uso
 - Asigne instrumentos con `PriceStep`, `PriceStepCost` y metadatos de volumen precisos para obtener tamaños de posición realistas.

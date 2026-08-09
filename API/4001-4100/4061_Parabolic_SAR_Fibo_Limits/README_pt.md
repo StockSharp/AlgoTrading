@@ -40,4 +40,4 @@ Parabolic SAR Fibo Limits é uma porta StockSharp do MetaTrader 4 consultor espe
 ## Notas adicionais
 * Todos os parâmetros baseados em pontos são automaticamente convertidos em compensações de preço usando a etapa de preço do instrumento. Símbolos FX de cinco dígitos, índices e outros ativos, portanto, reutilizam as configurações EA sem escalonamento manual.
 * A estratégia processa apenas velas finalizadas fornecidas pela assinatura configurada, correspondendo exatamente à execução barra por barra do EA.
-* Não existe uma versão Python desta estratégia; apenas a implementação C# está disponível no pacote API.
+* As implementações estão disponíveis em C# e Python.

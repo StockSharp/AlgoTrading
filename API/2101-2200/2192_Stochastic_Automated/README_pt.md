@@ -40,4 +40,4 @@ Esta estratégia opera usando o **Oscilador Stochastic** no período de velas se
 ## Notas
 
 - Os comentários no código estão em inglês.
-- A versão em Python é intencionalmente omitida.
+- As implementações estão disponíveis em C# e Python.

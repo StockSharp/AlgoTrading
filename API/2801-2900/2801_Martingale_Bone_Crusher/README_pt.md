@@ -49,4 +49,4 @@ A **Estratégia Martingale Bone Crusher** replica o comportamento do expert advi
 
 - O volume de posição é alinhado com o passo de volume do instrumento, os limites mínimos e máximos.
 - Os cálculos de lucro flutuante dependem do `PriceStep` e `StepPrice` do instrumento. Se forem zero, as proteções baseadas em dinheiro são automaticamente ignoradas.
-- Apenas a implementação em C# é fornecida. O port em Python é omitido intencionalmente conforme os requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.

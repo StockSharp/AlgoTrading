@@ -69,4 +69,4 @@ Alle Parameter verwenden `StrategyParam<T>` mit UI-Metadaten, damit sie im Desig
 
 - Die Strategie arbeitet absichtlich auf einer einzigen Nettoposition und spiegelt die Hedging-Logik des MQL-Experten wider, indem die Gegenseite vor dem Einstieg in einen neuen Trade abgeflacht wird.
 - Schutz-Stops und -Ziele werden auf abgeschlossenen Kerzen ausgewertet. Im Live-Trading approximiert dies die serverseitigen Schutzaufträge des Originalskripts.
-- Kein Python-Port enthalten, wie gewünscht.
+- Implementierungen sind in C# und Python verfügbar.

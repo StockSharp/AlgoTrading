@@ -32,5 +32,5 @@ When `UseMoneyManagement` is enabled, the position size increases after consecut
 ## Notes
 
 * The strategy uses `SubscribeCandles` and indicator binding to follow the recommended high-level API pattern.
-* A separate Python version is not yet available. Only the C# implementation in the `CS` folder is provided.
+* Implementations are available in both C# and Python.
 * Tests were not added or modified as requested.

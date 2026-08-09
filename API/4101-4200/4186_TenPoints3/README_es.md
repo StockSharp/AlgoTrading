@@ -58,4 +58,4 @@ El tamaño del pedido se multiplica por `2^n` para cuadrículas pequeñas (hasta
 - Exponga parámetros finales separados para cuadrículas largas y cortas o permita cuadrículas asimétricas.
 - Combine la pendiente MACD con filtros de tendencia (promedios móviles, confirmación de período de tiempo más alto) para reducir la cantidad de cuadrículas de contratendencia.
 
-> **Nota:** No se proporciona ninguna implementación de Python para esta estrategia, que coincide con la solicitud y la estructura actual del proyecto.
+> Las implementaciones están disponibles en C# y Python.

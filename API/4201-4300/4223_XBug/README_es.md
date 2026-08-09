@@ -36,5 +36,5 @@ La **X Bug Strategy** es un sistema cruzado de media móvil convertido del aseso
 
 ## Notas
 - La conversión de pips multiplica el paso del precio por 10 para los símbolos cotizados con 5 o 3 decimales, coincidiendo con el comportamiento original del Asesor Experto.
-- No se proporciona ningún puerto Python; sólo la estrategia C# se incluye en este directorio.
+- Las implementaciones están disponibles en C# y Python.
 - Las paradas finales, las paradas y los objetivos son opcionales. Establezca los valores de pip correspondientes en cero para desactivarlos.

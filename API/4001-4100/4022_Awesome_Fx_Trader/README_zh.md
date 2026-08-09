@@ -43,4 +43,4 @@
 | `MQL/8539/AwesomeFxTradera.mq4` | `CS/AwesomeFxTraderStrategy.cs` | 复刻基于开盘价的双 EMA 振荡器及其颜色判定。 |
 | `MQL/8539/t_ma.mq4` | `CS/AwesomeFxTraderStrategy.cs` | 实现 34 周期 LWMA 与 6 周期 SMA 平滑的趋势过滤器。 |
 
-按需求未创建 Python 版本。
+同时提供 C# 和 Python 实现。

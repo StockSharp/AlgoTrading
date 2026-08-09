@@ -62,4 +62,4 @@ MetaTrader エキスパート **20pipsOnceADayOppositeLastNHourTrend** のポー
 - `README_zh.md` – 中国語のドキュメント。
 - `README_ru.md` – ロシア語のドキュメント。
 
-この変換では、Python ポートは意図的に省略されています。
+C# と Python の両方の実装が提供されています。

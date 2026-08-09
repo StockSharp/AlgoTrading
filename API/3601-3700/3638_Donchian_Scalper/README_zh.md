@@ -32,4 +32,4 @@ Donchian Scalper 是 MetaTrader 4 专家顾问 `DonchianScalperEA` 的 StockShar
 * 所有挂单和止损价格都会对齐到交易所最小价格跳动，以满足撮合要求。
 * 当多空突破单同时存在时，一方成交会自动取消另一方挂单，避免形成对冲。
 * 如果在固定止盈模式下将 *Take Profit (points)* 设为零，仓位将一直持有，直到保护性止损被触发。
-* 本移植依赖 StockSharp 的高级 API：指标绑定、蜡烛订阅以及 `BuyStop`、`SellStop`、`SellMarket` 等辅助方法。本包未包含 Python 实现。
+* 本移植依赖 StockSharp 的高级 API：指标绑定、蜡烛订阅以及 `BuyStop`、`SellStop`、`SellMarket` 等辅助方法。同时提供 C# 和 Python 实现。

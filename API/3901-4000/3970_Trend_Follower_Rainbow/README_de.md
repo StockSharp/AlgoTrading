@@ -51,4 +51,4 @@ Die Strategie zeichnet automatisch:
 ## Notizen
 - Die Rainbow-Logik nähert sich den ursprünglichen benutzerdefinierten RainbowMMA-Indikatoren an, indem sie konfigurierbare EMA-Bundles erstellt. Passen Sie die Basislängen bei Bedarf an eine bestimmte Regenbogenvorlage an.
 - Alle Codekommentare, Protokolle und Dokumentationen werden bei Bedarf auf Englisch bereitgestellt.
-- Die Strategie konzentriert sich ausschließlich auf die C#-Implementierung. In dieser Aufgabe wird kein Python-Port generiert.
+- Implementierungen sind in C# und Python verfügbar.

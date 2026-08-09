@@ -63,4 +63,4 @@ punktbasierte Parameter, die mit den meisten FX-Symbolen kompatibel sind.
 * Alle Indikatorberechnungen basieren auf fertigen Kerzen, um der MT4-Implementierung zu entsprechen, die bei vollständig geschlossenen Balken funktionierte.
 * Im Gegensatz zum ursprünglichen EA gibt es kein manuelles Bedienfeld oder dateibasierten Profillader. Zonen werden rein live neu aufgebaut
 Kerzendaten, um den Port in sich geschlossen zu halten.
-* Die StockSharp-Version enthält keine Python-Übersetzung.
+* Implementierungen sind in C# und Python verfügbar.

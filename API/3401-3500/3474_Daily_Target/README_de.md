@@ -39,4 +39,4 @@ markiert und zeichnet eine neue PnL-Basislinie auf.
 MQL Experte.
 - Floating PnL verwendet den besten Geldkurs für Long-Positionen und den besten Briefkurs für Short-Positionen. Wenn kein Angebot verfügbar ist, der letzte Handel
 Der Preis fungiert als Fallback, um ein Abwürgen der Bewertung zu vermeiden.
-- Es wird kein Python-Port bereitgestellt. In diesem Paket ist nur die C#-High-Level-Implementierung enthalten.
+- Implementierungen sind in C# und Python verfügbar.

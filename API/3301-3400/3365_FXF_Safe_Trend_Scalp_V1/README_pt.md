@@ -40,7 +40,7 @@ A estratégia FXF Safe Trend Scalp V1 negocia rompimentos de linhas de tendênci
 
 - Apenas uma posição é mantida por vez. Os sinais são ignorados enquanto uma negociação está aberta.
 - O filtro de spread depende das melhores cotações de compra/venda, portanto a estratégia deve estar conectada a uma fonte de dados que forneça informações de nível 1.
-- A versão Python da estratégia é omitida intencionalmente conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 
 ## Arquivos
 

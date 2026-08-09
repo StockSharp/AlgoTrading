@@ -63,4 +63,4 @@ monitoring discipline found in the MT4 code.
 * All indicator calculations rely on finished candles to match the MT4 implementation that worked on fully closed bars.
 * Unlike the original EA, there is no manual control panel or file-based profile loader. Zones are rebuilt purely from live
   candle data to keep the port self-contained.
-* The StockSharp version does not include a Python translation.
+* Implementations are available in both C# and Python.

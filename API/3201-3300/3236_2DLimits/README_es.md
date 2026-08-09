@@ -49,5 +49,5 @@ La implementación se basa en las suscripciones de velas de alto nivel de StockS
 
 ## Notas adicionales
 * La estrategia gestiona cada orden directamente a través de la API de alto nivel; no hay dependencia de colecciones personalizadas o buffers de indicadores.
-* Solo se proporciona la implementación C# en este paquete. No se crea versión Python para esta conversión.
+* Las implementaciones están disponibles en C# y Python.
 * Las pruebas no se modifican según se solicitó.

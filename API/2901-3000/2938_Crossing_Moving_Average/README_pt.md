@@ -5,7 +5,7 @@
 - Conversão do consultor especialista MetaTrader 5 **"Crossing Moving Average (barabashkakvn's edition)"** do fonte `MQL/21515`.
 - Implementa a lógica sobre a API de alto nível do StockSharp com assinaturas de velas e vinculação de indicadores.
 - Projetado para instrumentos onde o momentum e os cruzamentos de médias móveis capturam reversões de tendência.
-- Este pacote contém apenas a versão em C#. Uma tradução para Python é intencionalmente omitida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 
 ## Ideia Central
 A estratégia monitora duas médias móveis configuráveis (rápida e lenta) com deslocamentos opcionais para frente e combina seu cruzamento com um filtro de confirmação de momentum. Um trade é aberto apenas quando:

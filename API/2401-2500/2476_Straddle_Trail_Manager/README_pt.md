@@ -63,7 +63,7 @@ A estratégia assina:
 * O gerenciamento de stop-loss e take-profit é executado via ordens a mercado em vez de modificar ordens de proteção do lado do broker. Isso espelha o comportamento original enquanto mantém a implementação simples.
 * A estratégia usa o `PriceStep` do instrumento para aproximar o tamanho do pip. Para instrumentos exóticos, ajuste os parâmetros adequadamente.
 * O comando de encerramento é avaliado apenas quando novos dados de velas chegam. Para ação imediata, reduza o período das velas.
-* A implementação em Python é intencionalmente omitida conforme solicitado.
+* As implementações estão disponíveis em C# e Python.
 
 ## Notas de conversão
 

@@ -14,4 +14,4 @@ Diese Strategie implementiert den "Loco"-Indikator, der ursprünglich in MQL5 ge
 - **Price Type** – Preis, der bei der Indikatorberechnung verwendet wird.
 
 ## Hinweise
-Die Strategie verwendet eine eigene Implementierung des Loco-Indikators. Eine Python-Version ist nicht vorhanden.
+Die Strategie verwendet eine eigene Implementierung des Loco-Indikators. Implementierungen sind in C# und Python verfügbar.

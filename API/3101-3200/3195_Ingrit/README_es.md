@@ -36,4 +36,4 @@ Ingrit es una conversión del asesor experto de MetaTrader 5 `Ingrit.mq5`. La es
 
 ## Notas
 * Los valores de pip se derivan del paso de precio del instrumento. Cuando el instrumento usa tres o cinco decimales, la estrategia multiplica el paso por diez para que un pip sea igual a la definición estándar de FX.
-* No hay una versión en Python para esta estrategia en el repositorio.
+* Las implementaciones están disponibles en C# y Python.

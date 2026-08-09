@@ -42,4 +42,4 @@ Cada indicador pode assinar seu próprio cronograma. Um valor de período de tem
 ## Notas
 * As filas de indicadores respeitam o `Shift` configurado, garantindo que os sinais sejam baseados em valores históricos da mesma forma que o especialista MQL.
 * A lógica de trailing só é ativada quando a negociação já está lucrando mais do que a distância de trailing e o stop está a mais do que essa distância do preço, correspondendo ao comportamento do EA original.
-* Nenhuma versão Python é fornecida para este pacote de estratégia.
+* As implementações estão disponíveis em C# e Python.

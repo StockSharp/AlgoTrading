@@ -32,4 +32,4 @@ A estratégia MT45 é uma conversão direta do consultor especializado original 
 ## Notas de uso
 * Escolha o período de velas que corresponda ao período do gráfico do especialista original. A lógica opera estritamente em velas completadas.
 * A estratégia não enfileira outra entrada enquanto houver uma ordem pendente ou uma posição ativa; sempre aguarda a operação existente ser fechada por stop-loss ou take-profit.
-* Não há uma versão Python separada para esta estratégia no momento, seguindo as diretrizes do projeto.
+* As implementações estão disponíveis em C# e Python.

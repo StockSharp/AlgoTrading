@@ -65,4 +65,4 @@ Candle closes
 ## Files
 
 - `CS/DaydreamStrategy.cs` – strategy implementation in C#.
-- Python version: not yet implemented.
+- Implementations are available in both C# and Python.

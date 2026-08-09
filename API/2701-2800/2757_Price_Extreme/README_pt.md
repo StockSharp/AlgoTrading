@@ -69,4 +69,4 @@ Todos os parâmetros usam `StrategyParam<T>` com metadados de UI para que possam
 
 - A estratégia opera intencionalmente em uma única posição líquida, espelhando a lógica de hedge do especialista MQL ao nivelar o lado oposto antes de entrar em uma nova negociação.
 - Stops e alvos de proteção são avaliados em velas concluídas. No trading ao vivo, isso aproxima as ordens de proteção do lado do servidor usadas pelo script original.
-- Nenhuma versão em Python está incluída, conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

@@ -41,5 +41,5 @@ The logic mirrors the original expert advisor: AO slope defines trade direction,
 ## Notes
 
 - The original MT5 expert names the inputs `Period_sma_slow` and `Period_sma_fast` but swaps the values (5 and 34). The StockSharp port keeps the functional mapping by exposing intuitive `AoShortPeriod`/`AoLongPeriod` parameters.
-- No Python version is provided yet, matching the task request.
+- Implementations are available in both C# and Python.
 - Tests are not included; run any necessary validations via Designer or your own backtesting harness before deploying to production.

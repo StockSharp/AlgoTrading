@@ -55,4 +55,4 @@ Die II Ausbruch-Strategie ist ein Hochfrequenz-Ausbruchssystem, das ursprünglic
 ## Implementierungshinweise
 * Die Spread-Filterung erfordert Live-Level-1-Daten (`Security.BestBid`/`BestAsk`). Wenn der Feed fehlt, geht die Strategie von einem Spread von null aus.
 * Margin- und Eigenkapitalprüfungen sind Näherungen, da der ursprüngliche EA auf MetaTrader-spezifische Kontoeigenschaften und Kontraktgrößen angewiesen war. Passe `AccountLeverage`, `MaximumRisk` oder `Volume` an das Broker-Modell an.
-* Die Konvertierung verwendet die StockSharp High-Level-API (Kerzenabonnements mit `Bind`) und hält alle Kommentare auf Englisch. Für diese Strategie wird kein Python-Port erstellt.
+* Die Konvertierung verwendet die StockSharp High-Level-API (Kerzenabonnements mit `Bind`) und hält alle Kommentare auf Englisch. Implementierungen sind in C# und Python verfügbar.

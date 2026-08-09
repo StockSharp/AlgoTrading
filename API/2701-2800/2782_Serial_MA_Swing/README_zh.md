@@ -45,5 +45,5 @@
 
 ## 使用提示
 - 策略完全采用 StockSharp 高层接口 (`SubscribeCandles` + `BindEx`)，不需要手动维护指标缓存。
-- 根据需求未提供 Python 版本；只有 `CS/SerialMASwingStrategy.cs` 中的 C# 实现。
+- 同时提供 C# 和 Python 实现。
 - 若希望最大程度保持与原策略一致，可同时允许多空并保持 `AllSwing` 模式。

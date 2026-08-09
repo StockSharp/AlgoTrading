@@ -24,4 +24,4 @@ Diese Strategie handelt Fibonacci-Retracement-Ausbrüche, die aus ZigZag-Pivots 
 
 ## Hinweise
 
-Diese Datei enthält nur die C#-Implementierung. Eine Python-Version ist noch nicht verfügbar.
+Implementierungen sind in C# und Python verfügbar.

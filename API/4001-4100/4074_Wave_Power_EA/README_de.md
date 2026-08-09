@@ -73,4 +73,4 @@ Verhalten.
 - `CS/WavePowerEAStrategy.cs` – StockSharp-Implementierung der Wave Power EA-Gitterlogik.
 - `README.md` / `README_ru.md` / `README_zh.md` – Dokumentation in Englisch, Russisch und Chinesisch.
 
-Die Python-Version wird gemäß den Aufgabenanforderungen absichtlich weggelassen.
+Implementierungen sind in C# und Python verfügbar.

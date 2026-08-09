@@ -31,4 +31,4 @@ Diese Strategie ist eine Übersetzung des MQL5-Expert Advisors **Exp_MAOscillato
 ## Hinweise
 - Die Strategie verwendet die hochrangige StockSharp-API mit `SubscribeCandles` und Indikator-Binding.
 - `StartProtection` ist mit Marktaufträgen für eine sicherere Ausführung aktiviert.
-- Keine Python-Version verfügbar.
+- Implementierungen sind in C# und Python verfügbar.

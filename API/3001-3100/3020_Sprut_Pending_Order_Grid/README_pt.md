@@ -63,4 +63,4 @@ A versão convertida mantém a filosofia do consultor especialista original:
 4. Ajuste `ProfitClose`/`LossClose` a valores consistentes com a moeda da sua conta.
 5. Inicie a estratégia; ela aguardará o primeiro snapshot do livro de ordens antes de construir a grade.
 
-> **Versão Python** – não fornecida. Apenas a implementação em C# está incluída, conforme solicitado.
+> As implementações estão disponíveis em C# e Python.

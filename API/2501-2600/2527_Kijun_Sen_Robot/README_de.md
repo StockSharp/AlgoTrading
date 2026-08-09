@@ -71,4 +71,4 @@ Alle pip-basierten Parameter werden in Preiseinheiten unter Verwendung des Instr
 4. Im High-Level-Backtester oder in der Live-Umgebung ausführen; die Strategie wird dasselbe Handelsfenster, dieselben Stop- und Trailing-Regeln wie der ursprüngliche Experte durchsetzen.
 5. Log oder Chart überwachen, um Breakeven- und Trailing-Updates zu sehen. Alle Kommentare im Code sind auf Englisch für Klarheit, wie angefordert.
 
-Die Python-Version wird absichtlich weggelassen; nur die C#-Implementierung wird in diesem Ordner bereitgestellt.
+Implementierungen sind in C# und Python verfügbar.

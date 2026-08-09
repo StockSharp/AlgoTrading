@@ -23,4 +23,4 @@
 ## 说明
 - 适用于 StockSharp 支持的任何品种。
 - 主要用于演示如何将基于线段的手动交易从 MQL 转换到 StockSharp。
-- Python 版本故意未提供。
+- 同时提供 C# 和 Python 实现。

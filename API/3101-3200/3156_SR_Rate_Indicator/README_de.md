@@ -55,4 +55,4 @@ Eine stark bullische Farbe (`4`) zeigt an, dass der Preis das obere Extrem des B
 - Signale werden nur auf abgeschlossenen Kerzen verarbeitet; Intrabar-Neuberechnungen werden ignoriert, genauso wie in der MetaTrader-Implementierung.
 - Die Slippage-Behandlung im ursprünglichen Experten hing von Ausführungseinstellungen ab. StockSharp-Marktorders respektieren bereits Exchange-Regeln, daher wird der `SlippagePoints`-Parameter nur für Dokumentationszwecke beibehalten.
 - Der Indikator speichert nur die minimale Menge an Verlauf, die zur Auswertung des Fensters benötigt wird, um unnötigen Speicherverbrauch zu vermeiden.
-- Die Python-Version wird gemäß den Projektrichtlinien absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

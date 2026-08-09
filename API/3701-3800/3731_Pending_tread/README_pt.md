@@ -31,7 +31,7 @@ Todas as entradas baseadas em pip (`PipStep`, `TakeProfitPips`) são convertidas
 - Os preços são normalizados por meio de `Security.ShrinkPrice` para que a corretora receba valores válidos alinhados aos ticks.
 - O volume é ajustado para respeitar `VolumeStep`, `MinVolume` e `MaxVolume` antes de cada pedido ser enviado.
 - Todas as mensagens de diagnóstico são roteadas por meio de `AddInfoLog` / `AddWarningLog`, espelhando a saída detalhada do script MetaTrader.
-- A implementação do Python foi omitida intencionalmente, conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 
 ## Dicas de uso
 1. Atribua um instrumento e um portfólio líquidos e, em seguida, inicie a estratégia. As escadas pendentes aparecerão instantaneamente após a primeira atualização de nível 1.

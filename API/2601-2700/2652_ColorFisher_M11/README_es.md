@@ -43,5 +43,5 @@ Para evitar múltiples órdenes por señal, la estrategia recuerda el tiempo de 
 
 ## Notas
 - La estrategia usa bindings de alto nivel de StockSharp (`SubscribeCandles().BindEx`) y no almacena colecciones históricas más allá del historial mínimo de colores requerido para la señal retrasada.
-- En esta versión no se proporciona un puerto Python, de acuerdo con la especificación.
+- Las implementaciones están disponibles en C# y Python.
 - Agrega la estrategia a un área del gráfico para visualizar tanto el precio como el oscilador Color Fisher calculado.

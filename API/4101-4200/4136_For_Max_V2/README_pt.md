@@ -41,4 +41,4 @@ O consultor especialista original expõe dois blocos de entrada e ambos são pre
 * As compensações de preço expressas em “pontos” dependem do `PriceStep` do título. Símbolos com cinco (ou três) casas decimais são convertidos automaticamente em tamanhos de pip fracionários, assim como em MetaTrader.
 * Stop Loss e Take Profits são executados por meio de ordens de mercado dentro da estratégia para espelhar o comportamento do EA de gerenciar níveis em velas fechadas.
 * A estratégia não implementa a função `vhod_3` não utilizada da fonte original; apenas os dois blocos de entrada ativos foram portados.
-* Este pacote contém apenas a implementação C#; nenhuma versão do Python é fornecida.
+* As implementações estão disponíveis em C# e Python.

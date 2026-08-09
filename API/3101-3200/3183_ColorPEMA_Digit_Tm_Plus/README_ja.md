@@ -57,4 +57,4 @@ StockSharpバージョンはMQL実装に存在したのと同じマネーマネ�
 
 ## 変換ステータス
 * **C#バージョン** – 実装済み（`CS/ExpColorPemaDigitTmPlusStrategy.cs`）。
-* **Pythonバージョン** – 作成せず（指示に従い）。
+* C# と Python の両方の実装が提供されています。

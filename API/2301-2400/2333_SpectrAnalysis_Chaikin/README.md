@@ -19,4 +19,4 @@ This strategy uses the Chaikin oscillator to detect shifts in momentum. The osci
 
 - Market orders are used for entries and exits.
 - The strategy does not set stop-loss or take-profit orders.
-- Only the C# version is provided; a Python implementation is not included.
+- Implementations are available in both C# and Python.

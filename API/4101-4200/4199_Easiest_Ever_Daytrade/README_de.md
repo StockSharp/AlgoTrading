@@ -36,4 +36,4 @@ Alle Parameter werden über `Param()` registriert und können im StockSharp-Opti
 - Führen Sie die Strategie auf Instrumenten aus, die sowohl Intraday- als auch tägliche Kerzenverläufe liefern. Die Standardkonfiguration erfordert Minuten- und Tageskerzen.
 - Richten Sie `EntryHourLimit` und `MarketCloseHour` an der Handelssitzung des ausgewählten Instruments aus.
 - Der Algorithmus erwartet in den Kerzenzeitstempeln die Ortszeit der Börse; Passen Sie die Datenquellen entsprechend an.
-- Die Logik spiegelt den ursprünglichen MQL-Expert Advisor wider und ermöglicht die Replikation des Verhaltens innerhalb der StockSharp-Umgebung ohne Python-Komponenten.
+- Implementierungen sind in C# und Python verfügbar.

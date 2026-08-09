@@ -27,4 +27,4 @@ Die Expotest-Strategie ist eine direkte StockSharp-Konvertierung des ursprüngli
 ## Zusätzliche Hinweise
 - Die Strategie verarbeitet nur abgeschlossene Kerzen, um nah an der ursprünglichen tickbasierten MQL-Implementierung zu bleiben und gleichzeitig mit StockSharp-Abonnements kompatibel zu sein.
 - Schutz-Levels werden intern verfolgt anstatt durch separate Stop/Limit-Orders, was die Logik transparent und leicht zu backtesten hält.
-- Die Python-Implementierung wird gemäß Anforderung absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

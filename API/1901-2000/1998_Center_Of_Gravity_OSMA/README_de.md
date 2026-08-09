@@ -32,5 +32,5 @@ werden Long-Positionen geschlossen und optional Shorts eröffnet.
 - `CandleType` – Kerzentyp (Zeitrahmen) für Berechnungen.
 
 ## Hinweise
-- Nur die C#-Version wird bereitgestellt. Der Python-Ordner ist absichtlich nicht vorhanden.
+- Implementierungen sind in C# und Python verfügbar.
 - Verwenden Sie Tabulatoren für Einrückungen beim Ändern des Codes.

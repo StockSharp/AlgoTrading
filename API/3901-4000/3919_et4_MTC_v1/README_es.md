@@ -56,7 +56,7 @@
 - El experto MQL4 envió sin reglas comerciales; sólo estaban presentes rutinas de infraestructura. En consecuencia, la conversión StockSharp prioriza la paridad de las funciones de soporte en lugar de agregar indicadores especulativos.
 - Todos los comentarios están escritos en inglés, cumpliendo con los estándares del repositorio.
 - Las tabulaciones se utilizan para que la sangría coincida con las pautas de estilo definidas en `AGENTS.md`.
-- La traducción de Python se omite intencionalmente según la solicitud de conversión.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Pasos de uso
 1. Haga referencia a `Et4MtcV1Strategy` en un proyecto StockSharp y asigne un `Security` y `Portfolio` antes de comenzar.

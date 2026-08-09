@@ -48,4 +48,4 @@ This strategy is a StockSharp port of the MetaTrader expert advisor `Exp_XPeriod
 - `SignalBar` must remain within the stored history (up to 14 positions after the current bar). Values greater than the available history will automatically skip trading.
 - The breakout offset is multiplied by `PriceStep` when the security exposes a tick size. This keeps the behaviour similar to the MetaTrader version where `Deviation` is defined in points.
 - `StopLoss` and `TakeProfit` are specified in absolute price units. Set them to zero to disable protective orders while keeping the management infrastructure active.
-- No Python translation is provided yet; this folder contains only the C# implementation.
+- Implementations are available in both C# and Python.

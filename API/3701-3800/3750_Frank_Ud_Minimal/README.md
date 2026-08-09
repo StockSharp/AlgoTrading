@@ -27,4 +27,4 @@ This sample ports the classic **Frank Ud** MetaTrader expert advisor into StockS
 - Position bookkeeping stores every fill (price and volume) in lists instead of querying cumulative statistics, preserving the behaviour of the MQL arrays that were used to locate the largest lot and its entry price.
 - The extra 25 pip buffer that the original expert placed on each take-profit order is retained as an additional exit condition.
 
-> **Note:** The Python port is intentionally omitted for now, as requested. The folder contains only the C# implementation and the multilingual documentation.
+> Implementations are available in both C# and Python.

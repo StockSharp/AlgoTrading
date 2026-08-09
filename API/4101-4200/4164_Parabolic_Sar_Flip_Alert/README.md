@@ -29,4 +29,4 @@ This strategy reproduces the MetaTrader expert advisor **pSAR_alert2** inside th
 - The original MetaTrader script relied on `Sleep` to throttle execution. StockSharp is event-driven, so the strategy reacts to new candles immediately without manual delays.
 - Alerts are produced through `AddInfoLog`, keeping the original behavior of pop-up notifications without requiring additional UI components.
 - Optional auto trading is provided to integrate the alert logic into automated workflows. Disable the `Enable Auto Trading` parameter to match the exact MetaTrader behavior.
-- Python implementation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

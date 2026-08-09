@@ -48,6 +48,6 @@
 ## Notas
 - O assessor especialista original incluía modos de gerenciamento de capital baseados em saldo ou margem. O porte expõe um parâmetro `OrderVolume` fixo mais simples. Ajuste-o para corresponder ao dimensionamento de posição desejado.
 - `StartProtection` é invocado apenas quando o instrumento expõe um passo de preço válido (`Security.Step > 0`).
-- Nenhuma versão Python é fornecida intencionalmente.
+- As implementações estão disponíveis em C# e Python.
 - Áreas de gráfico são criadas automaticamente: se os feeds de velas compradas e vendidas diferirem, dois painéis separados são exibidos; caso contrário, apenas um gráfico é mostrado.
 - A estratégia depende de velas completadas; não reage a atualizações intrabarra.

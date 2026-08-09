@@ -43,7 +43,7 @@ Ambos os parâmetros de parada operam em pontos do instrumento. O método auxili
 - O estado (preço de entrada, nível de stop, históricos de SMA) é redefinido automaticamente em `OnReseted()`, garantindo backtests e reinicializações limpos.
 - Os históricos dos indicadores são armazenados em buffers rolantes curtos para reproduzir os deslocamentos `iMA(..., shift)` sem chamar `GetValue()`.
 - Todos os comentários embutidos permanecem em inglês, conforme exigido pelas diretrizes do repositório.
-- Nenhuma contraparte Python é fornecida. Somente a implementação de alto nível C# é entregue em `CS/BrandyV12Strategy.cs` conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 
 ## Uso
 1. Coloque a estratégia em uma solução StockSharp, selecione o instrumento desejado e certifique-se de que os dados da vela correspondam ao período especificado por `CandleType`.

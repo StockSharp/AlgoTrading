@@ -32,4 +32,4 @@ La **Parabolic SAR estrategia del primer punto** es la StockSharp conversión de
 ## Notas sobre la conversión
 - MetaTrader las órdenes de limitación de pérdidas y toma de ganancias eran órdenes de protección del lado del corredor. StockSharp los reproduce monitoreando los máximos y mínimos de las velas y enviando salidas del mercado cuando se cruzan los umbrales.
 - El experto MetaTrader multiplicó las distancias de parada por diez siempre que `StopMult` fuera cierto para mejorar la compatibilidad con los corredores que cotizan con pips fraccionarios. El parámetro `UseStopMultiplier` implementa el mismo comportamiento.
-- La conversión utiliza API de alto nivel de StockSharp (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`) según lo exigen las pautas del proyecto. Aún no se proporciona ninguna versión adicional de Python que coincida con la solicitud de la tarea.
+- La conversión utiliza API de alto nivel de StockSharp (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`) según lo exigen las pautas del proyecto. Las implementaciones están disponibles en C# y Python.

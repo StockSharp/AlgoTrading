@@ -58,4 +58,4 @@
 - Defina `AppPrice` para o nível horizontal que você deseja monitorar (por exemplo, preço psicológico, pivô diário, etc.).
 - Desligue `BuyOnly` para replicar o modo "somente venda" original; deixe-o ativado para executar o comportamento padrão somente longo fornecido.
 - Ao habilitar a gestão de dinheiro, verifique se a conexão da carteira fornece atualizações de saldo; caso contrário, a estratégia reverte para o volume fixo.
-- Nenhuma porta Python é fornecida por solicitação; apenas a estratégia C# é gerada.
+- As implementações estão disponíveis em C# e Python.

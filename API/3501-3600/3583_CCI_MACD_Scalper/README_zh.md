@@ -51,4 +51,4 @@ CCI MACD Scalper 将 MetaTrader 5 专家顾问 “CCI + MACD Scalper” 迁移�
 ## 其他说明
 * 点值转换依赖标的的 `PriceStep`。若缺少有效步长，则退化为 1 个价格单位。
 * 账户权益优先使用 `Portfolio.CurrentValue`，若不可用则退回 `BeginValue`。当两者都缺失时，策略回退到基础的 `Volume` 手数。
-* 本策略仅提供 C# 实现，未包含 Python 版本。
+* 同时提供 C# 和 Python 实现。

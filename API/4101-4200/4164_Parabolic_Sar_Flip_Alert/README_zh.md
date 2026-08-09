@@ -29,4 +29,4 @@
 - 原始 MetaTrader 脚本通过 `Sleep` 控制执行频率。StockSharp 采用事件驱动模型，因此策略会在收到新 K 线后立即响应，无需手动延时。
 - 提醒通过 `AddInfoLog` 记录，复现了原策略的提示行为，同时避免依赖额外的界面组件。
 - 新增的自动交易开关使策略可以融入全自动流程；若希望保持与 MetaTrader 完全一致的行为，请关闭 `Enable Auto Trading` 参数。
-- 根据要求，此处未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

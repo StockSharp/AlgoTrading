@@ -31,4 +31,4 @@
 ## 说明
 - 该策略使用StockSharp高层API，通过 `SubscribeCandles` 绑定指标。
 - 启用了 `StartProtection`，并使用市价单执行。
-- 暂无Python版本。
+- 同时提供 C# 和 Python 实现。

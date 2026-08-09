@@ -50,4 +50,4 @@ La estrategia está implementada sobre la API de alto nivel de StockSharp. Toda 
 
 - La estrategia usa solo procesamiento a nivel de vela; la replicación tick a tick del EA original se evita intencionalmente para mantenerse consistente con la arquitectura de alto nivel de StockSharp.
 - Los comentarios dentro del código están en inglés según los requisitos del proyecto.
-- Se omite intencionalmente una versión en Python para cumplir con la solicitud del usuario.
+- Las implementaciones están disponibles en C# y Python.

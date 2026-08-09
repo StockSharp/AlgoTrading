@@ -36,4 +36,4 @@
 ## 补充说明
 - `StartProtection()` 在启动时调用一次，以启用内置仓位保护机制。
 - `BuyMarket` 与 `SellMarket` 在开新仓前会先平掉反向仓位，保持与 MT5 版本一致的执行方式。
-- 按照仓库要求，本策略暂未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

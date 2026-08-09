@@ -73,4 +73,4 @@ Example:
 3. Set `Volume`, portfolio and security in the UI or in code, then start the strategy.
 4. Watch the strategy log for messages such as "Trading paused due to high news" or "Next scheduled news" to confirm the blackout logic.
 
-Python translation is intentionally omitted as requested.
+Implementations are available in both C# and Python.

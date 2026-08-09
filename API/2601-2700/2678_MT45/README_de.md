@@ -32,4 +32,4 @@ Die MT45-Strategie ist eine direkte Konvertierung des ursprünglichen MetaTrader
 ## Verwendungshinweise
 * Wähle den Kerzen-Zeitrahmen, der dem Chart-Zeitrahmen des ursprünglichen Experten entspricht. Die Logik operiert ausschließlich auf abgeschlossenen Kerzen.
 * Die Strategie stellt keinen weiteren Einstieg in die Warteschlange, während eine Order aussteht oder eine Position aktiv ist; sie wartet immer, bis der bestehende Trade über Stop-Loss oder Take-Profit schließt.
-* Es gibt derzeit keine separate Python-Version für diese Strategie, entsprechend den Projektrichtlinien.
+* Implementierungen sind in C# und Python verfügbar.

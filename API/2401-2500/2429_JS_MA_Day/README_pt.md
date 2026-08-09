@@ -40,4 +40,4 @@ A **Estratégia JS MA Day** opera com base em uma média móvel simples calculad
 
 - A estratégia processa apenas velas completadas.
 - O volume das ordens é definido pela propriedade `Volume` da classe base.
-- Ainda não existe uma versão em Python desta estratégia.
+- As implementações estão disponíveis em C# e Python.

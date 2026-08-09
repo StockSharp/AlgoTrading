@@ -54,5 +54,5 @@ Bei `Pattern Side = Bearish` lösen die folgenden Setups einen kurzen Eintrag au
 ## Nutzungshinweise
 - Wählen Sie den Modus `Bullish` oder `Bearish`, je nachdem, ob Sie nach langen oder kurzen Gelegenheiten suchen möchten.
 - Die standardmäßigen stündlichen Kerzen können durch jeden anderen verfügbaren Kerzendatentyp ersetzt werden.
-- Wie gewünscht gibt es noch keinen Python-Port. Es wird nur die C#-Implementierung bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.
 - Die Strategie sieht keine Gewinnziele vor. Exits basieren ausschließlich auf der kerzenbasierten Stopplogik oder manuellen Eingriffen.

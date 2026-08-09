@@ -33,4 +33,4 @@ IFS Fractals is a port of the MetaTrader 5 script `IFS_Fractals`. The original e
 ## Additional notes
 * Each run produces a different trade sequence unless a deterministic random seed is injected by modifying the source; this mirrors the randomness of the original bitmap rendering script.
 * The strategy does not require any market-derived indicators. All data is generated internally from the IFS coefficients, so the subscribed candles simply provide timing for the iterations.
-* No Python implementation is included in this package. Only the C# strategy is available under `CS/`.
+* Implementations are available in both C# and Python.

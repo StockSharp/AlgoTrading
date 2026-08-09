@@ -37,4 +37,4 @@
 
 ## Notes
 - Works with any instrument that provides `Security.PriceStep`; default configuration targets H4 candles.
-- No Python port is provided, matching the original request.
+- Implementations are available in both C# and Python.

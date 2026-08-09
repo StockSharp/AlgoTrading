@@ -64,4 +64,4 @@ pplied by the high level API. |
 - Slippage handling in the original expert relied on execution settings. StockSharp's market orders already honour exchange rules,
  therefore the `SlippagePoints` parameter is kept only for documentation purposes.
 - The indicator stores only the minimal amount of history required to evaluate the window, preventing unnecessary memory usage.
-- Python version is intentionally omitted according to the project guidelines.
+- Implementations are available in both C# and Python.

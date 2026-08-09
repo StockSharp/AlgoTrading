@@ -51,7 +51,7 @@
 - Marginsbasiertes Lot-Sizing (`MM` und `MMMode`) wird durch einen festen `Volume`-Parameter ersetzt. Dies hält das Verhalten broker-übergreifend deterministisch und vermeidet die Replikation kontospezifischer Hebellogik.
 - Slippage (`Deviation_`) wird nicht emuliert, da StockSharp-Market-Orders keinen Slippage-Parameter exponieren.
 - Indikatorglättung wird vollständig mit StockSharp-Indikatoren rekonstruiert (einschließlich Jurik-Phasenbehandlung durch Reflection), sodass Signalwerte mit den ursprünglichen Buffern übereinstimmen.
-- Python-Implementierung wird absichtlich weggelassen, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Verwendungshinweise
 - Sicherstellen, dass das ausgewählte Instrument den von `CandleType` angeforderten Kerzentyp bereitstellt. Für Standard-Zeitrahmen `TimeSpan.FromHours(x).TimeFrame()` verwenden.

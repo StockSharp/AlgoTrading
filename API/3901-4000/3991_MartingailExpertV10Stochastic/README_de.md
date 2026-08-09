@@ -89,4 +89,4 @@ API/3991/
 └── README_ru.md
 „
 
-Gemäß den Aufgabenanforderungen wird bewusst auf eine Python-Implementierung verzichtet.
+Implementierungen sind in C# und Python verfügbar.

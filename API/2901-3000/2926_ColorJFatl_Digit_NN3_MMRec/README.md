@@ -41,7 +41,7 @@ Because modules share a single account position, only one net long or net short 
 - Signals operate strictly on finished candles to prevent intrabar repainting.
 - The *AppliedPrices* enum reproduces the options from the original indicator, including two trend-follow price variants and the DeMark price.
 - Money-management recovery logic from the MQL version is not reproduced. Instead, risk can be managed via StockSharp protections or by adjusting module volumes.
-- English comments inside the code explain each step of the conversion for easier maintenance and future Python porting.
+- Implementations are available in both C# and Python.
 
 ## Extending the Strategy
 

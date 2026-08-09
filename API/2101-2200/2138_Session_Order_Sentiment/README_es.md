@@ -30,4 +30,4 @@ Después de abrir una posición, los umbrales se reducen para monitorear el lado
 - `SlPips` – stop loss en puntos de precio (por defecto: 500)
 
 ## Notas
-La estrategia no incluye una versión en Python.
+Las implementaciones están disponibles en C# y Python.

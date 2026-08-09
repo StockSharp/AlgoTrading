@@ -40,5 +40,5 @@ La **Estrategia WE TRUST Channel** es un port de StockSharp de alto nivel del as
 
 ## Notas
 - La estrategia depende de metadatos válidos de `PriceStep`. Si el exchange no lo proporciona, el código recurre a `Security.Step` y finalmente a `1`.
-- Solo la implementación en C# está incluida en este directorio. El port de Python se omite intencionalmente según las instrucciones.
+- Las implementaciones están disponibles en C# y Python.
 - La lógica procesa solo velas finalizadas y no intenta acumular datos de barra parciales.

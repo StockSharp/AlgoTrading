@@ -46,4 +46,4 @@ cambios de cotización, al igual que el controlador de ticks MT4 `start()`.
 niveles de precios. Asegúrese de que el lugar conectado exponga los valores `PriceStep`, `StepPrice` y `VolumeStep` correctos.
 - El contador de cesta sintético permite que la estrategia imite cuentas de cobertura aunque StockSharp agregue la posición.
 Los llenados parciales y las paradas se manejan mediante la devolución de llamada `OnPositionChanged` que mantiene las colas FIFO.
-- La implementación de Python se omite intencionalmente según las pautas del repositorio.
+- Las implementaciones están disponibles en C# y Python.

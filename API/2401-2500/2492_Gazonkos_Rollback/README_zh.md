@@ -33,4 +33,4 @@ Gazonkos 回撤策略源自 MetaTrader 5 平台上的 **gazonkos** 专家顾问�
 ## 其他提示
 * 请根据交易品种的点值调整 `Delta`、`Rollback`、`TakeProfit` 与 `StopLoss`。
 * 代码中的注释均为英文，符合仓库规范。
-* 当前未提供 Python 版本的实现。
+* 同时提供 C# 和 Python 实现。

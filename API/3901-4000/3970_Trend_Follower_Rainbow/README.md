@@ -51,4 +51,4 @@ The strategy automatically draws:
 ## Notes
 - The rainbow logic approximates the original RainbowMMA custom indicators by building configurable EMA bundles. Adjust the base lengths to match a specific rainbow template if needed.
 - All code comments, logs, and documentation are provided in English as required.
-- The strategy focuses solely on the C# implementation. No Python port is generated in this task.
+- Implementations are available in both C# and Python.

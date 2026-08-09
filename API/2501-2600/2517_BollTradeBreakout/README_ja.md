@@ -40,6 +40,7 @@
 ## ファイル
 
 - `CS/BollTradeStrategy.cs` – 戦略のC#実装。
+- `PY/boll_trade_strategy.py` – 戦略のPython実装。
 - `README.md` – 英語のドキュメント（このファイル）。
 - `README_ru.md` – ロシア語のドキュメント。
 - `README_zh.md` – 中国語のドキュメント。

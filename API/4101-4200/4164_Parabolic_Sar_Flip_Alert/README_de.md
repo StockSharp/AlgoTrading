@@ -29,4 +29,4 @@ Diese Strategie reproduziert den MetaTrader-Expertenberater **pSAR_alert2** inne
 - Das ursprüngliche MetaTrader-Skript stützte sich auf `Sleep`, um die Ausführung zu drosseln. StockSharp ist ereignisgesteuert, sodass die Strategie sofort und ohne manuelle Verzögerungen auf neue Kerzen reagiert.
 - Warnungen werden über `AddInfoLog` erzeugt, wobei das ursprüngliche Verhalten von Popup-Benachrichtigungen beibehalten wird, ohne dass zusätzliche UI-Komponenten erforderlich sind.
 - Um die Alarmlogik in automatisierte Arbeitsabläufe zu integrieren, steht optionaler automatischer Handel zur Verfügung. Deaktivieren Sie den Parameter `Enable Auto Trading`, um dem genauen Verhalten von MetaTrader zu entsprechen.
-- Auf die Python-Implementierung wird wie gewünscht bewusst verzichtet.
+- Implementierungen sind in C# und Python verfügbar.

@@ -43,5 +43,5 @@ Para evitar múltiplas ordens por sinal, a estratégia lembra o tempo de fechame
 
 ## Notas
 - A estratégia usa bindings de alto nível do StockSharp (`SubscribeCandles().BindEx`) e não armazena coleções históricas além do histórico mínimo de cores necessário para o sinal atrasado.
-- Nesta versão não há port Python, de acordo com a especificação.
+- As implementações estão disponíveis em C# e Python.
 - Adicione a estratégia a uma área do gráfico para visualizar tanto o preço quanto o oscilador Color Fisher calculado.

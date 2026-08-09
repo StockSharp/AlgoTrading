@@ -51,7 +51,7 @@ Positionen vor dem Ausgeben neuer Orders geschlossen werden.
 - **Handelsvolumen** (`TradeVolume`): Ordergröße für jede neue Position; wird beim Start auch mit `Strategy.Volume` synchronisiert.
 
 ## Hinweise
-- Die Python-Übersetzung wird auf Anfrage bewusst weggelassen.
+- Implementierungen sind in C# und Python verfügbar.
 - Die Geldmanagement-Helfer aus `TradeAlgorithms.mqh` (Margin-Modi, dynamische Positionsgrößen, Stop-Loss/Take-Profit-Platzierung)
   werden auf ein festes Handelsvolumen und explizite Exit-Regeln vereinfacht.
 - Wenn das Wertpapier `PriceStep` nicht offenlegt, wird der Ausbruchs-Buffer als absolute Preiseinheiten interpretiert, was die beste

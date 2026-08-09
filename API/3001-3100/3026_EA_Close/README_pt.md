@@ -51,6 +51,6 @@ Apenas dados de velas finalizadas são usados. Isso espelha o gate `OnTick` de n
 - Como o StockSharp trabalha com velas agregadas em vez de callbacks de tick, não é necessária lógica adicional de atualização de taxa; a assinatura de dados garante que os indicadores recebam velas completas.
 
 ## Notas de conversão
-- Nenhuma implementação em Python é fornecida intencionalmente, alinhando-se aos requisitos da tarefa de conversão.
+- As implementações estão disponíveis em C# e Python.
 - A média móvel ponderada opera na série de velas; se precisar do preço ponderado exato do MT5 `(High + Low + 2 * Close) / 4`, pré-processe os valores de vela antes de alimentá-los na WMA.
 - As ordens de proteção são gerenciadas pela plataforma via `StartProtection`, portanto registros explícitos de stop/take após cada negociação não são necessários.

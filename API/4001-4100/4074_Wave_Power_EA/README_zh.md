@@ -65,4 +65,4 @@
 - `CS/WavePowerEAStrategy.cs`：Wave Power EA 网格策略的 StockSharp 实现。
 - `README.md` / `README_ru.md` / `README_zh.md`：英文、俄文、中文说明。
 
-根据任务要求，此策略不提供 Python 版本。
+同时提供 C# 和 Python 实现。

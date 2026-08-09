@@ -54,4 +54,4 @@ StockSharp 版本继续提供原策略中的资金管理模式、止损/止盈�
 
 ## 转换状态
 * **C# 版本** —— 已实现（`CS/ExpColorPemaDigitTmPlusStrategy.cs`）。
-* **Python 版本** —— 未创建（按要求省略）。
+* 同时提供 C# 和 Python 实现。

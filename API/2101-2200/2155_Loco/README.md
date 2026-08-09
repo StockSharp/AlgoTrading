@@ -14,4 +14,4 @@ This strategy implements the "Loco" indicator originally written in MQL5. The in
 - **Price Type** – price used in indicator calculation.
 
 ## Notes
-The strategy uses a custom implementation of the Loco indicator. Python version is not provided.
+The strategy uses a custom implementation of the Loco indicator. Implementations are available in both C# and Python.

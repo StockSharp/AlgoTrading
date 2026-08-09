@@ -45,5 +45,5 @@ Esta implementación expone el valor de la media móvil junto con una bandera bo
 
 ## Notas de uso
 - La implementación usa la API de alto nivel de StockSharp (`SubscribeCandles` + `BindEx`) y evita la gestión de búfer de bajo nivel.
-- No se incluye versión en Python, según lo solicitado. Solo el port en C# reside en `CS/SerialMASwingStrategy.cs`.
+- Las implementaciones están disponibles en C# y Python.
 - La estrategia está destinada para ejecución de estilo swing similar al EA original; habilitar ambas direcciones y mantener el modo predeterminado `AllSwing` se asemeja más al comportamiento MQL.

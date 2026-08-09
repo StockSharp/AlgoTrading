@@ -44,6 +44,6 @@ Diese Strategie reproduziert den MetaTrader "RSI and Bollinger Bands" Expert Adv
 | `CandleType` | Datentyp / Zeitrahmen für die Verarbeitung. | 4-Stunden-Kerzen |
 
 ## Hinweise
-- Die Python-Version wird absichtlich weggelassen, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.
 - Verwenden Sie `Volume` in der Basisklasse, um die Lotgröße zu konfigurieren (Standard 1, wenn nicht angegeben).
 - Die Strategie sollte auf demselben Zeitrahmen wie die ursprüngliche EA-Konfiguration ausgeführt werden (EURUSD H4 gemäß der bereitgestellten `.set`-Datei).

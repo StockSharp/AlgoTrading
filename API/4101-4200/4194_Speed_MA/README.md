@@ -37,7 +37,7 @@ The **Speed MA Strategy** is a direct StockSharp port of the MetaTrader 4 expert
 - `StartProtection` converts the MetaTrader point-based parameters into StockSharp `Unit` instances with absolute price offsets. This keeps the stop-loss and take-profit distances identical to the MQL4 version.
 - The strategy uses the high-level `SubscribeCandles().Bind(...)` workflow so that indicator updates and signal evaluation occur only on finished candles. No manual call to `Indicator.GetValue()` is required.
 - English inline comments are provided in the source code to highlight the critical conversion decisions.
-- Only the C# implementation is supplied. A Python port is intentionally omitted, matching the request.
+- Implementations are available in both C# and Python.
 
 ## Usage Tips
 - Lowering `SlopeThresholdPoints` increases the number of trades because smaller moving-average moves qualify as signals. Increasing the value filters out more trades and demands stronger momentum.
@@ -53,5 +53,3 @@ The **Speed MA Strategy** is a direct StockSharp port of the MetaTrader 4 expert
 ## Files
 - `CS/SpeedMAStrategy.cs` – strategy implementation.
 - `README.md`, `README_zh.md`, `README_ru.md` – detailed documentation in English, Chinese, and Russian respectively.
-
-No Python directory is included, in accordance with the conversion guidelines.

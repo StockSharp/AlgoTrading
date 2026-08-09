@@ -57,4 +57,4 @@ A **Estratégia semanal de intervalo** é uma conversão de StockSharp API de al
 - ✅ Programação semanal preservada, cálculos de intervalo, níveis de proteção e comportamento martingale de `RangeBreakout.mq5`.
 - ✅ Chamadas API específicas de MetaTrader substituídas (`iATR`, `CopyBuffer`, `OrderSend`, etc.) por abstrações StockSharp idiomáticas (`SubscribeCandles`, `AverageTrueRange`, `BuyMarket`/`SellMarket`).
 - ✅ Implementação de comentários in-line em inglês e extensa documentação conforme solicitado.
-- ✅ Deixou os projetos de teste intactos e não criou uma variante Python, cumprindo as restrições da tarefa.
+- As implementações estão disponíveis em C# e Python.

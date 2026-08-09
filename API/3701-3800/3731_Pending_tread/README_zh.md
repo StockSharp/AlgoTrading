@@ -31,7 +31,7 @@
 - 所有价格通过 `Security.ShrinkPrice` 归一化，确保满足交易所最小跳动要求。
 - 下单数量会根据 `VolumeStep`、`MinVolume`、`MaxVolume` 自动调整。
 - 日志信息使用 `AddInfoLog` / `AddWarningLog` 输出，保留原 EA 的详细提示风格。
-- 根据任务要求，本目录未提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用提示
 1. 绑定好品种与投资组合后启动策略。收到首个一级行情后两组挂单会立即生成。

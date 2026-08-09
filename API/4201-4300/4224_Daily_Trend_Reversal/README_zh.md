@@ -47,4 +47,4 @@ Daily Trend Reversal 是 MetaTrader 4 策略 `dailyTrendReversal_D1` 的移植�
 ## 其他说明
 * 策略根据标的的最小报价步长自动识别点值，能够适配 5 位和 3 位报价的外汇品种。
 * 每个新交易日的第一根 K 线会重置当日盈亏基准，重新计算每日 Profit Stop。
-* 本目录仅提供 C# 实现，暂不包含 Python 版本。
+* 同时提供 C# 和 Python 实现。

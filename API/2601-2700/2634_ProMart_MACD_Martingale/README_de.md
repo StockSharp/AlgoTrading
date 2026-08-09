@@ -38,5 +38,5 @@ Diese Strategie ist ein StockSharp-Port des historischen MQL-Experten **MartGreg
 
 - Die Implementierung approximiert Intrabar-Stop-Loss- und Take-Profit-Füllungen mit Kerzenhochs und -tiefs, da das StockSharp-Beispiel auf abgeschlossenen Kerzen arbeitet.
 - Das Positionsvolumen fällt auf die `Volume`-Eigenschaft der Strategie oder das Instrument-Mindestvolumen zurück, wenn Portfolio-Daten nicht verfügbar sind.
-- Noch keine Python-Version vorhanden; nur die C#-Strategie ist enthalten.
+- Implementierungen sind in C# und Python verfügbar.
 - Die Konfiguration immer auf historischen Daten validieren, bevor der echte Handel aktiviert wird. Die Martingale-Komponente erhöht das Risiko erheblich.

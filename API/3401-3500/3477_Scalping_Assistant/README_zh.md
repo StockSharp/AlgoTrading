@@ -31,4 +31,4 @@
 - ✅ 核心逻辑：按照 MetaTrader 输入参数实现保本止损。
 - ✅ 高级 API：使用 `SubscribeLevel1()` 并绑定委托。
 - ✅ 保护性订单：通过 `SellStop`、`BuyStop`、`SellLimit`、`BuyLimit` 创建。
-- ❌ 未提供 Python 版本，仅包含请求的 C# 策略。
+- 同时提供 C# 和 Python 实现。

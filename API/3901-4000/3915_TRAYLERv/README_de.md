@@ -37,4 +37,4 @@ Die Strategie eröffnet **keine** selbstständig Positionen. Es geht davon aus, 
 - Die Strategie nutzt den High-Level-Workflow `SubscribeCandles().Bind(...)` und verarbeitet nur fertige Kerzen, spiegelt die tickbasierte MT4-Schleife wider und vermeidet gleichzeitig vorzeitige Aktualisierungen.
 - Die Fraktalerkennung wird manuell mithilfe einer fortlaufenden Liste von Kerzen-Snapshots implementiert. Dies reproduziert das Verhalten des MT4-Indikators `iFractals`, ohne sich auf zusätzliche StockSharp-Indikatoren zu verlassen.
 - Die Bestellpreise werden auf den nächsten gültigen Tick gerundet und die Volumina berücksichtigen die Einschränkungen `VolumeStep`, `MinVolume` und `MaxVolume`, um die Börsenkompatibilität zu gewährleisten.
-- Es ist keine Python-Übersetzung enthalten. Das Verzeichnis `PY` fehlt bewusst und entspricht den Anforderungen der Konvertierungsrichtlinien.
+- Implementierungen sind in C# und Python verfügbar.

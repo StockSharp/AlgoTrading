@@ -16,4 +16,4 @@ O **Sistema PChannel** utiliza um rompimento de canal de preços com confirmaç�
 3. Fechar a posição oposta, se houver, antes de abrir uma nova.
 4. Monitorar as negociações ativas e sair quando `StopLoss` ou `TakeProfit` for atingido.
 
-Esta estratégia ainda não tem implementação em Python.
+As implementações estão disponíveis em C# e Python.

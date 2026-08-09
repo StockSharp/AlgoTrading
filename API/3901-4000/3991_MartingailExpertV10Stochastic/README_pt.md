@@ -89,4 +89,4 @@ API/3991/
 └── README_ru.md
 ```
 
-A implementação do Python é omitida intencionalmente de acordo com os requisitos da tarefa.
+As implementações estão disponíveis em C# e Python.

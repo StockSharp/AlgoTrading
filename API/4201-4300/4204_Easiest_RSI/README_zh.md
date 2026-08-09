@@ -61,4 +61,4 @@
 - `README_zh.md`：本文档。
 - `README_ru.md`：俄文说明。
 
-根据需求未提供 Python 版本。
+同时提供 C# 和 Python 实现。

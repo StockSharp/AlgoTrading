@@ -16,4 +16,4 @@ Das **PChannel-System** verwendet einen Preiskanal-Ausbruch mit verzögerter Bes
 3. Die entgegengesetzte Position, falls vorhanden, vor dem Öffnen einer neuen schließen.
 4. Aktive Trades überwachen und bei Erreichen von `StopLoss` oder `TakeProfit` aussteigen.
 
-Diese Strategie hat noch keine Python-Implementierung.
+Implementierungen sind in C# und Python verfügbar.

@@ -52,7 +52,7 @@ sejam fechadas antes de emitir novas ordens.
 - **Volume de trading** (`TradeVolume`): tamanho da ordem usada para cada nova posição; também sincronizado com `Strategy.Volume` no início.
 
 ## Notas
-- A tradução Python é intencionalmente omitida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 - Os auxiliares de gestão de dinheiro de `TradeAlgorithms.mqh` (modos de margem, dimensionamento dinâmico de posição, colocação de stop-loss/take-profit)
   são simplificados para um volume de trading fixo e regras de saída explícitas.
 - Quando o ativo não expõe `PriceStep`, o buffer de rompimento é interpretado como unidades de preço absolutas, correspondendo à melhor

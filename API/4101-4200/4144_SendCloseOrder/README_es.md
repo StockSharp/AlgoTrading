@@ -41,4 +41,4 @@ Send Close Order es una adaptación del asesor experto MetaTrader 4 de 2009 "Sen
 - Aumente `MaxOrders` para emular el comportamiento de apilamiento del EA original. Mantenga `TradeVolume` alineado con el tamaño de lote del instrumento para evitar el redondeo.
 - El desplazamiento de línea se fija en el valor histórico de 15 puntos. Ajuste el código fuente si se modifica la entrada MetaTrader.
 
-Solo se proporciona la implementación de C#. Se agregará una traducción de Python por separado si es necesario.
+Las implementaciones están disponibles en C# y Python.

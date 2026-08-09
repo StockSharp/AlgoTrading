@@ -38,4 +38,4 @@ de modo que todo o livro seja fechado em torno desse preço de break-even com um
   o preço de break-even. Se o corretor aplica swaps noturnos, eles devem ser tratados manualmente.
 * O script assume que a conta permite hedge (posições compradas e vendidas simultâneas). Se o corretor liquida posições,
   os agregados comprado e vendido se reduzirão a uma única exposição líquida assim como no MetaTrader.
-* Não há versão Python deste port. Apenas a implementação C# é fornecida.
+* As implementações estão disponíveis em C# e Python.

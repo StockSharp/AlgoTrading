@@ -23,4 +23,4 @@ Diese Strategie setzt die **Genie Pivot** Umkehr-Scalping-Idee um, die ursprüng
 
 ## Hinweise
 
-Die Strategie verarbeitet nur abgeschlossene Kerzen. Eine Python-Version ist noch nicht vorhanden.
+Die Strategie verarbeitet nur abgeschlossene Kerzen. Implementierungen sind in C# und Python verfügbar.

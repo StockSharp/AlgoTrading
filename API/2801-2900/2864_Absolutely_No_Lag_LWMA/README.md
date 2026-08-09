@@ -38,4 +38,4 @@ The strategy replicates the MetaTrader expert advisor **Exp_AbsolutelyNoLagLwma*
 ## Notes
 - The default timeframe is 4 hours, matching the original expert advisor configuration, but it can be adjusted through the *Candle Type* parameter.
 - No take-profit or stop-loss orders are placed automatically; users can combine the strategy with StockSharp risk management components if required.
-- The Python port is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

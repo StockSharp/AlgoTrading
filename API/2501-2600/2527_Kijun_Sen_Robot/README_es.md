@@ -71,4 +71,4 @@ Todos los parámetros basados en pips se traducen en unidades de precio usando e
 4. Ejecutar en el backtester de alto nivel o entorno en vivo; la estrategia aplicará la misma ventana de trading, reglas de stop y trailing que el experto original.
 5. Monitorear el registro o gráfico para ver las actualizaciones de break-even y trailing. Todos los comentarios en el código están en inglés por claridad según lo solicitado.
 
-La versión de Python se omite intencionalmente; solo la implementación en C# se proporciona en esta carpeta.
+Las implementaciones están disponibles en C# y Python.

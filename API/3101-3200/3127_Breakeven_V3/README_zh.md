@@ -33,4 +33,4 @@ Breakeven v3 管理器移植自 MetaTrader 5 智能交易系统 `Breakeven v3 (b
   需要额外手动处理。
 * 脚本假设账户支持锁仓（同时持有多空仓位）。若券商采用净额结算模式，多空持仓最终会收敛到
   与 MetaTrader 相同的单一净仓。
-* 本次移植仅提供 C# 版本，没有 Python 版本。
+* 同时提供 C# 和 Python 实现。

@@ -24,4 +24,4 @@ Esta estratégia opera rompimentos de níveis de retração de Fibonacci derivad
 
 ## Notas
 
-Este arquivo contém apenas a implementação em C#. Uma versão em Python ainda não foi fornecida.
+As implementações estão disponíveis em C# e Python.

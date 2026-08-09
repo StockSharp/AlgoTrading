@@ -40,4 +40,4 @@ Diese Strategie handelt mit dem **Stochastic-Oszillator** auf dem ausgewählten 
 ## Hinweise
 
 - Kommentare im Code sind auf Englisch.
-- Die Python-Version wird absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

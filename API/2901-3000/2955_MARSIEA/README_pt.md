@@ -57,4 +57,4 @@ O volume calculado é arredondado para o `Security.VolumeStep` mais próximo (qu
 ## Notas
 - As ordens são geradas apenas quando a estratégia está online e a vela terminou, correspondendo ao EA original que aciona em novas barras.
 - Como o StockSharp mantém uma posição líquida, os sinais de média automaticamente reduzem ou invertem a exposição atual em vez de criar posições de hedge.
-- A implementação em Python é intencionalmente omitida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

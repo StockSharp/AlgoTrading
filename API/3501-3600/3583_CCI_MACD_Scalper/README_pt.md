@@ -51,4 +51,4 @@ O CCI MACD Scalper transporta o MetaTrader 5 consultor especialista "CCI + MACD 
 ## Notas adicionais
 * A conversão do preço depende do `PriceStep` do título. Os símbolos sem um passo válido recuam para uma distância de uma unidade de preço.
 * O patrimônio do portfólio é obtido de `Portfolio.CurrentValue` e volta para `BeginValue` quando a avaliação atual não está disponível. Se ambos estiverem faltando, a estratégia reverte para a propriedade base `Volume`.
-* Não há porta Python para esta estratégia; apenas a versão C# está incluída no pacote API.
+* As implementações estão disponíveis em C# e Python.

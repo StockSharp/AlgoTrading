@@ -43,4 +43,4 @@ The **Wajdyss MA Expert Strategy** is a C# port of the MetaTrader 4 expert advis
 ## Notes
 - The strategy relies exclusively on the high-level StockSharp API: candles are processed through `SubscribeCandles`, indicator bindings feed moving averages, and `StartProtection` manages stops/take-profit/trailing orders.
 - Position flattening uses market orders to mirror the MT4 expert's immediate closures of opposite tickets.
-- No Python translation is included in this folder; only the C# implementation is provided.
+- Implementations are available in both C# and Python.

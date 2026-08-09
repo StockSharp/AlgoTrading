@@ -56,4 +56,4 @@ Tunnel Method戦略は、MetaTrader 5向けに元々公開された「Tunnel Met
 - `README_ru.md` – ロシア語のドキュメント。
 - `README_zh.md` – 中国語のドキュメント。
 
-Pythonの翻訳は意図的に省略されており、この段階でC#バージョンのみを提供するという要求に一致しています。
+C# と Python の両方の実装が提供されています。

@@ -49,7 +49,7 @@ Key design notes:
 - **Session filter** – Implements the two scenarios from the MQL source: intraday windows (`StartHour < EndHour`) and overnight windows (`StartHour > EndHour`). When `StartHour == EndHour` trading is disabled, matching the original logic.
 - **Indicator binding** – Uses `SubscribeCandles().Bind(...)` so the CCI and LWMA receive automatic updates without manual buffering. Values are stored only to support the optional LWMA shift, avoiding direct calls to `GetValue()`.
 - **Order management** – `CancelActiveOrders()` runs before each market order, mirroring the EA's behaviour of keeping a clean order book.
-- **No Python version** – Only the C# strategy is provided, as requested.
+- Implementations are available in both C# and Python.
 
 ## Usage
 1. Attach the strategy to a security and set `CandleType` to the desired timeframe.

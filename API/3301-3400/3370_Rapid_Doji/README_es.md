@@ -34,4 +34,4 @@ Todos los parámetros admiten la optimización dentro del entorno StockSharp.
 - El código se basa en la suscripción de vela de alto nivel API (`SubscribeCandles`) combinada con el enlace de indicador (`Bind`) para evitar el manejo manual del historial.
 - Las órdenes se normalizan a través de `Security.ShrinkPrice` para respetar el tamaño del tick de intercambio.
 - Las paradas de protección se gestionan explícitamente para imitar el comportamiento del asesor experto MetaTrader original.
-- El proyecto omite intencionalmente una implementación de Python según los requisitos de la tarea.
+- Las implementaciones están disponibles en C# y Python.

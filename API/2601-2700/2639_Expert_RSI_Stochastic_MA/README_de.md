@@ -56,7 +56,7 @@ Die Strategie bietet dieselben Eingaben wie die MetaTrader-Version und behält d
 - RSI- und gleitende Durchschnitt-Eingaben unterstützen mehrere angewendete Preise, um MetaTrader-Optionen abzugleichen. Stochastic-Berechnungen stützen sich auf StockSharp's integrierten Oszillator (Low/High-Modus) und berücksichtigen die konfigurierten Glättungslängen.
 - Trailing- und Verlust-Schwellenwerte werden in *Punkten* gemessen. Der Helfer skaliert den Wert automatisch für typische FX-Tick-Größen (3 oder 5 Dezimalstellen) und verwendet standardmäßig einen `PriceStep`.
 - Die Chartausgabe enthält Kerzen, den gleitenden Durchschnitt, RSI und Stochastic-Indikatoren, was eine visuelle Validierung ähnlich der ursprünglichen Vorlage ermöglicht.
-- Es gibt keine Python-Begleitversion auf Anfrage; nur die C#-Implementierung wird bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Verwendungshinweise
 - Beim Einsatz auf Wertpapieren mit unkonventionellen Tick-Größen stellen Sie sicher, dass `Security.PriceStep` ausgefüllt ist; andernfalls wird die Standardkonvertierung verwendet (1 Punkt = 1 Preiseinheit).

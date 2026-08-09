@@ -42,4 +42,4 @@ Cada indicador puede suscribirse a su propio marco temporal. Un valor de períod
 ## Notas
 * Las colas de indicadores respetan el `Shift` configurado, lo que garantiza que las señales se basen en valores históricos de la misma manera que el experto MQL.
 * La lógica de seguimiento solo se activa una vez que la operación ya tiene ganancias por más de la distancia de seguimiento y la parada está a más de esa distancia del precio, coincidiendo con el comportamiento del EA original.
-* No se proporciona ninguna versión de Python para este paquete de estrategia.
+* Las implementaciones están disponibles en C# y Python.

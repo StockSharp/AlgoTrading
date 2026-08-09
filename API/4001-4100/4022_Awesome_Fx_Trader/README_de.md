@@ -43,4 +43,4 @@ Dank der `StrategyParam`-Metadaten können alle Parameter über die StockSharp-B
 | `MQL/8539/AwesomeFxTradera.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Erstellt den EMA-on-open-Oszillator und seine steigende/fallende Farblogik neu. |
 | `MQL/8539/t_ma.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Implementiert den 34-Perioden-LWMA mit einem 6-Perioden-SMA-Glätter zur Trenderkennung. |
 
-Die Python-Version wird wie gewünscht bewusst weggelassen.
+Implementierungen sind in C# und Python verfügbar.

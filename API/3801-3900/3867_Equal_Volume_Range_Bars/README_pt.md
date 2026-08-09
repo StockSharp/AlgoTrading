@@ -20,4 +20,4 @@ Barras iguais de volume e intervalo transportam o script MetaTrader 4 `equalvolu
 * A estratégia infere o tamanho do ponto de `Security.PriceStep` (voltando para `Security.MinPriceStep` ou `0.0001` quando nenhum metadado está disponível) para espelhar a constante `_Point` usada por MetaTrader.
 * Em vez de gravar arquivos `.hst` e atualizar uma janela de gráfico, a porta C# registra cada vela concluída com dados OHLCV completos, facilitando a alimentação de outro componente ou a comparação de resultados com o construtor de gráficos offline MT4.
 * Nenhum pedido é enviado; a aula se concentra exclusivamente na transformação de dados, assim como o script original.
-* Somente a versão C# é fornecida. Uma versão e uma pasta do Python são omitidas intencionalmente de acordo com os requisitos de conversão.
+* As implementações estão disponíveis em C# e Python.

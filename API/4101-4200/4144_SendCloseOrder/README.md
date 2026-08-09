@@ -41,4 +41,4 @@ Send Close Order is a port of the 2009 MetaTrader 4 expert advisor "SendCloseOrd
 - Increase `MaxOrders` to emulate the stacking behaviour of the original EA. Keep `TradeVolume` aligned with the instrument’s lot size to avoid rounding.
 - The line offset is fixed to the historical value of 15 points. Adjust the source code if the MetaTrader input is modified.
 
-Only the C# implementation is provided. A Python translation will be added separately if required.
+Implementations are available in both C# and Python.

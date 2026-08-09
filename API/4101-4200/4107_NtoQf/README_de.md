@@ -42,4 +42,4 @@ Jeder Indikator kann seinen eigenen Zeitrahmen abonnieren. Ein Zeitrahmenwert vo
 ## Notizen
 * Indikatorwarteschlangen berücksichtigen den konfigurierten `Shift` und stellen sicher, dass Signale auf die gleiche Weise wie der MQL-Experte auf historischen Werten basieren.
 * Die Trailing-Logik wird erst aktiviert, wenn der Trade bereits mehr als die Trailing-Distanz im Gewinn ist und der Stop mehr als diese Distanz vom Preis entfernt ist, was dem ursprünglichen Verhalten von EA entspricht.
-* Für dieses Strategiepaket wird keine Python-Version bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

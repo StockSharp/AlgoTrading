@@ -51,6 +51,6 @@ Es werden nur finalisierte Kerzendaten verwendet. Dies spiegelt das `OnTick`-Neu
 - Da StockSharp mit aggregierten Kerzen statt Tick-Callbacks arbeitet, ist keine zusätzliche Rate-Refresh-Logik erforderlich; das Datenabonnement stellt sicher, dass Indikatoren vollständige Kerzen erhalten.
 
 ## Konvertierungshinweise
-- Keine Python-Implementierung wird absichtlich bereitgestellt, entsprechend den Konvertierungsaufgabenanforderungen.
+- Implementierungen sind in C# und Python verfügbar.
 - Der gewichtete gleitende Durchschnitt arbeitet auf der Kerzenserie; wenn Sie den genauen MT5-gewichteten Preis `(High + Low + 2 * Close) / 4` benötigen, verarbeiten Sie die Kerzenwerte vor, bevor Sie sie in die WMA einspeisen.
 - Schutzorders werden von der Plattform über `StartProtection` verwaltet, sodass explizite Stop/Take-Registrierungen nach jedem Trade nicht notwendig sind.

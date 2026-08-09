@@ -43,4 +43,4 @@ The `AwesomeFxTraderStrategy` subscribes to a configurable candle type (default 
 | `MQL/8539/AwesomeFxTradera.mq4` | `CS/AwesomeFxTraderStrategy.cs` | EMA-on-open オシレーターとその立ち上がり/立ち下がりカラー ロジックを再作成します。 |
 | `MQL/8539/t_ma.mq4` | `CS/AwesomeFxTraderStrategy.cs` | トレンド検出のために 6 期間の SMA スムーザーを備えた 34 期間 LWMA を実装します。 |
 
-Python のバージョンは、要求に応じて意図的に省略されています。
+C# と Python の両方の実装が提供されています。

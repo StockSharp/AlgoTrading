@@ -57,7 +57,7 @@ Kernideen:
 * ATR(8) wird mit `AverageTrueRange` berechnet und zwischengespeichert, damit die ursprünglichen Stop-/Ziel-Abstände für jeden Trade konstant bleiben.
 * Die Pip-Konvertierung reproduziert die MetaTrader-Anpassung für 3- und 5-stellige Kursnotierungen. Fehlt dem Wertpapier `PriceStep`, wird ein Standardschritt von `1` verwendet.
 * Bis zu 120 historische Kerzen werden gespeichert, um das ursprüngliche `CopyRates`-Look-back von 100 Bars mit etwas Sicherheitsmarge zu replizieren.
-* Kein Python-Port ist für diese Strategie vorgesehen.
+* Implementierungen sind in C# und Python verfügbar.
 
 ## Verwendung
 1. Die Strategie an das gewünschte Wertpapier und Portfolio anhängen.

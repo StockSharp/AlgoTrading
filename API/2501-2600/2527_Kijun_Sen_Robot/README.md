@@ -71,4 +71,4 @@ All pip-based parameters are translated into price units using the instrument `P
 4. Run in the high-level backtester or live environment; the strategy will enforce the same trading window, stop and trailing rules as the original expert.
 5. Monitor the log or chart to see break-even and trailing updates. All comments in the code are in English for clarity as requested.
 
-The Python version is intentionally omitted; only the C# implementation is provided in this folder.
+Implementations are available in both C# and Python.

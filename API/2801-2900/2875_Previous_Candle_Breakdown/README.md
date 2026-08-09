@@ -54,4 +54,4 @@ The **Previous Candle Breakdown Strategy** watches the high and low of the most 
 
 - `CS/PreviousCandleBreakdownStrategy.cs` – C# implementation of the strategy.
 
-Python translation is not provided for this strategy per request.
+Implementations are available in both C# and Python.

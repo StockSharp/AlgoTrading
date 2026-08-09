@@ -38,4 +38,4 @@ Exp Skyscraper Fix Duplex 是 MQL5 专家顾问 *Exp_Skyscraper_Fix_Duplex* 的�
 - `TradeVolume` 会同步到策略的 `Volume` 属性，因此 `BuyMarket()` / `SellMarket()` 会自动采用该数量下单。
 - 指标会读取标的的 `PriceStep`。如果步长为零，指标会等待直到获得有效的价格步长再输出信号。
 - 启动时会调用 `StartProtection()`，确保在第一笔交易之前激活内置保护机制。
-- 按照任务要求未提供 Python 版本，因此没有 `PY` 目录。
+- 同时提供 C# 和 Python 实现。

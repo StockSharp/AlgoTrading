@@ -56,4 +56,4 @@ Todos los indicadores se actualizan una vez por vela terminada. El puerto reflej
 * La estrategia solo procesa velas terminadas y utiliza sus precios de apertura para actualizaciones de indicadores, coincidiendo con la lógica de "nueva barra" en el código MQL4.
 * Los niveles finales mantienen al menos un margen de cinco puntos alejado del precio actual, al igual que la función auxiliar original `SlLastBar`.
 * Cuando el cierre de contraposición está desactivado, la estrategia nunca cubre: solo se gestiona una posición neta a la vez.
-* No se incluye ninguna implementación de Python en este paquete.
+* Las implementaciones están disponibles en C# y Python.

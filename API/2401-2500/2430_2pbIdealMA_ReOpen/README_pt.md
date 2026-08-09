@@ -37,4 +37,4 @@
 
 ## Notas
 - Funciona com qualquer instrumento que forneça `Security.PriceStep`; a configuração padrão visa velas H4.
-- Não é fornecida versão em Python, de acordo com a solicitação original.
+- As implementações estão disponíveis em C# e Python.

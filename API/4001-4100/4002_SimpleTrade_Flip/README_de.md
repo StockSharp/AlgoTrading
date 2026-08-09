@@ -26,7 +26,7 @@
 - `StartProtection` wird einmal während `OnStarted` aufgerufen. Stellen Sie sicher, dass die verbundene Sicherheit `PriceStep` bietet; Andernfalls kann die Stop-Loss-Distanz nicht in absolute Preise umgerechnet werden.
 - Da alle Geschäfte mit Marktaufträgen zu Beginn jedes Balkens eingegeben werden, wird die Slippage-Behandlung an den Handelsplatz delegiert und es gibt keinen zusätzlichen `slippage`-Parameter.
 - Der historische offene Puffer behält nur ein kleines rollierendes Fenster (`LookbackBars + 5`-Werte), um unnötigen Speicherverbrauch zu vermeiden.
-- Es wird kein Python-Port bereitgestellt. Das Verzeichnis `CS/` enthält die einzige Implementierung.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Dateistruktur
 „

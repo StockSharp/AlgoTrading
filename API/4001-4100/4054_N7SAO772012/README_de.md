@@ -68,5 +68,5 @@ Der Bot arbeitet mit dem in der Strategie ausgewählten primären Instrument und
 
 - Hochrangige StockSharp-Bindungen (`SubscribeCandles().Bind(...)`) werden zum Streamen von AO-Werten ohne direkte Indikatorabfragen verwendet.
 - Historische Puffer werden als Listen fester Größe geführt, um die ursprüngliche schichtbasierte Indizierung zu emulieren und gleichzeitig direkte Indikatorsuchen zu vermeiden.
-- Wie gewünscht wird keine Python-Version bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.
 - Tests wurden nicht geändert.

@@ -45,5 +45,5 @@
 
 ## 使用上の注意
 - 実装は StockSharp の高レベル API（`SubscribeCandles` + `BindEx`）を使用し、低レベルのバッファ管理を避けています。
-- Python バージョンは要求に応じて含まれていません。C# ポートのみが `CS/SerialMASwingStrategy.cs` に存在します。
+- C# と Python の両方の実装が提供されています。
 - 戦略は元の EA と同様のスイングスタイルの実行を意図しており、両方の方向を有効にしてデフォルトの `AllSwing` モードを維持することで MQL の動作に最も近くなります。

@@ -51,4 +51,4 @@ Esta estratégia replica o robô original "MACD Expert" do MetaTrader dentro do 
 - Um auxiliar compartilhado converte a relação MACD/sinal em sinalizadores `{-1, 0, 1}` para simplificar as verificações de confirmação.
 - A validação do spread divide a melhor oferta de venda menos a melhor oferta de compra por `Security.PriceStep` para que o limiar corresponda ao comportamento de "pontos" do MetaTrader.
 - Eventos de operação são registrados com `LogInfo` para auxiliar na depuração ao testar no Designer ou Runner.
-- Nenhuma tradução de Python é fornecida, conforme os requisitos da tarefa; apenas a versão C# está incluída.
+- As implementações estão disponíveis em C# e Python.

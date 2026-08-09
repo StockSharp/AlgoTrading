@@ -51,4 +51,4 @@ Only one exit module can be active at a time, just like the EA’s parameter val
 * Daily pivot levels are computed from the last finished daily candle supplied by a secondary subscription.
 * Price points and pip conversions rely on the security’s `PriceStep`. Symbols with different tick sizes automatically adapt.
 * The strategy subscribes to high-level indicators only and avoids direct buffer reads, adhering to the project’s high-level API guidelines.
-* No Python implementation is provided in this package.
+* Implementations are available in both C# and Python.

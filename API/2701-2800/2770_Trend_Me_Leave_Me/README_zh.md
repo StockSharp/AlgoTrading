@@ -45,5 +45,5 @@ Parabolic SAR 的方向进场，并在盈利了结后切换到反向。如果被
 ## 实现说明
 - 为了与原 EA 保持一致，当交易品种的小数位数为 3 或 5 时，pip 大小等于 `PriceStep * 10`。
 - 指标通过 StockSharp 高级 API 绑定，交易动作全部使用 `BuyMarket`/`SellMarket`。
-- 按要求暂未提供 Python 版本，因此没有 `PY/` 目录。
+- 同时提供 C# 和 Python 实现。
 - 启动前请选择交易标的，设定 `Volume`，并根据市场波动性调整参数。

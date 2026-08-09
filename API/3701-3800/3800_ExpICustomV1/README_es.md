@@ -5,7 +5,7 @@
 
 La **Estrategia ExpICustomV1** es un puerto StockSharp del MetaTrader experto `exp_iCustom_v1`. La estrategia lee señales comerciales de una instancia de indicador configurable y reacciona a valores distintos de cero en los buffers seleccionados. Cuando el colchón de compra es distinto de cero, la estrategia abre una posición larga, mientras que el colchón de venta activa una entrada corta. La lógica protectora de stop-loss, take-profit, trailing y breakeven reproduce las opciones de gestión del dinero del experto original.
 
-> **Nota:** Solo se proporciona la implementación de C#. Aún no hay una versión de Python disponible.
+> Las implementaciones están disponibles en C# y Python.
 
 ## Lógica de trading
 

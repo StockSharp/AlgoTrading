@@ -48,4 +48,4 @@ Setzen Sie die `Volume`-Eigenschaft der Strategie, um die Positionsgröße zu st
 
 * Die Strategie erwartet ausreichend Geschichte, um den gleitenden Kanal zu bilden (ungefähr `max(shift + 2 × range)` Kerzen). Sie verwaltet automatisch die internen Buffer und ignoriert Signale, bis genügend Daten verfügbar sind.
 * Preisrundung wird mit Dezimalstellen durchgeführt, was das MQL-Indikator-Rundungsverhalten widerspiegelt.
-* Die Python-Implementierung ist absichtlich ausgelassen gemäß den Projektanweisungen; nur die C#-Version wird bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

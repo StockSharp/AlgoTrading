@@ -32,4 +32,4 @@ The StockSharp port keeps the same intent while leveraging the framework's high-
 ## Notes on the Conversion
 - MetaTrader's broker-side stop-loss and take-profit orders are emulated by monitoring candle extremes and submitting market exits when the thresholds are breached.
 - The MetaTrader EA required manual management of `OrdersTotal()` and explicit `OrderClose()` calls. The StockSharp version achieves the same behaviour by sending a single market order sized as `TradeVolume + |Position|`, which simultaneously closes any opposite position and opens the new one.
-- No Python implementation is provided, matching the task request. The folder currently contains only the C# version of the strategy.
+- Implementations are available in both C# and Python.

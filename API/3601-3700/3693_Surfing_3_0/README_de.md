@@ -51,4 +51,4 @@ Der Algorithmus arbeitet ausschließlich mit fertigen Kerzen aus einer konfiguri
 
 - Signale werden ausschließlich an fertigen Kerzen ausgewertet; Intrabar-Schwankungen werden wie in MetaTrader ignoriert.
 - Die Strategie setzt ihren EMA-Verlauf zurück, wenn die Handelssitzung endet, um eine Vermischung von Daten verschiedener Tage zu vermeiden.
-- Auf eine Python-Übersetzung wird gemäß den Projektrichtlinien bewusst verzichtet.
+- Implementierungen sind in C# und Python verfügbar.

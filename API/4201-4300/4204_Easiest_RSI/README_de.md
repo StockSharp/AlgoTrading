@@ -61,4 +61,4 @@ Alle in Pips ausgedrückten Entfernungen werden mithilfe des Instrumentenwerts `
 - `README_zh.md` – Chinesische Übersetzung.
 - `README_ru.md` – Russische Übersetzung.
 
-Auf die Python-Implementierung wird wie gewünscht bewusst verzichtet.
+Implementierungen sind in C# und Python verfügbar.

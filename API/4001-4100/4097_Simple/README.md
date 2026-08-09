@@ -37,7 +37,7 @@ The **Simple Strategy** is the StockSharp high-level conversion of the MetaTrade
 - Money-based protective levels rely on the instrument metadata. For Forex pairs make sure both `PriceStep` and `StepPrice` are filled (for example, `0.0001` and the pip value per one lot). Otherwise the stop/target distance is silently treated as zero after logging a warning.
 - The log message emitted on every finished candle mirrors the EA comment: it lists the signal (`BUY`, `SELL`, or `WAIT`), both moving averages, the distance between them in price steps, and the trend assessment obtained from the delayed slow SMA.
 - The number of stacked orders is modelled as an aggregate target volume. This keeps the total exposure identical to the original implementation while using StockSharp's high-level market order helpers instead of multiple individual `OrderSend` calls.
-- No Python port is created yet, matching the task requirements.
+- Implementations are available in both C# and Python.
 
 ## Usage Tips
 - Assign a Forex security with correctly configured `PriceStep`, `StepPrice`, and `VolumeStep` values. Set `TradeVolume` to your desired lot size and enable trading once you are satisfied with the logged diagnostics.

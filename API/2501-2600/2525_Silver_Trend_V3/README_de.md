@@ -58,4 +58,4 @@ Alle Distanzen werden zur Laufzeit mit `PriceStep` multipliziert, was die Strate
 
 - Reproduziert die mathematischen Routinen aus `SilverTrend v3.mq5` getreu, einschließlich des verschachtelten J_TPO-Algorithmus.
 - Wendet C#-Best-Practices an: Parameter werden über `StrategyParam<T>` bereitgestellt, alle Kommentare sind auf Englisch, und die Einrückung verwendet Tabs gemäß den Repository-Richtlinien.
-- Keine Python-Version in dieser Version gemäß den Aufgabenanforderungen enthalten.
+- Implementierungen sind in C# und Python verfügbar.

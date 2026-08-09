@@ -42,7 +42,7 @@ Solo una posición neta está activa a la vez. Cuando la señal cambia, la estra
 - Las velas, indicadores y órdenes están conectados a través de la API de alto nivel (`SubscribeCandles().BindEx(...)`).
 - El tamaño del pip se ajusta automáticamente a símbolos forex de 3/5 dígitos multiplicando el `PriceStep` cuando es necesario.
 - La lógica de trailing se ejecuta en velas completadas. Si se requiere trailing intrabarra, conectar la lógica a datos de nivel tick.
-- No se proporciona port en Python; la carpeta `PY` está intencionalmente ausente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Diferencias respecto a la versión de MetaTrader
 - El dimensionamiento de riesgo es explícito y se basa en métricas del portafolio de StockSharp en lugar de la clase auxiliar `CMoneyFixedMargin`. Los lotes resultantes coinciden con el comportamiento original cuando el stop-loss está habilitado; con stop-loss cero el tamaño de posición permanece cero, reflejando la salvaguarda MQL.

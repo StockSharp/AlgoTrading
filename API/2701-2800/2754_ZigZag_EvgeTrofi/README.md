@@ -41,4 +41,4 @@ This port keeps the behaviour contrarian: new highs trigger long trades whereas 
 ## Files
 
 * `CS/ZigZagEvgeTrofiStrategy.cs` – C# implementation of the strategy.
-* Python version is intentionally not provided.
+* Implementations are available in both C# and Python.

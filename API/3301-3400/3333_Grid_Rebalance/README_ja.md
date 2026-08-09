@@ -27,4 +27,4 @@
 ## 注意事項
 - すべてのポイントベースの設定は、`Security.PriceStep` の価格に変換されます。ステップがゼロの場合、ストラテジーは機器がそれを提供するまで待機します。
 - この実装は、必要に応じて高レベルの API (`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`、`BuyLimit`、`SellLimit`) にのみ依存します。
-- Python バージョンは意図的にこのタスクには含まれていません。
+- C# と Python の両方の実装が提供されています。

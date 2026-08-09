@@ -27,4 +27,4 @@ When the indicator crosses below the **Low Level**, it signals a potential rever
 ## Notes
 
 - Comments in code are provided in English.
-- Only the C# version is implemented; Python version is intentionally omitted.
+- Implementations are available in both C# and Python.

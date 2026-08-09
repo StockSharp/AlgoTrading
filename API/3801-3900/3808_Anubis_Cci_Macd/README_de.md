@@ -53,4 +53,4 @@
 ## Notizen
 - Die Strategie basiert auf gültigen `Security.PriceStep`-Metadaten, um punktbasierte Parameter in Preisentfernungen zu übersetzen.
 - Die Schutzlogik wird über explizite Prüfungen anstelle ausstehender Stop-/Limit-Orders implementiert und spiegelt das ursprüngliche EA-Verhalten mit virtuellen Stops wider.
-- Die Python-Version wird gemäß den Aufgabenanweisungen absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

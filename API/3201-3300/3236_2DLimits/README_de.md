@@ -49,5 +49,5 @@ Die Implementierung basiert auf StockSharp's High-Level-Kerzenabonnements zusamm
 
 ## Zusätzliche Hinweise
 * Die Strategie verwaltet jede Order direkt über die High-Level-API; es gibt keine Abhängigkeit von benutzerdefinierten Sammlungen oder Indikatorpuffern.
-* In diesem Paket wird nur die C#-Implementierung bereitgestellt. Für diese Konvertierung wird keine Python-Version erstellt.
+* Implementierungen sind in C# und Python verfügbar.
 * Tests bleiben wie gewünscht unverändert.

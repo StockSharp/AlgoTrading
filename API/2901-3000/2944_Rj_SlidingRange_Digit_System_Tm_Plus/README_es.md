@@ -48,4 +48,4 @@ Establezca la propiedad `Volume` de la estrategia para controlar el tamaño de p
 
 * La estrategia espera suficiente historial para formar el canal deslizante (aproximadamente `max(shift + 2 × range)` velas). Gestiona automáticamente los buffers internos e ignora las señales hasta que haya suficientes datos disponibles.
 * El redondeo de precio se realiza usando dígitos decimales, reflejando el comportamiento de redondeo del indicador MQL.
-* La implementación en Python se omite intencionalmente según las instrucciones del proyecto; solo se proporciona la versión en C#.
+* Las implementaciones están disponibles en C# y Python.

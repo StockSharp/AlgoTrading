@@ -56,4 +56,4 @@
 - La estrategia opera sobre posiciones netas. A diferencia de la versión MQL compatible con cobertura, los largos y cortos no se mantienen simultáneamente; las señales en la dirección opuesta se ignoran hasta que la exposición actual sea cerrada por órdenes protectoras.
 - `MaxPositions` funciona como un límite en la posición agregada (volumen base multiplicado por el factor de apilamiento). Ajústelo cuidadosamente al cambiar los volúmenes base o aumentados.
 - La tolerancia de volumen usa la mitad del paso de volumen del instrumento para absorber diferencias menores de redondeo al verificar el límite de apilamiento.
-- La traducción a Python aún no está incluida y se puede agregar más adelante si es necesario.
+- Las implementaciones están disponibles en C# y Python.

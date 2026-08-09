@@ -22,7 +22,7 @@
 6. 直到 `HasAnyOpenPosition()` 检测到组合已空仓之前，`_closeAllRequested` 会一直保持为 `true`，这与原 EA 在全部票据关闭之前反复执行 `CloseAllPositions` 的逻辑一致。
 
 ## 额外说明
-- 按任务要求，仅提供 C# 版本，Python 文件夹保持为空。
+- 同时提供 C# 和 Python 实现。
 - 策略不会撤销挂单，因为原脚本只负责平掉市场仓位。
 - `ProfitThreshold` 已通过 `SetOptimize` 配置，可在 Designer 中进行收益阈值的参数优化测试。
 

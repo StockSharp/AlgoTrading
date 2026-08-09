@@ -57,7 +57,7 @@ Ideias-chave:
 * ATR(8) é calculado com `AverageTrueRange` e armazenado em cache para que as distâncias originais de stop/alvo permaneçam constantes para cada operação.
 * A conversão de pip reproduz o ajuste do MetaTrader para cotações de 3 e 5 dígitos. Se o instrumento não tiver `PriceStep`, um passo padrão de `1` é usado.
 * Até 120 velas históricas são armazenadas para replicar o look-back original de `CopyRates` de 100 barras com alguma margem de segurança.
-* Não há port em Python para esta estratégia.
+* As implementações estão disponíveis em C# e Python.
 
 ## Uso
 1. Anexar a estratégia ao instrumento e portfólio desejados.

@@ -42,4 +42,4 @@ Esta estrategia porta el asesor experto de MetaTrader "Dealers Trade v 7.91 Zero
 1. Conecte la estrategia a una cartera y seguridad antes de iniciarla.
 2. Revise el paso del instrumento y la configuración de precio para asegurar que las conversiones de pips son correctas.
 3. Los parámetros predeterminados replican el comportamiento del asesor experto original, pero pueden optimizarse a través de los optimizadores de StockSharp.
-4. La traducción a Python no está incluida para esta estrategia.
+4. Las implementaciones están disponibles en C# y Python.

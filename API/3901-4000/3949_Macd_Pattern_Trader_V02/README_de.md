@@ -45,4 +45,4 @@ Diese Strategie ist eine StockSharp-High-Level-API-Konvertierung des MetaTrader-
 - Die Punktgröße wird aus `Security.PriceStep` oder, falls nicht verfügbar, aus den Sicherheitsdezimalstellen abgeleitet. Als sicherer Fallback wird der Standardwert `0.0001` verwendet.
 - Der Kerzenverlauf wird gespeichert (bis zu 1024 Einträge), um die MQL-Hilfsfunktionen `iHighest`, `iLowest` und den sequentiellen Extremum-Scan von `TakeProfit()` zu replizieren.
 - Alle Kommentare innerhalb der Strategie bleiben in englischer Sprache, wie in den Repository-Richtlinien gefordert.
-- Python-Ports werden für diese Aufgabe absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

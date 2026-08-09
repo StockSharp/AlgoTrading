@@ -46,4 +46,4 @@ Early Bird Range Breakout ist eine C#-Portierung des MetaTrader 4 Expert Advisor
 * Die Pip-Größe wird aus dem aktuellen Preisniveau (≥ 10 Einheiten → `0.01`, sonst `0.0001`) abgeleitet, genau wie die `Fakt`-Berechnung im MT4-Skript.
 * In der Trailing-Statistik werden die letzten 16 abgeschlossenen Kerzen verwendet, mit Ausnahme des aktuellen Balkens, was der ursprünglichen Durchschnittslogik entspricht.
 * Die StockSharp-Strategie verwendet Nettopositionen, sodass gleichzeitige Long- und Short-Positionen durch Überkauf oder Überverkauf des bestehenden Engagements emuliert werden, wenn die Absicherung aktiviert ist.
-* Es wird nur die C#-Implementierung bereitgestellt. Für diese Strategie gibt es keine Python-Version.
+* Implementierungen sind in C# und Python verfügbar.

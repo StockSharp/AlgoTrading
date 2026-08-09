@@ -44,7 +44,7 @@ The **Auto ADX Strategy** is a direct port of the MetaTrader expert advisor `Aut
 - `BindEx` is used to access the full `AverageDirectionalIndexValue`, ensuring we never rely on manual indicator value retrieval.
 - Trailing logic keeps track of the last stop level and moves it only when price progresses by at least `TrailingStepPips` in favour of the position, mirroring the MQL trailing-step behaviour.
 - All inline comments in the C# source are in English to satisfy repository guidelines.
-- The strategy is self-contained inside `API/2908_Auto_ADX/CS/AutoAdxStrategy.cs`; there is no Python counterpart per requirements.
+- Implementations are available in both C# and Python.
 
 ## Usage Tips
 1. Attach the strategy to a security with correct `PriceStep` metadata so pip conversion stays accurate.

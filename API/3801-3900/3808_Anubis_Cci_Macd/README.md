@@ -53,4 +53,4 @@
 ## Notes
 - The strategy relies on valid `Security.PriceStep` metadata to translate point-based parameters to price distances.
 - Protective logic is implemented via explicit checks instead of pending stop/limit orders, mirroring the original EA behavior with virtual stops.
-- Python version is intentionally omitted per task instructions.
+- Implementations are available in both C# and Python.

@@ -32,5 +32,5 @@ long positions are closed and optional shorts are opened.
 - `CandleType` – candle type (timeframe) for calculations.
 
 ## Notes
-- Only the C# version is provided. The Python folder is intentionally absent.
+- Implementations are available in both C# and Python.
 - Use tabs for indentation when modifying the code.

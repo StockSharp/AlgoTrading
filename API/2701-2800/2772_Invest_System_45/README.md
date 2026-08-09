@@ -49,4 +49,4 @@ These rules closely reproduce the cascading lot escalation from the MetaTrader v
 - The strategy expects the attached security to provide both the 4-hour candle series and the faster timeframe series. These subscriptions are automatically created inside `OnStarted`.
 - The pip size is determined from `Security.PriceStep` and adjusted for fractional quoting (3 or 5 decimal places) to match MetaTrader’s treatment of pip values.
 - Because the original robot uses account balance thresholds, the StockSharp implementation reads `Portfolio.CurrentValue` on every entry candle update. When running in simulation make sure that the portfolio model updates the current equity so that the lot scaling remains consistent.
-- Python translation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

@@ -57,4 +57,4 @@ The **Range Breakout Weekly Strategy** is a StockSharp high-level API conversion
 - ✅ Preserved weekly scheduling, range calculations, protective levels, and martingale behaviour from `RangeBreakout.mq5`.
 - ✅ Replaced MetaTrader-specific API calls (`iATR`, `CopyBuffer`, `OrderSend`, etc.) with idiomatic StockSharp abstractions (`SubscribeCandles`, `AverageTrueRange`, `BuyMarket`/`SellMarket`).
 - ✅ Implemented English inline comments and extensive documentation as requested.
-- ✅ Left test projects untouched and did not create a Python variant, complying with the task constraints.
+- Implementations are available in both C# and Python.

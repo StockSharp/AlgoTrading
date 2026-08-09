@@ -39,4 +39,4 @@
 1. Strategie einem Portfolio und einem Wertpapier in der StockSharp-Umgebung zuordnen.
 2. `IntervalMinutes` und `Volume` entsprechend der gewünschten Handelsfrequenz und -größe konfigurieren.
 3. Strategie starten. Sie wird automatisch Positionen abflachen und bei jedem Intervall wieder öffnen, ohne zusätzliche Eingaben.
-4. Keine Python-Implementierung ist derzeit verfügbar; nur die C#-Version ist erhältlich.
+4. Implementierungen sind in C# und Python verfügbar.

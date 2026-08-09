@@ -49,4 +49,4 @@ or manually cancelled.
   while producing the same symmetric layout around the market.
 - The ATR snapshot used for the grid is also used for protective orders to mimic MetaTrader's per-ticket stop and take-profit
   values.
-- There is no Python translation yet, matching the request.
+- Implementations are available in both C# and Python.

@@ -36,4 +36,4 @@ Ingrit ist eine Konvertierung des MetaTrader 5 Expert Advisors `Ingrit.mq5`. Die
 
 ## Hinweise
 * Pip-Werte werden aus dem Preisschritt des Instruments abgeleitet. Wenn das Instrument drei oder fünf Dezimalstellen verwendet, multipliziert die Strategie den Schritt mit zehn, sodass ein Pip der Standard-FX-Definition entspricht.
-* Es gibt keine Python-Version dieser Strategie im Repository.
+* Implementierungen sind in C# und Python verfügbar.

@@ -49,5 +49,5 @@ Esta estrategia es una conversión de StockSharp del asesor experto de MetaTrade
 * La estrategia se basa exclusivamente en la infraestructura de alto nivel `Strategy` de StockSharp (`SubscribeCandles`, `WhenNew`, y órdenes de mercado) y no manipula libros de órdenes sin procesar.
 * Las estadísticas de rango se almacenan sin usar búsquedas de valores de indicadores; todos los cálculos ocurren dentro de la estrategia, en línea con las directrices del repositorio.
 * Las órdenes protectoras se simulan monitoreando los extremos de las velas en lugar de registrar órdenes stop/límite separadas, lo que mantiene la implementación portable entre diferentes adaptadores.
-* El soporte de Python se omite intencionalmente según lo solicitado. Solo se proporciona la versión en C# en esta carpeta.
+* Las implementaciones están disponibles en C# y Python.
 * Para operaciones en vivo, asegúrese de que haya suficientes velas históricas disponibles para que el primer cálculo del rango tenga suficientes datos con los que trabajar.

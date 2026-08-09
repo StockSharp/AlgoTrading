@@ -27,4 +27,4 @@ Die Grid Rebalance Strategy ist eine High-Level-StockSharp-Portierung des Expert
 ## Notizen
 - Alle punktbasierten Einstellungen werden mit `Security.PriceStep` in Preise umgewandelt. Wenn der Schritt Null ist, wartet die Strategie, bis das Instrument ihn bereitstellt.
 - Die Implementierung basiert je nach Bedarf ausschließlich auf der übergeordneten Ebene API (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`, `BuyLimit`, `SellLimit`).
-- Eine Python-Version ist in dieser Aufgabe absichtlich nicht enthalten.
+- Implementierungen sind in C# und Python verfügbar.

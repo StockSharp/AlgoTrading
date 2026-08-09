@@ -38,4 +38,4 @@ Esta estrategia reproduce el experto de MetaTrader **Exp_CandlesticksBW_Tm** sob
 
 - La estrategia sincroniza automáticamente las distancias de stop-loss y take-profit con el paso de precio del instrumento.
 - Las señales tienen marca de tiempo usando el tiempo de cierre de la barra evaluada para suprimir operaciones repetidas dentro de la misma barra.
-- No se proporciona versión de Python, coincidiendo con la estructura del paquete MQL fuente.
+- Las implementaciones están disponibles en C# y Python.

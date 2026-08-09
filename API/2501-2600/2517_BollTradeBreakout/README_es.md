@@ -40,6 +40,7 @@ Esta estrategia replica el asesor experto original **BollTrade** operando ruptur
 ## Archivos
 
 - `CS/BollTradeStrategy.cs` – implementación en C# de la estrategia.
+- `PY/boll_trade_strategy.py` – implementación en Python de la estrategia.
 - `README.md` – documentación en inglés (este archivo).
 - `README_ru.md` – documentación en ruso.
 - `README_zh.md` – documentación en chino.

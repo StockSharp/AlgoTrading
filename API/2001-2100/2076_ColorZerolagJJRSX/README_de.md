@@ -27,7 +27,7 @@ Diese Strategie repliziert die Logik des **ColorZerolagJJRSX** MetaTrader-Expert
 
 - Die Implementierung verwendet integrierte Indikatoren und die High-Level `Bind`-API.
 - Das Volumen wird aus der `Volume`-Eigenschaft der Strategie entnommen.
-- Für diese Strategie ist keine Python-Version vorgesehen.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Referenzen
 

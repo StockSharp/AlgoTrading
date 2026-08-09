@@ -5,7 +5,7 @@
 
 The **ExpICustomV1 Strategy** is a StockSharp port of the MetaTrader expert `exp_iCustom_v1`. The strategy reads trade signals from a configurable indicator instance and reacts to non-zero values in the selected buffers. When the buy buffer is non-zero the strategy opens a long position, while the sell buffer triggers a short entry. Protective stop-loss, take-profit, trailing and break-even logic reproduce the money-management options of the original expert.
 
-> **Note:** Only the C# implementation is provided. A Python version is not available yet.
+> Implementations are available in both C# and Python.
 
 ## Trading Logic
 

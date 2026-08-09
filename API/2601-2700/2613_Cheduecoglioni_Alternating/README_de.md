@@ -23,5 +23,5 @@ Diese Strategie ist ein StockSharp-Port des MQL5 Expert Advisors "cheduecoglioni
 - Schutzorders werden von `StartProtection` mit Marktausstiegen verwaltet, was der sofortigen Stop-Loss- und Take-Profit-Zuweisung entspricht, die der Expert Advisor bei der Orderplatzierung vornahm.
 
 ## Hinweise
-- Die Python-Version wurde absichtlich noch nicht erstellt.
+- Implementierungen sind in C# und Python verfügbar.
 - Die Strategie ändert keine Unit-Tests.

@@ -42,4 +42,4 @@ Un puerto del histórico asesor experto "Gordago EA" de MetaTrader 5. La estrate
 - Las distancias en pips se convierten a precios usando el `PriceStep` del instrumento. Si el paso tiene tres o cinco dígitos fraccionarios, la estrategia lo multiplica por diez, reproduciendo el ajuste de pip usado en la implementación MQL original para cotizaciones forex de 3/5 dígitos.
 - El trailing stop se ignora cuando `TrailingStopPips` es positivo pero `TrailingStepPips` no lo es; en ese caso se registra una advertencia.
 - Debido a que la versión de StockSharp trabaja con eventos de cierre de velas, la lógica de protección se ejecuta una vez por vela finalizada en lugar de en cada tick como en la versión MT5. El comportamiento de gestión de operaciones sigue las reglas originales.
-- Solo se proporciona la implementación en C#; no se incluye traducción ni carpeta de Python por petición.
+- Las implementaciones están disponibles en C# y Python.

@@ -58,4 +58,4 @@ A Estratégia de Redução de Riscos é um sistema de seguimento de tendência m
 
 ## Notas
 - A estratégia espera instrumentos cotados com tamanhos de pip similares aos principais pares de divisas. Ajuste os parâmetros baseados em pips quando usar outros mercados.
-- Apenas a implementação em C# é fornecida; a versão em Python é intencionalmente omitida conforme os requisitos.
+- As implementações estão disponíveis em C# e Python.

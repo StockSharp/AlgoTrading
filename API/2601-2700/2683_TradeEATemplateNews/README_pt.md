@@ -73,4 +73,4 @@ Exemplo:
 3. Defina `Volume`, portfólio e instrumento na interface ou no código, então inicie a estratégia.
 4. Observe o log da estratégia para mensagens como "Trading paused due to high news" ou "Next scheduled news" para confirmar a lógica de bloqueio.
 
-A tradução para Python é intencionalmente omitida conforme solicitado.
+As implementações estão disponíveis em C# e Python.

@@ -43,8 +43,9 @@
 ## 文件结构
 
 - `CS/BollTradeStrategy.cs` —— C# 策略实现。
+- `PY/boll_trade_strategy.py` —— Python 策略实现。
 - `README.md` —— 英文说明。
 - `README_ru.md` —— 俄文说明。
 - `README_zh.md` —— 中文说明（当前文件）。
 
-按要求暂未提供 Python 版本。
+同时提供 C# 和 Python 实现。

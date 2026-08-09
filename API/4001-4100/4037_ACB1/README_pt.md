@@ -57,4 +57,4 @@ A **Estratégia ACB1** é a porta StockSharp do consultor especialista MetaTrade
 - Os níveis de proteção são virtuais. StockSharp fecha posições por meio de ordens de mercado quando a oferta/venda toca o stop-loss ou o take-profit calculado.
 - O acompanhamento de patrimônio usa `Portfolio.CurrentValue`. Caso o conector não forneça este campo o Risk Guard manterá a negociação desabilitada até que esteja disponível.
 - Apenas uma única posição líquida é mantida. Os sinais opostos enquanto uma negociação está ativa são ignorados até que a posição seja totalmente fechada.
-- Nenhuma porta Python está incluída; este diretório contém apenas a implementação e documentação do C#.
+- As implementações estão disponíveis em C# e Python.

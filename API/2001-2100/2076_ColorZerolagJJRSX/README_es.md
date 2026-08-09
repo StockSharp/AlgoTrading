@@ -27,7 +27,7 @@ Esta estrategia replica la lógica del experto **ColorZerolagJJRSX** de MetaTrad
 
 - La implementación utiliza indicadores integrados y la API `Bind` de alto nivel.
 - El volumen se toma de la propiedad `Volume` de la estrategia.
-- No se proporciona versión en Python para esta estrategia.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Referencias
 

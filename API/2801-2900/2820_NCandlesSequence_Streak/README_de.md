@@ -39,4 +39,4 @@ Die N-Kerzen-Sequenz-Strategie repliziert das Verhalten des ursprünglichen Meta
 - Die Strategie arbeitet mit Netto-Positionen; mehrere Hedging-Style-Tickets werden nicht erstellt. Dies unterscheidet sich vom ursprünglichen Experten, wo mehrere abgesicherte Positionen gleichzeitig bestehen konnten.
 - Der schwebende Gewinn wird approximiert als `(aktueller Preis - Einstiegspreis) * Volumen` für Long-Positionen und umgekehrt für Short-Positionen.
 - Die Pip-Konvertierung stützt sich auf den `PriceStep` des Instruments. Für Symbole, bei denen der minimale Schritt nicht angegeben ist, wird ein Standard-Pip von 0.0001 angenommen.
-- Es wird keine Python-Portierung bereitgestellt, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.

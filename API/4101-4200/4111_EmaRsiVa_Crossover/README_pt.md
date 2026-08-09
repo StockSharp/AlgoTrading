@@ -68,7 +68,7 @@ lógica, se necessário.
 - Apenas velas concluídas são processadas, correspondendo às chamadas `CopyBuffer(..., 1, 2, ...)` na origem MQL.
 - A normalização de volume usa `Security.MinVolume`, `Security.VolumeStep` e `Security.MaxVolume`, evitando pedidos inválidos em
 verdadeiras trocas.
-- Uma versão Python é omitida intencionalmente conforme solicitado; o diretório contém apenas a implementação e documentação do C#.
+- As implementações estão disponíveis em C# e Python.
 
 O comportamento resultante espelha a fonte EA enquanto expõe parâmetros amigáveis e controles de risco StockSharp adequados para
 Designer, Runner ou qualquer host personalizado criado no StockSharp API.

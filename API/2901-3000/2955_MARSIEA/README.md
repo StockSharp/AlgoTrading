@@ -57,4 +57,4 @@ The calculated volume is rounded to the nearest `Security.VolumeStep` (when avai
 ## Notes
 - Orders are generated only when the strategy is online and the candle is finished, matching the original EA that triggers on new bars.
 - Because StockSharp maintains a net position, averaging signals automatically reduce or flip the current exposure instead of creating hedge positions.
-- Python implementation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

@@ -60,6 +60,6 @@ both the connection and indicators are ready.
 * The strategy uses the `BindEx` overload so that the MACD indicator can supply both the MACD and signal values in a single
 callback without manual calls to `GetValue`.
 * All comments inside the C# code are written in English, matching the project guidelines.
-* There is no Python translation for this strategy; only the C# implementation is provided in the API package.
+* Implementations are available in both C# and Python.
 * To replicate the original MT4 behaviour most closely, select a candle timeframe that matches the chart where the EA used to run
 and keep the volume parameter consistent with the lot size previously traded.

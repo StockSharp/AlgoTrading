@@ -48,4 +48,4 @@ cierre de ruptura más allá del rango del doji para entrar al mercado en la dir
   coincidir con las mediciones tradicionales de pip.
 - Establezca el tamaño de lote deseado en la propiedad `Volume` antes de ejecutar la estrategia.
 - No se requieren indicadores adicionales; la lógica depende únicamente de los datos de velas en bruto.
-- Todavía no hay un port de Python, solo la implementación en C#.
+- Las implementaciones están disponibles en C# y Python.

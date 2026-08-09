@@ -62,6 +62,6 @@ EA 的“信号即反手”逻辑，并遵循 StockSharp 的下单规范。
 - 采用 StockSharp 高层 API（`SubscribeCandles().Bind(...)`）完成订阅与指标绑定，无需手动遍历历史缓存。
 - 仅使用已完成的蜡烛，行为与 MQL 中 `CopyBuffer(..., 1, 2, ...)` 的读法一致。
 - 订单量通过 `Security.MinVolume`、`Security.VolumeStep`、`Security.MaxVolume` 进行归一化，避免提交无效委托。
-- 根据要求暂不提供 Python 版本，目录内只有 C# 实现和多语言文档。
+- 同时提供 C# 和 Python 实现。
 
 该移植版本忠实重现原始 EA 的交易逻辑，同时提供更符合 StockSharp 生态（Designer、Runner 等）的参数界面与风控选项。

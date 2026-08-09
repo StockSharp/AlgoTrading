@@ -51,4 +51,4 @@ paneles adicionales.
 cobertura) al igual que el propio StockSharp.
 * La estrategia tolera el comercio manual: reacciona a cualquier confirmación comercial para mantener las estadísticas sincronizadas.
 * El comentario se borra automáticamente cuando la estrategia se detiene o se reinicia, lo que evita que los valores obsoletos persistan entre sesiones.
-* No se proporciona ninguna implementación de Python; el paquete API contiene solo la versión C#.
+* Las implementaciones están disponibles en C# y Python.

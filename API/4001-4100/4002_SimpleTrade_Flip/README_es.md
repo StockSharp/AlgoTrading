@@ -26,7 +26,7 @@
 - `StartProtection` se invoca una vez durante `OnStarted`. Asegúrese de que la seguridad conectada proporcione `PriceStep`; de lo contrario, la distancia del stop-loss no se puede traducir a precios absolutos.
 - Debido a que todas las operaciones se ingresan con órdenes de mercado al comienzo de cada barra, el manejo del deslizamiento se delega al centro de negociación y no hay ningún parámetro `slippage` adicional.
 - El búfer abierto histórico mantiene solo una pequeña ventana móvil (valores `LookbackBars + 5`) para evitar el uso innecesario de memoria.
-- No se proporciona ningún puerto Python; el directorio `CS/` contiene la única implementación.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Estructura de archivos
 ```

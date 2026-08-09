@@ -57,4 +57,4 @@ The **ACB1 Strategy** is the StockSharp port of the MetaTrader expert advisor di
 - Protective levels are virtual. StockSharp closes positions via market orders when bid/ask touches the computed stop-loss or take-profit.
 - Equity tracking uses `Portfolio.CurrentValue`. If the connector does not provide this field the risk guard will keep trading disabled until it is available.
 - Only a single net position is maintained. Opposite signals while a trade is active are ignored until the position is fully closed.
-- No Python port is included; this directory only contains the C# implementation and documentation.
+- Implementations are available in both C# and Python.

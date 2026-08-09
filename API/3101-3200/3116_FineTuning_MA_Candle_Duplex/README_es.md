@@ -48,6 +48,6 @@
 ## Notas
 - El asesor experto original incluía modos de gestión del dinero basados en saldo o margen. El puerto expone un parámetro `OrderVolume` fijo más sencillo. Ajústelo para que coincida con el tamaño de posición deseado.
 - `StartProtection` se invoca solo cuando el instrumento expone un paso de precio válido (`Security.Step > 0`).
-- No se proporciona ninguna versión Python intencionalmente.
+- Las implementaciones están disponibles en C# y Python.
 - Las áreas de gráfico se crean automáticamente: si los feeds de velas largas y cortas difieren, se muestran dos paneles separados; de lo contrario solo se muestra uno.
 - La estrategia depende de velas completadas; no reacciona a actualizaciones intrabarra.

@@ -59,7 +59,7 @@ Todos os parâmetros numéricos suportam otimização por meio de `SetCanOptimiz
 - `Security.PriceStep` é usado para traduzir todas as entradas de "pontos" em distâncias de preços reais. Instrumentos sem uma etapa configurada voltam para `1`, preservando o comportamento sensato para índices ou criptomoedas.
 - The strategy executes only on finished candles. Se for necessária precisão intrabarra, reduza o período para a granularidade desejada.
 - Os trailing stops são implementados com ordens de mercado quando violados, imitando o EA original que modificou os preços do stop-loss. Esta abordagem evita a colocação de ordens stop adicionais e mantém a gestão de risco contida na própria estratégia.
-- Nenhuma versão do Python é fornecida para esta conversão, de acordo com os requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.
 
 ## Diferenças do original EA
 - O API baseado em vela de StockSharp substitui o processamento em nível de tick; todas as decisões são tomadas quando uma vela se fecha.

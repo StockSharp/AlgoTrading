@@ -30,4 +30,4 @@
 ## 说明
 
 - 风险管理通过默认的 `StartProtection()` 完成，可根据需要调整 `Volume` 和其他保护参数；
-- 当前仅提供 C# 版本，尚无 Python 版本。
+- 同时提供 C# 和 Python 实现。

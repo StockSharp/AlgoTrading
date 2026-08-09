@@ -62,4 +62,4 @@ A estratégia Two MA RSI é uma conversão do assessor especialista original do 
 ## Notas de uso
 - Fornecer um portfólio e instrumento com metadados válidos de `PriceStep` e `VolumeStep` para que a gestão de risco baseada em pontos e o dimensionamento de posição permaneçam consistentes.
 - Como ordens a mercado são usadas para saídas, derrapagem e spreads ainda são possíveis em comparação com as ordens limite da versão MetaTrader, mas a lógica de avaliação de stop/take é preservada.
-- A estratégia não cria uma versão Python; apenas a implementação C# é fornecida conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

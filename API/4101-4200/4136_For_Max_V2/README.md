@@ -41,4 +41,4 @@ The original expert advisor exposes two entry blocks and both are preserved:
 * Price offsets expressed in “points” rely on the security’s `PriceStep`. Symbols with five (or three) decimal places automatically convert to fractional pip sizes just like in MetaTrader.
 * Stop losses and take profits are executed via market orders inside the strategy to mirror the EA’s behaviour of managing levels on closed candles.
 * The strategy does not implement the unused `vhod_3` function from the original source; only the two active entry blocks were ported.
-* This package contains only the C# implementation; no Python version is provided.
+* Implementations are available in both C# and Python.

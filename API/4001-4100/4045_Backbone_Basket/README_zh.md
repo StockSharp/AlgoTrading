@@ -41,7 +41,7 @@
 - 仓位规模依赖 `Security.PriceStepCost`。若连接器未提供该值，则退回到策略的 `Volume` 属性。
 - 移动止损仅在新K线完成时更新，保持与 MT4 中“每根K线执行一次”的行为一致。
 - `_lastPositionDirection` 保存上一笔成交方向，使得平仓后下一根K线自动在相反方向重新建仓。
-- 本目录仅包含 C# 实现，不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用建议
 - 选择具有正确 `PriceStep`、`PriceStepCost` 与成交量步长信息的品种，以确保仓位规模合理。

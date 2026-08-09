@@ -49,4 +49,4 @@ The **Martingale Bone Crusher Strategy** replicates the behaviour of the origina
 
 - Position volume is aligned with the instrument’s volume step, minimum, and maximum limits.
 - Floating profit calculations rely on the instrument’s `PriceStep` and `StepPrice`. If they are zero the money-based protections are automatically skipped.
-- Only the C# implementation is supplied. The Python port is intentionally omitted per task requirements.
+- Implementations are available in both C# and Python.

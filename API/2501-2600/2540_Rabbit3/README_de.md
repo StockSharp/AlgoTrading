@@ -56,4 +56,4 @@
 - Die Strategie operiert auf Nettopositionen. Im Gegensatz zur hedging-freundlichen MQL-Version werden Longs und Shorts nicht gleichzeitig gehalten; Signale in entgegengesetzter Richtung werden ignoriert, bis das aktuelle Exposure durch Schutzorders geschlossen wird.
 - `MaxPositions` wirkt als Obergrenze für die aggregierte Position (Basisvolumen multipliziert mit dem Stapelfaktor). Passen Sie es sorgfältig an, wenn Sie die Basis- oder Boost-Volumina ändern.
 - Die Volumentoleranz verwendet die Hälfte des Instrument-Volumenschritts, um geringfügige Rundungsunterschiede bei der Prüfung des Stapel-Limits zu absorbieren.
-- Eine Python-Übersetzung ist noch nicht enthalten und kann bei Bedarf später hinzugefügt werden.
+- Implementierungen sind in C# und Python verfügbar.

@@ -22,7 +22,7 @@
 6. El indicador `_closeAllRequested` permanece establecido hasta que `HasAnyOpenPosition()` detecta que el portafolio está plano, coincidiendo con el comportamiento MQL donde `m_close_all` permanecía verdadero hasta que todos los tickets estaban cerrados.
 
 ## Notas adicionales
-- Solo se proporciona la implementación en C#; la carpeta Python se deja intencionalmente vacía según los requisitos de la tarea.
+- Las implementaciones están disponibles en C# y Python.
 - La estrategia no cancela órdenes pendientes porque el script original solo cerraba posiciones de mercado.
 - Usar `SetOptimize` en `ProfitThreshold` para explorar objetivos de beneficio alternativos a través del optimizador de Designer si es necesario.
 

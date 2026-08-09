@@ -37,7 +37,7 @@ A **Estratégia Simples** é a StockSharp conversão de alto nível do MetaTrade
 - Os níveis de proteção baseados em dinheiro dependem dos metadados do instrumento. Para pares Forex, certifique-se de que `PriceStep` e `StepPrice` estejam preenchidos (por exemplo, `0.0001` e o valor do pip por lote). Caso contrário, a distância parada/alvo será tratada silenciosamente como zero após registrar um aviso.
 - A mensagem de registro emitida em cada vela finalizada reflete o comentário EA: ela lista o sinal (`BUY`, `SELL` ou `WAIT`), ambas as médias móveis, a distância entre elas em etapas de preço e a avaliação de tendência obtida da lenta atrasada SMA.
 - O número de pedidos empilhados é modelado como um volume alvo agregado. Isso mantém a exposição total idêntica à implementação original ao usar os auxiliares de ordem de mercado de alto nível de StockSharp em vez de várias chamadas `OrderSend` individuais.
-- Nenhuma porta Python foi criada ainda, correspondendo aos requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.
 
 ## Dicas de uso
 - Atribua uma segurança Forex com valores `PriceStep`, `StepPrice` e `VolumeStep` configurados corretamente. Defina `TradeVolume` para o tamanho de lote desejado e ative a negociação quando estiver satisfeito com o diagnóstico registrado.

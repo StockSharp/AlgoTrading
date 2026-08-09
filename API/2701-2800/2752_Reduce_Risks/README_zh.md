@@ -54,4 +54,4 @@ Reduce Risks 策略源自 MetaTrader 专家顾问“Reduce_risks.mq5”，并移
 
 ## 其他说明
 - 若标的点值不同，请相应调整基于点数的参数。
-- 仅提供 C# 版本，依照要求未创建 Python 版本及其目录。
+- 同时提供 C# 和 Python 实现。

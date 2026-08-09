@@ -49,5 +49,5 @@ The implementation relies on StockSharp's high-level candle subscriptions togeth
 
 ## Additional notes
 * The strategy manages every order directly through the high-level API; there is no reliance on custom collections or indicator buffers.
-* Only the C# implementation is provided in this package. No Python version is created for this conversion.
+* Implementations are available in both C# and Python.
 * Tests are untouched as requested.

@@ -27,4 +27,4 @@ Este ejemplo traslada el asesor experto clásico **Frank Ud** MetaTrader a Stock
 - La contabilidad de posiciones almacena cada llenado (precio y volumen) en listas en lugar de consultar estadísticas acumulativas, preservando el comportamiento de las matrices MQL que se utilizaron para localizar el lote más grande y su precio de entrada.
 - El buffer adicional de 25 pips que el experto original colocó en cada orden de toma de ganancias se retiene como condición de salida adicional.
 
-> **Nota:** El puerto Python se omite intencionalmente por ahora, según lo solicitado. La carpeta contiene sólo la implementación de C# y la documentación multilingüe.
+> Las implementaciones están disponibles en C# y Python.

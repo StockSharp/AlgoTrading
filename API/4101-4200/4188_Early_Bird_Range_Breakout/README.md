@@ -46,4 +46,4 @@ Early Bird Range Breakout is a C# port of the MetaTrader 4 expert advisor `early
 * Pip size is derived from the current price level (≥ 10 units → `0.01`, otherwise `0.0001`) exactly like the `Fakt` calculation in the MT4 script.
 * Trailing statistics use the last 16 finished candles, excluding the current bar, matching the original averaging logic.
 * The StockSharp strategy uses net positions, so simultaneous long and short positions are emulated by over-buying or over-selling the existing exposure when hedging is enabled.
-* Only the C# implementation is provided; no Python version accompanies this strategy.
+* Implementations are available in both C# and Python.

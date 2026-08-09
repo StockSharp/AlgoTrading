@@ -40,4 +40,4 @@ This strategy trades using the **Stochastic Oscillator** on the selected candle 
 ## Notes
 
 - Comments in code are in English.
-- Python version is intentionally omitted.
+- Implementations are available in both C# and Python.

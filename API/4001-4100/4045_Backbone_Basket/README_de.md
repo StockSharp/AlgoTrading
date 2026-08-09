@@ -41,7 +41,7 @@ Die **Backbone Basket-Strategie** portiert den ursprünglichen Expertenberater M
 - Die Volume-Größe hängt von `Security.PriceStepCost` ab. Wenn der Connector diesen Wert nicht bereitstellt, greift die Strategie auf die konfigurierte Eigenschaft `Volume` zurück.
 - Nachlaufende Aktualisierungen werden angewendet, wenn eine neue Kerze eintrifft, was dem „Einmal pro Balken“-Verhalten des MT4-Skripts entspricht (das nur bei `Bars > PrevBars` funktionierte).
 - Die alternierende Logik behält die zuletzt ausgeführte Richtung in `_lastPositionDirection` bei, sodass sobald ein Korb geschlossen wird, die nächste Kerze automatisch einen Korb in die entgegengesetzte Richtung öffnet, genau wie der Quellcode.
-- Es wird nur die C#-Implementierung bereitgestellt. In diesem Verzeichnis gibt es keinen Python-Port.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Nutzungstipps
 - Weisen Sie Instrumente mit genauen `PriceStep`-, `PriceStepCost`- und Volumenmetadaten zu, um realistische Positionsgrößen zu erhalten.

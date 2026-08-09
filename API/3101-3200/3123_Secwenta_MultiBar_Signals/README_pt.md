@@ -43,4 +43,4 @@ Todas as operações de mercado reutilizam os helpers `BuyMarket` e `SellMarket`
 ## Arquivos
 - `CS/SecwentaMultiBarSignalsStrategy.cs` – implementação principal em C# construída sobre a API de estratégia de alto nível do StockSharp.
 
-> **Nota:** Nenhuma tradução para Python é fornecida para este ID; apenas a versão C# solicitada está disponível.
+> As implementações estão disponíveis em C# e Python.

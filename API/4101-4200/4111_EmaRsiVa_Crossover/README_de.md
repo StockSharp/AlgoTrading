@@ -68,7 +68,7 @@ Logik, falls erforderlich.
 - Es werden nur abgeschlossene Kerzen verarbeitet, die mit `CopyBuffer(..., 1, 2, ...)`-Aufrufen in der MQL-Quelle übereinstimmen.
 - Die Volumennormalisierung verwendet `Security.MinVolume`, `Security.VolumeStep` und `Security.MaxVolume` und verhindert so ungültige Bestellungen
 echter Austausch.
-- Auf eine Python-Version wird wie gewünscht bewusst verzichtet; Das Verzeichnis enthält nur die C#-Implementierung und Dokumentation.
+- Implementierungen sind in C# und Python verfügbar.
 
 Das resultierende Verhalten spiegelt die Quelle EA wider und legt gleichzeitig StockSharp-freundliche Parameter und geeignete Risikokontrollen offen
 Designer, Runner oder jeder benutzerdefinierte Host, der auf StockSharp API basiert.

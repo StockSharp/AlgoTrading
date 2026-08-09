@@ -49,4 +49,4 @@ Alle Parameter werden durch StockSharp `StrategyParam<T>`-Objekte bereitgestellt
 - `README_zh.md` – Chinesische Dokumentation.
 - `README_ru.md` – Russische Dokumentation.
 
-Ein Python-Port wird gemäß Projektanweisungen absichtlich weggelassen; erstellen Sie ihn später, wenn erforderlich.
+Implementierungen sind in C# und Python verfügbar.

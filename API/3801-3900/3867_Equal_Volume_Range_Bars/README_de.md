@@ -20,4 +20,4 @@ Equal Volume & Range Bars portiert das MetaTrader 4-Skript `equalvolumebars.mq4`
 * Die Strategie leitet die Punktgröße von `Security.PriceStep` ab (wobei auf `Security.MinPriceStep` oder `0.0001` zurückgegriffen wird, wenn keine Metadaten verfügbar sind), um die von MetaTrader verwendete Konstante `_Point` widerzuspiegeln.
 * Anstatt `.hst`-Dateien zu schreiben und ein Diagrammfenster zu aktualisieren, protokolliert der C#-Port jede fertige Kerze mit vollständigen OHLCV-Daten, sodass es einfach ist, eine andere Komponente zu füttern oder Ergebnisse mit dem MT4-Offline-Diagrammersteller zu vergleichen.
 * Es werden nie Bestellungen aufgegeben; Der Kurs konzentriert sich ausschließlich auf die Datentransformation, genau wie das Originalskript.
-* Es wird nur die C#-Version bereitgestellt. Gemäß den Konvertierungsanforderungen wird absichtlich auf eine Python-Version und einen Python-Ordner verzichtet.
+* Implementierungen sind in C# und Python verfügbar.

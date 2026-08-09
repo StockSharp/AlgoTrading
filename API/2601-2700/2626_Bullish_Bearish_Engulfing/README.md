@@ -47,4 +47,4 @@ These conditions reproduce the original MetaTrader implementation, which demande
 ## Files
 - `CS/BullishBearishEngulfingStrategy.cs` – main C# implementation built on the high-level StockSharp strategy API.
 
-> **Note:** No Python implementation is provided for this ID; only the C# version is included as requested.
+> Implementations are available in both C# and Python.

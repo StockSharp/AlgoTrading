@@ -35,4 +35,4 @@ A estratégia Surefirething recria o clássico assessor especialista MetaTrader 
 
 ## Notas
 - A implementação corresponde à lógica MQL original ao garantir que o passo de trailing seja diferente de zero sempre que o trailing estiver ativo.
-- Nenhuma implementação Python é fornecida para esta estratégia.
+- As implementações estão disponíveis em C# e Python.

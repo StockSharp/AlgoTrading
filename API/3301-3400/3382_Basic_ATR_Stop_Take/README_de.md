@@ -35,4 +35,4 @@ Basic ATR Stop Take portiert den MetaTrader 4 Expert Advisor **„Basic ATR stop
 * Die Standardparameter replizieren das Verhalten von EA (Long-Only-Modus, 0,01 Lot-Volumen, ATR-Periode 14, Stoppfaktor 1,5, Take-Faktor 2,0).
 * Bei Preisvergleichen werden Kerzenhochs und -tiefs verwendet, was bedeutet, dass Stop-Loss- und Take-Profit-Auslöser auftreten, sobald das Niveau innerhalb der Kerzenspanne durchbrochen wird.
 * Bei der Strategie werden keine Positionen gestapelt oder umgekehrt; Stattdessen flacht es immer ab und wartet auf den nächsten Barschluss, bevor es eine neue Bestellung aufgibt.
-* In diesem Paket wird nur die C#-Implementierung bereitgestellt; Für diese Strategie gibt es keine Python-Version.
+* Implementierungen sind in C# und Python verfügbar.

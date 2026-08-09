@@ -43,5 +43,5 @@ Color Fisher M11 策略复刻了 MetaTrader 5 上的 Exp_ColorFisher_m11 专家�
 
 ## 备注
 - 策略使用 StockSharp 的高级绑定接口 `SubscribeCandles().BindEx`，除了最少量的颜色历史外不会存储额外序列数据。
-- 本次仅提供 C# 版本，不包含 Python 实现。
+- 同时提供 C# 和 Python 实现。
 - 可在图表上同时绘制价格与 Color Fisher 指标，便于观察信号与交易执行。

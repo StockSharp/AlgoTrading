@@ -54,4 +54,4 @@ Rabbit M3 is a port of the MetaTrader 4 expert advisor `RabbitM3` (also released
 * Donchian levels are intentionally lagged by one candle so the exit mirrors the `shift=1` logic of the original MetaTrader calls.
 * Volume scaling only evaluates realized PnL while the position is flat, preventing floating gains from triggering false positives.
 * The UI label objects present in the source EA are omitted because StockSharp visualizes state through charts and logs.
-* Only the C# implementation is provided in this package; there is no Python version.
+* Implementations are available in both C# and Python.

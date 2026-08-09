@@ -49,4 +49,4 @@ Todos los parámetros se exponen a través de objetos `StrategyParam<T>` de Stoc
 - `README_zh.md` – documentación en chino.
 - `README_ru.md` – documentación en ruso.
 
-Un puerto de Python se omite intencionalmente según las instrucciones del proyecto; créelo más tarde si es necesario.
+Las implementaciones están disponibles en C# y Python.

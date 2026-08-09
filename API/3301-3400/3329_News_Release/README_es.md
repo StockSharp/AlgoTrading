@@ -34,4 +34,4 @@ Esta estrategia reproduce el comportamiento central del asesor experto original 
 - La estrategia trabaja exclusivamente con datos level1 (`SubscribeLevel1`) para reaccionar a los últimos precios bid/ask sin esperar velas.
 - Las distancias expresadas en pips se convierten a precios absolutos usando `PriceStep` del instrumento. Si `PriceStep` no está disponible, se usa 1 como fallback seguro.
 - Las condiciones de stop-loss, take-profit, break-even y trailing cierran la posición a mercado llamando a `ClosePosition()`. Esto replica la gestión reactiva del experto original manteniendo compacta la implementación.
-- No se proporciona versión Python, tal como se solicitó.
+- Las implementaciones están disponibles en C# y Python.

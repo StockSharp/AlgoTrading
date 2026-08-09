@@ -58,4 +58,4 @@ Die Risikominimierungs-Strategie ist ein Multi-Timeframe-Trendfolgesystem, das a
 
 ## Hinweise
 - Die Strategie erwartet Instrumente, die mit ähnlichen Pip-Größen wie wichtige Forex-Paare notiert werden. Passen Sie die pip-basierten Parameter an, wenn andere Märkte genutzt werden.
-- Es wird nur die C#-Implementierung bereitgestellt; die Python-Version wird gemäß Anforderungen absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

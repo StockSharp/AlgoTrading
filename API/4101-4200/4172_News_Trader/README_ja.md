@@ -36,4 +36,4 @@
 
 - `CS/NewsTraderStrategy.cs` — 戦略の C# 実装。
 
-Python のバージョンはリクエストに応じて意図的に省略されています。
+C# と Python の両方の実装が提供されています。

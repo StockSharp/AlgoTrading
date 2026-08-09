@@ -31,4 +31,4 @@ Market Predictor 策略是对 MetaTrader 平台 MarketPredictor 智能交易顾�
 ## 备注
 - 策略依赖 StockSharp 的高级 API 实现蜡烛订阅、指标绑定及市价委托。
 - 源码中的注释全部为英文，便于国际化协同。
-- 根据需求，未创建 Python 版本及其目录。
+- 同时提供 C# 和 Python 实现。

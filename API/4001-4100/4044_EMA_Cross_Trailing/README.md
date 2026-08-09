@@ -29,4 +29,4 @@ This strategy is the StockSharp conversion of the MetaTrader 4 expert advisor lo
 ## Notes
 - The strategy waits until both EMAs are fully formed before reacting to a crossover, removing the `Bars < 100` check from the MQL script while achieving the same stability.
 - Because only market orders are used, there are no individual `OrderModify` calls. The built-in protection module automatically repositions the trailing stop in the same way the MetaTrader loop updated `OrderStopLoss`.
-- No Python port is provided (per request); only the C# implementation is included.
+- Implementations are available in both C# and Python.

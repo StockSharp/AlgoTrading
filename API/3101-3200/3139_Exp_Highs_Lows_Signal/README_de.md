@@ -41,4 +41,4 @@ Exp Highs Lows Signal ist ein direkter Port des MetaTrader 5-Expertenberaters `E
 * Die Strategie speichert nur die minimale Menge an Kerzengeschichte, die für den Detektor benötigt wird, und hält das Verhalten identisch zum benutzerdefinierten MT5-Indikator.
 * Da alle Order-Verwaltung über `StartProtection` erfolgt, erhalten Backtests und Live-Trading automatisch passende Stop- und Take-Profit-Orders ohne zusätzlichen Code.
 * Deaktivieren Sie die entsprechenden `Allow`-Flags, um die Strategie in einen Richtungsfilter oder ein reines Signalisierungswerkzeug umzuwandeln.
-* Es ist keine Python-Übersetzung vorhanden; nur die C#-Version ist in diesem Paket verfügbar.
+* Implementierungen sind in C# und Python verfügbar.

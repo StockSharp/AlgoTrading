@@ -27,4 +27,4 @@ Grid 再平衡策略是基于 StockSharp 高级 API 重写的 Mission Automate�
 ## 其他说明
 - 所有以点数表示的参数都会乘以 `Security.PriceStep` 转换成价格；若价格步长未知，策略会等待交易所提供数据。
 - 实现完全依赖高层 API（`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`、`BuyLimit`、`SellLimit`）。
-- 本任务按要求不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

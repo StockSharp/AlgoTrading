@@ -35,4 +35,4 @@ Die **5/8 EMA Cross Protect-Strategie** repliziert den MetaTraderExpert Advisor 
 ## Notizen
 - Durch die Konvertierung konzentriert sich die Logik auf fertige Kerzen, um vorzeitige Signale zu vermeiden.
 - Trailing Stops und Gewinnziele werden mit `Security.PriceStep` berechnet; wenn ein Symbol es nicht definiert, bleiben die Risikoparameter inaktiv.
-- Die Python-Version wird aufgrund der Aufgabenanforderungen absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

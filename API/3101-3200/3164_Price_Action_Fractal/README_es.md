@@ -63,4 +63,4 @@ Esta estrategia es un port en C# del asesor experto "PRICE_ACTION" de MetaTrader
 ## Archivos
 
 - `CS/PriceActionFractalStrategy.cs` – implementación de la estrategia en C#.
-- La versión en Python aún no está disponible.
+- Las implementaciones están disponibles en C# y Python.

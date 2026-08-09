@@ -48,4 +48,4 @@ This strategy is a faithful StockSharp port of the FORTRADER `MACD.mq5` expert a
 - The strategy only reacts once per finished candle, mimicking the original `PrevBars` guard in MQL.
 - Stop-loss/take-profit management is purely price-based; there are no trailing adjustments or re-entries until the full state machine cycles again.
 - Designed for hedging accounts in the source EA, but this port enforces a single net position by checking `Position` before sending new orders.
-- No Python version is provided as requested.
+- Implementations are available in both C# and Python.

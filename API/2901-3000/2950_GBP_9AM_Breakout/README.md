@@ -54,4 +54,4 @@ All pip distances automatically adapt to 3- or 5-digit FX quotes by multiplying 
 - `README_ru.md` – Russian documentation.
 - `README_zh.md` – Chinese documentation.
 
-Python implementation is intentionally omitted per project requirements.
+Implementations are available in both C# and Python.

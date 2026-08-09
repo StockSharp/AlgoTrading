@@ -36,4 +36,4 @@ Esta estrategia reproduce el comportamiento del script original **NewsTrader.mq4
 
 - `CS/NewsTraderStrategy.cs` — Implementación en C# de la estrategia.
 
-La versión de Python se omite intencionalmente según lo solicitado.
+Las implementaciones están disponibles en C# y Python.

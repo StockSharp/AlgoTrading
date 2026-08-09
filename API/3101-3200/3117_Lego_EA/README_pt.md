@@ -48,4 +48,4 @@ A **Estratégia Lego EA** é um porte direto do assessor especialista MetaTrader
 - Monitore a exposição da conta ao usar valores altos de `LotMultiplier`; o risco cresce rapidamente durante sequências de perdas.
 - Combine a estratégia com o Backtester para confirmar se a combinação de filtros escolhida está alinhada com os instrumentos que planeja operar.
 
-Esta estratégia atualmente não tem versão em Python.
+As implementações estão disponíveis em C# e Python.

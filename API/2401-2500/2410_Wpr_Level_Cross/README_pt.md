@@ -27,4 +27,4 @@ Quando o indicador cruza abaixo do **Low Level**, sinaliza uma possível revers�
 ## Notas
 
 - Os comentários no código estão em inglês.
-- Apenas a versão C# está implementada; a versão Python é omitida intencionalmente.
+- As implementações estão disponíveis em C# e Python.

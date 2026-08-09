@@ -59,6 +59,6 @@ exponiert wird.
   Preisschritt mit 10 multipliziert, um die Broker-Tick-Größe in einen Standard-Pip umzurechnen.
 - Indikator-Bindungen verlassen sich auf die StockSharp High-Level-API, und alle Handelsaktionen verwenden
   `BuyMarket`/`SellMarket`, um mit den S#-Konventionen konform zu bleiben.
-- Noch keine Python-Übersetzung enthalten. Das Verzeichnis `PY/` ist wie gewünscht absichtlich nicht vorhanden.
+- Implementierungen sind in C# und Python verfügbar.
 - Hängen Sie die Strategie an ein von StockSharp unterstütztes Symbol an. Stellen Sie `Volume` vor dem Start der Strategie
   ein und passen Sie die Parameter an die Volatilität des Instruments an.

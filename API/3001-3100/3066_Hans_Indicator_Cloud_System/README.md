@@ -52,7 +52,7 @@ positions are closed prior to issuing fresh orders.
 - **Trade volume** (`TradeVolume`): order size used for every new position; also synced with `Strategy.Volume` on start.
 
 ## Notes
-- Python translation is intentionally omitted as requested.
+- Implementations are available in both C# and Python.
 - The money-management helpers from `TradeAlgorithms.mqh` (margin modes, dynamic position sizing, stop-loss/ take-profit
   placement) are simplified to a fixed trade volume and explicit exit rules.
 - When the security does not expose `PriceStep` the breakout buffer is interpreted as absolute price units, matching the best

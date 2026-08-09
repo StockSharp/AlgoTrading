@@ -36,4 +36,4 @@ A estratégia funciona em um período primário configurável (padrão 5 minutos
 ## Notas
 - A estratégia usa StockSharp API de alto nível com assinaturas de velas e vinculação de indicadores.
 - Os spreads são monitorados através das melhores cotações bid/ask; a negociação fica suspensa até que o spread esteja dentro do limite configurado.
-- A implementação do Python é omitida intencionalmente por instruções.
+- As implementações estão disponíveis em C# e Python.

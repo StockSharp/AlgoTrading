@@ -25,4 +25,4 @@
 | EndHour | 交易结束小时 | 24 |
 | CandleTimeFrame | 蜡烛图时间框架 | 5 分钟 |
 
-当前未提供 Python 版本。
+同时提供 C# 和 Python 实现。

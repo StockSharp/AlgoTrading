@@ -49,4 +49,4 @@ das Original EA.
 und gleichzeitig das gleiche symmetrische Layout auf dem Markt erzeugen.
 - Der für das Raster verwendete ATR-Snapshot wird auch für Schutzaufträge verwendet, um den Stop und Take-Profit pro Ticket von MetaTrader nachzuahmen
 Werte.
-- Es gibt noch keine Python-Übersetzung, die der Anfrage entspricht.
+- Implementierungen sind in C# und Python verfügbar.

@@ -56,7 +56,7 @@ The strategy exposes the same inputs as the MetaTrader version and keeps their d
 - RSI and moving-average inputs support multiple applied prices to match MetaTrader options. Stochastic calculations rely on StockSharp's built-in oscillator (Low/High mode) and honour the configured smoothing lengths.
 - Trailing and loss thresholds are measured in *points*. The helper automatically scales the value for typical FX tick sizes (3 or 5 decimals) and defaults to one `PriceStep` otherwise.
 - Chart output includes candles, the moving average, RSI, and Stochastic indicators, allowing visual validation similar to the original template.
-- There is no accompanying Python version by request; only the C# implementation is provided.
+- Implementations are available in both C# and Python.
 
 ## Usage Tips
 - When deploying on securities with unconventional tick sizes, verify that `Security.PriceStep` is filled; otherwise the default conversion (1 point = 1 price unit) will be used.

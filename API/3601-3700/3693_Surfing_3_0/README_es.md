@@ -51,4 +51,4 @@ El algoritmo funciona exclusivamente con velas terminadas de una agregación con
 
 - Las señales se evalúan estrictamente en velas terminadas; las fluctuaciones intrabar se ignoran como en MetaTrader.
 - La estrategia restablece su historial EMA cuando finaliza la sesión de negociación para evitar mezclar datos de diferentes días.
-- La traducción de Python se omite intencionalmente de acuerdo con las pautas del proyecto.
+- Las implementaciones están disponibles en C# y Python.

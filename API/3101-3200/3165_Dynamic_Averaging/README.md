@@ -34,4 +34,4 @@ Dynamic Averaging is a direct port of the MetaTrader 5 expert advisor "Dynamic a
 - Candles, stochastic and standard deviation values are processed through the high-level API with `BindEx`, avoiding manual buffer management.
 - The sliding volatility window converts calendar days into bar counts by using the candle time frame if available.
 - Floating profit control relies on the current candle close and `PositionAvgPrice`, matching the MQL implementation that sums open-position profit only.
-- All code comments are written in English; no Python version is provided per task requirements.
+- Implementations are available in both C# and Python.

@@ -27,4 +27,4 @@ Este exemplo transporta o consultor especialista clássico **Frank Ud** MetaTrad
 - A contabilidade de posição armazena cada preenchimento (preço e volume) em listas em vez de consultar estatísticas cumulativas, preservando o comportamento das matrizes MQL que foram usadas para localizar o maior lote e seu preço de entrada.
 - O buffer extra de 25 pips que o especialista original colocou em cada ordem de realização de lucro é retido como uma condição de saída adicional.
 
-> **Nota:** A porta Python foi omitida intencionalmente por enquanto, conforme solicitado. A pasta contém apenas a implementação do C# e a documentação multilíngue.
+> As implementações estão disponíveis em C# e Python.

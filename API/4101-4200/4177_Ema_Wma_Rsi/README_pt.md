@@ -56,4 +56,4 @@ Todos os indicadores são atualizados uma vez por vela finalizada. A porta espel
 * A estratégia processa apenas velas finalizadas e usa seus preços de abertura para atualizações de indicadores, correspondendo à lógica da "nova barra" no código MQL4.
 * Os níveis finais mantêm pelo menos um buffer de cinco pontos longe do preço atual, assim como a função auxiliar original `SlLastBar`.
 * Quando o fechamento da contraposição está desabilitado, a estratégia nunca faz hedge – apenas uma única posição líquida é gerenciada por vez.
-* Nenhuma implementação Python está incluída neste pacote.
+* As implementações estão disponíveis em C# e Python.

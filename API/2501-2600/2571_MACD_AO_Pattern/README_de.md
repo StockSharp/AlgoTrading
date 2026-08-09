@@ -48,4 +48,4 @@ Diese Strategie ist eine originalgetreue StockSharp-Portierung des FORTRADER-Exp
 - Die Strategie reagiert nur einmal pro abgeschlossener Kerze und ahmt den ursprünglichen `PrevBars`-Schutz in MQL nach.
 - Die Stop-Loss/Take-Profit-Verwaltung ist rein preisbasiert; es gibt keine Trailing-Anpassungen oder Wiedereinstiege, bis der vollständige Zustandsmaschinenzyklus erneut durchläuft.
 - Für Hedging-Konten im Quell-EA konzipiert, aber dieser Port erzwingt eine einzige Nettoposition durch Überprüfung von `Position` vor dem Senden neuer Orders.
-- Keine Python-Version vorhanden, wie angefordert.
+- Implementierungen sind in C# und Python verfügbar.

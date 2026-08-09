@@ -46,4 +46,4 @@ Die **Universal MA Cross-Strategie** ist eine direkte Konvertierung des ursprün
 ## Konvertierungshinweise
 * Schutzorders werden intern durch Überprüfung von Kerzenhochs und -tiefs behandelt, da StockSharp-Strategien auf finalisierten Kerzen statt auf rohen Tick-Ereignissen operieren. Dies spiegelt das Verhalten des ursprünglichen Experten wider, während es innerhalb der High-Level-API bleibt.
 * Trailing-Stop-Anpassungen folgen der MQL-Implementierung und erfordern eine Bewegung von **TrailingStop + TrailingStep**, bevor der Stop verschoben wird.
-* Es wird keine Python-Version in dieser Konvertierung bereitgestellt, wie angefordert.
+* Implementierungen sind in C# und Python verfügbar.

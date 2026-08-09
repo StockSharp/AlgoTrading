@@ -31,7 +31,7 @@ MACD No Sample ist ein Port des MetaTrader 5-Expertenberaters `MACD No Sample`. 
 * Indikatoreingaben berücksichtigen die angewendeten Preisauswahlen und stützen sich auf StockSharpss gleitende Durchschnitts- und MACD-Indikatorimplementierungen.
 * Pip-Größenerkennung spiegelt die originale EA-Logik wider, indem der Preisschritt bei Drei- und Fünf-Dezimalstellen-Instrumenten mit zehn multipliziert wird.
 * Stop- und Trailing-Logik schließt die Position über Marktorders, wenn die berechneten Niveaus verletzt werden; keine separaten Stop-Orders werden registriert.
-* Nur die C#-Implementierung wird bereitgestellt; es gibt keine Python-Version für diese Strategie.
+* Implementierungen sind in C# und Python verfügbar.
 
 ## Parameter
 * **Volume** – festes Handelsvolumen für Marktorders.

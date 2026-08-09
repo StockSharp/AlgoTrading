@@ -62,4 +62,4 @@ Porta do especialista MetaTrader **20pipsOnceADayOppositeLastNHourTrend** implem
 - `README_zh.md` – documentação chinesa.
 - `README_ru.md` – Documentação russa.
 
-As portas Python são omitidas intencionalmente para esta conversão.
+As implementações estão disponíveis em C# e Python.

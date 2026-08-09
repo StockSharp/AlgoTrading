@@ -55,4 +55,4 @@ Uma cor fortemente de alta (`4`) indica que o preço atingiu o extremo superior 
 - Os sinais são processados apenas em velas concluídas; recálculos intrabarra são ignorados, assim como na implementação do MetaTrader.
 - O tratamento de slippage no especialista original dependia das configurações de execução. As ordens de mercado do StockSharp já respeitam as regras do exchange, portanto o parâmetro `SlippagePoints` é mantido apenas para fins de documentação.
 - O indicador armazena apenas a quantidade mínima de histórico necessária para avaliar a janela, evitando uso desnecessário de memória.
-- A versão Python é omitida intencionalmente de acordo com as diretrizes do projeto.
+- As implementações estão disponíveis em C# e Python.

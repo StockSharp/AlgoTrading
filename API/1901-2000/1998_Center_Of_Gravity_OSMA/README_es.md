@@ -32,5 +32,5 @@ las posiciones largas se cierran y opcionalmente se abren posiciones cortas.
 - `CandleType` – tipo de vela (marco temporal) para los cálculos.
 
 ## Notas
-- Solo se proporciona la versión en C#. La carpeta de Python está intencionalmente ausente.
+- Las implementaciones están disponibles en C# y Python.
 - Use tabulaciones para la indentación al modificar el código.

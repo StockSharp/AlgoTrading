@@ -59,4 +59,4 @@ Omni Trend — это перенос советника MetaTrader "Exp_Omni_Tre
 - `CS/OmniTrendStrategy.cs` — реализация стратегии.
 - `README.md`, `README_ru.md`, `README_zh.md` — документация на трёх языках.
 
-Python-версия сознательно не создавалась согласно заданию.
+Реализации доступны на C# и Python.

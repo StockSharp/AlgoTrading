@@ -31,4 +31,4 @@ La **Estrategia NUp1Down** es una conversión directa del experto de MetaTrader 
 - Configure la propiedad `Volume` al tamaño mínimo de orden permitido por su broker. El dimensionamiento basado en riesgo puede aumentar el tamaño de la operación pero nunca lo reduce por debajo de `Volume`.
 - La estrategia mantiene solo una posición corta agregada a la vez. Si existe una posición larga, se cerrará antes de abrir la corta.
 - El algoritmo trabaja con datos de velas. Los hits de stop-loss o take-profit intrabar se detectan usando el máximo/mínimo de la vela, por lo que el tiempo de ejecución real puede diferir de la ejecución a nivel de tick.
-- No se proporciona versión Python en esta versión. Solo está disponible la implementación C# dentro de `API/2574/CS/NUp1DownStrategy.cs`.
+- Las implementaciones están disponibles en C# y Python.

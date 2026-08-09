@@ -54,4 +54,4 @@ La **Estrategia de Ruptura de la Vela Anterior** observa el máximo y el mínimo
 
 - `CS/PreviousCandleBreakdownStrategy.cs` – Implementación en C# de la estrategia.
 
-La traducción a Python no está disponible para esta estrategia.
+Las implementaciones están disponibles en C# y Python.

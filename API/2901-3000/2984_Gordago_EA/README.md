@@ -42,4 +42,4 @@ A port of the historical "Gordago EA" MetaTrader 5 expert advisor. The strategy 
 - Pip distances are converted to prices using the security's `PriceStep`. If the step has three or five fractional digits the strategy multiplies it by ten, reproducing the pip adjustment used in the original MQL implementation for 3/5-digit forex quotes.
 - Trailing stop is ignored when `TrailingStopPips` is positive but `TrailingStepPips` is not; a warning is logged in that case.
 - Because the StockSharp version works on candle close events, protective logic executes once per finished candle instead of on every tick as in the MT5 version. The trade management behaviour otherwise follows the original rules.
-- Only the C# implementation is provided; no Python translation or folder is included by request.
+- Implementations are available in both C# and Python.

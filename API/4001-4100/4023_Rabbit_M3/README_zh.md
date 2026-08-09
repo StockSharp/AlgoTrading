@@ -54,4 +54,4 @@ Rabbit M3 是 MetaTrader 4 智能交易系统 `RabbitM3`（又名“Petes Party 
 * 唐奇安通道故意滞后一根K线，以保持与原始 `iHighest`/`iLowest` 的偏移一致。
 * 手数递增逻辑只在仓位清零、且产生实现盈亏时评估，避免浮动盈利带来误判。
 * 原 EA 中用于显示信息的图形对象未移植，在 StockSharp 中可以通过图表和日志查看状态。
-* 本目录仅提供 C# 版本，没有 Python 实现。
+* 同时提供 C# 和 Python 实现。

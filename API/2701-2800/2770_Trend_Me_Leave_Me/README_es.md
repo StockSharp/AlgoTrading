@@ -57,6 +57,6 @@ numérica como un parámetro configurable.
   multiplica por 10 para convertir el tamaño del tick del broker en un pip estándar.
 - Los enlaces de indicadores se apoyan en la API de alto nivel de StockSharp, y todas las acciones de trading usan
   `BuyMarket`/`SellMarket` para mantenerse en línea con las convenciones de S#.
-- Aún no se incluye traducción a Python. El directorio `PY/` está intencionalmente ausente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.
 - Adjunte la estrategia a cualquier símbolo compatible con StockSharp. Establezca `Volume` antes de iniciar la estrategia
   y ajuste los parámetros para coincidir con la volatilidad del instrumento.

@@ -43,4 +43,4 @@
 ## Notas
 - La estrategia se basa exclusivamente en el StockSharp API de alto nivel: las velas se procesan a través de `SubscribeCandles`, los enlaces de indicadores alimentan los promedios móviles y `StartProtection` gestiona órdenes de parada, toma de ganancias y seguimiento.
 - El aplanamiento de posiciones utiliza órdenes de mercado para reflejar los cierres inmediatos de tickets opuestos por parte del experto en MT4.
-- No se incluye ninguna traducción de Python en esta carpeta; solo se proporciona la implementación de C#.
+- Las implementaciones están disponibles en C# y Python.

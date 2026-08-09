@@ -51,4 +51,4 @@ O algoritmo funciona exclusivamente com velas prontas de uma agregação configu
 
 - Os sinais são avaliados estritamente nas velas finalizadas; flutuações intrabarras são ignoradas como em MetaTrader.
 - A estratégia redefine seu histórico EMA quando a sessão de negociação termina para evitar misturar dados de dias diferentes.
-- A tradução do Python é omitida intencionalmente de acordo com as diretrizes do projeto.
+- As implementações estão disponíveis em C# e Python.

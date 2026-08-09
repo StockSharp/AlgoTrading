@@ -58,4 +58,4 @@
 - Stellen Sie `AppPrice` auf die horizontale Ebene ein, die Sie überwachen möchten (z. B. psychologischer Preis, täglicher Pivot usw.).
 - Schalten Sie `BuyOnly` aus, um den ursprünglichen „Nur-Verkauf“-Modus zu reproduzieren. Lassen Sie es eingeschaltet, um das bereitgestellte standardmäßige Long-Only-Verhalten auszuführen.
 - Stellen Sie beim Aktivieren der Geldverwaltung sicher, dass die Portfolioverbindung Saldoaktualisierungen bereitstellt. andernfalls kehrt die Strategie zum festen Volumen zurück.
-- Pro Anfrage wird kein Python-Port bereitgestellt. Es wird nur die C#-Strategie generiert.
+- Implementierungen sind in C# und Python verfügbar.

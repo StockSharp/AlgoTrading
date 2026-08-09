@@ -48,4 +48,4 @@ Die **Bullish & Bearish Harami Stochastic Strategy** ist die StockSharp-Portieru
 - `README_ru.md` – Russische Dokumentation.
 - `README_zh.md` – Chinesische Dokumentation.
 
-> **Hinweis:** Die Python-Version ist gemäß den Konvertierungsanweisungen nicht enthalten.
+> Implementierungen sind in C# und Python verfügbar.

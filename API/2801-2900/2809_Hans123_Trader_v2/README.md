@@ -38,4 +38,4 @@ Hans123 Trader v2 is a breakout strategy that places pending stop orders around 
 - Pip size is derived from the security's price step. For 3- and 5-digit forex symbols, the point value is adjusted to match the MQL definition of a pip.
 - The strategy relies on the `Security.BestBid`/`BestAsk` snapshots when available. If depth data is not present, it falls back to the current candle close price to evaluate the minimum distance from the market.
 - Protective orders are re-created whenever they need to be moved, mirroring the `PositionModify` logic from the original expert advisor.
-- The implementation keeps the logic purely in C# with no Python translation, as requested.
+- Implementations are available in both C# and Python.

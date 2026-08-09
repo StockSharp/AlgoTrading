@@ -47,4 +47,4 @@ Daily Trend Reversal ist eine Portierung des MetaTrader 4 Expert Advisors `daily
 ## Zusätzliche Hinweise
 * Die Strategie erkennt die Pip-Größe anhand der Preisstufe des Wertpapiers. Fünf- und dreistellige FX-Symbole wandeln die konfigurierten Pip-Abstände automatisch in Preisinkremente um.
 * Die tägliche Gewinnverfolgung wird mit der ersten Kerze jedes neuen Handelstages zurückgesetzt, indem der aktuell realisierte PnL als neue Basislinie erfasst wird.
-* Für diese Strategie gibt es keine Python-Implementierung; Im Paket API ist nur die C#-Version enthalten.
+* Implementierungen sind in C# und Python verfügbar.

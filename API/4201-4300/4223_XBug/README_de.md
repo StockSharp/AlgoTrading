@@ -36,5 +36,5 @@ Die **X-Bug-Strategie** ist ein gleitendes Durchschnitts-Crossover-System, das v
 
 ## Notizen
 - Die Pip-Umrechnung multipliziert den Preisschritt mit 10 für Symbole, die mit 5 oder 3 Dezimalstellen angegeben werden, was dem ursprünglichen Verhalten des Expert Advisors entspricht.
-- Es wird kein Python-Port bereitgestellt. In diesem Verzeichnis ist nur die C#-Strategie enthalten.
+- Implementierungen sind in C# und Python verfügbar.
 - Trailing Stops, Stopps und Ziele sind optional. Setzen Sie die entsprechenden Pip-Werte auf Null, um sie zu deaktivieren.

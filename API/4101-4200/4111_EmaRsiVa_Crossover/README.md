@@ -68,7 +68,7 @@ noise. Both the slow and fast lines expose the full set of price modes supported
 - Only completed candles are processed, matching `CopyBuffer(..., 1, 2, ...)` calls in the MQL source.
 - Volume normalisation uses `Security.MinVolume`, `Security.VolumeStep`, and `Security.MaxVolume`, preventing invalid orders on
   real exchanges.
-- A Python version is intentionally omitted as requested; the directory only contains the C# implementation and documentation.
+- Implementations are available in both C# and Python.
 
 The resulting behaviour mirrors the source EA while exposing StockSharp-friendly parameters and risk controls suitable for
 Designer, Runner, or any custom host built on the StockSharp API.

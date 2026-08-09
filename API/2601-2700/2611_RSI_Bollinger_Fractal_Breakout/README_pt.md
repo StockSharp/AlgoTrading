@@ -44,6 +44,6 @@ Esta estratégia reproduz o expert advisor MetaTrader "RSI and Bollinger Bands" 
 | `CandleType` | Tipo de dados / período para processamento. | Candles de 4 horas |
 
 ## Notas
-- A versão Python é omitida intencionalmente, conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 - Use `Volume` na classe base para configurar o tamanho do lote (padrão 1 se não especificado).
 - A estratégia deve ser executada no mesmo período da configuração original do EA (EURUSD H4 de acordo com o arquivo `.set` fornecido).

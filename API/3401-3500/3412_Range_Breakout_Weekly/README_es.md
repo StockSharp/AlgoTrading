@@ -57,4 +57,4 @@ La **Estrategia semanal de ruptura de rango** es una StockSharp conversión de a
 - ✅ Programación semanal conservada, cálculos de rango, niveles de protección y comportamiento de martingala de `RangeBreakout.mq5`.
 - ✅ Se reemplazaron las llamadas MetaTrader específicas de API (`iATR`, `CopyBuffer`, `OrderSend`, etc.) con abstracciones idiomáticas StockSharp (`SubscribeCandles`, `AverageTrueRange`, `BuyMarket`/`SellMarket`).
 - ✅ Implementé comentarios en línea en inglés y documentación extensa según lo solicitado.
-- ✅ Dejé los proyectos de prueba intactos y no creé una variante de Python, cumpliendo con las restricciones de la tarea.
+- Las implementaciones están disponibles en C# y Python.

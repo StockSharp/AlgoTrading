@@ -36,4 +36,4 @@ Todas las distancias expresadas en pips se convierten a desplazamientos de preci
 3. Ajuste los parámetros de pips según la volatilidad del instrumento. Valores grandes de `Grid Step` reducen la frecuencia de órdenes adicionales, mientras que un `Min Lots Multiplier` mayor acelera el crecimiento martingala.
 4. Monitoree la exposición resultante con cuidado; el comportamiento martingala puede escalar el volumen rápidamente cuando se activan múltiples stops consecutivos.
 
-La implementación en Python no se proporciona intencionalmente en esta carpeta, según los requisitos de esta tarea de conversión.
+Las implementaciones están disponibles en C# y Python.

@@ -59,7 +59,7 @@ All numeric parameters support optimisation through `SetCanOptimize(true)` so th
 - `Security.PriceStep` is used to translate all "points" inputs to actual price distances. Instruments without a configured step fall back to `1`, preserving sensible behaviour for indexes or cryptocurrencies.
 - The strategy executes only on finished candles. If intrabar precision is required, lower the timeframe to the desired granularity.
 - Trailing stops are implemented with market orders when violated, mimicking the original EA that modified stop-loss prices. This approach avoids placing additional stop orders and keeps risk management contained within the strategy itself.
-- No Python version is provided for this conversion, per the task requirements.
+- Implementations are available in both C# and Python.
 
 ## Differences from the original EA
 - StockSharp's candle-based API replaces tick-level processing; all decisions are taken when a candle closes.

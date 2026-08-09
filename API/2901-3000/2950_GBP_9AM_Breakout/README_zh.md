@@ -52,4 +52,4 @@
 - `README_ru.md`：俄文说明。
 - `README_zh.md`：中文说明（当前文件）。
 
-根据项目约束，本策略暂不提供 Python 版本。
+同时提供 C# 和 Python 实现。

@@ -31,4 +31,4 @@ A **Parabolic SAR Estratégia Bug 3** é uma StockSharp versão de alto nível d
 - MetaTrader posições fechadas antes de abrir a negociação oposta usando ordens separadas. A versão StockSharp alcança o mesmo resultado enviando uma única ordem de mercado dimensionada para compensar qualquer exposição oposta e estabelecer o novo volume de posição.
 - As ordens de stop-loss e take-profit do lado do corretor são emuladas monitorando os extremos das velas e enviando saídas de mercado assim que os limites forem violados.
 - O parâmetro adicional `StopMultiplier` aceita qualquer valor positivo, mas o padrão é `10`, o único multiplicador documentado nos comentários do código original.
-- Nenhuma versão do Python é fornecida para esta conversão, exatamente conforme solicitado na descrição da tarefa.
+- As implementações estão disponíveis em C# e Python.

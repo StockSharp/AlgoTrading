@@ -43,4 +43,4 @@
 | `MQL/8539/AwesomeFxTradera.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Воссоздана разность EMA по цене открытия и логика окраски столбиков. |
 | `MQL/8539/t_ma.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Реализована LWMA на 34 бара с 6-периодным сглаживанием. |
 
-Python-реализация намеренно не добавлялась.
+Реализации доступны на C# и Python.

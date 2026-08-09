@@ -49,4 +49,4 @@ o original EA.
 enquanto produz o mesmo layout simétrico em todo o mercado.
 - O instantâneo ATR usado para a grade também é usado para ordens de proteção para imitar a parada e o lucro por bilhete de MetaTrader
 valores.
-- Ainda não há tradução do Python, correspondendo à solicitação.
+- As implementações estão disponíveis em C# e Python.

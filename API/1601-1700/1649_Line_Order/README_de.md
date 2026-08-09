@@ -23,4 +23,4 @@ Die Strategie bietet Parameter zur Steuerung von Richtung, Einstiegsniveau und R
 ## Hinweise
 - Funktioniert mit jedem von StockSharp unterstützten Wertpapier.
 - Für Bildungszwecke konzipiert, um die Übertragung von manuellem Linienhandel aus MQL zu veranschaulichen.
-- Die Python-Version ist absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

@@ -25,4 +25,4 @@ This strategy is a conversion of the original MQL `TrendCollector.mq4` algorithm
 | EndHour | End hour for trading window | 24 |
 | CandleTimeFrame | Time frame of processed candles | 5 minutes |
 
-The Python version is currently not provided.
+Implementations are available in both C# and Python.

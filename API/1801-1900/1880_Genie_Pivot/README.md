@@ -23,4 +23,4 @@ This strategy implements the **Genie Pivot** reversal scalping idea originally w
 
 ## Notes
 
-The strategy processes only finished candles. No Python version is provided yet.
+The strategy processes only finished candles. Implementations are available in both C# and Python.

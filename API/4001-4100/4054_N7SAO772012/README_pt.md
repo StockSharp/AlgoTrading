@@ -68,5 +68,5 @@ O bot opera no instrumento principal selecionado na estratégia e utiliza:
 
 - Ligações StockSharp de alto nível (`SubscribeCandles().Bind(...)`) são usadas para transmitir valores AO sem consultas diretas de indicadores.
 - Os buffers históricos são mantidos como listas de tamanho fixo para emular a indexação original baseada em turnos, evitando pesquisas diretas de indicadores.
-- Nenhuma versão do Python é fornecida, conforme solicitado.
+- As implementações estão disponíveis em C# e Python.
 - Os testes não foram modificados.

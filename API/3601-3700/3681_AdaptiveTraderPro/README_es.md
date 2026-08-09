@@ -36,4 +36,4 @@ La estrategia funciona en un período de tiempo primario configurable (predeterm
 ## Notas
 - La estrategia utiliza API de alto nivel de StockSharp con suscripciones de velas y vinculación de indicadores.
 - Los diferenciales se controlan a través de las mejores cotizaciones de oferta y demanda; la negociación se suspende hasta que el diferencial esté dentro del límite configurado.
-- La implementación de Python se omite intencionalmente según las instrucciones.
+- Las implementaciones están disponibles en C# y Python.

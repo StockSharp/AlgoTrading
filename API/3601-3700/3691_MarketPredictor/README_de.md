@@ -31,4 +31,4 @@ Die Market Predictor-Strategie ist eine umfassende Adaption des ursprünglichen 
 ## Notizen
 - Das übergeordnete StockSharp API verwaltet Kerzenabonnements, Indikatorbindung und Marktauftragsausführung.
 - Kommentare im Quellcode erläutern jeden Schritt des Prozesses, um die Wartung zu erleichtern.
-- Der Python-Port wird wie gewünscht bewusst weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

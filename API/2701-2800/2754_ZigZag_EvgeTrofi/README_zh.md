@@ -41,4 +41,4 @@ ZigZag EvgeTrofi 策略是将经典的 MetaTrader 专家顾问移植到 StockSha
 ## 文件
 
 * `CS/ZigZagEvgeTrofiStrategy.cs` – 策略的 C# 实现。
-* 暂未提供 Python 版本。
+* 同时提供 C# 和 Python 实现。

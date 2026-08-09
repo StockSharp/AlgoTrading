@@ -45,5 +45,4 @@ automate a classical swing-reversal pattern inside StockSharp Designer, Shell, o
   the short.
 - The algorithm works on candle data. Intrabar stop-loss or take-profit hits are detected using the candle high/low, so the
   actual fill timing may differ from tick-level execution.
-- No Python version is provided in this release. Only the C# implementation inside `API/2574/CS/NUp1DownStrategy.cs` is
-  available.
+- Implementations are available in both C# and Python.

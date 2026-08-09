@@ -51,4 +51,4 @@ zusätzliche Panels.
 Absicherung) genau wie StockSharp selbst.
 * Die Strategie toleriert den manuellen Handel: Sie reagiert auf alle Handelsbestätigungen, um die Statistiken synchron zu halten.
 * Der Kommentar wird automatisch gelöscht, wenn die Strategie beendet oder zurückgesetzt wird, wodurch verhindert wird, dass veraltete Werte über Sitzungen hinweg bestehen bleiben.
-* Es wird keine Python-Implementierung bereitgestellt. Das Paket API enthält nur die C#-Version.
+* Implementierungen sind in C# und Python verfügbar.

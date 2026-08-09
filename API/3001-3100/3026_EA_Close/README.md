@@ -51,6 +51,6 @@ Only finalized candle data are used. This mirrors the `OnTick` new-bar gate in t
 - Because StockSharp works with aggregated candles instead of tick callbacks, no additional rate refresh logic is required—the data subscription ensures the indicators receive complete candles.
 
 ## Conversion Notes
-- No Python implementation is provided intentionally, aligning with the conversion task requirements.
+- Implementations are available in both C# and Python.
 - The weighted moving average operates on the candle series; if you need the exact MT5 weighted price `(High + Low + 2 * Close) / 4`, pre-process the candle values before feeding them into the WMA.
 - Protective orders are managed by the platform via `StartProtection`, so explicit stop/take registrations after each trade are not necessary.

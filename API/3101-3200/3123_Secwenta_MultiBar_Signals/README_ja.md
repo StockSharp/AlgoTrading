@@ -43,4 +43,4 @@
 ## ファイル
 - `CS/SecwentaMultiBarSignalsStrategy.cs` – StockSharp高レベル戦略APIに基づいたメインC#実装。
 
-> **注意：** このIDにはPython翻訳は提供されません。要求されたC#バージョンのみが提供されています。
+> C# と Python の両方の実装が提供されています。

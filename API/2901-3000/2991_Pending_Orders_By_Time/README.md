@@ -36,4 +36,4 @@ This strategy reproduces the behavior of the original MetaTrader "Pending orders
 - `OnOwnTradeReceived` is leveraged to keep protective orders synchronized with the filled entry order and to clean up when either the stop-loss or take-profit executes.
 - The trailing logic deliberately avoids calling indicator `GetValue` and relies only on the incoming candle and stored state, complying with conversion guidelines.
 - Distances are based on price steps, mirroring the original pip-based arithmetic from the MQL implementation and remaining instrument-agnostic.
-- Python implementation is intentionally omitted per the task requirements; only the C# version is provided in this folder.
+- Implementations are available in both C# and Python.

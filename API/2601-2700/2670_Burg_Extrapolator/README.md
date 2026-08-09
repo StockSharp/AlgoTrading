@@ -74,4 +74,4 @@ The Burg Extrapolator Strategy replicates the MetaTrader expert advisor "Burg Ex
 - `README_ru.md` – Russian documentation.
 - `README_zh.md` – Chinese documentation.
 
-Python version is intentionally omitted as per task requirements.
+Implementations are available in both C# and Python.

@@ -43,5 +43,5 @@ To prevent multiple orders per signal, the strategy remembers the next bar close
 
 ## Notes
 - The strategy uses high-level StockSharp bindings (`SubscribeCandles().BindEx`) and does not store historical collections beyond the minimal color history required for the delayed signal.
-- No Python port is provided in this release, matching the request specification.
+- Implementations are available in both C# and Python.
 - Add the strategy to a chart area to visualize both price and the computed Color Fisher oscillator.

@@ -32,4 +32,4 @@ Cash Machine 5 min Legacy é uma versão StockSharp do MetaTrader 4 consultor es
 ## Notas adicionais
 * A estratégia abre apenas uma posição por vez e não reverterá imediatamente; ele espera que a negociação atual feche antes que um novo sinal seja acionado.
 * Os níveis de proteção são aplicados no código por meio de saídas de mercado, portanto, não há ordens stop pendentes na carteira de pedidos.
-* O pacote contém apenas a implementação do C#; nenhuma versão do Python é fornecida.
+* As implementações estão disponíveis em C# e Python.

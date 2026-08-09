@@ -41,7 +41,7 @@
 - Keep `BuyRequest`, `SellRequest` and `CloseRequest` under the "Manual controls" group disabled when running optimizations.
 - The trailing equity lock and money take-profit logic require `Security.StepPrice` to translate profit into currency. When it is unavailable the fallback uses pure price differences.
 - Break-even and trailing stops use the instrument pip size inferred from `MinPriceStep`/`PriceStep` and decimal digits.
-- There is no Python translation, as requested.
+- Implementations are available in both C# and Python.
 
 ## Testing
 - No automated tests were modified; the strategy integrates with the existing solution structure and relies on manual parameter toggles for verification.

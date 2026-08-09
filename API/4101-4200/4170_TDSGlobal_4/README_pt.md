@@ -67,4 +67,4 @@ verificações de lucro. A avaliação real do sinal ocorre apenas uma vez por d
 ng) para que possa ser reutilizado dentro da plataforma sem encanamento manual.
 * Os dados de nível 1 são necessários para a operação de trailing stop porque o algoritmo usa as melhores cotações de compra/venda para mover e acionar o
 parada virtual.
-* O pacote não inclui tradução para Python; apenas a estratégia C# e a documentação multilíngue são fornecidas.
+* As implementações estão disponíveis em C# e Python.

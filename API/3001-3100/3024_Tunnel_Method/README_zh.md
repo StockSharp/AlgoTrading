@@ -57,4 +57,4 @@ Tunnel Method 策略是 MetaTrader 5 平台上同名专家顾问的 StockSharp �
 - `README_ru.md`：俄文文档。
 - `README_zh.md`：中文文档（本文件）。
 
-根据任务要求，暂未提供 Python 版本，当前仅包含 C# 实现。
+同时提供 C# 和 Python 实现。

@@ -75,4 +75,4 @@ mecanismo de trailing opcional reproducen las reglas de gestión de dinero del e
 - El tamaño del pip se deriva de `Security.PriceStep`. Si el instrumento no reporta un paso de precio válido, las distancias de stop
   y trailing se tratan como cero.
 - Todos los comentarios dentro del código están escritos en inglés según las pautas del repositorio.
-- La versión Python se omite intencionalmente según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.

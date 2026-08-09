@@ -27,4 +27,4 @@ The Grid Rebalance Strategy is a high-level StockSharp port of the Mission Autom
 ## Notes
 - All point-based settings are converted to prices with `Security.PriceStep`. If the step is zero the strategy waits until the instrument provides it.
 - The implementation relies purely on the high-level API (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`, `BuyLimit`, `SellLimit`) as required.
-- A Python version is intentionally not included in this task.
+- Implementations are available in both C# and Python.

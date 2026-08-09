@@ -49,5 +49,5 @@ This strategy is a StockSharp conversion of the MetaTrader 5 expert advisor `MQL
 * The strategy relies exclusively on StockSharp's high-level `Strategy` infrastructure (`SubscribeCandles`, `WhenNew`, and market orders) and does not manipulate raw order books.
 * Range statistics are stored without using indicator value look-ups; all computations happen inside the strategy, in line with the repository guidelines.
 * Protective orders are simulated by monitoring candle extremes rather than registering separate stop/limit orders, which keeps the implementation portable across different adapters.
-* Python support is intentionally omitted as requested. Only the C# version is provided in this folder.
+* Implementations are available in both C# and Python.
 * For live trading ensure that sufficient historical candles are available so that the first range calculation has enough data to work with.

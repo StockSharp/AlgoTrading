@@ -42,7 +42,7 @@
 - 使用 `BindEx` 直接获取 `AverageDirectionalIndexValue`，无需手动从指标缓存读取，符合仓库规范。
 - 移动止损记录最近的止损价，仅当价格继续朝盈利方向前进至少 `TrailingStepPips` 点时才移动，保持与原始 EA 相同的阶梯式推进效果。
 - C# 源码中的所有注释均为英文，符合仓库要求。
-- 仅提供 C# 版本，文件位于 `API/2908_Auto_ADX/CS/AutoAdxStrategy.cs`，按需求未生成 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用建议
 1. 确认证券的 `PriceStep` 设置正确，以保证点值换算准确。

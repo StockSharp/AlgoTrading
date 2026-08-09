@@ -27,4 +27,4 @@ La estrategia reduce el tamaño de la posición tras operaciones perdedoras cons
 
 - Funciona únicamente con velas cerradas.
 - Utiliza la API de alto nivel de StockSharp con vinculación de indicadores.
-- No se proporciona versión en Python.
+- Las implementaciones están disponibles en C# y Python.

@@ -45,4 +45,4 @@ La **Estrategia Universal MA Cross V4** es una versión StockSharp de alto nivel
 ## Notas de conversión
 * Las distancias basadas en precios se expresan en MetaTrader puntos. El asistente `GetPriceOffset` convierte esos valores en precios StockSharp utilizando el paso del precio del valor o la precisión decimal. Esto mantiene el comportamiento de la estrategia alineado con el EA original independientemente del instrumento.
 * Los trailingstops se gestionan internamente porque StockSharp estrategias de alto nivel operan en velas terminadas. Este enfoque determinista garantiza que las pruebas retrospectivas que utilizan velas reproduzcan la lógica de seguimiento de MT4 prevista.
-* No se incluye ningún puerto de Python que coincida con la solicitud de conversión. En este paquete solo se proporciona la implementación de C# y la documentación multilingüe.
+* Las implementaciones están disponibles en C# y Python.

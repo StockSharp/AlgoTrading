@@ -48,4 +48,4 @@ La **Estrategia Harami alcista y bajista Stochastic** es el puerto StockSharp de
 - `README_ru.md` — Documentación rusa.
 - `README_zh.md` — Documentación china.
 
-> **Nota:** La versión de Python no está incluida según las instrucciones de conversión.
+> Las implementaciones están disponibles en C# y Python.

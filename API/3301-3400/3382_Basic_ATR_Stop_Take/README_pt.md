@@ -35,4 +35,4 @@ Basic ATR Stop Take transporta o MetaTrader 4 consultor especialista **“Basic 
 * Os parâmetros padrão replicam o comportamento do EA (modo somente longo, volume de lote 0,01, período ATR 14, fator de parada 1,5, fator de aceitação 2,0).
 * As comparações de preços usam máximos e mínimos de velas, o que significa que os gatilhos de stop-loss e take-profit ocorrem assim que o nível é ultrapassado dentro da faixa da vela.
 * A estratégia não empilha nem inverte posições; em vez disso, ele sempre fica nivelado e aguarda o fechamento da próxima barra antes de fazer um novo pedido.
-* Somente a implementação C# é fornecida neste pacote; não existe uma versão Python para esta estratégia.
+* As implementações estão disponíveis em C# e Python.

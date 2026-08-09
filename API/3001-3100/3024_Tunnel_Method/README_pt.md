@@ -56,4 +56,4 @@ Todos os parâmetros baseados em pips são automaticamente convertidos para unid
 - `README_ru.md` – documentação em russo.
 - `README_zh.md` – documentação em chinês.
 
-A tradução para Python é intencionalmente omitida, coincidindo com a solicitação de entregar apenas a versão C# nesta etapa.
+As implementações estão disponíveis em C# e Python.

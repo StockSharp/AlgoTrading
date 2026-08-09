@@ -42,4 +42,4 @@ Handelsentscheidungen werden auf dem Crossover des Oszillators und der Signallin
 - Manuelle Stop/Ziel-Überprüfungen und der schrittbasierte Trailing-Stop werden bei jeder abgeschlossenen Kerze ausgeführt und spiegeln das Verhalten der MQL-Version eng wider.
 - Signale werden nur verarbeitet, wenn alle erforderlichen Werte verfügbar sind; partielle Indikatorzustände werden ignoriert, bis genügend Daten angesammelt wurden.
 
-In diesem Verzeichnis wird keine Python-Übersetzung bereitgestellt.
+Implementierungen sind in C# und Python verfügbar.

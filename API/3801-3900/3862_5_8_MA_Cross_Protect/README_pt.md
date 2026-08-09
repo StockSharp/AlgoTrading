@@ -35,4 +35,4 @@ A **5/8 EMA estratégia de proteção cruzada** replica o MetaTrader consultor e
 ## Notas
 - A conversão mantém a lógica focada nas velas finalizadas para evitar sinais prematuros.
 - Trailing stops e metas de lucro são calculadas com `Security.PriceStep`; se um símbolo não o definir, os parâmetros de risco permanecem inativos.
-- A versão Python é omitida intencionalmente de acordo com os requisitos da tarefa.
+- As implementações estão disponíveis em C# e Python.

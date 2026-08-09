@@ -23,5 +23,5 @@ Esta estrategia es un port de StockSharp del asesor experto MQL5 "cheduecoglioni
 - Las órdenes de protección son gestionadas por `StartProtection` con salidas de mercado, coincidiendo con la asignación inmediata de stop-loss y take-profit que el asesor experto realizaba al colocar la orden.
 
 ## Notas
-- La versión Python no se ha creado intencionadamente aún.
+- Las implementaciones están disponibles en C# y Python.
 - La estrategia no modifica las pruebas unitarias.

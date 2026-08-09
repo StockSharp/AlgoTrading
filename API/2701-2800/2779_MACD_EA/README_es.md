@@ -32,5 +32,5 @@ Cuando `UseMoneyManagement` está habilitado, el tamaño de la posición aumenta
 ## Notas
 
 * La estrategia usa `SubscribeCandles` y vinculación de indicadores para seguir el patrón recomendado del API de alto nivel.
-* Una versión en Python aún no está disponible. Solo se proporciona la implementación en C# en la carpeta `CS`.
+* Las implementaciones están disponibles en C# y Python.
 * No se añadieron ni modificaron pruebas según lo solicitado.

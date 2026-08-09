@@ -22,7 +22,7 @@
 6. Das `_closeAllRequested`-Flag bleibt gesetzt, bis `HasAnyOpenPosition()` erkennt, dass das Portfolio flach ist, entsprechend dem MQL-Verhalten, wo `m_close_all` wahr blieb, bis alle Tickets geschlossen waren.
 
 ## Weitere Hinweise
-- Es wird nur die C#-Implementierung bereitgestellt; der Python-Ordner wird gemäß den Aufgabenanforderungen absichtlich leer gelassen.
+- Implementierungen sind in C# und Python verfügbar.
 - Die Strategie storniert keine ausstehenden Orders, da das ursprüngliche Skript nur Market-Positionen schloss.
 - `SetOptimize` auf `ProfitThreshold` verwenden, um alternative Gewinnziele durch den Designer-Optimierer zu erkunden, falls erforderlich.
 

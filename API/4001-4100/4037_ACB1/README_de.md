@@ -57,4 +57,4 @@ Die **ACB1-Strategie** ist der StockSharp-Port des MetaTrader-Expertenberaters, 
 - Schutzstufen sind virtuell. StockSharp schließt Positionen über Marktaufträge, wenn Bid/Ask den berechneten Stop-Loss oder Take-Profit berührt.
 - Die Eigenkapitalverfolgung verwendet `Portfolio.CurrentValue`. Wenn der Connector dieses Feld nicht bereitstellt, wird der Risikoschutz den Handel so lange deaktiviert lassen, bis es verfügbar ist.
 - Es wird nur eine einzige Nettoposition gehalten. Gegensignale während eines aktiven Handels werden ignoriert, bis die Position vollständig geschlossen ist.
-- Es ist kein Python-Port enthalten; Dieses Verzeichnis enthält nur die C#-Implementierung und Dokumentation.
+- Implementierungen sind in C# und Python verfügbar.

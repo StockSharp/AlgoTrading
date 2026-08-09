@@ -48,4 +48,4 @@ Ausbruchs-Schlusskurs jenseits des Doji-Bereichs, um in die Ausbruchsrichtung in
   traditionellen Pip-Messungen zu entsprechen.
 - Stellen Sie die gewünschte Lot-Größe in der `Volume`-Eigenschaft vor dem Ausführen der Strategie ein.
 - Es sind keine zusätzlichen Indikatoren erforderlich; die Logik hängt nur von rohen Kerzendaten ab.
-- Es gibt noch keinen Python-Port; nur die C#-Implementierung existiert.
+- Implementierungen sind in C# und Python verfügbar.

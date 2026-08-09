@@ -43,4 +43,4 @@
 ## 文件
 - `CS/SecwentaMultiBarSignalsStrategy.cs` – 基于 StockSharp 高层策略 API 的 C# 实现。
 
-> **说明：** 按需求仅提供 C# 版本，本目录中没有 Python 代码或 PY 子目录。
+> 同时提供 C# 和 Python 实现。

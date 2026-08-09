@@ -58,4 +58,4 @@ Die Bestellgröße wird für kleine Gitter (bis zu 12 Einträge) mit `2^n` oder 
 - Stellen Sie separate nachgestellte Parameter für lange und kurze Gitter bereit oder lassen Sie asymmetrische Gitter zu.
 - Kombinieren Sie die MACD-Steigung mit Trendfiltern (gleitende Durchschnitte, höhere Zeitrahmenbestätigung), um die Anzahl der gegenläufigen Trendgitter zu reduzieren.
 
-> **Hinweis:** Für diese Strategie wird keine Python-Implementierung bereitgestellt, die der Anfrage und der aktuellen Projektstruktur entspricht.
+> Implementierungen sind in C# und Python verfügbar.

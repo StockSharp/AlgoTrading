@@ -26,7 +26,7 @@
 - `StartProtection` is invoked once during `OnStarted`. Ensure the connected security provides `PriceStep`; otherwise the stop-loss distance cannot be translated into absolute prices.
 - Because all trades are entered with market orders at the start of each bar, slippage handling is delegated to the trading venue and there is no additional `slippage` parameter.
 - The historical open buffer keeps only a small rolling window (`LookbackBars + 5` values) to avoid unnecessary memory usage.
-- No Python port is supplied; the `CS/` directory contains the only implementation.
+- Implementations are available in both C# and Python.
 
 ## File Structure
 ```

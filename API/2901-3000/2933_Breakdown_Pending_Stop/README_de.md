@@ -25,4 +25,4 @@ Diese Strategie recreates den originalen MetaTrader "breakdown"-Expertenberater.
 - Die Strategie auf Instrumenten konfigurieren, die Tageskerzen veröffentlichen, damit der vorherige Sitzungsbereich ermittelt werden kann.
 - Die Logik geht von einer konstanten Tick-Größe aus. Für Instrumente mit variablen Tick-Inkrementen die Standardwerte entsprechend anpassen.
 - Die Strategie implementiert keine prozentuale Dimensionierung aus dem ursprünglichen MQL-Skript; das Volumen wird explizit durch den Parameter `Order Volume` definiert.
-- Für diese Strategie ist noch keine Python-Version verfügbar.
+- Implementierungen sind in C# und Python verfügbar.

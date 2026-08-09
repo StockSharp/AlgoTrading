@@ -48,6 +48,6 @@
 ## Notes
 - The original expert advisor included money-management modes based on balance or margin. The port exposes a simpler fixed `OrderVolume` parameter. Adjust it to match the desired position sizing.
 - `StartProtection` is invoked only when the instrument exposes a valid price step (`Security.Step > 0`).
-- No Python version is provided intentionally (as requested).
+- Implementations are available in both C# and Python.
 - Chart areas are created automatically: if long and short candle feeds differ, two separate panels are displayed; otherwise only one chart is shown.
 - The strategy relies on finished candles; it does not react to intrabar updates.

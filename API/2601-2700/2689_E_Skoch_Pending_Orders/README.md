@@ -5,7 +5,7 @@
 
 The **e-Skoch Pending Orders Strategy** recreates the original MetaTrader expert advisor that waits for a new bar, analyses the two most recent highs and lows on both the trading timeframe and the daily timeframe, and places pending breakout orders. The goal is to catch momentum when the market breaks through the previous bar after a short-term pullback confirmed by the daily trend.
 
-The StockSharp implementation keeps the original ideas but uses high-level API features such as candle subscriptions, automatic protection orders, and strategy parameters. The C# version is stored inside the `CS/` folder and no Python port is provided yet.
+The StockSharp implementation keeps the original ideas but uses high-level API features such as candle subscriptions, automatic protection orders, and strategy parameters. Implementations are available in both C# and Python.
 
 ## Trading Logic
 

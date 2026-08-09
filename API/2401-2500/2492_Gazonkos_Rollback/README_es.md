@@ -33,4 +33,4 @@ Esta secuencia refleja de cerca la versión MT5 que usó las variables `STATE` y
 ## Notas
 * La estrategia funciona con cualquier instrumento que tenga un tamaño de tick razonable; ajustar `Delta`, `Rollback`, `TakeProfit` y `StopLoss` para que coincidan con el valor del punto del instrumento.
 * Todos los comentarios en línea están escritos en inglés según lo requerido por las directrices del proyecto.
-* Aún no se proporciona un port de Python para esta estrategia.
+* Las implementaciones están disponibles en C# y Python.

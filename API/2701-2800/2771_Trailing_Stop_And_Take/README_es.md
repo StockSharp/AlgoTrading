@@ -47,5 +47,5 @@ La estrategia opera en un único instrumento usando velas terminadas. Cuando la 
 ## Notas
 - Los stops y objetivos se ejecutan con órdenes de mercado cuando se activan, lo que mantiene la implementación simple y refleja las modificaciones originales de stop.
 - `SpreadMultiplier` aproxima el comportamiento de MQL donde los niveles de stop no pueden colocarse más cerca que el spread actual. Ajustar este valor para coincidir con el venue de ejecución.
-- La estrategia evita intencionalmente una versión de Python y se centra exclusivamente en la implementación C#, según lo solicitado.
+- Las implementaciones están disponibles en C# y Python.
 - Considere combinar el motor de trailing con su propio filtro de entrada deshabilitando las entradas integradas e inyectando órdenes externas si es necesario.

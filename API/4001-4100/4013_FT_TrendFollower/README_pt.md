@@ -51,4 +51,4 @@ Apenas um módulo de saída pode estar ativo por vez, assim como a validação d
 * Os níveis de pivô diários são calculados a partir da última vela diária concluída fornecida por uma assinatura secundária.
 * Os pontos de preço e as conversões de pip dependem do `PriceStep` do título. Símbolos com diferentes tamanhos de ticks se adaptam automaticamente.
 * A estratégia subscreve apenas indicadores de alto nível e evita leituras diretas de buffer, aderindo às diretrizes de alto nível API do projeto.
-* Nenhuma implementação Python é fornecida neste pacote.
+* As implementações estão disponíveis em C# e Python.

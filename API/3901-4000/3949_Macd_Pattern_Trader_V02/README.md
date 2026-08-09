@@ -45,4 +45,4 @@ This strategy is a StockSharp high-level API conversion of the MetaTrader expert
 - The point size is derived from `Security.PriceStep` or, when unavailable, from the security decimals. A default value of `0.0001` is used as a safe fallback.
 - Candle history is stored (up to 1024 entries) to replicate the MQL helper functions `iHighest`, `iLowest`, and the sequential extremum scan from `TakeProfit()`.
 - All comments inside the strategy remain in English, as required by the repository guidelines.
-- Python ports are intentionally omitted for this task.
+- Implementations are available in both C# and Python.

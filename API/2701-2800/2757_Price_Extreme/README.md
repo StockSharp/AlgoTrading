@@ -69,4 +69,4 @@ All parameters use `StrategyParam<T>` with UI metadata so they can be optimized 
 
 - The strategy intentionally operates on a single net position, mirroring the hedging logic of the MQL expert by flattening the opposite side before entering a new trade.
 - Protective stops and targets are evaluated on completed candles. When live trading, this approximates the server-side protective orders used by the original script.
-- No Python port is included, as requested.
+- Implementations are available in both C# and Python.

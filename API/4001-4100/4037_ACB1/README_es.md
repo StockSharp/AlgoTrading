@@ -57,4 +57,4 @@ La **Estrategia ACB1** es el puerto StockSharp del asesor experto MetaTrader dis
 - Los niveles de protección son virtuales. StockSharp cierra posiciones mediante órdenes de mercado cuando la oferta/demanda toca el límite de pérdidas o la toma de ganancias calculados.
 - El seguimiento de acciones utiliza `Portfolio.CurrentValue`. Si el conector no proporciona este campo, la protección contra riesgos mantendrá las operaciones desactivadas hasta que esté disponible.
 - Sólo se mantiene una única posición neta. Las señales opuestas mientras una operación está activa se ignoran hasta que la posición se cierra por completo.
-- No se incluye ningún puerto Python; este directorio solo contiene la implementación y documentación de C#.
+- Las implementaciones están disponibles en C# y Python.

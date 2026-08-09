@@ -25,4 +25,4 @@ Esta estrategia recrea el asesor experto original de MetaTrader de "breakdown". 
 - Configurar la estrategia en instrumentos que publiquen velas diarias para obtener el rango de la sesión anterior.
 - La lógica asume un tamaño de tick constante. Para instrumentos con incrementos de tick variables, ajustar los valores predeterminados en consecuencia.
 - La estrategia no implementa el dimensionamiento basado en porcentaje del script MQL original; el volumen se define explícitamente a través del parámetro `Order Volume`.
-- Aún no se proporciona una versión Python para esta estrategia.
+- Las implementaciones están disponibles en C# y Python.

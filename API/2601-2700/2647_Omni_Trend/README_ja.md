@@ -55,4 +55,4 @@ Omni トレンド戦略は、MetaTrader エキスパート「Exp_Omni_Trend」�
 - `CS/OmniTrendStrategy.cs` — 戦略の C# 実装。
 - `README.md`、`README_ru.md`、`README_zh.md` — 英語、ロシア語、中国語のドキュメント。
 
-Python サポートはリクエストに応じて意図的に省略されています。
+C# と Python の両方の実装が提供されています。

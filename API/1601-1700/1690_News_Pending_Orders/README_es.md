@@ -33,4 +33,4 @@ La estrategia opera con datos de Nivel1 y no depende de ningún indicador.
 
 - Las órdenes se gestionan mediante la API de alto nivel de StockSharp.
 - La estrategia cancela las órdenes protectoras cuando la posición se cierra.
-- Solo se proporciona la versión en C#; no se incluye implementación en Python.
+- Las implementaciones están disponibles en C# y Python.

@@ -65,4 +65,4 @@ Kerze schließt
 ## Dateien
 
 - `CS/DaydreamStrategy.cs` – Strategieimplementierung in C#.
-- Python-Version: noch nicht implementiert.
+- Implementierungen sind in C# und Python verfügbar.

@@ -49,7 +49,7 @@
 - **时段过滤**：支持日内窗口（`StartHour < EndHour`）与跨夜窗口（`StartHour > EndHour`）。当二者相等时，策略被禁用，与原版逻辑一致。
 - **指标绑定**：通过 `SubscribeCandles().Bind(...)` 获取指标值，无需手工复制缓冲区，仅在内部保存少量 LWMA 历史以处理 `MaShift`。
 - **订单管理**：每次下市场单前都会执行 `CancelActiveOrders()`，保证订单簿整洁。
-- **无 Python 版本**：按要求仅提供 C# 实现。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用步骤
 1. 将策略绑定到目标证券，并设置合适的 `CandleType`（时间框架）。

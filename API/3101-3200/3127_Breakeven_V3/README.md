@@ -38,4 +38,4 @@ so that the whole book is closed around that break-even price with an optional b
   the break-even price. If the broker applies overnight swaps they must be handled manually.
 * The script assumes the account allows hedging (simultaneous long and short positions). If the broker nets positions,
   the long and short aggregates will reduce to a single net exposure just like in MetaTrader.
-* There is no Python version of this port. Only the C# implementation is provided.
+* Implementations are available in both C# and Python.

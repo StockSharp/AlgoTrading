@@ -53,4 +53,4 @@
 ## Notas
 - A estratégia depende de metadados `Security.PriceStep` válidos para traduzir parâmetros baseados em pontos em distâncias de preços.
 - A lógica de proteção é implementada por meio de verificações explícitas em vez de ordens pendentes de stop/limit, espelhando o comportamento original EA com paradas virtuais.
-- A versão Python é omitida intencionalmente de acordo com as instruções da tarefa.
+- As implementações estão disponíveis em C# e Python.

@@ -43,4 +43,4 @@ All parameters can be optimised through the StockSharp UI thanks to the `Strateg
 | `MQL/8539/AwesomeFxTradera.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Recreates the EMA-on-open oscillator and its rising/falling colour logic. |
 | `MQL/8539/t_ma.mq4` | `CS/AwesomeFxTraderStrategy.cs` | Implements the 34-period LWMA with a 6-period SMA smoother for trend detection. |
 
-The Python version is intentionally omitted as requested.
+Implementations are available in both C# and Python.

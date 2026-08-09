@@ -54,4 +54,4 @@ Alle Pip-Abstände passen sich automatisch an 3- oder 5-stellige FX-Kurse an, in
 - `README_ru.md` – Russische Dokumentation.
 - `README_zh.md` – Chinesische Dokumentation.
 
-Eine Python-Implementierung wird gemäß den Projektanforderungen absichtlich nicht bereitgestellt.
+Implementierungen sind in C# und Python verfügbar.

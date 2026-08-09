@@ -33,5 +33,5 @@ The strategy operates on Level1 data and does not rely on any indicators.
 
 - Orders are managed using the high-level StockSharp API.
 - The strategy cancels protective orders when the position is closed.
-- Only the C# version is provided; no Python implementation is included.
+- Implementations are available in both C# and Python.
 

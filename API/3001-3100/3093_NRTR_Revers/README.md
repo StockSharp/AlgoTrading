@@ -32,4 +32,4 @@ The NRTR Revers strategy is a C# conversion of the original MetaTrader 5 expert 
 - The indicator computations and reversal checks only use finished candles; incomplete candles are ignored.
 - The ATR value supplied by the binding is equivalent to the previous-bar ATR used in the source EA because calculations occur after candle completion.
 - The adjusted point calculation automatically handles 3- and 5-decimal forex quotes to keep pip-based parameters compatible with the original script.
-- No Python port is provided by request. The folder currently contains only the C# implementation and documentation.
+- Implementations are available in both C# and Python.

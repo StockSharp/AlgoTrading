@@ -56,4 +56,4 @@ Todos los parámetros basados en pips se convierten automáticamente a unidades 
 - `README_ru.md` – documentación en ruso.
 - `README_zh.md` – documentación en chino.
 
-La traducción a Python se omite intencionalmente, coincidiendo con la solicitud de entregar solo la versión de C# en esta etapa.
+Las implementaciones están disponibles en C# y Python.

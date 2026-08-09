@@ -41,7 +41,7 @@
 - `BuyRequest`, `SellRequest` und `CloseRequest` unter der Gruppe "Manuelle Steuerungen" bei Optimierungsläufen deaktiviert lassen.
 - Equity-Trailing-Lock und Geld-Take-Profit-Logik benötigen `Security.StepPrice` zur Umrechnung des Gewinns in Währung. Wenn nicht verfügbar, verwendet der Fallback reine Preisdifferenzen.
 - Break-Even und Trailing-Stops verwenden die Pip-Größe des Instruments, abgeleitet aus `MinPriceStep`/`PriceStep` und Dezimalstellen.
-- Es gibt keine Python-Übersetzung, wie gewünscht.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Tests
 - Keine automatisierten Tests wurden geändert; die Strategie integriert sich in die bestehende Lösungsstruktur und verlässt sich auf manuelle Parameter-Umschaltungen zur Überprüfung.

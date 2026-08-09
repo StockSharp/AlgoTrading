@@ -39,4 +39,4 @@ The N-Candles Sequence strategy replicates the behaviour of the original MetaTra
 - The strategy operates with net positions; hedging-style multiple tickets are not created. This differs from the original expert where several hedged positions could coexist.
 - Floating profit is approximated as `(current price - entry price) * volume` for long positions and the inverse for short positions.
 - The pip conversion relies on the instrument `PriceStep`. For symbols where the minimal step is not provided, a default 0.0001 pip is assumed.
-- No Python port is provided, as requested.
+- Implementations are available in both C# and Python.

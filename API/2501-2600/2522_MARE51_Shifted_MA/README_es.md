@@ -51,4 +51,4 @@ La estrategia replica las distancias fijas de toma de ganancias y stop-loss orig
 - El valor del paso de precio del instrumento activo se usa al comparar diferencias de SMA para asegurar que la distancia requerida sea al menos un tick.
 - Los niveles de stop-loss y toma de ganancias dependen del paso de precio del instrumento. Para instrumentos de tres y cinco decimales, el tamaño de pip se expande automáticamente diez veces, coincidiendo con el comportamiento de MetaTrader.
 - No se implementa ningún escalado automático de posiciones. La estrategia espera a que todas las posiciones abiertas se cierren antes de buscar la siguiente señal de entrada.
-- Este repositorio contiene solo la implementación en C#; no hay port en Python para esta estrategia.
+- Las implementaciones están disponibles en C# y Python.

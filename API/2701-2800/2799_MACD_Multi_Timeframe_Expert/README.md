@@ -51,4 +51,4 @@ This strategy replicates the original "MACD Expert" MetaTrader robot inside the 
 - A shared helper converts the MACD/signal relationship into `{-1, 0, 1}` flags to simplify confirmation checks.
 - Spread validation divides the best ask minus best bid by `Security.PriceStep` so the threshold matches MetaTrader "points" behavior.
 - Trade events are logged with `LogInfo` to aid debugging when testing in Designer or Runner.
-- No Python translation is provided, per the task requirements; only the C# version is included.
+- Implementations are available in both C# and Python.

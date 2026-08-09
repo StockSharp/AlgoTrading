@@ -32,4 +32,4 @@
 ## 转换说明
 - MetaTrader 中的止损与止盈是由经纪商托管的挂单；在 StockSharp 中通过监控蜡烛高低价并在突破时发送市价单来模拟。
 - 原策略在 `StopMult` 为真时会把距离乘以 10，以适应带小数点报价的经纪商。本实现通过 `UseStopMultiplier` 保留了该开关。
-- 代码完全使用高层 API（`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`），遵循项目要求。本任务不创建 Python 版本。
+- 代码完全使用高层 API（`SubscribeCandles`、`Bind`、`BuyMarket`、`SellMarket`），遵循项目要求。同时提供 C# 和 Python 实现。

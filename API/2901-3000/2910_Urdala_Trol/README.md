@@ -36,4 +36,4 @@ All distances expressed in pips are converted to absolute price offsets through 
 3. Adjust pip parameters to align with the instrument's volatility. Large `Grid Step` values reduce the frequency of additional orders, while larger `Min Lots Multiplier` accelerates martingale growth.
 4. Monitor the resulting exposure carefully; the martingale behaviour can escalate volume quickly when multiple stops are hit consecutively.
 
-Python implementation is intentionally not provided in this folder, matching the requirements for this conversion task.
+Implementations are available in both C# and Python.

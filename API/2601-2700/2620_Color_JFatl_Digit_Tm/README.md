@@ -39,7 +39,7 @@ The **Color JFATL Digit TM Strategy** is a port of the original MetaTrader 5 exp
 - The strategy uses `SubscribeCandles` and high-level order helpers (`BuyMarket`, `SellMarket`) as recommended by the StockSharp conversion guidelines.
 - Jurik phase is applied via reflection; if the runtime implementation does not expose a `Phase` property the default behaviour is used automatically.
 - Rounding requires a valid `Security.PriceStep`. When unavailable, indicator values remain unrounded.
-- No Python version is provided, as requested.
+- Implementations are available in both C# and Python.
 
 ## Usage
 1. Attach the strategy to a security and connection capable of providing the configured `SignalCandleType`.

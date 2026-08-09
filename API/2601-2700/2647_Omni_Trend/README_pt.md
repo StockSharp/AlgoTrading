@@ -55,4 +55,4 @@ Os sinais são agendados através de uma fila FIFO. Quando `SignalBar` é zero, 
 - `CS/OmniTrendStrategy.cs` — Implementação em C# da estratégia.
 - `README.md`, `README_ru.md`, `README_zh.md` — Documentação em inglês, russo e chinês.
 
-O suporte a Python foi intencionalmente omitido conforme solicitado.
+As implementações estão disponíveis em C# e Python.

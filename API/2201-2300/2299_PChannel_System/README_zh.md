@@ -16,4 +16,4 @@
 3. 在开新仓前平掉已有的反向仓位。
 4. 当价格达到 `StopLoss` 或 `TakeProfit` 时平仓。
 
-该策略目前尚无 Python 实现。
+同时提供 C# 和 Python 实现。

@@ -22,7 +22,7 @@ A estratégia Karacatica é uma abordagem de seguidor de tendência que combina 
 ## Notas de uso
 - Projetada para a API de alto nível do StockSharp; assina candles e vincula o indicador ADX.
 - A estratégia fecha automaticamente as posições opostas quando um novo sinal aparece.
-- Nenhuma implementação em Python é fornecida por enquanto.
+- As implementações estão disponíveis em C# e Python.
 
 ## Aviso legal
 Este exemplo é apenas para fins educacionais e não garante lucros. O trading envolve riscos significativos. Sempre teste as estratégias minuciosamente antes de implantá-las em mercados ao vivo.

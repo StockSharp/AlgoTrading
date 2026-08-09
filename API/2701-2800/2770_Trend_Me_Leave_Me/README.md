@@ -55,6 +55,6 @@ required.
   10 to convert the broker tick size into a standard pip.
 - Indicator bindings rely on the StockSharp high-level API, and all trading actions use `BuyMarket`/`SellMarket` to stay in line
   with the S# conventions.
-- No Python translation is included yet. The `PY/` directory is intentionally absent as requested.
+- Implementations are available in both C# and Python.
 - Attach the strategy to any symbol supported by StockSharp. Set the `Volume` before starting the strategy and adjust parameters
   to match the instrument's volatility.

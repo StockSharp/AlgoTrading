@@ -34,4 +34,4 @@ Diese Strategie reproduziert das Kernverhalten des ursprünglichen **NewsRelease
 - Die Strategie arbeitet ausschließlich mit Level1-Daten (`SubscribeLevel1`), damit sie auf die neuesten Bid/Ask-Preise reagieren kann, ohne auf Kerzen zu warten.
 - In Pips angegebene Preisdistanzen werden über `PriceStep` des Instruments in absolute Preise konvertiert. Ist `PriceStep` nicht verfügbar, wird 1 als sicherer Fallback verwendet.
 - Stop-Loss-, Take-Profit-, Break-even- und Trailing-Bedingungen schließen die Position zum Markt über `ClosePosition()`. Dies spiegelt die reaktive Verwaltung des ursprünglichen Experten wider und hält die Implementierung kompakt.
-- Wie gewünscht wird keine Python-Version bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.

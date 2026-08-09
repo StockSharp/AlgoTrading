@@ -34,4 +34,4 @@ This strategy reproduces the core behaviour of the original **NewsReleaseEA** ex
 - The strategy works exclusively with level1 data (`SubscribeLevel1`) so it can react to the latest bid/ask prices without waiting for candles.
 - Price distances expressed in pips are converted to absolute prices by using the instrument `PriceStep`. If `PriceStep` is unavailable, a value of 1 is used as a safe fallback.
 - Stop-loss, take-profit, break-even and trailing conditions close the position at market by calling `ClosePosition()`. This mirrors the reactive management in the original expert while keeping the implementation compact.
-- No Python version is provided, as requested.
+- Implementations are available in both C# and Python.

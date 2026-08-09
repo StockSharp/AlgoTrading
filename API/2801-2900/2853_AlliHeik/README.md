@@ -42,4 +42,4 @@ Trading decisions are made on the crossover of the oscillator and signal line ev
 - Manual stop/target checks and the step-based trailing stop are executed on every finished candle, closely mirroring the behavior of the MQL version.
 - Signals are processed only when all required values are available; partial indicator states are ignored until enough data has accumulated.
 
-No Python translation is provided in this directory.
+Implementations are available in both C# and Python.

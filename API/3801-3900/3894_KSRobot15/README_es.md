@@ -67,4 +67,4 @@ Todos los parámetros basados en pips se convierten en unidades de precio usando
 3. Esté atento a la salida del registro: las entradas, los movimientos de equilibrio, los ajustes finales y las salidas de emergencia se informan a través de llamadas `LogInfo`.
 4. Adjunte el área del gráfico generado (velas, Ichimoku, LWMA, operaciones propias) en el diseñador o backtester para visualizar el flujo comercial.
 
-Sólo se proporciona la versión C#. No se crea ninguna carpeta de Python según los requisitos.
+Las implementaciones están disponibles en C# y Python.

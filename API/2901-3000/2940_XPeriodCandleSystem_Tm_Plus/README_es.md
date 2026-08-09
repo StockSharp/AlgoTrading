@@ -48,4 +48,4 @@ Esta estrategia es un port de StockSharp del asesor experto de MetaTrader `Exp_X
 - `SignalBar` debe permanecer dentro del historial almacenado (hasta 14 posiciones después de la barra actual). Valores mayores al historial disponible omitirán automáticamente el trading.
 - El desplazamiento de ruptura se multiplica por `PriceStep` cuando el valor expone un tamaño de tick. Esto mantiene el comportamiento similar a la versión MetaTrader donde `Deviation` se define en puntos.
 - `StopLoss` y `TakeProfit` se especifican en unidades absolutas de precio. Establézcalos en cero para deshabilitar las órdenes de protección manteniendo activa la infraestructura de gestión.
-- Aún no se proporciona traducción en Python; esta carpeta contiene únicamente la implementación en C#.
+- Las implementaciones están disponibles en C# y Python.

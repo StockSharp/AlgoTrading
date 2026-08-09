@@ -51,4 +51,4 @@
 - 将 MACD 与信号线的相对位置映射为 `{-1, 0, 1}` 标记，便于统一判断多周期一致性。
 - 点差检测以 `Security.PriceStep` 为单位，将最优买卖价差转换为“点”以贴近 MetaTrader 行为。
 - 关键交易事件通过 `LogInfo` 输出，方便在 Designer 或 Runner 中调试。
-- 按需求仅提供 C# 版本，不包含 Python 实现。
+- 同时提供 C# 和 Python 实现。

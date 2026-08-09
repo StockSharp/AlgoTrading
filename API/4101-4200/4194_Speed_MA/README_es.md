@@ -37,7 +37,7 @@ La **Estrategia Speed MA** es una versión StockSharp directa del MetaTrader 4 a
 - `StartProtection` convierte los MetaTrader parámetros basados en puntos en StockSharp `Unit` instancias con compensaciones de precios absolutas. Esto mantiene las distancias de stop-loss y take-profit idénticas a las de la versión MQL4.
 - La estrategia utiliza el flujo de trabajo de alto nivel `SubscribeCandles().Bind(...)` para que las actualizaciones de indicadores y la evaluación de señales ocurran solo en velas terminadas. No se requiere ninguna llamada manual a `Indicator.GetValue()`.
 - Se proporcionan comentarios en línea en inglés en el código fuente para resaltar las decisiones de conversión críticas.
-- Solo se proporciona la implementación de C#. Se omite intencionalmente un puerto de Python que coincide con la solicitud.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Consejos de uso
 - Reducir `SlopeThresholdPoints` aumenta la cantidad de operaciones porque los movimientos más pequeños de promedio móvil califican como señales. Aumentar el valor filtra más operaciones y exige un impulso más fuerte.
@@ -53,5 +53,3 @@ La **Estrategia Speed MA** es una versión StockSharp directa del MetaTrader 4 a
 ## Archivos
 - `CS/SpeedMAStrategy.cs` – implementación de estrategia.
 - `README.md`, `README_zh.md`, `README_ru.md`: documentación detallada en inglés, chino y ruso respectivamente.
-
-No se incluye ningún directorio de Python, de acuerdo con las pautas de conversión.

@@ -33,4 +33,4 @@ Die Strategie arbeitet mit Level1-Daten und stützt sich auf keine Indikatoren.
 
 - Orders werden über die High-Level-API von StockSharp verwaltet.
 - Die Strategie storniert Schutzorders, wenn die Position geschlossen wird.
-- Nur die C#-Version wird bereitgestellt; keine Python-Implementierung enthalten.
+- Implementierungen sind in C# und Python verfügbar.

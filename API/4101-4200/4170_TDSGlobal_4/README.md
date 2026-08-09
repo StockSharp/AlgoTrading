@@ -67,4 +67,4 @@ profit checks. The actual signal evaluation only occurs once per trading day dur
 ng) so it can be reused inside the platform without manual order plumbing.
 * Level1 data is required for trailing stop operation because the algorithm uses the best bid/ask quotes to move and trigger the
 virtual stop.
-* The package does not include a Python translation; only the C# strategy and multilingual documentation are provided.
+* Implementations are available in both C# and Python.

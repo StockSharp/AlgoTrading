@@ -45,4 +45,4 @@ Die **Universal MA Cross V4-Strategie** ist eine High-Level-StockSharp-Portierun
 ## Konvertierungshinweise
 * Preisbasierte Entfernungen werden in MetaTrader Punkten ausgedrückt. Der Helfer `GetPriceOffset` wandelt diese Werte mithilfe der Sicherheitspreisschrittweite oder der Dezimalgenauigkeit in StockSharp-Preise um. Dadurch bleibt das Strategieverhalten unabhängig vom Instrument am ursprünglichen EA ausgerichtet.
 * Trailing Stops werden intern verwaltet, da StockSharp High-Level-Strategien auf fertige Kerzen angewendet werden. Dieser deterministische Ansatz stellt sicher, dass Backtests mit Kerzen die beabsichtigte MT4-Trailing-Logik reproduzieren.
-* Es ist kein Python-Port enthalten, der der Konvertierungsanforderung entspricht. In diesem Paket werden nur die C#-Implementierung und die mehrsprachige Dokumentation bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.

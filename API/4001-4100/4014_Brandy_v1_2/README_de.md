@@ -43,7 +43,7 @@ Beide Stoppparameter wirken in Instrumentenpunkten. Die Hilfsmethode wandelt sie
 - Der Status (Einstiegspreis, Stop-Level, SMA-Historien) wird am `OnReseted()` automatisch zurückgesetzt, um saubere Backtests und Neustarts zu gewährleisten.
 - Indikatorverläufe werden in kurzen Rollpuffern gespeichert, um die `iMA(..., shift)`-Offsets ohne Aufruf von `GetValue()` zu reproduzieren.
 - Alle Inline-Kommentare bleiben gemäß den Repository-Richtlinien auf Englisch.
-- Es wird kein Python-Gegenstück bereitgestellt. Nur die C#-High-Level-Implementierung wird wie angefordert in `CS/BrandyV12Strategy.cs` bereitgestellt.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Nutzung
 1. Platzieren Sie die Strategie in einer StockSharp-Lösung, wählen Sie das gewünschte Instrument aus und stellen Sie sicher, dass die Kerzendaten mit dem durch `CandleType` angegebenen Zeitrahmen übereinstimmen.

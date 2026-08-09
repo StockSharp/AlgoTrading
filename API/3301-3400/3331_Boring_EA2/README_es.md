@@ -31,4 +31,4 @@ Boring EA2 Alert recrea la lógica de notificaciones del asesor experto MetaTrad
 * La estrategia no envía, modifica ni cancela órdenes. Es puramente informativa.
 * Como `Bind` alimenta valores finalizados, cada cruce se evalúa sobre velas completadas. Esto evita los giros ruidosos intrabar que el EA original mitigaba contando ticks.
 * Las notificaciones basadas en logging pueden integrarse con handlers personalizados suscribiéndose a eventos de log de la estrategia dentro de una aplicación anfitriona.
-* No se proporciona traducción Python por ahora; solo la versión C# se incluye en el paquete API.
+* Las implementaciones están disponibles en C# y Python.

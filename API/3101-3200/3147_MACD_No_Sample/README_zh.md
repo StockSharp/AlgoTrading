@@ -31,7 +31,7 @@ MACD No Sample 是将 MetaTrader 5 专家顾问 `MACD No Sample` 迁移到 Stock
 * 指标输入严格遵循所选价格类型，并使用 StockSharp 内置的移动平均与 MACD 指标实现。
 * 点值检测与原 EA 保持一致：对于三位或五位报价的品种，将价格步长乘以 10。
 * 止损与移动止损通过市价平仓实现，不会额外注册止损挂单。
-* 仅提供 C# 版本，当前没有 Python 实现。
+* 同时提供 C# 和 Python 实现。
 
 ## 参数
 * **Volume** – 固定下单手数。

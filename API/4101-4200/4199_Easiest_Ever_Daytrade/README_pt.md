@@ -36,4 +36,4 @@ Todos os parâmetros são registrados por meio de `Param()` e podem ser otimizad
 - Execute a estratégia em instrumentos que fornecem históricos de velas intradiários e diários. A configuração padrão requer velas diárias e de minuto.
 - Alinhe `EntryHourLimit` e `MarketCloseHour` com a sessão de negociação do instrumento selecionado.
 - O algoritmo espera o horário local da troca nos carimbos de data e hora da vela; ajuste as fontes de dados adequadamente.
-- A lógica reflete o consultor especialista MQL original, permitindo que o comportamento seja replicado dentro do ambiente StockSharp sem componentes Python.
+- As implementações estão disponíveis em C# e Python.

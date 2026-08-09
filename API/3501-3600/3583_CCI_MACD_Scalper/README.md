@@ -51,4 +51,4 @@ The CCI MACD Scalper ports the MetaTrader 5 expert advisor "CCI + MACD Scalper" 
 ## Additional notes
 * The price-point conversion relies on the security's `PriceStep`. Symbols without a valid step fall back to a distance of one price unit.
 * Portfolio equity is obtained from `Portfolio.CurrentValue` and falls back to `BeginValue` when the current valuation is not available. If both are missing, the strategy reverts to the base `Volume` property.
-* There is no Python port for this strategy; only the C# version is included in the API package.
+* Implementations are available in both C# and Python.

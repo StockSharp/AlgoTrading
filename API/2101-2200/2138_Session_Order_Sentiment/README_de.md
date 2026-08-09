@@ -30,4 +30,4 @@ Nach dem Öffnen einer Position werden die Schwellenwerte reduziert, um die gege
 - `SlPips` – Stop-Loss in Preispunkten (Standard: 500)
 
 ## Hinweise
-Die Strategie enthält keine Python-Version.
+Implementierungen sind in C# und Python verfügbar.

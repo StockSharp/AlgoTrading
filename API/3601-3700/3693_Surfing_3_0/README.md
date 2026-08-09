@@ -51,4 +51,4 @@ The algorithm works exclusively with finished candles from a configurable aggreg
 
 - Signals are evaluated strictly on finished candles; intrabar fluctuations are ignored just like in MetaTrader.
 - The strategy resets its EMA history when the trading session ends to avoid mixing data from different days.
-- Python translation is intentionally omitted in accordance with the project guidelines.
+- Implementations are available in both C# and Python.

@@ -36,4 +36,4 @@ Todos os parâmetros podem ser otimizados diretamente dentro do StockSharp Desig
 ## Notas
 - A estratégia chama `StartProtection()` uma vez para ativar recursos integrados de proteção de posição.
 - Os comandos de negociação usam ajudantes `BuyMarket` e `SellMarket` para nivelar a posição atual antes de abrir uma nova, correspondendo ao comportamento do consultor especialista MetaTrader.
-- Nenhuma porta Python é fornecida de acordo com os requisitos do projeto.
+- As implementações estão disponíveis em C# e Python.

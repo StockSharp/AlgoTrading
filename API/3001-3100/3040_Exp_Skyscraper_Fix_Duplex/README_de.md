@@ -38,4 +38,4 @@ Signale können mit den `SignalBar`-Parametern verzögert werden, damit die Stra
 - Die Strategie setzt die globale `Volume`-Eigenschaft aus `TradeVolume`, sodass Standard-`BuyMarket()`- und `SellMarket()`-Aufrufe diese Größe automatisch verwenden.
 - Beide Indikatorinstanzen lesen den `PriceStep` des Instruments. Wenn dieser null ist, wartet der Indikator still, bis ein gültiger Preisschritt verfügbar ist.
 - `StartProtection()` wird beim Start aufgerufen, damit Schutzmaßnahmen auf Plattformebene aktiv sind, bevor die erste Order eingereicht wird.
-- Es gibt keine separate Python-Implementierung; das `PY`-Verzeichnis wird wie angefordert absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.

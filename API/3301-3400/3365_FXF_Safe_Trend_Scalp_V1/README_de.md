@@ -40,7 +40,7 @@ Die FXF Safe Trend Scalp V1-Strategie handelt Ausbrüche von ZigZag-basierten Tr
 
 - Es wird jeweils nur eine Position besetzt. Signale werden ignoriert, solange ein Trade offen ist.
 - Der Spread-Filter basiert auf den besten Geld-/Briefkursen, daher sollte die Strategie mit einer Datenquelle verbunden sein, die Informationen der Ebene 1 bereitstellt.
-- Die Python-Version der Strategie wird wie gewünscht absichtlich weggelassen.
+- Implementierungen sind in C# und Python verfügbar.
 
 ## Dateien
 

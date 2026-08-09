@@ -29,4 +29,4 @@ Esta estrategia es la conversión de StockSharp del MetaTrader 4 asesor experto 
 ## Notas
 - La estrategia espera hasta que ambos EMA estén completamente formados antes de reaccionar ante un cruce, eliminando la verificación `Bars < 100` del script MQL y logrando la misma estabilidad.
 - Debido a que solo se utilizan órdenes de mercado, no hay llamadas `OrderModify` individuales. El módulo de protección incorporado reposiciona automáticamente el trailing stop de la misma manera que el bucle MetaTrader actualizó `OrderStopLoss`.
-- No se proporciona ningún puerto Python (por solicitud); solo se incluye la implementación de C#.
+- Las implementaciones están disponibles en C# y Python.

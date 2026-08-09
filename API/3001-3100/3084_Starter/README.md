@@ -58,4 +58,4 @@ The **Starter Strategy** is a conversion of the MetaTrader 5 expert advisor "Sta
 - Indicator buffers are cached internally so the strategy can access historical values for arbitrary shifts, replicating the MQL approach of indexing indicator arrays.
 - The pip size is derived from `Security.PriceStep`. If the instrument does not report a valid price step the stop and trailing distances are treated as zero.
 - All comments inside the code are written in English per repository guidelines.
-- The Python version is intentionally omitted as requested.
+- Implementations are available in both C# and Python.

@@ -67,4 +67,4 @@ Burg Extrapolator 策略在 StockSharp 高级 API 上重建了 MetaTrader 专家
 - `README_ru.md`：俄文说明。
 - `README_zh.md`：本中文说明。
 
-按照任务要求，本策略暂不提供 Python 版本。
+同时提供 C# 和 Python 实现。

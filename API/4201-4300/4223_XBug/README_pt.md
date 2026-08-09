@@ -36,5 +36,5 @@ A **Estratégia X Bug** é um sistema cruzado de média móvel convertido do con
 
 ## Notas
 - A conversão do pip multiplica o passo do preço por 10 para símbolos cotados com 5 ou 3 casas decimais, correspondendo ao comportamento original do Expert Advisor.
-- Nenhuma porta Python é fornecida; apenas a estratégia C# está incluída neste diretório.
+- As implementações estão disponíveis em C# e Python.
 - Paradas finais, paradas e alvos são opcionais. Defina os valores pip correspondentes como zero para desativá-los.

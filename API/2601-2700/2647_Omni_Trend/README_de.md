@@ -55,4 +55,4 @@ Signale werden über eine FIFO-Warteschlange geplant. Wenn `SignalBar` null ist,
 - `CS/OmniTrendStrategy.cs` — C#-Implementierung der Strategie.
 - `README.md`, `README_ru.md`, `README_zh.md` — Dokumentation in Englisch, Russisch und Chinesisch.
 
-Python-Unterstützung wurde auf Anfrage bewusst weggelassen.
+Implementierungen sind in C# und Python verfügbar.

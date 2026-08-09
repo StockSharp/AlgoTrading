@@ -27,4 +27,4 @@ A Estratégia de Reequilíbrio de Grade é uma versão StockSharp de alto nível
 ## Notas
 - Todas as configurações baseadas em pontos são convertidas em preços com `Security.PriceStep`. Se o passo for zero, a estratégia espera até que o instrumento o forneça.
 - A implementação depende puramente do API de alto nível (`SubscribeCandles`, `Bind`, `BuyMarket`, `SellMarket`, `BuyLimit`, `SellLimit`) conforme necessário.
-- Uma versão Python não foi incluída intencionalmente nesta tarefa.
+- As implementações estão disponíveis em C# e Python.

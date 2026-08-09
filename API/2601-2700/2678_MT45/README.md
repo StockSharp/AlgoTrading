@@ -32,4 +32,4 @@ The MT45 strategy is a direct conversion of the original MetaTrader expert advis
 ## Usage Notes
 * Choose the candle timeframe that matches the chart timeframe of the original expert. The logic operates strictly on completed candles.
 * The strategy does not queue another entry while an order is pending or a position is active; it always waits for the existing trade to close through stop-loss or take-profit.
-* There is no separate Python version for this strategy at the moment, matching the project guidelines.
+* Implementations are available in both C# and Python.

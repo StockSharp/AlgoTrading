@@ -58,4 +58,4 @@ SilverTrend V3 策略源自 MetaTrader 5 的 "SilverTrend v3" 专家顾问，本
 
 - 完整复刻 `SilverTrend v3.mq5` 中的数学算法，包括多维数组实现的 J_TPO 计算。
 - 遵循仓库规范：所有参数通过 `StrategyParam<T>` 暴露、注释为英文、并使用制表符缩进。
-- 根据任务要求，本次仅提供 C# 版本，未创建 Python 版本或对应目录。
+- 同时提供 C# 和 Python 实现。

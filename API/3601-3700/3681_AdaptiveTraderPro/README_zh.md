@@ -36,4 +36,4 @@ AdaptiveTrader Pro 是由 MetaTrader 5 智能交易系统 *AdaptiveTrader_Pro_Fi
 ## 说明
 - 策略使用 StockSharp 高级 API，通过蜡烛订阅与指标绑定执行逻辑。
 - 通过最佳买卖报价监控点差；若点差超过阈值则暂停开仓。
-- 根据要求暂不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。

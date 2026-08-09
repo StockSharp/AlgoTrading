@@ -62,4 +62,4 @@ Port des MetaTrader-Experten **20pipsOnceADayOppositeLastNHourTrend**, implement
 - `README_zh.md` – Chinesische Dokumentation.
 - `README_ru.md` – Russische Dokumentation.
 
-Auf Python-Ports wird bei dieser Konvertierung bewusst verzichtet.
+Implementierungen sind in C# und Python verfügbar.

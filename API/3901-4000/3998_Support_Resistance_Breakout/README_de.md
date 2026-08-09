@@ -41,4 +41,4 @@ Die Logik lockert niemals den Stopp: Bei Long-Positionen kann sich der Stop nur 
 
 ## Notizen
 - Der Code wird für die übergeordnete Ebene StockSharp API nur mit Indikatorbindung und Kerzenabonnements geschrieben.
-- Es wird kein Python-Port bereitgestellt. Der Ordner `CS` enthält die einzige Implementierung.
+- Implementierungen sind in C# und Python verfügbar.

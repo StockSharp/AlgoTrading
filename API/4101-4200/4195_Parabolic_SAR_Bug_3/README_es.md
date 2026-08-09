@@ -31,4 +31,4 @@ La **Parabolic SAR estrategia de error 3** es una StockSharp adaptación de alto
 - MetaTrader cerró posiciones antes de abrir la operación opuesta utilizando órdenes separadas. La versión StockSharp logra el mismo resultado enviando una única orden de mercado con el tamaño necesario para compensar cualquier exposición opuesta y establecer el nuevo volumen de posición.
 - Las órdenes de stop-loss y take-profit del lado del corredor se emulan monitoreando los extremos de las velas y enviando salidas del mercado una vez que se violan los umbrales.
 - El parámetro adicional `StopMultiplier` acepta cualquier valor positivo pero el valor predeterminado es `10`, el único multiplicador documentado en los comentarios del código original.
-- No se proporciona ninguna versión de Python para esta conversión, exactamente como se solicita en la descripción de la tarea.
+- Las implementaciones están disponibles en C# y Python.

@@ -5,7 +5,7 @@
 - 由 MetaTrader 5 专家顾问 **“Crossing Moving Average (barabashkakvn's edition)”**（文件 `MQL/21515`）转换而来。
 - 采用 StockSharp 高级 API，通过蜡烛订阅和指标绑定实现原始逻辑。
 - 适用于依靠均线交叉与动量变化捕捉趋势反转的品种。
-- 按照要求，仅提供 C# 版本，暂不包含 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 核心思路
 策略跟踪两条可配置的移动平均线（快线与慢线），可选向前平移，并结合 Momentum 指标进行信号确认。只有在以下条件同时满足时才会开仓：

@@ -41,4 +41,4 @@ A lógica nunca afrouxa o stop: para posições compradas, o stop só pode se mo
 
 ## Notas
 - O código é escrito no StockSharp API de alto nível apenas com vinculação de indicadores e assinaturas de velas.
-- Nenhuma porta Python é fornecida. A pasta `CS` contém a única implementação.
+- As implementações estão disponíveis em C# e Python.

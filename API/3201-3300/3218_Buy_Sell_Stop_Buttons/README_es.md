@@ -41,7 +41,7 @@
 - Mantener `BuyRequest`, `SellRequest` y `CloseRequest` bajo el grupo "Controles manuales" deshabilitados al ejecutar optimizaciones.
 - La lógica de trailing de capital y take-profit monetario requieren `Security.StepPrice` para traducir el beneficio en moneda. Cuando no está disponible, el respaldo usa diferencias de precio puras.
 - Break-even y trailing stops usan el tamaño de pip del instrumento inferido de `MinPriceStep`/`PriceStep` y dígitos decimales.
-- No hay traducción a Python, como se solicitó.
+- Las implementaciones están disponibles en C# y Python.
 
 ## Pruebas
 - No se modificaron pruebas automatizadas; la estrategia se integra con la estructura de solución existente y se basa en alternancia manual de parámetros para verificación.

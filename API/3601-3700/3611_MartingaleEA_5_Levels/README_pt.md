@@ -34,4 +34,4 @@ A **Estratégia de níveis MartingaleEA-5** é uma porta direta do MetaTrader co
 - A implementação reflete o EA original, incluindo sua suposição de que apenas uma cesta direcional está ativa por vez. A abertura de posições simultaneamente em ambas as direções fará com que cada lado seja gerenciado de forma independente.
 - Como a estratégia reage apenas no fechamento da vela, escolha um período de tempo que corresponda à capacidade de resposta desejada. Prazos mais baixos emulam mais de perto o comportamento do nível de tick.
 - As técnicas Martingale amplificam o risco. Sempre faça backtest com modelos realistas de slippage e comissão e defina níveis de stop conservadores antes de ativar a estratégia em mercados reais.
-- A estratégia ainda não cria uma porta Python. Somente a implementação de alto nível do C# é incluída conforme solicitado.
+- As implementações estão disponíveis em C# e Python.

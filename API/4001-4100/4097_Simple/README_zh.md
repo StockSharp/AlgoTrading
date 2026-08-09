@@ -37,7 +37,7 @@
 - 金额型止损/止盈需要正确配置的 `PriceStep` 与 `StepPrice`。以常见外汇为例，分别可以是 `0.0001` 与每手的点值；若缺失这些信息，策略会输出警告并忽略该保护。
 - 每根完成 K 线输出的日志信息与 EA 在终端注释中的文本一致，包括信号方向、两条均线数值、价格差（单位为价格步长）以及趋势窗口的判断。
 - `NumOrders` 通过调整目标仓位实现叠加下单，与原 EA 多次 `OrderSend` 的累计仓位完全一致，同时利用 StockSharp 的高阶 `BuyMarket`/`SellMarket` 方法完成指令。
-- 按任务要求暂不提供 Python 版本。
+- 同时提供 C# 和 Python 实现。
 
 ## 使用建议
 - 指定带有正确 `PriceStep`、`StepPrice` 与 `VolumeStep` 的外汇品种，调整 `TradeVolume` 以匹配所需手数；在确认日志输出与预期一致后再开启 `EnableTrading` 进行实盘或回测。

@@ -40,4 +40,4 @@ Die **JS MA Day-Strategie** handelt auf Basis eines einfachen gleitenden Durchsc
 
 - Die Strategie verarbeitet nur abgeschlossene Kerzen.
 - Das Ordervolumen wird durch die `Volume`-Eigenschaft der Basisklasse definiert.
-- Es gibt noch keine Python-Version dieser Strategie.
+- Implementierungen sind in C# und Python verfügbar.

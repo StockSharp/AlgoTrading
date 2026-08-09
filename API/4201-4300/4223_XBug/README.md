@@ -36,5 +36,5 @@ The **X Bug Strategy** is a moving average crossover system converted from the M
 
 ## Notes
 - The pip conversion multiplies the price step by 10 for symbols quoted with 5 or 3 decimal places, matching the original Expert Advisor behaviour.
-- No Python port is provided; only the C# strategy is included in this directory.
+- Implementations are available in both C# and Python.
 - Trailing stops, stops, and targets are optional. Set the corresponding pip values to zero to disable them.

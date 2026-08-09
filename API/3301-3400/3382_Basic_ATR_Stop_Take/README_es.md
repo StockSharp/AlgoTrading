@@ -35,4 +35,4 @@ Básico ATR Stop Tome los puertos del MetaTrader 4 asesor experto **“Básico A
 * Los parámetros predeterminados replican el comportamiento del EA (modo solo largo, volumen de lote 0,01, período ATR 14, factor de parada 1,5, factor de toma 2,0).
 * Las comparaciones de precios utilizan máximos y mínimos de velas, lo que significa que los activadores de stop-loss y take-profit se producen tan pronto como se traspasa el nivel dentro del rango de la vela.
 * La estrategia no acumula ni invierte posiciones; en cambio, siempre se aplana y espera a que se cierre la siguiente barra antes de realizar un nuevo pedido.
-* En este paquete sólo se proporciona la implementación de C#; No existe una versión de Python para esta estrategia.
+* Las implementaciones están disponibles en C# y Python.

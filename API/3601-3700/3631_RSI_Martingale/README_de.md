@@ -48,4 +48,4 @@ RSI Martingale ist eine Portierung des MetaTrader 5 Expertenberaters `RSI&Martin
 ## Zusätzliche Hinweise
 * Die Strategie gilt nur für fertige Kerzen und wertet keine Intrabar-Ticks aus.
 * Tägliche Gewinnberechnungen kombinieren realisierte Strategie-PnL mit variablem PnL basierend auf dem letzten Schlusskurs.
-* Das Paket enthält keine Python-Implementierung für diese Strategie. Es wird nur die C#-Version bereitgestellt.
+* Implementierungen sind in C# und Python verfügbar.
