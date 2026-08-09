@@ -324,9 +324,9 @@ public class FrankUdMinimalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
+	protected override void OnOrderRegisterFailed(OrderFail fail)
 	{
-		base.OnOrderRegisterFailed(fail, calcRisk);
+		base.OnOrderRegisterFailed(fail);
 
 		if (fail.Order.Id is long foid)
 			_orderActions.Remove(foid);

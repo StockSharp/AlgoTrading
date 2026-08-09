@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -157,7 +158,7 @@ public class FractalWprStrategy : Strategy
 			.BindEx(_wpr, ProcessCandle)
 			.Start();
 
-		var step = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
+		var step = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 1m;
 		StartProtection(
 			stopLoss: new Unit(step * StopLossTicks, UnitTypes.Absolute),
 			takeProfit: new Unit(step * TakeProfitTicks, UnitTypes.Absolute));

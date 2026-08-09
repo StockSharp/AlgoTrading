@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -608,7 +609,7 @@ public class SvDailyBreakoutStrategy : Strategy
 		if (step <= 0m)
 			step = _pipSize > 0m ? _pipSize : 1m;
 
-		var stepValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? step;
+		var stepValue = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? step;
 		if (stepValue <= 0m)
 			stepValue = step;
 

@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -462,7 +463,7 @@ public class GridEaProStrategy : Strategy
 
 		_tickSize = Security?.PriceStep ?? 0.0001m;
 		_stepValue = _tickSize;
-		_tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
+		_tickValue = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 1m;
 		Volume = InitialVolume;
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };

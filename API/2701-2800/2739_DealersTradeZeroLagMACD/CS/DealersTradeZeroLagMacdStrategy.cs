@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -761,7 +762,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 	private decimal GetEntryProfit(PositionEntry entry, decimal price)
 	{
 		var priceStep = Security?.PriceStep ?? 1m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
+		var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? priceStep;
 		if (priceStep == 0m)
 			priceStep = 1m;
 
@@ -806,7 +807,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security?.PriceStep ?? 1m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
+		var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? priceStep;
 		if (priceStep == 0m || stepPrice == 0m)
 			return 0m;
 

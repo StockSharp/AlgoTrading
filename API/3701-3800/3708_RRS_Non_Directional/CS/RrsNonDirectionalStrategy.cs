@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -309,7 +310,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (_pointSize <= 0m)
 		_pointSize = 0.0001m;
 
-		_tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
+		_tickValue = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 0m;
 		if (_tickValue <= 0m)
 		_tickValue = 1m;
 

@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -164,7 +165,7 @@ public class AutotradePendingStopsStrategy : Strategy
 
 		// Cache price step and tick value for fast profit calculations.
 		_tickSize = Security.PriceStep ?? 1m;
-		_tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? _tickSize;
+		_tickValue = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? _tickSize;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

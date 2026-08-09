@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -382,7 +383,7 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 
 		var priceMove = price - entryPrice;
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
+		var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 0m;
 
 		if (priceStep > 0m && stepPrice > 0m)
 		{

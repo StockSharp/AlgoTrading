@@ -8,6 +8,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -282,7 +283,7 @@ public class MpCandlestickStrategy : Strategy
 		if (priceStep <= 0m)
 			priceStep = 1m;
 
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
+		var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? priceStep;
 		if (stepPrice <= 0m)
 			stepPrice = priceStep;
 
@@ -353,7 +354,7 @@ public class MpCandlestickStrategy : Strategy
 		if (volumeStep <= 0m)
 			volumeStep = 1m;
 
-		var marginPerVolume = isLong ? GetSecurityValue<decimal?>(Level1Fields.MarginBuy) : GetSecurityValue<decimal?>(Level1Fields.MarginSell);
+		var marginPerVolume = isLong ? this.GetSecurityValue<decimal?>(Security, Level1Fields.MarginBuy) : this.GetSecurityValue<decimal?>(Security, Level1Fields.MarginSell);
 
 		decimal margin;
 		if (marginPerVolume is decimal direct && direct > 0m)

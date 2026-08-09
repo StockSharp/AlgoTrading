@@ -198,7 +198,7 @@ public class DispersionTradingStrategy : Strategy
 
 	private void CloseAll()
 	{
-		foreach (var position in Positions)
+		foreach (var position in ((IPositionProvider)this).Positions)
 			TradeToTarget(position.Security, 0m);
 
 		_open = false;

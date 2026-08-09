@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -458,7 +459,7 @@ private decimal CalculateFloatingProfit(decimal price)
 	return 0m;
 
 	var priceStep = Security.PriceStep ?? 0m;
-	var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
+	var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? priceStep;
 
 	if (priceStep <= 0m || stepPrice <= 0m)
 	return 0m;

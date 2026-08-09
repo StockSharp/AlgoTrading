@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -312,7 +313,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 		var riskCapital = portfolioValue.Value * RiskPercent;
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
+		var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 0m;
 
 		decimal riskPerContract;
 

@@ -618,8 +618,8 @@ private bool IsSpreadWithinLimit()
 	if (security == null)
 	return true;
 
-	var bestBid = GetSecurityValue<decimal?>(Level1Fields.BestBidPrice);
-	var bestAsk = GetSecurityValue<decimal?>(Level1Fields.BestAskPrice);
+	var bestBid = this.GetSecurityValue<decimal?>(Security, Level1Fields.BestBidPrice);
+	var bestAsk = this.GetSecurityValue<decimal?>(Security, Level1Fields.BestAskPrice);
 	if (!bestBid.HasValue || !bestAsk.HasValue || !_pipSizeInitialized || _pipSize <= 0m)
 	return true;
 

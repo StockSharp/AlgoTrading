@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -398,7 +399,7 @@ public class TrendRdsStrategy : Strategy
 			return baseVolume;
 
 		var step = Security?.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
+		var stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 1m;
 
 		if (step <= 0m)
 			return baseVolume;

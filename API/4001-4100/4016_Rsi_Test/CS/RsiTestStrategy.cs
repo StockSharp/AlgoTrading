@@ -8,6 +8,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -321,7 +322,7 @@ public class RsiTestStrategy : Strategy
 
 			if (riskCapital > 0m)
 			{
-				var margin = GetSecurityValue<decimal?>(Level1Fields.MarginBuy) ?? GetSecurityValue<decimal?>(Level1Fields.MarginSell) ?? 0m;
+				var margin = this.GetSecurityValue<decimal?>(Security, Level1Fields.MarginBuy) ?? this.GetSecurityValue<decimal?>(Security, Level1Fields.MarginSell) ?? 0m;
 
 				if (margin > 0m)
 				{

@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -420,7 +421,7 @@ public class BuildYourGridStrategy : Strategy
 
 		_pointSize = CalculatePointSize();
 		_priceStep = Security?.PriceStep ?? 0m;
-		_stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
+		_stepPrice = this.GetSecurityValue<decimal?>(Security, Level1Fields.StepPrice) ?? 0m;
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)

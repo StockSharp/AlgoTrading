@@ -131,7 +131,7 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 		// Cancel any pending orders to avoid unexpected executions during liquidation.
 		CancelActiveOrders();
 
-		foreach (var position in Positions.ToArray())
+		foreach (var position in ((IPositionProvider)this).Positions.ToArray())
 		{
 			var value = GetPositionValue(position.Security, Portfolio) ?? 0m;
 
