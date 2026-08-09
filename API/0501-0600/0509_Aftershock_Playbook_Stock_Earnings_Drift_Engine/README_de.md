@@ -1,11 +1,9 @@
 # Aftershock Playbook-Strategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Die **Aftershock Playbook**-Strategie handelt Post-Earnings-Drift basierend auf EPS-Überraschungen.
+Die **Aftershock Playbook**-Strategie wertet eine ungewöhnlich große Preisbewegung innerhalb einer einzelnen Kerze als Näherung für eine Gewinnüberraschung und folgt dem anschließenden Drift. Sie verwendet nur Marktkerzen und benötigt keinen externen Ergebnisdaten-Feed.
 
-- **Einstieg**: Bei einer Gewinnveröffentlichung Long gehen, wenn die Überraschung ≥ `PositiveSurprise`, oder Short, wenn die Überraschung ≤ `NegativeSurprise`. Signale können mit `ReverseSignals` umgekehrt werden.
-- **Stop**: Optionaler ATR-Stop (`AtrLength`, `AtrMultiplier`) für Short-Positionen.
-- **Ausstieg**: Optional Positionen nach `HoldDays` Kalendertagen schließen (`UseTimeExit`).
-- **Wiedereinstieg**: Nach einem profitablen Ausstieg steigt die Strategie einmal in dieselbe Richtung wieder ein. Verlusttrades blockieren neue Einstiege bis zur nächsten Gewinnveröffentlichung.
-
-*Eine externe Gewinndate-Datenquelle ist erforderlich.*
+- **Signal**: Bei jeder abgeschlossenen `CandleType`-Kerze wird die Veränderung zwischen zwei Schlusskursen mit dem über `AtrLength` berechneten ATR verglichen.
+- **Einstieg oder Umkehr**: Ein Anstieg über `ATR × SurpriseThreshold` eröffnet eine Long-Position oder dreht auf Long; ein entsprechender Rückgang eröffnet eine Short-Position oder dreht auf Short.
+- **Ausstieg**: Eine ungünstige Bewegung über `ATR × AtrMultiplier` schließt die aktuelle Position. Erreicht die Bewegung zugleich die Einstiegsschwelle, hat die Positionsumkehr Vorrang.
+- **Abkühlphase**: Nach Einstieg, Umkehr oder Ausstieg werden für `CooldownBars` abgeschlossene Kerzen alle Signale übersprungen.

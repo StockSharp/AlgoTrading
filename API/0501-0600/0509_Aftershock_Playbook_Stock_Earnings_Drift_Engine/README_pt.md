@@ -1,11 +1,9 @@
 # Estratégia Aftershock Playbook
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A estratégia **Aftershock Playbook** opera a deriva pós-resultados com base em surpresas de LPA.
+A estratégia **Aftershock Playbook** interpreta um movimento de preço excepcionalmente grande em uma única vela como aproximação de uma surpresa de resultados e acompanha a deriva subsequente. Ela usa apenas velas de mercado e não requer uma fonte externa de resultados.
 
-- **Entrada**: Em uma divulgação de resultados, entrar comprado quando a surpresa ≥ `PositiveSurprise` ou vendido quando a surpresa ≤ `NegativeSurprise`. Os sinais podem ser invertidos com `ReverseSignals`.
-- **Stop**: Stop ATR opcional (`AtrLength`, `AtrMultiplier`) aplicado a posições vendidas.
-- **Saída**: Opcionalmente fechar posições após `HoldDays` dias corridos (`UseTimeExit`).
-- **Reentrada**: Após uma saída lucrativa, a estratégia reentra uma vez na mesma direção. Operações com perda bloqueiam novas entradas até a próxima divulgação de resultados.
-
-*É necessária uma fonte de dados de resultados externos.*
+- **Sinal**: Em cada vela `CandleType` concluída, a variação entre fechamentos é comparada ao ATR calculado durante `AtrLength` períodos.
+- **Entrada ou reversão**: Uma alta superior a `ATR × SurpriseThreshold` abre ou reverte para uma posição comprada; uma queda equivalente abre ou reverte para uma posição vendida.
+- **Saída**: Um movimento adverso superior a `ATR × AtrMultiplier` fecha a posição atual. Se o movimento também atingir o limiar de entrada, a reversão tem prioridade.
+- **Intervalo**: Após uma entrada, reversão ou saída, todos os sinais são ignorados durante `CooldownBars` velas concluídas.

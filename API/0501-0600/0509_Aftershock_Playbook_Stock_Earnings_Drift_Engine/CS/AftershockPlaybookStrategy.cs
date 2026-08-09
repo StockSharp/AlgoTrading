@@ -34,7 +34,7 @@ public class AftershockPlaybookStrategy : Strategy
 	public AftershockPlaybookStrategy()
 	{
 		_atrMult = Param(nameof(AtrMultiplier), 1.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for surprise threshold", "Strategy");
+			.SetDisplay("ATR Multiplier", "ATR multiplier for the adverse-move exit threshold", "Strategy");
 
 		_atrLen = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()

@@ -16,7 +16,7 @@ class aftershock_playbook_stock_earnings_drift_engine_strategy(Strategy):
         super(aftershock_playbook_stock_earnings_drift_engine_strategy, self).__init__()
 
         self._atr_mult = self.Param("AtrMultiplier", 1.0) \
-            .SetDisplay("ATR Multiplier", "ATR multiplier for surprise threshold", "Strategy")
+            .SetDisplay("ATR Multiplier", "ATR multiplier for the adverse-move exit threshold", "Strategy")
 
         self._atr_len = self.Param("AtrLength", 14) \
             .SetGreaterThanZero() \

@@ -1,11 +1,9 @@
 # Estrategia Aftershock Playbook
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia **Aftershock Playbook** opera la deriva post-ganancias basada en sorpresas de BPA.
+La estrategia **Aftershock Playbook** interpreta un movimiento de precio inusualmente grande en una sola vela como aproximación de una sorpresa de resultados y sigue la deriva posterior. Solo utiliza velas de mercado y no requiere una fuente externa de resultados.
 
-- **Entrada**: En una publicación de ganancias, entrar largo cuando la sorpresa ≥ `PositiveSurprise` o corto cuando la sorpresa ≤ `NegativeSurprise`. Las señales se pueden invertir con `ReverseSignals`.
-- **Stop**: Stop ATR opcional (`AtrLength`, `AtrMultiplier`) aplicado a posiciones cortas.
-- **Salida**: Opcionalmente cerrar posiciones después de `HoldDays` días calendario (`UseTimeExit`).
-- **Reentrada**: Después de una salida rentable, la estrategia vuelve a entrar una vez en la misma dirección. Las operaciones con pérdidas bloquean nuevas entradas hasta la próxima publicación de ganancias.
-
-*Se requiere una fuente de datos de ganancias externa.*
+- **Señal**: En cada vela `CandleType` finalizada, el cambio entre cierres se compara con el ATR calculado durante `AtrLength` períodos.
+- **Entrada o inversión**: Una subida superior a `ATR × SurpriseThreshold` abre o invierte a una posición larga; una caída equivalente abre o invierte a una posición corta.
+- **Salida**: Un movimiento adverso superior a `ATR × AtrMultiplier` cierra la posición actual. Si el movimiento también alcanza el umbral de entrada, la inversión tiene prioridad.
+- **Pausa**: Después de una entrada, inversión o salida, se omiten todas las señales durante `CooldownBars` velas finalizadas.
