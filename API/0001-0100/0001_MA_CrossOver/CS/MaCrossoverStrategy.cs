@@ -188,6 +188,8 @@ public class MaCrossoverStrategy : Strategy
 				// Update previous values
 				previousFastValue = fastValue;
 				previousSlowValue = slowValue;
+
+				CheckStopLoss(candle.ClosePrice);
 			})
 			.Start();
 

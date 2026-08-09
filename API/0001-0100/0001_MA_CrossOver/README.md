@@ -1,37 +1,16 @@
-# HMA Seasonal Divergence Strategy
+# Moving Average Crossover Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-This strategy combines the Hull Moving Average (HMA) with seasonal open interest clustering to find divergences between price and market positioning. It assumes that when price temporarily moves against the direction of rising open interest, a trend continuation is likely. The system is designed to trade both long and short, using the HMA slope to gauge momentum and the seasonal open interest data to measure participation levels.
 
-Testing indicates an average annual return of about 40%. It performs best in the crypto market.
-
-A trade setup occurs when the HMA changes relative to the previous bar while seasonal open interest confirms the move, but price prints in the opposite direction. This bullish or bearish divergence between price and positioning often signals the end of a short-term pullback within a larger trend. The strategy waits for these conditions before entering and places a volatility-based stop to manage risk.
-
-Positions are closed when the HMA slope reverses, signifying that momentum has shifted. Because the stop level uses a multiple of the Average True Range (ATR), the risk adapts to market volatility. This helps prevent premature exits during periods of expansion and keeps losses contained when volatility contracts.
+The strategy follows the relationship between a fast and a slow exponential moving average. A bullish crossover opens or reverses into a long position, while a bearish crossover opens or reverses into a short position. Signals are evaluated on finished candles.
 
 ## Details
 
-- **Entry Criteria**:
-  - **Long**: `HMA(t) > HMA(t-1)` && `OI_Cluster_Seasonal(t) > OI_Cluster_Seasonal(t-1)` && `Price(t) < Price(t-1)` (bullish divergence).
-  - **Short**: `HMA(t) < HMA(t-1)` && `OI_Cluster_Seasonal(t) < OI_Cluster_Seasonal(t-1)` && `Price(t) > Price(t-1)` (bearish divergence).
-- **Long/Short**: Both sides.
-- **Exit Criteria**:
-  - **Long**: `HMA(t) < HMA(t-1)` (HMA begins falling).
-  - **Short**: `HMA(t) > HMA(t-1)` (HMA begins rising).
-- **Stops**: Yes, stop-loss placed at `N * ATR` from entry.
-- **Default Values**:
-  - `HMA period` = 9.
-  - `OI_Cluster_Seasonal` = seasonal OI at cluster levels over five years.
-  - `N` = 2 (stop-loss = `2 * ATR`).
-- **Filters**:
-  - Category: Trend following
-  - Direction: Both
-  - Indicators: Multiple
-  - Stops: Yes
-  - Complexity: Complex
-  - Timeframe: Medium-term
-  - Seasonality: Yes
-  - Neural networks: Yes
-  - Divergence: Yes
-  - Risk level: High
-
+- **Long entry**: the fast EMA crosses above the slow EMA.
+- **Short entry**: the fast EMA crosses below the slow EMA.
+- **Exit**: an opposite crossover reverses the position; a percentage stop-loss can close it earlier.
+- **Default values**:
+  - `FastLength` = 100
+  - `SlowLength` = 400
+  - `StopLossPercent` = 2
+  - `CandleType` = 1 minute
+- **Implementations**: C# and Python.

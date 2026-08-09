@@ -84,5 +84,22 @@ class ma_crossover_strategy(Strategy):
                     self.SellMarket()
             self._was_fast_less = is_fast_less
 
+        self._check_stop_loss(float(candle.ClosePrice))
+
+    def _check_stop_loss(self, current_price):
+        if self._entry_price == 0.0:
+            return
+
+        threshold = float(self._stop_loss_percent.Value) / 100.0
+
+        if self._is_long_position and self.Position > 0:
+            stop_price = self._entry_price * (1.0 - threshold)
+            if current_price <= stop_price:
+                self.SellMarket(abs(self.Position))
+        elif not self._is_long_position and self.Position < 0:
+            stop_price = self._entry_price * (1.0 + threshold)
+            if current_price >= stop_price:
+                self.BuyMarket(abs(self.Position))
+
     def CreateClone(self):
         return ma_crossover_strategy()
