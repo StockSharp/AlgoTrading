@@ -1,52 +1,142 @@
-![StockSharp Logo](logo.png)
-# StockSharp Algorithmic Trading and Strategy Designer Repository
+![StockSharp logo](logo.png)
 
-Welcome to the official repository for algorithmic trading strategies and the [Strategy Designer](https://doc.stocksharp.com/en/topics/designer.html) designed for the StockSharp platform. This repository aims to serve as a comprehensive resource for both new and experienced traders and developers using StockSharp for automated trading and strategy design.
+# StockSharp algorithmic trading examples
 
-## Repository Purpose
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-This repository provides detailed examples and source code for various algorithmic trading strategies and features from the Strategy Designer that can be implemented on the StockSharp platform. The primary goals are:
+This is the official StockSharp repository of algorithmic trading examples. It combines a large, organized catalog of API strategies with visual Strategy Designer samples, educational material, and automated checks that keep the examples buildable.
 
-- **Educational Resource**: Enhance learning and understanding of algorithmic trading and the StockSharp Strategy Designer through practical examples.
-- **Community Collaboration**: Encourage the community to contribute their own strategies, enhancements, and insights, sharing knowledge and best practices for trading automation.
-- **Showcase Capabilities**: Demonstrate the versatility and power of the StockSharp platform in developing, testing, and optimizing trading strategies and algorithmic solutions.
+The repository is intended for learning, research, prototyping, and regression testing. The strategies illustrate trading ideas and StockSharp APIs; they are not ready-made investment recommendations.
 
-## Strategy Source Code
+## Start here
 
-All strategy implementations in source code form are located in the `API` directory. These files can be loaded as standalone programs through the StockSharp API or opened directly in Designer.
+| Goal | Location |
+|---|---|
+| Browse strategies by trading idea | [API strategy catalog](API/README.md) |
+| Study C# and Python implementations | [`API`](API/) |
+| Explore visual schemas and Designer examples | [`Designer`](Designer/) |
+| Compile and backtest one C# strategy | [`Backtester`](Backtester/) |
+| Review the automated strategy test harness | [`Tests`](Tests/) |
+
+## What the repository contains
+
+### API strategy catalog
+
+The [`API`](API/) directory contains strategy examples ranging from familiar building blocks—moving-average crosses, breakouts, momentum, volatility, and mean reversion—to pairs trading, arbitrage, market making, portfolio methods, order-flow models, machine-learning experiments, and many specialized variations.
+
+The catalog groups strategies by their primary trading idea, while the filesystem uses numbered range directories so GitHub can display the collection efficiently. A typical example looks like this:
+
+```text
+API/0001-0100/0001_MA_CrossOver/
+├── CS/
+│   ├── MaCrossoverStrategy.cs
+│   └── logo.svg
+├── PY/
+│   ├── ma_crossover_strategy.py
+│   └── logo.svg
+├── README.md
+├── README_ru.md
+├── README_zh.md
+├── README_es.md
+├── README_de.md
+├── README_pt.md
+└── README_ja.md
+```
+
+Every API example provides the same strategy idea in both C# and Python. Its documentation explains the concept, parameters, signal logic, and risk considerations in seven languages. The transparent SVG logos identify both the strategy and its implementation language and remain readable in light and dark themes.
+
+### Strategy Designer examples
+
+The [`Designer`](Designer/) directory contains visual schemas, reusable strategy types, and educational examples for the [StockSharp Strategy Designer](https://doc.stocksharp.com/en/topics/designer.html). These samples are useful when you prefer to assemble and inspect a strategy graphically instead of starting with source code.
+
+### Build and test utilities
+
+The repository includes two small .NET projects:
+
+- [`Backtester`](Backtester/) dynamically compiles a selected C# strategy and runs it against bundled sample history data.
+- [`Tests`](Tests/) compiles the API examples and exercises them through StockSharp's historical emulation environment.
+
+The test project uses a source generator, so ordinary strategies do not need handwritten test methods. Each generated test runs a strategy on sample market data, verifies that it produces orders and trades, and checks cloning and settings serialization. Strategies requiring multiple instruments or custom setup have explicit overrides in the test project.
+
+Before the .NET build, [`Tools/validate_api_structure.py`](Tools/validate_api_structure.py) performs the fast structural checks: numbered directory placement, C#/Python parity, required translations, source-file presence, and stale language-availability claims.
+
+## Prerequisites
+
+To build the complete solution locally, install:
+
+- the .NET 10 SDK;
+- Python 3 for the structure validator;
+- a sibling checkout of the StockSharp platform repository.
+
+The project references expect the following directory layout:
+
+```text
+<workspace>/
+├── AlgoTrading/
+└── StockSharp (GitHub)/
+```
+
+Clone this repository as `AlgoTrading` and the [StockSharp platform repository](https://github.com/StockSharp/StockSharp) as `StockSharp (GitHub)` under the same parent directory.
+
+## Validate, build, and test
+
+Run the fast repository checks first:
+
+```bash
+python Tools/validate_api_structure.py
+```
+
+Then build and test the solution in the same configuration used by CI:
+
+```bash
+dotnet build AlgoTrading.slnx --configuration Release
+dotnet test AlgoTrading.slnx --no-build --configuration Release
+```
+
+To run only one generated strategy test, filter by the PascalCase strategy folder name. For example:
+
+```bash
+dotnet test Tests/Tests.csproj --no-build --configuration Release \
+  --filter "FullyQualifiedName~MaCrossover"
+```
+
+To compile and backtest one C# example directly:
+
+```bash
+dotnet run --project Backtester/Backtester.csproj -- \
+  API/0001-0100/0001_MA_CrossOver/CS/MaCrossoverStrategy.cs
+```
+
+## Using the examples
+
+Choose a strategy from the [catalog](API/README.md), read its assumptions and parameters, and compare the C# and Python implementations. Treat each example as a starting point: select suitable market data, commissions, slippage, latency, position sizing, and risk limits before evaluating the idea.
+
+For visual development, install [Strategy Designer](https://stocksharp.com/en/store/strategy-designer/), open its [Strategy Gallery](https://doc.stocksharp.com/en/topics/designer/strategy_gallery.html), and use the schemas in [`Designer`](Designer/) as learning material or prototypes.
+
+Always validate a modified strategy on out-of-sample data and in simulation before considering live execution. A backtest demonstrates behavior on a particular dataset; it does not establish future profitability.
 
 ## Contributing
 
-We welcome contributions from all users! If you have a strategy, a feature from the [Strategy Designer](https://doc.stocksharp.com/en/topics/designer.html), or a piece of code that offers educational insights or is innovative in terms of trading automation, please consider sharing it with the community. To contribute, follow these steps:
+Contributions that improve correctness, clarity, coverage, or educational value are welcome. When adding or changing an API strategy:
 
-1. **Fork the Repository**: Start by forking the repository to your own GitHub account.
-2. **Clone Your Fork**: Clone the forked repository to your local machine to start working on the changes.
-3. **Create a New Branch**: Create a new branch in your forked repository. This helps you to manage your changes more effectively.
-4. **Add Your Strategy or Feature**: Place your strategy or Strategy Designer feature code in the appropriate directory. If your contribution is specific to a certain type of trading or asset, make sure it is placed in a corresponding folder or create one if needed.
-5. **Document Your Code**: Include comments in your code to explain the logic and usage of the strategy or feature. Additionally, provide a README.md file with a detailed description of what the strategy or feature does and how it can be used.
-6. **Submit a Pull Request**: Once you've added and tested your contribution, submit a pull request to the main repository. Include a clear description of what your contribution does and any other relevant information that would help the reviewers.
+1. Keep the strategy in its numbered range directory.
+2. Maintain both C# and Python implementations.
+3. Keep the seven localized README files aligned with the actual parameters and behavior.
+4. Add or update the language-specific transparent SVG logos when the strategy identity changes.
+5. Run the structure validator, Release build, and relevant tests before opening a pull request.
+
+Ordinary strategies are discovered automatically by the test source generator. Add a handwritten override only when the example needs custom securities, portfolios, market data, or other setup that the standard harness cannot provide.
 
 ## Resources
 
-- [Telegram Chat](https://stocksharp.com/en/chat/)
-- [StockSharp Documentation](https://doc.stocksharp.com/en)
+- [StockSharp website](https://stocksharp.com/)
+- [Documentation](https://doc.stocksharp.com/en/)
+- [Strategy Designer](https://stocksharp.com/en/store/strategy-designer/)
+- [Community chat](https://stocksharp.com/en/chat/)
+- [Issue tracker](https://github.com/StockSharp/AlgoTrading/issues)
 
-## Usage
+## License and risk notice
 
-To use the strategies or features in this repository, you'll need to have StockSharp installed and configured on your system. Each strategy or feature may have specific requirements or dependencies, so be sure to check the included README.md or documentation files for each contribution.
+See [LICENSE](LICENSE) and [NOTICE](NOTICE) for the terms that apply to this repository.
 
-The easiest way to run these strategies is through the [Designer](https://stocksharp.com/en/store/strategy-designer/) application:
-
-1. Download Designer from the [official site](https://stocksharp.com/en/products/download/).
-2. Install the program on your machine.
-3. Open the [Strategy Gallery](https://doc.stocksharp.com/en/topics/designer/strategy_gallery.html) inside Designer and select the strategy you want to run.
-
-## Disclaimer
-
-While we strive to provide useful and functional trading strategies and features, it is important to test them thoroughly in a simulation environment before deploying them in a live trading scenario. The contributors and maintainers of this repository bear no responsibility for any financial loss that may occur from the use of these strategies or features.
-
-## Support
-
-If you have any questions or need help with setting up or running the strategies or using the Strategy Designer features, please open an issue in the GitHub repository. The community and maintainers are here to help!
-
-Thank you for visiting the StockSharp Algorithmic Trading and Strategy Designer Repository. We look forward to your contributions and hope you find the resources helpful!
+Algorithmic trading involves substantial risk. Examples in this repository are provided for educational and technical purposes without any guarantee of performance. You are responsible for reviewing the code, validating assumptions, and applying appropriate operational and financial risk controls before any real-money use.
