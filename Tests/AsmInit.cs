@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Ecng.Common;
+using Ecng.ComponentModel;
 using Ecng.Configuration;
 using Ecng.Logging;
 using Ecng.Serialization;
@@ -86,7 +87,7 @@ public static class AsmInit
 		var startTime = Paths.HistoryBeginDate;
 		var stopTime = Paths.HistoryEndDate;
 
-		var connector = new HistoryEmulationConnector(ServicesRegistry.SecurityProvider, ServicesRegistry.PortfolioProvider, storageRegistry)
+		using var connector = new HistoryEmulationConnector(ServicesRegistry.SecurityProvider, ServicesRegistry.PortfolioProvider, storageRegistry)
 		{
 			HistoryMessageAdapter =
 			{
@@ -124,21 +125,80 @@ public static class AsmInit
 
 		await connector.ConnectAsync(token);
 
-		var (_, timeout) = token.CreateChildToken(TimeSpan.FromSeconds(30));
-
 		var orders = new HashSet<long>();
-		strategy.OrderReceived += (s, o) => orders.Add(o.TransactionId);
-
 		var tradesCount = 0;
-		strategy.OwnTradeReceived += (s, t) => tradesCount++;
+		var coverageReached = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-		var (completed, execError) = await strategy.ExecAsync(ct => connector.StartAsync(ct), timeout);
+		void tryCompleteCoverage()
+		{
+			if (orders.Count > 0 && tradesCount > 0)
+				coverageReached.TrySetResult(true);
+		}
 
-		if (error is not null)
-			throw error;
+		strategy.OrderReceived += (s, o) =>
+		{
+			orders.Add(o.TransactionId);
+			tryCompleteCoverage();
+		};
 
-		if (execError is not null)
-			throw execError;
+		strategy.OwnTradeReceived += (s, t) =>
+		{
+			tradesCount++;
+			tryCompleteCoverage();
+		};
+
+		var (timeoutSource, timeout) = token.CreateChildToken(TimeSpan.FromSeconds(30));
+		var (stopWatcherSource, stopWatcherToken) = timeout.CreateChildToken();
+
+		using (timeoutSource)
+		using (stopWatcherSource)
+		{
+			async Task stopWhenCovered()
+			{
+				await coverageReached.Task.WaitAsync(stopWatcherToken);
+
+				if (connector.ConnectionState != ConnectionStates.Connected)
+					return;
+
+				try
+				{
+					using var disconnectSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+					await connector.DisconnectAsync(disconnectSource.Token);
+				}
+				catch (ArgumentException) when (connector.ConnectionState != ConnectionStates.Connected)
+				{
+					// The historical replay finished between the state check and DisconnectAsync.
+				}
+			}
+
+			var stopWatcher = stopWhenCovered();
+			(bool completed, Exception execError) result;
+
+			try
+			{
+				result = await strategy.ExecAsync(ct => connector.StartAsync(ct), timeout);
+			}
+			finally
+			{
+				stopWatcherSource.Cancel();
+
+				try
+				{
+					await stopWatcher;
+				}
+				catch (OperationCanceledException) when (stopWatcherToken.IsCancellationRequested)
+				{
+				}
+			}
+
+			if (error is not null)
+				throw error;
+
+			if (result.execError is not null)
+				throw result.execError;
+
+			result.completed.AssertTrue("Strategy execution timed out before creating an order and a trade.");
+		}
 
 		var ordersCount = orders.Count;
 		ordersCount.AssertGreater(0, "No orders were created by the strategy.");

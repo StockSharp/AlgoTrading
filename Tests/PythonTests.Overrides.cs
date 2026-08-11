@@ -18,20 +18,23 @@ partial class PythonTests
 	}
 
 	[TestMethod]
+	[TestCategory("Shard08")]
 	public Task Ch2010Structure()
-		=> RunStrategy("2776_CH2010_Structure/PY/ch2010_structure_strategy.py", (s, _) =>
+		=> RunStrategy("2701-2800/2776_CH2010_Structure/PY/ch2010_structure_strategy.py", (s, _) =>
 		{
 			SetParam(s, "DailyCandleType", System.TimeSpan.FromHours(1).TimeFrame());
 			SetParam(s, "IntradayCandleType", System.TimeSpan.FromMinutes(5).TimeFrame());
 		});
 
 	[TestMethod]
+	[TestCategory("Shard13")]
 	public Task DispersionTrading()
-		=> RunStrategy("0365_Dispersion_Trading/PY/dispersion_trading_strategy.py", (s, sec2) => SetParam(s, "Constituents", new[] { sec2 }));
+		=> RunStrategy("0301-0400/0365_Dispersion_Trading/PY/dispersion_trading_strategy.py", (s, sec2) => SetParam(s, "Constituents", new[] { sec2 }));
 
 	[TestMethod]
+	[TestCategory("Shard07")]
 	public Task MulticurrencyOverlayHedge()
-		=> RunStrategy("2679_Multicurrency_Overlay_Hedge/PY/multicurrency_overlay_hedge_strategy.py", (s, sec2) =>
+		=> RunStrategy("2601-2700/2679_Multicurrency_Overlay_Hedge/PY/multicurrency_overlay_hedge_strategy.py", (s, sec2) =>
 		{
 			SetParam(s, "Universe", new[] { s.Security, sec2 });
 			SetParam(s, "CandleType", System.TimeSpan.FromMinutes(5).TimeFrame());
@@ -45,8 +48,9 @@ partial class PythonTests
 		});
 
 	[TestMethod]
+	[TestCategory("Shard01")]
 	public Task Spreader2()
-		=> RunStrategy("2705_Spreader_2/PY/spreader2_strategy.py", (s, sec2) =>
+		=> RunStrategy("2701-2800/2705_Spreader_2/PY/spreader2_strategy.py", (s, sec2) =>
 		{
 			SetParam(s, "SecondSecurity", sec2);
 			SetParam(s, "DayBars", 10);
@@ -55,30 +59,37 @@ partial class PythonTests
 		});
 
 	[TestMethod]
+	[TestCategory("Shard14")]
 	public Task CointegrationPairs()
-		=> RunStrategy("0222_Cointegration_Pairs/PY/cointegration_pairs_strategy.py", (s, sec2) => { SetParam(s, "Asset2", sec2); SetParam(s, "Beta", 10000.0); });
+		=> RunStrategy("0201-0300/0222_Cointegration_Pairs/PY/cointegration_pairs_strategy.py", (s, sec2) => { SetParam(s, "Asset2", sec2); SetParam(s, "Beta", 10000.0); });
 
 	[TestMethod]
+	[TestCategory("Shard06")]
 	public Task DeltaNeutralArbitrage()
-		=> RunStrategy("0230_Delta_Neutral_Arbitrage/PY/delta_neutral_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Asset2Security", sec2); SetParam(s, "Asset2Portfolio", s.Portfolio); });
+		=> RunStrategy("0201-0300/0230_Delta_Neutral_Arbitrage/PY/delta_neutral_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Asset2Security", sec2); SetParam(s, "Asset2Portfolio", s.Portfolio); });
 
 	[TestMethod]
+	[TestCategory("Shard14")]
 	public Task ImproveMaRsiHedge()
-		=> RunStrategy("2798_Improve_MA_RSI_Hedge/PY/improve_ma_rsi_hedge_strategy.py");
+		=> RunStrategy("2701-2800/2798_Improve_MA_RSI_Hedge/PY/improve_ma_rsi_hedge_strategy.py");
 
 	[TestMethod]
+	[TestCategory("Shard01")]
 	public Task Pairs()
-		=> RunStrategy("1153_Pairs/PY/pairs_strategy.py", (s, sec2) => SetParam(s, "ReferenceSecurity", sec2));
+		=> RunStrategy("1101-1200/1153_Pairs/PY/pairs_strategy.py", (s, sec2) => SetParam(s, "ReferenceSecurity", sec2));
 
 	[TestMethod]
+	[TestCategory("Shard09")]
 	public Task PairsTrading()
-		=> RunStrategy("0217_Pairs_Trading/PY/pairs_trading_strategy.py", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
+		=> RunStrategy("0201-0300/0217_Pairs_Trading/PY/pairs_trading_strategy.py", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
 
 	[TestMethod]
+	[TestCategory("Shard14")]
 	public Task SpotFuturesArbitrage()
-		=> RunStrategy("0526_Spot_Futures_Arbitrage/PY/spot_futures_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Spot", s.Security); SetParam(s, "Future", sec2); });
+		=> RunStrategy("0501-0600/0526_Spot_Futures_Arbitrage/PY/spot_futures_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Spot", s.Security); SetParam(s, "Future", sec2); });
 
 	[TestMethod]
+	[TestCategory("Shard11")]
 	public Task StatisticalArbitrage()
-		=> RunStrategy("0219_Statistical_Arbitrage/PY/statistical_arbitrage_strategy.py", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
+		=> RunStrategy("0201-0300/0219_Statistical_Arbitrage/PY/statistical_arbitrage_strategy.py", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
 }

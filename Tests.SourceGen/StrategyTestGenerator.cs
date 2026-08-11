@@ -11,6 +11,9 @@ namespace Tests.SourceGen;
 [Generator(LanguageNames.CSharp)]
 public class StrategyTestGenerator : IIncrementalGenerator
 {
+	// Keep this bucket count in sync with the category pairs in .github/workflows/dotnet.yml.
+	private const int _shardCount = 16;
+
 	// Test method names (derived from folder) with manually-defined tests in Overrides files
 	private static readonly System.Collections.Generic.HashSet<string> _overrides = new(System.StringComparer.Ordinal)
 	{
@@ -47,11 +50,11 @@ public class StrategyTestGenerator : IIncrementalGenerator
 						return null;
 
 					var filePath = ctx.Node.SyntaxTree.FilePath.Replace('\\', '/');
-					var methodName = FolderToMethodName(filePath);
-					if (methodName == null)
+					var strategyInfo = GetStrategyInfo(filePath);
+					if (strategyInfo == null)
 						return null;
 
-					return methodName + "|" + symbol.Name;
+					return strategyInfo.Value.methodName + "|" + symbol.Name + "|" + strategyInfo.Value.shard;
 				})
 			.Where(static x => x != null);
 
@@ -63,7 +66,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 				return;
 
 			var entries = items
-				.Select(x => { var parts = x.Split('|'); return (methodName: parts[0], className: parts[1]); })
+				.Select(x => { var parts = x.Split('|'); return (methodName: parts[0], className: parts[1], shard: int.Parse(parts[2])); })
 				.OrderBy(x => x.methodName)
 				.ToList();
 
@@ -82,7 +85,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 			var usedNames = new System.Collections.Generic.HashSet<string>();
 
-			foreach (var (methodName, className) in entries)
+			foreach (var (methodName, className, shard) in entries)
 			{
 				var uniqueName = methodName;
 				var i = 2;
@@ -93,6 +96,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 					continue;
 
 				sb.AppendLine($"\t[TestMethod]");
+				sb.AppendLine($"\t[TestCategory(\"Shard{shard:D2}\")]");
 				sb.AppendLine($"\tpublic Task {uniqueName}()");
 				sb.AppendLine($"\t\t=> RunStrategy<{className}>();");
 				sb.AppendLine();
@@ -114,7 +118,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			if (files.IsEmpty)
 				return;
 
-			var entries = new System.Collections.Generic.List<(string methodName, string relPath)>();
+			var entries = new System.Collections.Generic.List<(string methodName, string relPath, int shard)>();
 
 			foreach (var file in files)
 			{
@@ -127,11 +131,11 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 				var relPath = path.Substring(apiIdx + "/API/".Length);
 
-				var methodName = FolderToMethodName(path);
-				if (methodName == null)
+				var strategyInfo = GetStrategyInfo(path);
+				if (strategyInfo == null)
 					continue;
 
-				entries.Add((methodName, relPath));
+				entries.Add((strategyInfo.Value.methodName, relPath, strategyInfo.Value.shard));
 			}
 
 			if (entries.Count == 0)
@@ -153,7 +157,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 			var usedNames = new System.Collections.Generic.HashSet<string>();
 
-			foreach (var (methodName, relPath) in entries)
+			foreach (var (methodName, relPath, shard) in entries)
 			{
 				var uniqueName = methodName;
 				var i = 2;
@@ -164,6 +168,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 					continue;
 
 				sb.AppendLine($"\t[TestMethod]");
+				sb.AppendLine($"\t[TestCategory(\"Shard{shard:D2}\")]");
 				sb.AppendLine($"\tpublic Task {uniqueName}()");
 				sb.AppendLine($"\t\t=> RunStrategy(\"{relPath}\");");
 				sb.AppendLine();
@@ -182,7 +187,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 	/// E.g. ".../API/0201-0300/0256_Bollinger_Band_Width_Breakout/CS/SomeStrategy.cs"
 	/// becomes "BollingerBandWidthBreakout".
 	/// </summary>
-	private static string FolderToMethodName(string filePath)
+	private static (string methodName, int shard)? GetStrategyInfo(string filePath)
 	{
 		var idx = filePath.IndexOf("/API/");
 		if (idx < 0)
@@ -190,11 +195,12 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 		var afterApi = filePath.Substring(idx + "/API/".Length);
 		string folderName = null;
+		var strategyId = 0;
 
 		foreach (var segment in afterApi.Split('/'))
 		{
 			var underscoreIdx = segment.IndexOf('_');
-			if (underscoreIdx <= 0 || !int.TryParse(segment.Substring(0, underscoreIdx), out _))
+			if (underscoreIdx <= 0 || !int.TryParse(segment.Substring(0, underscoreIdx), out strategyId))
 				continue;
 
 			folderName = segment.Substring(underscoreIdx + 1);
@@ -210,7 +216,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 		if (result.Length > 0 && char.IsDigit(result[0]))
 			result = "_" + result;
 
-		return result;
+		return (result, strategyId % _shardCount);
 	}
 
 	private static string SnakeToPascal(string snake, string removeSuffix)

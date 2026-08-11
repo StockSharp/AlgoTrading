@@ -5,10 +5,57 @@ on:
     branches: [ main ]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: AlgoTrading
+
+    steps:
+      - name: Checkout AlgoTrading
+        uses: actions/checkout@v4
+        with:
+          path: AlgoTrading
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Validate API structure
+        run: python Tools/validate_api_structure.py
+
+  tests:
+    name: Tests (shard ${{ matrix.shard }})
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: '0'
+            filter: 'TestCategory=Shard00|TestCategory=Shard08'
+          - shard: '1'
+            filter: 'TestCategory=Shard01|TestCategory=Shard09'
+          - shard: '2'
+            filter: 'TestCategory=Shard02|TestCategory=Shard10'
+          - shard: '3'
+            filter: 'TestCategory=Shard03|TestCategory=Shard11'
+          - shard: '4'
+            filter: 'TestCategory=Shard04|TestCategory=Shard12'
+          - shard: '5'
+            filter: 'TestCategory=Shard05|TestCategory=Shard13'
+          - shard: '6'
+            filter: 'TestCategory=Shard06|TestCategory=Shard14'
+          - shard: '7'
+            filter: 'TestCategory=Shard07|TestCategory=Shard15'
     defaults:
       run:
         working-directory: AlgoTrading
@@ -26,14 +73,6 @@ jobs:
           ref: master
           path: 'StockSharp (GitHub)'
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Validate API structure
-        run: python Tools/validate_api_structure.py
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -43,4 +82,4 @@ jobs:
         run: dotnet build --restore --configuration Release
 
       - name: Run tests
-        run: dotnet test --no-build --configuration Release
+        run: dotnet test --no-build --configuration Release --filter "${{ matrix.filter }}"
