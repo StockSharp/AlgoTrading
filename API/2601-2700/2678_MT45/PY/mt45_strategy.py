@@ -112,7 +112,7 @@ class mt45_strategy(Strategy):
         self._prev_position = new_position
 
         if previous_position == Decimal(0) and new_position != Decimal(0):
-            self._entry_price = trade.Trade.Price
+            self._entry_price = trade.Trade.TradePrice
             self._last_trade_volume = CMath.Abs(new_position)
             self._entry_pending = False
 
@@ -122,7 +122,7 @@ class mt45_strategy(Strategy):
 
         elif previous_position != Decimal(0) and new_position == Decimal(0):
             direction = Sides.Buy if previous_position > Decimal(0) else Sides.Sell
-            self._update_next_volume(direction, trade.Trade.Price, CMath.Abs(previous_position))
+            self._update_next_volume(direction, trade.Trade.TradePrice, CMath.Abs(previous_position))
             self._entry_price = Decimal(0)
             self._entry_pending = False
 

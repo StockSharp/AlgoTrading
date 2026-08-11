@@ -94,7 +94,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_parabolic, ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -110,19 +110,17 @@ public class BreakoutBarsTrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sarResult = _parabolic.Process(candle);
-		if (!sarResult.IsFormed)
+		if (!_parabolic.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var sarValue = sarResult.ToDecimal();
 		var trend = sarValue < candle.ClosePrice ? 1 : -1;
 
 		if (_lastTrend != 0 && _lastTrend != trend)

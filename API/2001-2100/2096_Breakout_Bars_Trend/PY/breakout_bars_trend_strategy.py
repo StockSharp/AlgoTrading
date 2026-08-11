@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ParabolicSar, CandleIndicatorValue
+from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -50,7 +50,7 @@ class breakout_bars_trend_strategy(Strategy):
         self._parabolic = ParabolicSar()
         self.Indicators.Add(self._parabolic)
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self.process_candle).Start()
+        subscription.Bind(self._parabolic, self.process_candle).Start()
         self.StartProtection(
             takeProfit=Unit(self.take_profit_pct, UnitTypes.Percent),
             stopLoss=Unit(self.stop_loss_pct, UnitTypes.Percent),
@@ -60,17 +60,14 @@ class breakout_bars_trend_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def process_candle(self, candle):
+    def process_candle(self, candle, sar_value):
         if candle.State != CandleStates.Finished:
             return
-        cv = CandleIndicatorValue(self._parabolic, candle)
-        sar_result = self._parabolic.Process(cv)
-        if not sar_result.IsFormed:
+        if not self._parabolic.IsFormed:
             return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        sar_value = float(sar_result)
-        trend = 1 if sar_value < float(candle.ClosePrice) else -1
+        trend = 1 if float(sar_value) < float(candle.ClosePrice) else -1
 
         if self._last_trend != 0 and self._last_trend != trend:
             if trend == 1 and self.Position < 0:

@@ -116,8 +116,8 @@ class vr_setka3_strategy(Strategy):
     def OnOwnTradeReceived(self, trade):
         super(vr_setka3_strategy, self).OnOwnTradeReceived(trade)
 
-        trade_price = float(trade.Trade.Price)
-        trade_vol = float(trade.Trade.Volume)
+        trade_price = float(trade.Trade.TradePrice)
+        trade_vol = float(trade.Trade.TradeVolume)
 
         if trade.Order.Side == Sides.Buy:
             self._buy_avg_price = (self._buy_avg_price * self._buy_volume + trade_price * trade_vol) / (self._buy_volume + trade_vol)

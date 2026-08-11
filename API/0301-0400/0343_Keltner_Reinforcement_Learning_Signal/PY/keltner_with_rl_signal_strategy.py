@@ -182,9 +182,9 @@ class keltner_with_rl_signal_strategy(Strategy):
             return
 
         if trade.Order.Side == Sides.Buy:
-            profitable = self._last_price > float(trade.Trade.Price)
+            profitable = self._last_price > float(trade.Trade.TradePrice)
         else:
-            profitable = self._last_price < float(trade.Trade.Price)
+            profitable = self._last_price < float(trade.Trade.TradePrice)
 
         if profitable:
             self._consecutive_wins += 1

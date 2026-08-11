@@ -154,7 +154,7 @@ class moving_average_position_system_strategy(Strategy):
     def OnOwnTradeReceived(self, trade):
         super(moving_average_position_system_strategy, self).OnOwnTradeReceived(trade)
         if self.Position != 0 and self._entry_price == 0:
-            self._entry_price = float(trade.Trade.Price)
+            self._entry_price = float(trade.Trade.TradePrice)
         if self.Position == 0:
             self._entry_price = 0.0
 

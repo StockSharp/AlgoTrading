@@ -93,12 +93,22 @@ _sessionLow = 0m;
 _currentSessionDate = default;
 _stopPrice = null;
 _targetPrice = null;
+_isLong = false;
 }
 
 /// <inheritdoc />
 protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
+
+_prevHigh = null;
+_prevLow = null;
+_sessionHigh = 0m;
+_sessionLow = 0m;
+_currentSessionDate = default;
+_stopPrice = null;
+_targetPrice = null;
+_isLong = false;
 
 var subscription = SubscribeCandles(CandleType);
 subscription

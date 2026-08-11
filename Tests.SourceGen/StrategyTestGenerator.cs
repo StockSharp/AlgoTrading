@@ -11,17 +11,19 @@ namespace Tests.SourceGen;
 [Generator(LanguageNames.CSharp)]
 public class StrategyTestGenerator : IIncrementalGenerator
 {
-	// Keep this bucket count in sync with the category pairs in .github/workflows/dotnet.yml.
-	private const int _shardCount = 16;
+	// Keep this bucket count in sync with the eight direct category jobs in .github/workflows/dotnet.yml.
+	private const int _shardCount = 8;
 
 	// Test method names (derived from folder) with manually-defined tests in Overrides files
 	private static readonly System.Collections.Generic.HashSet<string> _overrides = new(System.StringComparer.Ordinal)
 	{
+		"BreakoutBarsTrend",
 		"Ch2010Structure",
 		"CointegrationPairs",
 		"DeltaNeutralArbitrage",
 		"DispersionTrading",
 		"ImproveMaRsiHedge",
+		"KeltnerSeasonalFilter",
 		"MulticurrencyOverlayHedge",
 		"Pairs",
 		"PairsTrading",

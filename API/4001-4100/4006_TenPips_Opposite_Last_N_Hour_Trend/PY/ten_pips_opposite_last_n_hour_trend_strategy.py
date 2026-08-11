@@ -343,8 +343,8 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         if trade is None or trade.Order is None or trade.Trade is None:
             return
 
-        price = float(trade.Trade.Price)
-        volume = float(trade.Trade.Volume)
+        price = float(trade.Trade.TradePrice)
+        volume = float(trade.Trade.TradeVolume)
         time = trade.Trade.ServerTime
 
         if volume <= 0 or price <= 0:

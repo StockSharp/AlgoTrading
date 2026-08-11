@@ -4,21 +4,22 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, InvalidOperationException
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from indicator_extensions import *
 
 class spot_futures_arbitrage_strategy(Strategy):
     def __init__(self):
         super(spot_futures_arbitrage_strategy, self).__init__()
 
-        self._spot = self.Param("Spot", None) \
+        self._spot = self.Param[Security]("Spot", None) \
             .SetDisplay("Spot", "Spot security", "General")
-        self._future = self.Param("Future", None) \
+        self._future = self.Param[Security]("Future", None) \
             .SetDisplay("Future", "Futures security", "General")
         self._min_spread_pct = self.Param("MinSpreadPct", 0.05) \
             .SetDisplay("Min Spread %", "Minimum spread percentage to enter", "General")
@@ -64,6 +65,11 @@ class spot_futures_arbitrage_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        if self.spot is None or self.future is None:
+            raise InvalidOperationException("Both spot and futures securities must be set.")
+        return [(self.spot, self.candle_type), (self.future, self.candle_type)]
+
     def OnReseted(self):
         super(spot_futures_arbitrage_strategy, self).OnReseted()
         self._spot_price = 0.0
@@ -72,6 +78,9 @@ class spot_futures_arbitrage_strategy(Strategy):
         self._entry_time = None
 
     def OnStarted2(self, time):
+        if self.spot is None or self.future is None:
+            raise InvalidOperationException("Both spot and futures securities must be set.")
+
         super(spot_futures_arbitrage_strategy, self).OnStarted2(time)
 
         self._spread_average = SMA()

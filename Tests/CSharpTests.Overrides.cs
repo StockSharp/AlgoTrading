@@ -10,7 +10,18 @@ using StockSharp.Samples.Strategies;
 partial class CSharpTests
 {
 	[TestMethod]
-	[TestCategory("Shard08")]
+	[TestCategory("Shard00")]
+	public Task BreakoutBarsTrend()
+		// Compact parameters make the signal reachable in the bundled history window.
+		=> RunStrategy<BreakoutBarsTrendStrategy>((s, _) =>
+		{
+			s.Volume = 0.001m;
+			s.CandleType = System.TimeSpan.FromMinutes(5).TimeFrame();
+			s.Negatives = 0;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard00")]
 	public Task Ch2010Structure()
 		=> RunStrategy<Ch2010StructureStrategy>((s, sec2) =>
 		{
@@ -22,12 +33,12 @@ partial class CSharpTests
 		});
 
 	[TestMethod]
-	[TestCategory("Shard13")]
+	[TestCategory("Shard05")]
 	public Task DispersionTrading()
 		=> RunStrategy<DispersionTradingStrategy>((s, sec2) => s.Constituents = new[] { sec2 });
 
 	[TestMethod]
-	[TestCategory("Shard14")]
+	[TestCategory("Shard06")]
 	public Task CointegrationPairs()
 		=> RunStrategy<CointegrationPairsStrategy>((s, sec2) => s.Asset2 = sec2);
 
@@ -53,9 +64,22 @@ partial class CSharpTests
 		});
 
 	[TestMethod]
-	[TestCategory("Shard14")]
+	[TestCategory("Shard06")]
 	public Task ImproveMaRsiHedge()
 		=> RunStrategy<ImproveMaRsiHedgeStrategy>((s, sec2) => s.HedgeSecurity = sec2);
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task KeltnerSeasonalFilter()
+		// Compact periods make the signal reachable in the bundled history window.
+		=> RunStrategy<KeltnerSeasonalStrategy>((s, _) =>
+		{
+			s.EmaPeriod = 2;
+			s.AtrPeriod = 2;
+			s.AtrMultiplier = 0.01m;
+			s.SeasonalThreshold = 0m;
+			s.CandleType = System.TimeSpan.FromMinutes(5).TimeFrame();
+		});
 
 	[TestMethod]
 	[TestCategory("Shard01")]
@@ -63,12 +87,12 @@ partial class CSharpTests
 		=> RunStrategy<PairsStrategy>((s, sec2) => s.ReferenceSecurity = sec2);
 
 	[TestMethod]
-	[TestCategory("Shard09")]
+	[TestCategory("Shard01")]
 	public Task PairsTrading()
 		=> RunStrategy<PairsTradingStrategy>((s, sec2) => s.SecondSecurity = sec2);
 
 	[TestMethod]
-	[TestCategory("Shard14")]
+	[TestCategory("Shard06")]
 	public Task SpotFuturesArbitrage()
 		=> RunStrategy<SpotFuturesArbitrageStrategy>((s, sec2) => { s.Spot = s.Security; s.Future = sec2; });
 
@@ -78,7 +102,7 @@ partial class CSharpTests
 		=> RunStrategy<Spreader2Strategy>((s, sec2) => { s.SecondSecurity = sec2; s.DayBars = 10; s.ShiftLength = 3; s.TargetProfit = 1m; });
 
 	[TestMethod]
-	[TestCategory("Shard11")]
+	[TestCategory("Shard03")]
 	public Task StatisticalArbitrage()
 		=> RunStrategy<StatisticalArbitrageStrategy>((s, sec2) => s.SecondSecurity = sec2);
 }

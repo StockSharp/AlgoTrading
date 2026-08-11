@@ -147,11 +147,11 @@ class exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy(Strate
     def OnOwnTradeReceived(self, trade):
         super(exp_brain_trend2_absolutely_no_lag_lwma_x2_ma_candle_mmrec_strategy, self).OnOwnTradeReceived(trade)
         if trade.Order.Side == Sides.Buy:
-            self._long_entry_price = float(trade.Trade.Price) if trade.Trade is not None else None
+            self._long_entry_price = float(trade.Trade.TradePrice) if trade.Trade is not None else None
             if self.Position <= 0:
                 self._short_entry_price = None
         elif trade.Order.Side == Sides.Sell:
-            self._short_entry_price = float(trade.Trade.Price) if trade.Trade is not None else None
+            self._short_entry_price = float(trade.Trade.TradePrice) if trade.Trade is not None else None
             if self.Position >= 0:
                 self._long_entry_price = None
         if self.Position == 0:

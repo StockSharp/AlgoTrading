@@ -239,7 +239,7 @@ class build_your_grid_strategy(Strategy):
         ps = self.Security.PriceStep if self.Security is not None else None
         self._price_step = float(ps) if ps is not None else 0.0
 
-        sp = self.GetSecurityValue[object](Level1Fields.StepPrice)
+        sp = self.GetSecurityValue(self.Security, Level1Fields.StepPrice)
         self._step_price = float(sp) if sp is not None else 0.0
 
         subscription = self.SubscribeCandles(self.CandleType)

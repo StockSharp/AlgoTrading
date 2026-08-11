@@ -196,8 +196,8 @@ class smart_trend_follower_strategy(Strategy):
     def OnOwnTradeReceived(self, trade):
         super(smart_trend_follower_strategy, self).OnOwnTradeReceived(trade)
 
-        price = float(trade.Trade.Price)
-        volume = float(trade.Trade.Volume)
+        price = float(trade.Trade.TradePrice)
+        volume = float(trade.Trade.TradeVolume)
 
         if trade.Order.Side == Sides.Buy:
             volume = self._reduce_entries(self._short_entries, volume)

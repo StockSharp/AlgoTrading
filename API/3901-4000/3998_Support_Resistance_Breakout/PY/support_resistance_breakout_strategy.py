@@ -123,7 +123,7 @@ class support_resistance_breakout_strategy(Strategy):
     def OnOwnTradeReceived(self, trade):
         super(support_resistance_breakout_strategy, self).OnOwnTradeReceived(trade)
         if self.Position != 0 and self._entry_price is None:
-            self._entry_price = float(trade.Trade.Price)
+            self._entry_price = float(trade.Trade.TradePrice)
         if self.Position == 0:
             self._entry_price = None
 

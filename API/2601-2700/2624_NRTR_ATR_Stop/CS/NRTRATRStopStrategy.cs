@@ -294,7 +294,7 @@ public class NRTRATRStopStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		BuyMarket();
+		BuyMarket(volume);
 		LogInfo($"Buy signal at {signal.Time:u}. Close={signal.ClosePrice:0.#####}, upper stop={signal.UpperStop:0.#####}, lower stop={signal.LowerStop:0.#####}, volume={volume:0.#####}.");
 	}
 
@@ -304,7 +304,7 @@ public class NRTRATRStopStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		SellMarket();
+		SellMarket(volume);
 		LogInfo($"Sell signal at {signal.Time:u}. Close={signal.ClosePrice:0.#####}, upper stop={signal.UpperStop:0.#####}, lower stop={signal.LowerStop:0.#####}, volume={volume:0.#####}.");
 	}
 

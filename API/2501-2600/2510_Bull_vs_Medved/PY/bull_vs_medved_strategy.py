@@ -116,7 +116,10 @@ class bull_vs_medved_strategy(Strategy):
 
         sl_unit = Unit(self._stop_loss_offset, UnitTypes.Absolute) if self._stop_loss_offset > 0 else None
         tp_unit = Unit(self._take_profit_offset, UnitTypes.Absolute) if self._take_profit_offset > 0 else None
-        self.StartProtection(sl_unit, tp_unit, True)
+        self.StartProtection(
+            stopLoss=sl_unit,
+            takeProfit=tp_unit,
+            useMarketOrders=True)
 
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:

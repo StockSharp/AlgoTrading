@@ -165,7 +165,7 @@ class she_kanskigor_daily_strategy(Strategy):
         super(she_kanskigor_daily_strategy, self).OnOwnTradeReceived(trade)
         if trade.Order.Security != self.Security:
             return
-        self._entry_price = float(trade.Trade.Price)
+        self._entry_price = float(trade.Trade.TradePrice)
 
     def OnReseted(self):
         super(she_kanskigor_daily_strategy, self).OnReseted()

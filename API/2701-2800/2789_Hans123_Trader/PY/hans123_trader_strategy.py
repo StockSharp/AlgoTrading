@@ -94,9 +94,9 @@ class hans123_trader_strategy(Strategy):
             return
         pos = float(self.Position)
         if pos != 0 and self._entry_price == 0.0:
-            self._entry_price = float(trade.Trade.Price)
-            self._highest_since_entry = float(trade.Trade.Price)
-            self._lowest_since_entry = float(trade.Trade.Price)
+            self._entry_price = float(trade.Trade.TradePrice)
+            self._highest_since_entry = float(trade.Trade.TradePrice)
+            self._lowest_since_entry = float(trade.Trade.TradePrice)
         if pos == 0:
             self._entry_price = 0.0
             self._highest_since_entry = 0.0

@@ -90,7 +90,7 @@ class trailing_stop_trigger_manager_strategy(Strategy):
 
     def OnOwnTradeReceived(self, trade):
         super(trailing_stop_trigger_manager_strategy, self).OnOwnTradeReceived(trade)
-        self._last_entry_price = float(trade.Trade.Price)
+        self._last_entry_price = float(trade.Trade.TradePrice)
 
     def _process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:

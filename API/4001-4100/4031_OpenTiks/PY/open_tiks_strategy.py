@@ -136,8 +136,8 @@ class open_tiks_strategy(Strategy):
     def OnOwnTradeReceived(self, trade):
         super(open_tiks_strategy, self).OnOwnTradeReceived(trade)
 
-        if trade.Trade is not None and trade.Trade.Price is not None:
-            self._last_trade_price = float(trade.Trade.Price)
+        if trade.Trade is not None and trade.Trade.TradePrice is not None:
+            self._last_trade_price = float(trade.Trade.TradePrice)
         elif trade.Order is not None and trade.Order.Price is not None:
             self._last_trade_price = float(trade.Order.Price)
 

@@ -39,23 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - shard: '0'
-            filter: 'TestCategory=Shard00|TestCategory=Shard08'
-          - shard: '1'
-            filter: 'TestCategory=Shard01|TestCategory=Shard09'
-          - shard: '2'
-            filter: 'TestCategory=Shard02|TestCategory=Shard10'
-          - shard: '3'
-            filter: 'TestCategory=Shard03|TestCategory=Shard11'
-          - shard: '4'
-            filter: 'TestCategory=Shard04|TestCategory=Shard12'
-          - shard: '5'
-            filter: 'TestCategory=Shard05|TestCategory=Shard13'
-          - shard: '6'
-            filter: 'TestCategory=Shard06|TestCategory=Shard14'
-          - shard: '7'
-            filter: 'TestCategory=Shard07|TestCategory=Shard15'
+        shard: [ '00', '01', '02', '03', '04', '05', '06', '07' ]
     defaults:
       run:
         working-directory: AlgoTrading
@@ -79,7 +63,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Build
-        run: dotnet build --restore --configuration Release
+        run: dotnet build Tests/Tests.csproj --restore --configuration Release
 
       - name: Run tests
-        run: dotnet test --no-build --configuration Release --filter "${{ matrix.filter }}"
+        run: dotnet test Tests/Tests.csproj --no-build --configuration Release --filter "TestCategory=Shard${{ matrix.shard }}"

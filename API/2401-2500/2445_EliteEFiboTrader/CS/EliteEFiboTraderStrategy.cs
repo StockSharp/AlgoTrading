@@ -138,6 +138,17 @@ public class EliteEFiboTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_cycleActive = false;
+		_currentLevel = 0;
+		_activeDirection = 0;
+		_entryPrice = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -4,17 +4,19 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, InvalidOperationException
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Security
 
 
 class pairs_strategy(Strategy):
     def __init__(self):
         super(pairs_strategy, self).__init__()
 
-        self._reference_security = self.Param("ReferenceSecurity", None) \
+        self._reference_security = self.Param[Security]("ReferenceSecurity", None) \
             .SetDisplay("Reference Security", "Security used for pair comparison", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
@@ -30,16 +32,19 @@ class pairs_strategy(Strategy):
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type), (self.reference_security, self.candle_type)]
+
     def OnReseted(self):
         super(pairs_strategy, self).OnReseted()
         self._reference_up = False
         self._previous_high = 0.0
 
     def OnStarted2(self, time):
-        super(pairs_strategy, self).OnStarted2(time)
-
         if self.reference_security is None:
             raise InvalidOperationException("ReferenceSecurity must be specified.")
+
+        super(pairs_strategy, self).OnStarted2(time)
 
         self.StartProtection(None, None)
 

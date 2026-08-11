@@ -208,7 +208,7 @@ class trend_me_leave_me_strategy(Strategy):
             return
         pos = float(self.Position)
         if pos != 0 and self._entry_price == 0:
-            self._entry_price = float(trade.Trade.Price)
+            self._entry_price = float(trade.Trade.TradePrice)
         if pos == 0:
             self._entry_price = 0.0
 

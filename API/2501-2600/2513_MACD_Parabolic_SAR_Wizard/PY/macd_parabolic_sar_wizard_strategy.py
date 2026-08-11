@@ -53,9 +53,9 @@ class macd_parabolic_sar_wizard_strategy(Strategy):
         sl = self._stop_loss_points.Value * step if self._stop_loss_points.Value > 0 else 0
         if tp > 0 or sl > 0:
             self.StartProtection(
-                Unit(tp, UnitTypes.Absolute) if tp > 0 else Unit(),
-                Unit(sl, UnitTypes.Absolute) if sl > 0 else Unit(),
-                True
+                takeProfit=Unit(tp, UnitTypes.Absolute) if tp > 0 else Unit(),
+                stopLoss=Unit(sl, UnitTypes.Absolute) if sl > 0 else Unit(),
+                useMarketOrders=True
             )
         area = self.CreateChartArea()
         if area is not None:

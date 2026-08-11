@@ -231,7 +231,7 @@ class reduce_risks_strategy(Strategy):
         if trade is None or trade.Trade is None:
             return
         if float(self.Position) != 0 and self._entry_price == 0.0:
-            self._entry_price = float(trade.Trade.Price)
+            self._entry_price = float(trade.Trade.TradePrice)
 
     def OnReseted(self):
         super(reduce_risks_strategy, self).OnReseted()

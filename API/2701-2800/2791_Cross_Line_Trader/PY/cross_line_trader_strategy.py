@@ -84,7 +84,7 @@ class cross_line_trader_strategy(Strategy):
         if pos == 0:
             self._entry_price = 0.0
             return
-        self._entry_price = float(trade.Trade.Price)
+        self._entry_price = float(trade.Trade.TradePrice)
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:

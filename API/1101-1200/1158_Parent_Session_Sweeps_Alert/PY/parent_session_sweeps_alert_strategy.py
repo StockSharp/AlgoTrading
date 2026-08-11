@@ -42,6 +42,7 @@ class parent_session_sweeps_alert_strategy(Strategy):
         self._current_session_date = None
         self._stop_price = None
         self._target_price = None
+        self._is_long = False
 
     def OnStarted2(self, time):
         super(parent_session_sweeps_alert_strategy, self).OnStarted2(time)
@@ -52,6 +53,7 @@ class parent_session_sweeps_alert_strategy(Strategy):
         self._current_session_date = None
         self._stop_price = None
         self._target_price = None
+        self._is_long = False
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.OnProcess).Start()
 

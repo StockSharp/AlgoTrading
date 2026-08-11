@@ -105,7 +105,6 @@ public static class AsmInit
 		extra?.Invoke(strategy, Security2);
 
 		var clone = strategy.TypedClone();
-		clone.Connector = connector;
 
 		connector.StateChanged2 += state =>
 		{
@@ -126,7 +125,9 @@ public static class AsmInit
 		await connector.ConnectAsync(token);
 
 		var orders = new HashSet<long>();
+		var orderStates = new List<string>();
 		var tradesCount = 0;
+		var orderFailures = new List<string>();
 		var coverageReached = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		void tryCompleteCoverage()
@@ -138,6 +139,8 @@ public static class AsmInit
 		strategy.OrderReceived += (s, o) =>
 		{
 			orders.Add(o.TransactionId);
+			if (orderStates.Count < 20)
+				orderStates.Add($"#{o.TransactionId} {o.Side} {o.Type} {o.State}, volume={o.Volume}, balance={o.Balance}, time={o.Time:O}");
 			tryCompleteCoverage();
 		};
 
@@ -147,63 +150,77 @@ public static class AsmInit
 			tryCompleteCoverage();
 		};
 
+		strategy.OrderRegisterFailReceived += (_, fail) =>
+			orderFailures.Add(fail.Error?.Message ?? fail.ToString());
+
 		var (timeoutSource, timeout) = token.CreateChildToken(TimeSpan.FromSeconds(30));
 		var (stopWatcherSource, stopWatcherToken) = timeout.CreateChildToken();
+		(bool completed, Exception execError) result = default;
 
-		using (timeoutSource)
-		using (stopWatcherSource)
+		try
 		{
-			async Task stopWhenCovered()
+			using (timeoutSource)
+			using (stopWatcherSource)
 			{
-				await coverageReached.Task.WaitAsync(stopWatcherToken);
+				async Task stopWhenCovered()
+				{
+					await coverageReached.Task.WaitAsync(stopWatcherToken);
 
-				if (connector.ConnectionState != ConnectionStates.Connected)
-					return;
+					if (connector.ConnectionState != ConnectionStates.Connected)
+						return;
+
+					try
+					{
+						using var disconnectSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+						await connector.DisconnectAsync(disconnectSource.Token);
+					}
+					catch (ArgumentException) when (connector.ConnectionState != ConnectionStates.Connected)
+					{
+						// The historical replay finished between the state check and DisconnectAsync.
+					}
+				}
+
+				var stopWatcher = stopWhenCovered();
 
 				try
 				{
-					using var disconnectSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-					await connector.DisconnectAsync(disconnectSource.Token);
+					result = await strategy.ExecAsync(ct => connector.StartAsync(ct), timeout);
 				}
-				catch (ArgumentException) when (connector.ConnectionState != ConnectionStates.Connected)
+				finally
 				{
-					// The historical replay finished between the state check and DisconnectAsync.
+					stopWatcherSource.Cancel();
+
+					try
+					{
+						await stopWatcher;
+					}
+					catch (OperationCanceledException) when (stopWatcherToken.IsCancellationRequested)
+					{
+					}
 				}
 			}
-
-			var stopWatcher = stopWhenCovered();
-			(bool completed, Exception execError) result;
-
-			try
-			{
-				result = await strategy.ExecAsync(ct => connector.StartAsync(ct), timeout);
-			}
-			finally
-			{
-				stopWatcherSource.Cancel();
-
-				try
-				{
-					await stopWatcher;
-				}
-				catch (OperationCanceledException) when (stopWatcherToken.IsCancellationRequested)
-				{
-				}
-			}
-
-			if (error is not null)
-				throw error;
-
-			if (result.execError is not null)
-				throw result.execError;
-
-			result.completed.AssertTrue("Strategy execution timed out before creating an order and a trade.");
+		}
+		finally
+		{
+			strategy.Connector = null;
 		}
 
-		var ordersCount = orders.Count;
-		ordersCount.AssertGreater(0, "No orders were created by the strategy.");
+		if (error is not null)
+			throw error;
 
-		tradesCount.AssertGreater(0, "No trades were created by the strategy.");
+		if (result.execError is not null)
+			throw result.execError;
+
+		result.completed.AssertTrue("Strategy execution timed out before creating an order and a trade.");
+
+		var ordersCount = orders.Count;
+		ordersCount.AssertGreater(0, orderFailures.Count == 0
+			? "No orders were created by the strategy."
+			: $"No orders were created by the strategy. Order registration failures: {string.Join("; ", orderFailures)}");
+
+		tradesCount.AssertGreater(0, orderFailures.Count == 0
+			? $"No trades were created by the strategy. Orders: {string.Join("; ", orderStates)}"
+			: $"No trades were created by the strategy. Order registration failures: {string.Join("; ", orderFailures)}");
 
 		// // Check the distribution of trades over the entire period
 		// var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);

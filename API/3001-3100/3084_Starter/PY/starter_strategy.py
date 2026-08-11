@@ -318,7 +318,7 @@ class starter_strategy(Strategy):
     def OnOwnTradeReceived(self, trade):
         super(starter_strategy, self).OnOwnTradeReceived(trade)
 
-        volume = float(trade.Trade.Volume)
+        volume = float(trade.Trade.TradeVolume)
         if volume <= 0.0:
             return
 
@@ -328,7 +328,7 @@ class starter_strategy(Strategy):
 
         if previous_position == 0.0 and self._signed_position != 0.0:
             self._last_entry_side = trade.Order.Side
-            self._last_entry_price = float(trade.Trade.Price)
+            self._last_entry_price = float(trade.Trade.TradePrice)
 
             sl_pips = float(self.stop_loss_pips)
             if self._last_entry_side == Sides.Buy:
@@ -341,7 +341,7 @@ class starter_strategy(Strategy):
                 self._reset_long_protection()
 
         elif previous_position != 0.0 and self._signed_position == 0.0:
-            exit_price = float(trade.Trade.Price)
+            exit_price = float(trade.Trade.TradePrice)
 
             if self._last_entry_side is not None and self._last_entry_price != 0.0:
                 if self._last_entry_side == Sides.Buy:

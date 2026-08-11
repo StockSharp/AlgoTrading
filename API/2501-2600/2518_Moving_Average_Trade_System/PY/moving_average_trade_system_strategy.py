@@ -170,7 +170,7 @@ class moving_average_trade_system_strategy(Strategy):
         t = trade.Trade
         if t is None:
             return
-        price = float(t.Price)
+        price = float(t.TradePrice)
         if self.Position > 0:
             self._reset_short_state()
             self._setup_long_state(price)

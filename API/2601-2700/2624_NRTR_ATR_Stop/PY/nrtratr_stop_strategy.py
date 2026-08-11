@@ -156,7 +156,7 @@ class nrtratr_stop_strategy(Strategy):
         if self.EnableLongEntry and self.Position <= 0 and self.Volume > 0:
             vol += float(self.Volume)
         if vol > 0:
-            self.BuyMarket()
+            self.BuyMarket(vol)
 
     def _handle_sell(self):
         vol = 0.0
@@ -165,7 +165,7 @@ class nrtratr_stop_strategy(Strategy):
         if self.EnableShortEntry and self.Position >= 0 and self.Volume > 0:
             vol += float(self.Volume)
         if vol > 0:
-            self.SellMarket()
+            self.SellMarket(vol)
 
     def _update_prev(self, candle):
         self._prev_high = float(candle.HighPrice)

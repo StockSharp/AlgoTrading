@@ -244,7 +244,7 @@ class invest_system45_strategy(Strategy):
             return
         pos = float(self.Position)
         if pos != 0 and self._entry_price == 0:
-            self._entry_price = float(trade.Trade.Price)
+            self._entry_price = float(trade.Trade.TradePrice)
             sl_dist = self.StopLossPips * self._pip_size
             tp_dist = self.TakeProfitPips * self._pip_size
             if pos > 0:

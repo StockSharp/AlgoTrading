@@ -106,8 +106,8 @@ class amstell_grid_strategy(Strategy):
 
     def OnOwnTradeReceived(self, trade):
         super(amstell_grid_strategy, self).OnOwnTradeReceived(trade)
-        price = float(trade.Trade.Price)
-        volume = float(trade.Trade.Volume)
+        price = float(trade.Trade.TradePrice)
+        volume = float(trade.Trade.TradeVolume)
         side = trade.Order.Side
 
         if side == Sides.Buy:

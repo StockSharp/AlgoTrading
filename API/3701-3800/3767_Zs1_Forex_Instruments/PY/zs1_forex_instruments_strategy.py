@@ -130,8 +130,8 @@ class zs1_forex_instruments_strategy(Strategy):
         if trade is None or trade.Trade is None:
             return
 
-        volume = float(trade.Trade.Volume)
-        price = float(trade.Trade.Price)
+        volume = float(trade.Trade.TradeVolume)
+        price = float(trade.Trade.TradePrice)
         side = trade.Order.Side if trade.Order is not None else None
 
         if side is None:

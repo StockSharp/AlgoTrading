@@ -8,7 +8,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from System import Decimal
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, CandleIndicatorValue
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
@@ -101,7 +101,7 @@ class macd_signal_strategy(Strategy):
         self._has_prev_delta = False
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(fast_ema, slow_ema, self.ProcessCandle).Start()
+        subscription.Bind(fast_ema, slow_ema, self._atr, self.ProcessCandle).Start()
 
         step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         tp_ticks = float(self.TakeProfitTicks)
@@ -113,12 +113,9 @@ class macd_signal_strategy(Strategy):
 
         self.StartProtection(tp_unit, sl_unit, is_trailing)
 
-    def ProcessCandle(self, candle, fast_val, slow_val):
+    def ProcessCandle(self, candle, fast_val, slow_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-
-        atr_input = CandleIndicatorValue(self._atr, candle)
-        atr_result = self._atr.Process(atr_input)
 
         fast_f = float(fast_val)
         slow_f = float(slow_val)
@@ -127,11 +124,11 @@ class macd_signal_strategy(Strategy):
         signal_result = process_float(self._signal_ema, Decimal(delta_val), candle.CloseTime, True)
         signal_f = float(signal_result)
 
-        if not atr_result.IsFinal or not self._signal_ema.IsFormed:
+        if not self._atr.IsFormed or not self._signal_ema.IsFormed:
             return
 
         delta_val -= signal_f
-        atr_val = float(atr_result)
+        atr_val = float(atr_val)
         atr_level = float(self.AtrLevel)
         rr = atr_val * atr_level
 

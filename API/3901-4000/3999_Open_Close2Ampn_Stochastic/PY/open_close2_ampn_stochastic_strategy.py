@@ -240,8 +240,8 @@ class open_close2_ampn_stochastic_strategy(Strategy):
         if trade is None or trade.Order is None or trade.Trade is None:
             return
 
-        price = float(trade.Trade.Price)
-        volume = float(trade.Trade.Volume)
+        price = float(trade.Trade.TradePrice)
+        volume = float(trade.Trade.TradeVolume)
 
         if trade.Order.Side == Sides.Buy:
             if self.Position > 0:

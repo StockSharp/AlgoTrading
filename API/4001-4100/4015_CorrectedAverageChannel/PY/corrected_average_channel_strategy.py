@@ -150,7 +150,7 @@ class corrected_average_channel_strategy(Strategy):
             return
 
         if trade.Trade is not None:
-            self._last_trade_price = float(trade.Trade.Price)
+            self._last_trade_price = float(trade.Trade.TradePrice)
 
         self._last_trade_side = trade.Order.Side
 

@@ -136,7 +136,7 @@ class pending_order_grid_strategy(Strategy):
         super(pending_order_grid_strategy, self).OnOwnTradeReceived(trade)
 
         if trade is not None and trade.Trade is not None:
-            self._entry_price = trade.Trade.Price
+            self._entry_price = trade.Trade.TradePrice
 
     def CreateClone(self):
         return pending_order_grid_strategy()
