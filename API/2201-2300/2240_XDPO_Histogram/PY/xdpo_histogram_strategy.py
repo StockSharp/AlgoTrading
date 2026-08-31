@@ -58,6 +58,10 @@ class xdpo_histogram_strategy(Strategy):
     def process_candle(self, candle, ma1_value, ma2_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         ma1_value = float(ma1_value)
         ma2_value = float(ma2_value)
         xdpo = ma1_value - ma2_value

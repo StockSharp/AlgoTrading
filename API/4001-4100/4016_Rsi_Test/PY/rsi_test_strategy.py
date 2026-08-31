@@ -18,6 +18,7 @@ class rsi_test_strategy(Strategy):
         self._sell_level = self.Param("SellLevel", 60.0).SetDisplay("RSI Sell Level", "Overbought threshold for short entries", "Trading")
         self._trailing_distance_steps = self.Param("TrailingDistanceSteps", 50).SetDisplay("Trailing Distance Steps", "Steps before activating trailing stop", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Primary timeframe", "Data")
+        self._rsi = None
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -26,6 +27,7 @@ class rsi_test_strategy(Strategy):
 
     def OnReseted(self):
         super(rsi_test_strategy, self).OnReseted()
+        self._rsi = None
         self._prev_rsi = None
         self._entry_price = None
         self._stop_price = None
@@ -41,16 +43,16 @@ class rsi_test_strategy(Strategy):
         if self.Security is not None and self.Security.PriceStep is not None and self.Security.PriceStep > 0:
             self._price_step = float(self.Security.PriceStep)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_period.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self._rsi_period.Value
 
         sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(rsi, self.OnProcess).Start()
+        sub.Bind(self._rsi, self.OnProcess).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, sub)
-            self.DrawIndicator(area, rsi)
+            self.DrawIndicator(area, self._rsi)
             self.DrawOwnTrades(area)
 
     def OnProcess(self, candle, rsi_val):
@@ -61,6 +63,10 @@ class rsi_test_strategy(Strategy):
 
         # Manage existing position
         self._manage_position(candle, close)
+
+        if not self._rsi.IsFormed:
+            self._prev_rsi = rsi_val
+            return
 
         if self._prev_rsi is None:
             self._prev_rsi = rsi_val

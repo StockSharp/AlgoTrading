@@ -49,6 +49,10 @@ class asc_trend_strategy(Strategy):
     def process_candle(self, candle, wpr_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         wpr_val = float(wpr_val)
         value2 = 100.0 - abs(wpr_val)
         x1 = 67.0 + float(self.risk)

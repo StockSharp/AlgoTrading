@@ -31,6 +31,7 @@ class mtc_combo_v2_strategy(Strategy):
         self._entry = 0.0
         self._sl = 50.0
         self._tp = 50.0
+        self._ma = None
 
     @property
     def candle_type(self):
@@ -43,21 +44,24 @@ class mtc_combo_v2_strategy(Strategy):
         self._entry = 0.0
         self._sl = float(self._sl1.Value)
         self._tp = float(self._tp1.Value)
+        self._ma = None
 
     def OnStarted2(self, time):
         super(mtc_combo_v2_strategy, self).OnStarted2(time)
-        ma = SimpleMovingAverage()
-        ma.Length = self._ma_period.Value
+        self._ma = SimpleMovingAverage()
+        self._ma.Length = self._ma_period.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ma, self._process_candle).Start()
+        subscription.Bind(self._ma, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
+            self.DrawIndicator(area, self._ma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._ma.IsFormed:
             return
         ma = float(ma_val)
         close = float(candle.ClosePrice)

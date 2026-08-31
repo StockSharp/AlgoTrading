@@ -109,11 +109,14 @@ public class MomentumCandleSignStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openMom = _openMomentum.Process(new DecimalIndicatorValue(_openMomentum, candle.OpenPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
-		var closeMom = _closeMomentum.Process(new DecimalIndicatorValue(_closeMomentum, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var openMomValue = _openMomentum.Process(new DecimalIndicatorValue(_openMomentum, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
+		var closeMomValue = _closeMomentum.Process(new DecimalIndicatorValue(_closeMomentum, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!openMomValue.IsFormed || !closeMomValue.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		var openMom = openMomValue.ToDecimal();
+		var closeMom = closeMomValue.ToDecimal();
 
 		if (!_isFormed)
 		{

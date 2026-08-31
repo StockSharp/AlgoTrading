@@ -40,6 +40,9 @@ class alligator_simple_strategy(Strategy):
         self._take_profit_points = self.Param("TakeProfitPoints", 400) \
             .SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk")
 
+        self._jaw = None
+        self._teeth = None
+        self._lips = None
         self._entry_price = 0.0
         self._cooldown = 0
 
@@ -85,24 +88,30 @@ class alligator_simple_strategy(Strategy):
 
     def OnReseted(self):
         super(alligator_simple_strategy, self).OnReseted()
+        self._jaw = None
+        self._teeth = None
+        self._lips = None
         self._entry_price = 0.0
         self._cooldown = 0
 
     def OnStarted2(self, time):
         super(alligator_simple_strategy, self).OnStarted2(time)
 
-        jaw = SmoothedMovingAverage()
-        jaw.Length = self.JawPeriod
-        teeth = SmoothedMovingAverage()
-        teeth.Length = self.TeethPeriod
-        lips = SmoothedMovingAverage()
-        lips.Length = self.LipsPeriod
+        self._jaw = SmoothedMovingAverage()
+        self._jaw.Length = self.JawPeriod
+        self._teeth = SmoothedMovingAverage()
+        self._teeth.Length = self.TeethPeriod
+        self._lips = SmoothedMovingAverage()
+        self._lips.Length = self.LipsPeriod
 
         subscription = self.SubscribeCandles(tf(5))
-        subscription.Bind(jaw, teeth, lips, self.ProcessCandle).Start()
+        subscription.Bind(self._jaw, self._teeth, self._lips, self.ProcessCandle).Start()
 
     def ProcessCandle(self, candle, jaw_value, teeth_value, lips_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._jaw.IsFormed or not self._teeth.IsFormed or not self._lips.IsFormed:
             return
 
         if self._cooldown > 0:

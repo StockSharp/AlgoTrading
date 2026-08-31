@@ -32,6 +32,7 @@ class color_j_laguerre_strategy(Strategy):
 
         self._prev_rsi = 0.0
         self._has_prev = False
+        self._rsi = None
 
     @property
     def candle_type(self):
@@ -41,15 +42,16 @@ class color_j_laguerre_strategy(Strategy):
         super(color_j_laguerre_strategy, self).OnReseted()
         self._prev_rsi = 0.0
         self._has_prev = False
+        self._rsi = None
 
     def OnStarted2(self, time):
         super(color_j_laguerre_strategy, self).OnStarted2(time)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_length.Value
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self._rsi_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self.on_process).Start()
+        subscription.Bind(self._rsi, self.on_process).Start()
 
         self.StartProtection(
             takeProfit=Unit(4, UnitTypes.Percent),
@@ -58,6 +60,9 @@ class color_j_laguerre_strategy(Strategy):
 
     def on_process(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._rsi.IsFormed:
             return
 
         if not self._has_prev:

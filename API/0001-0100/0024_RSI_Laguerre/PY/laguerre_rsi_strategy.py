@@ -49,6 +49,10 @@ class laguerre_rsi_strategy(Strategy):
     def _process_candle(self, candle, rsi_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         rsi = float(rsi_val)
         if rsi == 0:
             return

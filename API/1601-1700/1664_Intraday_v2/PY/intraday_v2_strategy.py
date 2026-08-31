@@ -46,7 +46,7 @@ class intraday_v2_strategy(Strategy):
     def on_process(self, candle, sma_val, stdev_val):
         if candle.State != CandleStates.Finished:
             return
-        if stdev_val <= 0:
+        if not self.IsFormedAndOnlineAndAllowTrading() or stdev_val <= 0:
             return
         close = candle.ClosePrice
         upper = sma_val + 2 * stdev_val

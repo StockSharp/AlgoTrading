@@ -71,6 +71,8 @@ class ema_sar_bulls_bears_strategy(Strategy):
     def on_process(self, candle, short_ema, long_ema, sar_value, bears_power, bulls_power):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         if not self._has_prev:
             self._prev_bears = bears_power
             self._prev_bulls = bulls_power

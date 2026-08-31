@@ -84,6 +84,8 @@ class rgt_ea_rsi_strategy(Strategy):
     def on_process(self, candle, values):
         if candle.State != CandleStates.Finished:
             return
+        if not values[0].IsFormed or not values[1].IsFormed:
+            return
         if values[0].IsEmpty or values[1].IsEmpty:
             return
         rsi_val = IndicatorHelper.ToDecimal(values[0])

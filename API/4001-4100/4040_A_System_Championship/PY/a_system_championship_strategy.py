@@ -107,7 +107,7 @@ class a_system_championship_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if atr_value <= 0:
+        if atr_value <= 0 or not self.IsFormedAndOnlineAndAllowTrading():
             self._save_candle(candle)
             return
 

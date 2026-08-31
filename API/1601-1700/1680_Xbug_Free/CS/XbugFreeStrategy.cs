@@ -44,7 +44,7 @@ public class XbugFreeStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished) return;
-		if (atr <= 0) return;
+		if (!IsFormedAndOnlineAndAllowTrading() || atr <= 0) return;
 
 		var close = candle.ClosePrice;
 

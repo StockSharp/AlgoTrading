@@ -38,6 +38,8 @@ class gold_warrior02b_impulse_strategy(Strategy):
     def process_candle(self, candle, cci, ema):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         close = float(candle.ClosePrice)
         cci_val = float(cci)
         ema_val = float(ema)

@@ -73,7 +73,13 @@ public class ColorJLaguerreStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		SubscribeCandles(CandleType)
-			.Bind(rsi, ProcessCandle)
+			.Bind(rsi, (candle, value) =>
+			{
+				if (!rsi.IsFormed)
+					return;
+
+				ProcessCandle(candle, value);
+			})
 			.Start();
 
 		StartProtection(

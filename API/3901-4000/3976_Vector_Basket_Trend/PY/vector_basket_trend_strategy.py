@@ -52,6 +52,9 @@ class vector_basket_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         fv = float(fast_val)
         sv = float(slow_val)
         close = float(candle.ClosePrice)

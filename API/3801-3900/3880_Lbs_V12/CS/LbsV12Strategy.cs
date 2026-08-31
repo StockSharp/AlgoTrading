@@ -64,6 +64,7 @@ public class LbsV12Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) return;
 
 		if (_cooldownRemaining > 0)
 		{

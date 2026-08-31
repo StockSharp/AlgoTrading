@@ -54,6 +54,9 @@ class rsi_divergence_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         rv = float(rsi_val)
         if rv == 0:
             return

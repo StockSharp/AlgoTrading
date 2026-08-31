@@ -59,7 +59,13 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ma3, ma8, ma20, ma50, ProcessCandle)
+			.Bind(ma3, ma8, ma20, ma50, (candle, value3, value8, value20, value50) =>
+			{
+				if (!ma3.IsFormed || !ma8.IsFormed || !ma20.IsFormed || !ma50.IsFormed)
+					return;
+
+				ProcessCandle(candle, value3, value8, value20, value50);
+			})
 			.Start();
 	}
 

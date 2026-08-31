@@ -57,6 +57,8 @@ class moving_average_rainbow_stormer_strategy(Strategy):
     def OnProcess(self, candle, ma3, ma8, ma20, ma50):
         if candle.State != CandleStates.Finished:
             return
+        if not self._ma3.IsFormed or not self._ma8.IsFormed or not self._ma20.IsFormed or not self._ma50.IsFormed:
+            return
         self._bar_index += 1
         close = float(candle.ClosePrice)
         m3 = float(ma3)

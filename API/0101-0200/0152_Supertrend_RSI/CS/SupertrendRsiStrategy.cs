@@ -257,6 +257,9 @@ public class SupertrendRsiStrategy : Strategy
 			_closes.RemoveRange(0, trim);
 		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (_cooldown > 0)
 		{
 			_cooldown--;

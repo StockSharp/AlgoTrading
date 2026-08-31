@@ -88,7 +88,7 @@ class send_close_order_strategy(Strategy):
         self._prev2_low = self._prev1_low
         self._prev1_low = low
 
-        if self._fractal_high == 0 or self._fractal_low == 0 or av <= 0:
+        if self._fractal_high == 0 or self._fractal_low == 0 or av <= 0 or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         if self.Position > 0:

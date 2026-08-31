@@ -23,6 +23,7 @@ class williams_r_zone_scalper_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_wr = 0.0
+        self._wr = None
 
     @property
     def length(self):
@@ -43,21 +44,24 @@ class williams_r_zone_scalper_strategy(Strategy):
     def OnReseted(self):
         super(williams_r_zone_scalper_strategy, self).OnReseted()
         self._prev_wr = 0.0
+        self._wr = None
 
     def OnStarted2(self, time):
         super(williams_r_zone_scalper_strategy, self).OnStarted2(time)
-        wr = WilliamsR()
-        wr.Length = self.length
+        self._wr = WilliamsR()
+        self._wr.Length = self.length
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(wr, self.on_process).Start()
+        subscription.Bind(self._wr, self.on_process).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, wr)
+            self.DrawIndicator(area, self._wr)
             self.DrawOwnTrades(area)
 
     def on_process(self, candle, wr):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._wr.IsFormed:
             return
         if self._prev_wr <= self.oversold and wr > self.oversold and self.Position <= 0:
             self.BuyMarket()

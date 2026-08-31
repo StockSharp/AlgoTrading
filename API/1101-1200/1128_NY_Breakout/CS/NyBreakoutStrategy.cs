@@ -2,7 +2,6 @@ using System;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -48,10 +47,8 @@ public class NyBreakoutStrategy : Strategy
 		_rangeSet = false;
 		_tradedToday = false;
 
-		var sma = new SimpleMovingAverage { Length = 20 };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -61,7 +58,7 @@ public class NyBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

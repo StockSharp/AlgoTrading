@@ -59,7 +59,13 @@ public class ColorSchaffJccxTrendCycleStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(stc, ProcessCandle)
+			.Bind(stc, (candle, value) =>
+			{
+				if (!stc.IsFormed)
+					return;
+
+				ProcessCandle(candle, value);
+			})
 			.Start();
 
 		var area = CreateChartArea();

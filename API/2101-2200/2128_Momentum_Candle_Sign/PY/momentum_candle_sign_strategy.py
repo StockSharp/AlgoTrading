@@ -61,8 +61,15 @@ class momentum_candle_sign_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        open_mom = float(process_float(self._open_momentum, candle.OpenPrice, candle.OpenTime, True))
-        close_mom = float(process_float(self._close_momentum, candle.ClosePrice, candle.OpenTime, True))
+        open_mom_value = process_float(self._open_momentum, candle.OpenPrice, candle.OpenTime, True)
+        close_mom_value = process_float(self._close_momentum, candle.ClosePrice, candle.OpenTime, True)
+
+        if not open_mom_value.IsFormed or not close_mom_value.IsFormed or not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        open_mom = float(open_mom_value)
+        close_mom = float(close_mom_value)
+
         if not self._is_formed:
             self._prev_open_momentum = open_mom
             self._prev_close_momentum = close_mom

@@ -69,6 +69,9 @@ public class EhlersSwamiChartsRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (values.Any(value => !value.IsFormed))
+			return;
+
 		int color1Tot = 0;
 		int color2Tot = 0;
 		int count = 0;

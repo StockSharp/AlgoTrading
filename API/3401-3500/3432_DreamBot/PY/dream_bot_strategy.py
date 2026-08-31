@@ -22,6 +22,7 @@ class dream_bot_strategy(Strategy):
         self._has_prev_close = False
         self._was_bullish = False
         self._candles_since_trade = 6
+        self._ema = None
 
     @property
     def CandleType(self):
@@ -53,20 +54,24 @@ class dream_bot_strategy(Strategy):
         self._has_prev_close = False
         self._was_bullish = False
         self._candles_since_trade = self.SignalCooldownCandles
+        self._ema = None
 
     def OnStarted2(self, time):
         super(dream_bot_strategy, self).OnStarted2(time)
         self._has_prev_close = False
         self._candles_since_trade = self.SignalCooldownCandles
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self.EmaPeriod
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self.EmaPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ema, self._process_candle).Start()
+        subscription.Bind(self._ema, self._process_candle).Start()
 
     def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._ema.IsFormed:
             return
 
         if self._candles_since_trade < self.SignalCooldownCandles:

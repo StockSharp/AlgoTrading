@@ -77,7 +77,7 @@ class for_max_v2_strategy(Strategy):
         self._lows[idx] = float(candle.LowPrice)
         self._bar_count += 1
 
-        if self._bar_count < length or av <= 0:
+        if self._bar_count < length or av <= 0 or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         high = max(self._highs[i] for i in range(length))

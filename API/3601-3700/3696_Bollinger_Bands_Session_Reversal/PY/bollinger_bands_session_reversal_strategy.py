@@ -63,6 +63,9 @@ class bollinger_bands_session_reversal_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not bb_value.IsFormed:
+            return
+
         upper = bb_value.UpBand
         lower = bb_value.LowBand
         middle = bb_value.MovingAverage

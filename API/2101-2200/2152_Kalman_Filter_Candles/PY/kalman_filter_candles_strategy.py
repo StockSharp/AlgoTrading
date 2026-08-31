@@ -60,6 +60,10 @@ class kalman_filter_candles_strategy(Strategy):
             return
         open_res = process_float(self._open_filter, candle.OpenPrice, candle.OpenTime, True)
         close_res = process_float(self._close_filter, candle.ClosePrice, candle.OpenTime, True)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         open_val = float(open_res)
         close_val = float(close_res)
         if open_val < close_val:

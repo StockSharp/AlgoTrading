@@ -102,6 +102,9 @@ public class MtcComboV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!_ma.IsFormed)
+			return;
+
 		_opens.Enqueue(candle.OpenPrice);
 		var max = Math.Max(Math.Max(P2, P3), P4) * 4 + 5;
 		while (_opens.Count > max)

@@ -61,7 +61,13 @@ public class PinballMachineRandomDrawStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, ProcessCandle)
+			.Bind(atr, (candle, value) =>
+			{
+				if (!atr.IsFormed)
+					return;
+
+				ProcessCandle(candle, value);
+			})
 			.Start();
 
 		var area = CreateChartArea();

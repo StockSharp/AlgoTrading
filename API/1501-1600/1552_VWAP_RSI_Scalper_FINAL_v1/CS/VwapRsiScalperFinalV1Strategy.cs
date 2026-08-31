@@ -102,7 +102,13 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 		_takeProfitPrice = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ema, stdDev, ProcessCandle).Start();
+		subscription.Bind(rsi, ema, stdDev, (candle, rsiValue, emaValue, stdDevValue) =>
+		{
+			if (!rsi.IsFormed || !ema.IsFormed || !stdDev.IsFormed)
+				return;
+
+			ProcessCandle(candle, rsiValue, emaValue, stdDevValue);
+		}).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

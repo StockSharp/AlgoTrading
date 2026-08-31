@@ -115,6 +115,9 @@ class atr_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         # Calculate entry thresholds
         upper_threshold = sma_value + self.Multiplier * atr_value
         lower_threshold = sma_value - self.Multiplier * atr_value

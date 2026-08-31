@@ -124,7 +124,7 @@ public class SendCloseOrderStrategy : Strategy
 		_prev2Low = _prev1Low;
 		_prev1Low = low;
 
-		if (_fractalHigh == 0 || _fractalLow == 0 || atrVal <= 0)
+		if (_fractalHigh == 0 || _fractalLow == 0 || atrVal <= 0 || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (Position > 0)

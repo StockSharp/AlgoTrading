@@ -81,6 +81,9 @@ public class Exp3XmaIshimokuStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!ichimokuValue.IsFormed)
+			return;
+
 		var ich = (IIchimokuValue)ichimokuValue;
 
 		if (ich.Kijun is not decimal kijun ||

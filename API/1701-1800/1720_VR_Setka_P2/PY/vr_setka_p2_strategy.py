@@ -51,23 +51,20 @@ class vr_setka_p2_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
         close = candle.ClosePrice
-        if not self._has_prev:
-            self._prev_open = candle.OpenPrice
-            self._prev_close = close
-            self._has_prev = True
-            return
-        # Previous candle bullish + close above EMA => buy
-        if self._prev_close > self._prev_open and close > ema_value and self.Position <= 0:
-            if self.Position < 0:
+        if self._has_prev and self.IsFormedAndOnlineAndAllowTrading():
+            # Previous candle bullish + close above EMA => buy
+            if self._prev_close > self._prev_open and close > ema_value and self.Position <= 0:
+                if self.Position < 0:
+                    self.BuyMarket()
                 self.BuyMarket()
-            self.BuyMarket()
-        # Previous candle bearish + close below EMA => sell
-        elif self._prev_close < self._prev_open and close < ema_value and self.Position >= 0:
-            if self.Position > 0:
+            # Previous candle bearish + close below EMA => sell
+            elif self._prev_close < self._prev_open and close < ema_value and self.Position >= 0:
+                if self.Position > 0:
+                    self.SellMarket()
                 self.SellMarket()
-            self.SellMarket()
         self._prev_open = candle.OpenPrice
         self._prev_close = close
+        self._has_prev = True
 
     def CreateClone(self):
         return vr_setka_p2_strategy()

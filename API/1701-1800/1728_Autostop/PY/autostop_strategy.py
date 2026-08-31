@@ -26,6 +26,9 @@ class autostop_strategy(Strategy):
             .SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
+        self._fast_ema = None
+        self._slow_ema = None
+        self._atr = None
         self._entry_price = 0.0
         self._take_price = 0.0
         self._stop_price = 0.0
@@ -56,30 +59,37 @@ class autostop_strategy(Strategy):
 
     def OnReseted(self):
         super(autostop_strategy, self).OnReseted()
+        self._fast_ema = None
+        self._slow_ema = None
+        self._atr = None
         self._entry_price = 0.0
         self._take_price = 0.0
         self._stop_price = 0.0
 
     def OnStarted2(self, time):
         super(autostop_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_length
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_length
-        atr = StandardDeviation()
-        atr.Length = self.atr_length
+        self._fast_ema = ExponentialMovingAverage()
+        self._fast_ema.Length = self.fast_length
+        self._slow_ema = ExponentialMovingAverage()
+        self._slow_ema.Length = self.slow_length
+        self._atr = StandardDeviation()
+        self._atr.Length = self.atr_length
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, atr, self.on_process).Start()
+        subscription.Bind(self._fast_ema, self._slow_ema, self._atr, self.on_process).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, self._fast_ema)
+            self.DrawIndicator(area, self._slow_ema)
             self.DrawOwnTrades(area)
 
     def on_process(self, candle, fast, slow, atr_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed or not self._atr.IsFormed:
+            return
+
         # Check TP/SL for existing positions
         if self.Position > 0:
             if candle.ClosePrice >= self._take_price or candle.ClosePrice <= self._stop_price:

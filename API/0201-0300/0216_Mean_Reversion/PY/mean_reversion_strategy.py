@@ -22,6 +22,8 @@ class mean_reversion_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
+        self._ma = None
+        self._std_dev = None
         self._was_below_lower = False
         self._was_above_upper = False
         self._cooldown = 0
@@ -32,27 +34,33 @@ class mean_reversion_strategy(Strategy):
 
     def OnReseted(self):
         super(mean_reversion_strategy, self).OnReseted()
+        self._ma = None
+        self._std_dev = None
         self._was_below_lower = False
         self._was_above_upper = False
         self._cooldown = 0
 
     def OnStarted2(self, time):
         super(mean_reversion_strategy, self).OnStarted2(time)
-        ma = SimpleMovingAverage()
-        ma.Length = self._ma_period.Value
-        std_dev = StandardDeviation()
-        std_dev.Length = self._ma_period.Value
+        self._ma = SimpleMovingAverage()
+        self._ma.Length = self._ma_period.Value
+        self._std_dev = StandardDeviation()
+        self._std_dev.Length = self._ma_period.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ma, std_dev, self._process_candle).Start()
+        subscription.Bind(self._ma, self._std_dev, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
+            self.DrawIndicator(area, self._ma)
             self.DrawOwnTrades(area)
 
     def _process_candle(self, candle, ma_val, std_val):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self._ma.IsFormed or not self._std_dev.IsFormed:
+            return
+
         ma = float(ma_val)
         std = float(std_val)
         close = float(candle.ClosePrice)

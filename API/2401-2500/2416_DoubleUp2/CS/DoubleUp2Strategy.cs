@@ -98,7 +98,13 @@ public class DoubleUp2Strategy : Strategy
 			new ExponentialMovingAverage { Length = MacdFastPeriod });
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, macd, ProcessCandle).Start();
+		subscription.Bind(rsi, macd, (candle, rsiValue, macdValue) =>
+		{
+			if (!rsi.IsFormed || !macd.IsFormed)
+				return;
+
+			ProcessCandle(candle, rsiValue, macdValue);
+		}).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

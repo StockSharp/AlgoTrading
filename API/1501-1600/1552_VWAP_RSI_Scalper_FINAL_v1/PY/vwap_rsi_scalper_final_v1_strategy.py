@@ -34,6 +34,9 @@ class vwap_rsi_scalper_final_v1_strategy(Strategy):
         self._current_day = None
         self._stop_price = 0.0
         self._take_profit_price = 0.0
+        self._rsi = None
+        self._ema = None
+        self._std_dev = None
 
     @property
     def rsi_length(self):
@@ -73,25 +76,30 @@ class vwap_rsi_scalper_final_v1_strategy(Strategy):
         self._current_day = None
         self._stop_price = 0.0
         self._take_profit_price = 0.0
+        self._rsi = None
+        self._ema = None
+        self._std_dev = None
 
     def OnStarted2(self, time):
         super(vwap_rsi_scalper_final_v1_strategy, self).OnStarted2(time)
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.rsi_length
-        ema = ExponentialMovingAverage()
-        ema.Length = self.ema_length
-        std_dev = StandardDeviation()
-        std_dev.Length = 14
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.rsi_length
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self.ema_length
+        self._std_dev = StandardDeviation()
+        self._std_dev.Length = 14
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, ema, std_dev, self.on_process).Start()
+        subscription.Bind(self._rsi, self._ema, self._std_dev, self.on_process).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
+            self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
     def on_process(self, candle, rsi_val, ema_val, std_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._rsi.IsFormed or not self._ema.IsFormed or not self._std_dev.IsFormed:
             return
         day = candle.OpenTime.Date
         if day != self._current_day:

@@ -131,6 +131,16 @@ public class BillyExpertReversalStrategy : Strategy
 			}
 		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHigh3 = _prevHigh2;
+			_prevHigh2 = _prevHigh1;
+			_prevHigh1 = high;
+			_prevRsi = rsiValue;
+			_hasPrevRsi = true;
+			return;
+		}
+
 		// Entry: descending highs (selling exhaustion) + RSI confirms reversal
 		if (Position == 0)
 		{

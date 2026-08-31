@@ -25,6 +25,8 @@ class machine_learning_super_trend_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))).SetDisplay("Candle Type", "Candles", "General")
 
         self._super_trend = None
+        self._dummy_ema1 = None
+        self._dummy_ema2 = None
         self._prev_direction = 0
         self._stop_loss = 0.0
         self._take_profit = 0.0
@@ -37,6 +39,8 @@ class machine_learning_super_trend_strategy(Strategy):
     def OnReseted(self):
         super(machine_learning_super_trend_strategy, self).OnReseted()
         self._super_trend = None
+        self._dummy_ema1 = None
+        self._dummy_ema2 = None
         self._prev_direction = 0
         self._stop_loss = 0.0
         self._take_profit = 0.0
@@ -48,12 +52,12 @@ class machine_learning_super_trend_strategy(Strategy):
         self._super_trend = SuperTrend()
         self._super_trend.Length = self._atr_period.Value
         self._super_trend.Multiplier = self._atr_factor.Value
-        dummy1 = ExponentialMovingAverage()
-        dummy1.Length = 10
-        dummy2 = ExponentialMovingAverage()
-        dummy2.Length = 20
+        self._dummy_ema1 = ExponentialMovingAverage()
+        self._dummy_ema1.Length = 10
+        self._dummy_ema2 = ExponentialMovingAverage()
+        self._dummy_ema2.Length = 20
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(dummy1, dummy2, self._process_candle).Start()
+        subscription.Bind(self._dummy_ema1, self._dummy_ema2, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -65,7 +69,7 @@ class machine_learning_super_trend_strategy(Strategy):
             return
         from StockSharp.Algo.Indicators import CandleIndicatorValue
         st_result = self._super_trend.Process(CandleIndicatorValue(self._super_trend, candle))
-        if not self._super_trend.IsFormed or st_result.IsEmpty:
+        if not self._dummy_ema1.IsFormed or not self._dummy_ema2.IsFormed or not self._super_trend.IsFormed or st_result.IsEmpty:
             return
         st_val = float(st_result)
         close = float(candle.ClosePrice)

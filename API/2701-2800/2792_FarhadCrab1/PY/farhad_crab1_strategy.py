@@ -47,6 +47,8 @@ class farhad_crab1_strategy(Strategy):
         self._prev_prev_daily_ma = None
         self._previous_candle = None
         self._entry_price = 0.0
+        self._ema = None
+        self._daily_ema = None
 
     @property
     def candle_type(self):
@@ -63,28 +65,32 @@ class farhad_crab1_strategy(Strategy):
         self._prev_prev_daily_ma = None
         self._previous_candle = None
         self._entry_price = 0.0
+        self._ema = None
+        self._daily_ema = None
 
     def OnStarted2(self, time):
         super(farhad_crab1_strategy, self).OnStarted2(time)
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self._ma_length.Value
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self._ma_length.Value
+        self._daily_ema = ExponentialMovingAverage()
+        self._daily_ema.Length = self._daily_ma_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ema, self._process_working_candle).Start()
+        subscription.Bind(self._ema, self._process_working_candle).Start()
 
-        daily_ema = ExponentialMovingAverage()
-        daily_ema.Length = self._daily_ma_length.Value
         daily_sub = self.SubscribeCandles(self._daily_candle_type)
-        daily_sub.Bind(daily_ema, self._process_daily_candle).Start()
+        daily_sub.Bind(self._daily_ema, self._process_daily_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
+            self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
     def _process_daily_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._daily_ema.IsFormed:
             return
         self._prev_prev_daily_close = self._prev_daily_close
         self._prev_prev_daily_ma = self._prev_daily_ma
@@ -93,6 +99,9 @@ class farhad_crab1_strategy(Strategy):
 
     def _process_working_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._ema.IsFormed or not self._daily_ema.IsFormed:
             return
 
         ema_val = float(ema_val)

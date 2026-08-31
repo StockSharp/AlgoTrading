@@ -29,6 +29,8 @@ class hull_trend_osma_strategy(Strategy):
 
         self._prev1 = None
         self._prev2 = None
+        self._hma = None
+        self._signal = None
 
     @property
     def HullPeriod(self):
@@ -76,13 +78,13 @@ class hull_trend_osma_strategy(Strategy):
         self._prev1 = None
         self._prev2 = None
 
-        hma = HullMovingAverage()
-        hma.Length = self.HullPeriod
-        signal = ExponentialMovingAverage()
-        signal.Length = self.SignalPeriod
+        self._hma = HullMovingAverage()
+        self._hma.Length = self.HullPeriod
+        self._signal = ExponentialMovingAverage()
+        self._signal.Length = self.SignalPeriod
 
         self.SubscribeCandles(self.CandleType) \
-            .Bind(hma, signal, self.ProcessCandle) \
+            .Bind(self._hma, self._signal, self.ProcessCandle) \
             .Start()
 
         self.StartProtection(
@@ -93,6 +95,9 @@ class hull_trend_osma_strategy(Strategy):
 
     def ProcessCandle(self, candle, hma_val, signal_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._hma.IsFormed or not self._signal.IsFormed:
             return
 
         hma_f = float(hma_val)
@@ -126,6 +131,8 @@ class hull_trend_osma_strategy(Strategy):
         super(hull_trend_osma_strategy, self).OnReseted()
         self._prev1 = None
         self._prev2 = None
+        self._hma = None
+        self._signal = None
 
     def CreateClone(self):
         return hull_trend_osma_strategy()

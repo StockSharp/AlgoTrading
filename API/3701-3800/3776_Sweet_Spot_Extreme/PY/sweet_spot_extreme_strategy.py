@@ -79,6 +79,9 @@ class sweet_spot_extreme_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         ema_val = float(ema_value)
         cci_val = float(cci_value)
 

@@ -52,6 +52,7 @@ public class MartiniMartingaleStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal sma)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) return;
 
 		var close = candle.ClosePrice;
 

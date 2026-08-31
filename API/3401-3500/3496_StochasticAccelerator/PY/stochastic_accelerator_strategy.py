@@ -22,6 +22,7 @@ class stochastic_accelerator_strategy(Strategy):
         self._prev_roc = 0.0
         self._candles_since_trade = 4
         self._has_prev = False
+        self._roc = None
 
     @property
     def CandleType(self):
@@ -60,6 +61,7 @@ class stochastic_accelerator_strategy(Strategy):
         self._prev_roc = 0.0
         self._candles_since_trade = self.SignalCooldownCandles
         self._has_prev = False
+        self._roc = None
 
     def OnStarted2(self, time):
         super(stochastic_accelerator_strategy, self).OnStarted2(time)
@@ -67,14 +69,17 @@ class stochastic_accelerator_strategy(Strategy):
         self._candles_since_trade = self.SignalCooldownCandles
         self._has_prev = False
 
-        roc = RateOfChange()
-        roc.Length = self.Period
+        self._roc = RateOfChange()
+        self._roc.Length = self.Period
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(roc, self._process_candle).Start()
+        subscription.Bind(self._roc, self._process_candle).Start()
 
     def _process_candle(self, candle, roc_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._roc.IsFormed:
             return
 
         if self._candles_since_trade < self.SignalCooldownCandles:

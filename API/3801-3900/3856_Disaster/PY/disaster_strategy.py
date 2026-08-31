@@ -36,6 +36,7 @@ class disaster_strategy(Strategy):
         subscription.Bind(sma, mom, self.process_candle).Start()
     def process_candle(self, candle, sma, mom):
         if candle.State != CandleStates.Finished: return
+        if not self.IsFormedAndOnlineAndAllowTrading(): return
         close = float(candle.ClosePrice); sma_val = float(sma); mom_val = float(mom)
         if not self._has_prev:
             self._prev_mom = mom_val; self._has_prev = True; return

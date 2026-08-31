@@ -47,7 +47,7 @@ class envelope_limit_ladder_strategy(Strategy):
     def process_candle(self, candle, bb_value):
         if candle.State != CandleStates.Finished:
             return
-        if not bb_value.IsFinal or bb_value.IsEmpty:
+        if not bb_value.IsFormed or not bb_value.IsFinal or bb_value.IsEmpty:
             return
         if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
             return

@@ -2,12 +2,10 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -44,12 +42,10 @@ class ny_breakout_strategy(Strategy):
         self._current_day = None
         self._range_set = False
         self._traded_today = False
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = 20
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._sma, self.OnProcess).Start()
+        subscription.Bind(self.OnProcess).Start()
 
-    def OnProcess(self, candle, sma_val):
+    def OnProcess(self, candle):
         if candle.State != CandleStates.Finished:
             return
         day = candle.OpenTime.Date

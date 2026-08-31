@@ -161,6 +161,9 @@ public class MeanReversionStrategy : Strategy
 			return;
 
 		// Skip if strategy is not ready to trade
+		if (!_ma.IsFormed || !_stdDev.IsFormed)
+			return;
+
 		// Calculate upper and lower bands based on mean and standard deviation
 		decimal upperBand = maValue + (stdDevValue * DeviationMultiplier);
 		decimal lowerBand = maValue - (stdDevValue * DeviationMultiplier);

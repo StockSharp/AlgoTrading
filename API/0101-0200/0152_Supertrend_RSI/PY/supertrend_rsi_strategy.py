@@ -141,6 +141,9 @@ class supertrend_rsi_strategy(Strategy):
             self._lows = self._lows[trim:]
             self._closes = self._closes[trim:]
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         if self._cooldown > 0:
             self._cooldown -= 1
             return

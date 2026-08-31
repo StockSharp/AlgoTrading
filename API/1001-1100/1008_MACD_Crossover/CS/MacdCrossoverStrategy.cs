@@ -180,6 +180,9 @@ public class MacdCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!macdValue.IsFormed)
+			return;
+
 		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue macdTyped)
 			return;
 

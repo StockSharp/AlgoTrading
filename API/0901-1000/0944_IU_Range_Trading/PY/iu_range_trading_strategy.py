@@ -30,6 +30,9 @@ class iu_range_trading_strategy(Strategy):
         self._sl0 = None
         self._trailing_sl = None
         self._entry_price = 0.0
+        self._highest = None
+        self._lowest = None
+        self._atr = None
 
     @property
     def candle_type(self):
@@ -47,17 +50,20 @@ class iu_range_trading_strategy(Strategy):
         self._sl0 = None
         self._trailing_sl = None
         self._entry_price = 0.0
+        self._highest = None
+        self._lowest = None
+        self._atr = None
 
     def OnStarted2(self, time):
         super(iu_range_trading_strategy, self).OnStarted2(time)
-        highest = Highest()
-        highest.Length = self._range_length.Value
-        lowest = Lowest()
-        lowest.Length = self._range_length.Value
-        atr = AverageTrueRange()
-        atr.Length = self._atr_length.Value
+        self._highest = Highest()
+        self._highest.Length = self._range_length.Value
+        self._lowest = Lowest()
+        self._lowest.Length = self._range_length.Value
+        self._atr = AverageTrueRange()
+        self._atr.Length = self._atr_length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(highest, lowest, atr, self.OnProcess).Start()
+        subscription.Bind(self._highest, self._lowest, self._atr, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -65,6 +71,8 @@ class iu_range_trading_strategy(Strategy):
 
     def OnProcess(self, candle, highest_val, lowest_val, atr_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._highest.IsFormed or not self._lowest.IsFormed or not self._atr.IsFormed:
             return
         h_val = float(highest_val)
         l_val = float(lowest_val)

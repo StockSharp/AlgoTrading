@@ -60,28 +60,24 @@ public class VrSetkaP2Strategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		if (!_hasPrev)
+		if (_hasPrev && IsFormedAndOnlineAndAllowTrading())
 		{
-			_prevOpen = candle.OpenPrice;
-			_prevClose = close;
-			_hasPrev = true;
-			return;
-		}
-
-		// Previous candle bullish + close above EMA => buy
-		if (_prevClose > _prevOpen && close > emaValue && Position <= 0)
-		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		// Previous candle bearish + close below EMA => sell
-		else if (_prevClose < _prevOpen && close < emaValue && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			// Previous candle bullish + close above EMA => buy
+			if (_prevClose > _prevOpen && close > emaValue && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			// Previous candle bearish + close below EMA => sell
+			else if (_prevClose < _prevOpen && close < emaValue && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
 		}
 
 		_prevOpen = candle.OpenPrice;
 		_prevClose = close;
+		_hasPrev = true;
 	}
 }

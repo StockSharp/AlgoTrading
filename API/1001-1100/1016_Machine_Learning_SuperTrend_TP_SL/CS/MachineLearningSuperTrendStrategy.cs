@@ -23,6 +23,8 @@ namespace StockSharp.Samples.Strategies;
 	private readonly StrategyParam<int> _cooldownBars;
 	
 	private SuperTrend _superTrend;
+	private ExponentialMovingAverage _dummyEma1;
+	private ExponentialMovingAverage _dummyEma2;
 	private int _prevDirection;
 	private decimal _stopLoss;
 	private decimal _takeProfit;
@@ -126,6 +128,8 @@ namespace StockSharp.Samples.Strategies;
 	{
 	base.OnReseted();
 	_superTrend = null;
+	_dummyEma1 = null;
+	_dummyEma2 = null;
 	_prevDirection = 0;
 	_stopLoss = 0;
 	_takeProfit = 0;
@@ -144,12 +148,12 @@ namespace StockSharp.Samples.Strategies;
 	Multiplier = AtrFactor
 	};
 	
-	var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
-	var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+	_dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+	_dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription
-	.Bind(dummyEma1, dummyEma2, ProcessCandle)
+	.Bind(_dummyEma1, _dummyEma2, ProcessCandle)
 	.Start();
 	
 	var area = CreateChartArea();
@@ -167,7 +171,7 @@ namespace StockSharp.Samples.Strategies;
 	return;
 
 	var stResult = _superTrend.Process(new CandleIndicatorValue(_superTrend, candle));
-	if (!_superTrend.IsFormed || stResult.IsEmpty)
+	if (!_dummyEma1.IsFormed || !_dummyEma2.IsFormed || !_superTrend.IsFormed || stResult.IsEmpty)
 	return;
 
 	var superTrendValue = stResult.GetValue<decimal>();

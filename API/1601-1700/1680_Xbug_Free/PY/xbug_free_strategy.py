@@ -43,7 +43,7 @@ class xbug_free_strategy(Strategy):
     def on_process(self, candle, sma, atr):
         if candle.State != CandleStates.Finished:
             return
-        if atr <= 0:
+        if not self.IsFormedAndOnlineAndAllowTrading() or atr <= 0:
             return
         close = candle.ClosePrice
         # Counter-trend: buy when price drops below SMA by 1 ATR

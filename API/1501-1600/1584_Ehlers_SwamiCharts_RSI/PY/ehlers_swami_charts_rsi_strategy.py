@@ -51,6 +51,8 @@ class ehlers_swami_charts_rsi_strategy(Strategy):
     def on_process(self, candle, values):
         if candle.State != CandleStates.Finished:
             return
+        if any(not value.IsFormed for value in values):
+            return
         color1_tot = 0
         color2_tot = 0
         count = 0

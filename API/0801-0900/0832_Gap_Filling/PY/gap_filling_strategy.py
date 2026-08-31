@@ -59,6 +59,11 @@ class gap_filling_strategy(Strategy):
         fast_v = float(fast_val)
         slow_v = float(slow_val)
 
+        if self._prev_fast == 0.0 or self._prev_slow == 0.0:
+            self._prev_fast = fast_val
+            self._prev_slow = slow_val
+            return
+
         if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
 
 

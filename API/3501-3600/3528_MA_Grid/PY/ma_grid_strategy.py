@@ -19,6 +19,7 @@ class ma_grid_strategy(Strategy):
         self._grid_amount = self.Param("GridAmount", 6)
         self._distance = self.Param("Distance", 0.005)
 
+        self._ema = None
         self._current_grid = 0
         self._next_grid_price = 0.0
         self._last_grid_price = 0.0
@@ -66,6 +67,7 @@ class ma_grid_strategy(Strategy):
 
     def OnReseted(self):
         super(ma_grid_strategy, self).OnReseted()
+        self._ema = None
         self._current_grid = 0
         self._next_grid_price = 0.0
         self._last_grid_price = 0.0
@@ -78,11 +80,11 @@ class ma_grid_strategy(Strategy):
         self._last_grid_price = 0.0
         self._is_grid_initialized = False
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self.MaPeriod
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self.MaPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ema, self._process_candle).Start()
+        subscription.Bind(self._ema, self._process_candle).Start()
 
     def _update_grid_levels(self, ema_val):
         dist = float(self.Distance)
@@ -100,6 +102,9 @@ class ma_grid_strategy(Strategy):
 
     def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._ema.IsFormed:
             return
 
         ema_val = float(ema_value)

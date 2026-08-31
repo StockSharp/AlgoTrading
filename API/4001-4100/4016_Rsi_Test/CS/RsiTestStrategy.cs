@@ -115,6 +115,7 @@ public class RsiTestStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_rsi = null;
 		_previousRsi = null;
 		_previousOpen = null;
 		_entryPrice = null;

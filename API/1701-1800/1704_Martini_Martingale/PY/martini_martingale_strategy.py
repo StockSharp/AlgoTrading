@@ -49,6 +49,8 @@ class martini_martingale_strategy(Strategy):
     def on_process(self, candle, rsi, sma):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         close = candle.ClosePrice
         # RSI oversold => buy
         if rsi < 30 and self.Position <= 0:

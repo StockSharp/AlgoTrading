@@ -16,6 +16,7 @@ public class TradingPanelControlStrategy : Strategy
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _signalCooldownCandles;
 
+	private RelativeStrengthIndex _rsi;
 	private decimal _prevWr;
 	private int _candlesSinceTrade;
 	private bool _hasPrev;
@@ -40,6 +41,7 @@ public class TradingPanelControlStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_rsi = null;
 		_prevWr = 0;
 		_candlesSinceTrade = SignalCooldownCandles;
 		_hasPrev = false;
@@ -52,14 +54,21 @@ public class TradingPanelControlStrategy : Strategy
 		_prevWr = 0;
 		_candlesSinceTrade = SignalCooldownCandles;
 		_hasPrev = false;
-		var wr = new RelativeStrengthIndex { Length = Period };
+		_rsi = new RelativeStrengthIndex { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(wr, ProcessCandle).Start();
+		subscription.Bind(_rsi, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal wrValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
+
+		if (!_rsi.IsFormed)
+		{
+			_prevWr = wrValue;
+			_hasPrev = true;
+			return;
+		}
 
 		if (_candlesSinceTrade < SignalCooldownCandles)
 			_candlesSinceTrade++;

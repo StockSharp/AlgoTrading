@@ -77,6 +77,9 @@ class exp3_xma_ishimoku_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not ichimoku_value.IsFormed:
+            return
+
         kijun_raw = ichimoku_value.Kijun
         senkou_a_raw = ichimoku_value.SenkouA
         senkou_b_raw = ichimoku_value.SenkouB

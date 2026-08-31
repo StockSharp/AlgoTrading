@@ -101,7 +101,13 @@ base.OnStarted2(time);
 
 var wr = new WilliamsR { Length = Length };
 var subscription = SubscribeCandles(CandleType);
-subscription.Bind(wr, ProcessCandle).Start();
+subscription.Bind(wr, (candle, value) =>
+{
+if (!wr.IsFormed)
+return;
+
+ProcessCandle(candle, value);
+}).Start();
 
 var area = CreateChartArea();
 if (area != null)

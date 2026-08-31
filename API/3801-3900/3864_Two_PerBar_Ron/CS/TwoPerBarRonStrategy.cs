@@ -61,6 +61,9 @@ public class TwoPerBarRonStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var close = candle.ClosePrice;
 
 		if (!_hasPrev)

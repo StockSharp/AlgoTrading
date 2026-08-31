@@ -32,6 +32,7 @@ class two_per_bar_ron_strategy(Strategy):
         sub.Bind(ema, mom, self.process_candle).Start()
     def process_candle(self, candle, ema, mom):
         if candle.State != CandleStates.Finished: return
+        if not self.IsFormedAndOnlineAndAllowTrading(): return
         close = float(candle.ClosePrice); ema_val = float(ema); mom_val = float(mom)
         if not self._has_prev: self._prev_mom = mom_val; self._has_prev = True; return
         if self._prev_mom <= 0 and mom_val > 0 and close > ema_val and self.Position <= 0:

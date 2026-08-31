@@ -103,6 +103,9 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!bbValue.IsFormed)
+			return;
+
 		if (bbValue is not IBollingerBandsValue bb)
 			return;
 

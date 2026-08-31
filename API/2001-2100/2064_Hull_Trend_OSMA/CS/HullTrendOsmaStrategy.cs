@@ -73,7 +73,13 @@ public class HullTrendOsmaStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(hma, signal, ProcessCandle)
+			.Bind(hma, signal, (candle, hmaValue, signalValue) =>
+			{
+				if (!hma.IsFormed || !signal.IsFormed)
+					return;
+
+				ProcessCandle(candle, hmaValue, signalValue);
+			})
 			.Start();
 
 		StartProtection(

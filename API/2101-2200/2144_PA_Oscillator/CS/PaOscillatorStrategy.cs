@@ -97,7 +97,13 @@ public class PaOscillatorStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(fastEma, slowEma, (candle, fast, slow) =>
+			{
+				if (!fastEma.IsFormed || !slowEma.IsFormed)
+					return;
+
+				ProcessCandle(candle, fast, slow);
+			})
 			.Start();
 
 		var area = CreateChartArea();

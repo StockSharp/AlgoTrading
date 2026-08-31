@@ -158,6 +158,10 @@ class tds_global_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
 
+        if not self.IsFormed:
+            self._update_history(macd_val, williams_val, candle)
+            return
+
         self._manage_open_position(candle)
 
         if abs(self.Position) > 0:

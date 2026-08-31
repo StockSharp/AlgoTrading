@@ -88,6 +88,9 @@ public class EmaSarBullsBearsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (!_hasPrev)
 		{
 			_prevBears = bearsPower;

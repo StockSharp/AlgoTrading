@@ -61,6 +61,9 @@ class nextbar_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         close = float(candle.ClosePrice)
         open_price = float(candle.OpenPrice)
         ema_val = float(ema)

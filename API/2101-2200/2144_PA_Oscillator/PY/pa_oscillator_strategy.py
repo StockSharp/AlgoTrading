@@ -23,6 +23,8 @@ class pa_oscillator_strategy(Strategy):
         self._prev_macd = None
         self._prev_color = None
         self._prev_prev_color = None
+        self._fast_ema = None
+        self._slow_ema = None
 
     @property
     def fast_length(self):
@@ -41,24 +43,28 @@ class pa_oscillator_strategy(Strategy):
         self._prev_macd = None
         self._prev_color = None
         self._prev_prev_color = None
+        self._fast_ema = None
+        self._slow_ema = None
 
     def OnStarted2(self, time):
         super(pa_oscillator_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_length
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_length
+        self._fast_ema = ExponentialMovingAverage()
+        self._fast_ema.Length = self.fast_length
+        self._slow_ema = ExponentialMovingAverage()
+        self._slow_ema.Length = self.slow_length
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.process_candle).Start()
+        subscription.Bind(self._fast_ema, self._slow_ema, self.process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, self._fast_ema)
+            self.DrawIndicator(area, self._slow_ema)
             self.DrawOwnTrades(area)
 
     def process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
             return
         fast = float(fast)
         slow = float(slow)

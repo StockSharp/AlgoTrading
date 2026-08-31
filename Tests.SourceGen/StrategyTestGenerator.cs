@@ -14,23 +14,81 @@ public class StrategyTestGenerator : IIncrementalGenerator
 	// Keep this bucket count in sync with the eight direct category jobs in .github/workflows/dotnet.yml.
 	private const int _shardCount = 8;
 
-	// Test method names (derived from folder) with manually-defined tests in Overrides files
+	// Full strategy folder keys with manually-defined tests in Overrides files.
 	private static readonly System.Collections.Generic.HashSet<string> _overrides = new(System.StringComparer.Ordinal)
 	{
-		"BreakoutBarsTrend",
-		"Ch2010Structure",
-		"CointegrationPairs",
-		"DeltaNeutralArbitrage",
-		"DispersionTrading",
-		"ImproveMaRsiHedge",
-		"KeltnerSeasonalFilter",
-		"MulticurrencyOverlayHedge",
-		"Pairs",
-		"PairsTrading",
-		"SpotFuturesArbitrage",
-		"Spreader2",
-		"StatisticalArbitrage",
+		"0217_Pairs_Trading",
+		"0219_Statistical_Arbitrage",
+		"0222_Cointegration_Pairs",
+		"0230_Delta_Neutral_Arbitrage",
+		"0333_Keltner_Seasonal_Filter",
+		"0365_Dispersion_Trading",
+		"0526_Spot_Futures_Arbitrage",
+		"1153_Pairs",
+		"2000_HFT_Spreader_for_FORTS",
+		"2096_Breakout_Bars_Trend",
+		"2679_Multicurrency_Overlay_Hedge",
+		"2705_Spreader_2",
+		"2776_CH2010_Structure",
+		"2798_Improve_MA_RSI_Hedge",
+		"3064_Two_PerBar",
+		"4048_Burg_Extrapolator_Forecast",
 	};
+
+	// These diagnostics are repository build guards, not a separately versioned analyzer API.
+#pragma warning disable RS2008
+	private static readonly DiagnosticDescriptor _duplicateCSharpKey = new(
+		"ATG001",
+		"Duplicate C# strategy implementation",
+		"Strategy key '{0}' is implemented by multiple C# Strategy subclasses: {1}",
+		"StrategyInventory",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	private static readonly DiagnosticDescriptor _duplicatePythonKey = new(
+		"ATG002",
+		"Duplicate Python strategy implementation",
+		"Strategy key '{0}' is implemented by multiple Python files: {1}",
+		"StrategyInventory",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	private static readonly DiagnosticDescriptor _missingPythonKey = new(
+		"ATG003",
+		"Python strategy is missing",
+		"Strategy key '{0}' has a C# Strategy subclass but no Python AdditionalFile ({1})",
+		"StrategyInventory",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+
+	private static readonly DiagnosticDescriptor _missingCSharpKey = new(
+		"ATG004",
+		"C# strategy is missing",
+		"Strategy key '{0}' has a Python AdditionalFile but no C# Strategy subclass ({1})",
+		"StrategyInventory",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+#pragma warning restore RS2008
+
+	private readonly struct StrategyEntry
+	{
+		public StrategyEntry(string strategyKey, int strategyId, string methodName, string implementation, string path, int shard)
+		{
+			StrategyKey = strategyKey;
+			StrategyId = strategyId;
+			MethodName = methodName;
+			Implementation = implementation;
+			Path = path;
+			Shard = shard;
+		}
+
+		public string StrategyKey { get; }
+		public int StrategyId { get; }
+		public string MethodName { get; }
+		public string Implementation { get; }
+		public string Path { get; }
+		public int Shard { get; }
+	}
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
@@ -46,19 +104,26 @@ public class StrategyTestGenerator : IIncrementalGenerator
 					var cds = (ClassDeclarationSyntax)ctx.Node;
 					var symbol = ctx.SemanticModel.GetDeclaredSymbol(cds, ct) as INamedTypeSymbol;
 					if (symbol == null)
-						return null;
+						return (StrategyEntry?)null;
 
 					if (!InheritsFromStrategy(symbol))
-						return null;
+						return (StrategyEntry?)null;
 
 					var filePath = ctx.Node.SyntaxTree.FilePath.Replace('\\', '/');
 					var strategyInfo = GetStrategyInfo(filePath);
 					if (strategyInfo == null)
-						return null;
+						return (StrategyEntry?)null;
 
-					return strategyInfo.Value.methodName + "|" + symbol.Name + "|" + strategyInfo.Value.shard;
+					return new StrategyEntry(
+						strategyInfo.Value.strategyKey,
+						strategyInfo.Value.strategyId,
+						strategyInfo.Value.methodName,
+						symbol.Name,
+						filePath,
+						strategyInfo.Value.shard);
 				})
-			.Where(static x => x != null);
+			.Where(static x => x.HasValue)
+			.Select(static (x, _) => x.Value);
 
 		var collected = classes.Collect();
 
@@ -68,8 +133,10 @@ public class StrategyTestGenerator : IIncrementalGenerator
 				return;
 
 			var entries = items
-				.Select(x => { var parts = x.Split('|'); return (methodName: parts[0], className: parts[1], shard: int.Parse(parts[2])); })
-				.OrderBy(x => x.methodName)
+				.GroupBy(x => x.StrategyKey, System.StringComparer.Ordinal)
+				.Select(g => g.OrderBy(x => x.Path).First())
+				.OrderBy(x => x.StrategyId)
+				.ThenBy(x => x.StrategyKey)
 				.ToList();
 
 			var sb = new StringBuilder();
@@ -85,22 +152,15 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			sb.AppendLine("partial class CSharpTests");
 			sb.AppendLine("{");
 
-			var usedNames = new System.Collections.Generic.HashSet<string>();
-
-			foreach (var (methodName, className, shard) in entries)
+			foreach (var entry in entries)
 			{
-				var uniqueName = methodName;
-				var i = 2;
-				while (!usedNames.Add(uniqueName))
-					uniqueName = methodName + i++;
-
-				if (_overrides.Contains(uniqueName))
+				if (_overrides.Contains(entry.StrategyKey))
 					continue;
 
 				sb.AppendLine($"\t[TestMethod]");
-				sb.AppendLine($"\t[TestCategory(\"Shard{shard:D2}\")]");
-				sb.AppendLine($"\tpublic Task {uniqueName}()");
-				sb.AppendLine($"\t\t=> RunStrategy<{className}>();");
+				sb.AppendLine($"\t[TestCategory(\"Shard{entry.Shard:D2}\")]");
+				sb.AppendLine($"\tpublic Task {entry.MethodName}()");
+				sb.AppendLine($"\t\t=> RunStrategy<{entry.Implementation}>();");
 				sb.AppendLine();
 			}
 
@@ -111,39 +171,43 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 		// Python tests: scan .py AdditionalFiles
 		var pyFiles = context.AdditionalTextsProvider
-			.Where(static f => f.Path.EndsWith(".py"));
-
-		var pyCollected = pyFiles.Collect();
-
-		context.RegisterSourceOutput(pyCollected, static (spc, files) =>
-		{
-			if (files.IsEmpty)
-				return;
-
-			var entries = new System.Collections.Generic.List<(string methodName, string relPath, int shard)>();
-
-			foreach (var file in files)
+			.Where(static f => f.Path.EndsWith(".py"))
+			.Select(static (file, _) =>
 			{
 				var path = file.Path.Replace('\\', '/');
-
-				// Extract the path below API, including its numeric range directory.
 				var apiIdx = path.IndexOf("/API/");
 				if (apiIdx < 0)
-					continue;
-
-				var relPath = path.Substring(apiIdx + "/API/".Length);
+					return (StrategyEntry?)null;
 
 				var strategyInfo = GetStrategyInfo(path);
 				if (strategyInfo == null)
-					continue;
+					return (StrategyEntry?)null;
 
-				entries.Add((strategyInfo.Value.methodName, relPath, strategyInfo.Value.shard));
-			}
+				var relPath = path.Substring(apiIdx + "/API/".Length);
+				return new StrategyEntry(
+					strategyInfo.Value.strategyKey,
+					strategyInfo.Value.strategyId,
+					strategyInfo.Value.methodName,
+					relPath,
+					path,
+					strategyInfo.Value.shard);
+			})
+			.Where(static x => x.HasValue)
+			.Select(static (x, _) => x.Value);
 
-			if (entries.Count == 0)
+		var pyCollected = pyFiles.Collect();
+
+		context.RegisterSourceOutput(pyCollected, static (spc, items) =>
+		{
+			if (items.IsEmpty)
 				return;
 
-			entries.Sort((a, b) => string.CompareOrdinal(a.relPath, b.relPath));
+			var entries = items
+				.GroupBy(x => x.StrategyKey, System.StringComparer.Ordinal)
+				.Select(g => g.OrderBy(x => x.Path).First())
+				.OrderBy(x => x.StrategyId)
+				.ThenBy(x => x.StrategyKey)
+				.ToList();
 
 			var sb = new StringBuilder();
 
@@ -157,22 +221,15 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			sb.AppendLine("partial class PythonTests");
 			sb.AppendLine("{");
 
-			var usedNames = new System.Collections.Generic.HashSet<string>();
-
-			foreach (var (methodName, relPath, shard) in entries)
+			foreach (var entry in entries)
 			{
-				var uniqueName = methodName;
-				var i = 2;
-				while (!usedNames.Add(uniqueName))
-					uniqueName = methodName + i++;
-
-				if (_overrides.Contains(uniqueName))
+				if (_overrides.Contains(entry.StrategyKey))
 					continue;
 
 				sb.AppendLine($"\t[TestMethod]");
-				sb.AppendLine($"\t[TestCategory(\"Shard{shard:D2}\")]");
-				sb.AppendLine($"\tpublic Task {uniqueName}()");
-				sb.AppendLine($"\t\t=> RunStrategy(\"{relPath}\");");
+				sb.AppendLine($"\t[TestCategory(\"Shard{entry.Shard:D2}\")]");
+				sb.AppendLine($"\tpublic Task {entry.MethodName}()");
+				sb.AppendLine($"\t\t=> RunStrategy(\"{entry.Implementation}\");");
 				sb.AppendLine();
 			}
 
@@ -180,6 +237,9 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 			spc.AddSource("PythonTests.g.cs", sb.ToString());
 		});
+
+		context.RegisterSourceOutput(collected.Combine(pyCollected), static (spc, inventories) =>
+			ReportInventoryDiagnostics(spc, inventories.Left, inventories.Right));
 	}
 
 	/// <summary>
@@ -187,9 +247,9 @@ public class StrategyTestGenerator : IIncrementalGenerator
 	/// and convert it to a PascalCase method name. The strategy may be placed directly
 	/// below API or below a numeric range directory such as 0201-0300.
 	/// E.g. ".../API/0201-0300/0256_Bollinger_Band_Width_Breakout/CS/SomeStrategy.cs"
-	/// becomes "BollingerBandWidthBreakout".
+	/// becomes ID 256 and test method "S0256_BollingerBandWidthBreakout".
 	/// </summary>
-	private static (string methodName, int shard)? GetStrategyInfo(string filePath)
+	private static (string strategyKey, int strategyId, string methodName, int shard)? GetStrategyInfo(string filePath)
 	{
 		var idx = filePath.IndexOf("/API/");
 		if (idx < 0)
@@ -197,6 +257,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 
 		var afterApi = filePath.Substring(idx + "/API/".Length);
 		string folderName = null;
+		string strategyKey = null;
 		var strategyId = 0;
 
 		foreach (var segment in afterApi.Split('/'))
@@ -205,6 +266,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			if (underscoreIdx <= 0 || !int.TryParse(segment.Substring(0, underscoreIdx), out strategyId))
 				continue;
 
+			strategyKey = segment;
 			folderName = segment.Substring(underscoreIdx + 1);
 			break;
 		}
@@ -212,14 +274,62 @@ public class StrategyTestGenerator : IIncrementalGenerator
 		if (folderName == null)
 			return null;
 
-		var result = SnakeToPascal(folderName, null);
+		var methodName = $"S{strategyId:D4}_{SnakeToPascal(folderName, null)}";
 
-		// C# identifiers can't start with a digit
-		if (result.Length > 0 && char.IsDigit(result[0]))
-			result = "_" + result;
-
-		return (result, strategyId % _shardCount);
+		return (strategyKey, strategyId, methodName, strategyId % _shardCount);
 	}
+
+	private static void ReportInventoryDiagnostics(
+		SourceProductionContext context,
+		ImmutableArray<StrategyEntry> csharpEntries,
+		ImmutableArray<StrategyEntry> pythonEntries)
+	{
+		var csharpByKey = csharpEntries
+			.GroupBy(x => x.StrategyKey, System.StringComparer.Ordinal)
+			.ToDictionary(g => g.Key, g => g.ToList(), System.StringComparer.Ordinal);
+		var pythonByKey = pythonEntries
+			.GroupBy(x => x.StrategyKey, System.StringComparer.Ordinal)
+			.ToDictionary(g => g.Key, g => g.ToList(), System.StringComparer.Ordinal);
+
+		foreach (var pair in csharpByKey.Where(p => p.Value.Count > 1).OrderBy(p => p.Key))
+		{
+			context.ReportDiagnostic(Diagnostic.Create(
+				_duplicateCSharpKey,
+				Location.None,
+				pair.Key,
+				string.Join(", ", pair.Value.Select(FormatEntry))));
+		}
+
+		foreach (var pair in pythonByKey.Where(p => p.Value.Count > 1).OrderBy(p => p.Key))
+		{
+			context.ReportDiagnostic(Diagnostic.Create(
+				_duplicatePythonKey,
+				Location.None,
+				pair.Key,
+				string.Join(", ", pair.Value.Select(FormatEntry))));
+		}
+
+		foreach (var strategyKey in csharpByKey.Keys.Except(pythonByKey.Keys, System.StringComparer.Ordinal).OrderBy(key => key))
+		{
+			context.ReportDiagnostic(Diagnostic.Create(
+				_missingPythonKey,
+				Location.None,
+				strategyKey,
+				FormatEntry(csharpByKey[strategyKey][0])));
+		}
+
+		foreach (var strategyKey in pythonByKey.Keys.Except(csharpByKey.Keys, System.StringComparer.Ordinal).OrderBy(key => key))
+		{
+			context.ReportDiagnostic(Diagnostic.Create(
+				_missingCSharpKey,
+				Location.None,
+				strategyKey,
+				FormatEntry(pythonByKey[strategyKey][0])));
+		}
+	}
+
+	private static string FormatEntry(StrategyEntry entry)
+		=> $"{entry.Implementation} ({entry.Path})";
 
 	private static string SnakeToPascal(string snake, string removeSuffix)
 	{

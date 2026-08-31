@@ -146,7 +146,13 @@ public class IuRangeTradingStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, atr, ProcessCandle)
+			.Bind(highest, lowest, atr, (candle, highestValue, lowestValue, atrValue) =>
+			{
+				if (!highest.IsFormed || !lowest.IsFormed || !atr.IsFormed)
+					return;
+
+				ProcessCandle(candle, highestValue, lowestValue, atrValue);
+			})
 			.Start();
 
 		var area = CreateChartArea();

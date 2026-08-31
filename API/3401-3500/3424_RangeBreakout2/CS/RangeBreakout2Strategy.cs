@@ -54,6 +54,7 @@ public class RangeBreakout2Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) return;
 
 		var close = candle.ClosePrice;
 

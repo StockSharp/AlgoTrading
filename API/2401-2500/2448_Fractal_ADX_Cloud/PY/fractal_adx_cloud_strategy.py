@@ -111,6 +111,9 @@ class fractal_adx_cloud_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         plus_di_val = adx_value.Dx.Plus
         minus_di_val = adx_value.Dx.Minus
 

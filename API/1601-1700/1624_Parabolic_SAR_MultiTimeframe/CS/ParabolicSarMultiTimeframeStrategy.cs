@@ -71,6 +71,9 @@ public class ParabolicSarMultiTimeframeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var price = candle.ClosePrice;
 
 		// Buy when price is above both SAR and EMA

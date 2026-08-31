@@ -113,7 +113,7 @@ public class ForMaxV2Strategy : Strategy
 		_lows[idx] = candle.LowPrice;
 		_barCount++;
 
-		if (_barCount < len || atrVal <= 0)
+		if (_barCount < len || atrVal <= 0 || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var high = decimal.MinValue;

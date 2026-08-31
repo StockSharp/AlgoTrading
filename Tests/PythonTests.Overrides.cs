@@ -19,7 +19,32 @@ partial class PythonTests
 
 	[TestMethod]
 	[TestCategory("Shard00")]
-	public Task BreakoutBarsTrend()
+	public Task S2000_HftSpreaderForForts()
+		// A full month creates tens of thousands of fills. One natural day still
+		// exercises hundreds of entry/exit cycles without turning CI into a load test.
+		=> RunStrategy(
+			"1901-2000/2000_HFT_Spreader_for_FORTS/PY/hft_spreader_for_forts_strategy.py",
+			replayDuration: System.TimeSpan.FromDays(1));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S3064_TwoPerbar()
+		// This intentionally trades on nearly every bar. A natural one-day window
+		// retains high trade coverage without generating ~16k fills per language.
+		=> RunStrategy(
+			"3001-3100/3064_Two_PerBar/PY/two_per_bar_strategy.py",
+			replayDuration: System.TimeSpan.FromDays(1));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S4048_BurgExtrapolatorForecast()
+		=> RunStrategy(
+			"4001-4100/4048_Burg_Extrapolator_Forecast/PY/burg_extrapolator_forecast_strategy.py",
+			replayDuration: System.TimeSpan.FromDays(1));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S2096_BreakoutBarsTrend()
 		// Compact parameters make the signal reachable in the bundled history window.
 		=> RunStrategy("2001-2100/2096_Breakout_Bars_Trend/PY/breakout_bars_trend_strategy.py", (s, _) =>
 		{
@@ -30,7 +55,7 @@ partial class PythonTests
 
 	[TestMethod]
 	[TestCategory("Shard00")]
-	public Task Ch2010Structure()
+	public Task S2776_Ch2010Structure()
 		=> RunStrategy("2701-2800/2776_CH2010_Structure/PY/ch2010_structure_strategy.py", (s, _) =>
 		{
 			SetParam(s, "DailyCandleType", System.TimeSpan.FromHours(1).TimeFrame());
@@ -39,12 +64,12 @@ partial class PythonTests
 
 	[TestMethod]
 	[TestCategory("Shard05")]
-	public Task DispersionTrading()
+	public Task S0365_DispersionTrading()
 		=> RunStrategy("0301-0400/0365_Dispersion_Trading/PY/dispersion_trading_strategy.py", (s, sec2) => SetParam(s, "Constituents", new[] { sec2 }));
 
 	[TestMethod]
 	[TestCategory("Shard07")]
-	public Task MulticurrencyOverlayHedge()
+	public Task S2679_MulticurrencyOverlayHedge()
 		=> RunStrategy("2601-2700/2679_Multicurrency_Overlay_Hedge/PY/multicurrency_overlay_hedge_strategy.py", (s, sec2) =>
 		{
 			SetParam(s, "Universe", new[] { s.Security, sec2 });
@@ -60,7 +85,7 @@ partial class PythonTests
 
 	[TestMethod]
 	[TestCategory("Shard01")]
-	public Task Spreader2()
+	public Task S2705_Spreader2()
 		=> RunStrategy("2701-2800/2705_Spreader_2/PY/spreader2_strategy.py", (s, sec2) =>
 		{
 			SetParam(s, "SecondSecurity", sec2);
@@ -71,22 +96,22 @@ partial class PythonTests
 
 	[TestMethod]
 	[TestCategory("Shard06")]
-	public Task CointegrationPairs()
+	public Task S0222_CointegrationPairs()
 		=> RunStrategy("0201-0300/0222_Cointegration_Pairs/PY/cointegration_pairs_strategy.py", (s, sec2) => { SetParam(s, "Asset2", sec2); SetParam(s, "Beta", 10000.0); });
 
 	[TestMethod]
 	[TestCategory("Shard06")]
-	public Task DeltaNeutralArbitrage()
+	public Task S0230_DeltaNeutralArbitrage()
 		=> RunStrategy("0201-0300/0230_Delta_Neutral_Arbitrage/PY/delta_neutral_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Asset2Security", sec2); SetParam(s, "Asset2Portfolio", s.Portfolio); });
 
 	[TestMethod]
 	[TestCategory("Shard06")]
-	public Task ImproveMaRsiHedge()
+	public Task S2798_ImproveMaRsiHedge()
 		=> RunStrategy("2701-2800/2798_Improve_MA_RSI_Hedge/PY/improve_ma_rsi_hedge_strategy.py");
 
 	[TestMethod]
 	[TestCategory("Shard05")]
-	public Task KeltnerSeasonalFilter()
+	public Task S0333_KeltnerSeasonalFilter()
 		// Compact periods make the signal reachable in the bundled history window.
 		=> RunStrategy("0301-0400/0333_Keltner_Seasonal_Filter/PY/keltner_seasonal_strategy.py", (s, _) =>
 		{
@@ -99,21 +124,21 @@ partial class PythonTests
 
 	[TestMethod]
 	[TestCategory("Shard01")]
-	public Task Pairs()
+	public Task S1153_Pairs()
 		=> RunStrategy("1101-1200/1153_Pairs/PY/pairs_strategy.py", (s, sec2) => SetParam(s, "ReferenceSecurity", sec2));
 
 	[TestMethod]
 	[TestCategory("Shard01")]
-	public Task PairsTrading()
+	public Task S0217_PairsTrading()
 		=> RunStrategy("0201-0300/0217_Pairs_Trading/PY/pairs_trading_strategy.py", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
 
 	[TestMethod]
 	[TestCategory("Shard06")]
-	public Task SpotFuturesArbitrage()
+	public Task S0526_SpotFuturesArbitrage()
 		=> RunStrategy("0501-0600/0526_Spot_Futures_Arbitrage/PY/spot_futures_arbitrage_strategy.py", (s, sec2) => { SetParam(s, "Spot", s.Security); SetParam(s, "Future", sec2); });
 
 	[TestMethod]
 	[TestCategory("Shard03")]
-	public Task StatisticalArbitrage()
+	public Task S0219_StatisticalArbitrage()
 		=> RunStrategy("0201-0300/0219_Statistical_Arbitrage/PY/statistical_arbitrage_strategy.py", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
 }

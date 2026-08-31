@@ -61,6 +61,8 @@ class vix_spike_strategy(Strategy):
     def on_process(self, candle, value):
         if candle.State != CandleStates.Finished:
             return
+        if not value.IsFormed:
+            return
         upper = float(value.UpBand)
         lower = float(value.LowBand)
         if upper == 0 or lower == 0:

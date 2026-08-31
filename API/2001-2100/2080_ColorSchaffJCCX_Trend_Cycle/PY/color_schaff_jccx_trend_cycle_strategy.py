@@ -21,6 +21,7 @@ class color_schaff_jccx_trend_cycle_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev = None
+        self._stc = None
 
     @property
     def high_level(self):
@@ -37,20 +38,23 @@ class color_schaff_jccx_trend_cycle_strategy(Strategy):
     def OnReseted(self):
         super(color_schaff_jccx_trend_cycle_strategy, self).OnReseted()
         self._prev = None
+        self._stc = None
 
     def OnStarted2(self, time):
         super(color_schaff_jccx_trend_cycle_strategy, self).OnStarted2(time)
-        stc = SchaffTrendCycle()
+        self._stc = SchaffTrendCycle()
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(stc, self.process_candle).Start()
+        subscription.Bind(self._stc, self.process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, stc)
+            self.DrawIndicator(area, self._stc)
             self.DrawOwnTrades(area)
 
     def process_candle(self, candle, stc_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._stc.IsFormed:
             return
         stc_val = float(stc_val)
         if self._prev is None:

@@ -55,7 +55,13 @@ public class DreamBotStrategy : Strategy
 		_candlesSinceTrade = SignalCooldownCandles;
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, ProcessCandle).Start();
+		subscription.Bind(ema, (candle, value) =>
+		{
+			if (!ema.IsFormed)
+				return;
+
+			ProcessCandle(candle, value);
+		}).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)

@@ -61,6 +61,9 @@ public class GoldWarrior02bImpulseStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var close = candle.ClosePrice;
 
 		if (!_hasPrev)

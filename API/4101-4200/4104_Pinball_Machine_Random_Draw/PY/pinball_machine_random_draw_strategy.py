@@ -15,6 +15,7 @@ class pinball_machine_random_draw_strategy(Strategy):
         super(pinball_machine_random_draw_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR Length", "ATR period for stops", "Indicators")
+        self._atr = None
 
     @property
     def CandleType(self): return self._candle_type.Value
@@ -25,17 +26,18 @@ class pinball_machine_random_draw_strategy(Strategy):
         super(pinball_machine_random_draw_strategy, self).OnReseted()
         self._entry_price = 0
         self._candle_count = 0
+        self._atr = None
 
     def OnStarted2(self, time):
         super(pinball_machine_random_draw_strategy, self).OnStarted2(time)
         self._entry_price = 0
         self._candle_count = 0
 
-        atr = AverageTrueRange()
-        atr.Length = self._atr_length.Value
+        self._atr = AverageTrueRange()
+        self._atr.Length = self._atr_length.Value
 
         sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(atr, self.OnProcess).Start()
+        sub.Bind(self._atr, self.OnProcess).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -44,6 +46,8 @@ class pinball_machine_random_draw_strategy(Strategy):
 
     def OnProcess(self, candle, atr_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._atr.IsFormed:
             return
         if atr_val <= 0:
             return

@@ -27,6 +27,8 @@ class double_up2_strategy(Strategy):
 
         self._entry_price = 0.0
         self._martingale_step = 0
+        self._rsi = None
+        self._macd = None
 
     @property
     def CciPeriod(self):
@@ -74,20 +76,23 @@ class double_up2_strategy(Strategy):
         self._entry_price = 0.0
         self._martingale_step = 0
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.CciPeriod
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.CciPeriod
 
         slow_ema = ExponentialMovingAverage()
         slow_ema.Length = self.MacdSlowPeriod
         fast_ema = ExponentialMovingAverage()
         fast_ema.Length = self.MacdFastPeriod
-        macd = MovingAverageConvergenceDivergence(slow_ema, fast_ema)
+        self._macd = MovingAverageConvergenceDivergence(slow_ema, fast_ema)
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, macd, self.ProcessCandle).Start()
+        subscription.Bind(self._rsi, self._macd, self.ProcessCandle).Start()
 
     def ProcessCandle(self, candle, rsi_value, macd_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self._rsi.IsFormed or not self._macd.IsFormed:
             return
 
         rsi_val = float(rsi_value)
@@ -132,6 +137,8 @@ class double_up2_strategy(Strategy):
         super(double_up2_strategy, self).OnReseted()
         self._entry_price = 0.0
         self._martingale_step = 0
+        self._rsi = None
+        self._macd = None
 
     def CreateClone(self):
         return double_up2_strategy()

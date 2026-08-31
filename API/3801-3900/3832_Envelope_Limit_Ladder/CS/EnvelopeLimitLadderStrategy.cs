@@ -55,7 +55,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!value.IsFinal || value.IsEmpty)
+		if (!value.IsFormed || !value.IsFinal || value.IsEmpty)
 			return;
 
 		var bbVal = value as BollingerBandsValue;

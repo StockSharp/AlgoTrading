@@ -58,6 +58,8 @@ class parabolic_sar_multi_timeframe_strategy(Strategy):
     def on_process(self, candle, sar_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         price = candle.ClosePrice
         # Buy when price is above both SAR and EMA
         if price > sar_value and price > ema_value and self.Position <= 0:

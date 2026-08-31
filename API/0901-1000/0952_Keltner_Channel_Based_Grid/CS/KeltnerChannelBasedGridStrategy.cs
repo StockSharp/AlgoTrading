@@ -93,7 +93,13 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 		var atr = new AverageTrueRange { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ma, atr, ProcessCandle).Start();
+		subscription.Bind(ma, atr, (candle, maValue, atrValue) =>
+		{
+			if (!ma.IsFormed || !atr.IsFormed)
+				return;
+
+			ProcessCandle(candle, maValue, atrValue);
+		}).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -58,7 +58,13 @@ public class StochasticAcceleratorStrategy : Strategy
 		_hasPrev = false;
 		var roc = new RateOfChange { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(roc, ProcessCandle).Start();
+		subscription.Bind(roc, (candle, value) =>
+		{
+			if (!roc.IsFormed)
+				return;
+
+			ProcessCandle(candle, value);
+		}).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rocValue)

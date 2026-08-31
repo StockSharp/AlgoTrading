@@ -17,7 +17,7 @@ using StockSharp.BusinessEntities;
 [TestClass]
 public partial class PythonTests
 {
-	public static async Task RunStrategy(string filePath, Action<Strategy, Security> extra = null)
+	public static async Task RunStrategy(string filePath, Action<Strategy, Security> extra = null, TimeSpan? replayDuration = null)
 	{
 		var strategyPath = Path.Combine("../../../../API/", filePath);
 
@@ -35,6 +35,6 @@ public partial class PythonTests
 
 		var strategy = code.ObjectType.CreateInstance<Strategy>();
 
-		await AsmInit.RunStrategy(strategy, extra);
+		await AsmInit.RunStrategy(strategy, extra, replayDuration: replayDuration);
 	}
 }

@@ -23,6 +23,8 @@ class ma_macd_position_averaging_strategy(Strategy):
         self._tp_points = self.Param("TakeProfitPoints", 400).SetDisplay("Take Profit", "TP in price steps", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 
+        self._fast = None
+        self._slow = None
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._entry_price = 0.0
@@ -34,6 +36,8 @@ class ma_macd_position_averaging_strategy(Strategy):
 
     def OnReseted(self):
         super(ma_macd_position_averaging_strategy, self).OnReseted()
+        self._fast = None
+        self._slow = None
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._entry_price = 0.0
@@ -41,18 +45,22 @@ class ma_macd_position_averaging_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(ma_macd_position_averaging_strategy, self).OnStarted2(time)
-        fast = WeightedMovingAverage()
-        fast.Length = self._fast_period.Value
-        slow = WeightedMovingAverage()
-        slow.Length = self._slow_period.Value
+        self._fast = WeightedMovingAverage()
+        self._fast.Length = self._fast_period.Value
+        self._slow = WeightedMovingAverage()
+        self._slow.Length = self._slow_period.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, self._process_candle).Start()
+        subscription.Bind(self._fast, self._slow, self._process_candle).Start()
 
     def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
         f = float(fast_val)
         s = float(slow_val)
+        if not self._fast.IsFormed or not self._slow.IsFormed:
+            self._prev_fast = f
+            self._prev_slow = s
+            return
         if self._cooldown > 0:
             self._cooldown -= 1
             self._prev_fast = f

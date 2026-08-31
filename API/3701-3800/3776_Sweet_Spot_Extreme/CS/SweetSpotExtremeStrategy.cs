@@ -120,6 +120,9 @@ public class SweetSpotExtremeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (!_hasPrevEma)
 		{
 			_prevPrevEma = emaValue;

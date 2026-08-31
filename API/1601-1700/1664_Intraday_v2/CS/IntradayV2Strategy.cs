@@ -61,7 +61,7 @@ public class IntradayV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (stdevVal <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading() || stdevVal <= 0)
 			return;
 
 		var close = candle.ClosePrice;

@@ -61,6 +61,10 @@ class color_xva_ma_digit_st_dev_strategy(Strategy):
     def process_candle(self, candle, ema_value, std_value):
         if candle.State != CandleStates.Finished:
             return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         ema_value = float(ema_value)
         std_value = float(std_value)
         if std_value == 0:

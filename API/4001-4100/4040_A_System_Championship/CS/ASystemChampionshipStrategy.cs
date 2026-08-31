@@ -111,7 +111,7 @@ public class ASystemChampionshipStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (atrValue <= 0)
+		if (atrValue <= 0 || !IsFormedAndOnlineAndAllowTrading())
 		{
 			SaveCandle(candle);
 			return;

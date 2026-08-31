@@ -18,6 +18,7 @@ class vidya_n_bars_borders_martingale_strategy(Strategy):
         self._ema_period = self.Param("EmaPeriod", 20)
         self._range_period = self.Param("RangePeriod", 10)
 
+        self._ema = None
         self._high_history = []
         self._low_history = []
         self._entry_price = 0.0
@@ -48,6 +49,7 @@ class vidya_n_bars_borders_martingale_strategy(Strategy):
 
     def OnReseted(self):
         super(vidya_n_bars_borders_martingale_strategy, self).OnReseted()
+        self._ema = None
         self._high_history = []
         self._low_history = []
         self._entry_price = 0.0
@@ -58,11 +60,11 @@ class vidya_n_bars_borders_martingale_strategy(Strategy):
         self._low_history = []
         self._entry_price = 0.0
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self.EmaPeriod
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self.EmaPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ema, self._process_candle).Start()
+        subscription.Bind(self._ema, self._process_candle).Start()
 
     def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
@@ -80,7 +82,7 @@ class vidya_n_bars_borders_martingale_strategy(Strategy):
             self._high_history.pop(0)
             self._low_history.pop(0)
 
-        if len(self._high_history) < rng_period:
+        if not self._ema.IsFormed or len(self._high_history) < rng_period:
             return
 
         highest = max(self._high_history)

@@ -33,6 +33,8 @@ class keltner_channel_based_grid_strategy(Strategy):
             .SetDisplay("Candle type", "Type of candles", "General")
         self._rebalance_count = 0
         self._bars_since_rebalance = 0
+        self._ma = None
+        self._atr = None
 
     @property
     def candle_type(self):
@@ -46,25 +48,29 @@ class keltner_channel_based_grid_strategy(Strategy):
         super(keltner_channel_based_grid_strategy, self).OnReseted()
         self._rebalance_count = 0
         self._bars_since_rebalance = 0
+        self._ma = None
+        self._atr = None
 
     def OnStarted2(self, time):
         super(keltner_channel_based_grid_strategy, self).OnStarted2(time)
         self._rebalance_count = 0
         self._bars_since_rebalance = self._cooldown_bars.Value
-        ma = ExponentialMovingAverage()
-        ma.Length = self._length.Value
-        atr = AverageTrueRange()
-        atr.Length = self._length.Value
+        self._ma = ExponentialMovingAverage()
+        self._ma.Length = self._length.Value
+        self._atr = AverageTrueRange()
+        self._atr.Length = self._length.Value
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ma, atr, self.OnProcess).Start()
+        subscription.Bind(self._ma, self._atr, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
+            self.DrawIndicator(area, self._ma)
             self.DrawOwnTrades(area)
 
     def OnProcess(self, candle, ma_val, atr_val):
         if candle.State != CandleStates.Finished:
+            return
+        if not self._ma.IsFormed or not self._atr.IsFormed:
             return
         self._bars_since_rebalance += 1
         ma_v = float(ma_val)

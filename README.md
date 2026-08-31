@@ -56,7 +56,7 @@ The repository includes two small .NET projects:
 - [`Backtester`](Backtester/) dynamically compiles a selected C# strategy and runs it against bundled sample history data.
 - [`Tests`](Tests/) compiles the API examples and exercises them through StockSharp's historical emulation environment.
 
-The test project uses a source generator, so ordinary strategies do not need handwritten test methods. Each generated test runs a strategy on sample market data, verifies that it produces orders and trades, and checks cloning and settings serialization. Strategies requiring multiple instruments or custom setup have explicit overrides in the test project.
+The test project uses a source generator, so ordinary strategies do not need handwritten test methods. Methods use a stable `S####_PascalCaseSlug` name derived from the full strategy folder key. Each generated test runs a strategy through its complete sample-data window, rejects runtime order/subscription/connector failures, requires orders, trades, and post-trade coverage, then checks cloning and settings serialization. The generator also rejects duplicate implementations or a missing C#/Python counterpart. Strategies requiring multiple instruments, custom setup, or a bounded high-frequency replay profile have explicit overrides in the test project.
 
 Before the .NET build, [`Tools/validate_api_structure.py`](Tools/validate_api_structure.py) performs the fast structural checks: numbered directory placement, C#/Python parity, required translations, source-file presence, and stale language-availability claims.
 
@@ -93,11 +93,11 @@ dotnet build AlgoTrading.slnx --configuration Release
 dotnet test AlgoTrading.slnx --no-build --configuration Release
 ```
 
-To run only one generated strategy test, filter by the PascalCase strategy folder name. For example:
+To run the C# and Python tests for one strategy, filter by its stable generated method name. For example, `0001_MA_CrossOver` becomes `S0001_MaCrossover`:
 
 ```bash
 dotnet test Tests/Tests.csproj --no-build --configuration Release \
-  --filter "FullyQualifiedName~MaCrossover"
+  --filter "FullyQualifiedName~S0001_MaCrossover"
 ```
 
 To compile and backtest one C# example directly:

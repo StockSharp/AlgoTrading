@@ -158,6 +158,9 @@ class neural_network_atr_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         close = float(candle.ClosePrice)
         open_p = float(candle.OpenPrice)
         high = float(candle.HighPrice)

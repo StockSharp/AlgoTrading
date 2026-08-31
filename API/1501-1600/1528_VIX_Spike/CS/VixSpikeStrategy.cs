@@ -90,6 +90,9 @@ public class VixSpikeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!value.IsFormed)
+			return;
+
 		var bb = value as BollingerBandsValue;
 		if (bb == null)
 			return;

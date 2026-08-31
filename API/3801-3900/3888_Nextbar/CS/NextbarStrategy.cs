@@ -55,6 +55,7 @@ public class NextbarStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal ema)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) return;
 		var close = candle.ClosePrice;
 		if (!_hasPrev) { _prevOpen = candle.OpenPrice; _prevClose = close; _hasPrev = true; return; }
 

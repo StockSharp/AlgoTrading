@@ -31,6 +31,8 @@ public class FarhadCrab1Strategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 
 	private readonly Queue<decimal> _maValues = new();
+	private ExponentialMovingAverage _ema;
+	private ExponentialMovingAverage _dailyEma;
 
 	private readonly DataType _dailyCandleType = TimeSpan.FromHours(1).TimeFrame();
 
@@ -187,6 +189,8 @@ public class FarhadCrab1Strategy : Strategy
 		_prevPrevDailyMa = null;
 		_previousCandle = null;
 		_entryPrice = 0m;
+		_ema = null;
+		_dailyEma = null;
 	}
 
 	/// <inheritdoc />
@@ -198,17 +202,17 @@ public class FarhadCrab1Strategy : Strategy
 		base.Volume = OrderVolume;
 
 		// Subscribe to the working timeframe candles with an EMA for entry decisions.
-		var ema = new ExponentialMovingAverage { Length = MaLength };
+		_ema = new ExponentialMovingAverage { Length = MaLength };
+		_dailyEma = new ExponentialMovingAverage { Length = DailyMaLength };
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription
-			.Bind(ema, ProcessWorkingCandle)
+			.Bind(_ema, ProcessWorkingCandle)
 			.Start();
 
 		// Subscribe to daily candles with another EMA for exit filtering.
-		var dailyEma = new ExponentialMovingAverage { Length = DailyMaLength };
 		var dailySubscription = SubscribeCandles(_dailyCandleType);
 		dailySubscription
-			.Bind(dailyEma, ProcessDailyCandle)
+			.Bind(_dailyEma, ProcessDailyCandle)
 			.Start();
 
 		// Draw candles, indicator, and trades on the chart if charting is available.
@@ -217,7 +221,7 @@ public class FarhadCrab1Strategy : Strategy
 		{
 			DrawCandles(area, candleSubscription);
 			DrawOwnTrades(area);
-			DrawIndicator(area, ema);
+			DrawIndicator(area, _ema);
 		}
 	}
 
@@ -225,6 +229,9 @@ public class FarhadCrab1Strategy : Strategy
 	{
 		// Process only finished daily candles.
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_dailyEma.IsFormed)
 			return;
 
 		_prevPrevDailyClose = _prevDailyClose;
@@ -237,6 +244,9 @@ public class FarhadCrab1Strategy : Strategy
 	{
 		// Use only completed candles for decision making.
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_ema.IsFormed || !_dailyEma.IsFormed)
 			return;
 
 		// Store EMA values so we can apply the configured shift.

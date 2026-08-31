@@ -88,6 +88,9 @@ public class RgtEaRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!values[0].IsFormed || !values[1].IsFormed)
+			return;
+
 		if (values[0].IsEmpty || values[1].IsEmpty)
 			return;
 

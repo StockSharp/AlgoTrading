@@ -14,7 +14,7 @@ using StockSharp.Samples.Strategies;
 [TestClass]
 public partial class CSharpTests
 {
-	public static Task RunStrategy<T>(Action<T, Security> extra = null)
+	public static Task RunStrategy<T>(Action<T, Security> extra = null, TimeSpan? replayDuration = null)
 		where T : Strategy
-		=> AsmInit.RunStrategy(TypeHelper.CreateInstance<T>(typeof(T)), extra);
+		=> AsmInit.RunStrategy(TypeHelper.CreateInstance<T>(typeof(T)), extra, replayDuration: replayDuration);
 }

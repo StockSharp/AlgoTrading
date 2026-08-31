@@ -18,6 +18,7 @@ class trading_panel_control_strategy(Strategy):
         self._period = self.Param("Period", 14)
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 4)
 
+        self._rsi = None
         self._prev_wr = 0.0
         self._candles_since_trade = 4
         self._has_prev = False
@@ -48,6 +49,7 @@ class trading_panel_control_strategy(Strategy):
 
     def OnReseted(self):
         super(trading_panel_control_strategy, self).OnReseted()
+        self._rsi = None
         self._prev_wr = 0.0
         self._candles_since_trade = self.SignalCooldownCandles
         self._has_prev = False
@@ -58,20 +60,25 @@ class trading_panel_control_strategy(Strategy):
         self._candles_since_trade = self.SignalCooldownCandles
         self._has_prev = False
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.Period
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.Period
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, self._process_candle).Start()
+        subscription.Bind(self._rsi, self._process_candle).Start()
 
     def _process_candle(self, candle, wr_value):
         if candle.State != CandleStates.Finished:
             return
 
+        wr_val = float(wr_value)
+
+        if not self._rsi.IsFormed:
+            self._prev_wr = wr_val
+            self._has_prev = True
+            return
+
         if self._candles_since_trade < self.SignalCooldownCandles:
             self._candles_since_trade += 1
-
-        wr_val = float(wr_value)
 
         if self._has_prev:
             if self._prev_wr < 35 and wr_val >= 35 and self.Position <= 0 and self._candles_since_trade >= self.SignalCooldownCandles:

@@ -23,6 +23,9 @@ public class AutostopStrategy : Strategy
 	private readonly StrategyParam<decimal> _slMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private StandardDeviation _atr;
 	private decimal _entryPrice;
 	private decimal _takePrice;
 	private decimal _stopPrice;
@@ -66,6 +69,9 @@ public class AutostopStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_fastEma = null;
+		_slowEma = null;
+		_atr = null;
 		_entryPrice = 0m;
 		_takePrice = 0m;
 		_stopPrice = 0m;
@@ -76,19 +82,19 @@ public class AutostopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
-		var atr = new StandardDeviation { Length = AtrLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_atr = new StandardDeviation { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastEma, slowEma, atr, ProcessCandle).Start();
+		subscription.Bind(_fastEma, _slowEma, _atr, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, _fastEma);
+			DrawIndicator(area, _slowEma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -96,6 +102,9 @@ public class AutostopStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_atr.IsFormed)
 			return;
 
 		// Check TP/SL for existing positions
