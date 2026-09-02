@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Indicators\Algo.Indicators.csproj" />
     <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Strategies\Algo.Strategies.csproj" />
     <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Compilation\Algo.Compilation.csproj" />
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Diagram.Core\Diagram.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../API/**/*.cs" Link="CS\%(RecursiveDir)%(Filename)%(Extension)" />

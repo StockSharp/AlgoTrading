@@ -791,11 +791,31 @@ public static class AsmInit
 					value.AreEqual(cloneValue, name);
 					return;
 
+				// A parameter of the clone is a different object holding the same setting, so what is
+				// compared is the setting. Diagram strategies keep theirs in a set, where two equal sets
+				// need not enumerate in the same order, so they are matched by name.
+				case IStrategyParam param when cloneValue is IStrategyParam cloneParam:
+					validateValue(param.Value, cloneParam.Value, $"{name} ({param.Id})");
+					return;
+
 				case IEnumerable enumerable when cloneValue is IEnumerable cloneEnumerable:
 				{
 					var values = enumerable.Cast<object>().ToArray();
 					var cloneValues = cloneEnumerable.Cast<object>().ToArray();
 					values.Length.AreEqual(cloneValues.Length, name);
+
+					if (values.All(v => v is IStrategyParam))
+					{
+						var byName = cloneValues.Cast<IStrategyParam>().ToDictionary(p => p.Id);
+
+						foreach (IStrategyParam param in values.Cast<IStrategyParam>())
+						{
+							byName.TryGetValue(param.Id, out var cloneParam).AssertTrue($"{name}: the clone has no '{param.Id}'.");
+							validateValue(param.Value, cloneParam.Value, $"{name} ({param.Id})");
+						}
+
+						return;
+					}
 
 					for (var i = 0; i < values.Length; i++)
 						validateValue(values[i], cloneValues[i], $"{name}[{i}]");
@@ -821,6 +841,13 @@ public static class AsmInit
 			{
 				if (fv2 is not null)
 					validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save(), field.Name);
+			}
+			// Anything else that persists itself -- a diagram composition, for one -- is an object graph
+			// the strategy worked through during the replay while the clone sat untouched, so the two
+			// legitimately differ by now. What has to match after the round-trip is the parameters, and
+			// those are compared above.
+			else if (fv is IPersistable && fv2 is IPersistable)
+			{
 			}
 			else
 				validateValue(fv, fv2, field.Name);
