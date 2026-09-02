@@ -1,0 +1,1206 @@
+﻿{
+  "Id": "e36ceb8f-677c-5097-b2a3-373688d79678",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Type": "Independent",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "Description": "Schaff Trend Cycle level breakout with a MACD filter: the cycle climbing through the upper level while MACD is positive reverses into a long, the cycle dropping through the lower level while MACD is negative reverses into a short.",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "dbeaffef-5060-5991-9188-1227f7a18945",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "Color_Schaff_Trend_Cycle"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": true
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "30f86b68-80d2-5b11-865b-b25daeb95a42Length": {
+              "Value": 10
+            },
+            "63dc4431-a599-5cd5-8e19-0938a577c15aShortMa.Length": {
+              "Value": 12
+            },
+            "63dc4431-a599-5cd5-8e19-0938a577c15aLongMa.Length": {
+              "Value": 26
+            },
+            "d4417a85-f690-5389-aaa6-2be9bb1f3387Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 60.0
+                }
+              }
+            },
+            "a715d65e-d8f8-5ad8-9672-af16ae74dcd1Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 40.0
+                }
+              }
+            },
+            "5400f0b5-b575-5d4a-8e2a-7ac643ee8109Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            }
+          },
+          "TypeId": "a7a0c6a0-8c7c-4a62-9c84-1f6f91d1f605",
+          "Type": "Independent"
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "1",
+              "Figure": "Procedure",
+              "X": 0.0,
+              "Y": 240.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "33e65412-0b04-53cb-85fb-ce1dcacd8bef",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TF: 00:05:00"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "2",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 360.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "30f86b68-80d2-5b11-865b-b25daeb95a42",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "SchaffTrendCycle 10"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Indicator": "StockSharp.Algo.Indicators.SchaffTrendCycle, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 10
+                  }
+                }
+              }
+            },
+            {
+              "Key": "3",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 720.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "63dc4431-a599-5cd5-8e19-0938a577c15a",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "MACD 12 / 26"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Indicator": "StockSharp.Algo.Indicators.MovingAverageConvergenceDivergence, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "ShortMa.Length": {
+                    "Value": 12
+                  },
+                  "LongMa.Length": {
+                    "Value": 26
+                  }
+                }
+              }
+            },
+            {
+              "Key": "4",
+              "Figure": "Procedure",
+              "X": 520.0,
+              "Y": 120.0,
+              "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
+              "Settings": {
+                "Id": "5c49c19f-9cc8-54e0-839d-3c64988d852a",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "STC one candle back"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Shift": {
+                    "Value": 1
+                  }
+                }
+              }
+            },
+            {
+              "Key": "5",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "d4417a85-f690-5389-aaa6-2be9bb1f3387",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Upper level = 60"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 60.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "6",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 600.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "a715d65e-d8f8-5ad8-9672-af16ae74dcd1",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Lower level = 40"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 40.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "7",
+              "Figure": "Procedure",
+              "X": 0.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "a2bd85f4-06ca-53f7-aac1-4fb735237b54",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "8",
+              "Figure": "Procedure",
+              "X": 780.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "8edc28d9-8432-5baf-96fb-4fb0643ab3af",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "STC -1 <= upper level"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "LessOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "9",
+              "Figure": "Procedure",
+              "X": 520.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "c5aa671e-e9e2-5bd2-a6e3-aedc5825c2a6",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "STC > upper level"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "10",
+              "Figure": "Procedure",
+              "X": 780.0,
+              "Y": 120.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "eef43c4f-bc18-55b1-a6e4-9f26ddd669b8",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "STC -1 >= lower level"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "GreaterOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "11",
+              "Figure": "Procedure",
+              "X": 520.0,
+              "Y": 480.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "3aab1c18-2ae9-5bea-ad2a-9a20445f2701",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "STC < lower level"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "12",
+              "Figure": "Procedure",
+              "X": 520.0,
+              "Y": 240.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "7064fcd0-94d3-5172-92f9-5fbd7689fddc",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "MACD > 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "13",
+              "Figure": "Procedure",
+              "X": 520.0,
+              "Y": 360.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "2777bc8b-67ee-5601-b385-740bc31af58f",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "MACD < 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "14",
+              "Figure": "Procedure",
+              "X": 0.0,
+              "Y": 120.0,
+              "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
+              "Settings": {
+                "Id": "6a8f4e3a-7921-5f4c-81b6-f419f0dfc5f1",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsMoney": {
+                    "Value": false
+                  },
+                  "ShowPosition": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "15",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 120.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "d176515e-dcf3-501c-bcb2-d1680bac91ec",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position <= 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "LessOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "16",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 240.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "6f7de75c-935f-5f30-9ee4-cec4a53eb442",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position >= 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "GreaterOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "17",
+              "Figure": "Procedure",
+              "X": 1040.0,
+              "Y": 0.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "75aff2c5-ba75-578b-a9d3-4fcaaadbb431",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "AND"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "5ea4fe6dfb4c51018b04da542b8a5d86",
+                  "4324f8b883d458248d2aa25bbbe2810b",
+                  "dc1c2e248931539d8125764a6970fce9",
+                  "a394f7b2d4c359abae5c941d6a3a5349"
+                ]
+              }
+            },
+            {
+              "Key": "18",
+              "Figure": "Procedure",
+              "X": 1040.0,
+              "Y": 120.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "0de19bf8-5cfb-5240-9590-ae21ec38ef02",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "AND"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "d8a38fa1c8665ef78676f6ecd5f06637",
+                  "866ebed4c2ce5826884830e6e3cc1793",
+                  "ab720bdf70915b23b7fe799df57c6758",
+                  "c3329693ea1f5538bf9f5447dec7318e"
+                ]
+              }
+            },
+            {
+              "Key": "19",
+              "Figure": "Procedure",
+              "X": 0.0,
+              "Y": 360.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "5400f0b5-b575-5d4a-8e2a-7ac643ee8109",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Volume = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "20",
+              "Figure": "Procedure",
+              "X": 260.0,
+              "Y": 480.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "96d8dc95-a1ee-5c21-8a36-b51ab625121f",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Volume + |Position|\n(reversal size)"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "a + abs(b)"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_a",
+                  "dynsock_b"
+                ]
+              }
+            },
+            {
+              "Key": "21",
+              "Figure": "Procedure",
+              "X": 1300.0,
+              "Y": 0.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "085372a9-b28c-5be8-8516-60358ede3312",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "IsMarket": {
+                    "Value": true
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "ZeroAsMarket": {
+                    "Value": false
+                  },
+                  "ShrinkPrice": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "22",
+              "Figure": "Procedure",
+              "X": 1300.0,
+              "Y": 120.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "35012656-96f5-5364-991a-1dc1a0259e8d",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "IsMarket": {
+                    "Value": true
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "ZeroAsMarket": {
+                    "Value": false
+                  },
+                  "ShrinkPrice": {
+                    "Value": true
+                  }
+                }
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "1",
+              "FromPort": "Output",
+              "To": "2",
+              "ToPort": "Input"
+            },
+            {
+              "From": "1",
+              "FromPort": "Output",
+              "To": "3",
+              "ToPort": "Input"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "4",
+              "ToPort": "Input"
+            },
+            {
+              "From": "4",
+              "FromPort": "Output",
+              "To": "8",
+              "ToPort": "Input"
+            },
+            {
+              "From": "5",
+              "FromPort": "Output",
+              "To": "8",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "9",
+              "ToPort": "Input"
+            },
+            {
+              "From": "5",
+              "FromPort": "Output",
+              "To": "9",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "4",
+              "FromPort": "Output",
+              "To": "10",
+              "ToPort": "Input"
+            },
+            {
+              "From": "6",
+              "FromPort": "Output",
+              "To": "10",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "11",
+              "ToPort": "Input"
+            },
+            {
+              "From": "6",
+              "FromPort": "Output",
+              "To": "11",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "3",
+              "FromPort": "Output",
+              "To": "12",
+              "ToPort": "Input"
+            },
+            {
+              "From": "7",
+              "FromPort": "Output",
+              "To": "12",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "3",
+              "FromPort": "Output",
+              "To": "13",
+              "ToPort": "Input"
+            },
+            {
+              "From": "7",
+              "FromPort": "Output",
+              "To": "13",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "14",
+              "FromPort": "Output",
+              "To": "15",
+              "ToPort": "Input"
+            },
+            {
+              "From": "7",
+              "FromPort": "Output",
+              "To": "15",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "14",
+              "FromPort": "Output",
+              "To": "16",
+              "ToPort": "Input"
+            },
+            {
+              "From": "7",
+              "FromPort": "Output",
+              "To": "16",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "8",
+              "FromPort": "Signal",
+              "To": "17",
+              "ToPort": "5ea4fe6dfb4c51018b04da542b8a5d86"
+            },
+            {
+              "From": "9",
+              "FromPort": "Signal",
+              "To": "17",
+              "ToPort": "4324f8b883d458248d2aa25bbbe2810b"
+            },
+            {
+              "From": "12",
+              "FromPort": "Signal",
+              "To": "17",
+              "ToPort": "dc1c2e248931539d8125764a6970fce9"
+            },
+            {
+              "From": "15",
+              "FromPort": "Signal",
+              "To": "17",
+              "ToPort": "a394f7b2d4c359abae5c941d6a3a5349"
+            },
+            {
+              "From": "10",
+              "FromPort": "Signal",
+              "To": "18",
+              "ToPort": "d8a38fa1c8665ef78676f6ecd5f06637"
+            },
+            {
+              "From": "11",
+              "FromPort": "Signal",
+              "To": "18",
+              "ToPort": "866ebed4c2ce5826884830e6e3cc1793"
+            },
+            {
+              "From": "13",
+              "FromPort": "Signal",
+              "To": "18",
+              "ToPort": "ab720bdf70915b23b7fe799df57c6758"
+            },
+            {
+              "From": "16",
+              "FromPort": "Signal",
+              "To": "18",
+              "ToPort": "c3329693ea1f5538bf9f5447dec7318e"
+            },
+            {
+              "From": "19",
+              "FromPort": "Output",
+              "To": "20",
+              "ToPort": "dynsock_a"
+            },
+            {
+              "From": "14",
+              "FromPort": "Output",
+              "To": "20",
+              "ToPort": "dynsock_b"
+            },
+            {
+              "From": "17",
+              "FromPort": "Signal",
+              "To": "21",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "20",
+              "FromPort": "Output",
+              "To": "21",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "18",
+              "FromPort": "Signal",
+              "To": "22",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "20",
+              "FromPort": "Output",
+              "To": "22",
+              "ToPort": "Volume"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

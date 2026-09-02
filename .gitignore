@@ -191,3 +191,5 @@ cs_deleted.txt
 CompareRunner*/
 PLAN_COMPARE*.md
 compare*.txt
+# The gallery ships the finished examples; what generates them stays out of it.
+Designer/Gallery/Schemas/_Tools/
