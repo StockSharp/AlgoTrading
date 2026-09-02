@@ -1,7 +1,7 @@
 # Estrategia Renko Line Break vs RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Esta estrategia recrea el experto MetaTrader "RenkoLineBreak vs RSI" usando la API de alto nivel de StockSharp. Combina la detección de tendencia Renko con un filtro de retroceso RSI y ejecuta operaciones a través de órdenes stop pendientes ubicadas alrededor de una estructura de precio de tres velas.
+Esta estrategia recrea el experto MetaTrader "RenkoLineBreak vs RSI" usando la API de alto nivel de StockSharp. Combina la detección de tendencia Renko con un filtro de retroceso RSI y ejecuta operaciones a través de órdenes stop pendientes ubicadas alrededor de una estructura de precio de tres velas. Los ladrillos Renko se calculan dentro de la propia estrategia a partir de los cierres de las velas temporales, por lo que una única suscripción de velas alimenta todo.
 
 ## Detalles
 
@@ -31,7 +31,7 @@ Esta estrategia recrea el experto MetaTrader "RenkoLineBreak vs RSI" usando la A
   - Indicadores: Renko, RSI.
   - Stops: Stop fijo y take profit.
   - Complejidad: Intermedio.
-  - Marco temporal: Híbrido (Renko + velas temporales).
+  - Marco temporal: Un solo marco temporal (los ladrillos Renko se derivan de los cierres de las velas).
   - Estacionalidad: No.
   - Redes neuronales: No.
   - Divergencia: No.
@@ -39,15 +39,15 @@ Esta estrategia recrea el experto MetaTrader "RenkoLineBreak vs RSI" usando la A
 
 ## Cómo funciona
 
-1. Una suscripción Renko (`RenkoCandleMessage`) estima la dirección de la tendencia. Cuando un ladrillo Renko cambia de dirección, el estado de tendencia se establece en `ToUp` o `ToDown` por una barra para imitar el comportamiento del indicador original.
-2. Simultáneamente, un flujo de velas basado en tiempo alimenta el indicador RSI y proporciona los últimos tres máximos/mínimos usados para los niveles de ruptura.
+1. Los ladrillos Renko se construyen dentro de la estrategia a partir de los cierres de las velas temporales: en cuanto el cierre se aleja un `BoxSize` completo del ancla actual, se generan uno o varios ladrillos y el ancla se desplaza con ellos. Cuando un ladrillo cambia de dirección, el estado de tendencia se establece en `ToUp` o `ToDown` por un paso para imitar el comportamiento del indicador original.
+2. El mismo flujo de velas alimenta el indicador RSI y proporciona los últimos tres máximos/mínimos usados para los niveles de ruptura, por lo que la estrategia abre exactamente una suscripción de datos de mercado.
 3. Cuando ambas condiciones de tendencia Renko y RSI se alinean, la estrategia registra una orden stop (compra o venta). Los niveles planificados de stop-loss y take-profit se almacenan y monitorean después de que se dispara la orden.
 4. Tras la ejecución de la orden, los niveles de protección almacenados se activan. Las velas posteriores verifican si el precio alcanza los rangos de stop o objetivo; si es así, la posición se cierra a mercado.
 5. Si el impulso se desvanece (RSI cruza de vuelta a través del punto medio) o la tendencia Renko cambia, la posición se cierra anticipadamente.
 
 ## Indicadores utilizados
 
-- **Ladrillos Renko** para inferir el sesgo direccional y detectar transiciones entre estados alcistas y bajistas.
+- **Ladrillos Renko** derivados de los cierres de las velas temporales con el paso `BoxSize`, para inferir el sesgo direccional y detectar transiciones entre estados alcistas y bajistas.
 - **Relative Strength Index (RSI)** para calificar entradas exigiendo retrocesos contra la tendencia.
 
 ## Notas adicionales

@@ -1,7 +1,7 @@
 # Estratégia Renko Line Break vs RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Esta estratégia recria o especialista MetaTrader "RenkoLineBreak vs RSI" usando a API de alto nível do StockSharp. Combina a detecção de tendência Renko com um filtro de retrocesso RSI e executa operações através de ordens stop pendentes localizadas em torno de uma estrutura de preço de três velas.
+Esta estratégia recria o especialista MetaTrader "RenkoLineBreak vs RSI" usando a API de alto nível do StockSharp. Combina a detecção de tendência Renko com um filtro de retrocesso RSI e executa operações através de ordens stop pendentes localizadas em torno de uma estrutura de preço de três velas. Os tijolos Renko são calculados dentro da própria estratégia a partir dos fechamentos das velas temporais, portanto uma única subscrição de velas alimenta tudo.
 
 ## Detalhes
 
@@ -31,7 +31,7 @@ Esta estratégia recria o especialista MetaTrader "RenkoLineBreak vs RSI" usando
   - Indicadores: Renko, RSI.
   - Stops: Stop fixo e take profit.
   - Complexidade: Intermediário.
-  - Período: Híbrido (Renko + velas temporais).
+  - Período: Um único período (os tijolos Renko são derivados dos fechamentos das velas).
   - Sazonalidade: Não.
   - Redes neurais: Não.
   - Divergência: Não.
@@ -39,15 +39,15 @@ Esta estratégia recria o especialista MetaTrader "RenkoLineBreak vs RSI" usando
 
 ## Como funciona
 
-1. Uma subscrição Renko (`RenkoCandleMessage`) estima a direção da tendência. Quando um tijolo Renko muda de direção, o estado de tendência é definido como `ToUp` ou `ToDown` por uma barra para imitar o comportamento do indicador original.
-2. Simultaneamente, um fluxo de velas baseado em tempo alimenta o indicador RSI e fornece as últimas três máximas/mínimas usadas para os níveis de ruptura.
+1. Os tijolos Renko são construídos dentro da estratégia a partir dos fechamentos das velas temporais: assim que o fechamento se afasta um `BoxSize` completo da âncora atual, um ou mais tijolos são gerados e a âncora acompanha o movimento. Quando um tijolo muda de direção, o estado de tendência é definido como `ToUp` ou `ToDown` por um passo para imitar o comportamento do indicador original.
+2. O mesmo fluxo de velas alimenta o indicador RSI e fornece as últimas três máximas/mínimas usadas para os níveis de ruptura, de modo que a estratégia abre exatamente uma subscrição de dados de mercado.
 3. Quando as condições de tendência Renko e RSI se alinham, a estratégia registra uma ordem stop (compra ou venda). Os níveis planejados de stop loss e take profit são armazenados e monitorados após o disparo da ordem.
 4. Após a execução da ordem, os níveis de proteção armazenados tornam-se ativos. As velas subsequentes verificam se o preço atinge os intervalos de stop ou alvo; se sim, a posição é fechada a mercado.
 5. Se o impulso diminui (RSI cruza de volta pelo ponto médio) ou a tendência Renko muda, a posição é fechada antecipadamente.
 
 ## Indicadores utilizados
 
-- **Tijolos Renko** para inferir o viés direcional e detectar transições entre estados de alta e baixa.
+- **Tijolos Renko** derivados dos fechamentos das velas temporais com o passo `BoxSize`, para inferir o viés direcional e detectar transições entre estados de alta e baixa.
 - **Relative Strength Index (RSI)** para qualificar entradas exigindo retrocessos contra a tendência.
 
 ## Notas adicionais
