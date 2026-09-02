@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -38,11 +36,12 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _rsi;
-	private DataType _renkoType;
 
 	private TrendStates _trendState = TrendStates.None;
 	private bool _renkoHasPrev;
 	private bool _renkoPrevBull;
+	private decimal _renkoAnchorPrice;
+	private bool _hasRenkoAnchor;
 
 	private decimal _prevHigh1;
 	private decimal _prevHigh2;
@@ -162,9 +161,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new Unit(BoxSize));
-
-		return [(Security, CandleType), (Security, _renkoType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -173,11 +170,12 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		base.OnReseted();
 
 		_rsi = null;
-		_renkoType = null;
 
 		_trendState = TrendStates.None;
 		_renkoHasPrev = false;
 		_renkoPrevBull = false;
+		_renkoAnchorPrice = 0m;
+		_hasRenkoAnchor = false;
 
 		_prevHigh1 = 0m;
 		_prevHigh2 = 0m;
@@ -203,16 +201,9 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 			Length = RsiPeriod
 		};
 
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new Unit(BoxSize));
-
 		var timeSubscription = SubscribeCandles(CandleType);
 		timeSubscription
 		.Bind(_rsi, ProcessTimeCandle)
-		.Start();
-
-		var renkoSubscription = SubscribeCandles(_renkoType);
-		renkoSubscription
-		.Bind(ProcessRenkoCandle)
 		.Start();
 
 		var area = CreateChartArea();
@@ -226,14 +217,37 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		StartProtection(null, null);
 	}
 
-	private void ProcessRenkoCandle(ICandleMessage candle)
+	private void UpdateRenkoBricks(decimal closePrice)
 	{
-		if (candle.State != CandleStates.Finished)
+		var boxSize = BoxSize;
+
+		if (boxSize <= 0m)
 		return;
 
-		var isBull = candle.ClosePrice > candle.OpenPrice;
-		var isBear = candle.ClosePrice < candle.OpenPrice;
+		if (!_hasRenkoAnchor)
+		{
+			// The first close only anchors the brick grid, a direction needs a full box move.
+			_renkoAnchorPrice = closePrice;
+			_hasRenkoAnchor = true;
+			return;
+		}
 
+		var move = closePrice - _renkoAnchorPrice;
+		var bricks = (int)(Math.Abs(move) / boxSize);
+
+		if (bricks == 0)
+		return;
+
+		var isBull = move > 0m;
+
+		for (var i = 0; i < bricks; i++)
+		ProcessRenkoBrick(isBull);
+
+		_renkoAnchorPrice += (isBull ? boxSize : -boxSize) * bricks;
+	}
+
+	private void ProcessRenkoBrick(bool isBull)
+	{
 		if (!_renkoHasPrev)
 		{
 			// Store the very first renko brick direction and wait for the next one to define a trend state.
@@ -243,26 +257,19 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 			return;
 		}
 
-		if (isBull)
-		{
-			_trendState = _renkoPrevBull ? TrendStates.Up : TrendStates.ToUp;
-			_renkoPrevBull = true;
-		}
-		else if (isBear)
-		{
-			_trendState = _renkoPrevBull ? TrendStates.ToDown : TrendStates.Down;
-			_renkoPrevBull = false;
-		}
-		else
-		{
-			// Flat bricks keep the previous trend state.
-		}
+		_trendState = isBull
+		? (_renkoPrevBull ? TrendStates.Up : TrendStates.ToUp)
+		: (_renkoPrevBull ? TrendStates.ToDown : TrendStates.Down);
+
+		_renkoPrevBull = isBull;
 	}
 
 	private void ProcessTimeCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		UpdateRenkoBricks(candle.ClosePrice);
 
 		var canTrade = true;
 		var hasRsi = _rsi?.IsFormed == true && rsiValue >= 0m;

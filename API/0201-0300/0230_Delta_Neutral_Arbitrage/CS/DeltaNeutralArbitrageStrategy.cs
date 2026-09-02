@@ -33,6 +33,7 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 	private decimal _lastAsset2Price;
 	private decimal _asset1Volume;
 	private decimal _asset2Volume;
+	private int _spreadDirection;
 
 	/// <summary>
 	/// Secondary security for pair trading.
@@ -138,6 +139,7 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		_lastAsset2Price = default;
 		_asset1Volume = default;
 		_asset2Volume = default;
+		_spreadDirection = default;
 	}
 
 	/// <inheritdoc />
@@ -237,7 +239,7 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		LogInfo($"Current spread: {_currentSpread}, SMA: {spreadSma}, StdDev: {spreadStdDev}, Z-score: {zScore}");
 
 		// Trading logic
-		if (Math.Abs(Position) == 0) // No position, check for entry
+		if (_spreadDirection == 0) // No position, check for entry
 		{
 			// Spread is too low (Asset1 cheap relative to Asset2)
 			if (zScore < -EntryThreshold)
@@ -254,8 +256,8 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		}
 		else // Have position, check for exit
 		{
-			if ((Position > 0 && _currentSpread >= spreadSma) || // Long spread and spread has reverted to mean
-				(Position < 0 && _currentSpread <= spreadSma))   // Short spread and spread has reverted to mean
+			if ((_spreadDirection > 0 && _currentSpread >= spreadSma) || // Long spread and spread has reverted to mean
+				(_spreadDirection < 0 && _currentSpread <= spreadSma))   // Short spread and spread has reverted to mean
 			{
 				ClosePositions();
 				LogInfo($"Spread exit: Asset1 price={_lastAsset1Price}, Asset2 price={_lastAsset2Price}, Spread={_currentSpread}");
@@ -276,6 +278,8 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		asset2Order.Security = Asset2Security;
 		asset2Order.Portfolio = Asset2Portfolio;
 		RegisterOrder(asset2Order);
+
+		_spreadDirection = 1;
 	}
 
 	private void EnterShortSpread()
@@ -291,24 +295,29 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		asset2Order.Security = Asset2Security;
 		asset2Order.Portfolio = Asset2Portfolio;
 		RegisterOrder(asset2Order);
+
+		_spreadDirection = -1;
 	}
 
 	private void ClosePositions()
 	{
+		// Closing volumes come from the entry, not from Position: the position is refreshed only
+		// when executions arrive, so several candles can size a full-position order before any of
+		// them fills. Both securities share the candle type, so the decision block runs twice per bar.
+		var isLongSpread = _spreadDirection > 0;
+
+		_spreadDirection = 0;
+
 		// Close position in Asset1
-		if (Position > 0)
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
+		if (isLongSpread)
+			SellMarket(_asset1Volume);
+		else
+			BuyMarket(_asset1Volume);
 
-		// Note: In a real implementation, you would also close the position
-		// in Asset2 by checking its position via separate portfolio tracking
-		// For simplicity, this example assumes symmetrical positions
-
-		// Close position in Asset2 (simplified example)
+		// Close position in Asset2
 		var asset2Order = CreateOrder(
-			Position > 0 ? Sides.Buy : Sides.Sell, 
-			_lastAsset2Price, 
+			isLongSpread ? Sides.Buy : Sides.Sell,
+			_lastAsset2Price,
 			_asset2Volume);
 
 		asset2Order.Security = Asset2Security;

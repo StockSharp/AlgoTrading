@@ -169,46 +169,41 @@ class ro_nz_rapid_fire_strategy(Strategy):
         pos = self.Position
 
         if pos > 0:
-            if self.CloseType == 1 and down_signal:
+            # Trend close, take profit and stop loss all close the whole position,
+            # so they must be a single exit decision: otherwise the second matching
+            # condition sends another closing order for an already flat position.
+            trend_exit = self.CloseType == 1 and down_signal
+            take_exit = self.TakeProfit > 0 and high >= self._take_price
+            stop_exit = self.StopLoss > 0 and low <= self._stop_price
+
+            if trend_exit or take_exit or stop_exit:
                 self.SellMarket(pos)
                 self._bars_since_trade = 0
+            else:
+                if self.TrailingStop > 0:
+                    trail = close - self.TrailingStop * self._tick
+                    if trail > self._stop_price:
+                        self._stop_price = trail
 
-            if self.TakeProfit > 0 and high >= self._take_price:
-                self.SellMarket(self.Position)
-                self._bars_since_trade = 0
-
-            if self.StopLoss > 0 and low <= self._stop_price:
-                self.SellMarket(self.Position)
-                self._bars_since_trade = 0
-
-            if self.TrailingStop > 0:
-                trail = close - self.TrailingStop * self._tick
-                if trail > self._stop_price:
-                    self._stop_price = trail
-
-            if self.Averaging and up_signal and self._bars_since_trade >= self.CooldownBars:
-                self._enter_long(candle)
+                if self.Averaging and up_signal and self._bars_since_trade >= self.CooldownBars:
+                    self._enter_long(candle)
 
         elif pos < 0:
-            if self.CloseType == 1 and up_signal:
+            trend_exit = self.CloseType == 1 and up_signal
+            take_exit = self.TakeProfit > 0 and low <= self._take_price
+            stop_exit = self.StopLoss > 0 and high >= self._stop_price
+
+            if trend_exit or take_exit or stop_exit:
                 self.BuyMarket(abs(pos))
                 self._bars_since_trade = 0
+            else:
+                if self.TrailingStop > 0:
+                    trail = close + self.TrailingStop * self._tick
+                    if trail < self._stop_price:
+                        self._stop_price = trail
 
-            if self.TakeProfit > 0 and low <= self._take_price:
-                self.BuyMarket(abs(self.Position))
-                self._bars_since_trade = 0
-
-            if self.StopLoss > 0 and high >= self._stop_price:
-                self.BuyMarket(abs(self.Position))
-                self._bars_since_trade = 0
-
-            if self.TrailingStop > 0:
-                trail = close + self.TrailingStop * self._tick
-                if trail < self._stop_price:
-                    self._stop_price = trail
-
-            if self.Averaging and down_signal and self._bars_since_trade >= self.CooldownBars:
-                self._enter_short(candle)
+                if self.Averaging and down_signal and self._bars_since_trade >= self.CooldownBars:
+                    self._enter_short(candle)
 
         else:
             if up_signal and self._bars_since_trade >= self.CooldownBars:

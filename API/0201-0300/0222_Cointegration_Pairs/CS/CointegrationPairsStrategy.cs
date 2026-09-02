@@ -251,12 +251,17 @@ public class CointegrationPairsStrategy : Strategy
 			// Calculate z-score of current residual
 			var zScore = (_residualStdDev == 0) ? 0 : (residual - _residualMean) / _residualStdDev;
 			
+			// The strategy never intends to hold more than one leg, so every closing order is
+			// capped at Volume. Sizing an order from the raw position instead feeds exposure
+			// that has not been netted yet into the next order, which compounds without bound.
+			var closingVolume = Math.Min(Math.Abs(Position), Volume);
+			
 			// Check for trading signals
 			if (zScore < -EntryThreshold && Position <= 0)
 			{
 				// Long Asset1, Short Asset2
 				// First, close any existing short position on Asset1
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket(Volume + closingVolume);
 				hasTraded = true;
 				
 				// Then, short Asset2 using the second portfolio
@@ -278,7 +283,7 @@ public class CointegrationPairsStrategy : Strategy
 			{
 				// Short Asset1, Long Asset2
 				// First, close any existing long position on Asset1
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket(Volume + closingVolume);
 				hasTraded = true;
 				
 				// Then, buy Asset2 using the second portfolio
@@ -302,9 +307,9 @@ public class CointegrationPairsStrategy : Strategy
 				if (Position != 0)
 				{
 					if (Position > 0)
-						SellMarket(Position);
+						SellMarket(closingVolume);
 					else
-						BuyMarket(Math.Abs(Position));
+						BuyMarket(closingVolume);
 					hasTraded = true;
 					
 					// Close position on Asset2

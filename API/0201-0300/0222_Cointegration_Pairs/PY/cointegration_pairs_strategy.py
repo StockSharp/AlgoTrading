@@ -19,6 +19,9 @@ class cointegration_pairs_strategy(Strategy):
     Trades based on cointegration relationship between two assets.
     """
 
+    # Number of pair updates skipped after any trade.
+    _tradeCooldownTicks = 30
+
     def __init__(self):
         super(cointegration_pairs_strategy, self).__init__()
 
@@ -65,6 +68,7 @@ class cointegration_pairs_strategy(Strategy):
         self._residuals = Queue[float]()
         self._asset1Price = 0.0
         self._asset2Price = 0.0
+        self._cooldownTicksLeft = 0
         self._asset2Portfolio = None
 
     @property
@@ -128,16 +132,16 @@ class cointegration_pairs_strategy(Strategy):
         self._residuals.Clear()
         self._asset1Price = 0
         self._asset2Price = 0
+        self._cooldownTicksLeft = 0
+
+        # Use the same portfolio for second asset or find another portfolio
+        self._asset2Portfolio = self.Portfolio
 
     def OnStarted2(self, time):
         super(cointegration_pairs_strategy, self).OnStarted2(time)
 
         if self.Asset2 is None:
             raise Exception("Second asset is not specified.")
-
-        # Use the same portfolio for second asset or find another portfolio
-        self._asset2Portfolio = self.Portfolio
-
 
         # Create subscriptions for both assets
         asset1Subscription = self.SubscribeCandles(self.CandleType)
@@ -178,8 +182,18 @@ class cointegration_pairs_strategy(Strategy):
         if self._asset1Price == 0 or self._asset2Price == 0:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self._cooldownTicksLeft > 0:
+            self._cooldownTicksLeft -= 1
+            self._asset1Price = 0
+            self._asset2Price = 0
+            return
+
         # Calculate residual = Asset1Price - Beta * Asset2Price
         residual = self._asset1Price - self.Beta * self._asset2Price
+        hasTraded = False
 
         # Track residual statistics over period
         self._residuals.Enqueue(residual)
@@ -200,11 +214,17 @@ class cointegration_pairs_strategy(Strategy):
             # Calculate z-score of current residual
             zScore = 0 if self._residualStdDev == 0 else (residual - self._residualMean) / self._residualStdDev
 
+            # The strategy never intends to hold more than one leg, so every closing order is
+            # capped at Volume. Sizing an order from the raw position instead feeds exposure
+            # that has not been netted yet into the next order, which compounds without bound.
+            closingVolume = Math.Min(Math.Abs(self.Position), self.Volume)
+
             # Check for trading signals
             if zScore < -self.EntryThreshold and self.Position <= 0:
                 # Long Asset1, Short Asset2
                 # First, close any existing short position on Asset1
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
+                self.BuyMarket(self.Volume + closingVolume)
+                hasTraded = True
 
                 # Then, short Asset2 using the second portfolio
                 if self._asset2Portfolio is not None:
@@ -214,11 +234,13 @@ class cointegration_pairs_strategy(Strategy):
                     asset2Order.Portfolio = self._asset2Portfolio
                     asset2Order.Volume = self.Volume * self.Beta
                     self.RegisterOrder(asset2Order)
+                    hasTraded = True
 
             elif zScore > self.EntryThreshold and self.Position >= 0:
                 # Short Asset1, Long Asset2
                 # First, close any existing long position on Asset1
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
+                self.SellMarket(self.Volume + closingVolume)
+                hasTraded = True
 
                 # Then, buy Asset2 using the second portfolio
                 if self._asset2Portfolio is not None:
@@ -228,14 +250,16 @@ class cointegration_pairs_strategy(Strategy):
                     asset2Order.Portfolio = self._asset2Portfolio
                     asset2Order.Volume = self.Volume * self.Beta
                     self.RegisterOrder(asset2Order)
+                    hasTraded = True
 
             elif Math.Abs(zScore) < 0.5:
                 # Close positions when spread reverts to mean
                 if self.Position != 0:
                     if self.Position > 0:
-                        self.SellMarket(self.Position)
+                        self.SellMarket(closingVolume)
                     else:
-                        self.BuyMarket(Math.Abs(self.Position))
+                        self.BuyMarket(closingVolume)
+                    hasTraded = True
 
                     # Close position on Asset2
                     if self._asset2Portfolio is not None:
@@ -245,6 +269,10 @@ class cointegration_pairs_strategy(Strategy):
                         asset2Order.Portfolio = self._asset2Portfolio
                         asset2Order.Volume = self.Volume * self.Beta
                         self.RegisterOrder(asset2Order)
+                        hasTraded = True
+
+        if hasTraded:
+            self._cooldownTicksLeft = self._tradeCooldownTicks
 
         # Reset prices for next update
         self._asset1Price = 0

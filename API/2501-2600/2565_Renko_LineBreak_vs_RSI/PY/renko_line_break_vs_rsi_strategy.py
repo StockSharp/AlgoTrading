@@ -18,10 +18,11 @@ class renko_line_break_vs_rsi_strategy(Strategy):
 
     def __init__(self):
         super(renko_line_break_vs_rsi_strategy, self).__init__()
+        self._box_size = self.Param("BoxSize", 100.0).SetGreaterThanZero().SetDisplay("Renko Box Size", "Renko brick size in price units", "Renko")
         self._rsi_period = self.Param("RsiPeriod", 4).SetGreaterThanZero().SetDisplay("RSI Period", "RSI lookback", "Indicators")
         self._rsi_shift = self.Param("RsiShift", 10.0).SetGreaterThanZero().SetDisplay("RSI Shift", "Distance from 50 for pullbacks", "Indicators")
         self._take_profit = self.Param("TakeProfit", 1000.0).SetGreaterThanZero().SetDisplay("Take Profit", "TP distance in price", "Risk")
-        self._indent = self.Param("Indent", 50.0).SetGreaterThanZero().SetDisplay("Indent", "Indent for breakout levels", "Risk")
+        self._indent = self.Param("IndentFromHighLow", 50.0).SetGreaterThanZero().SetDisplay("Indent", "Indent for breakout levels", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
@@ -40,8 +41,11 @@ class renko_line_break_vs_rsi_strategy(Strategy):
         self._history_count = 0
         self._active_stop = None
         self._active_tp = None
-        self._trend = 0  # 1=up, -1=down, 0=none
+        self._rsi = None
+        self._trend = 0  # 1=up, -1=down, 2=to up, -2=to down, 0=none
         self._prev_bull = None
+        self._renko_anchor = 0.0
+        self._has_renko_anchor = False
 
     def OnStarted2(self, time):
         super(renko_line_break_vs_rsi_strategy, self).OnStarted2(time)
@@ -56,9 +60,12 @@ class renko_line_break_vs_rsi_strategy(Strategy):
         self._active_tp = None
         self._trend = 0
         self._prev_bull = None
+        self._renko_anchor = 0.0
+        self._has_renko_anchor = False
 
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value
+        self._rsi = rsi
 
         sub = self.SubscribeCandles(self.CandleType)
         sub.Bind(rsi, self.OnProcess).Start()
@@ -73,15 +80,9 @@ class renko_line_break_vs_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        is_bull = candle.ClosePrice > candle.OpenPrice
+        self._update_renko_bricks(float(candle.ClosePrice))
 
-        # Update trend based on consecutive candle direction
-        if self._prev_bull is not None:
-            if is_bull:
-                self._trend = 1 if self._prev_bull else 2  # 2 = ToUp
-            elif candle.ClosePrice < candle.OpenPrice:
-                self._trend = -2 if self._prev_bull else -1  # -2 = ToDown
-        self._prev_bull = is_bull
+        has_rsi = self._rsi is not None and self._rsi.IsFormed and rsi_val >= 0
 
         # Manage existing positions
         if self.Position > 0:
@@ -97,7 +98,7 @@ class renko_line_break_vs_rsi_strategy(Strategy):
                 self.SellMarket()
                 self._active_stop = None
                 self._active_tp = None
-            elif rsi_val > 50 + self._rsi_shift.Value:
+            elif has_rsi and rsi_val > 50 + self._rsi_shift.Value:
                 self.SellMarket()
                 self._active_stop = None
                 self._active_tp = None
@@ -114,17 +115,17 @@ class renko_line_break_vs_rsi_strategy(Strategy):
                 self.BuyMarket()
                 self._active_stop = None
                 self._active_tp = None
-            elif rsi_val < 50 - self._rsi_shift.Value:
+            elif has_rsi and rsi_val < 50 - self._rsi_shift.Value:
                 self.BuyMarket()
                 self._active_stop = None
                 self._active_tp = None
 
-        # New entries
-        if self.Position == 0 and self._history_count >= 3:
+        # New entries. Transition states (2 = ToUp, -2 = ToDown) never open a position.
+        eff_trend = self._get_effective_trend()
+
+        if self.Position == 0 and eff_trend not in (2, -2) and self._history_count >= 3 and has_rsi:
             indent = self._indent.Value
             tp_dist = self._take_profit.Value
-
-            eff_trend = self._get_effective_trend()
 
             if eff_trend == 1 and rsi_val <= 50 - self._rsi_shift.Value:
                 entry = self._prev_high3 + indent
@@ -151,8 +152,47 @@ class renko_line_break_vs_rsi_strategy(Strategy):
         if self._history_count < 3:
             self._history_count += 1
 
+    def _update_renko_bricks(self, close_price):
+        box_size = self._box_size.Value
+
+        if box_size <= 0:
+            return
+
+        if not self._has_renko_anchor:
+            # The first close only anchors the brick grid, a direction needs a full box move.
+            self._renko_anchor = close_price
+            self._has_renko_anchor = True
+            return
+
+        move = close_price - self._renko_anchor
+        bricks = int(abs(move) / box_size)
+
+        if bricks == 0:
+            return
+
+        is_bull = move > 0
+
+        for _ in range(bricks):
+            self._process_renko_brick(is_bull)
+
+        self._renko_anchor += (box_size if is_bull else -box_size) * bricks
+
+    def _process_renko_brick(self, is_bull):
+        if self._prev_bull is None:
+            # Store the very first renko brick direction and wait for the next one to define a trend state.
+            self._prev_bull = is_bull
+            self._trend = 0
+            return
+
+        if is_bull:
+            self._trend = 1 if self._prev_bull else 2
+        else:
+            self._trend = -2 if self._prev_bull else -1
+
+        self._prev_bull = is_bull
+
     def _get_effective_trend(self):
-        if self._trend == 1 or self._trend == -1:
+        if self._trend != 0:
             return self._trend
         if self._history_count >= 3:
             if self._prev_high1 > self._prev_high2 and self._prev_high2 > self._prev_high3:

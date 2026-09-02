@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Logistic regression based strategy.
-/// Retrains a simple model on each finished candle and trades by prediction.
+/// Updates a simple online model on each finished candle and trades by prediction.
 /// </summary>
 public class MachineLearningLogisticRegressionStrategy : Strategy
 {
@@ -31,6 +31,7 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 	private int _signal;
 	private int _hpCounter;
 	private bool _isInitialized;
+	private double _weight;
 
 	/// <summary>
 	/// Training window size.
@@ -94,11 +95,11 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 			
 			.SetOptimize(0.0001m, 0.01m, 0.0001m);
 
-		_iterations = Param(nameof(Iterations), 1000)
+		_iterations = Param(nameof(Iterations), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Iterations", "Training iterations", "General")
+			.SetDisplay("Iterations", "Training iterations per candle", "General")
 			
-			.SetOptimize(50, 5000, 50);
+			.SetOptimize(1, 50, 1);
 
 		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
 			.SetGreaterThanZero()
@@ -115,6 +116,7 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 		_signal = 0;
 		_hpCounter = 0;
 		_isInitialized = false;
+		_weight = 0d;
 	}
 
 	/// <inheritdoc />
@@ -134,6 +136,7 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 		_signal = 0;
 		_hpCounter = 0;
 		_isInitialized = false;
+		_weight = 0d;
 	}
 
 	/// <inheritdoc />
@@ -147,6 +150,7 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 		_signal = 0;
 		_hpCounter = 0;
 		_isInitialized = false;
+		_weight = 0d;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -194,7 +198,7 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 			return;
 		}
 
-		var prediction = RunLogisticRegression(_baseSeries, _synthSeries, Lookback, LearningRate, Iterations);
+		var prediction = TrainAndPredict();
 
 		var newSignal = prediction > 0.5m ? 1 : -1;
 
@@ -226,32 +230,34 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 		buffer[^1] = value;
 	}
 
-	private static decimal RunLogisticRegression(decimal[] x, decimal[] y, int p, decimal lr, int iterations)
+	// The weight is kept between candles, so each candle applies Iterations gradient
+	// steps to the existing model instead of retraining it from scratch.
+	private decimal TrainAndPredict()
 	{
-		var w = 0m;
+		var p = Lookback;
+		var lr = (double)LearningRate;
+		var iterations = Iterations;
 
 		for (var i = 0; i < iterations; i++)
 		{
-			var gradient = 0m;
+			var gradient = 0d;
 
 			for (var j = 0; j < p; j++)
 			{
-				var z = w * x[j];
-				var h = Sigmoid(z);
-				gradient += (h - y[j]) * x[j];
+				var x = (double)_baseSeries[j];
+				var h = Sigmoid(_weight * x);
+				gradient += (h - (double)_synthSeries[j]) * x;
 			}
 
 			gradient /= p;
-			w -= lr * gradient;
+			_weight -= lr * gradient;
 		}
 
-		var prediction = Sigmoid(w * x[^1]);
-		return prediction;
+		return (decimal)Sigmoid(_weight * (double)_baseSeries[^1]);
 	}
 
-	private static decimal Sigmoid(decimal z)
+	private static double Sigmoid(double z)
 	{
-		var exp = (decimal)Math.Exp((double)(-z));
-		return 1m / (1m + exp);
+		return 1d / (1d + Math.Exp(-z));
 	}
 }

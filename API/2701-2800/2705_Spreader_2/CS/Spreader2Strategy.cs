@@ -43,6 +43,7 @@ public class Spreader2Strategy : Strategy
 	private decimal _secondPosition;
 
 	private Portfolio _secondPortfolio;
+	private Order _primaryOrder;
 	private bool _contractsMatch = true;
 
 	/// <summary>
@@ -160,6 +161,7 @@ public class Spreader2Strategy : Strategy
 		_secondPosition = 0m;
 
 		_secondPortfolio = null;
+		_primaryOrder = null;
 		_contractsMatch = true;
 	}
 
@@ -266,6 +268,11 @@ public class Spreader2Strategy : Strategy
 		var maxHistory = Math.Max(DayBars, ShiftLength * 2) + 10;
 		AppendHistory(_firstCloses, firstCandle.ClosePrice, maxHistory);
 		AppendHistory(_secondCloses, secondCandle.ClosePrice, maxHistory);
+
+		// Position reflects the primary leg only after the previous primary order reaches a final state.
+		// Reading the stale value would re-send another full size order and multiply the exposure.
+		if (IsPrimaryOrderActive())
+			return;
 
 		if (!UpdateProfitCheck(firstCandle.ClosePrice, secondCandle.ClosePrice))
 			return;
@@ -436,10 +443,9 @@ public class Spreader2Strategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		if (side == Sides.Buy)
-			BuyMarket(volume);
-		else
-			SellMarket(volume);
+		_primaryOrder = side == Sides.Buy
+			? BuyMarket(volume)
+			: SellMarket(volume);
 
 		_firstEntryPrice = _lastFirstClose;
 	}
@@ -470,10 +476,15 @@ public class Spreader2Strategy : Strategy
 	{
 		var primaryPosition = Position;
 
+		// The primary leg is opened one PrimaryVolume at a time, so a close never needs more than that.
+		// Sizing it from the raw Position feeds exposure the previous close has not netted yet back
+		// into the next order, which compounds instead of flattening.
+		var closingVolume = Math.Min(Math.Abs(primaryPosition), PrimaryVolume);
+
 		if (primaryPosition > 0m)
-			SellMarket(primaryPosition);
+			_primaryOrder = SellMarket(closingVolume);
 		else if (primaryPosition < 0m)
-			BuyMarket(Math.Abs(primaryPosition));
+			_primaryOrder = BuyMarket(closingVolume);
 
 		_firstEntryPrice = 0m;
 	}
@@ -496,6 +507,9 @@ public class Spreader2Strategy : Strategy
 		_secondPosition = 0m;
 		_secondEntryPrice = 0m;
 	}
+
+	private bool IsPrimaryOrderActive()
+		=> _primaryOrder is not null && _primaryOrder.State is not (OrderStates.Done or OrderStates.Failed);
 
 	private decimal AdjustSecondaryVolume(decimal requestedVolume)
 	{

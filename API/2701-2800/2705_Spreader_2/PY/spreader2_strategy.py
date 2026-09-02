@@ -10,7 +10,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math
 from collections import deque
 
-from StockSharp.Messages import DataType, CandleStates, OrderTypes, Sides
+from StockSharp.Messages import DataType, CandleStates, OrderTypes, OrderStates, Sides
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security
 from datatype_extensions import *
@@ -67,6 +67,7 @@ class spreader2_strategy(Strategy):
         self._second_position = 0.0
 
         self._second_portfolio = None
+        self._primary_order = None
         self._contracts_match = True
 
     @property
@@ -139,6 +140,7 @@ class spreader2_strategy(Strategy):
         self._second_position = 0.0
 
         self._second_portfolio = None
+        self._primary_order = None
         self._contracts_match = True
 
     def OnStarted2(self, time):
@@ -219,6 +221,11 @@ class spreader2_strategy(Strategy):
         max_history = max(self.DayBars, self.ShiftLength * 2) + 10
         self._append_history(self._first_closes, float(first_candle.ClosePrice), max_history)
         self._append_history(self._second_closes, float(second_candle.ClosePrice), max_history)
+
+        # Position reflects the primary leg only after the previous primary order reaches a final state.
+        # Reading the stale value would re-send another full size order and multiply the exposure.
+        if self._is_primary_order_active():
+            return
 
         if not self._update_profit_check(float(first_candle.ClosePrice), float(second_candle.ClosePrice)):
             return
@@ -379,9 +386,9 @@ class spreader2_strategy(Strategy):
             return
 
         if side == Sides.Buy:
-            self.BuyMarket(volume)
+            self._primary_order = self.BuyMarket(volume)
         else:
-            self.SellMarket(volume)
+            self._primary_order = self.SellMarket(volume)
 
         self._first_entry_price = self._last_first_close
 
@@ -406,10 +413,15 @@ class spreader2_strategy(Strategy):
     def _close_primary_position(self):
         primary_position = float(self.Position)
 
+        # The primary leg is opened one PrimaryVolume at a time, so a close never needs more than that.
+        # Sizing it from the raw Position feeds exposure the previous close has not netted yet back
+        # into the next order, which compounds instead of flattening.
+        closing_volume = min(abs(primary_position), float(self.PrimaryVolume))
+
         if primary_position > 0:
-            self.SellMarket(primary_position)
+            self._primary_order = self.SellMarket(closing_volume)
         elif primary_position < 0:
-            self.BuyMarket(abs(primary_position))
+            self._primary_order = self.BuyMarket(closing_volume)
 
         self._first_entry_price = 0.0
 
@@ -429,6 +441,10 @@ class spreader2_strategy(Strategy):
 
         self._second_position = 0.0
         self._second_entry_price = 0.0
+
+    def _is_primary_order_active(self):
+        order = self._primary_order
+        return order is not None and order.State != OrderStates.Done and order.State != OrderStates.Failed
 
     def _adjust_secondary_volume(self, requested_volume):
         if self.SecondSecurity is None:

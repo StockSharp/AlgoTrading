@@ -41,8 +41,6 @@ class hull_ma_volatility_contraction_strategy(Strategy):
         self._prev_hma = 0.0
         self._cur_hma = 0.0
         self._atr_values = []
-        self._is_long = False
-        self._is_short = False
 
     @property
     def candle_type(self):
@@ -56,8 +54,6 @@ class hull_ma_volatility_contraction_strategy(Strategy):
         self._prev_hma = 0.0
         self._cur_hma = 0.0
         self._atr_values = []
-        self._is_long = False
-        self._is_short = False
 
     def OnStarted2(self, time):
         super(hull_ma_volatility_contraction_strategy, self).OnStarted2(time)
@@ -116,18 +112,12 @@ class hull_ma_volatility_contraction_strategy(Strategy):
 
         if rising and contracted and self.Position <= 0:
             self.BuyMarket(self.Volume)
-            self._is_long = True
-            self._is_short = False
         elif falling and contracted and self.Position >= 0:
             self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self._is_long = False
-            self._is_short = True
-        elif self._is_long and falling:
+        elif self.Position > 0 and falling:
             self.SellMarket(self.Position)
-            self._is_long = False
-        elif self._is_short and rising:
+        elif self.Position < 0 and rising:
             self.BuyMarket(Math.Abs(self.Position))
-            self._is_short = False
 
     def CreateClone(self):
         return hull_ma_volatility_contraction_strategy()

@@ -40,7 +40,7 @@ class delta_rsi_strategy(Strategy):
             .SetDisplay("Close Short", "Allow closing short positions", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._prev_color = 1
+        self._prev_color = int(self.pass_state)
 
     @property
     def up_state(self):
@@ -108,6 +108,8 @@ class delta_rsi_strategy(Strategy):
 
     def process_candle(self, candle, rsi_fast, rsi_slow):
         if candle.State != CandleStates.Finished:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
         rsi_fast = float(rsi_fast)
         rsi_slow = float(rsi_slow)

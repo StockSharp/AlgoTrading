@@ -279,8 +279,9 @@ public class FrankUdMinimalStrategy : Strategy
 		if (order == null)
 		return;
 
-		if (order.Id is long id)
-			_orderActions[id] = action;
+		// Key by the transaction id: the exchange assigns Order.Id only later, so keying by it
+		// would leave the map empty and the grid would look empty on every quote.
+		_orderActions[order.TransactionId] = action;
 	}
 
 	/// <inheritdoc />
@@ -288,8 +289,11 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order.Id is not long tradeOrderId || !_orderActions.TryGetValue(tradeOrderId, out var action))
+		if (!_orderActions.TryGetValue(trade.Order.TransactionId, out var action))
 		return;
+
+		if (trade.Order.Balance == 0m)
+		_orderActions.Remove(trade.Order.TransactionId);
 
 		var price = trade.Trade.Price;
 		var volume = trade.Trade.Volume;
@@ -319,8 +323,10 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnOrderReceived(order);
 
-		if (order.Id is long oid && order.State is OrderStates.Done or OrderStates.Failed)
-		_orderActions.Remove(oid);
+		// Only a failed order is dropped here. A Done order can still be delivering its own
+		// trades, and removing it now would discard the grid entry those trades create.
+		if (order.State == OrderStates.Failed)
+		_orderActions.Remove(order.TransactionId);
 	}
 
 	/// <inheritdoc />
@@ -328,8 +334,7 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnOrderRegisterFailed(fail);
 
-		if (fail.Order.Id is long foid)
-			_orderActions.Remove(foid);
+		_orderActions.Remove(fail.Order.TransactionId);
 	}
 
 	private decimal DetermineNextVolume(List<PositionEntry> entries)

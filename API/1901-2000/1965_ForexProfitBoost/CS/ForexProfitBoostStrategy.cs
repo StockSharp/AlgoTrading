@@ -31,7 +31,6 @@ public class ForexProfitBoostStrategy : Strategy
 
 	private bool? _wasFastAboveSlow;
 	private decimal _entryPrice;
-	private bool _isLongPosition;
 	private DateTime _lastSignalTime;
 
 	/// <summary>
@@ -123,7 +122,6 @@ public class ForexProfitBoostStrategy : Strategy
 
 		_wasFastAboveSlow = null;
 		_entryPrice = 0m;
-		_isLongPosition = false;
 		_lastSignalTime = default;
 	}
 
@@ -187,7 +185,6 @@ public class ForexProfitBoostStrategy : Strategy
 
 				BuyMarket(volume);
 				_entryPrice = candle.ClosePrice;
-				_isLongPosition = true;
 				_lastSignalTime = candle.CloseTime;
 			}
 		}
@@ -200,7 +197,6 @@ public class ForexProfitBoostStrategy : Strategy
 
 				SellMarket(volume);
 				_entryPrice = candle.ClosePrice;
-				_isLongPosition = false;
 				_lastSignalTime = candle.CloseTime;
 			}
 		}
@@ -217,18 +213,22 @@ public class ForexProfitBoostStrategy : Strategy
 		if (Position == 0 || _entryPrice == 0)
 			return;
 
-		if (_isLongPosition)
+		// A market entry can fill partially, so the real exposure may still
+		// carry the previous sign and a fractional size.
+		var volume = Math.Abs(Position);
+
+		if (Position > 0)
 		{
 			if (_stopLoss.Value > 0m && currentPrice <= _entryPrice - _stopLoss.Value)
 			{
-				SellMarket(Position);
+				SellMarket(volume);
 				_entryPrice = 0m;
 				return;
 			}
 
 			if (_takeProfit.Value > 0m && currentPrice >= _entryPrice + _takeProfit.Value)
 			{
-				SellMarket(Position);
+				SellMarket(volume);
 				_entryPrice = 0m;
 			}
 		}
@@ -236,14 +236,14 @@ public class ForexProfitBoostStrategy : Strategy
 		{
 			if (_stopLoss.Value > 0m && currentPrice >= _entryPrice + _stopLoss.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket(volume);
 				_entryPrice = 0m;
 				return;
 			}
 
 			if (_takeProfit.Value > 0m && currentPrice <= _entryPrice - _takeProfit.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket(volume);
 				_entryPrice = 0m;
 			}
 		}

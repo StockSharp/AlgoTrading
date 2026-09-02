@@ -29,9 +29,13 @@ public class SpotFuturesArbitrageStrategy : Strategy
 
 	private SMA _spreadAverage;
 	private StandardDeviation _spreadStd;
+	private Order _spotOrder;
+	private Order _futureOrder;
 	private decimal _spotPrice;
 	private decimal _futurePrice;
+	private decimal _entryVolume;
 	private bool _isLong;
+	private bool _inPosition;
 	private DateTimeOffset _entryTime;
 
 	/// <summary>
@@ -141,9 +145,13 @@ public class SpotFuturesArbitrageStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_spotOrder = null;
+		_futureOrder = null;
 		_spotPrice = 0m;
 		_futurePrice = 0m;
+		_entryVolume = 0m;
 		_isLong = false;
+		_inPosition = false;
 		_entryTime = default;
 	}
 
@@ -205,28 +213,31 @@ public class SpotFuturesArbitrageStrategy : Strategy
 		var exitThreshold = 0.6m;
 		var now = candle.CloseTime;
 
-		var spotPos = PositionBy(Spot);
-		var futPos = PositionBy(Future);
-		var hasPosition = spotPos != 0m || futPos != 0m;
+		// The pair is opened and closed as a whole, so a new decision may not be taken while
+		// an earlier market order of either leg is still working.
+		if (IsWorking(_spotOrder) || IsWorking(_futureOrder))
+			return;
 
-		if (!hasPosition)
+		if (!_inPosition)
 		{
-			var volume = ComputeVolume();
-			if (volume <= 0m)
-				return;
+			var volume = Volume;
 
 			if (spread >= entryLong)
 			{
-				Buy(Spot, volume);
-				Sell(Future, volume);
+				_spotOrder = Register(Spot, Sides.Buy, volume);
+				_futureOrder = Register(Future, Sides.Sell, volume);
 				_isLong = true;
+				_inPosition = true;
+				_entryVolume = volume;
 				_entryTime = now;
 			}
 			else if (spread <= entryShort)
 			{
-				Sell(Spot, volume);
-				Buy(Future, volume);
+				_spotOrder = Register(Spot, Sides.Sell, volume);
+				_futureOrder = Register(Future, Sides.Buy, volume);
 				_isLong = false;
+				_inPosition = true;
+				_entryVolume = volume;
 				_entryTime = now;
 			}
 		}
@@ -237,68 +248,34 @@ public class SpotFuturesArbitrageStrategy : Strategy
 
 			if (shouldExit || timeExpired)
 			{
-				if (spotPos != 0m)
-				{
-					RegisterOrder(new Order
-					{
-						Security = Spot,
-						Portfolio = Portfolio,
-						Side = spotPos > 0m ? Sides.Sell : Sides.Buy,
-						Volume = Math.Abs(spotPos),
-						Type = OrderTypes.Market,
-					});
-				}
-
-				if (futPos != 0m)
-				{
-					RegisterOrder(new Order
-					{
-						Security = Future,
-						Portfolio = Portfolio,
-						Side = futPos > 0m ? Sides.Sell : Sides.Buy,
-						Volume = Math.Abs(futPos),
-						Type = OrderTypes.Market,
-					});
-				}
+				// Each leg is closed with exactly the volume it was opened with, so the
+				// order size never depends on the results of the previous cycle.
+				_spotOrder = Register(Spot, _isLong ? Sides.Sell : Sides.Buy, _entryVolume);
+				_futureOrder = Register(Future, _isLong ? Sides.Buy : Sides.Sell, _entryVolume);
 
 				_isLong = false;
+				_inPosition = false;
+				_entryVolume = 0m;
 				_entryTime = default;
 			}
 		}
 	}
 
-	private decimal ComputeVolume()
-	{
-		var equity = Portfolio.CurrentValue ?? 0m;
-		if (_spotPrice <= 0m || equity <= 0m)
-			return 0m;
+	private static bool IsWorking(Order order)
+		=> order != null && order.State is not (OrderStates.Done or OrderStates.Failed);
 
-		return equity * 0.3m / _spotPrice;
-	}
-
-	private void Buy(Security security, decimal volume)
+	private Order Register(Security security, Sides side, decimal volume)
 	{
-		RegisterOrder(new Order
+		var order = new Order
 		{
 			Security = security,
 			Portfolio = Portfolio,
-			Side = Sides.Buy,
+			Side = side,
 			Volume = volume,
 			Type = OrderTypes.Market,
-		});
-	}
+		};
 
-	private void Sell(Security security, decimal volume)
-	{
-		RegisterOrder(new Order
-		{
-			Security = security,
-			Portfolio = Portfolio,
-			Side = Sides.Sell,
-			Volume = volume,
-			Type = OrderTypes.Market,
-		});
+		RegisterOrder(order);
+		return order;
 	}
-
-	private decimal PositionBy(Security security) => GetPositionValue(security, Portfolio) ?? 0m;
 }

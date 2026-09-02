@@ -29,7 +29,6 @@ class forex_profit_boost_strategy(Strategy):
 
         self._was_fast_above_slow = None
         self._entry_price = 0.0
-        self._is_long_position = False
         self._last_signal_time = DateTime.MinValue
         self._signal_cooldown = TimeSpan.FromHours(18)
 
@@ -77,21 +76,25 @@ class forex_profit_boost_strategy(Strategy):
         if self.Position == 0 or self._entry_price == 0.0:
             return
 
-        if self._is_long_position:
+        # A market entry can fill partially, so the real exposure may still
+        # carry the previous sign and a fractional size.
+        volume = abs(self.Position)
+
+        if self.Position > 0:
             if self.StopLoss > 0.0 and current_price <= self._entry_price - self.StopLoss:
-                self.SellMarket(self.Position)
+                self.SellMarket(volume)
                 self._entry_price = 0.0
                 return
             if self.TakeProfit > 0.0 and current_price >= self._entry_price + self.TakeProfit:
-                self.SellMarket(self.Position)
+                self.SellMarket(volume)
                 self._entry_price = 0.0
         else:
             if self.StopLoss > 0.0 and current_price >= self._entry_price + self.StopLoss:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(volume)
                 self._entry_price = 0.0
                 return
             if self.TakeProfit > 0.0 and current_price <= self._entry_price - self.TakeProfit:
-                self.BuyMarket(abs(self.Position))
+                self.BuyMarket(volume)
                 self._entry_price = 0.0
 
     def OnStarted2(self, time):
@@ -118,6 +121,9 @@ class forex_profit_boost_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
         fast_val = float(fast_value)
         slow_val = float(slow_value)
         is_fast_above_slow = fast_val > slow_val
@@ -141,14 +147,12 @@ class forex_profit_boost_strategy(Strategy):
                 volume = abs(self.Position) + self.Volume if self.Position < 0 else self.Volume
                 self.BuyMarket(volume)
                 self._entry_price = float(candle.ClosePrice)
-                self._is_long_position = True
                 self._last_signal_time = candle.CloseTime
         elif is_bearish_signal:
             if self.Position >= 0:
                 volume = self.Position + self.Volume if self.Position > 0 else self.Volume
                 self.SellMarket(volume)
                 self._entry_price = float(candle.ClosePrice)
-                self._is_long_position = False
                 self._last_signal_time = candle.CloseTime
 
         self._was_fast_above_slow = is_fast_above_slow
@@ -158,7 +162,6 @@ class forex_profit_boost_strategy(Strategy):
         super(forex_profit_boost_strategy, self).OnReseted()
         self._was_fast_above_slow = None
         self._entry_price = 0.0
-        self._is_long_position = False
         self._last_signal_time = DateTime.MinValue
 
     def CreateClone(self):

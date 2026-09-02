@@ -220,65 +220,58 @@ public class RoNzRapidFireStrategy : Strategy
 		var upSignal = _prevClose != 0m && _prevSma != 0m && _prevClose <= _prevSma && candle.ClosePrice > smaValue;
 		var downSignal = _prevClose != 0m && _prevSma != 0m && _prevClose >= _prevSma && candle.ClosePrice < smaValue;
 
-		if (Position > 0)
+		var position = Position;
+
+		if (position > 0)
 		{
-			if (CloseType == CloseTypes.TrendClose && downSignal)
+			// Trend close, take profit and stop loss all close the whole position,
+			// so they must be a single exit decision: otherwise the second matching
+			// condition sends another closing order for an already flat position.
+			var trendExit = CloseType == CloseTypes.TrendClose && downSignal;
+			var takeExit = TakeProfit > 0 && candle.HighPrice >= _takePrice;
+			var stopExit = StopLoss > 0 && candle.LowPrice <= _stopPrice;
+
+			if (trendExit || takeExit || stopExit)
 			{
-				SellMarket(Position);
+				SellMarket(position);
 				_barsSinceTrade = 0;
 			}
-
-			if (TakeProfit > 0 && candle.HighPrice >= _takePrice)
+			else
 			{
-				SellMarket(Position);
-				_barsSinceTrade = 0;
-			}
+				if (TrailingStop > 0)
+				{
+					var trail = candle.ClosePrice - TrailingStop * _tick;
+					if (trail > _stopPrice)
+						_stopPrice = trail;
+				}
 
-			if (StopLoss > 0 && candle.LowPrice <= _stopPrice)
-			{
-				SellMarket(Position);
-				_barsSinceTrade = 0;
+				if (Averaging && upSignal && _barsSinceTrade >= CooldownBars)
+					EnterLong(candle);
 			}
-
-			if (TrailingStop > 0)
-			{
-				var trail = candle.ClosePrice - TrailingStop * _tick;
-				if (trail > _stopPrice)
-					_stopPrice = trail;
-			}
-
-			if (Averaging && upSignal && _barsSinceTrade >= CooldownBars)
-				EnterLong(candle);
 		}
-		else if (Position < 0)
+		else if (position < 0)
 		{
-			if (CloseType == CloseTypes.TrendClose && upSignal)
+			var trendExit = CloseType == CloseTypes.TrendClose && upSignal;
+			var takeExit = TakeProfit > 0 && candle.LowPrice <= _takePrice;
+			var stopExit = StopLoss > 0 && candle.HighPrice >= _stopPrice;
+
+			if (trendExit || takeExit || stopExit)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket(Math.Abs(position));
 				_barsSinceTrade = 0;
 			}
-
-			if (TakeProfit > 0 && candle.LowPrice <= _takePrice)
+			else
 			{
-				BuyMarket(Math.Abs(Position));
-				_barsSinceTrade = 0;
-			}
+				if (TrailingStop > 0)
+				{
+					var trail = candle.ClosePrice + TrailingStop * _tick;
+					if (trail < _stopPrice)
+						_stopPrice = trail;
+				}
 
-			if (StopLoss > 0 && candle.HighPrice >= _stopPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_barsSinceTrade = 0;
+				if (Averaging && downSignal && _barsSinceTrade >= CooldownBars)
+					EnterShort(candle);
 			}
-
-			if (TrailingStop > 0)
-			{
-				var trail = candle.ClosePrice + TrailingStop * _tick;
-				if (trail < _stopPrice)
-					_stopPrice = trail;
-			}
-
-			if (Averaging && downSignal && _barsSinceTrade >= CooldownBars)
-				EnterShort(candle);
 		}
 		else
 		{

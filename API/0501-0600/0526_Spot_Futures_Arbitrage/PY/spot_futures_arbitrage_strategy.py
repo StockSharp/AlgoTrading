@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math, InvalidOperationException
-from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes, OrderStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Order, Security
@@ -32,9 +32,13 @@ class spot_futures_arbitrage_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._spot_order = None
+        self._future_order = None
         self._spot_price = 0.0
         self._future_price = 0.0
+        self._entry_volume = 0.0
         self._is_long = False
+        self._in_position = False
         self._entry_time = None
 
     @property
@@ -72,9 +76,13 @@ class spot_futures_arbitrage_strategy(Strategy):
 
     def OnReseted(self):
         super(spot_futures_arbitrage_strategy, self).OnReseted()
+        self._spot_order = None
+        self._future_order = None
         self._spot_price = 0.0
         self._future_price = 0.0
+        self._entry_volume = 0.0
         self._is_long = False
+        self._in_position = False
         self._entry_time = None
 
     def OnStarted2(self, time):
@@ -129,67 +137,60 @@ class spot_futures_arbitrage_strategy(Strategy):
         exit_threshold = 0.6
         now = candle.CloseTime
 
-        spot_pos = float(self.GetPositionValue(self.spot, self.Portfolio) or 0)
-        fut_pos = float(self.GetPositionValue(self.future, self.Portfolio) or 0)
-        has_position = spot_pos != 0 or fut_pos != 0
+        # The pair is opened and closed as a whole, so a new decision may not be taken while
+        # an earlier market order of either leg is still working.
+        if self._is_working(self._spot_order) or self._is_working(self._future_order):
+            return
 
-        if not has_position:
+        if not self._in_position:
+            volume = self.Volume
+
             if spread >= entry_long:
-                self._buy_security(self.spot)
-                self._sell_security(self.future)
+                self._spot_order = self._register(self.spot, Sides.Buy, volume)
+                self._future_order = self._register(self.future, Sides.Sell, volume)
                 self._is_long = True
+                self._in_position = True
+                self._entry_volume = volume
                 self._entry_time = now
             elif spread <= entry_short:
-                self._sell_security(self.spot)
-                self._buy_security(self.future)
+                self._spot_order = self._register(self.spot, Sides.Sell, volume)
+                self._future_order = self._register(self.future, Sides.Buy, volume)
                 self._is_long = False
+                self._in_position = True
+                self._entry_volume = volume
                 self._entry_time = now
         else:
-            time_expired = self._entry_time is not None and (now - self._entry_time) >= TimeSpan.FromHours(int(self.max_hold_hours))
+            time_expired = (now - self._entry_time) >= TimeSpan.FromHours(int(self.max_hold_hours))
             if self._is_long:
                 should_exit = spread < entry_long * exit_threshold
             else:
                 should_exit = spread > entry_short * exit_threshold
 
             if should_exit or time_expired:
-                if spot_pos != 0:
-                    order = Order()
-                    order.Security = self.spot
-                    order.Portfolio = self.Portfolio
-                    order.Side = Sides.Sell if spot_pos > 0 else Sides.Buy
-                    order.Volume = abs(spot_pos)
-                    order.Type = OrderTypes.Market
-                    self.RegisterOrder(order)
-
-                if fut_pos != 0:
-                    order = Order()
-                    order.Security = self.future
-                    order.Portfolio = self.Portfolio
-                    order.Side = Sides.Sell if fut_pos > 0 else Sides.Buy
-                    order.Volume = abs(fut_pos)
-                    order.Type = OrderTypes.Market
-                    self.RegisterOrder(order)
+                # Each leg is closed with exactly the volume it was opened with, so the
+                # order size never depends on the results of the previous cycle.
+                spot_side = Sides.Sell if self._is_long else Sides.Buy
+                future_side = Sides.Buy if self._is_long else Sides.Sell
+                self._spot_order = self._register(self.spot, spot_side, self._entry_volume)
+                self._future_order = self._register(self.future, future_side, self._entry_volume)
 
                 self._is_long = False
+                self._in_position = False
+                self._entry_volume = 0.0
                 self._entry_time = None
 
-    def _buy_security(self, security):
-        order = Order()
-        order.Security = security
-        order.Portfolio = self.Portfolio
-        order.Side = Sides.Buy
-        order.Volume = self.Volume
-        order.Type = OrderTypes.Market
-        self.RegisterOrder(order)
+    def _is_working(self, order):
+        return order is not None and order.State != OrderStates.Done and order.State != OrderStates.Failed
 
-    def _sell_security(self, security):
+    def _register(self, security, side, volume):
         order = Order()
         order.Security = security
         order.Portfolio = self.Portfolio
-        order.Side = Sides.Sell
-        order.Volume = self.Volume
+        order.Side = side
+        order.Volume = volume
         order.Type = OrderTypes.Market
         self.RegisterOrder(order)
+        return order
 
     def CreateClone(self):
         return spot_futures_arbitrage_strategy()

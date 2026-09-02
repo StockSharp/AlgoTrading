@@ -20,9 +20,9 @@ class machine_learning_logistic_regression_strategy(Strategy):
         self._learning_rate = self.Param("LearningRate", 0.0009) \
             .SetGreaterThanZero() \
             .SetDisplay("Learning Rate", "Gradient descent step", "General")
-        self._iterations = self.Param("Iterations", 1000) \
+        self._iterations = self.Param("Iterations", 10) \
             .SetGreaterThanZero() \
-            .SetDisplay("Iterations", "Training iterations", "General")
+            .SetDisplay("Iterations", "Training iterations per candle", "General")
         self._holding_period = self.Param("HoldingPeriod", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Holding Period", "Bars to hold position", "General")
@@ -34,6 +34,7 @@ class machine_learning_logistic_regression_strategy(Strategy):
         self._signal = 0
         self._hp_counter = 0
         self._is_initialized = False
+        self._weight = 0.0
 
     @property
     def candle_type(self):
@@ -52,6 +53,7 @@ class machine_learning_logistic_regression_strategy(Strategy):
         self._signal = 0
         self._hp_counter = 0
         self._is_initialized = False
+        self._weight = 0.0
 
     def OnStarted2(self, time):
         super(machine_learning_logistic_regression_strategy, self).OnStarted2(time)
@@ -62,6 +64,7 @@ class machine_learning_logistic_regression_strategy(Strategy):
         self._signal = 0
         self._hp_counter = 0
         self._is_initialized = False
+        self._weight = 0.0
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.OnProcess).Start()
         area = self.CreateChartArea()
@@ -81,8 +84,10 @@ class machine_learning_logistic_regression_strategy(Strategy):
             exp_val = float('inf')
         return 1.0 / (1.0 + exp_val)
 
-    def _run_logistic_regression(self, x, y, p, lr, iterations):
-        w = 0.0
+    # The weight is kept between candles, so each candle applies "iterations" gradient
+    # steps to the existing model instead of retraining it from scratch.
+    def _train_and_predict(self, x, y, p, lr, iterations):
+        w = self._weight
         for _ in range(iterations):
             gradient = 0.0
             for j in range(p):
@@ -91,8 +96,8 @@ class machine_learning_logistic_regression_strategy(Strategy):
                 gradient += (h - y[j]) * x[j]
             gradient /= p
             w -= lr * gradient
-        prediction = self._sigmoid(w * x[-1])
-        return prediction
+        self._weight = w
+        return self._sigmoid(w * x[-1])
 
     def OnProcess(self, candle):
         if candle.State != CandleStates.Finished:
@@ -119,7 +124,7 @@ class machine_learning_logistic_regression_strategy(Strategy):
             return
         lr = float(self._learning_rate.Value)
         iters = self._iterations.Value
-        prediction = self._run_logistic_regression(
+        prediction = self._train_and_predict(
             self._base_series, self._synth_series, lb, lr, iters
         )
         new_signal = 1 if prediction > 0.5 else -1

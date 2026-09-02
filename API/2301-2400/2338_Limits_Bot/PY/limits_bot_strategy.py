@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -30,6 +30,7 @@ class limits_bot_strategy(Strategy):
         self._trailing_step = self.Param("TrailingStep", 1.0) \
             .SetDisplay("Trailing Step", "Minimal move to shift trailing", "Risk")
         self._cooldown_candles = self.Param("CooldownCandles", 2) \
+            .SetGreaterThanZero() \
             .SetDisplay("Cooldown Candles", "Bars to wait after an exit", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
@@ -116,6 +117,8 @@ class limits_bot_strategy(Strategy):
     def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
         price_step = 0.01
         self._bars_since_exit += 1
         pos = float(self.Position)
@@ -131,18 +134,21 @@ class limits_bot_strategy(Strategy):
         cd = int(self.cooldown_candles)
 
         if pos > 0 and self._last_position <= 0:
-            self._entry_price = open_price
+            self._entry_price = float(self._buy_order.Price) if self._buy_order is not None else open_price
             self._long_stop = self._entry_price - sl * price_step
             self._long_take = self._entry_price + tp * price_step
+            # A filled or already cancelled order is gone from the book, cancelling it fails.
             if self._sell_order is not None:
-                self.CancelOrder(self._sell_order)
+                if self._sell_order.State == OrderStates.Active:
+                    self.CancelOrder(self._sell_order)
                 self._sell_order = None
         elif pos < 0 and self._last_position >= 0:
-            self._entry_price = open_price
+            self._entry_price = float(self._sell_order.Price) if self._sell_order is not None else open_price
             self._short_stop = self._entry_price + sl * price_step
             self._short_take = self._entry_price - tp * price_step
             if self._buy_order is not None:
-                self.CancelOrder(self._buy_order)
+                if self._buy_order.State == OrderStates.Active:
+                    self.CancelOrder(self._buy_order)
                 self._buy_order = None
 
         if pos > 0 and self._entry_price is not None:
@@ -178,10 +184,12 @@ class limits_bot_strategy(Strategy):
             self._short_stop = None
             self._short_take = None
             if self._buy_order is not None:
-                self.CancelOrder(self._buy_order)
+                if self._buy_order.State == OrderStates.Active:
+                    self.CancelOrder(self._buy_order)
                 self._buy_order = None
             if self._sell_order is not None:
-                self.CancelOrder(self._sell_order)
+                if self._sell_order.State == OrderStates.Active:
+                    self.CancelOrder(self._sell_order)
                 self._sell_order = None
             sod = float(self.stop_order_distance)
             if self.buy_allow and close_price >= open_price:

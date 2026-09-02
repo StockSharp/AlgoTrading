@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.BusinessEntities import Security, Portfolio
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
@@ -60,6 +60,7 @@ class delta_neutral_arbitrage_strategy(Strategy):
         self._last_asset2_price = 0.0
         self._asset1_volume = 0.0
         self._asset2_volume = 0.0
+        self._spread_direction = 0
 
     @property
     def asset2_security(self):
@@ -128,6 +129,7 @@ class delta_neutral_arbitrage_strategy(Strategy):
         self._last_asset2_price = 0.0
         self._asset1_volume = 0.0
         self._asset2_volume = 0.0
+        self._spread_direction = 0
 
     def OnStarted2(self, time):
         super(delta_neutral_arbitrage_strategy, self).OnStarted2(time)
@@ -215,7 +217,7 @@ class delta_neutral_arbitrage_strategy(Strategy):
             self._current_spread, spread_sma, spread_std_dev, z_score))
 
         # Trading logic
-        if Math.Abs(self.Position) == 0:  # No position, check for entry
+        if self._spread_direction == 0:  # No position, check for entry
             # Spread is too low (Asset1 cheap relative to Asset2)
             if z_score < -self.entry_threshold:
                 self.EnterLongSpread()
@@ -229,8 +231,8 @@ class delta_neutral_arbitrage_strategy(Strategy):
                     "Short spread entry: Asset1 price={0}, Asset2 price={1}, Spread={2}".format(
                         self._last_asset1_price, self._last_asset2_price, self._current_spread))
         else:  # Have position, check for exit
-            if (self.Position > 0 and self._current_spread >= spread_sma) or \
-                    (self.Position < 0 and self._current_spread <= spread_sma):  # Long spread and spread has reverted to mean / Short spread and spread has reverted to mean
+            if (self._spread_direction > 0 and self._current_spread >= spread_sma) or \
+                    (self._spread_direction < 0 and self._current_spread <= spread_sma):  # Long spread and spread has reverted to mean / Short spread and spread has reverted to mean
                 self.ClosePositions()
                 self.LogInfo(
                     "Spread exit: Asset1 price={0}, Asset2 price={1}, Spread={2}".format(
@@ -249,6 +251,8 @@ class delta_neutral_arbitrage_strategy(Strategy):
         asset2_order.Portfolio = self.asset2_portfolio
         self.RegisterOrder(asset2_order)
 
+        self._spread_direction = 1
+
     def EnterShortSpread(self):
         # Sell Asset1
         asset1_order = self.CreateOrder(Sides.Sell, self._last_asset1_price, self._asset1_volume)
@@ -262,20 +266,25 @@ class delta_neutral_arbitrage_strategy(Strategy):
         asset2_order.Portfolio = self.asset2_portfolio
         self.RegisterOrder(asset2_order)
 
+        self._spread_direction = -1
+
     def ClosePositions(self):
+        # Closing volumes come from the entry, not from Position: the position is refreshed only
+        # when executions arrive, so several candles can size a full-position order before any of
+        # them fills. Both securities share the candle type, so the decision block runs twice per bar.
+        is_long_spread = self._spread_direction > 0
+
+        self._spread_direction = 0
+
         # Close position in Asset1
-        if self.Position > 0:
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0:
-            self.BuyMarket(Math.Abs(self.Position))
+        if is_long_spread:
+            self.SellMarket(self._asset1_volume)
+        else:
+            self.BuyMarket(self._asset1_volume)
 
-        # Note: In a real implementation, you would also close the position
-        # in Asset2 by checking its position via separate portfolio tracking
-        # For simplicity, this example assumes symmetrical positions
-
-        # Close position in Asset2 (simplified example)
+        # Close position in Asset2
         asset2_order = self.CreateOrder(
-            Sides.Buy if self.Position > 0 else Sides.Sell,
+            Sides.Buy if is_long_spread else Sides.Sell,
             self._last_asset2_price,
             self._asset2_volume)
 

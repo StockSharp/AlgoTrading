@@ -100,8 +100,8 @@ class correlation_mean_reversion_strategy(Strategy):
         self._correlation_std_dev.Length = int(self._lookback_period.Value)
         self._cooldown = 0
 
-        primary_subscription = self.SubscribeCandles(self.candle_type, False, self.Security)
-        secondary_subscription = self.SubscribeCandles(self.candle_type, False, self._security2)
+        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
+        secondary_subscription = self.SubscribeCandles(self.candle_type, True, self._security2)
 
         primary_subscription.Bind(self._process_primary_candle).Start()
         secondary_subscription.Bind(self._process_secondary_candle).Start()

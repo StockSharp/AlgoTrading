@@ -30,8 +30,6 @@ public class HullMaVolatilityContractionStrategy : Strategy
 	private readonly SynchronizedList<decimal> _atrValues = [];
 	private decimal _prevHmaValue;
 	private decimal _currentHmaValue;
-	private bool _isLongPosition;
-	private bool _isShortPosition;
 
 	/// <summary>
 	/// Hull Moving Average period.
@@ -106,8 +104,6 @@ public class HullMaVolatilityContractionStrategy : Strategy
 
 		_prevHmaValue = default;
 		_currentHmaValue = default;
-		_isLongPosition = false;
-		_isShortPosition = false;
 		_atrValues.Clear();
 		_hma = null;
 		_atr = null;
@@ -195,30 +191,24 @@ public class HullMaVolatilityContractionStrategy : Strategy
 		{
 			BuyMarket(Volume);
 			LogInfo($"Buy Signal: HMA Rising ({_prevHmaValue:F2} -> {_currentHmaValue:F2}) with Contracted Volatility");
-			_isLongPosition = true;
-			_isShortPosition = false;
 		}
 		// Sell when HMA is falling and volatility is contracted
 		else if (isHmaFalling && isVolatilityContracted && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			LogInfo($"Sell Signal: HMA Falling ({_prevHmaValue:F2} -> {_currentHmaValue:F2}) with Contracted Volatility");
-			_isLongPosition = false;
-			_isShortPosition = true;
 		}
 		// Exit long position when HMA starts falling
-		else if (_isLongPosition && isHmaFalling)
+		else if (Position > 0 && isHmaFalling)
 		{
 			SellMarket(Position);
 			LogInfo($"Exit Long: HMA started falling ({_prevHmaValue:F2} -> {_currentHmaValue:F2})");
-			_isLongPosition = false;
 		}
 		// Exit short position when HMA starts rising
-		else if (_isShortPosition && isHmaRising)
+		else if (Position < 0 && isHmaRising)
 		{
 			BuyMarket(Math.Abs(Position));
 			LogInfo($"Exit Short: HMA started rising ({_prevHmaValue:F2} -> {_currentHmaValue:F2})");
-			_isShortPosition = false;
 		}
 	}
 

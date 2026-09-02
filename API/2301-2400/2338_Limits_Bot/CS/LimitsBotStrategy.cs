@@ -127,9 +127,12 @@ public class LimitsBotStrategy : Strategy
 			_entryPrice = _buyOrder?.Price ?? candle.OpenPrice;
 			_longStop = _entryPrice - StopLoss * priceStep;
 			_longTake = _entryPrice + TakeProfit * priceStep;
+			// A filled or already cancelled order is gone from the book, cancelling it fails.
 			if (_sellOrder != null)
 			{
-				CancelOrder(_sellOrder);
+				if (_sellOrder.State == OrderStates.Active)
+					CancelOrder(_sellOrder);
+
 				_sellOrder = null;
 			}
 		}
@@ -140,7 +143,9 @@ public class LimitsBotStrategy : Strategy
 			_shortTake = _entryPrice - TakeProfit * priceStep;
 			if (_buyOrder != null)
 			{
-				CancelOrder(_buyOrder);
+				if (_buyOrder.State == OrderStates.Active)
+					CancelOrder(_buyOrder);
+
 				_buyOrder = null;
 			}
 		}
@@ -184,12 +189,16 @@ public class LimitsBotStrategy : Strategy
 
 			if (_buyOrder != null)
 			{
-				CancelOrder(_buyOrder);
+				if (_buyOrder.State == OrderStates.Active)
+					CancelOrder(_buyOrder);
+
 				_buyOrder = null;
 			}
 			if (_sellOrder != null)
 			{
-				CancelOrder(_sellOrder);
+				if (_sellOrder.State == OrderStates.Active)
+					CancelOrder(_sellOrder);
+
 				_sellOrder = null;
 			}
 
