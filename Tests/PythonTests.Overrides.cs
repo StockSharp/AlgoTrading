@@ -43,6 +43,17 @@ partial class PythonTests
 			replayDuration: System.TimeSpan.FromDays(1));
 
 	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S3750_FrankUdMinimal()
+		// A forex grid expert quoting its distances in pips. On the bundled crypto history one pip
+		// is a hundredth of a dollar against a five-figure price, so the profit target clears on
+		// almost every quote and a full month produces ~220k fills per language. One natural day
+		// still walks the whole open/add/liquidate cycle many times over.
+		=> RunStrategy(
+			"3701-3800/3750_Frank_Ud_Minimal/PY/frank_ud_minimal_strategy.py",
+			replayDuration: System.TimeSpan.FromDays(1));
+
+	[TestMethod]
 	[TestCategory("Shard00")]
 	public Task S2096_BreakoutBarsTrend()
 		// Compact parameters make the signal reachable in the bundled history window.
