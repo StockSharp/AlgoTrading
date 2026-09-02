@@ -83,14 +83,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },
@@ -338,7 +337,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.ParabolicSar, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.ParabolicSar, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {

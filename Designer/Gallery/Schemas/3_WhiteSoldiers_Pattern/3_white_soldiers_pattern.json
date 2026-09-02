@@ -143,16 +143,13 @@
               },
               "Series": {
                 "Value": {
-                  "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                  "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                   "settings": {
-                    "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                    "Arg": "01-00-00",
-                    "IsCalcVolumeProfile": false,
-                    "BuildCandlesMode": "LoadAndBuild",
-                    "AllowBuildFromSmallerTimeFrame": true,
-                    "IsRegularTradingHours": false,
-                    "IsFinishedOnly": false,
-                    "FillGaps": false
+                    "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                    "Arg": {
+                      "type": "System.TimeSpan, mscorlib",
+                      "value": "01-00-00"
+                    }
                   }
                 }
               },
@@ -380,7 +377,7 @@
               },
               "Type": {
                 "Value": {
-                  "Indicator": "StockSharp.Algo.Indicators.CandlePatternIndicator, StockSharp.Algo"
+                  "Indicator": "StockSharp.Algo.Indicators.CandlePatternIndicator, StockSharp.Algo.Indicators"
                 }
               },
               "IsFinal": {
@@ -644,7 +641,7 @@
               },
               "Type": {
                 "Value": {
-                  "Indicator": "StockSharp.Algo.Indicators.Highest, StockSharp.Algo"
+                  "Indicator": "StockSharp.Algo.Indicators.Highest, StockSharp.Algo.Indicators"
                 }
               },
               "IsFinal": {
@@ -725,7 +722,7 @@
               },
               "Type": {
                 "Value": {
-                  "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.Algo"
+                  "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.BusinessEntities"
                 }
               },
               "Shift": {

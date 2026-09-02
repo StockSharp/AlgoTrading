@@ -61,7 +61,7 @@
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
                   "Type": "Absolute",
-                  "Value": 2.5
+                  "Value": 0.75
                 }
               }
             },
@@ -164,14 +164,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },
@@ -448,7 +447,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -626,7 +625,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.Lowest, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.Lowest, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -671,7 +670,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.Lowest, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.Lowest, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -716,7 +715,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.Highest, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.Highest, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -895,7 +894,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.Algo"
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.BusinessEntities"
                     }
                   },
                   "Shift": {
@@ -931,7 +930,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.Algo"
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.BusinessEntities"
                     }
                   },
                   "Shift": {
@@ -1051,7 +1050,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "2.5"
+                    "Value": "Quiet ratio = 0.75"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1075,7 +1074,7 @@
                       "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                       "settings": {
                         "Type": "Absolute",
-                        "Value": 2.5
+                        "Value": 0.75
                       }
                     }
                   },
@@ -1534,6 +1533,86 @@
                   }
                 }
               }
+            },
+            {
+              "Key": "90",
+              "Figure": "Procedure",
+              "X": -790.0,
+              "Y": 190.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "1626931b-071f-5507-bdc9-907efec03823",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Average StdDev 200"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": false
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 200
+                  }
+                }
+              }
+            },
+            {
+              "Key": "91",
+              "Figure": "Procedure",
+              "X": -660.0,
+              "Y": 190.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "8f65e9ce-83dd-5bc9-804e-133f79f35408",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "a * b"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "a * b"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_a",
+                  "dynsock_b"
+                ]
+              }
             }
           ],
           "Links": [
@@ -1658,7 +1737,7 @@
               "ToPort": "Input"
             },
             {
-              "From": "17",
+              "From": "91",
               "FromPort": "Output",
               "To": "19",
               "ToPort": "SecondInput"
@@ -1782,6 +1861,24 @@
               "FromPort": "MyTrade",
               "To": "3",
               "ToPort": "dynsock_e3653f8950a34d7d8f3f5cde01a00d07"
+            },
+            {
+              "From": "4",
+              "FromPort": "Output",
+              "To": "90",
+              "ToPort": "Input"
+            },
+            {
+              "From": "90",
+              "FromPort": "Output",
+              "To": "91",
+              "ToPort": "dynsock_a"
+            },
+            {
+              "From": "17",
+              "FromPort": "Output",
+              "To": "91",
+              "ToPort": "dynsock_b"
             }
           ]
         }

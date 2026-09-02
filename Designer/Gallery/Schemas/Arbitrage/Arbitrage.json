@@ -30,10 +30,10 @@
               "Value": false
             },
             "1714c8d5-3efe-43b9-8fc5-309d75c39887Value": {
-              "Value": "ETHUSDT@BNB"
+              "Value": "TONUSDT@BNBFT"
             },
             "3d874ac4-2cd7-4681-919d-c082be99f562Value": {
-              "Value": "BTCUSDT@BNB"
+              "Value": "BTCUSDT@BNBFT"
             },
             "1fcb0666-f7a9-466c-a43e-86e9ca6d25c7Value": {
               "Value": {
@@ -91,7 +91,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "ETHUSDT@BNB"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -111,7 +111,7 @@
                     }
                   },
                   "Value": {
-                    "Value": "ETHUSDT@BNB"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "InputAsTrigger": {
                     "Value": false
@@ -130,7 +130,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "BTCUSDT@BNB"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -150,7 +150,7 @@
                     }
                   },
                   "Value": {
-                    "Value": "BTCUSDT@BNB"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "InputAsTrigger": {
                     "Value": false
@@ -188,14 +188,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },
@@ -247,14 +246,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },
