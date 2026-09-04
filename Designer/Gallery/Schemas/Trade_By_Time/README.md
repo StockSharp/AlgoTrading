@@ -5,7 +5,7 @@
 
 This example in the StockSharp Strategy Designer demonstrates a sophisticated setup that integrates date and time handling within a trading strategy. The strategy utilizes time-specific conditions to make trading decisions based on the candle data and time of day, making it a practical example for scenarios where trades are time-sensitive.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Description of the Schema
 

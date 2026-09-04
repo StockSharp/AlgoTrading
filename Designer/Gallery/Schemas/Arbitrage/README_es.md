@@ -5,7 +5,7 @@
 
 La Estrategia de Trading por Pares en BTC y ETH está diseñada para operar con dos criptomonedas populares: Bitcoin (BTC) y Ethereum (ETH). Esta estrategia de arbitraje de criptomonedas se basa en identificar oportunidades de arbitraje entre estos dos activos, permitiendo a los traders capitalizar los momentos en que la diferencia de precio entre BTC y ETH alcanza un determinado umbral.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 La estrategia implementa mecanismos para comprar una criptomoneda mientras simultáneamente se vende la otra, con el objetivo de obtener beneficios de las discrepancias temporales en sus valores. Esto hace que la estrategia sea atractiva para aquellos que buscan oportunidades de ganancia con fluctuaciones mínimas del mercado sin depender de la tendencia general del mercado.
 

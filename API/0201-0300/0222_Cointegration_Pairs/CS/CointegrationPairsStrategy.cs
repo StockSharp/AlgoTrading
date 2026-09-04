@@ -153,8 +153,9 @@ public class CointegrationPairsStrategy : Strategy
 		_asset2Price = 0;
 		_cooldownTicksLeft = 0;
 
-		// Use the same portfolio for second asset or find another portfolio
-		_asset2Portfolio = Portfolio;
+		// Portfolio is not guaranteed to be assigned by the time a strategy is reset,
+		// so the hedge portfolio is resolved on start instead.
+		_asset2Portfolio = null;
 	}
 
 	/// <inheritdoc />
@@ -164,7 +165,10 @@ public class CointegrationPairsStrategy : Strategy
 
 		if (Asset2 == null)
 			throw new InvalidOperationException("Second asset is not specified.");
-		
+
+		// Use the same portfolio for second asset or find another portfolio
+		_asset2Portfolio = Portfolio;
+
 		// Subscribe to Asset1 candles
 		var asset1Subscription = SubscribeCandles(CandleType)
 			.Bind(ProcessAsset1Candle)
@@ -255,7 +259,14 @@ public class CointegrationPairsStrategy : Strategy
 			// capped at Volume. Sizing an order from the raw position instead feeds exposure
 			// that has not been netted yet into the next order, which compounds without bound.
 			var closingVolume = Math.Min(Math.Abs(Position), Volume);
-			
+
+			// The hedge leg fills independently of Asset1, so it is measured from its own
+			// position and bounded the same way: a closing order takes at most the open leg,
+			// an entry adds only the part of it that its own side nets out.
+			var hedgeVolume = Volume * Beta;
+			var asset2Position = _asset2Portfolio == null ? 0m : GetPositionValue(Asset2, _asset2Portfolio) ?? 0m;
+			var asset2ClosingVolume = Math.Min(Math.Abs(asset2Position), hedgeVolume);
+
 			// Check for trading signals
 			if (zScore < -EntryThreshold && Position <= 0)
 			{
@@ -267,15 +278,7 @@ public class CointegrationPairsStrategy : Strategy
 				// Then, short Asset2 using the second portfolio
 				if (_asset2Portfolio != null)
 				{
-					var asset2Order = new Order
-					{
-						Side = Sides.Sell,
-						Security = Asset2,
-						Portfolio = _asset2Portfolio,
-						Volume = Volume * Beta
-					};
-					
-					RegisterOrder(asset2Order);
+					RegisterAsset2Order(Sides.Sell, hedgeVolume + (asset2Position > 0 ? asset2ClosingVolume : 0m));
 					hasTraded = true;
 				}
 			}
@@ -289,15 +292,7 @@ public class CointegrationPairsStrategy : Strategy
 				// Then, buy Asset2 using the second portfolio
 				if (_asset2Portfolio != null)
 				{
-					var asset2Order = new Order
-					{
-						Side = Sides.Buy,
-						Security = Asset2,
-						Portfolio = _asset2Portfolio,
-						Volume = Volume * Beta
-					};
-					
-					RegisterOrder(asset2Order);
+					RegisterAsset2Order(Sides.Buy, hedgeVolume + (asset2Position < 0 ? asset2ClosingVolume : 0m));
 					hasTraded = true;
 				}
 			}
@@ -311,21 +306,13 @@ public class CointegrationPairsStrategy : Strategy
 					else
 						BuyMarket(closingVolume);
 					hasTraded = true;
-					
-					// Close position on Asset2
-					if (_asset2Portfolio != null)
-					{
-						var asset2Order = new Order
-						{
-							Side = Position > 0 ? Sides.Buy : Sides.Sell,
-							Security = Asset2,
-							Portfolio = _asset2Portfolio,
-							Volume = Volume * Beta
-						};
-						
-						RegisterOrder(asset2Order);
-						hasTraded = true;
-					}
+				}
+
+				// Close position on Asset2 from the real size and side of that leg
+				if (asset2ClosingVolume > 0)
+				{
+					RegisterAsset2Order(asset2Position > 0 ? Sides.Sell : Sides.Buy, asset2ClosingVolume);
+					hasTraded = true;
 				}
 			}
 		}
@@ -336,5 +323,19 @@ public class CointegrationPairsStrategy : Strategy
 		// Reset prices for next update
 		_asset1Price = 0;
 		_asset2Price = 0;
+	}
+
+	private void RegisterAsset2Order(Sides side, decimal volume)
+	{
+		var asset2Order = new Order
+		{
+			Side = side,
+			Security = Asset2,
+			Portfolio = _asset2Portfolio,
+			Volume = volume,
+			Type = OrderTypes.Market
+		};
+
+		RegisterOrder(asset2Order);
 	}
 }

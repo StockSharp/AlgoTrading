@@ -3,7 +3,7 @@
 
 Este archivo contiene una representación diagramática de una estrategia de trading basada en medias móviles, diseñada mediante la Galería de Estrategias de la plataforma Designer. La estrategia utiliza el concepto de medias móviles para generar señales de compra y venta basadas en sus cruces, un método popular en los mercados financieros para evaluar el impulso y confirmar tendencias.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Descripción General de la Estrategia
 

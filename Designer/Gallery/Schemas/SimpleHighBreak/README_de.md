@@ -5,7 +5,7 @@
 
 Die „SimpleHighBreak"-Strategie ist darauf ausgelegt, von Kursausbrüchen über ein vordefiniertes Hoch im [StockSharp Designer](https://doc.stocksharp.com/de/topics/designer.html) zu profitieren. Die Strategie konzentriert sich auf die Identifizierung von Chancen, bei denen der Kurs über das 15-Perioden-Hoch ausbricht und damit eine mögliche Fortsetzung des Aufwärtstrends signalisiert.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategiedetails
 

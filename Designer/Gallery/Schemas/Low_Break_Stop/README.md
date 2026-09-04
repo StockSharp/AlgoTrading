@@ -5,7 +5,7 @@
 
 This example demonstrates a "Low Break with Stop" trading strategy configured within the StockSharp Strategy Designer. It is designed to execute trades based on specific low-price breakout conditions, incorporating stop-loss parameters to manage risk. This strategy leverages real-time market data to identify when a security's price breaks below a predefined low over a certain period and then initiates trades with defined stop conditions.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Description of the Schema
 

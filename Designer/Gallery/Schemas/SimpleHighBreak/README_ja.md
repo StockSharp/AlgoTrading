@@ -5,7 +5,7 @@
 
 「SimpleHighBreak」戦略は、[StockSharp Designer](https://doc.stocksharp.com/ja/topics/designer.html) 内で事前に定義した高値を超えた価格ブレイクアウトを利用するように設計されています。この戦略は、価格が直近15期間の高値を上抜けする機会を特定することに焦点を当てており、上昇トレンドの継続可能性を示します。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 戦略の詳細
 

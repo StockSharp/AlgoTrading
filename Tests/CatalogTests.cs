@@ -3,10 +3,14 @@ namespace StockSharp.Tests;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Ecng.Common;
+using Ecng.ComponentModel;
 using Ecng.UnitTesting;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,16 +22,19 @@ using StockSharp.Diagram;
 /// is generated from the running registry rather than kept by hand.
 /// </summary>
 [TestClass]
-public class CatalogTests
+public class CatalogTests : BaseTestClass
 {
 	/// <summary>Where the generated catalog is kept.</summary>
 	public static string FileName => Path.Combine(SchemaGallery.Root, "_Tools", "catalog.md");
+
+	/// <summary>The same catalog for the tools that draw the pictures.</summary>
+	public static string DataFileName => Path.Combine(SchemaGallery.Root, "_Tools", "catalog.json");
 
 	/// <summary>Regenerates the element catalog from the registry.</summary>
 	[TestMethod]
 	public async Task Write()
 	{
-		var registry = await SchemaLoader.GetRegistryAsync(CancellationToken.None);
+		var registry = await SchemaLoader.GetRegistryAsync(CancellationToken);
 		var builder = new StringBuilder();
 
 		builder.AppendLine("# Designer element catalog");
@@ -58,7 +65,47 @@ public class CatalogTests
 		}
 
 		Directory.CreateDirectory(Path.GetDirectoryName(FileName));
-		await File.WriteAllTextAsync(FileName, builder.ToString(), CancellationToken.None);
+		await File.WriteAllTextAsync(FileName, builder.ToString(), CancellationToken);
+
+		// The same catalog for the renderer: what a block is called, what it looks like, which ports it
+		// has and in which colour.
+		var socketKeys = typeof(DiagramSocketType)
+			.GetFields(BindingFlags.Public | BindingFlags.Static)
+			.Where(f => f.FieldType == typeof(DiagramSocketType))
+			.ToDictionary(f => (DiagramSocketType)f.GetValue(null), f => f.Name);
+
+		string KeyOf(DiagramSocketType type)
+			=> type is not null && socketKeys.TryGetValue(type, out var key) ? key : type?.Name ?? "Any";
+
+		var socketTypes = socketKeys
+			.OrderBy(pair => pair.Value, StringComparer.Ordinal)
+			.Select(pair => new
+			{
+				name = pair.Value,
+				displayName = pair.Key.Name,
+				color = $"#{pair.Key.Color.R:X2}{pair.Key.Color.G:X2}{pair.Key.Color.B:X2}",
+			})
+			.ToArray();
+
+		object Port(DiagramSocket socket)
+			=> new { key = socket.Id, name = socket.Name, type = KeyOf(socket.Type), maxLinks = socket.LinkableMaximum == int.MaxValue ? 0 : socket.LinkableMaximum };
+
+		var elements = registry.DiagramElements
+			.OrderBy(e => e.GetType().Name, StringComparer.Ordinal)
+			.Select(e => new
+			{
+				typeId = e.TypeId.ToString().ToUpperInvariant(),
+				name = e.GetType().GetDisplayName(),
+				description = e.Description ?? string.Empty,
+				groupName = e.GetCategory(),
+				icon = e.IconName,
+				inPorts = e.InputSockets.Select(Port).ToArray(),
+				outPorts = e.OutputSockets.Select(Port).ToArray(),
+			})
+			.ToArray();
+
+		await File.WriteAllTextAsync(DataFileName, JsonSerializer.Serialize(new { socketTypes, elements },
+			new JsonSerializerOptions { WriteIndented = true }), CancellationToken);
 
 		registry.DiagramElements.Count.AssertGreater(30, "The registry holds suspiciously few elements.");
 	}

@@ -5,7 +5,7 @@
 
 StockSharp Strategy Designer 中的这个示例展示了一种将日期和时间处理集成到交易策略中的复杂配置。该策略利用特定时间条件，根据蜡烛图数据和当天时间做出交易决策，是时间敏感型交易场景的实用参考案例。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 图表描述
 

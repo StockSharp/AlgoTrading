@@ -8,12 +8,12 @@ Diese Datei veranschaulicht ein komplexes Strategie-Diagramm, das Kerzen aus ver
 Das Diagramm ist in zwei Hauptzweige unterteilt, wobei jeder Zweig Fünf-Minuten-Kerzen verwendet, die mit historischen Preisextremen verglichen werden, um Handelsentscheidungen zu treffen:
 
 ### Erster Zweig — Historische Extreme
-- **Kaufbedingung**: Die Strategie initiiert eine Kauforder, wenn der Schlusskurs einer Fünf-Minuten-Kerze höher ist als der höchste Preis der letzten 20 Tage.
-- **Verkaufsbedingung**: Eine Verkaufsorder wird ausgeführt, wenn der Schlusskurs einer Fünf-Minuten-Kerze niedriger ist als der niedrigste Preis der letzten 10 Tage.
+- **Kaufbedingung**: Die Strategie initiiert eine Kauforder, wenn der Schlusskurs einer Fünf-Minuten-Kerze höher ist als der höchste Preis der letzten 5 Tage.
+- **Verkaufsbedingung**: Eine Verkaufsorder wird ausgeführt, wenn der Schlusskurs einer Fünf-Minuten-Kerze niedriger ist als der niedrigste Preis der letzten 3 Tage.
 
 ### Zweiter Zweig — Umgekehrte Bedingungen
-- **Verkaufsbedingung**: Führt eine Verkaufsorder aus, wenn der Schlusskurs einer Fünf-Minuten-Kerze niedriger ist als der niedrigste Preis der letzten 20 Tage.
-- **Kaufbedingung**: Initiiert einen Kauf, wenn der Schlusskurs einer Fünf-Minuten-Kerze höher ist als der höchste Preis der letzten 10 Tage.
+- **Verkaufsbedingung**: Führt eine Verkaufsorder aus, wenn der Schlusskurs einer Fünf-Minuten-Kerze niedriger ist als der niedrigste Preis der letzten 5 Tage.
+- **Kaufbedingung**: Initiiert einen Kauf, wenn der Schlusskurs einer Fünf-Minuten-Kerze höher ist als der höchste Preis der letzten 3 Tage.
 
 ## Versionsspezifische Funktionen und Änderungen
 - **Erscheinungsbild des Flag-Blocks**: In Designer Version 5 wurde das Erscheinungsbild des Flag-Blocks aktualisiert.

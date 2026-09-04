@@ -5,7 +5,7 @@
 
 La estrategia "Bullish8020" está diseñada para [StockSharp Designer](https://doc.stocksharp.com/es/topics/designer.html) con el fin de capitalizar con alta precisión patrones de velas específicamente alcistas. Esta estrategia busca identificar oportunidades de mercado donde el sentimiento alcista es fuerte, utilizando un análisis de patrones único combinado con volumen y acción del precio.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Detalles de la estrategia
 

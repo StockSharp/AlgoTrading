@@ -5,7 +5,7 @@
 
 "Bullish8020"策略专为 [StockSharp Designer](https://doc.stocksharp.com/zh/topics/designer.html) 打造，旨在高精度地把握特定看涨K线形态。该策略通过独特的形态分析结合成交量和价格行为，旨在识别看涨情绪强烈的市场机会。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 策略详情
 

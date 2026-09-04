@@ -5,7 +5,7 @@
 
 Стратегия «Bollinger Bands» разработана для [StockSharp Designer](https://doc.stocksharp.com/ru/topics/designer.html) и направлена на использование полос Bollinger Bands для извлечения выгоды из паттернов волатильности. Стратегия определяет моменты пересечения ценой полос для нахождения точек входа и выхода на рынке.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Детали стратегии
 

@@ -5,7 +5,7 @@
 
 Este exemplo demonstra a implementação de uma estratégia de negociação no StockSharp Strategy Designer que utiliza o padrão de candles "Three White Soldiers". Este padrão é frequentemente interpretado como um sinal de reversão de alta e pode ser decisivo para traders que buscam capitalizar mudanças de momento. A configuração descrita no esquema JSON envolve a detecção deste padrão e o início de negociações com base em sua ocorrência.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Descrição do esquema
 

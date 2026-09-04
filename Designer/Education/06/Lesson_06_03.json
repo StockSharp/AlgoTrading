@@ -456,15 +456,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },
@@ -552,7 +550,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -679,7 +677,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -1075,22 +1073,22 @@
               "ToPort": "SecondInput"
             },
             {
-              "From": "11",
+              "From": "999cbcc0db3949ae943693cee467a9f4",
               "FromPort": "Output",
-              "To": "999cbcc0db3949ae943693cee467a9f4",
-              "ToPort": "dynsock_a"
+              "To": "9",
+              "ToPort": "SecondInput"
             },
             {
               "From": "7",
               "FromPort": "Output",
               "To": "999cbcc0db3949ae943693cee467a9f4",
-              "ToPort": "dynsock_b"
+              "ToPort": "dynsock_a"
             },
             {
-              "From": "999cbcc0db3949ae943693cee467a9f4",
+              "From": "11",
               "FromPort": "Output",
-              "To": "9",
-              "ToPort": "SecondInput"
+              "To": "999cbcc0db3949ae943693cee467a9f4",
+              "ToPort": "dynsock_b"
             }
           ]
         }

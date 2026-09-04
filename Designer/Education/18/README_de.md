@@ -5,13 +5,13 @@ Dieses Schema präsentiert eine Paarhandels-Strategie basierend auf dem relative
 
 ## Überblick
 
-Paarhandel ist eine marktneutrale Strategie, bei der ein Vermögenswert gekauft und gleichzeitig ein anderer verkauft wird, wenn ihr Preisverhältnis von der historischen Norm abweicht. Dieses Schema verwendet das Beispiel zweier spezifischer Wertpapiere: SBER@TQBR und GAZP@TQBR.
+Paarhandel ist eine marktneutrale Strategie, bei der ein Vermögenswert gekauft und gleichzeitig ein anderer verkauft wird, wenn ihr Preisverhältnis von der historischen Norm abweicht. Dieses Schema verwendet das Beispiel zweier konkreter Instrumente: BTCUSDT@BNBFT und TONUSDT@BNBFT.
 
 ## Strategielogik
 
-- **Indexberechnung**: Die Strategie berechnet einen Index basierend auf der Formel `SBER@TQBR / GAZP@TQBR`. Dieser Index hilft, die relative Stärke oder Schwäche einer Aktie im Vergleich zur anderen zu bestimmen.
-- **Kaufbedingung**: Wenn der Index steigt und signalisiert, dass SBER@TQBR relativ zu GAZP@TQBR teurer wird, kauft die Strategie den günstigeren Vermögenswert (GAZP@TQBR) und verkauft den teureren (SBER@TQBR).
-- **Verkaufsbedingung**: Wenn der Index fällt und andeutet, dass SBER@TQBR relativ zu GAZP@TQBR günstiger wird, kauft die Strategie den teureren Vermögenswert (SBER@TQBR) und verkauft den günstigeren (GAZP@TQBR).
+- **Indexberechnung**: Die Strategie berechnet einen Index basierend auf der Formel `BTCUSDT@BNBFT / TONUSDT@BNBFT`. Dieser Index hilft, die relative Stärke oder Schwäche eines Instruments im Vergleich zum anderen zu bestimmen.
+- **Kaufbedingung**: Wenn der Index steigt und signalisiert, dass BTCUSDT@BNBFT relativ zu TONUSDT@BNBFT teurer wird, kauft die Strategie den günstigeren Vermögenswert (TONUSDT@BNBFT) und verkauft den teureren (BTCUSDT@BNBFT).
+- **Verkaufsbedingung**: Wenn der Index fällt und andeutet, dass BTCUSDT@BNBFT relativ zu TONUSDT@BNBFT günstiger wird, kauft die Strategie den teureren Vermögenswert (BTCUSDT@BNBFT) und verkauft den günstigeren (TONUSDT@BNBFT).
 
 ## Schlüsselmerkmale
 

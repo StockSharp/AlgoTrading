@@ -5,7 +5,7 @@
 
 Die „PseudoIndex"-Strategie ist darauf ausgelegt, einen synthetischen Index aus den Kursrelationen zweier bedeutender Kryptowährungen — Ethereum und Bitcoin — zu erstellen, wie sie an der Binance-Börse gehandelt werden. Die Strategie überwacht die relative Entwicklung dieser Kryptowährungen, indem sie einen Echtzeit-Index auf Basis ihrer Kursbewegungen berechnet.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategiedetails
 

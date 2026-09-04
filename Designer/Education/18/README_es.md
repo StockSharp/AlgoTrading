@@ -5,13 +5,13 @@ Este esquema presenta una estrategia de trading en pares basada en el valor rela
 
 ## Descripción General
 
-El trading en pares es una estrategia neutral respecto al mercado que consiste en comprar un activo y simultáneamente vender otro cuando su ratio de precio se desvía de la norma histórica. Este esquema utiliza el ejemplo de dos valores específicos: SBER@TQBR y GAZP@TQBR.
+El trading en pares es una estrategia neutral respecto al mercado que consiste en comprar un activo y simultáneamente vender otro cuando su ratio de precio se desvía de la norma histórica. Este esquema utiliza el ejemplo de dos instrumentos específicos: BTCUSDT@BNBFT y TONUSDT@BNBFT.
 
 ## Lógica de la Estrategia
 
-- **Cálculo del Índice**: La estrategia calcula un índice basado en la fórmula `SBER@TQBR / GAZP@TQBR`. Este índice ayuda a determinar la fortaleza o debilidad relativa de una acción comparada con la otra.
-- **Condición de Compra**: Si el índice sube, indicando que SBER@TQBR se está encareciendo en relación a GAZP@TQBR, la estrategia compra el activo más barato (GAZP@TQBR) y vende el más caro (SBER@TQBR).
-- **Condición de Venta**: Si el índice cae, sugiriendo que SBER@TQBR se está abaratando en relación a GAZP@TQBR, la estrategia compra el activo más caro (SBER@TQBR) y vende el más barato (GAZP@TQBR).
+- **Cálculo del Índice**: La estrategia calcula un índice basado en la fórmula `BTCUSDT@BNBFT / TONUSDT@BNBFT`. Este índice ayuda a determinar la fortaleza o debilidad relativa de un instrumento comparado con el otro.
+- **Condición de Compra**: Si el índice sube, indicando que BTCUSDT@BNBFT se está encareciendo en relación a TONUSDT@BNBFT, la estrategia compra el activo más barato (TONUSDT@BNBFT) y vende el más caro (BTCUSDT@BNBFT).
+- **Condición de Venta**: Si el índice cae, sugiriendo que BTCUSDT@BNBFT se está abaratando en relación a TONUSDT@BNBFT, la estrategia compra el activo más caro (BTCUSDT@BNBFT) y vende el más barato (TONUSDT@BNBFT).
 
 ## Características Clave
 

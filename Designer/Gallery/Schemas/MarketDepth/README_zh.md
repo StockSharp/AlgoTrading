@@ -5,7 +5,7 @@
 
 本示例展示了 StockSharp Strategy Designer 中处理市场深度数据的配置方案。市场深度数据（通常称为"订单簿"）包含证券在不同价格水平上的买卖订单信息，对于需要实时分析各价格水平供需动态的策略至关重要。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 图表描述
 

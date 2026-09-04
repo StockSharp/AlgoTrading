@@ -3,7 +3,7 @@
 
 Diese Datei enthält eine diagrammatische Darstellung einer Handelsstrategie auf Basis gleitender Durchschnitte, die mithilfe der Strategiegalerie der Designer-Plattform entwickelt wurde. Die Strategie nutzt das Konzept der gleitenden Durchschnitte, um Kauf- und Verkaufssignale auf Basis ihrer Kreuzungen zu generieren — eine in Finanzmärkten weit verbreitete Methode zur Beurteilung von Momentum und Trendbestätigung.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategieübersicht
 

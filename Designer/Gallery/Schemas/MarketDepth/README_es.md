@@ -5,7 +5,7 @@
 
 Este ejemplo ilustra una configuración dentro de StockSharp Strategy Designer centrada en el manejo de datos de profundidad de mercado. Los datos de profundidad de mercado, a menudo denominados "libro de órdenes", incluyen información sobre órdenes de compra y venta en diferentes niveles de precio para un instrumento. Son fundamentales para las estrategias que necesitan analizar la dinámica de oferta y demanda en distintos niveles de precio en tiempo real.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Descripción del Esquema
 

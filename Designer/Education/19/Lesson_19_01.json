@@ -37,15 +37,15 @@
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
                   "Type": "Absolute",
-                  "Value": 1.0
+                  "Value": 0.01
                 }
               }
             },
             "449e63ed-7f78-4382-a076-d3c95f7ae759Value": {
-              "Value": "GAZP@TQNE"
+              "Value": "TONUSDT@BNBFT"
             },
             "0f7e6246-ab4f-4446-93a8-e21915ed215eValue": {
-              "Value": "SBER@TQBR"
+              "Value": "BTCUSDT@BNBFT"
             },
             "aaba0754-7337-42a3-a2bc-be66238817bbValue": {
               "Value": {
@@ -75,7 +75,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "round(a, 0)"
+                    "Value": "round(a/100, 0)"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -90,7 +90,7 @@
                     "Value": false
                   },
                   "Expression": {
-                    "Value": "round(a, 0)"
+                    "Value": "round(a/100, 0)"
                   }
                 }
               }
@@ -361,9 +361,9 @@
                     "Value": {
                       "type": "StockSharp.Xaml.Charting.IndicatorType, StockSharp.Xaml.Charting",
                       "settings": {
-                        "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo",
-                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo",
-                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo"
+                        "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators",
+                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities",
+                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities"
                       }
                     }
                   },
@@ -409,16 +409,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00:05:00"
+                        }
                       }
                     }
                   },
@@ -472,16 +469,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00:05:00"
+                        }
                       }
                     }
                   },
@@ -805,7 +799,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "0.01"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -829,7 +823,7 @@
                       "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                       "settings": {
                         "Type": "Absolute",
-                        "Value": 1.0
+                        "Value": 0.01
                       }
                     }
                   },
@@ -1020,7 +1014,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "GAZP@TQNE"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1040,7 +1034,7 @@
                     }
                   },
                   "Value": {
-                    "Value": "GAZP@TQNE"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "InputAsTrigger": {
                     "Value": false
@@ -1059,7 +1053,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "SBER@TQBR"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1079,7 +1073,7 @@
                     }
                   },
                   "Value": {
-                    "Value": "SBER@TQBR"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "InputAsTrigger": {
                     "Value": false
@@ -1129,7 +1123,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "StdDev 1"
+                    "Value": "StdDev 10"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1147,9 +1141,9 @@
                     "Value": {
                       "type": "StockSharp.Xaml.Charting.IndicatorType, StockSharp.Xaml.Charting",
                       "settings": {
-                        "Indicator": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo",
-                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo",
-                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo"
+                        "Indicator": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo.Indicators",
+                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities",
+                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities"
                       }
                     }
                   },
@@ -1160,7 +1154,7 @@
                     "Value": false
                   },
                   "Length": {
-                    "Value": 1
+                    "Value": 10
                   }
                 }
               }
@@ -1512,13 +1506,13 @@
               "From": "15",
               "FromPort": "Output",
               "To": "17",
-              "ToPort": "dynsock_a"
+              "ToPort": "dynsock_b"
             },
             {
               "From": "16",
               "FromPort": "Output",
               "To": "17",
-              "ToPort": "dynsock_b"
+              "ToPort": "dynsock_a"
             },
             {
               "From": "9",

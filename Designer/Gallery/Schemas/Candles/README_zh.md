@@ -3,7 +3,7 @@
 
 本示意图简明展示了如何在 Designer 平台中使用"Candles"数据源和"Chart"方块。旨在帮助用户理解获取市场数据并以图表形式展示的基本方法。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 概述
 

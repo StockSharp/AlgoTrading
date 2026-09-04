@@ -5,7 +5,7 @@
 
 "Parabolic SAR"策略旨在利用 [StockSharp Designer](https://doc.stocksharp.com/zh/topics/designer.html) 中的抛物线停止反转（Parabolic SAR）指标捕捉趋势反转和延续形态。该策略根据价格相对于 Parabolic SAR 点位的运动提供清晰的入场和出场信号。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 策略详情
 

@@ -5,7 +5,7 @@
 
 Die „Bullish8020"-Strategie ist für den [StockSharp Designer](https://doc.stocksharp.com/de/topics/designer.html) entwickelt, um spezifische bullische Candlestick-Muster mit hoher Präzision zu nutzen. Diese Strategie zielt darauf ab, Marktgelegenheiten zu identifizieren, bei denen die bullische Stimmung stark ist, indem eine einzigartige Musteranalyse in Kombination mit Volumen und Kursaktion eingesetzt wird.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategiedetails
 

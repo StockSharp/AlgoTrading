@@ -5,7 +5,7 @@
 
 The "High Break" strategy depicted in the provided JSON schema is designed to execute trades based on specific conditions related to price movements and time frames, using the StockSharp Strategy Designer. This example showcases how to set up a trading strategy that identifies potential buying opportunities when the price of a security breaks above a predetermined high over a certain period.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Description of the Schema
 

@@ -5,7 +5,7 @@
 
 La estrategia "Ruptura de Mínimos con Cálculo" utiliza una combinación de indicadores de precio máximo y mínimo para identificar posibles puntos de ruptura en el mercado. Esta estrategia tiene como objetivo ejecutar operaciones cuando el precio rompe por debajo de un mínimo calculado durante un período específico, lo que sugiere una posible tendencia bajista.
 
-[![schema](schema.png)](schema_easter_egg.png)
+[![schema](schema.svg)](schema_easter_egg.png)
 
 ## Detalles de la Estrategia
 

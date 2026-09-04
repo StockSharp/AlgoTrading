@@ -5,7 +5,7 @@
 
 Die Strategie „Tief-Ausbruch mit Berechnung" nutzt eine Kombination aus Hoch- und Tief-Kurs-Indikatoren, um potenzielle Ausbruchspunkte am Markt zu identifizieren. Ziel dieser Strategie ist es, Trades auszuführen, wenn der Kurs unter ein berechnetes Tief über einen bestimmten Zeitraum fällt, was auf einen möglichen Abwärtstrend hindeutet.
 
-[![schema](schema.png)](schema_easter_egg.png)
+[![schema](schema.svg)](schema_easter_egg.png)
 
 ## Strategiedetails
 

@@ -3,7 +3,7 @@
 
 Dieses Diagramm bietet eine einfache Demonstration, wie die „Candles"-Datenquelle und der „Chart"-Baustein innerhalb der Designer-Plattform verwendet werden. Es ist darauf ausgelegt, Benutzern die Grundlagen des Abrufens von Marktdaten und deren Visualisierung in einem Diagrammformat zu vermitteln.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Überblick
 

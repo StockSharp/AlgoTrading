@@ -37,15 +37,15 @@
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
                   "Type": "Absolute",
-                  "Value": 1.0
+                  "Value": 0.01
                 }
               }
             },
             "e47ee653-5775-4f16-9132-f15b2e9a1adaValue": {
-              "Value": "GAZP@TQNE"
+              "Value": "TONUSDT@BNBFT"
             },
             "edf2f246-eb74-4d34-b459-6180289bb810Value": {
-              "Value": "SBER@TQBR"
+              "Value": "BTCUSDT@BNBFT"
             }
           },
           "TypeId": "b22be658-7127-4963-a81c-4b0e2dec63c2",
@@ -66,7 +66,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "round(a, 0)"
+                    "Value": "round(a/100, 0)"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -81,7 +81,7 @@
                     "Value": false
                   },
                   "Expression": {
-                    "Value": "round(a, 0)"
+                    "Value": "round(a/100, 0)"
                   }
                 }
               }
@@ -397,9 +397,9 @@
                     "Value": {
                       "type": "StockSharp.Xaml.Charting.IndicatorType, StockSharp.Xaml.Charting",
                       "settings": {
-                        "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo",
-                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo",
-                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo"
+                        "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators",
+                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities",
+                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities"
                       }
                     }
                   },
@@ -445,16 +445,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00:05:00"
+                        }
                       }
                     }
                   },
@@ -508,16 +505,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00:05:00"
+                        }
                       }
                     }
                   },
@@ -618,13 +612,13 @@
               "X": 580.0,
               "Y": 180.0,
               "Figure": "None",
-              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "TypeId": "da1d00fc-3ccc-4769-a692-5938e8aca201",
               "Settings": {
                 "Id": "58dd281d-53b6-4edd-9429-4de9d2f154c9",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "<"
+                    "Value": "Index crosses below the lower band"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -637,19 +631,6 @@
                   },
                   "ProcessNullValues": {
                     "Value": false
-                  },
-                  "LeftValue": {
-                    "Value": {
-                      "Id": "Input"
-                    }
-                  },
-                  "Operator": {
-                    "Value": "Less"
-                  },
-                  "RightValue": {
-                    "Value": {
-                      "Id": "SecondInput"
-                    }
                   }
                 }
               }
@@ -659,13 +640,13 @@
               "X": -310.0,
               "Y": 340.0,
               "Figure": "None",
-              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "TypeId": "da1d00fc-3ccc-4769-a692-5938e8aca201",
               "Settings": {
                 "Id": "16da1d92-3699-42eb-be1a-b20b45c274ae",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": ">"
+                    "Value": "Index crosses above the upper band"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -678,19 +659,6 @@
                   },
                   "ProcessNullValues": {
                     "Value": false
-                  },
-                  "LeftValue": {
-                    "Value": {
-                      "Id": "Input"
-                    }
-                  },
-                  "Operator": {
-                    "Value": "Greater"
-                  },
-                  "RightValue": {
-                    "Value": {
-                      "Id": "SecondInput"
-                    }
                   }
                 }
               }
@@ -841,7 +809,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "0.01"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -865,7 +833,7 @@
                       "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                       "settings": {
                         "Type": "Absolute",
-                        "Value": 1.0
+                        "Value": 0.01
                       }
                     }
                   },
@@ -1056,7 +1024,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "GAZP@TQNE"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1076,7 +1044,7 @@
                     }
                   },
                   "Value": {
-                    "Value": "GAZP@TQNE"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "InputAsTrigger": {
                     "Value": false
@@ -1095,7 +1063,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "SBER@TQBR"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1115,7 +1083,7 @@
                     }
                   },
                   "Value": {
-                    "Value": "SBER@TQBR"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "InputAsTrigger": {
                     "Value": false
@@ -1165,7 +1133,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "StdDev 1"
+                    "Value": "StdDev 10"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1183,9 +1151,9 @@
                     "Value": {
                       "type": "StockSharp.Xaml.Charting.IndicatorType, StockSharp.Xaml.Charting",
                       "settings": {
-                        "Indicator": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo",
-                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo",
-                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.Algo"
+                        "Indicator": "StockSharp.Algo.Indicators.StandardDeviation, StockSharp.Algo.Indicators",
+                        "InputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities",
+                        "OutputValue": "StockSharp.Algo.Indicators.DecimalIndicatorValue, StockSharp.BusinessEntities"
                       }
                     }
                   },
@@ -1196,7 +1164,7 @@
                     "Value": false
                   },
                   "Length": {
-                    "Value": 1
+                    "Value": 10
                   }
                 }
               }
@@ -1280,17 +1248,17 @@
               "From": "13",
               "FromPort": "Output",
               "To": "11",
-              "ToPort": "SecondInput"
+              "ToPort": "Input Up"
             },
             {
               "From": "10",
               "FromPort": "Output",
               "To": "12",
-              "ToPort": "SecondInput"
+              "ToPort": "Input Down"
             },
             {
               "From": "12",
-              "FromPort": "Signal",
+              "FromPort": "Output",
               "To": "18",
               "ToPort": "Trigger"
             },
@@ -1302,7 +1270,7 @@
             },
             {
               "From": "12",
-              "FromPort": "Signal",
+              "FromPort": "Output",
               "To": "19",
               "ToPort": "Trigger"
             },
@@ -1332,7 +1300,7 @@
             },
             {
               "From": "11",
-              "FromPort": "Signal",
+              "FromPort": "Output",
               "To": "23",
               "ToPort": "Trigger"
             },
@@ -1356,7 +1324,7 @@
             },
             {
               "From": "11",
-              "FromPort": "Signal",
+              "FromPort": "Output",
               "To": "24",
               "ToPort": "Trigger"
             },
@@ -1436,13 +1404,13 @@
               "From": "17",
               "FromPort": "Output",
               "To": "12",
-              "ToPort": "Input"
+              "ToPort": "Input Up"
             },
             {
               "From": "17",
               "FromPort": "Output",
               "To": "11",
-              "ToPort": "Input"
+              "ToPort": "Input Down"
             },
             {
               "From": "17",
@@ -1460,13 +1428,13 @@
               "From": "15",
               "FromPort": "Output",
               "To": "17",
-              "ToPort": "dynsock_a"
+              "ToPort": "dynsock_b"
             },
             {
               "From": "16",
               "FromPort": "Output",
               "To": "17",
-              "ToPort": "dynsock_b"
+              "ToPort": "dynsock_a"
             },
             {
               "From": "9",

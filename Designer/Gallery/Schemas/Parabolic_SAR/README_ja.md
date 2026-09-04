@@ -5,7 +5,7 @@
 
 「Parabolic SAR」戦略は、[StockSharp Designer](https://doc.stocksharp.com/ja/topics/designer.html) 内でパラボリック・ストップ・アンド・リバース（SAR）インジケーターを使用して、トレンドの反転と継続パターンを捉えるように設計されています。この戦略は、価格と Parabolic SAR ポイントとの相対的な動きに基づいて明確なエントリー・エグジットシグナルを提供します。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 戦略の詳細
 

@@ -5,7 +5,7 @@
 
 Este ejemplo demuestra una estrategia de trading de "Ruptura de Mínimos con Stop" configurada en StockSharp Strategy Designer. Está diseñada para ejecutar operaciones basadas en condiciones específicas de ruptura del precio mínimo, incorporando parámetros de stop-loss para gestionar el riesgo. Esta estrategia aprovecha los datos de mercado en tiempo real para identificar cuándo el precio de un valor rompe por debajo de un mínimo predefinido durante un período determinado y luego inicia operaciones con condiciones de stop definidas.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Descripción del Esquema
 

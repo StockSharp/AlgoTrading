@@ -20,15 +20,20 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FrankUdMinimalStrategy : Strategy
 {
+	// Forex convention this expert came from: one pip is roughly a ten-thousandth of the quoted
+	// price (0.0001 on EURUSD at 1.10, 0.01 on USDJPY at 150). Expressing it as a fraction of the
+	// price keeps the same grid spacing on instruments quoted in five figures.
+	private const decimal _pipFraction = 0.0001m;
+
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _reEntryPips;
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _minimumFreeMarginRatio;
 	private readonly StrategyParam<decimal> _extraTakeProfitPips;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<PositionEntry> _longEntries = new();
 	private readonly List<PositionEntry> _shortEntries = new();
-	private readonly Dictionary<long, OrderActions> _orderActions = new();
 
 	private decimal _pointValue;
 	private decimal _takeProfitThreshold;
@@ -57,11 +62,14 @@ public class FrankUdMinimalStrategy : Strategy
 
 		_minimumFreeMarginRatio = Param(nameof(MinimumFreeMarginRatio), 0.5m)
 		.SetDisplay("Free margin ratio", "Free margin must stay above Balance × Ratio before adding orders.", "Risk")
-		.SetGreaterThanZero();
+		.SetNotNegative();
 
 		_extraTakeProfitPips = Param(nameof(ExtraTakeProfitPips), 25m)
 		.SetDisplay("Buffer profit (pips)", "Additional pip distance applied when calculating buffered targets.", "Risk")
 		.SetNotNegative();
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		.SetDisplay("Candle type", "Candle series the grid reacts to.", "General");
 }
 
 	/// <summary>
@@ -109,6 +117,15 @@ public class FrankUdMinimalStrategy : Strategy
 		set => _extraTakeProfitPips.Value = value;
 	}
 
+	/// <summary>
+	/// Candle series the grid reacts to.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -116,7 +133,6 @@ public class FrankUdMinimalStrategy : Strategy
 
 		_longEntries.Clear();
 		_shortEntries.Clear();
-		_orderActions.Clear();
 
 		_pointValue = 0m;
 		_takeProfitThreshold = 0m;
@@ -132,31 +148,28 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var security = Security ?? throw new InvalidOperationException("Security is not assigned.");
-		var priceStep = security.PriceStep ?? 0.01m;
-
-		_pointValue = priceStep;
+		// The pip and the distances derived from it need a quote, so they are set up on the first one.
 		_takeProfitThreshold = TakeProfitPips;
-		_takeProfitDistance = (TakeProfitPips + ExtraTakeProfitPips) * _pointValue;
-		_reEntryDistance = ReEntryPips * _pointValue;
 		_baseVolume = AdjustVolume(InitialVolume);
 
-		var l1sub = new Subscription(DataType.Level1, Security);
-		l1sub.MarketData.BuildField = Level1Fields.BestBidPrice;
-		SubscribeLevel1(l1sub)
-		.Bind(ProcessLevel1)
+		SubscribeCandles(CandleType)
+		.Bind(ProcessCandle)
 		.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidPrice))
-		_lastBid = (decimal)bidPrice;
+		if (candle.State != CandleStates.Finished)
+		return;
 
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askPrice))
-		_lastAsk = (decimal)askPrice;
+		// The bundled history carries no book, so the close stands for both sides of the quote.
+		_lastBid = candle.ClosePrice;
+		_lastAsk = candle.ClosePrice;
 
 		if (_lastBid <= 0m || _lastAsk <= 0m)
+		return;
+
+		if (!TryInitializePip())
 		return;
 
 		if (ShouldCloseLong())
@@ -170,6 +183,27 @@ public class FrankUdMinimalStrategy : Strategy
 
 		if (ShouldOpenShort())
 		OpenShortPosition();
+	}
+
+	private bool TryInitializePip()
+	{
+		if (_pointValue > 0m)
+		return true;
+
+		var reference = (_lastBid + _lastAsk) / 2m;
+		if (reference <= 0m)
+		return false;
+
+		// A missing or zero price step simply leaves the pip unfloored; the fraction alone already
+		// keeps it positive.
+		var floor = Security?.PriceStep is decimal step && step > 0m ? step : 0m;
+
+		// Frozen for the rest of the run: a pip that followed the price would move the grid under itself.
+		_pointValue = Math.Max(reference * _pipFraction, floor);
+		_takeProfitDistance = (TakeProfitPips + ExtraTakeProfitPips) * _pointValue;
+		_reEntryDistance = ReEntryPips * _pointValue;
+
+		return true;
 	}
 
 	private bool ShouldCloseLong()
@@ -240,8 +274,8 @@ public class FrankUdMinimalStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var order = BuyMarket(volume);
-		RegisterOrder(order, OrderActions.OpenLong);
+		BuyMarket(volume);
+		AddEntry(_longEntries, _lastAsk, volume);
 	}
 
 	private void OpenShortPosition()
@@ -250,8 +284,8 @@ public class FrankUdMinimalStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var order = SellMarket(volume);
-		RegisterOrder(order, OrderActions.OpenShort);
+		SellMarket(volume);
+		AddEntry(_shortEntries, _lastBid, volume);
 	}
 
 	private void CloseLongPositions()
@@ -260,8 +294,8 @@ public class FrankUdMinimalStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var order = SellMarket(volume);
-		RegisterOrder(order, OrderActions.CloseLong);
+		SellMarket(volume);
+		_longEntries.Clear();
 	}
 
 	private void CloseShortPositions()
@@ -270,71 +304,8 @@ public class FrankUdMinimalStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var order = BuyMarket(volume);
-		RegisterOrder(order, OrderActions.CloseShort);
-	}
-
-	private void RegisterOrder(Order order, OrderActions action)
-	{
-		if (order == null)
-		return;
-
-		// Key by the transaction id: the exchange assigns Order.Id only later, so keying by it
-		// would leave the map empty and the grid would look empty on every quote.
-		_orderActions[order.TransactionId] = action;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (!_orderActions.TryGetValue(trade.Order.TransactionId, out var action))
-		return;
-
-		if (trade.Order.Balance == 0m)
-		_orderActions.Remove(trade.Order.TransactionId);
-
-		var price = trade.Trade.Price;
-		var volume = trade.Trade.Volume;
-
-		switch (action)
-		{
-			case OrderActions.OpenLong:
-			AddEntry(_longEntries, price, volume);
-			break;
-
-			case OrderActions.OpenShort:
-			AddEntry(_shortEntries, price, volume);
-			break;
-
-			case OrderActions.CloseLong:
-			RemoveVolume(_longEntries, volume);
-			break;
-
-			case OrderActions.CloseShort:
-			RemoveVolume(_shortEntries, volume);
-			break;
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		// Only a failed order is dropped here. A Done order can still be delivering its own
-		// trades, and removing it now would discard the grid entry those trades create.
-		if (order.State == OrderStates.Failed)
-		_orderActions.Remove(order.TransactionId);
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
-	{
-		base.OnOrderRegisterFailed(fail);
-
-		_orderActions.Remove(fail.Order.TransactionId);
+		BuyMarket(volume);
+		_shortEntries.Clear();
 	}
 
 	private decimal DetermineNextVolume(List<PositionEntry> entries)
@@ -399,27 +370,6 @@ public class FrankUdMinimalStrategy : Strategy
 		return;
 
 		entries.Add(new PositionEntry(price, volume));
-	}
-
-	private static void RemoveVolume(List<PositionEntry> entries, decimal volume)
-	{
-		var remaining = volume;
-
-		for (var i = entries.Count - 1; i >= 0 && remaining > 0m; i--)
-		{
-			var entry = entries[i];
-
-			if (entry.Volume <= remaining)
-			{
-				remaining -= entry.Volume;
-				entries.RemoveAt(i);
-			}
-			else
-			{
-				entries[i] = entry.WithVolume(entry.Volume - remaining);
-				remaining = 0m;
-			}
-		}
 	}
 
 	private static decimal GetTotalVolume(List<PositionEntry> entries)
@@ -501,19 +451,5 @@ public class FrankUdMinimalStrategy : Strategy
 		public decimal Price { get; }
 
 		public decimal Volume { get; }
-
-		public PositionEntry WithVolume(decimal volume)
-		{
-			return new PositionEntry(Price, volume);
-		}
-	}
-
-	private enum OrderActions
-	{
-		OpenLong,
-		CloseLong,
-		OpenShort,
-		CloseShort
 	}
 }
-

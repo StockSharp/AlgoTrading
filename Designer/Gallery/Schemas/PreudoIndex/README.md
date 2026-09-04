@@ -5,7 +5,7 @@
 
 The "PseudoIndex" strategy is designed to create a synthetic index from the price ratios of two major cryptocurrencies, specifically Ethereum and Bitcoin, as traded on the Binance exchange. This strategy monitors the relative performance of these cryptocurrencies by calculating a real-time index based on their price movements.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Details
 

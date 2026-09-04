@@ -3,7 +3,7 @@
 
 This file contains a diagrammatic representation of a trading strategy based on moving averages, designed using the Designer platform's Strategy Gallery. The strategy utilizes the concept of moving averages to generate buy and sell signals based on their crossovers, a popular method used in financial markets to gauge momentum and confirm trends.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Overview
 

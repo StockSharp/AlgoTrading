@@ -5,7 +5,7 @@
 
 Die „3 Black Crows Trend"-Strategie im [Strategy Designer](https://doc.stocksharp.com/de/topics/designer.html) verwendet ein spezifisches bearisches Umkehr-Candlestick-Muster, um potenzielle Abwärtsbewegungen am Aktienmarkt vorherzusagen. Dieses automatisierte Handelsschema ist sorgfältig entwickelt, um bedeutende Preismuster zu erkennen und darauf zu reagieren, mit dem Ziel, von bearischen Trends zu profitieren.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategiedetails
 

@@ -5,7 +5,7 @@
 
 A estratégia "Bullish8020" foi elaborada para o [StockSharp Designer](https://doc.stocksharp.com/pt/topics/designer.html) a fim de capitalizar padrões específicos de candles de alta com grande precisão. Esta estratégia visa identificar oportunidades de mercado onde o sentimento de alta é forte, usando uma análise de padrões exclusiva combinada com volume e ação do preço.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Detalhes da estratégia
 

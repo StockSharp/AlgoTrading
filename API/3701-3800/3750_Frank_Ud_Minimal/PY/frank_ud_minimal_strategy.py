@@ -9,6 +9,11 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
+# Forex convention this expert came from: one pip is roughly a ten-thousandth of the quoted
+# price (0.0001 on EURUSD at 1.10, 0.01 on USDJPY at 150). Expressing it as a fraction of the
+# price keeps the same grid spacing on instruments quoted in five figures.
+PIP_FRACTION = 0.0001
+
 
 class frank_ud_minimal_strategy(Strategy):
     """Hedged martingale grid strategy that liquidates both sides once the newest
@@ -26,6 +31,9 @@ class frank_ud_minimal_strategy(Strategy):
         self._initial_volume = self.Param("InitialVolume", 0.1) \
             .SetGreaterThanZero() \
             .SetDisplay("Initial volume", "Base lot used for the very first order", "Risk")
+        self._minimum_free_margin_ratio = self.Param("MinimumFreeMarginRatio", 0.5) \
+            .SetNotNegative() \
+            .SetDisplay("Free margin ratio", "Free margin must stay above Balance x Ratio before adding orders", "Risk")
         self._extra_take_profit_pips = self.Param("ExtraTakeProfitPips", 25.0) \
             .SetDisplay("Buffer profit (pips)", "Additional pip distance applied when calculating buffered targets", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
@@ -60,6 +68,10 @@ class frank_ud_minimal_strategy(Strategy):
         return self._initial_volume.Value
 
     @property
+    def MinimumFreeMarginRatio(self):
+        return self._minimum_free_margin_ratio.Value
+
+    @property
     def ExtraTakeProfitPips(self):
         return self._extra_take_profit_pips.Value
 
@@ -76,16 +88,9 @@ class frank_ud_minimal_strategy(Strategy):
     def OnStarted2(self, time):
         super(frank_ud_minimal_strategy, self).OnStarted2(time)
 
-        self._point_value = 1.0
-        if self.Security is not None and self.Security.PriceStep is not None:
-            ps = float(self.Security.PriceStep)
-            if ps > 0:
-                self._point_value = ps
-
+        # The pip and the distances derived from it need a quote, so they are set up on the first one.
         self._take_profit_threshold = float(self.TakeProfitPips)
-        self._take_profit_distance = (float(self.TakeProfitPips) + float(self.ExtraTakeProfitPips)) * self._point_value
-        self._re_entry_distance = float(self.ReEntryPips) * self._point_value
-        self._base_volume = float(self.InitialVolume)
+        self._base_volume = self._adjust_volume(float(self.InitialVolume))
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()
@@ -100,6 +105,9 @@ class frank_ud_minimal_strategy(Strategy):
         if bid <= 0 or ask <= 0:
             return
 
+        if not self._try_initialize_pip((bid + ask) / 2.0):
+            return
+
         if self._should_close_long(bid):
             self._close_long_positions()
 
@@ -111,6 +119,28 @@ class frank_ud_minimal_strategy(Strategy):
 
         if self._should_open_short(bid):
             self._open_short_position(bid)
+
+    def _try_initialize_pip(self, reference):
+        if self._point_value > 0:
+            return True
+
+        if reference <= 0:
+            return False
+
+        # A missing or zero price step simply leaves the pip unfloored; the fraction alone already
+        # keeps it positive.
+        floor = 0.0
+        if self.Security is not None and self.Security.PriceStep is not None:
+            step = float(self.Security.PriceStep)
+            if step > 0:
+                floor = step
+
+        # Frozen for the rest of the run: a pip that followed the price would move the grid under itself.
+        self._point_value = max(reference * PIP_FRACTION, floor)
+        self._take_profit_distance = (float(self.TakeProfitPips) + float(self.ExtraTakeProfitPips)) * self._point_value
+        self._re_entry_distance = float(self.ReEntryPips) * self._point_value
+
+        return True
 
     def _should_close_long(self, bid):
         if len(self._long_entries) == 0:
@@ -144,6 +174,9 @@ class frank_ud_minimal_strategy(Strategy):
         if self._base_volume <= 0:
             return False
 
+        if not self._has_enough_margin():
+            return False
+
         if len(self._long_entries) == 0:
             return True
 
@@ -152,6 +185,9 @@ class frank_ud_minimal_strategy(Strategy):
 
     def _should_open_short(self, bid):
         if self._base_volume <= 0:
+            return False
+
+        if not self._has_enough_margin():
             return False
 
         if len(self._short_entries) == 0:
@@ -197,10 +233,57 @@ class frank_ud_minimal_strategy(Strategy):
             return 0.0
 
         if len(entries) == 0:
-            return self._base_volume
+            volume = self._base_volume
+        else:
+            volume = self._get_max_volume(entries) * 2.0
 
-        max_vol = self._get_max_volume(entries)
-        return max_vol * 2.0
+        return self._adjust_volume(volume)
+
+    def _adjust_volume(self, volume):
+        if volume <= 0:
+            return 0.0
+
+        security = self.Security
+
+        if security is not None and security.VolumeStep is not None:
+            step = float(security.VolumeStep)
+            if step > 0:
+                steps = Math.Floor(volume / step)
+                volume = steps * step
+
+        if security is not None and security.MinVolume is not None:
+            min_volume = float(security.MinVolume)
+            if min_volume > 0 and volume < min_volume:
+                volume = min_volume
+
+        if security is not None and security.MaxVolume is not None:
+            max_volume = float(security.MaxVolume)
+            if max_volume > 0 and volume > max_volume:
+                volume = max_volume
+
+        return volume
+
+    def _has_enough_margin(self):
+        ratio = float(self.MinimumFreeMarginRatio)
+        if ratio <= 0:
+            return True
+
+        portfolio = self.Portfolio
+        if portfolio is None:
+            return True
+
+        current_value = portfolio.CurrentValue
+        base_value = current_value if current_value is not None else portfolio.BeginValue
+
+        balance = float(base_value) if base_value is not None else 0.0
+        if balance <= 0:
+            return True
+
+        commission = portfolio.Commission
+        blocked = float(commission) if commission is not None else 0.0
+
+        free_margin = float(base_value) - blocked
+        return free_margin > balance * ratio
 
     def _get_max_volume_entry(self, entries):
         result = None

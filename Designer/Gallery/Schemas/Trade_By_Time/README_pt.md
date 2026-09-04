@@ -5,7 +5,7 @@
 
 Este exemplo no StockSharp Strategy Designer demonstra uma configuração sofisticada que integra o tratamento de data e hora dentro de uma estratégia de trading. A estratégia utiliza condições específicas de tempo para tomar decisões de negociação com base nos dados de velas e na hora do dia, tornando-o um exemplo prático para cenários onde as operações são sensíveis ao tempo.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Descrição do Esquema
 

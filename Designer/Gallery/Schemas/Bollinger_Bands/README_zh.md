@@ -5,7 +5,7 @@
 
 "Bollinger Bands"策略专为 [StockSharp Designer](https://doc.stocksharp.com/zh/topics/designer.html) 设计，专注于利用 Bollinger Bands 来把握波动性规律。该策略通过检测价格穿越通道线的时机来确定市场的进场和出场点。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 策略详情
 

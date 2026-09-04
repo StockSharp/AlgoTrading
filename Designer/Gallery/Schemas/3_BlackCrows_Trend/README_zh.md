@@ -5,7 +5,7 @@
 
 [Strategy Designer](https://doc.stocksharp.com/zh/topics/designer.html) 中的"3 Black Crows Trend"策略采用特定的看跌反转K线形态来预测股市潜在的下跌走势。该自动化交易方案经过精心设计，用于识别并利用重要的价格形态，旨在从熊市趋势中获益。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 策略详情
 

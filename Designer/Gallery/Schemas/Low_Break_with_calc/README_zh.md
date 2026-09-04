@@ -5,7 +5,7 @@
 
 "低点突破计算"策略综合运用高价和低价指标，识别市场中潜在的突破点。该策略的目标是在价格跌破指定周期内计算所得低点时执行交易，从而把握潜在的下跌趋势。
 
-[![schema](schema.png)](schema_easter_egg.png)
+[![schema](schema.svg)](schema_easter_egg.png)
 
 ## 策略详情
 

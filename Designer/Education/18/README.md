@@ -5,13 +5,13 @@ This schema presents a pair trading strategy based on the relative value of two 
 
 ## Overview
 
-Pair trading is a market-neutral strategy that involves buying one asset and simultaneously selling another when their price ratio deviates from the historical norm. This schema uses the example of two specific securities: SBER@TQBR and GAZP@TQBR.
+Pair trading is a market-neutral strategy that involves buying one asset and simultaneously selling another when their price ratio deviates from the historical norm. This schema uses the example of two specific instruments: BTCUSDT@BNBFT and TONUSDT@BNBFT.
 
 ## Strategy Logic
 
-- **Index Calculation**: The strategy calculates an index based on the formula `SBER@TQBR / GAZP@TQBR`. This index helps determine the relative strength or weakness of one stock compared to the other.
-- **Buy Condition**: If the index rises, indicating that SBER@TQBR is becoming more expensive relative to GAZP@TQBR, the strategy buys the cheaper asset (GAZP@TQBR) and sells the more expensive one (SBER@TQBR).
-- **Sell Condition**: If the index falls, suggesting that SBER@TQBR is getting cheaper relative to GAZP@TQBR, the strategy buys the more expensive asset (SBER@TQBR) and sells the cheaper one (GAZP@TQBR).
+- **Index Calculation**: The strategy calculates an index based on the formula `BTCUSDT@BNBFT / TONUSDT@BNBFT`. This index helps determine the relative strength or weakness of one instrument compared to the other.
+- **Buy Condition**: If the index rises, indicating that BTCUSDT@BNBFT is becoming more expensive relative to TONUSDT@BNBFT, the strategy buys the cheaper asset (TONUSDT@BNBFT) and sells the more expensive one (BTCUSDT@BNBFT).
+- **Sell Condition**: If the index falls, suggesting that BTCUSDT@BNBFT is getting cheaper relative to TONUSDT@BNBFT, the strategy buys the more expensive asset (BTCUSDT@BNBFT) and sells the cheaper one (TONUSDT@BNBFT).
 
 ## Key Features
 

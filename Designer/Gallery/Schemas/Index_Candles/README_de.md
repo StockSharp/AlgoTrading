@@ -3,7 +3,7 @@
 
 Diese Diagrammdatei veranschaulicht eine Strategie zur Erstellung eines zusammengesetzten Index aus Kerzenserien verschiedener Finanzinstrumente mithilfe der Strategiegalerie der Designer-Plattform. Die Strategie aggregiert Daten verschiedener Wertpapiere, um einen einheitlichen Index zu bilden, der zur Beurteilung der allgemeinen Marktstimmung oder der Sektorentwicklung genutzt werden kann.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategieübersicht
 

@@ -8,12 +8,12 @@ Este arquivo ilustra um esquema de estratégia complexo que utiliza velas de dif
 O esquema é dividido em dois ramos principais, cada um utilizando velas de cinco minutos comparadas com extremos históricos de preços para tomar decisões de negociação:
 
 ### Primeiro Ramo — Extremos Históricos
-- **Condição de Compra**: A estratégia inicia uma ordem de compra se o preço de fechamento de uma vela de cinco minutos for maior que o preço mais alto dos últimos 20 dias.
-- **Condição de Venda**: Uma ordem de venda é executada se o preço de fechamento de uma vela de cinco minutos for menor que o preço mais baixo dos últimos 10 dias.
+- **Condição de Compra**: A estratégia inicia uma ordem de compra se o preço de fechamento de uma vela de cinco minutos for maior que o preço mais alto dos últimos 5 dias.
+- **Condição de Venda**: Uma ordem de venda é executada se o preço de fechamento de uma vela de cinco minutos for menor que o preço mais baixo dos últimos 3 dias.
 
 ### Segundo Ramo — Condições Inversas
-- **Condição de Venda**: Executa uma ordem de venda se o preço de fechamento de uma vela de cinco minutos for menor que o preço mais baixo dos últimos 20 dias.
-- **Condição de Compra**: Inicia uma compra se o preço de fechamento de uma vela de cinco minutos for maior que o preço mais alto dos últimos 10 dias.
+- **Condição de Venda**: Executa uma ordem de venda se o preço de fechamento de uma vela de cinco minutos for menor que o preço mais baixo dos últimos 5 dias.
+- **Condição de Compra**: Inicia uma compra se o preço de fechamento de uma vela de cinco minutos for maior que o preço mais alto dos últimos 3 dias.
 
 ## Recursos e Alterações Específicos da Versão
 - **Aparência do Bloco de Bandeira**: No Designer versão 5, a aparência do bloco de bandeira foi atualizada.

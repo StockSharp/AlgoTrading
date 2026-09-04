@@ -5,7 +5,7 @@
 
 The "Bullish8020" strategy is crafted for [StockSharp Designer](https://doc.stocksharp.com/en/topics/designer.html) to capitalize on specific bullish candlestick patterns with high precision. This strategy aims to identify market opportunities where bullish sentiment is strong, using a unique pattern analysis combined with volume and price action.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Details
 

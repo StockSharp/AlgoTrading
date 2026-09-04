@@ -1,17 +1,15 @@
 ﻿{
-  "Id": "b397e5e2-c7fb-5614-9457-f0beef3880d0",
+  "Id": "ac53dd8f-0970-39af-544e-cb49c13eb99a",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Money Flow Index level cross: buys the candle on which MFI steps down into the oversold zone, sells the candle on which it steps up into the overbought zone, and protects every position with a percent take profit and stop loss.",
         "DocUrl": "",
         "Composition": {
-          "Id": "84b879d7-05d2-5915-82f5-c55a89074694",
+          "Id": "ac53dd8f-0970-39af-544e-cb49c13eb99a",
           "CanAutoName": false,
           "Parameters": {
             "Name": {
@@ -24,15 +22,31 @@
               "Value": true
             },
             "ShowSockets": {
-              "Value": true
+              "Value": false
             },
             "ProcessNullValues": {
               "Value": false
             },
-            "e4bca80b-5ac7-5b6b-a483-1461670c3e2eLength": {
+            "8124113f-d433-2a4a-b601-84826981b728Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "01-00-00"
+                  }
+                }
+              }
+            },
+            "fa864366-c212-2d38-5729-d0a6682f9692Length": {
               "Value": 14
             },
-            "0e0d3146-a26d-5598-abe3-2fc2405b77f2Value": {
+            "fa864366-c212-2d38-5729-d0a6682f9692Source": {},
+            "d2822e6e-d4a2-7506-d83a-ecfd737fc5e9Shift": {
+              "Value": 1
+            },
+            "44947372-860a-ca55-cd9a-12ba4c7f6faaValue": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
@@ -41,7 +55,7 @@
                 }
               }
             },
-            "c8a52466-3f03-5c50-9422-f6e4a0d46e1cValue": {
+            "cabcddef-b0a9-a539-8ccd-d1244c629209Value": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
@@ -50,7 +64,16 @@
                 }
               }
             },
-            "d8396f40-086a-58f0-9667-27fd81a5c616Value": {
+            "5ac50200-cfee-0a0d-3ca2-d976ae855d66Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "929ca14a-8c6b-f13e-0787-59d50d9d1a6fValue": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
@@ -59,7 +82,7 @@
                 }
               }
             },
-            "be9dce0d-61a3-5dbd-8c1b-d307877d38fdTakeValue": {
+            "5474ab74-d1fe-c850-9e53-a1316cfb1682TakeValue": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
@@ -68,7 +91,7 @@
                 }
               }
             },
-            "be9dce0d-61a3-5dbd-8c1b-d307877d38fdStopValue": {
+            "5474ab74-d1fe-c850-9e53-a1316cfb1682StopValue": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
@@ -76,22 +99,27 @@
                   "Value": 1.0
                 }
               }
+            },
+            "5474ab74-d1fe-c850-9e53-a1316cfb1682IsTrailingStopLoss": {
+              "Value": false
+            },
+            "5474ab74-d1fe-c850-9e53-a1316cfb1682UseMarketOrders": {
+              "Value": true
             }
           },
-          "TypeId": "a7a0c6a0-8c7c-4a62-9c84-1f6f91d1f605",
-          "Type": "Independent"
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
         },
         "Model": {
           "Nodes": [
             {
-              "Key": "1",
-              "Figure": "Procedure",
+              "Key": "candles",
+              "Figure": "",
               "X": 0.0,
               "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
-                "Id": "1fde9f8b-a911-5e4f-befb-85a0e8281095",
-                "CanAutoName": true,
+                "Id": "8124113f-d433-2a4a-b601-84826981b728",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "TF: 01:00:00"
@@ -100,7 +128,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -117,7 +145,7 @@
                       "settings": {
                         "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
                         "Arg": {
-                          "type": "System.TimeSpan, mscorlib",
+                          "type": "System.TimeSpan, System.Private.CoreLib",
                           "value": "01-00-00"
                         }
                       }
@@ -132,21 +160,24 @@
                   "AllowBuildFromSmallerTimeFrame": {
                     "Value": true
                   },
+                  "IsRegularTradingHours": {},
                   "BuildCandlesMode": {
                     "Value": "LoadAndBuild"
-                  }
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
                 }
               }
             },
             {
-              "Key": "2",
-              "Figure": "Procedure",
-              "X": 260.0,
-              "Y": 240.0,
+              "Key": "mfi",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 0.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
-                "Id": "e4bca80b-5ac7-5b6b-a483-1461670c3e2e",
-                "CanAutoName": true,
+                "Id": "fa864366-c212-2d38-5729-d0a6682f9692",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "MFI 14"
@@ -165,7 +196,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Indicator": "StockSharp.Algo.Indicators.MoneyFlowIndex, StockSharp.Algo.Indicators"
+                      "Id": "StockSharp.Algo.Indicators.MoneyFlowIndex, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -179,19 +210,20 @@
                   },
                   "Length": {
                     "Value": 14
-                  }
+                  },
+                  "Source": {}
                 }
               }
             },
             {
-              "Key": "3",
-              "Figure": "Procedure",
-              "X": 520.0,
+              "Key": "prevMfi",
+              "Figure": "",
+              "X": 440.0,
               "Y": 0.0,
               "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
               "Settings": {
-                "Id": "ceb3208c-f89b-5ed0-8c9e-220dc52026f2",
-                "CanAutoName": true,
+                "Id": "d2822e6e-d4a2-7506-d83a-ecfd737fc5e9",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "MFI one candle back"
@@ -215,19 +247,22 @@
                   },
                   "Shift": {
                     "Value": 1
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
                   }
                 }
               }
             },
             {
-              "Key": "4",
-              "Figure": "Procedure",
-              "X": 260.0,
-              "Y": 120.0,
+              "Key": "lowLevel",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "0e0d3146-a26d-5598-abe3-2fc2405b77f2",
-                "CanAutoName": true,
+                "Id": "44947372-860a-ca55-cd9a-12ba4c7f6faa",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Low level = 30"
@@ -265,14 +300,14 @@
               }
             },
             {
-              "Key": "5",
-              "Figure": "Procedure",
-              "X": 260.0,
-              "Y": 480.0,
+              "Key": "highLevel",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "c8a52466-3f03-5c50-9422-f6e4a0d46e1c",
-                "CanAutoName": true,
+                "Id": "cabcddef-b0a9-a539-8ccd-d1244c629209",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "High level = 70"
@@ -310,14 +345,14 @@
               }
             },
             {
-              "Key": "6",
-              "Figure": "Procedure",
+              "Key": "flat",
+              "Figure": "",
               "X": 0.0,
-              "Y": 120.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "97d81c32-233b-5f83-82ca-9f8899bf5ce5",
-                "CanAutoName": true,
+                "Id": "5ac50200-cfee-0a0d-3ca2-d976ae855d66",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "0"
@@ -326,7 +361,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -355,14 +390,14 @@
               }
             },
             {
-              "Key": "7",
-              "Figure": "Procedure",
-              "X": 1040.0,
-              "Y": 0.0,
+              "Key": "volume",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 520.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "d8396f40-086a-58f0-9667-27fd81a5c616",
-                "CanAutoName": true,
+                "Id": "929ca14a-8c6b-f13e-0787-59d50d9d1a6f",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Volume = 1"
@@ -400,14 +435,14 @@
               }
             },
             {
-              "Key": "8",
-              "Figure": "Procedure",
-              "X": 780.0,
+              "Key": "prevAboveLow",
+              "Figure": "",
+              "X": 660.0,
               "Y": 0.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
-                "Id": "962048a5-4f56-50f0-a3b5-a4449d137d40",
-                "CanAutoName": true,
+                "Id": "bc4794b0-06f5-abca-fc4f-b9a02e69340f",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "MFI -1 > Low level"
@@ -441,14 +476,14 @@
               }
             },
             {
-              "Key": "9",
-              "Figure": "Procedure",
-              "X": 520.0,
-              "Y": 120.0,
+              "Key": "nowAtLow",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
-                "Id": "c11d5dd4-0518-59f0-a011-23f3d44b36a2",
-                "CanAutoName": true,
+                "Id": "9543e226-29f1-629a-346c-66574baa980e",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "MFI <= Low level"
@@ -482,14 +517,14 @@
               }
             },
             {
-              "Key": "10",
-              "Figure": "Procedure",
-              "X": 780.0,
-              "Y": 120.0,
+              "Key": "prevBelowHigh",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
-                "Id": "a5da97b2-1f16-55be-8517-a90a981e5353",
-                "CanAutoName": true,
+                "Id": "5623f5fb-51aa-1279-c621-c0f7f6774929",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "MFI -1 < High level"
@@ -523,14 +558,14 @@
               }
             },
             {
-              "Key": "11",
-              "Figure": "Procedure",
-              "X": 520.0,
-              "Y": 240.0,
+              "Key": "nowAtHigh",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
-                "Id": "61732c29-9974-5eff-9776-ab6fb2bc7479",
-                "CanAutoName": true,
+                "Id": "5fd12272-ba8e-136c-4cf9-6fd5f18782b6",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "MFI >= High level"
@@ -564,16 +599,19 @@
               }
             },
             {
-              "Key": "12",
-              "Figure": "Procedure",
+              "Key": "position",
+              "Figure": "",
               "X": 0.0,
-              "Y": 240.0,
+              "Y": 650.0,
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
-                "Id": "3a472760-e1d2-5dc0-a840-b381f8cc0501",
-                "CanAutoName": true,
+                "Id": "01f919b7-75ee-2f3c-a61b-54d4d046ee5a",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
+                    "Value": "Position"
+                  },
+                  "ElementName": {
                     "Value": "Position"
                   },
                   "LogLevel": {
@@ -598,14 +636,14 @@
               }
             },
             {
-              "Key": "13",
-              "Figure": "Procedure",
-              "X": 260.0,
-              "Y": 360.0,
+              "Key": "posNotLong",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
-                "Id": "93b5a6ae-2f28-5370-81e7-773c0cf40acc",
-                "CanAutoName": true,
+                "Id": "267ed3c7-b65c-bf73-7744-cd9b010e7675",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Position <= 0"
@@ -639,14 +677,14 @@
               }
             },
             {
-              "Key": "14",
-              "Figure": "Procedure",
-              "X": 260.0,
-              "Y": 600.0,
+              "Key": "posNotShort",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
-                "Id": "ddc90ac9-39f1-5117-8bc6-a019d183638e",
-                "CanAutoName": true,
+                "Id": "13cd669e-f0a5-439a-9109-eed15b0c6208",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Position >= 0"
@@ -680,14 +718,14 @@
               }
             },
             {
-              "Key": "15",
-              "Figure": "Procedure",
-              "X": 1040.0,
-              "Y": 120.0,
+              "Key": "buySignal",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
-                "Id": "4f1adfe3-c5ee-5866-9459-6146a76c1267",
-                "CanAutoName": true,
+                "Id": "9dce417b-1ac1-9531-8134-40405589837b",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "AND\n(enters oversold)"
@@ -709,21 +747,22 @@
                   }
                 },
                 "InputSocketIds": [
-                  "2c398dcbb33b5e76b49cd3b3475c4668",
-                  "4eb2dbf7dc76515a85c6759232e209d5",
-                  "d5ccba880d7559b7863ea550ba6b1127"
+                  "dynsock_prev",
+                  "dynsock_current",
+                  "dynsock_position",
+                  "f986ffb0c0654876a068cff544178e22"
                 ]
               }
             },
             {
-              "Key": "16",
-              "Figure": "Procedure",
-              "X": 1040.0,
-              "Y": 240.0,
+              "Key": "sellSignal",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 130.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
-                "Id": "d7200127-46ff-5693-9165-5dd758b24953",
-                "CanAutoName": true,
+                "Id": "101c17ab-27c2-d1a6-044b-03bfe41a2825",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "AND\n(enters overbought)"
@@ -745,21 +784,22 @@
                   }
                 },
                 "InputSocketIds": [
-                  "19bc901533ee562896772fc3345d0546",
-                  "fc33047917b558da92006ec81e372851",
-                  "dbccdb7087b15449b8b9f92059db36bc"
+                  "dynsock_prev",
+                  "dynsock_current",
+                  "dynsock_position",
+                  "386e4191b04a4b88ad1f043759a85929"
                 ]
               }
             },
             {
-              "Key": "17",
-              "Figure": "Procedure",
-              "X": 1300.0,
+              "Key": "buy",
+              "Figure": "",
+              "X": 1100.0,
               "Y": 0.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
-                "Id": "a9db0bfe-f0e6-5bf5-a021-71790af1912d",
-                "CanAutoName": true,
+                "Id": "ffcd29d9-294e-a635-68b7-125780836d07",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Buy"
@@ -779,33 +819,48 @@
                   "OnlineOnly": {
                     "Value": true
                   },
-                  "Direction": {
-                    "Value": "Buy"
-                  },
-                  "IsMarket": {
-                    "Value": true
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
                   },
                   "PosCondition": {
                     "Value": "NoCondition"
                   },
-                  "ZeroAsMarket": {
-                    "Value": false
+                  "Direction": {
+                    "Value": "Buy"
                   },
-                  "ShrinkPrice": {
-                    "Value": true
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
                   }
                 }
               }
             },
             {
-              "Key": "18",
-              "Figure": "Procedure",
-              "X": 1300.0,
-              "Y": 120.0,
+              "Key": "sell",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 130.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
-                "Id": "3706e0a5-51d5-52d7-a81a-c66ec2bf4eab",
-                "CanAutoName": true,
+                "Id": "b9c7441d-fdd5-edd5-e71d-60af1f490f44",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Sell"
@@ -825,33 +880,48 @@
                   "OnlineOnly": {
                     "Value": true
                   },
-                  "Direction": {
-                    "Value": "Sell"
-                  },
-                  "IsMarket": {
-                    "Value": true
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
                   },
                   "PosCondition": {
                     "Value": "NoCondition"
                   },
-                  "ZeroAsMarket": {
-                    "Value": false
+                  "Direction": {
+                    "Value": "Sell"
                   },
-                  "ShrinkPrice": {
-                    "Value": true
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
                   }
                 }
               }
             },
             {
-              "Key": "19",
-              "Figure": "Procedure",
-              "X": 260.0,
-              "Y": 0.0,
+              "Key": "closePrice",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 390.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
-                "Id": "e447cd2e-df06-5c6e-9347-9cec8bdcd88e",
-                "CanAutoName": true,
+                "Id": "4f471253-6f58-c5a6-80ae-d01c7dbdf70c",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Close price"
@@ -860,7 +930,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": true
+                    "Value": false
                   },
                   "ShowSockets": {
                     "Value": true
@@ -880,14 +950,14 @@
               }
             },
             {
-              "Key": "20",
-              "Figure": "Procedure",
-              "X": 1560.0,
+              "Key": "protect",
+              "Figure": "",
+              "X": 1320.0,
               "Y": 0.0,
               "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
               "Settings": {
-                "Id": "be9dce0d-61a3-5dbd-8c1b-d307877d38fd",
-                "CanAutoName": true,
+                "Id": "5474ab74-d1fe-c850-9e53-a1316cfb1682",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Take 2% / Stop 1%"
@@ -913,6 +983,9 @@
                       }
                     }
                   },
+                  "TakeProfitTimeOut": {
+                    "Value": "00:00:00"
+                  },
                   "StopValue": {
                     "Value": {
                       "type": "StockSharp.Messages.Unit, StockSharp.Messages",
@@ -925,8 +998,14 @@
                   "IsTrailingStopLoss": {
                     "Value": false
                   },
+                  "StopLossTimeOut": {
+                    "Value": "00:00:00"
+                  },
                   "UseMarketOrders": {
                     "Value": true
+                  },
+                  "UseServer": {
+                    "Value": false
                   }
                 }
               }
@@ -934,171 +1013,171 @@
           ],
           "Links": [
             {
-              "From": "1",
+              "From": "candles",
               "FromPort": "Output",
-              "To": "2",
+              "To": "mfi",
               "ToPort": "Input"
             },
             {
-              "From": "2",
+              "From": "mfi",
               "FromPort": "Output",
-              "To": "3",
+              "To": "prevMfi",
               "ToPort": "Input"
             },
             {
-              "From": "3",
+              "From": "prevMfi",
               "FromPort": "Output",
-              "To": "8",
+              "To": "prevAboveLow",
               "ToPort": "Input"
             },
             {
-              "From": "4",
+              "From": "lowLevel",
               "FromPort": "Output",
-              "To": "8",
+              "To": "prevAboveLow",
               "ToPort": "SecondInput"
             },
             {
-              "From": "2",
+              "From": "mfi",
               "FromPort": "Output",
-              "To": "9",
+              "To": "nowAtLow",
               "ToPort": "Input"
             },
             {
-              "From": "4",
+              "From": "lowLevel",
               "FromPort": "Output",
-              "To": "9",
+              "To": "nowAtLow",
               "ToPort": "SecondInput"
             },
             {
-              "From": "3",
+              "From": "prevMfi",
               "FromPort": "Output",
-              "To": "10",
+              "To": "prevBelowHigh",
               "ToPort": "Input"
             },
             {
-              "From": "5",
+              "From": "highLevel",
               "FromPort": "Output",
-              "To": "10",
+              "To": "prevBelowHigh",
               "ToPort": "SecondInput"
             },
             {
-              "From": "2",
+              "From": "mfi",
               "FromPort": "Output",
-              "To": "11",
+              "To": "nowAtHigh",
               "ToPort": "Input"
             },
             {
-              "From": "5",
+              "From": "highLevel",
               "FromPort": "Output",
-              "To": "11",
+              "To": "nowAtHigh",
               "ToPort": "SecondInput"
             },
             {
-              "From": "12",
+              "From": "position",
               "FromPort": "Output",
-              "To": "13",
+              "To": "posNotLong",
               "ToPort": "Input"
             },
             {
-              "From": "6",
+              "From": "flat",
               "FromPort": "Output",
-              "To": "13",
+              "To": "posNotLong",
               "ToPort": "SecondInput"
             },
             {
-              "From": "12",
+              "From": "position",
               "FromPort": "Output",
-              "To": "14",
+              "To": "posNotShort",
               "ToPort": "Input"
             },
             {
-              "From": "6",
+              "From": "flat",
               "FromPort": "Output",
-              "To": "14",
+              "To": "posNotShort",
               "ToPort": "SecondInput"
             },
             {
-              "From": "8",
+              "From": "prevAboveLow",
               "FromPort": "Signal",
-              "To": "15",
-              "ToPort": "2c398dcbb33b5e76b49cd3b3475c4668"
+              "To": "buySignal",
+              "ToPort": "dynsock_prev"
             },
             {
-              "From": "9",
+              "From": "nowAtLow",
               "FromPort": "Signal",
-              "To": "15",
-              "ToPort": "4eb2dbf7dc76515a85c6759232e209d5"
+              "To": "buySignal",
+              "ToPort": "dynsock_current"
             },
             {
-              "From": "13",
+              "From": "posNotLong",
               "FromPort": "Signal",
-              "To": "15",
-              "ToPort": "d5ccba880d7559b7863ea550ba6b1127"
+              "To": "buySignal",
+              "ToPort": "dynsock_position"
             },
             {
-              "From": "10",
+              "From": "prevBelowHigh",
               "FromPort": "Signal",
-              "To": "16",
-              "ToPort": "19bc901533ee562896772fc3345d0546"
+              "To": "sellSignal",
+              "ToPort": "dynsock_prev"
             },
             {
-              "From": "11",
+              "From": "nowAtHigh",
               "FromPort": "Signal",
-              "To": "16",
-              "ToPort": "fc33047917b558da92006ec81e372851"
+              "To": "sellSignal",
+              "ToPort": "dynsock_current"
             },
             {
-              "From": "14",
+              "From": "posNotShort",
               "FromPort": "Signal",
-              "To": "16",
-              "ToPort": "dbccdb7087b15449b8b9f92059db36bc"
+              "To": "sellSignal",
+              "ToPort": "dynsock_position"
             },
             {
-              "From": "15",
+              "From": "buySignal",
               "FromPort": "Signal",
-              "To": "17",
+              "To": "buy",
               "ToPort": "Trigger"
             },
             {
-              "From": "7",
+              "From": "volume",
               "FromPort": "Output",
-              "To": "17",
+              "To": "buy",
               "ToPort": "Volume"
             },
             {
-              "From": "16",
+              "From": "sellSignal",
               "FromPort": "Signal",
-              "To": "18",
+              "To": "sell",
               "ToPort": "Trigger"
             },
             {
-              "From": "7",
+              "From": "volume",
               "FromPort": "Output",
-              "To": "18",
+              "To": "sell",
               "ToPort": "Volume"
             },
             {
-              "From": "1",
+              "From": "candles",
               "FromPort": "Output",
-              "To": "19",
+              "To": "closePrice",
               "ToPort": "Input"
             },
             {
-              "From": "19",
+              "From": "closePrice",
               "FromPort": "Output",
-              "To": "20",
+              "To": "protect",
               "ToPort": "Price"
             },
             {
-              "From": "17",
+              "From": "buy",
               "FromPort": "MyTrade",
-              "To": "20",
+              "To": "protect",
               "ToPort": "Trade"
             },
             {
-              "From": "18",
+              "From": "sell",
               "FromPort": "MyTrade",
-              "To": "20",
+              "To": "protect",
               "ToPort": "Trade"
             }
           ]

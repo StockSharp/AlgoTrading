@@ -5,7 +5,7 @@
 
 「Bollinger Bands」戦略は [StockSharp Designer](https://doc.stocksharp.com/ja/topics/designer.html) 向けに設計されており、Bollinger Bands を活用してボラティリティパターンから利益を得ることに焦点を当てています。この戦略は価格がバンドを横切る動きを検出し、市場への参入および退出ポイントを決定します。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 戦略の詳細
 

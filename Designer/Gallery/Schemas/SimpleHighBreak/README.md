@@ -5,7 +5,7 @@
 
 The "SimpleHighBreak" strategy is designed to capitalize on price breakouts over a predefined high within [StockSharp Designer](https://doc.stocksharp.com/en/topics/designer.html). This strategy is focused on identifying opportunities where the price breaks above the 15-period high, signaling a potential continuation of an upward trend.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Details
 

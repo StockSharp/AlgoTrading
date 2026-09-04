@@ -5,7 +5,7 @@
 
 Dieses Beispiel zeigt eine Konfiguration innerhalb des StockSharp Strategy Designers, die sich auf die Verarbeitung von Markttiefen-Daten konzentriert. Markttiefen-Daten, häufig als „Orderbuch" bezeichnet, enthalten Informationen über Kauf- und Verkaufsorders auf verschiedenen Preisniveaus für ein Wertpapier. Sie sind für Strategien unerlässlich, die Angebots- und Nachfragedynamiken auf verschiedenen Preisniveaus in Echtzeit analysieren müssen.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Schemabeschreibung
 

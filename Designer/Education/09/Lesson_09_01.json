@@ -152,15 +152,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },

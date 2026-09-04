@@ -5,7 +5,7 @@
 
 A estratégia "SimpleHighBreak" foi desenvolvida para capitalizar em rompimentos de preço acima de uma máxima predefinida dentro do [StockSharp Designer](https://doc.stocksharp.com/pt/topics/designer.html). Esta estratégia é focada em identificar oportunidades onde o preço rompe acima da máxima de 15 períodos, sinalizando uma possível continuação da tendência de alta.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Detalhes da Estratégia
 

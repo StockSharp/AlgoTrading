@@ -8,12 +8,12 @@ This file illustrates a complex strategy schema using candles from different tim
 The schema is divided into two main branches, each using five-minute candles compared against historical price extremes to make trading decisions:
 
 ### First Branch - Historical Extremes
-- **Buy Condition**: The strategy initiates a buy order if the closing price of a five-minute candle is greater than the highest price of the last 20 days.
-- **Sell Condition**: A sell order is executed if the closing price of a five-minute candle is less than the lowest price of the last 10 days.
+- **Buy Condition**: The strategy initiates a buy order if the closing price of a five-minute candle is greater than the highest price of the last 5 days.
+- **Sell Condition**: A sell order is executed if the closing price of a five-minute candle is less than the lowest price of the last 3 days.
 
 ### Second Branch - Reverse Conditions
-- **Sell Condition**: Executes a sell order if the closing price of a five-minute candle is less than the lowest price of the last 20 days.
-- **Buy Condition**: Initiates a buy if the closing price of a five-minute candle is greater than the highest price of the last 10 days.
+- **Sell Condition**: Executes a sell order if the closing price of a five-minute candle is less than the lowest price of the last 5 days.
+- **Buy Condition**: Initiates a buy if the closing price of a five-minute candle is greater than the highest price of the last 3 days.
 
 ## Version-Specific Features and Changes
 - **Flag Cube Appearance**: In Designer version 5, the appearance of the flag cube has been updated.

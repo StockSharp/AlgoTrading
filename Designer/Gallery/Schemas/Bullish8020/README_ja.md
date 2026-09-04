@@ -5,7 +5,7 @@
 
 「Bullish8020」戦略は [StockSharp Designer](https://doc.stocksharp.com/ja/topics/designer.html) 向けに開発されており、特定の強気ローソク足パターンを高精度で活用することを目的としています。この戦略は、ボリュームと価格行動を組み合わせた独自のパターン分析を使用して、強気のセンチメントが強い市場機会を識別することを目指しています。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 戦略の詳細
 

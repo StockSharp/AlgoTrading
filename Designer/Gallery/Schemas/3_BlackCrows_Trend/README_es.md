@@ -5,7 +5,7 @@
 
 La estrategia "3 Black Crows Trend" en el [Strategy Designer](https://doc.stocksharp.com/es/topics/designer.html) emplea un patrón específico de velas de reversión bajista para predecir posibles movimientos a la baja en el mercado bursátil. Este esquema de trading automatizado está meticulosamente diseñado para reconocer y operar en función de patrones de precio significativos, con el objetivo de beneficiarse de las tendencias bajistas.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Detalles de la estrategia
 

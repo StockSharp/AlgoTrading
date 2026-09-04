@@ -5,7 +5,7 @@
 
 Dieses Beispiel im StockSharp Strategy Designer demonstriert eine ausgefeilte Konfiguration, die die Verarbeitung von Datum und Uhrzeit in eine Handelsstrategie integriert. Die Strategie nutzt zeitspezifische Bedingungen, um Handelsentscheidungen auf Basis von Kerzendaten und der Tageszeit zu treffen, und ist damit ein praxisnahes Beispiel für zeitkritische Trading-Szenarien.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Beschreibung des Schemas
 

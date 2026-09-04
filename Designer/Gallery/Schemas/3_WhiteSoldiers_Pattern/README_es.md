@@ -5,7 +5,7 @@
 
 Este ejemplo demuestra la implementación de una estrategia de trading en el StockSharp Strategy Designer que utiliza el patrón de velas "Three White Soldiers". Este patrón suele interpretarse como una señal de reversión alcista y puede ser decisivo para los traders que buscan capitalizar los cambios de impulso. La configuración descrita en el esquema JSON implica la detección de este patrón y el inicio de operaciones basadas en su aparición.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Descripción del esquema
 

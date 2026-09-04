@@ -3,7 +3,7 @@
 
 This diagram provides a straightforward demonstration of how to use the "Candles" data source and "Chart" cube within the Designer platform. It is designed to help users understand the fundamentals of fetching market data and visualizing it in a chart format.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Overview
 

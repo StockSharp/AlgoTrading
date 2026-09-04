@@ -5,7 +5,7 @@
 
 [Strategy Designer](https://doc.stocksharp.com/ja/topics/designer.html) の「3 Black Crows Trend」戦略は、特定の弱気反転ローソク足パターンを使用して、株式市場における潜在的な下降動向を予測します。この自動化された取引スキーマは、重要な価格パターンを認識し対応するために綿密に設計されており、弱気トレンドから利益を得ることを目指しています。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 戦略の詳細
 

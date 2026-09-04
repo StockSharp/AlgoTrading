@@ -5,7 +5,7 @@
 
 Dieses Beispiel demonstriert die Implementierung einer Handelsstrategie im StockSharp Strategy Designer, die das Candlestick-Muster „Three White Soldiers" nutzt. Dieses Muster wird häufig als bullisches Umkehrsignal interpretiert und kann für Trader, die von Impulswechseln profitieren möchten, entscheidend sein. Die im JSON-Schema beschriebene Konfiguration umfasst die Erkennung dieses Musters und die Einleitung von Trades bei seinem Auftreten.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Beschreibung des Schemas
 

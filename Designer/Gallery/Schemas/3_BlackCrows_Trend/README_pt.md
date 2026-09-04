@@ -5,7 +5,7 @@
 
 A estratégia "3 Black Crows Trend" no [Strategy Designer](https://doc.stocksharp.com/pt/topics/designer.html) emprega um padrão específico de reversão de baixa em candles para prever potenciais movimentos de queda no mercado de ações. Este esquema de negociação automatizado é meticulosamente elaborado para reconhecer e agir sobre padrões de preço significativos, visando beneficiar-se de tendências de baixa.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Detalhes da estratégia
 

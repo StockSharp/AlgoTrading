@@ -5,7 +5,7 @@
 
 The "Bollinger Bands" strategy is designed for [StockSharp Designer](https://doc.stocksharp.com/en/topics/designer.html) and focuses on utilizing Bollinger Bands to capitalize on volatility patterns. This strategy detects the price crossing the bands to determine entry and exit points in the market.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Details
 

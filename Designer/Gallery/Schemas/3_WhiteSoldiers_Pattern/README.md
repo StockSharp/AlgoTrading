@@ -5,7 +5,7 @@
 
 This example demonstrates the implementation of a trading strategy in the StockSharp Strategy Designer that utilizes the "Three White Soldiers" candlestick pattern. This pattern is often interpreted as a bullish reversal signal and can be pivotal for traders looking to capitalize on shifts in momentum. The setup described in the JSON schema involves the detection of this pattern and the initiation of trades based on its occurrence.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Description of the Schema
 

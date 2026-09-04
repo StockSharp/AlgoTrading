@@ -8,7 +8,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
@@ -134,14 +134,18 @@ class cointegration_pairs_strategy(Strategy):
         self._asset2Price = 0
         self._cooldownTicksLeft = 0
 
-        # Use the same portfolio for second asset or find another portfolio
-        self._asset2Portfolio = self.Portfolio
+        # Portfolio is not guaranteed to be assigned by the time a strategy is reset,
+        # so the hedge portfolio is resolved on start instead.
+        self._asset2Portfolio = None
 
     def OnStarted2(self, time):
         super(cointegration_pairs_strategy, self).OnStarted2(time)
 
         if self.Asset2 is None:
             raise Exception("Second asset is not specified.")
+
+        # Use the same portfolio for second asset or find another portfolio
+        self._asset2Portfolio = self.Portfolio
 
         # Create subscriptions for both assets
         asset1Subscription = self.SubscribeCandles(self.CandleType)
@@ -219,6 +223,17 @@ class cointegration_pairs_strategy(Strategy):
             # that has not been netted yet into the next order, which compounds without bound.
             closingVolume = Math.Min(Math.Abs(self.Position), self.Volume)
 
+            # The hedge leg fills independently of Asset1, so it is measured from its own
+            # position and bounded the same way: a closing order takes at most the open leg,
+            # an entry adds only the part of it that its own side nets out.
+            hedgeVolume = float(self.Volume) * float(self.Beta)
+            asset2Position = 0.0
+            if self._asset2Portfolio is not None:
+                asset2PositionValue = self.GetPositionValue(self.Asset2, self._asset2Portfolio)
+                if asset2PositionValue is not None:
+                    asset2Position = float(asset2PositionValue)
+            asset2ClosingVolume = Math.Min(Math.Abs(asset2Position), hedgeVolume)
+
             # Check for trading signals
             if zScore < -self.EntryThreshold and self.Position <= 0:
                 # Long Asset1, Short Asset2
@@ -228,12 +243,7 @@ class cointegration_pairs_strategy(Strategy):
 
                 # Then, short Asset2 using the second portfolio
                 if self._asset2Portfolio is not None:
-                    asset2Order = Order()
-                    asset2Order.Side = Sides.Sell
-                    asset2Order.Security = self.Asset2
-                    asset2Order.Portfolio = self._asset2Portfolio
-                    asset2Order.Volume = self.Volume * self.Beta
-                    self.RegisterOrder(asset2Order)
+                    self.RegisterAsset2Order(Sides.Sell, hedgeVolume + (asset2ClosingVolume if asset2Position > 0 else 0.0))
                     hasTraded = True
 
             elif zScore > self.EntryThreshold and self.Position >= 0:
@@ -244,12 +254,7 @@ class cointegration_pairs_strategy(Strategy):
 
                 # Then, buy Asset2 using the second portfolio
                 if self._asset2Portfolio is not None:
-                    asset2Order = Order()
-                    asset2Order.Side = Sides.Buy
-                    asset2Order.Security = self.Asset2
-                    asset2Order.Portfolio = self._asset2Portfolio
-                    asset2Order.Volume = self.Volume * self.Beta
-                    self.RegisterOrder(asset2Order)
+                    self.RegisterAsset2Order(Sides.Buy, hedgeVolume + (asset2ClosingVolume if asset2Position < 0 else 0.0))
                     hasTraded = True
 
             elif Math.Abs(zScore) < 0.5:
@@ -261,15 +266,10 @@ class cointegration_pairs_strategy(Strategy):
                         self.BuyMarket(closingVolume)
                     hasTraded = True
 
-                    # Close position on Asset2
-                    if self._asset2Portfolio is not None:
-                        asset2Order = Order()
-                        asset2Order.Side = Sides.Buy if self.Position > 0 else Sides.Sell
-                        asset2Order.Security = self.Asset2
-                        asset2Order.Portfolio = self._asset2Portfolio
-                        asset2Order.Volume = self.Volume * self.Beta
-                        self.RegisterOrder(asset2Order)
-                        hasTraded = True
+                # Close position on Asset2 from the real size and side of that leg
+                if asset2ClosingVolume > 0:
+                    self.RegisterAsset2Order(Sides.Sell if asset2Position > 0 else Sides.Buy, asset2ClosingVolume)
+                    hasTraded = True
 
         if hasTraded:
             self._cooldownTicksLeft = self._tradeCooldownTicks
@@ -277,6 +277,15 @@ class cointegration_pairs_strategy(Strategy):
         # Reset prices for next update
         self._asset1Price = 0
         self._asset2Price = 0
+
+    def RegisterAsset2Order(self, side, volume):
+        asset2Order = Order()
+        asset2Order.Side = side
+        asset2Order.Security = self.Asset2
+        asset2Order.Portfolio = self._asset2Portfolio
+        asset2Order.Volume = volume
+        asset2Order.Type = OrderTypes.Market
+        self.RegisterOrder(asset2Order)
 
     def CreateClone(self):
         """

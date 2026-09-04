@@ -5,7 +5,7 @@
 
 The "3 Black Crows Trend" strategy in the [Strategy Designer](https://doc.stocksharp.com/en/topics/designer.html) employs a specific bearish reversal candlestick pattern to predict potential downward movements in the stock market. This automated trading schema is meticulously crafted to recognize and act on significant price patterns, aiming to benefit from bearish trends.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Details
 

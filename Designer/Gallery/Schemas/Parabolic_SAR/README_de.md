@@ -5,7 +5,7 @@
 
 Die Strategie „Parabolic SAR" ist darauf ausgelegt, Trendumkehrungen und Trendfortsetzungsmuster mithilfe des Parabolic Stop and Reverse (SAR)-Indikators im [StockSharp Designer](https://doc.stocksharp.com/de/topics/designer.html) zu erfassen. Die Strategie liefert klare Ein- und Ausstiegssignale basierend auf der Kursbewegung relativ zu den Parabolic SAR-Punkten.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategiedetails
 

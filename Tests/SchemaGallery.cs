@@ -18,14 +18,18 @@ public static class SchemaGallery
 	public static readonly string[] Translations = ["ru", "zh", "es", "de", "pt", "ja"];
 
 	/// <summary>Full path of the gallery folder.</summary>
-	public static string Root { get; } = FindRoot();
+	public static string Root { get; } = FindRoot("Gallery", "Schemas");
+
+	/// <summary>Full path of the lessons folder. A lesson is a schema too, and is held to the same load.</summary>
+	public static string EducationRoot { get; } = FindRoot("Education");
 
 	/// <summary>Every example folder of the gallery.</summary>
 	public static IEnumerable<string> EnumerateFolders()
-		=> Directory
-			.EnumerateDirectories(Root)
-			.Where(dir => !Path.GetFileName(dir).StartsWith(_toolsPrefix, StringComparison.Ordinal))
-			.OrderBy(dir => dir, StringComparer.OrdinalIgnoreCase);
+		=> Folders(Root);
+
+	/// <summary>Every lesson folder.</summary>
+	public static IEnumerable<string> EnumerateLessonFolders()
+		=> Folders(EducationRoot);
 
 	/// <summary>The schema file of an example folder, or null when the folder holds none.</summary>
 	public static string FindSchemaFile(string folder)
@@ -43,7 +47,23 @@ public static class SchemaGallery
 		}
 	}
 
-	private static string FindRoot()
+	/// <summary>Every lesson schema. A lesson folder may hold several, so each is named by its file.</summary>
+	public static IEnumerable<(string name, string fileName)> EnumerateLessons()
+	{
+		foreach (var folder in EnumerateLessonFolders())
+		{
+			foreach (var file in Directory.EnumerateFiles(folder, "*.json", SearchOption.TopDirectoryOnly).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+				yield return ($"{Path.GetFileName(folder)}/{Path.GetFileNameWithoutExtension(file)}", file);
+		}
+	}
+
+	private static IEnumerable<string> Folders(string root)
+		=> Directory
+			.EnumerateDirectories(root)
+			.Where(dir => !Path.GetFileName(dir).StartsWith(_toolsPrefix, StringComparison.Ordinal))
+			.OrderBy(dir => dir, StringComparer.OrdinalIgnoreCase);
+
+	private static string FindRoot(params string[] parts)
 	{
 		// The tests run from the build output, so the gallery is found by walking up to the repository
 		// root rather than by counting folders from the assembly.
@@ -53,11 +73,11 @@ public static class SchemaGallery
 		{
 			if (File.Exists(Path.Combine(dir.FullName, "AlgoTrading.slnx")))
 			{
-				var root = Path.Combine(dir.FullName, "Designer", "Gallery", "Schemas");
+				var root = Path.Combine([dir.FullName, "Designer", .. parts]);
 
 				return Directory.Exists(root)
 					? root
-					: throw new DirectoryNotFoundException($"The schema gallery is missing at '{root}'.");
+					: throw new DirectoryNotFoundException($"Nothing at '{root}'.");
 			}
 
 			dir = dir.Parent;

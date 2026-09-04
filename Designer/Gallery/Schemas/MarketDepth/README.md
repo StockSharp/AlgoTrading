@@ -5,7 +5,7 @@
 
 This example illustrates a setup within the StockSharp Strategy Designer that focuses on handling market depth data. Market depth data, often referred to as "the order book," includes information about buy and sell orders at different price levels for a security. It's crucial for strategies that need to analyze supply and demand dynamics at various price levels in real-time.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Schema Description
 

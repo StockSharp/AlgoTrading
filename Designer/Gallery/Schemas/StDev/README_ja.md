@@ -5,7 +5,7 @@
 
 「StDevStrategy」は、[StockSharp Designer](https://doc.stocksharp.com/ja/topics/designer.html) 向けに、Standard Deviation インジケーターを使用して統計的な変動パターンを活用するよう設計されています。この戦略は、平均価格からの乖離に基づいて潜在的な取引機会を特定し、買われすぎまたは売られすぎの状態をシグナルとして活用します。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 戦略の詳細
 

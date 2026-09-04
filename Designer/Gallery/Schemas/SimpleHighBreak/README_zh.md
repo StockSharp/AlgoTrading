@@ -5,7 +5,7 @@
 
 "SimpleHighBreak"策略旨在利用 [StockSharp Designer](https://doc.stocksharp.com/zh/topics/designer.html) 中价格突破预设高点的机会。该策略专注于识别价格突破15周期高点的时机，以此作为上涨趋势可能延续的信号。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 策略详情
 

@@ -3,7 +3,7 @@
 
 Este arquivo de diagrama ilustra uma estratégia para criar um índice composto a partir de séries de velas de diferentes instrumentos financeiros, utilizando a Galeria de Estratégias da plataforma Designer. A estratégia agrega dados de vários ativos para formar um índice unificado, que pode ser usado para avaliar o sentimento geral do mercado ou o desempenho de um setor.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Visão Geral da Estratégia
 

@@ -5,7 +5,7 @@
 
 Dieses Beispiel demonstriert eine „Tief-Ausbruch mit Stop"-Handelsstrategie, die im StockSharp Strategy Designer konfiguriert ist. Sie ist darauf ausgelegt, Trades auf Basis spezifischer Tief-Ausbruchsbedingungen auszuführen und dabei Stop-Loss-Parameter zum Risikomanagement einzusetzen. Die Strategie nutzt Echtzeit-Marktdaten, um zu erkennen, wann der Kurs eines Wertpapiers über einen bestimmten Zeitraum unter ein vordefiniertes Tief fällt, und initiiert dann Trades mit definierten Stop-Bedingungen.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Beschreibung des Schemas
 

@@ -5,7 +5,7 @@
 
 A Estratégia de Negociação por Pares em BTC e ETH foi projetada para negociar duas criptomoedas populares — Bitcoin (BTC) e Ethereum (ETH). Esta estratégia de arbitragem de criptomoedas baseia-se na identificação de oportunidades de arbitragem entre esses dois ativos, permitindo que os traders capitalizem momentos em que a diferença de preço entre BTC e ETH atinge um determinado limiar.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 A estratégia implementa mecanismos para comprar uma criptomoeda enquanto simultaneamente vende a outra, visando lucrar com discrepâncias temporárias em seus valores. Isso torna a estratégia atraente para aqueles que buscam oportunidades de ganho a partir de flutuações mínimas do mercado sem estar vinculados à tendência geral do mercado.
 

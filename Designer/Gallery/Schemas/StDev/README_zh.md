@@ -5,7 +5,7 @@
 
 "StDevStrategy"专为 [StockSharp Designer](https://doc.stocksharp.com/zh/topics/designer.html) 设计，利用 Standard Deviation 指标把握统计波动规律。该策略通过识别价格偏离均值的情况来发现潜在交易机会，从而捕捉超买或超卖信号。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 策略详情
 

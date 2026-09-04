@@ -5,7 +5,7 @@
 
 La "StDevStrategy" está diseñada para [StockSharp Designer](https://doc.stocksharp.com/es/topics/designer.html) con el fin de aprovechar los patrones de volatilidad estadística utilizando el indicador Standard Deviation. Esta estrategia está construida para identificar posibles oportunidades de trading basándose en las desviaciones del precio promedio, señalando condiciones de sobrecompra o sobreventa.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Detalles de la Estrategia
 

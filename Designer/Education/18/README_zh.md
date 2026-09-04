@@ -5,13 +5,13 @@
 
 ## 概述
 
-配对交易是一种市场中性策略，当两种资产的价格比率偏离历史常态时，同时买入一种资产并卖出另一种资产。本图以两种具体证券为例：SBER@TQBR 和 GAZP@TQBR。
+配对交易是一种市场中性策略，当两种资产的价格比率偏离历史常态时，同时买入一种资产并卖出另一种资产。本图以两个具体品种为例：BTCUSDT@BNBFT 和 TONUSDT@BNBFT。
 
 ## 策略逻辑
 
-- **指数计算**：策略根据公式 `SBER@TQBR / GAZP@TQBR` 计算指数。该指数有助于判断一只股票相对于另一只股票的相对强弱。
-- **买入条件**：若指数上升，表明 SBER@TQBR 相对于 GAZP@TQBR 变贵，策略买入较便宜的资产（GAZP@TQBR）并卖出较贵的资产（SBER@TQBR）。
-- **卖出条件**：若指数下降，表明 SBER@TQBR 相对于 GAZP@TQBR 变便宜，策略买入较贵的资产（SBER@TQBR）并卖出较便宜的资产（GAZP@TQBR）。
+- **指数计算**：策略根据公式 `BTCUSDT@BNBFT / TONUSDT@BNBFT` 计算指数。该指数有助于判断一个品种相对于另一个品种的相对强弱。
+- **买入条件**：若指数上升，表明 BTCUSDT@BNBFT 相对于 TONUSDT@BNBFT 变贵，策略买入较便宜的资产（TONUSDT@BNBFT）并卖出较贵的资产（BTCUSDT@BNBFT）。
+- **卖出条件**：若指数下降，表明 BTCUSDT@BNBFT 相对于 TONUSDT@BNBFT 变便宜，策略买入较贵的资产（BTCUSDT@BNBFT）并卖出较便宜的资产（TONUSDT@BNBFT）。
 
 ## 主要特点
 

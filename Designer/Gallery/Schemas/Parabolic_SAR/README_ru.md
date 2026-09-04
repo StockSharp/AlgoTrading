@@ -5,7 +5,7 @@
 
 Стратегия «Parabolic SAR» предназначена для захвата разворотов и продолжения трендов с использованием индикатора Parabolic Stop and Reverse (SAR) в [StockSharp Designer](https://doc.stocksharp.com/ru/topics/designer.html). Стратегия предоставляет чёткие сигналы входа и выхода на основе движения цены относительно точек Parabolic SAR.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Детали стратегии
 

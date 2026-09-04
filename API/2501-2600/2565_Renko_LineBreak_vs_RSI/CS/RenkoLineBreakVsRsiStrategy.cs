@@ -232,18 +232,28 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 			return;
 		}
 
-		var move = closePrice - _renkoAnchorPrice;
-		var bricks = (int)(Math.Abs(move) / boxSize);
+		while (true)
+		{
+			// A brick continuing the current direction needs one box, a brick reversing it needs two.
+			// Until the first brick sets a direction one box is enough either way.
+			var upDistance = _renkoHasPrev && !_renkoPrevBull ? boxSize * 2m : boxSize;
+			var downDistance = _renkoHasPrev && _renkoPrevBull ? boxSize * 2m : boxSize;
 
-		if (bricks == 0)
-		return;
-
-		var isBull = move > 0m;
-
-		for (var i = 0; i < bricks; i++)
-		ProcessRenkoBrick(isBull);
-
-		_renkoAnchorPrice += (isBull ? boxSize : -boxSize) * bricks;
+			if (closePrice - _renkoAnchorPrice >= upDistance)
+			{
+				_renkoAnchorPrice += upDistance;
+				ProcessRenkoBrick(true);
+			}
+			else if (_renkoAnchorPrice - closePrice >= downDistance)
+			{
+				_renkoAnchorPrice -= downDistance;
+				ProcessRenkoBrick(false);
+			}
+			else
+			{
+				break;
+			}
+		}
 	}
 
 	private void ProcessRenkoBrick(bool isBull)

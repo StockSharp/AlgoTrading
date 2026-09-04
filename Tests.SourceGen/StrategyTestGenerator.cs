@@ -32,7 +32,6 @@ public class StrategyTestGenerator : IIncrementalGenerator
 		"2776_CH2010_Structure",
 		"2798_Improve_MA_RSI_Hedge",
 		"3064_Two_PerBar",
-		"3750_Frank_Ud_Minimal",
 		"4048_Burg_Extrapolator_Forecast",
 	};
 

@@ -3,7 +3,7 @@
 
 Este arquivo contém uma representação diagramática de uma estratégia de trading baseada em médias móveis, desenvolvida usando a Galeria de Estratégias da plataforma Designer. A estratégia utiliza o conceito de médias móveis para gerar sinais de compra e venda com base em seus cruzamentos, um método popular nos mercados financeiros para avaliar o momentum e confirmar tendências.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Visão Geral da Estratégia
 

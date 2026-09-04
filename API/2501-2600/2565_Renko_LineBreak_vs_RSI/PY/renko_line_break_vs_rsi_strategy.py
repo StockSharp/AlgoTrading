@@ -164,18 +164,21 @@ class renko_line_break_vs_rsi_strategy(Strategy):
             self._has_renko_anchor = True
             return
 
-        move = close_price - self._renko_anchor
-        bricks = int(abs(move) / box_size)
+        while True:
+            # A brick continuing the current direction needs one box, a brick reversing it needs two.
+            # Until the first brick sets a direction one box is enough either way.
+            has_prev = self._prev_bull is not None
+            up_distance = box_size * 2 if has_prev and not self._prev_bull else box_size
+            down_distance = box_size * 2 if has_prev and self._prev_bull else box_size
 
-        if bricks == 0:
-            return
-
-        is_bull = move > 0
-
-        for _ in range(bricks):
-            self._process_renko_brick(is_bull)
-
-        self._renko_anchor += (box_size if is_bull else -box_size) * bricks
+            if close_price - self._renko_anchor >= up_distance:
+                self._renko_anchor += up_distance
+                self._process_renko_brick(True)
+            elif self._renko_anchor - close_price >= down_distance:
+                self._renko_anchor -= down_distance
+                self._process_renko_brick(False)
+            else:
+                break
 
     def _process_renko_brick(self, is_bull):
         if self._prev_bull is None:

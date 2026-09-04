@@ -3,7 +3,7 @@
 
 This diagram file illustrates a strategy for creating a composite index from candle series of different financial instruments using the Designer platform's Strategy Gallery. The strategy aggregates data from various securities to form a unified index, which can be used to gauge the overall market sentiment or sector performance.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Strategy Overview
 

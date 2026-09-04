@@ -5,7 +5,7 @@
 
 The "Low Break with Calculation" strategy utilizes a combination of high and low price indicators to identify potential breakout points in a market. This strategy aims to execute trades when the price breaks below a calculated low over a specified period, suggesting a potential downtrend.
 
-[![schema](schema.png)](schema_easter_egg.png)
+[![schema](schema.svg)](schema_easter_egg.png)
 
 ## Strategy Details
 

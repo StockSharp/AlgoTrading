@@ -5,7 +5,7 @@
 
 所提供 JSON 方案中描述的"High Break"策略，使用 StockSharp Strategy Designer，旨在根据与价格走势和时间框架相关的特定条件执行交易。本示例展示了如何设置一个交易策略，在证券价格突破一定时期内预设高点时识别潜在买入机会。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 方案描述
 

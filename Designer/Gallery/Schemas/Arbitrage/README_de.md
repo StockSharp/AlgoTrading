@@ -5,7 +5,7 @@
 
 Die Paarhandels-Strategie für BTC und ETH ist für den Handel mit zwei populären Kryptowährungen konzipiert — Bitcoin (BTC) und Ethereum (ETH). Diese Kryptowährungs-Arbitrage-Strategie basiert auf der Identifizierung von Arbitragemöglichkeiten zwischen diesen beiden Vermögenswerten, sodass Trader Momente nutzen können, in denen die Preisdifferenz zwischen BTC und ETH einen bestimmten Schwellenwert erreicht.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 Die Strategie implementiert Mechanismen zum Kauf einer Kryptowährung bei gleichzeitigem Verkauf der anderen, mit dem Ziel, von vorübergehenden Abweichungen in ihren Werten zu profitieren. Dies macht die Strategie attraktiv für diejenigen, die Verdienstmöglichkeiten aus minimalen Marktfluktuationen suchen, ohne an den allgemeinen Markttrend gebunden zu sein.
 

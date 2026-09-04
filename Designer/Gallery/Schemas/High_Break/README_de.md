@@ -5,7 +5,7 @@
 
 Die im bereitgestellten JSON-Schema dargestellte „High Break"-Strategie ist dafür konzipiert, Trades auf Basis spezifischer Bedingungen im Zusammenhang mit Kursbewegungen und Zeitrahmen auszuführen, und verwendet dabei den StockSharp Strategy Designer. Dieses Beispiel zeigt, wie eine Handelsstrategie eingerichtet wird, die potenzielle Kaufgelegenheiten identifiziert, wenn der Kurs eines Wertpapiers ein vorbestimmtes Hoch über einen bestimmten Zeitraum überschreitet.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Beschreibung des Schemas
 

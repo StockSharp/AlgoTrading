@@ -3,7 +3,7 @@
 
 Este diagrama fornece uma demonstração simples de como usar a fonte de dados "Candles" e o bloco "Chart" dentro da plataforma Designer. Foi projetado para ajudar os usuários a entender os fundamentos da obtenção de dados de mercado e sua visualização em formato de gráfico.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## Visão geral
 

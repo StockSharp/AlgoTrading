@@ -406,7 +406,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "CurrentTime"
+                    "Value": "CloseTime"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -422,11 +422,11 @@
                   },
                   "Type": {
                     "Value": {
-                      "Type": "StockSharp.Algo.Strategies.Strategy, StockSharp.Algo"
+                      "Type": "StockSharp.Algo.Strategies.Strategy, StockSharp.Algo.Strategies"
                     }
                   },
                   "Property": {
-                    "Value": "CurrentTime"
+                    "Value": "CloseTime"
                   }
                 }
               }
@@ -458,7 +458,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Type": "StockSharp.Algo.Strategies.Strategy, StockSharp.Algo"
+                      "Type": "StockSharp.Algo.Strategies.Strategy, StockSharp.Algo.Strategies"
                     }
                   },
                   "Value": {},
@@ -1202,7 +1202,7 @@
                   },
                   "Type": {
                     "Value": {
-                      "Id": "StockSharp.Algo.Indicators.MovingAverageConvergenceDivergence, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.MovingAverageConvergenceDivergence, StockSharp.Algo.Indicators"
                     }
                   },
                   "IsFinal": {
@@ -1407,15 +1407,13 @@
                   },
                   "Series": {
                     "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
                       "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, mscorlib",
+                          "value": "00-05-00"
+                        }
                       }
                     }
                   },
@@ -1700,6 +1698,161 @@
                   "4addabcf2500488c8ec07128ac482aab"
                 ]
               }
+            },
+            {
+              "Key": "39",
+              "Figure": "None",
+              "X": 380.0,
+              "Y": -260.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "12b27ee5-b116-404a-aa5a-4476815aac38",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Volume = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "40",
+              "Figure": "None",
+              "X": 960.0,
+              "Y": -110.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "937d2837-70fc-49e4-9814-7ef0896349f2",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close short"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "IsMarket": {
+                    "Value": true
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "ZeroAsMarket": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "ConditionalSettings": {},
+                  "ShrinkPrice": {
+                    "Value": true
+                  },
+                  "IsMargin": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Slippage": {}
+                }
+              }
+            },
+            {
+              "Key": "41",
+              "Figure": "None",
+              "X": 960.0,
+              "Y": -190.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "db5d45a2-581c-49be-9372-a02a881ca721",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "IsMarket": {
+                    "Value": true
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "ZeroAsMarket": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "ConditionalSettings": {},
+                  "ShrinkPrice": {
+                    "Value": true
+                  },
+                  "IsMargin": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Slippage": {}
+                }
+              }
             }
           ],
           "Links": [
@@ -1744,12 +1897,6 @@
               "FromPort": "Signal",
               "To": "35",
               "ToPort": "Trigger"
-            },
-            {
-              "From": "28",
-              "FromPort": "Output",
-              "To": "29",
-              "ToPort": "Input"
             },
             {
               "From": "23",
@@ -1968,18 +2115,6 @@
               "ToPort": "Trigger"
             },
             {
-              "From": "26",
-              "FromPort": "Signal",
-              "To": "15",
-              "ToPort": "Trigger"
-            },
-            {
-              "From": "27",
-              "FromPort": "Signal",
-              "To": "13",
-              "ToPort": "Trigger"
-            },
-            {
               "From": "3",
               "FromPort": "Output",
               "To": "21",
@@ -2056,6 +2191,72 @@
               "FromPort": "MyTrade",
               "To": "4",
               "ToPort": "dynsock_33ebf8ea2db34675bead7abf1fa14371"
+            },
+            {
+              "From": "39",
+              "FromPort": "Output",
+              "To": "13",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "39",
+              "FromPort": "Output",
+              "To": "15",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "3",
+              "FromPort": "Output",
+              "To": "29",
+              "ToPort": "Input"
+            },
+            {
+              "From": "26",
+              "FromPort": "Signal",
+              "To": "40",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "35",
+              "FromPort": "Output",
+              "To": "40",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "40",
+              "ToPort": "Security"
+            },
+            {
+              "From": "17",
+              "FromPort": "Output",
+              "To": "40",
+              "ToPort": "Portfolio"
+            },
+            {
+              "From": "27",
+              "FromPort": "Signal",
+              "To": "41",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "35",
+              "FromPort": "Output",
+              "To": "41",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "41",
+              "ToPort": "Security"
+            },
+            {
+              "From": "17",
+              "FromPort": "Output",
+              "To": "41",
+              "ToPort": "Portfolio"
             }
           ]
         }

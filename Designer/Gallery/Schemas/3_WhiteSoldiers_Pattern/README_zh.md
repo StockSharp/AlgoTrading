@@ -5,7 +5,7 @@
 
 本示例展示了在 StockSharp Strategy Designer 中实现交易策略的方法，该策略利用"Three White Soldiers"K线形态。该形态通常被解读为看涨反转信号，对于希望从动量转变中获利的交易者而言具有重要意义。JSON 方案中描述的配置涉及检测该形态并在其出现时发起交易。
 
-![schema](schema.png)
+![schema](schema.svg)
 
 ## 方案描述
 

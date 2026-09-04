@@ -5,7 +5,7 @@
 
 The Pair Trading Strategy on BTC and ETH is designed for trading two popular cryptocurrencies—Bitcoin (BTC) and Ethereum (ETH). This cryptocurrency arbitrage strategy is based on identifying arbitrage opportunities between these two assets, allowing traders to capitalize on moments when the price difference between BTC and ETH reaches a certain threshold.
 
-![schema](schema.png)
+![schema](schema.svg)
 
 The strategy implements mechanisms for buying one cryptocurrency while simultaneously selling another, aiming to profit from temporary discrepancies in their values. This makes the strategy appealing for those looking for earning opportunities from minimal market fluctuations without being tied to the general market trend.
 
